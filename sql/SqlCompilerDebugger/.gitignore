@@ -1,0 +1,5 @@
+libSqlCompilerDebugger.so*
+Makefile
+moc_*cpp
+ui_*.h
+qrc_Resource.cpp

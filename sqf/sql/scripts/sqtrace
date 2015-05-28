@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+# To turn on/off seabed tracing of a SQ process
+
+if [[ $# < 2 ]]; then
+    echo "$0 <SQ process name> <0|1>"
+    exit -1
+fi
+
+lv_pnm=$1
+lv_cmd=$2
+
+if [ "$lv_cmd" == 1 ]; then
+
+sqshell -a <<EOF
+
+set {process $lv_pnm} sbtrace-MS_TRACE_FILE=mstrace
+set {process $lv_pnm} sbtrace-MS_TRACE_FILE_UNIQUE=1
+set {process $lv_pnm} sbtrace-MS_TRACE_MON=1
+set {process $lv_pnm} sbtrace-MS_TRACE_PARAMS=1
+set {process $lv_pnm} sbtrace-MS_TRACE_ENABLE=1
+set {process $lv_pnm} sbtrace-FS_TRACE_MON=1
+set {process $lv_pnm} sbtrace-FS_TRACE_PARAMS=1
+set {process $lv_pnm} sbtrace-FS_TRACE_ENABLE=1
+EOF
+
+else
+
+sqshell -a <<EOF
+
+set {process $lv_pnm} sbtrace-MS_TRACE_MON=0
+set {process $lv_pnm} sbtrace-MS_TRACE_PARAMS=0
+set {process $lv_pnm} sbtrace-MS_TRACE_ENABLE=0
+EOF
+
+fi

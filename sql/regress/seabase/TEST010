@@ -1,0 +1,445 @@
+-- Tests for SeaBase
+-- Added June 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST010(clean_up);
+
+log LOG010 clear;
+obey TEST010(setup);
+
+cqd hbase_serialization 'OFF';
+cqd hbase_filter_preds 'OFF';
+
+-- query_cache on(default), mdam_scan_method on(default)
+cqd query_cache '1024';
+cqd mdam_scan_method 'ON';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- query_cache off, mdam_scan_method off
+cqd query_cache '0';
+cqd mdam_scan_method 'OFF';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- query_cache on, mdam_scan_method off
+cqd query_cache '1024';
+cqd mdam_scan_method 'OFF';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- query_cache off, mdam_scan_method on
+cqd query_cache '0';
+cqd mdam_scan_method 'ON';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- run with hbase_serialization ON
+obey TEST010(clean_up);
+cqd hbase_serialization 'ON';
+cqd hbase_filter_preds 'ON';
+
+-- query_cache on(default), mdam_scan_method on(default)
+cqd query_cache '1024';
+cqd mdam_scan_method 'ON';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- query_cache off, mdam_scan_method on
+cqd query_cache '0';
+cqd mdam_scan_method 'ON';
+obey TEST010(clean_up);
+obey TEST010(tests);
+
+-- other mdam queries
+cqd mdam_scan_method 'ON';
+cqd query_cache '1024';
+obey TEST010(otherMdam);
+drop schema minotaur cascade;
+
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+
+cqd hbase_max_column_name_length '10';
+cqd hbase_max_column_val_length '20';
+cqd hbase_max_column_info_length '60';
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table if exists t010t1;
+drop table if exists t010t2;
+drop table if exists t010t3;
+
+?section tests
+--------------------------------------------------------------------------
+
+create table if not exists t010t1 (a int not null, b char(10), primary key(a)); 
+create table if not exists t010t2 (a int not null, b char(10) not null, c int not null, d char(10), primary key(a,b,c));
+create table if not exists t010t3 (a int not null, b char(10) not null, c int not null, d char(10), primary key(a,b,c))
+  salt using 4 partitions on (a,b);
+
+invoke t010t1;
+invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
+invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
+
+insert into t010t1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+select * from t010t1;
+
+select * from t010t1 where a = 2;
+
+select * from t010t1 where a = 2 or a = 3;
+
+delete from t010t1 where a = 4;
+
+select * from t010t1;
+
+delete from t010t1 where a = 2;
+
+select * from t010t1;
+
+-------------------
+-- check query plan
+-------------------
+
+-- no sort operator should present when order by on primary key column
+prepare xx from select * from t010t1 order by a;
+explain options 'f' xx;
+
+-- should see a sort when order by on non key column
+prepare xx from select * from t010t1 order by b;
+explain options 'f' xx;
+
+-- selectPred should present due to the 2nd disjunct b='1'
+prepare xx from select * from t010t1 where a=1 or b='1';
+explain xx;
+
+-- Optimization: with only one disjunct, the selectPred should be empty
+-- and the executor predicate should contain the non-key predicate
+prepare xx from select * from t010t1 where a=1 and b='1';
+explain xx;
+
+-- should see a full hbase SCAN
+prepare xx from select * from t010t1 where b='1';
+explain xx;
+
+-- should see a unique hbase GET 
+prepare xx from select * from t010t1 where a=1;
+explain xx;
+
+insert into t010t2 values
+(1, 'a', 1, '1a1'),
+(1, 'a', 3, '1a3'),
+(1, 'a', 5, '1a5'),
+(1, 'c', 1, '1c1'),
+(2, 'a', 1, '2a1'),
+(2, 'a', 2, '2a2'),
+(2, 'c', 3, '2c3'),
+(4, 'a', 1, '4a1'),
+(4, 'b', 1, '4b1'),
+(4, 'b', 2, '4b2');
+
+insert into t010t3 select * from t010t2;
+
+prepare x1 from
+select * from t010t2 where a in (1,4) and b='a' and c = 1;
+
+execute x1;
+-- expect 1a1, 4a1
+
+prepare x2 from
+select * from t010t2 where a in (1,2,4) and b='a' and (c in (1,3) or c>=5);
+execute x2;
+-- expect 1a1, 1a3, 1a5, 2a1, 4a1
+
+prepare x3 from
+select * from t010t2 where a in (1,2,4) and b='a' and c in (1,3);
+execute x3;
+-- expect 1a1, 1a3, 2a1, 4a1
+
+prepare x4 from
+delete from t010t2 where a in (2,4,6) and b='a' and c in (1,3);
+execute x4;
+-- expect 2 rows deleted, 2a1 and 4a1
+execute x3;
+-- expect 1a1, 1a3
+
+insert into t010t2 values
+(2, 'a', 1, '2a1'),
+(4, 'a', 1, '4a1');
+
+prepare x5 from 
+update t010t2 set d='upd' where a=4 and b in ('a', 'b') and c < 2;
+execute x5;
+-- execute 2 rows updated, 4a1 and 4b1
+select * from t010t2;
+
+cqd HBASE_MAX_NUM_SEARCH_KEYS '1';
+
+prepare y1 from
+select * from t010t2 where a in (1,4) and b='a' and c = 1;
+execute y1;
+-- expect 1a1, 4a1
+
+prepare y2 from
+select * from t010t2 where a in (1,2,4) and b='a' and (c in (1,3) or c>=5);
+execute y2;
+-- expect 1a1, 1a3, 1a5, 2a1, 4a1
+
+prepare y3 from
+select * from t010t2 where a in (1,2,4) and b='a' and c in (1,3);
+execute y3;
+-- expect 1a1, 1a3, 2a1, 4a1
+
+prepare y4 from
+delete from t010t2 where a in (2,4,6) and b='a' and c in (1,3);
+execute y4;
+-- expect 2 rows deleted, 2a1 and 4a1
+execute y3;
+-- expect 1a1, 1a3
+
+insert into t010t2 values
+(2, 'a', 1, '2a1'),
+(4, 'a', 1, '4a1');
+
+prepare y5 from 
+update t010t2 set d='uuu' where a=4 and b in ('a', 'b') and c < 2;
+execute y5;
+-- execute 2 rows updated, 4a1 and 4b1
+select * from t010t2;
+
+cqd HBASE_MAX_NUM_SEARCH_KEYS reset;
+
+explain x1;
+explain x2;
+explain x3;
+explain x4;
+explain x5;
+explain y1;
+explain y2;
+explain y3;
+explain y4;
+explain y5;
+
+select "_SALT_", * from t010t3 order by a,b,c;
+select "_SALT_", * from t010t3 where a=1 and b='c';
+
+update t010t3 set d='2axu' where a=2 and b='a';
+-- 2 rows updated
+update t010t3 set d='4b1u' where a=4 and b='b' and c <= 1;
+-- 1 row updated
+update t010t3 set a=3 where a=2;
+-- 3 rows updated
+delete from t010t3 where a=3 and b='c' and c=3;
+-- 1 row deleted
+delete from t010t3 where d like '2%u %';
+-- 2 rows deleted
+select "_SALT_", * from t010t3;
+-- 7 rows
+merge into t010t3
+  using (select * from t010t2) as src
+  on ((src.a, src.b, src.c) = (a,b,c))
+when matched
+  then update set d = src.d
+when not matched
+  then insert values (src.a, src.b, src.c, src.d)
+;
+-- 10 rows updated
+select "_SALT_", * from t010t2 natural join t010t3 order by a,b,c;
+-- expect 10 rows, same as each individual table
+
+select "_SALT_", * from table(table t010t3, partition number 4);
+select "_SALT_", * from table(table t010t3, partition number from 1 to 3);
+-- 2 statements above must return 10 rows total
+
+?section otherMdam
+drop table if exists minotaur.events_load75;
+create schema minotaur;
+CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75
+  (
+    SRCIP                            CHAR(45) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SRCPORT                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DSTIP                            VARCHAR(45) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DSTPORT                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , AGENTRECEIPTTIME                 TIMESTAMP(0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , CATEGORYOUTCOME                  VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATEGORYSIGNIFICANCE             VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DEVICESEVERITY                   VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATEGORYDEVICETYPE               VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DEVICECUSTOMSTRING1              VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , FLEXSTRING1                      VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EVENT_ID                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (EVENT_ID ASC,SRCIP ASC, AGENTRECEIPTTIME ASC)
+  )
+  SALT USING 75 PARTITIONS
+  hbase_options (blockcache = 'TRUE', TTL = '1000')
+;
+
+prepare s from
+select * from minotaur.events_load75<<+ cardinality 10e6 >>  where srcip = '120.120.120.1' and agentreceipttime = timestamp '2014-05-28 15:10:33';
+
+execute s;
+
+showddl TRAFODION.MINOTAUR.EVENTS_LOAD75;
+
+drop table if exists t010t4;
+create table t010t4 (a int not null primary key, b int, c int) 
+salt using 4 partitions ;
+create index t010ix1 on t010t4 (b) 
+HBASE_OPTIONS
+  (
+    DATA_BLOCK_ENCODING = 'FAST_DIFF',
+    COMPRESSION = 'GZ'
+  )
+  SALT LIKE TABLE
+;
+showddl t010t4 ;
+insert into t010t4 values (1,1,1) ;
+prepare s from select a from t010t4 <<+cardinality 10e8>> where b > 0 ;
+explain options 'f' s ;
+execute s;
+
+cqd detailed_statistics 'all';
+
+prepare statsquery from
+select frag_num, inst_num, seq_num,
+       cast(substring(variable_info
+                      from position('AccessedRows' in variable_info)
+                      for position('DiskIOs' in variable_info) -
+                          position('AccessedRows' in variable_info))
+            as char(40) character set iso88591) as rows_accessed
+from table(statistics(null, 'S'))
+where tdb_name like 'EX_TRAF_%';
+
+prepare statsquery1 from
+select frag_num, inst_num, seq_num,
+       case when cast(substring(variable_info
+                      from position('AccessedRows' in variable_info)+14
+                      for position('UsedRows' in variable_info) -
+                          position('AccessedRows' in variable_info)-14)
+            as integer) > 4000 then 'PASS' else 'FAIL' end
+from table(statistics(null, 'S'))
+where tdb_name like 'EX_TRAF_%'
+order by 1,2,3;
+
+drop table if exists t010t5;
+
+create table T010t5(c1 numeric(12,2) not null,
+                     c2 largeint not null,
+                     c3 integer,
+                     c4 char(1000),
+                     primary key (c1, c2))
+salt using 2 partitions ;
+
+upsert using load into t010t5
+select num*0.01, num, num, 'dummy'
+from (select 1000*thousands+100*hundreds+10*tens+ones
+      from (values (0)) seed(c)
+      transpose 0,1,2,3,4,5,6,7,8,9 as ones
+      transpose 0,1,2,3,4,5,6,7,8,9 as tens
+      transpose 0,1,2,3,4,5,6,7,8,9 as hundreds
+      transpose 0,1,2,3,4,5,6,7,8,9 as thousands) gen(num)
+order by 3
+;
+
+create index t010t5idx1 on t010t5(c3) salt like table ;
+
+-- begin testcase for lp 1396793.
+
+create index t010t5idx2 on t010t5(c2) no populate ;
+
+create index t010t5idx3 on t010t5(c1) no populate ;
+
+create index t010t5idx4 on t010t5(c3) no populate ;
+
+populate index t010t5idx2 on t010t5;
+
+populate index t010t5idx3 on t010t5;
+
+populate index t010t5idx4 on t010t5;
+
+set parserflags 1;
+
+select count(*) from table(index_table t010t5idx2);
+
+select count(*) from table(index_table t010t5idx3);
+
+select count(*) from table(index_table t010t5idx4);
+
+-- end testcase for lp 1396793.
+
+set parserflags 1;
+
+prepare s from
+select count(*) as cnt, min(c1) minc1, max(c1) maxc1, min(c2) minc2, max(c2) maxc2 from table(index_table t010t5idx1 )a;
+execute s;
+execute statsquery1;
+--use statsquery to see rows flowing through each ESP
+--execute statsquery ;
+
+cqd ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON' ;
+
+drop table if exists LOGITEM;
+
+CREATE TABLE LOGITEM
+  (
+    D_GROUP                   VARCHAR(80 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , L_ORDER_NO                  VARCHAR(30 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , I_SLN                         VARCHAR(10 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+ 
+  , PRIMARY KEY (L_ORDER_NO ASC, I_SLN ASC)
+  )
+  SALT USING 16 PARTITIONS
+  HBASE_OPTIONS
+  (
+    DATA_BLOCK_ENCODING = 'FAST_DIFF',
+    COMPRESSION = 'GZ'
+  )
+;
+
+cqd hbase_hash2_partitioning 'off' ;
+
+select * from logitem ;
+
+-- showddl output should not show 'ACTUAL PARTITIONS' 
+-- Created and actual partitions are the same.
+drop table if exists "delim_tab";
+create table "delim_tab" (a int not null primary key) salt using 4 partitions;
+showddl "delim_tab";
+
+create volatile table vtab1 (a int);
+create volatile table vtab2 (a int);
+get all volatile schemas;
+get all volatile tables;

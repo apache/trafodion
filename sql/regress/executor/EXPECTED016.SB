@@ -1,0 +1,874 @@
+>>
+>>-- DDL 
+>>
+>>create table t016t1 (a numeric(10) unsigned, 
++>		     b numeric(18) unsigned not null,
++>	             c numeric(20) default 12345678901234567890, 
++>		     d numeric(23) unsigned not null,
++>                     e numeric(34,0) not null, 
++>		     f numeric(128) not null,
++>                     g numeric(10,2) unsigned not null, 
++>		     h numeric(18,18) unsigned,
++>                     i numeric(25,20) not null, 
++>		     j numeric(128,60) unsigned 
++>		       default 12345678012345678901234567890.12345678901234567890,
++>                     k numeric(128,128), 
++>		     l numeric(60,59)) no partition;
+
+--- SQL operation complete.
+>>
+>>create table t016t2(a numeric(39,12) not null, b numeric(20,0) unsigned not null,
++>	c numeric(21,21),
++>		    primary key(a,b))
++>#ifNT
++>#ifndef SEABASE_REGRESS
++>hash partition by (a,b)
++>(add location $$partition2$$, add location $$partition2$$, add location $$partition2$$)
++>#endif
++>#ifNT
++>attribute all mvs allowed
++>;
+
+--- SQL operation complete.
+>>
+>>-- MVs not support on seabase
+>>#ifndef SEABASE_REGRESS
+>>create MVGroup MVG_016;
+>>
+>>-- MV with attribute no audit on refresh 
+>>create mv MV_no_audit_016
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes no AuditOnRefresh 
++>	store by (a,b)
++>	as
++>	select a,b,sum(c) sumc
++>	from T016t2
++>	group by a,b;
+>>ALTER MVGroup MVG_016 add MV_no_audit_016;
+>>
+>>create mv MV_audit_016
++>	refresh on request
++>	initialize on refresh
++>	store by (a,b)
++>	as
++>	select a,b,min(b) minb
++>	from T016t2
++>	group by a,b;
+>>ALTER MVGroup MVG_016 add MV_audit_016;
+>>
+>>create table t016t3(a numeric(39,12) not null, b numeric(20,0) unsigned not null,
++>		    primary key(a,b)) range partition by (a,b)
++>(add first key (12345678901234567890.12) location $$partition2$$, 
++> add first key (22345678901234567890) location $$partition3$$
++>)
++>;
+>>#endif
+>>
+>>invoke t016t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T016T1
+-- Definition current  Wed May 14 05:01:26 2014
+
+  (
+    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+  , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(20, 0) DEFAULT
+      12345678901234567890
+  , D                                NUMERIC(23, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , E                                NUMERIC(34, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , F                                NUMERIC(128, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , G                                NUMERIC(10, 2) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , H                                NUMERIC(18, 18) UNSIGNED DEFAULT NULL
+  , I                                NUMERIC(25, 20) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , J                                NUMERIC(128, 60) UNSIGNED DEFAULT
+      12345678012345678901234567890.12345678901234567890
+  , K                                NUMERIC(128, 128) DEFAULT NULL
+  , L                                NUMERIC(60, 59) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t016t1;
+
+CREATE TABLE TRAFODION.SCH.T016T1
+  (
+    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+  , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(20, 0) DEFAULT
+      12345678901234567890
+  , D                                NUMERIC(23, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , E                                NUMERIC(34, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , F                                NUMERIC(128, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , G                                NUMERIC(10, 2) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , H                                NUMERIC(18, 18) UNSIGNED DEFAULT NULL
+  , I                                NUMERIC(25, 20) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , J                                NUMERIC(128, 60) UNSIGNED DEFAULT
+      12345678012345678901234567890.12345678901234567890
+  , K                                NUMERIC(128, 128) DEFAULT NULL
+  , L                                NUMERIC(60, 59) DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>invoke t016t2;
+
+-- Definition of Trafodion table TRAFODION.SCH.T016T2
+-- Definition current  Wed May 14 05:01:27 2014
+
+  (
+    A                                NUMERIC(39, 12) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                NUMERIC(20, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(21, 21) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t016t2;
+
+CREATE TABLE TRAFODION.SCH.T016T2
+  (
+    A                                NUMERIC(39, 12) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , B                                NUMERIC(20, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(21, 21) DEFAULT NULL
+  , PRIMARY KEY (A ASC, B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>invoke t016t3;
+>>showddl t016t3;
+>>#endif
+>>
+>>----------------------------------------------------------------------------
+>>-- DDL used to verify fix to SQ2535
+>>create table t016_2535_2(c1 numeric(20,0) not null , c2 int, primary key (c1));
+
+--- SQL operation complete.
+>>
+>>insert into  t016_2535_2 values (1234567.1234556789, 1);
+
+--- 1 row(s) inserted.
+>>insert into  t016_2535_2 values (1234568.234556789, 1);
+
+--- 1 row(s) inserted.
+>>
+>>create table t016_2535_3(c1 numeric(20,0) not null , c2 int not null,
++>primary key (c1, c2));
+
+--- SQL operation complete.
+>>
+>>
+>>insert into  t016_2535_3 values (1234567.1234556789, 1);
+
+--- 1 row(s) inserted.
+>>insert into  t016_2535_3 values (1234567.1234556789, 2);
+
+--- 1 row(s) inserted.
+>>insert into  t016_2535_3 values (1234568, 1);
+
+--- 1 row(s) inserted.
+>>insert into  t016_2535_3 values (1234568, 2);
+
+--- 1 row(s) inserted.
+>>insert into  t016_2535_3 values (1234569, 1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>-- DML
+>>insert into t016t2 values (1234567890123456789012345.123456789012, 12345678901234567890, .1);
+
+--- 1 row(s) inserted.
+>>insert into t016t2 values (-1234567890123456789012345.123456789012, 12345678901234567890, .2);
+
+--- 1 row(s) inserted.
+>>insert into t016t2 values (2234567890123456789012345.123456789012, 12345678901234567890, .3);
+
+--- 1 row(s) inserted.
+>>insert into t016t2 values (-1234567890123456789012345.123456789012, 22345678901234567890, .000000000000000000001);
+
+--- 1 row(s) inserted.
+>>insert into t016t2 values (10, 20, .30);
+
+--- 1 row(s) inserted.
+>>insert into t016t2 values (11, 22, null);
+
+--- 1 row(s) inserted.
+>>
+>>select * from t016t2;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+  -1234567890123456789012345.123456789012   22345678901234567890   .000000000000000000001
+                          10.000000000000                     20   .300000000000000000000
+                          11.000000000000                     22                        ?
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+   2234567890123456789012345.123456789012   12345678901234567890   .300000000000000000000
+
+--- 6 row(s) selected.
+>>
+>>select a+b, a-b, a*b, a/b from t016t2;
+
+(EXPR)                                      (EXPR)                                      (EXPR)                                                         (EXPR)
+------------------------------------------  ------------------------------------------  -------------------------------------------------------------  -------------------------------------------------------------
+
+   -1234555544444555554444455.123456789012     -1234580235802358023580235.123456789012     -15241578753238836750342928917695521270218084.316720024680                       -100000.00000000000000099995500899950505
+   -1234545544444555554444455.123456789012     -1234590235802358023580235.123456789012     -27587257654473404640466380152263411390218084.316720024680                        -55248.61856200970553500748492071608082
+                           30.000000000000                            -10.000000000000                                               200.000000000000                             0.50000000000000000000000000000000
+                           33.000000000000                            -11.000000000000                                               242.000000000000                             0.50000000000000000000000000000000
+    1234580235802358023580235.123456789012      1234555544444555554444455.123456789012      15241578753238836750342928917695521270218084.316720024680                        100000.00000000000000099995500899950505
+    2234580235802358023580235.123456789012      2234555544444555554444455.123456789012      27587257654473404640342928917695521270218084.316720024680                        181000.00072900000663571001538478005447
+
+--- 6 row(s) selected.
+>>
+>>select sum(a), sum(b), min(a), min(b), avg(a), avg(b) from t016t2;
+
+(EXPR)                                               (EXPR)                           (EXPR)                                     (EXPR)                 (EXPR)                                                                  (EXPR)
+---------------------------------------------------  -------------------------------  -----------------------------------------  ---------------------  ----------------------------------------------------------------------  ---------------------------------------------------
+
+             1000000000000000000000021.000000000000             59382715604938271602    -1234567890123456789012345.123456789012                     20                166666666666666666666670.1666666666666666666666666666666              9897119267489711933.6666666666666666666
+
+--- 1 row(s) selected.
+>>
+>>select * from t016t2 where a = 1234567890123456789012345.123456789012;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+
+--- 1 row(s) selected.
+>>select * from t016t2 where (a,b) = (-1234567890123456789012345.123456789012, 12345678901234567890);
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+
+--- 1 row(s) selected.
+>>select * from t016t2 where b < 22345678901234567890;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+                          10.000000000000                     20   .300000000000000000000
+                          11.000000000000                     22                        ?
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+   2234567890123456789012345.123456789012   12345678901234567890   .300000000000000000000
+
+--- 5 row(s) selected.
+>>
+>>update t016t2 set c = 0.123456789012345678901 where a = 10;
+
+--- 1 row(s) updated.
+>>update t016t2 set c = .20 where c is null;
+
+--- 1 row(s) updated.
+>>
+>>select * from t016t2;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+  -1234567890123456789012345.123456789012   22345678901234567890   .000000000000000000001
+                          10.000000000000                     20   .123456789012345678901
+                          11.000000000000                     22   .200000000000000000000
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+   2234567890123456789012345.123456789012   12345678901234567890   .300000000000000000000
+
+--- 6 row(s) selected.
+>>
+>>set param ?p 98765432109876543210.12345678901;
+>>set param ?q 98765432109876543210;
+>>set param ?r 0.012345678901234567891;
+>>insert into t016t2 values (?p, ?q, ?r);
+
+--- 1 row(s) inserted.
+>>select * from t016t2;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+  -1234567890123456789012345.123456789012   22345678901234567890   .000000000000000000001
+                          10.000000000000                     20   .123456789012345678901
+                          11.000000000000                     22   .200000000000000000000
+        98765432109876543210.123456789010   98765432109876543210   .012345678901234567891
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+   2234567890123456789012345.123456789012   12345678901234567890   .300000000000000000000
+
+--- 7 row(s) selected.
+>>
+>>create view t016v1 as select * from t016t1;
+
+--- SQL operation complete.
+>>invoke t016v1;
+
+-- Definition of Trafodion view TRAFODION.SCH.T016V1
+-- Definition current  Wed May 14 05:01:35 2014
+
+  (
+    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+  , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(20, 0) DEFAULT NULL
+  , D                                NUMERIC(23, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , E                                NUMERIC(34, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , F                                NUMERIC(128, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , G                                NUMERIC(10, 2) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , H                                NUMERIC(18, 18) UNSIGNED DEFAULT NULL
+  , I                                NUMERIC(25, 20) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , J                                NUMERIC(128, 60) UNSIGNED DEFAULT NULL
+  , K                                NUMERIC(128, 128) DEFAULT NULL
+  , L                                NUMERIC(60, 59) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t016v1;
+
+--- 0 row(s) selected.
+>>
+>>create view t016v2 (jj,kf) as select j*j, k*f from t016t1;
+
+--- SQL operation complete.
+>>invoke t016v2;
+
+-- Definition of Trafodion view TRAFODION.SCH.T016V2
+-- Definition current  Wed May 14 05:01:37 2014
+
+  (
+    JJ                               NUMERIC(128, 0) UNSIGNED DEFAULT NULL
+  , KF                               NUMERIC(128, 0) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t016v2;
+
+--- 0 row(s) selected.
+>>
+>>create table t016t2t1 as select * from t016t1;
+
+--- 0 row(s) inserted.
+>>invoke t016t2t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T016T2T1
+-- Definition current  Wed May 14 05:01:40 2014
+
+  (
+    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+  , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , C                                NUMERIC(20, 0) DEFAULT NULL
+  , D                                NUMERIC(23, 0) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , E                                NUMERIC(34, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , F                                NUMERIC(128, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , G                                NUMERIC(10, 2) UNSIGNED NO DEFAULT NOT
+      NULL NOT DROPPABLE
+  , H                                NUMERIC(18, 18) UNSIGNED DEFAULT NULL
+  , I                                NUMERIC(25, 20) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , J                                NUMERIC(128, 60) UNSIGNED DEFAULT NULL
+  , K                                NUMERIC(128, 128) DEFAULT NULL
+  , L                                NUMERIC(60, 59) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t016t2t1;
+
+--- 0 row(s) selected.
+>>
+>>create table t016t2t2 as select j*j jj, k*f kf from t016t1;
+
+--- 0 row(s) inserted.
+>>invoke t016t2t2;
+
+-- Definition of Trafodion table TRAFODION.SCH.T016T2T2
+-- Definition current  Wed May 14 05:01:42 2014
+
+  (
+    JJ                               NUMERIC(128, 0) UNSIGNED DEFAULT NULL
+  , KF                               NUMERIC(128, 0) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t016t2t2;
+
+--- 0 row(s) selected.
+>>
+>>create view t016v3 as select * from t016t2;
+
+--- SQL operation complete.
+>>select * from t016v3;
+
+A                                          B                      C
+-----------------------------------------  ---------------------  -----------------------
+
+  -1234567890123456789012345.123456789012   12345678901234567890   .200000000000000000000
+  -1234567890123456789012345.123456789012   22345678901234567890   .000000000000000000001
+                          10.000000000000                     20   .123456789012345678901
+                          11.000000000000                     22   .200000000000000000000
+        98765432109876543210.123456789010   98765432109876543210   .012345678901234567891
+   1234567890123456789012345.123456789012   12345678901234567890   .100000000000000000000
+   2234567890123456789012345.123456789012   12345678901234567890   .300000000000000000000
+
+--- 7 row(s) selected.
+>>
+>>create index t016t1i1 on t016t1(a);
+
+--- SQL operation complete.
+>>create index t016t1i2 on t016t1(c);
+
+--- SQL operation complete.
+>>create index t016t1i3 on t016t1(k);
+
+--- SQL operation complete.
+>>
+>>create index t016t2i1 on t016t2(a);
+
+--- SQL operation complete.
+>>create index t016t2i2 on t016t2(b);
+
+--- SQL operation complete.
+>>create index t016t2i3 on t016t2(c) no populate;
+
+--- SQL operation complete.
+>>populate index t016t2i3 on t016t2;
+
+--- SQL operation complete.
+>>
+>>-- SPJs not supported on Seabase
+>>#ifndef SEABASE_REGRESS
+>>
+>>-- SPJ returning rowsets
+>>log;
+>>sh sh java-compile.ksh TEST016.java 2>LOG016.SECONDARY | tee -a LOG016;
+>>log LOG016;
+>>
+>>create procedure rs016(tablename varchar(20))
++>external name 'TEST016.rs016'
++>external path $$REGRRUNDIR_Q$$
++>language java parameter style java
++>dynamic result sets 1 reads sql data;
+>>
+>>grant all privileges on t016t2 to sql_user1;
+>>
+>>call rs016('t016t2');
+>>#endif
+>>
+>>-- exact numerics
+>>select
++>12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+ 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>-12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+-12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+(EXPR)
+----------------------------------------------------------------------------------------------------------------------------------
+
+ 1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>-1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+(EXPR)
+----------------------------------------------------------------------------------------------------------------------------------
+
+ -1234567890123456789012345678901234567890123456789012345678901234567890.123456789012345678901234567890123456789012345678901234567
+
+--- 1 row(s) selected.
+>>
+>>-- float numerics
+>>select
++>12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+(EXPR)                   
+-------------------------
+
+ 1.23456789012345664E+127
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>-12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+(EXPR)                   
+-------------------------
+
+-1.23456789012345664E+127
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+(EXPR)                   
+-------------------------
+
+ 1.23456789012345664E+069
+
+--- 1 row(s) selected.
+>>
+>>
+>>select
++>-1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+(EXPR)                   
+-------------------------
+
+-1.23456789012345664E+069
+
+--- 1 row(s) selected.
+>>
+>>-- Utilities
+>>#ifndef SEABASE_REGRESS
+>>refresh mvgroup mvg_016 outfile REFRESH.LOG;
+>>log;
+>>sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOG016;
+>>log LOG016;
+>>#endif
+>>
+>>-- error cases
+>>create table t016terr(a numeric(23,24)) no partition;
+
+*** ERROR[3015] Scale 24 cannot exceed precision 23.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create table t016terr(a numeric(129,0)) no partition;
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create table t016terr(a numeric(129)) no partition;
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query default cat_large_blocks_large_keys 'OFF';
+
+--- SQL operation complete.
+>>create table t016err (a numeric(128,0) not null, b numeric(128,0) not null, c numeric(128,0) not null, d numeric(128,0) not null, e numeric(92) not null,
++>primary key(a,b,c,d,e));
+
+--- SQL operation complete.
+>>
+>>-- error cases: exact numerics
+>>select
++>123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>select
++>-123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>select
++>1234567890123456789012345678901234567890123456789012345678901234567890.12345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>select
++>-1234567890123456789012345678901234567890123456789012345678901234567890.12345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+*** ERROR[3014] Precision of numeric, 129, cannot exceed 128.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>
+>>select * from t016_2535_2 where c1 = 1234567.1234556789;
+
+--- 0 row(s) selected.
+>>select * from t016_2535_2 where c1 = 1234567.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_2 where c1 = 1234567;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_2 where c1 > 1234567.3;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>select * from t016_2535_2 where c1 >= 1234567.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>select * from t016_2535_2 where c1 < 1234567.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_2 where c1 <= 1234567.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_2 where c1 < 1234568.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>select * from t016_2535_2 where c1 <= 1234568.0;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>select * from t016_2535_2 where c1 < 1234568.9;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>select * from t016_2535_2 where c1 <= 1234568.9;
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234568            1
+
+--- 2 row(s) selected.
+>>
+>>select * from t016_2535_3 where (c1,c2) = (1234567.1234556789, 1);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) = (1234567.0, 1);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) = (1234567, 1);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) >= (1234567, 1);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234567            2
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 5 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) >= (1234567, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            2
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 4 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) >= (1234567.76, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 3 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) > (1234567, 1);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            2
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 4 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) > (1234567, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 3 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) > (1234565.5, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234567            2
+              1234568            1
+              1234568            2
+              1234569            1
+
+--- 5 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) > (1234568.3, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234569            1
+
+--- 1 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) < (1234568.3, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234567            2
+              1234568            1
+              1234568            2
+
+--- 4 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) <= (1234568.3, 2);
+
+C1                     C2         
+---------------------  -----------
+
+              1234567            1
+              1234567            2
+              1234568            1
+              1234568            2
+
+--- 4 row(s) selected.
+>>select * from t016_2535_3 where (c1,c2) <= (1234567.3, 0);
+
+--- 0 row(s) selected.
+>>
+>>drop table t016_2535_2;
+
+--- SQL operation complete.
+>>drop table t016_2535_3;
+
+--- SQL operation complete.
+>>
+>>log;

@@ -1,0 +1,76 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+#ifndef ELEMDDLLOGGABLE_H
+#define ELEMDDLLOGGABLE_H
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         ElemDDLLoggable.h
+ * Description:  column LOGGABLE attribute
+ *
+ *               
+ * Created:      05/18/2000
+ * Language:     C++
+ *
+ *
+ *
+ *
+ *****************************************************************************
+ */
+
+
+#include "ElemDDLNode.h"
+
+
+class ElemDDLLoggable : public ElemDDLNode
+{
+
+public:
+
+	ElemDDLLoggable( NABoolean loggableVal)
+	  : ElemDDLNode(ELM_LOGGABLE),
+	  loggable_(loggableVal)
+	{
+
+	}
+
+
+	// virtual destructor
+        // LCOV_EXCL_LINE  
+	virtual ~ElemDDLLoggable(){}
+
+	// cast
+	virtual ElemDDLLoggable* castToElemDDLLoggable(){return this;}
+	virtual NABoolean getIsLoggable() const { return loggable_; }
+
+	// methods for tracing
+//	virtual const NAString displayLabel2() const;
+//	virtual const NAString getText() const;
+
+
+private:
+
+	NABoolean loggable_;
+
+}; // class ElemDDLElemDDLLoggableAttribute
+
+
+
+#endif // ELEMDDLLOGGABLE_H

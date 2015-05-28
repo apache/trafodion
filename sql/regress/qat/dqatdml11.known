@@ -1,0 +1,22 @@
+842,843c842
+< EMPNAME
+< ------------------
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+845,847c844
+< JACK RAYMOND
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.
+859,860c856
+< EMPNAME
+< ------------------
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+862,864c858
+< JACK RAYMOND
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.

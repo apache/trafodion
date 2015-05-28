@@ -1,0 +1,86 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# This is a convenience script to update the existing HBase
+# installation with HBase-trx jar and configuration.
+#
+# Currently, it works for local_hadoop installations only.
+#
+
+if [ -d $MY_SQROOT/sql/local_hadoop/hbase ]; then
+    echo "An existing Hadoop installation exists. Will:"
+    echo "    - Stop HBase"
+    echo "    - Copy TRX jar"
+    echo "    - Edit hbase-site.xml (add TRX properties)"
+    echo "    - Restart HBase"
+    echo -n "Continue? y/n (n): "
+    read YN
+    if [ "$YN" = "n" -o "$YN" = "N" ]; then
+	echo "N entered. Exiting"
+	exit 0
+    fi
+else
+    echo "There isn't any existing HBase installation. Exiting..."
+    exit 1
+fi
+
+cd $MY_SQROOT/sql/local_hadoop/
+echo "Stopping HBase"
+swstophbase
+# Let the HBase env settle down
+sleep 5
+
+HBASE_CONFIG_FILE=hbase/conf/hbase-site.xml
+HBASE_ENV_FILE=hbase/conf/hbase-env.sh
+
+# For HBase_Trx (for now)
+echo "Copied ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} to $PWD/hbase/lib"
+cp -p ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} hbase/lib
+
+echo "Updating file $HBASE_CONFIG_FILE ..."
+
+HBASE_ORIG_CONFIG_FILE=${HBASE_CONFIG_FILE}.orig.pre_trx
+if [ -r ${HBASE_CONFIG_FILE} ]; then
+    mv -f ${HBASE_CONFIG_FILE} ${HBASE_ORIG_CONFIG_FILE}
+fi
+
+# Append the TRX properties
+sed -e 's/<\/configuration>//' < ${HBASE_ORIG_CONFIG_FILE} > ${HBASE_CONFIG_FILE}
+cat <<EOF >>$HBASE_CONFIG_FILE
+  <property>
+    <name>hbase.regionserver.class</name>
+    <value>org.apache.hadoop.hbase.ipc.TransactionalRegionInterface</value></property>
+  <property>
+    <name>hbase.regionserver.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value></property>
+  <property>
+    <name>hbase.hregion.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value></property>
+  <property>
+    <name>hbase.hlog.splitter.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value></property>
+  <property>
+    <name>hbase.master.distributed.log.splitting</name>
+    <value>false</value> </property>
+</configuration>
+EOF
+
+echo "Restarting HBase"
+swstarthbase

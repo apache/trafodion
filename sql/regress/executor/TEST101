@@ -1,0 +1,231 @@
+-- Test: TEST100 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: ROUND funtion
+-- Expected files: EXPECTED101
+-- Table created:
+-- Limitations:
+-- To do:
+-- Revision history:
+
+drop table t101 cascade;
+control query default query_cache '0';
+
+log LOG101 clear;
+
+obey TEST101(round_function);
+obey TEST101(round_function_BIGNUM);
+obey TEST101(round_mode_special_1);
+
+log;
+
+exit;
+----------------------------------------------------------------------------
+?section round_function
+----------------------------------------------------------------------------
+-- General exact numeric tests
+select round(123.45678) from (values(1))t;
+select round(123.45000, 0)from (values(1))t;
+select round(123.45000,-0)from (values(1))t;
+
+select round(-123.45678) from (values(1))t;
+select round(-123.45000, 0)from (values(1))t;
+select round(-123.45000,-0)from (values(1))t;
+
+select round(123.45678, 1) from (values(1))t;
+select round(123.45000, 1)from (values(1))t;
+select round(123.45004, 1) from (values(1))t;
+select round(123.35678,1) from (values(1))t;
+select round(123.35000, 1)from (values(1))t;
+select round(123.35004, 1) from (values(1))t;
+
+select round(-123.45678, 1) from (values(1))t;
+select round(-123.45000, 1)from (values(1))t;
+select round(-123.45004, 1) from (values(1))t;
+select round(-123.35678,1) from (values(1))t;
+select round(-123.35000, 1)from (values(1))t;
+select round(-123.35004, 1) from (values(1))t;
+
+select round(12345.678, -1) from (values(1))t;
+select round(12345.000, -1)from (values(1))t;
+select round(12345.004, -1) from (values(1))t;
+select round(12335.678, -1) from (values(1))t;
+select round(12335.000, -1)from (values(1))t;
+select round(12335.004, -1) from (values(1))t;
+
+select round(-12345.678, -1) from (values(1))t;
+select round(-12345.000, -1)from (values(1))t;
+select round(-12345.004, -1) from (values(1))t;
+select round(-12335.678, -1) from (values(1))t;
+select round(-12335.000, -1)from (values(1))t;
+select round(-12335.004, -1) from (values(1))t;
+
+select round(999.0, -1) from (values(1))t;
+select round(999,-1) from (values(1))t;
+select round(999.9, 0) from (values(1))t;
+select round(999.9, 1) from (values(1))t;
+select round(-999.0, -1) from (values(1))t;
+select round(-999,-1) from (values(1))t;
+select round(-999.9, 0) from (values(1))t;
+select round(-999.9, 1) from (values(1))t;
+
+-- Generic approximate numeric rounding.
+-- Even rounding tests
+select round(cast(4.5678 as double precision)) from (values(1))t;
+select round(cast(4.5000 as double precision)) from (values(1))t;
+select round(cast(4.5004 as double precision)) from (values(1))t;
+select round(cast(3.5678 as double precision)) from (values(1))t;
+select round(cast(3.5000 as double precision)) from (values(1))t;
+select round(cast(3.5004 as double precision)) from (values(1))t;
+
+select round(cast(1.45678 as double precision),1) from (values(1))t;
+select round(cast(1.45000 as double precision),1) from (values(1))t;
+select round(cast(1.45004 as double precision),1) from (values(1))t;
+select round(cast(1.35678 as double precision),1) from (values(1))t;
+select round(cast(1.35000 as double precision),1) from (values(1))t;
+select round(cast(1.35004 as double precision),1) from (values(1))t;
+
+select round(cast(45.678 as double precision),-1) from (values(1))t;
+select round(cast(45.000 as double precision),-1) from (values(1))t;
+select round(cast(45.004 as double precision),-1) from (values(1))t;
+select round(cast(35.678 as double precision),-1) from (values(1))t;
+select round(cast(35.000 as double precision),-1) from (values(1))t;
+select round(cast(35.004 as double precision),-1) from (values(1))t;
+
+select round(cast(-4.5678 as double precision)) from (values(1))t;
+select round(cast(-4.5000 as double precision)) from (values(1))t;
+select round(cast(-4.5004 as double precision)) from (values(1))t;
+select round(cast(-3.5678 as double precision)) from (values(1))t;
+select round(cast(-3.5000 as double precision)) from (values(1))t;
+select round(cast(-3.5004 as double precision)) from (values(1))t;
+
+select round(cast(-1.45678 as double precision),1) from (values(1))t;
+select round(cast(-1.45000 as double precision),1) from (values(1))t;
+select round(cast(-1.45004 as double precision),1) from (values(1))t;
+select round(cast(-1.35678 as double precision),1) from (values(1))t;
+select round(cast(-1.35000 as double precision),1) from (values(1))t;
+select round(cast(-1.35004 as double precision),1) from (values(1))t;
+
+select round(cast(-45.678 as double precision),-1) from (values(1))t;
+select round(cast(-45.000 as double precision),-1) from (values(1))t;
+select round(cast(-45.004 as double precision),-1) from (values(1))t;
+select round(cast(-35.678 as double precision),-1) from (values(1))t;
+select round(cast(-35.000 as double precision),-1) from (values(1))t;
+select round(cast(-35.004 as double precision),-1) from (values(1))t;
+
+----------------------------------------------------------------------------
+?section round_function_BIGNUM
+----------------------------------------------------------------------------
+-- scale 0, +ve numbers
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,0) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,2) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-1) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-2) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-3) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-7) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-8) from (values(1))t;
+select round(9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,-1) from (values(1))t;
+
+-- scale 0, -ve numbers
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,0) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,2) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-1) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-2) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-3) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-7) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901,-8) from (values(1))t;
+select round(-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,-1) from (values(1))t;
+
+-- scale > 0, +ve numbers
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,0) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,1) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,2) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,3) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992500,3) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.993500,3) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,4) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-0) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-1) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-2) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-4) from (values(1))t;
+select round(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-7) from (values(1))t;
+select round(9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999.999999,1) from (values(1))t;
+
+-- scale > 0, -ve numbers
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,0) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,1) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,2) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,3) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992500,3) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.993500,3) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,4) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-0) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-1) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-2) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-4) from (values(1))t;
+select round(-1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853853853853535312345678901.992578,-7) from (values(1))t;
+select round(-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999.999999,1) from (values(1))t;
+
+-- tests that involve internal representation of result as bignum but 
+-- requires the result to be non-Bignum. Tests SQLBigNum.isARealBigNum().
+select round(round(748,0),1) from (values(1))t;
+
+create table t101( i int)no partition;
+insert into t101 values(1),(2);
+select round(avg(i),0) from t101;
+drop table t101;
+
+CREATE TABLE t101
+ (PG_BUDGET NUMERIC(18, 6),
+  PG_RESULT NUMERIC(18, 6)) NO PARTITION;
+insert into t101 values
+(8394000.000000 ,      7945000.000000),
+(37784000.000000,      68082000.000000),
+(339236000.000000,     357539000.000000),
+(0.000000,             0.000000),
+(231992000.000000,     257631000.000000),
+(219187000.000000,     218909000.000000),
+(1166648000.000000,    1131836000.000000);
+select ROUND(( SUM(PG_RESULT)/SUM(PG_BUDGET) )*100,2) from t101;
+control query default BIGNUM_IO 'ON';
+select ROUND(( SUM(PG_RESULT)/SUM(PG_BUDGET) )*100,2) from t101;
+control query default BIGNUM_IO 'SYSTEM';
+
+----------------------------------------------------------------------------
+?section round_mode_special_1
+----------------------------------------------------------------------------
+-- Tests rounding mode 2 in mode_special_1 which
+-- requires consideration of precision >19 when attempting to
+-- apply the rounding algorithm.
+#ifdef SEABASE_REGRESS
+control query default DISABLE_READ_ONLY 'ON';
+#else
+control query default COMP_BOOL_58 'ON';
+#endif
+control query default mode_special_1 'on';
+control query default rounding_mode '2';
+select (21237.87 * 70787) / 77076.97  from (values(1)) x(a);
+
+-- Test the same with pcode off.
+Control Query Default PCODE_OPT_LEVEL 'OFF'; 
+select (21237.87 * 70787) / 77076.97  from (values(1)) x(a);

@@ -1,0 +1,49 @@
+.TH SQCOREFILE 1 "06 April 2012" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+sqcorefile \- Display core-file information
+.LP
+.SH SYNOPSIS
+.B sqcorefile
+[
+.B \-e
+]
+[
+.B \-l
+]
+[
+.B \-p
+]
+[ <core>... ]
+.SH DESCRIPTION
+.LP
+.B sqcorefile
+will display core-file information.
+.br
+Similar to the
+.I
+file
+command,
+.B sqcorefile
+will display other information,
+such as
+.I
+$MY_SQROOT.
+.sp
+If no core-files are specified,
+.B sqcorefile
+will look in the current working directory.
+.SH USAGE
+.TP 7
+.BI -e
+will display all environment variables from the core-file.
+.I NOTE:
+This will only work if
+the core-file matches current binary/libraries.
+.TP
+.BI -l
+will display LD_LIBRARY_PATH from the core-file.
+.TP
+.BI -p
+will display PATH from the core-file.
+.SH SEE ALSO
+.I file.

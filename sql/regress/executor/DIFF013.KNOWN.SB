@@ -1,0 +1,8 @@
+270c270
+< *** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+---
+> *** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+276c276
+< *** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+---
+> *** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.

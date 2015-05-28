@@ -1,0 +1,175 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# update_sql - SQ Script to update sql/sqlmx (or a supplied directory) to all nodes. 
+# $MY_SQROOT should be sourced from sqenv.sh prior to running this script.
+#
+
+function Usage {
+
+    echo 
+    echo "Usage: $0 {-q | -i <directory> }"
+    echo 
+    echo "-q Perform some operations quietly"
+    echo "-i Directory to copy/update from the current node to the same location on all nodes"
+    echo
+    exit 1
+
+}
+
+function GetOpts {
+
+    while getopts "qhi:" arg
+      do
+      case $arg in 
+	  q)
+	      SQ_QUIET=1;
+	      ;;
+	  i)
+	      SQ_COPY_FROM=${OPTARG};
+	      ;;
+	  h)
+	      Usage;
+	      exit 1;
+              ;;
+          *)
+	      Usage;
+	      exit 1;
+	      ;;
+      esac
+    done
+
+}
+
+
+######################################
+### MAIN portion of script begins here
+######################################
+ 
+# Set default values
+declare -i SQ_QUIET=0
+TMPDIR=/hptc_cluster/$USER/TmpSQLCopyDir
+MY_NODES_PRM=" -a "
+if [ -n "$MY_NODES" ];then
+    MY_NODES_PRM=$MY_NODES
+fi
+
+# Parse command line options
+GetOpts $@
+
+# Default is to copy SQL files from current nodes sql/sqlmx if a -i dir isn't supplied
+if [ -z $SQ_COPY_FROM ]; then
+    SQ_COPY_FROM=$MY_SQROOT/sql/sqlmx
+    
+    if [ -e $MY_SQROOT ]; then
+        SQ_COPY_TO=$MY_SQROOT/sql/sqlmx
+    else 
+        echo
+        echo "Error - MY_SQROOT env variable does not exist."
+        echo "        Source sqenv.sh and retry $0. Exiting..."
+        echo
+        exit 2
+    fi
+else
+    SQ_COPY_TO=$SQ_COPY_FROM
+fi
+
+# Validate from path
+if [ ! -d $SQ_COPY_FROM ]; then
+    echo
+    echo "Error - Copy directory $SQ_COPY_FROM (-i) does not exist. Exiting..."
+    echo
+    exit 3
+fi
+
+if [ $SQ_QUIET '==' 0 ]; then
+    echo 
+    echo "Updating $SQ_COPY_TO on all nodes"
+    echo "with files from $SQ_COPY_FROM on the current node (`uname -n`)."
+    echo
+    echo -n "Do you want to continue with the update (Enter n to quit, Any other key to update)?: "
+    read ans
+else
+    ans="y"
+fi
+
+if [[ $ans == "n" ]]; then
+    echo
+    echo "Not updating the SQ installation on the nodes of the cluster."
+    exit 4
+fi
+
+if [ ! -d $TMPDIR ]; then
+    echo
+    echo "Creating $TMPDIR temp copy location..."
+    mkdir -p $TMPDIR
+    if [[ $? != 0 ]]; then
+       echo
+       echo "Error creating $TMPDIR. Exiting..."
+       exit 5;
+    fi
+fi
+
+# In order to copy across all nodes, the files must first be sent to a staging
+# area that is mounted on all nodes. In this case /hptc_cluster/<user>. Not sure
+# if this will exist on customer systems(?).
+echo
+echo "Copying $SQ_COPY_FROM/* to temp copy location ($TMPDIR)..."
+cp -R $SQ_COPY_FROM/* $TMPDIR 2>&1
+if [[ $? != 0 ]]; then
+   echo
+   echo "Error copying to $TMPDIR. Exiting..."
+   exit 6;
+fi
+
+
+echo
+echo "Updating all nodes..."
+# Create the dir on ALL nodes if it doesn't exist
+# The original -x 'uname -a' actually dones not work
+$SQ_PDSH $MY_NODES_PRM mkdir -p $SQ_COPY_TO
+if [[ $? != 0 ]]; then
+       echo
+       echo "Error creating $SQ_COPY_TO. Exiting..."
+       exit 7;
+fi
+$SQ_PDSH $MY_NODES_PRM cp -R $TMPDIR/* $SQ_COPY_TO
+if [[ $? != 0 ]]; then
+   echo
+   echo "Error copying to $SQ_COPY_TO on each node. Exiting..."
+   exit 8;
+fi
+
+if [ -d $TMPDIR ]; then
+    echo
+    echo "Removing $TMPDIR temp copy location..."
+    rm -rf $TMPDIR
+    if [[ $? != 0 ]]; then
+       echo
+       echo "Error removing $TMPDIR. Exiting..."
+       exit 9;
+    fi
+fi
+
+echo
+echo "Done with the copy of $SQ_COPY_FROM to $SQ_COPY_TO on each node"
+echo
+

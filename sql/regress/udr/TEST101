@@ -1,0 +1,919 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- TEST101
+--
+set schema trafodion.spjrs;
+
+--------------------------------------------------------------------------
+-- Main test driver section
+--------------------------------------------------------------------------
+set schema trafodion.spjrs;
+obey TEST101(clean_up);
+create schema trafodion.spjrs;
+obey $$REGRTSTDIR$$/sampledb;
+
+log LOG101 clear;
+obey TEST101(make_patterns);
+obey TEST101(java_compile);
+obey TEST101(tests);
+log;
+
+obey TEST101(clean_up);
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop procedure order_summary;
+drop procedure part_data;
+drop procedure rs;
+drop procedure rs3;
+drop procedure utils;
+drop procedure xact;
+drop procedure Test101_2rs_errwarn;
+drop procedure Test101_singleRowFetch;
+
+drop procedure trafodion.spjrs.lmGateway;
+drop procedure trafodion.spjrs.lmRSGateway;
+
+drop procedure rs0p;
+drop procedure rs1p;
+drop procedure rs3p;
+
+drop library TEST101;
+
+drop table trafodion.sch.udrproxy;
+drop table trafodion.sch.t10;
+drop table trafodion.sch.test101_t1;
+drop table trafodion.sch.interval_columns;
+drop table trafodion.sch.varchar_columns;
+drop table trafodion.sch.ucs2_columns;
+sh rm -f TEST101.class TEST101.jar TEST101.patterns;
+
+drop schema trafodion.spjrs cascade;
+
+
+?section java_compile
+--------------------------------------------------------------------------
+log;
+sh sh $$scriptsdir$$/tools/java-compile.ksh TEST101.java 2> LOG101-SECONDARY | tee -a LOG101;
+sh sh $$scriptsdir$$/tools/java-archive.ksh TEST101.jar TEST101.class 2>> LOG101-SECONDARY | tee -a LOG101;
+log LOG101;
+
+---------------------------------------------------------------------
+?section make_patterns
+---------------------------------------------------------------------
+log;
+sh rm -f TEST101.patterns;
+sh sh make-quoted-pattern.ksh JARFILE_Q 
+   $$REGRRUNDIR$$/TEST101.jar > TEST101.patterns;
+obey TEST101.patterns;
+show pattern;
+log LOG101;
+
+?section tests
+--------------------------------------------------------------------------
+obey TEST101(create_library);
+obey TEST101(create_rs);
+obey TEST101(basic_test);
+--obey TEST101(explain_test);
+--obey TEST101(dnr_change);
+--obey TEST101(rs_autocommit);
+--obey TEST101(rs_errors_warnings);
+--obey TEST101(rs_parallel_plan);
+#ifNSK
+obey TEST101(udr_memory_leak);
+#ifNSK
+
+?section basic_test
+--------------------------------------------------------------------------
+call order_summary('04/01/2003', ?);
+call order_summary('04/01/2003', ?);
+
+prepare S from call order_summary('04/01/2003', ?);
+execute S;
+execute S;
+
+call part_data(244, ?, ?, ?);
+call part_data(244, ?, ?, ?);
+
+prepare S from call part_data(244, ?, ?, ?);
+execute S;
+execute S;
+
+--
+-- Produce a 0-row result set
+--
+call rs('select * from trafodion.sch.udrproxy where a <> a', ?);
+prepare S from call rs('select * from trafodion.sch.udrproxy where a <> a', ?);
+execute S;
+execute S;
+
+--
+-- Test resulset involving a column with no heading (bug 2758 test)
+--
+prepare S from call rs('select * from trafodion.sch.test101_t1', ?);
+execute S;
+
+-- Test a few more datatypes  not covered by the sample DB. This 
+-- section also covers NOT NULL result set columns.
+call rs('select * from sch.varchar_columns', ?);
+call rs('select * from sch.ucs2_columns', ?);
+
+?section create_library
+--------------------------------------------------------------------------
+create library TEST101 file $$JARFILE_Q$$;
+
+?section explain_test
+--------------------------------------------------------------------------
+prepare E from
+select substring(description from locate('signature', description) for 300)
+from   table(explain(NULL, 'S'))
+where  trim(operator) = 'CALL';
+
+prepare S from 
+call TRAFODION."_MD_".VALIDATEROUTINE(?,?,?,?,?,?,?,?,?,?);
+execute E;
+
+-- VALIDATEROUTINE2 is not created on disk by downrev compiler in QCD7.
+-- When VALIDATEROUTINE2 is created on disk the following can be run.
+--prepare S from 
+--call $$SQLMX_SYSCAT$$.HP_ROUTINES.VALIDATEROUTINE(?,?,?,?,?,?,?,?,?,?);
+execute E;
+
+prepare S from call trafodion.spjrs.order_summary(?,?);
+execute E;
+
+prepare S from call trafodion.spjrs.part_data(?,?,?,?);
+execute E;
+
+?section dnr_change
+--------------------------------------------------------------------------
+set envvar SQLCI_CURSOR 1;
+set schema trafodion.spjrs;
+
+----------------------------------------------------- [SETUP]
+
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 2
+external name 'TEST101.rs3' library TEST101;
+
+prepare S from
+call rs3('select 1 from trafodion.sch.udrproxy',
+         'select 1, 2 from trafodion.sch.udrproxy', 
+         'select 1, 2, 3 from trafodion.sch.udrproxy', ?);
+
+declare C cursor for S;
+declare RS1 cursor for C result set 1;
+declare RS2 cursor for C result set 2;
+
+----------------------------------------------------- [EXEC DNR 2]
+
+execute S;
+
+begin work;
+open C;
+fetch C;
+declare RS3 cursor for C result set 3;
+open RS1;
+close RS1;
+open RS2;
+close RS2;
+open RS3;
+close RS3;
+dealloc RS3;
+commit;
+
+----------------------------------------------------- [EXEC DNR 1]
+
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 1
+external name 'TEST101.rs3' library TEST101;
+
+execute S;
+
+begin work;
+open C;
+fetch C;
+declare RS3 cursor for C result set 3;
+open RS1;
+close RS1;
+open RS2;
+close RS2;
+open RS3;
+close RS3;
+dealloc RS3;
+commit;
+
+----------------------------------------------------- [EXEC DNR 3]
+
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 3
+external name 'TEST101.rs3' library TEST101;
+
+execute S;
+
+begin work;
+open C;
+fetch C;
+declare RS3 cursor for C result set 3;
+open RS1;
+close RS1;
+open RS2;
+close RS2;
+open RS3;
+close RS3;
+dealloc RS3;
+commit;
+
+----------------------------------------------------- [EXEC DNR 0]
+
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 0
+external name 'TEST101.rs3a' library TEST101;
+
+execute S;
+
+begin work;
+open C;
+fetch C;
+declare RS3 cursor for C result set 3;
+open RS1;
+close RS1;
+open RS2;
+close RS2;
+open RS3;
+close RS3;
+dealloc RS3;
+commit;
+
+----------------------------------------------------- [EXEC DNR 2]
+
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 2
+external name 'TEST101.rs3' library TEST101;
+
+execute S;
+
+begin work;
+open C;
+fetch C;
+declare RS3 cursor for C result set 3;
+open RS1;
+close RS1;
+open RS2;
+close RS2;
+open RS3;
+close RS3;
+dealloc RS3;
+commit;
+
+-- Restore procedure RS3
+drop procedure rs3;
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 3
+external name 'TEST101.rs3' library TEST101;
+
+?section rs_autocommit
+--------------------------------------------------------------------------
+-- Throughout this section we need to verify whether a transaction
+-- is currently active. The following techniques are used
+-- * Attempt a COMMIT or ROLLBACK. It will fail if no transaction is
+--   active.
+-- * Call an SPJ that returns the transaction identifier
+
+set schema trafodion.spjrs;
+set envvar SQLCI_CURSOR 1;
+
+prepare PS0 from call xact('GetTxName', ?);
+prepare PS3 from call rs3 (
+ 'select ''RS1'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS2'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS3'', * from trafodion.sch.udrproxy order by A', ?);
+
+declare AUTO_CALL1 cursor for PS3;
+declare AUTO_RS1 cursor for AUTO_CALL1 result set 1;
+declare AUTO_RS2 cursor for AUTO_CALL1 result set 2;
+declare AUTO_RS3 cursor for AUTO_CALL1 result set 3;
+declare AUTOSEL1 cursor for select * from trafodion.sch.udrproxy order by A;
+
+------------------------------------------------------------------
+-- Simple AUTOCOMMIT test without result sets
+
+set transaction autocommit off;
+execute PS0;
+commit;
+
+set transaction autocommit on;
+execute PS0;
+commit;
+
+------------------------------------------------------------------
+-- Simple AUTOCOMMIT test with result sets
+
+set transaction autocommit off;
+execute PS3;
+commit;
+
+set transaction autocommit on;
+execute PS3;
+commit;
+
+------------------------------------------------------------------
+-- With AUTOCOMMIT OFF, show that consuming results in non-serial
+-- order does NOT end the transaction
+
+set transaction autocommit off;
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+open AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+close AUTO_RS3;
+
+open AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+close AUTO_RS1;
+
+open AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+close AUTO_RS2;
+
+close AUTO_CALL1;
+commit;
+
+------------------------------------------------------------------
+-- With AUTOCOMMIT OFF, show that closing the CALL does NOT end
+-- the transaction
+
+set transaction autocommit off;
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+close AUTO_CALL1;
+commit;
+
+------------------------------------------------------------------
+-- With AUTOCOMMIT ON, show that consuming results in non-serial
+-- order DOES end the transaction
+
+set transaction autocommit on;
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+close AUTO_RS3;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+close AUTO_RS1;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+close AUTO_RS2;
+
+call xact('GetTxName', ?);
+
+close AUTO_CALL1;
+
+commit;
+
+------------------------------------------------------------------
+-- With AUTOCOMMIT ON, show that closing the CALL DOES end
+-- the transaction
+
+set transaction autocommit on;
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+close AUTO_CALL1;
+commit;
+
+------------------------------------------------------------------
+-- Process results in serial order within an AUTOCOMMIT 
+-- transaction started by another statement. The RS operations
+-- do NOT end the transaction.
+
+set transaction autocommit on;
+open autoSEL1;
+fetch autoSEL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+close AUTO_RS1;
+
+open AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+close AUTO_RS2;
+
+open AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+close AUTO_RS3;
+
+close AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+close autoSEL1;
+
+commit;
+
+------------------------------------------------------------------
+-- Process results in non-serial order within an AUTOCOMMIT 
+-- transaction started by another statement. The RS operations
+-- do NOT end the transaction.
+
+set transaction autocommit on;
+open autoSEL1;
+fetch autoSEL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+fetch AUTO_RS3;
+close AUTO_RS3;
+
+open AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+fetch AUTO_RS1;
+close AUTO_RS1;
+
+open AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+fetch AUTO_RS2;
+close AUTO_RS2;
+
+close AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+close autoSEL1;
+
+commit;
+
+------------------------------------------------------------------
+-- Process results in a non-AUTOCOMMIT transaction
+
+begin work;
+delete from trafodion.sch.udrproxy;
+execute PS3;
+rollback;
+select * from trafodion.sch.udrproxy;
+
+------------------------------------------------------------------
+-- In an AUTOCOMMIT transaction started by another statement,
+-- execute a CALL then close it before results are consumed. The
+-- transaction does NOT end.
+
+set transaction autocommit on;
+open autoSEL1;
+fetch autoSEL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+open AUTO_RS1;
+fetch AUTO_RS1;
+close AUTO_RS1;
+close AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+close autoSEL1;
+
+commit;
+
+------------------------------------------------------------------
+-- In an AUTOCOMMIT transaction started by another cursor, execute
+-- exec a CALL then close the outer cursor before results are
+-- consumed. The transaction does end and all statements get
+-- closed.
+
+set transaction autocommit on;
+open autoSEL1;
+fetch autoSEL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+open AUTO_RS3;
+open AUTO_RS1;
+open AUTO_RS2;
+
+fetch AUTO_RS2;
+fetch AUTO_RS1;
+fetch AUTO_RS3;
+
+close autoSEL1;
+
+fetch AUTO_RS2;
+fetch AUTO_RS1;
+fetch AUTO_RS3;
+fetch AUTO_CALL1;
+
+------------------------------------------------------------------
+-- Process multiple CALLs that produce results in a single
+-- transaction.
+
+open AUTO_CALL1;
+fetch AUTO_CALL1;
+
+call xact('GetTxName', ?);
+
+open AUTO_RS2;
+fetch AUTO_RS2;
+
+call rs('select * from trafodion.sch.t10', ?);
+
+delete from trafodion.sch.t10;
+call rs('select * from trafodion.sch.t10', ?);
+
+open AUTO_RS1;
+fetch AUTO_RS1;
+
+insert into trafodion.sch.t10 (
+  select *
+  from   (values(1)) T(a)
+         transpose 1,2,3,4,5,6,7,8,9,10 as b
+);
+
+call rs('select * from trafodion.sch.t10', ?);
+
+open AUTO_RS3;
+fetch AUTO_RS3;
+
+close AUTO_RS1;
+close AUTO_RS2;
+close AUTO_RS3;
+
+delete from trafodion.sch.t10;
+call rs('select * from trafodion.sch.t10', ?);
+
+call xact('GetTxName', ?);
+
+close AUTO_CALL1;
+commit;
+
+-- Restore table t10
+select * from trafodion.sch.t10;
+delete from trafodion.sch.t10;
+insert into trafodion.sch.t10 (
+  select *
+  from   (values(1)) T(a)
+         transpose 1,2,3,4,5,6,7,8,9,10 as b
+);
+
+?section rs_errors_warnings
+--------------------------------------------------------------------------
+-- This section checks if the result set errors and warnings are correctly
+-- propagated back to applitrafodion. Currently warnings are not seen when
+-- we do bulk fetches. To see the warnings, we have to enable single row
+-- fetches. It can be done by setting UDR_RS_FETCH_SIZE env variable to 1.
+-- SPJ method TEST101_singleRowFetch() sets this variable.
+--
+-- SPJ 'Test101_2rs_errwarn' takes two string commads that instruct how the
+-- SPJ behaves. The valid strings are 'Good', 'Error',
+-- 'Warning', 'WarningError'.
+--
+-- First the SPJs are executed in auto commit mode
+call Test101_2rs_ErrWarn('Good', 'Error');
+call Test101_2rs_ErrWarn('Error', 'Good');
+call Test101_2rs_ErrWarn('Good', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Good');
+call Test101_2rs_ErrWarn('Error', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Error');
+call Test101_2rs_errwarn('Error', 'Error');
+call Test101_2rs_errwarn('Warning', 'Warning');
+
+-- call same procedures in user initiated transaction
+begin work;
+call Test101_2rs_ErrWarn('Good', 'Error');
+call Test101_2rs_ErrWarn('Error', 'Good');
+call Test101_2rs_ErrWarn('Good', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Good');
+call Test101_2rs_ErrWarn('Error', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Error');
+call Test101_2rs_errwarn('Error', 'Error');
+call Test101_2rs_errwarn('Warning', 'Warning');
+commit work;
+
+-- call same proceudres with single row fetch mode
+call Test101_singleRowFetch('TRUE');
+call Test101_2rs_ErrWarn('Good', 'Error');
+call Test101_2rs_ErrWarn('Error', 'Good');
+call Test101_2rs_ErrWarn('Good', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Good');
+call Test101_2rs_ErrWarn('Error', 'Warning');
+call Test101_2rs_ErrWarn('Warning', 'Error');
+call Test101_2rs_errwarn('Error', 'Error');
+call Test101_2rs_errwarn('Warning', 'Warning');
+call Test101_singleRowFetch('FALSE');
+
+?section rs_parallel_plan
+call rs1p('select * from trafodion.sch.test101_t1', ?);
+call rs3p('select * from trafodion.sch.test101_t1', 
+          'select * from trafodion.sch.test101_t1', 
+          'select * from trafodion.sch.test101_t1', ?);
+call rs0p('select * from trafodion.sch.test101_t1', 
+          'select * from trafodion.sch.test101_t1', 
+          'select * from trafodion.sch.test101_t1', ?);
+
+?section create_rs
+--------------------------------------------------------------------------
+create table trafodion.sch.udrproxy(a int not null not droppable,
+                              b int, c int, primary key (a));
+-- Grant privileges to the SPJ user. In the runregr environment all SPJs
+-- run with the sql_user1 database identity.
+insert into trafodion.sch.udrproxy values (1,2,3), (4,5,6), (7,8,9);
+
+create table trafodion.sch.t10 (a int, b int);
+insert into trafodion.sch.t10 (
+  select *
+  from   (values(1)) T(a)
+         transpose 1,2,3,4,5,6,7,8,9,10 as b
+);
+
+create table trafodion.sch.test101_t1(a int no heading, b int, c char(10));
+insert into trafodion.sch.test101_t1 values (1, 100, 'first'), (2, 200, 'second'),
+                                      (3, 300, 'third'), (4, 400, 'fourth'),
+                                      (0, 500, 'fifth'), (6, 600, 'sixth');
+
+set schema trafodion.sch;
+
+create table interval_columns
+  (
+    INT1 INT NOT NULL
+  , IVYR                             INTERVAL YEAR(2)
+  , IVMN                             INTERVAL MONTH(2) NOT NULL
+  , IVDY                             INTERVAL DAY(2)
+  , IVHR                             INTERVAL HOUR(2) NOT NULL
+  , IVMT                             INTERVAL MINUTE(2)
+  , IVSC                             INTERVAL SECOND(2,6) NOT NULL
+  , IVSC6                            INTERVAL SECOND(2,6)
+  , INT2 INT NOT NULL
+  ) ;
+
+prepare S from insert into interval_columns values
+(   ?
+  , cast (? as INTERVAL YEAR(2))
+  , cast (? as INTERVAL MONTH(2))
+  , cast (? as INTERVAL DAY(2))
+  , cast (? as INTERVAL HOUR(2))
+  , cast (? as INTERVAL MINUTE(2))
+  , cast (? as INTERVAL SECOND(2,6))
+  , cast (? as INTERVAL SECOND(2,6))
+  , ?
+);
+
+delete from interval_columns;
+execute S using 1, 97, 2, 11, 15, 45, 14, 23.123456, -1;
+execute S using 2, 0, 0, 0, 0, 0, 0, 0, -2;
+execute S using 3, -30, -12, -31, -24, -60, -59, -59.999999, -3;
+
+create table varchar_columns
+  (
+    INT1 INT NOT NULL
+  , a varchar(5) NOT NULL
+  , b varchar(10)
+  , c varchar(25) NOT NULL
+  , d varchar(50)
+  , e varchar(100) NOT NULL
+  , f varchar(255)
+  , INT2 INT NOT NULL
+  ) ;
+
+prepare S from insert into varchar_columns values (
+  ?,
+  repeat(?,4) || ']',
+  repeat('b',9) || ']',
+  repeat('c',24) || ']',
+  repeat('d',49) || ']',
+  repeat('e',99) || ']',
+  repeat('f',254) || ']',
+  ?
+);
+
+delete from varchar_columns;
+execute S using 1, '1', -1;
+execute S using 2, '2', -2;
+execute S using 3, '3', -3;
+
+create table ucs2_columns
+  (
+    a varchar(5) character set ucs2
+  , b varchar(10) character set ucs2 not null
+  , c varchar(25) character set ucs2
+  , d varchar(50) character set ucs2 not null
+  , e varchar(100) character set ucs2
+  , f varchar(255) character set ucs2 not null
+  )
+#ifNT
+  attribute blocksize 4096
+#ifNT
+  ;
+
+prepare S from insert into ucs2_columns values (
+  repeat(cast(? as char(1) character set ucs2), 4) || _ucs2']',
+  repeat(_ucs2'b', 9)   || _ucs2']',
+  repeat(_ucs2'c', 24)  || _ucs2']',
+  repeat(_ucs2'd', 49)  || _ucs2']',
+  repeat(_ucs2'e', 99)  || _ucs2']',
+  repeat(_ucs2'f', 254) || _ucs2']'
+);
+
+delete from ucs2_columns;
+execute S using _ucs2'1';
+execute S using _ucs2'2';
+execute S using _ucs2'3';
+
+set schema trafodion.spjrs;
+
+create procedure order_summary (
+  in onOrAfterDate char(20),
+  out Num_Orders largeint
+)
+language java parameter style java reads sql data dynamic result sets 2
+external name 'TEST101.orderSummary' library TEST101;
+
+create procedure part_data (
+  in partNum int,
+  out Part_Description char(18),
+  out Unit_Price float,
+  out Qty_Avail int
+)
+language java parameter style java reads sql data dynamic result sets 4
+external name 'TEST101.partData' library TEST101;
+
+create procedure rs(in cmd char(1000), out status char(70))
+language java parameter style java reads sql data dynamic result sets 1
+external name 'TEST101.lmRSGateway' library TEST101;
+
+create procedure rs3(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 3
+external name 'TEST101.rs3' library TEST101;
+
+create procedure utils(in cmd char(1000),
+                       out status char(70))
+language java parameter style java modifies sql data
+external name 'TEST101.lmGateway' library TEST101;
+
+create procedure xact(in cmd char(1000),
+                                  out status char(60))
+language java parameter style java modifies sql data
+external name 'TEST101.Xact' library TEST101;
+
+create procedure Test101_2rs_errwarn(in rs1_cmd char(10), in rs2_cmd char(10))
+external name 'TEST101.test101_2rs_errwarn' library TEST101
+language java parameter style java reads sql data dynamic result sets 2;
+
+create procedure Test101_singleRowFetch(in enable char(10))
+external name 'TEST101.test101_singleRowFetch'
+library TEST101
+language java parameter style java;
+
+-- Used for parallel plan testing
+create procedure rs0p(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 0
+external name 'TEST101.rs0p' library TEST101;
+
+create procedure rs1p(in query1 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 1
+external name 'TEST101.rs1p' library TEST101;
+
+create procedure rs3p(in query1 char(1000),
+                     in query2 char(1000),
+                     in query3 char(1000),
+                     out status char(70))
+language java parameter style java reads sql data dynamic result sets 3
+external name 'TEST101.rs3p' library TEST101;
+
+showddl procedure rs3p;
+
+?section udr_memory_leak
+--------------------------------------------------------------------------
+-- This gets run only for DEBUG builds.
+-- This section checks if there are any Memory leaks in UDR Server
+-- process. A call statment is run twice and the non-deallocate memory is
+-- captured after the CALL statements are executed. The Total non-deallocated
+-- memory is compared from both CALL statements.
+-- If you see "Memory leak test FAILED" then some of the memory is allocated
+-- and not removed. You need to fix that memory leak.
+
+sh rm -rf ${REGRRUNDIR}/t101_memleak.log;
+sh sh -c '(test "$BUILD_FLAVOR" = "debug" || test "$BUILD_FLAVOR" = "DEBUG") && export SQLMX_UDR_MEMORY_LOG=yes && export SQLMX_UDR_STDOUT=${REGRRUNDIR}/t101_memleak.log && ${mxci} -i ${REGRTSTDIR}/TEST101\(memory_leak_test\)' 2>&1 | tee -a LOG101;
+
+-- Now compare the Total memory that's still allocated after the
+-- CALL statements.
+sh trafodion ${REGRRUNDIR}/t101_memleak.log | awk 'BEGIN { total = 0 } /^\ \ Total:/  { if ( total == 0 ) total = $4; else if (total >= $4) print "\n***Memory leak test PASSED***"; else print "\n***Memory leak test FAILED***"; } ' 2>&1 | tee -a LOG101;
+
+?section memory_leak_test
+--------------------------------------------------------------------------
+call trafodion.spjrs.rs3 (
+ 'select ''RS1'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS2'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS3'', * from trafodion.sch.udrproxy order by A', ?);
+call trafodion.spjrs.rs3 (
+ 'select ''RS1'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS2'', * from trafodion.sch.udrproxy order by A',
+ 'select ''RS3'', * from trafodion.sch.udrproxy order by A', ?);
+sh sleep 10;
+

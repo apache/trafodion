@@ -1,0 +1,118 @@
+/* -*-C++-*-
+****************************************************************************
+*
+* File:         HashRow.h
+* Description:  
+*
+* Created:      5/6/98
+* Language:     C++
+*
+*
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+*
+*
+****************************************************************************
+*/
+
+#ifndef COMHASHROW_H
+#define COMHASHROW_H
+
+#include "NABasicObject.h"
+#include "BaseTypes.h"
+
+/////////////////////////////////////////////////////
+// The HashRow here describes only the row header.
+// The expressions working on the rows know where to
+// find the data
+// The class is NOT derived from ExGod! HashRow is
+// never allocated with new. Instead, it is just an
+// "overlay" on an allocated buffer.
+/////////////////////////////////////////////////////
+
+#define MASK31 0x7FFFFFFF
+class HashRow {
+  friend class HashTableCursor;
+  friend class HashTable;
+  friend class HashBufferSerial;
+public:
+NA_EIDPROC
+  inline HashRow() {};
+NA_EIDPROC
+  inline ~HashRow() {};
+NA_EIDPROC
+  void print(ULng32 rowlength);
+NA_EIDPROC
+  inline SimpleHashValue hashValue() const { return hashValue_ & MASK31; }
+
+  // Return the raw hash value (no masking)
+  NA_EIDPROC
+  inline SimpleHashValue hashValueRaw() const { return hashValue_; }
+
+NA_EIDPROC
+  inline void setHashValue(SimpleHashValue hv) { hashValue_ = hv & MASK31; }
+
+  // Set the hash value to the raw hash value (no masking)
+  NA_EIDPROC
+  inline void setHashValueRaw(SimpleHashValue hv) { hashValue_ = hv; }
+
+NA_EIDPROC
+  inline NABoolean bitSet() const { return ((hashValue_ & ~MASK31) != 0L) ; }
+NA_EIDPROC
+  inline void setBit(NABoolean val)
+	 { if ( val ) hashValue_ |= ~MASK31 ; else hashValue_ &= MASK31 ;}
+NA_EIDPROC
+inline void setNext (HashRow *next) {next_ = next;}
+NA_EIDPROC
+inline HashRow *next() const {return next_;}
+
+NA_EIDPROC
+inline char *getData() const {
+  return ((char *)this) + sizeof(HashRow);
+}
+
+NA_EIDPROC
+inline UInt32 getRowLength() const {
+  return *((UInt32 *)getData());
+}
+
+private:
+NA_EIDPROC
+inline void setRowLength(UInt32 rowLen) {
+  *((UInt32 *)getData()) = rowLen;
+}
+
+#ifdef CHECK_EYE
+  inline void setEye() {
+    eye_ = 42424242;
+  }
+  inline void checkEye() {
+    assert(eye_ == 42424242);
+  }
+
+  UInt32 eye_;
+#else
+  inline void setEye() {}
+  inline void checkEye() {}
+#endif
+
+  SimpleHashValue hashValue_;
+  HashRow * next_;
+};
+
+#endif

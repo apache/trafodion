@@ -1,0 +1,869 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on NskSrvr.dsp
+!IF "$(CFG)" == ""
+CFG=NskSrvr - Win32 Debug
+!MESSAGE No configuration specified.  Defaulting to NskSrvr - Win32 Debug.
+!ENDIF 
+
+!IF "$(CFG)" != "NskSrvr - Win32 Release" && "$(CFG)" != "NskSrvr - Win32 Debug" \
+&& "$(CFG)" != "NskSrvr - Yosemite Release" && "$(CFG)" != "NskSrvr - Yosemite Debug"
+
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "NskSrvr.mak" CFG="NskSrvr - Win32 Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "NskSrvr - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "NskSrvr - Win32 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "NskSrvr - Yosemite Release"
+!MESSAGE "NskSrvr - Yosemite Debug"
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+!IF  "$(CFG)" == "NskSrvr - Win32 Release"
+
+COMP_ROOT=
+OUTDIR=.\Release
+INTDIR=.\Release
+OUTLIBDIR=..\..\..\lib\NskRelease
+# Begin Custom Macros
+OutDir=.\Release
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\QSMarshalingDrvr.o"
+	-@erase "$(INTDIR)\QSInterfaceDrvr.o"
+	-@erase "$(INTDIR)\CommonNSKFunctions.o"
+	-@erase "$(INTDIR)\CommonFunctions.o"
+	-@erase "$(INTDIR)\Compression.o"
+	-@erase "$(INTDIR)\TransportBase.o"
+	-@erase "$(INTDIR)\Transport.o"
+	-@erase "$(INTDIR)\FileSystemDrvr.o"
+	-@erase "$(INTDIR)\FileSystemSrvr.o"
+	-@erase "$(INTDIR)\TCPIPSystemSrvr.o"
+	-@erase "$(INTDIR)\Listener.o"
+	-@erase "$(INTDIR)\Listener_srvr.o"
+	-@erase "$(INTDIR)\marshaling.o"
+	-@erase "$(INTDIR)\marshalingsrvr_drvr.o"
+	-@erase "$(INTDIR)\marshalingsrvr_srvr.o"
+	-@erase "$(INTDIR)\odbcas_drvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr_res.o"
+	-@erase "$(INTDIR)\SrvrMain.o"
+	-@erase "$(INTDIR)\SrvrConnect.o"
+	-@erase "$(INTDIR)\SrvrSMD.o"
+	-@erase "$(INTDIR)\swap.o"
+	-@erase "$(INTDIR)\swaps_srvr.o"
+	-@erase "$(INTDIR)\prodregc.o"
+	-@erase "$(INTDIR)\security.o"
+	-@erase "$(INTDIR)\ODBCMXTraceMsgs.o"
+	-@erase "$(INTDIR)\odbcs_srvr.o"
+	-@erase "$(OUTLIBDIR)\MXOSRVR"
+	-@erase "$(INTDIR)\DBTService.o"
+	-@erase "$(INTDIR)\DBTServiceList.o"
+	-@erase "$(INTDIR)\DBTmsgcat.o"
+	
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP= $(NSKTOOLS)\nsk\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Wextensions -Ww -Woptimize=2 -Wsystype=oss \
+-Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 \
+-D_TANDEM_SOURCE \
+-DNSK_PLATFORM -DNSK_ODBC_SRVR -DTCL_MEM_DEBUG  -Dset_fieldalign \
+-DDBT_EXT \
+-I. \
+-I$(NSKTOOLS)\kds\inc \
+-I$(NSKTOOLS)\nsk\inc \
+-I$(NSKTOOLS)\nsk\inc\tmf_tipapi \
+-I$(NSKTOOLS)\nsk\inc\sys \
+-I$(NSKTOOLS)\tcpip\inc \
+-I$(NSKTOOLS)\tcpip\inc\netinet \
+-I..\Krypton \
+-I..\common \
+-I..\EventMsgs \
+-I$(NSKTOOLS)\dependencies \
+-I..\dependencies\windows \
+-I..\srvrMsg \
+-I. \
+-I..\NSKSrvrCore \
+-I.\interface \
+-I..\CmdCfgDll \
+-Iy:\include
+CPP_OBJS=.\Release/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(NSKTOOLS)\nsk\bin\nld.exe
+LINK32_FLAGS=-verbose -ansistreams -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on \
+-L $(NSKTOOLS)\nsk\lib -Bdynamic \
+..\..\..\lib\NskRelease\MXOCORE.lib -L y:\lib -lcli -lstl \
+$(NSKTOOLS)\nsk\lib\libtipa.o \
+$(NSKTOOLS)\nsk\lib\tistbnat.o \
+$(NSKTOOLS)\nsk\lib\crtlmain.o \
+$(NSKTOOLS)\nsk\lib\TFDRTLRU \
+-obey $(NSKTOOLS)\nsk\lib\libc.obey
+LINK32_OBJS= \
+	"$(INTDIR)\QSMarshalingDrvr.o" \
+	"$(INTDIR)\QSInterfaceDrvr.o" \
+	"$(INTDIR)\CommonNSKFunctions.o" \
+	"$(INTDIR)\CommonFunctions.o" \
+	"$(INTDIR)\Compression.o" \
+	"$(INTDIR)\TransportBase.o" \
+	"$(INTDIR)\Transport.o" \
+	"$(INTDIR)\FileSystemDrvr.o" \
+	"$(INTDIR)\FileSystemSrvr.o" \
+	"$(INTDIR)\TCPIPSystemSrvr.o" \
+	"$(INTDIR)\Listener.o" \
+	"$(INTDIR)\Listener_srvr.o" \
+	"$(INTDIR)\marshaling.o" \
+	"$(INTDIR)\marshalingsrvr_drvr.o" \
+	"$(INTDIR)\marshalingsrvr_srvr.o" \
+	"$(INTDIR)\odbcas_drvr.o" \
+	"$(INTDIR)\odbcs_srvr.o" \
+	"$(INTDIR)\odbcs_srvr_res.o" \
+	"$(INTDIR)\SrvrConnect.o" \
+	"$(INTDIR)\SrvrSMD.o" \
+	"$(INTDIR)\SrvrMain.o" \
+	"$(INTDIR)\security.o" \
+	"$(INTDIR)\swap.o" \
+	"$(INTDIR)\swaps_srvr.o" \
+	"$(INTDIR)\prodregc.o" \
+	"$(INTDIR)\ODBCMXTraceMsgs.o" \
+	"$(INTDIR)\DBTService.o" \
+	"$(INTDIR)\DBTServiceList.o" \
+	"$(INTDIR)\DBTmsgcat.o"
+
+
+"$(OUTLIBDIR)\MXOSRVR" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOSRVR" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ELSEIF  "$(CFG)" == "NskSrvr - Win32 Debug"
+
+COMP_ROOT=
+OUTDIR=.\Debug
+INTDIR=.\Debug
+OUTLIBDIR=..\..\..\lib\NskDebug
+# Begin Custom Macros
+OutDir=.\Debug
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\QSMarshalingDrvr.o"
+	-@erase "$(INTDIR)\QSInterfaceDrvr.o"
+	-@erase "$(INTDIR)\CommonNSKFunctions.o"
+	-@erase "$(INTDIR)\CommonFunctions.o"
+	-@erase "$(INTDIR)\Compression.o"
+	-@erase "$(INTDIR)\TransportBase.o"
+	-@erase "$(INTDIR)\Transport.o"
+	-@erase "$(INTDIR)\FileSystemDrvr.o"
+	-@erase "$(INTDIR)\FileSystemSrvr.o"
+	-@erase "$(INTDIR)\TCPIPSystemSrvr.o"
+	-@erase "$(INTDIR)\Listener.o"
+	-@erase "$(INTDIR)\Listener_srvr.o"
+	-@erase "$(INTDIR)\marshaling.o"
+	-@erase "$(INTDIR)\marshalingsrvr_drvr.o"
+	-@erase "$(INTDIR)\marshalingsrvr_srvr.o"
+	-@erase "$(INTDIR)\odbcas_drvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr_res.o"
+	-@erase "$(INTDIR)\SrvrMain.o"
+	-@erase "$(INTDIR)\SrvrConnect.o"
+	-@erase "$(INTDIR)\SrvrSMD.o"
+	-@erase "$(INTDIR)\swap.o"
+	-@erase "$(INTDIR)\swaps_srvr.o"
+	-@erase "$(INTDIR)\prodregc.o"
+	-@erase "$(INTDIR)\security.o"
+	-@erase "$(INTDIR)\ODBCMXTraceMsgs.o"
+	-@erase "$(INTDIR)\odbcs_srvr.o"
+	-@erase "$(OUTLIBDIR)\MXOSRVR"
+	-@erase "$(INTDIR)\DBTService.o"
+	-@erase "$(INTDIR)\DBTServiceList.o"
+	-@erase "$(INTDIR)\DBTmsgcat.o"
+
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(NSKTOOLS)\nsk\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Winspect -Wextensions -Ww -Woptimize=0 \
+-Wsystype=oss -Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 \
+-D_TANDEM_SOURCE \
+-D_DEBUG -DNSK_PLATFORM \
+-DTCL_MEM_DEBUG -DNSK_ODBC_SRVR -Dset_fieldalign\
+-DDBT_EXT \
+-I. \
+-I$(NSKTOOLS)\kds\inc \
+-I$(NSKTOOLS)\nsk\inc \
+-I$(NSKTOOLS)\nsk\inc\tmf_tipapi \
+-I$(NSKTOOLS)\nsk\inc\sys \
+-I$(NSKTOOLS)\tcpip\inc \
+-I$(NSKTOOLS)\tcpip\inc\netinet \
+-I..\Krypton \
+-I..\common \
+-I..\EventMsgs \
+-I$(NSKTOOLS)\dependencies \
+-I..\dependencies\windows \
+-I..\srvrMsg \
+-I. \
+-I..\NSKSrvrCore \
+-I.\interface \
+-I..\CmdCfgDll \
+-Iy:\include
+
+CPP_OBJS=.\Debug/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(NSKTOOLS)\nsk\bin\nld.exe
+LINK32_FLAGS=-verbose -ansistreams -Bdynamic -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on -set inspect on \
+-L $(INTDIR) -L $(NSKTOOLS)\nsk\lib -L y:\lib -lcli -lstl \
+..\..\..\lib\NskDebug\MXOCORE.lib \
+$(NSKTOOLS)\nsk\lib\tistbnat.o \
+$(NSKTOOLS)\nsk\lib\libtipa.o \
+$(NSKTOOLS)\nsk\lib\crtlmain.o \
+$(NSKTOOLS)\nsk\lib\TFDRTLRU \
+-obey $(NSKTOOLS)\nsk\lib\libc.obey  
+LINK32_OBJS= \
+	"$(INTDIR)\QSMarshalingDrvr.o" \
+	"$(INTDIR)\QSInterfaceDrvr.o" \
+	"$(INTDIR)\CommonNSKFunctions.o" \
+	"$(INTDIR)\CommonFunctions.o" \
+	"$(INTDIR)\Compression.o" \
+	"$(INTDIR)\TransportBase.o" \
+	"$(INTDIR)\Transport.o" \
+	"$(INTDIR)\FileSystemDrvr.o" \
+	"$(INTDIR)\FileSystemSrvr.o" \
+	"$(INTDIR)\TCPIPSystemSrvr.o" \
+	"$(INTDIR)\Listener.o" \
+	"$(INTDIR)\Listener_srvr.o" \
+	"$(INTDIR)\marshaling.o" \
+	"$(INTDIR)\marshalingsrvr_drvr.o" \
+	"$(INTDIR)\marshalingsrvr_srvr.o" \
+	"$(INTDIR)\odbcas_drvr.o" \
+	"$(INTDIR)\odbcs_srvr.o" \
+	"$(INTDIR)\odbcs_srvr_res.o" \
+	"$(INTDIR)\SrvrConnect.o" \
+	"$(INTDIR)\SrvrSMD.o" \
+	"$(INTDIR)\SrvrMain.o" \
+	"$(INTDIR)\security.o" \
+	"$(INTDIR)\swap.o" \
+	"$(INTDIR)\swaps_srvr.o" \
+	"$(INTDIR)\prodregc.o" \
+	"$(INTDIR)\ODBCMXTraceMsgs.o" \
+	"$(INTDIR)\DBTService.o" \
+	"$(INTDIR)\DBTServiceList.o" \
+	"$(INTDIR)\DBTmsgcat.o"
+
+
+"$(OUTLIBDIR)\MXOSRVR" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOSRVR" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ELSEIF  "$(CFG)" == "NskSrvr - Yosemite Release"
+
+COMP_ROOT=H:
+OUTDIR=.\YosRelease
+INTDIR=.\YosRelease
+OUTLIBDIR=..\..\..\lib\YosemiteRelease
+COMDLLDIR=..\..\..\..\lib\YosemiteRelease
+
+# Begin Custom Macros
+OutDir=.\YosRelease
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\QSMarshalingDrvr.o"
+	-@erase "$(INTDIR)\QSInterfaceDrvr.o"
+	-@erase "$(INTDIR)\CommonNSKFunctions.o"
+	-@erase "$(INTDIR)\CommonFunctions.o"
+	-@erase "$(INTDIR)\Compression.o"
+	-@erase "$(INTDIR)\TransportBase.o"
+	-@erase "$(INTDIR)\Transport.o"
+	-@erase "$(INTDIR)\FileSystemDrvr.o"
+	-@erase "$(INTDIR)\FileSystemSrvr.o"
+	-@erase "$(INTDIR)\TCPIPSystemSrvr.o"
+	-@erase "$(INTDIR)\Listener.o"
+	-@erase "$(INTDIR)\Listener_srvr.o"
+	-@erase "$(INTDIR)\marshaling.o"
+	-@erase "$(INTDIR)\marshalingsrvr_drvr.o"
+	-@erase "$(INTDIR)\marshalingsrvr_srvr.o"
+	-@erase "$(INTDIR)\odbcas_drvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr_res.o"
+	-@erase "$(INTDIR)\SrvrMain.o"
+	-@erase "$(INTDIR)\SrvrConnect.o"
+	-@erase "$(INTDIR)\SrvrSMD.o"
+	-@erase "$(INTDIR)\swap.o"
+	-@erase "$(INTDIR)\swaps_srvr.o"
+	-@erase "$(INTDIR)\prodregc.o"
+	-@erase "$(INTDIR)\security.o"
+	-@erase "$(INTDIR)\ODBCMXTraceMsgs.o"
+	-@erase "$(INTDIR)\odbcs_srvr.o"
+	-@erase "$(OUTLIBDIR)\MXOSRVR"
+	-@erase "$(INTDIR)\DBTService.o"
+	-@erase "$(INTDIR)\DBTServiceList.o"
+	-@erase "$(INTDIR)\DBTmsgcat.o"
+	
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP= $(COMP_ROOT)\usr\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Wextensions -Ww -Woptimize=2 -Wsystype=oss \
+-Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 -Wtarget=tns/e -DYOSEMITE \
+-D_TANDEM_SOURCE \
+-DNSK_PLATFORM -DNSK_ODBC_SRVR -DTCL_MEM_DEBUG  -Dset_fieldalign \
+-DDBT_EXT \
+-I. \
+-I$(COMP_ROOT)\kds\inc \
+-I$(COMP_ROOT)\dependencies\sql \
+-I$(COMP_ROOT)\usr\include \
+-I$(COMP_ROOT)\dependencies\tmf_tipapi \
+-I$(COMP_ROOT)\dependencies\tfds \
+-I$(COMP_ROOT)\usr\include\sys \
+-I..\Krypton \
+-I..\common \
+-I..\EventMsgs \
+-I$(COMP_ROOT)\dependencies \
+-I..\dependencies\windows \
+-I..\srvrMsg \
+-I. \
+-I..\NSKSrvrCore \
+-I.\interface \
+-I..\OssCfgCl\src \
+-I..\NskComDll \
+-I..\NskComDll\COMDLLTST \
+-I..\CmdCfgDll \
+-Ix:\include \
+-I..\dependencies\liblzf
+
+CPP_OBJS=.\Release/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(COMP_ROOT)\usr\bin\eld.exe
+LINK32_FLAGS=-verbose -ansistreams -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on -Bdynamic \
+-unres_symbols warn \
+-L $(COMP_ROOT)\usr\lib \
+..\..\..\lib\YosemiteRelease\MXOCORE.lib \
+-rld_first_L . -rld_L /G/SYSTEM/ZDLLSHR \
+-lzrlddll \
+-l x:\lib\yos\zclidll \
+-l x:\lib\yos\ZLDPSDLL \
+-lcppc -lcpp3 -lcrtl -lcre -linet -lzosskdll -lzossedll \
+$(COMP_ROOT)\usr\lib\ccplmain.o \
+$(COMP_ROOT)\dependencies\tfds\TFDLRTL 
+
+LINK32_OBJS= \
+	"$(INTDIR)\QSMarshalingDrvr.o" \
+	"$(INTDIR)\QSInterfaceDrvr.o" \
+	"$(INTDIR)\CommonNSKFunctions.o" \
+	"$(INTDIR)\CommonFunctions.o" \
+	"$(INTDIR)\Compression.o" \
+	"$(INTDIR)\TransportBase.o" \
+	"$(INTDIR)\Transport.o" \
+	"$(INTDIR)\FileSystemDrvr.o" \
+	"$(INTDIR)\FileSystemSrvr.o" \
+	"$(INTDIR)\TCPIPSystemSrvr.o" \
+	"$(INTDIR)\Listener.o" \
+	"$(INTDIR)\Listener_srvr.o" \
+	"$(INTDIR)\marshaling.o" \
+	"$(INTDIR)\marshalingsrvr_drvr.o" \
+	"$(INTDIR)\marshalingsrvr_srvr.o" \
+	"$(INTDIR)\odbcas_drvr.o" \
+	"$(INTDIR)\odbcs_srvr.o" \
+	"$(INTDIR)\odbcs_srvr_res.o" \
+	"$(INTDIR)\SrvrConnect.o" \
+	"$(INTDIR)\SrvrSMD.o" \
+	"$(INTDIR)\SrvrMain.o" \
+	"$(INTDIR)\security.o" \
+	"$(INTDIR)\swap.o" \
+	"$(INTDIR)\swaps_srvr.o" \
+	"$(INTDIR)\prodregc.o" \
+	"$(INTDIR)\ODBCMXTraceMsgs.o" \
+	"$(INTDIR)\DBTService.o" \
+	"$(INTDIR)\DBTServiceList.o" \
+	"$(INTDIR)\DBTmsgcat.o" \
+	"$(INTDIR)\lzf_c.o" \
+	"$(INTDIR)\lzf_d.o"
+
+    
+
+"$(OUTLIBDIR)\MXOSRVR" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOSRVR" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ELSEIF  "$(CFG)" == "NskSrvr - Yosemite Debug"
+
+COMP_ROOT=H:
+OUTDIR=.\YosDebug
+INTDIR=.\YosDebug
+OUTLIBDIR=..\..\..\lib\YosemiteDebug
+COMDLLDIR=..\..\..\..\lib\YosemiteDebug
+
+# Begin Custom Macros
+OutDir=.\YosDebug
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOSRVR"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\QSMarshalingDrvr.o"
+	-@erase "$(INTDIR)\QSInterfaceDrvr.o"
+	-@erase "$(INTDIR)\CommonNSKFunctions.o"
+	-@erase "$(INTDIR)\CommonFunctions.o"
+	-@erase "$(INTDIR)\Compression.o"
+	-@erase "$(INTDIR)\TransportBase.o"
+	-@erase "$(INTDIR)\Transport.o"
+	-@erase "$(INTDIR)\FileSystemDrvr.o"
+	-@erase "$(INTDIR)\FileSystemSrvr.o"
+	-@erase "$(INTDIR)\TCPIPSystemSrvr.o"
+	-@erase "$(INTDIR)\Listener.o"
+	-@erase "$(INTDIR)\Listener_srvr.o"
+	-@erase "$(INTDIR)\marshaling.o"
+	-@erase "$(INTDIR)\marshalingsrvr_drvr.o"
+	-@erase "$(INTDIR)\marshalingsrvr_srvr.o"
+	-@erase "$(INTDIR)\odbcas_drvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr.o"
+	-@erase "$(INTDIR)\odbcas_srvr_res.o"
+	-@erase "$(INTDIR)\SrvrMain.o"
+	-@erase "$(INTDIR)\SrvrConnect.o"
+	-@erase "$(INTDIR)\SrvrSMD.o"
+	-@erase "$(INTDIR)\swap.o"
+	-@erase "$(INTDIR)\swaps_srvr.o"
+	-@erase "$(INTDIR)\prodregc.o"
+	-@erase "$(INTDIR)\security.o"
+	-@erase "$(INTDIR)\ODBCMXTraceMsgs.o"
+	-@erase "$(INTDIR)\odbcs_srvr.o"
+	-@erase "$(OUTLIBDIR)\MXOSRVR"
+	-@erase "$(OUTLIBDIR)\MXOSRVR"
+	-@erase "$(INTDIR)\DBTService.o"
+	-@erase "$(INTDIR)\DBTServiceList.o"
+	-@erase "$(INTDIR)\DBTmsgcat.o"
+
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(COMP_ROOT)\usr\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Winspect -Wextensions -Ww -Woptimize=0 \
+-Wsystype=oss -Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 -Wtarget=tns/e -DYOSEMITE \
+-D_TANDEM_SOURCE \
+-D_DEBUG -DNSK_PLATFORM \
+-DTCL_MEM_DEBUG -DNSK_ODBC_SRVR -Dset_fieldalign\
+-DDBT_EXT \
+-I. \
+-I$(COMP_ROOT)\kds\inc \
+-I$(COMP_ROOT)\dependencies\sql \
+-I$(COMP_ROOT)\usr\include \
+-I$(COMP_ROOT)\dependencies\tmf_tipapi \
+-I$(COMP_ROOT)\dependencies\tfds \
+-I$(COMP_ROOT)\usr\include\sys \
+-I..\Krypton \
+-I..\common \
+-I..\EventMsgs \
+-I$(COMP_ROOT)\dependencies \
+-I..\dependencies\windows \
+-I..\srvrMsg \
+-I. \
+-I..\NSKSrvrCore \
+-I.\interface \
+-I..\OssCfgCl\src \
+-I..\NskComDll \
+-I..\NskComDll\COMDLLTST \
+-I..\CmdCfgDll \
+-Ix:\include \
+-I..\dependencies\liblzf
+
+CPP_OBJS=.\Debug/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(COMP_ROOT)\usr\bin\eld.exe
+LINK32_FLAGS=-verbose -ansistreams -Bdynamic -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on -set inspect on -allow_duplicate_procs \
+-unres_symbols warn \
+-instance_data data2 \
+-L $(INTDIR) -L $(COMP_ROOT)\usr\lib \
+..\..\..\lib\YosemiteDebug\MXOCORE.lib \
+-rld_first_L . -rld_L /G/SYSTEM/ZDLLSHR \
+-lzrlddll \
+-l x:\lib\yos\zclidll \
+-l x:\lib\yos\ZLDPSDLL \
+-lcppc -lcpp3 -lcrtl -lcre -linet  -lzosskdll -lzossedll \
+$(COMP_ROOT)\usr\lib\ccplmain.o \
+$(COMP_ROOT)\dependencies\tfds\TFDLRTL
+
+LINK32_OBJS= \
+	"$(INTDIR)\QSMarshalingDrvr.o" \
+	"$(INTDIR)\QSInterfaceDrvr.o" \
+	"$(INTDIR)\CommonNSKFunctions.o" \
+	"$(INTDIR)\CommonFunctions.o" \
+	"$(INTDIR)\Compression.o" \
+	"$(INTDIR)\TransportBase.o" \
+	"$(INTDIR)\Transport.o" \
+	"$(INTDIR)\FileSystemDrvr.o" \
+	"$(INTDIR)\FileSystemSrvr.o" \
+	"$(INTDIR)\TCPIPSystemSrvr.o" \
+	"$(INTDIR)\Listener.o" \
+	"$(INTDIR)\Listener_srvr.o" \
+	"$(INTDIR)\marshaling.o" \
+	"$(INTDIR)\marshalingsrvr_drvr.o" \
+	"$(INTDIR)\marshalingsrvr_srvr.o" \
+	"$(INTDIR)\odbcas_drvr.o" \
+	"$(INTDIR)\odbcs_srvr.o" \
+	"$(INTDIR)\odbcs_srvr_res.o" \
+	"$(INTDIR)\SrvrConnect.o" \
+	"$(INTDIR)\SrvrSMD.o" \
+	"$(INTDIR)\SrvrMain.o" \
+	"$(INTDIR)\security.o" \
+	"$(INTDIR)\swap.o" \
+	"$(INTDIR)\swaps_srvr.o" \
+	"$(INTDIR)\prodregc.o" \
+	"$(INTDIR)\ODBCMXTraceMsgs.o" \
+	"$(INTDIR)\DBTService.o" \
+	"$(INTDIR)\DBTServiceList.o" \
+	"$(INTDIR)\DBTmsgcat.o" \
+	"$(INTDIR)\lzf_c.o" \
+	"$(INTDIR)\lzf_d.o"
+    
+
+"$(OUTLIBDIR)\MXOSRVR" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOSRVR" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ENDIF 
+
+
+!IF "$(CFG)" == "NskSrvr - Win32 Release" || "$(CFG)" == "NskSrvr - Win32 Debug" \
+|| "$(CFG)" == "NskSrvr - Yosemite Release" || "$(CFG)" == "NskSrvr - Yosemite Debug"
+
+SOURCE=..\dependencies\liblzf\lzf_c.c
+"$(INTDIR)\lzf_c.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\lzf_c.o" $(CPP_PROJ)
+
+SOURCE=..\dependencies\liblzf\lzf_d.c
+"$(INTDIR)\lzf_d.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\lzf_d.o" $(CPP_PROJ)
+
+
+SOURCE=..\Common\CommonFunctions.cpp
+
+"$(INTDIR)\CommonFunctions.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\CommonFunctions.o" $(CPP_PROJ)
+
+SOURCE=..\Common\Compression.cpp
+DEP_CPP_COMPR=\
+	"..\Common\Compression.h"\
+	
+
+"$(INTDIR)\Compression.o" : $(SOURCE) $(DEP_CPP_COMPR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\Compression.o" $(CPP_PROJ)
+	
+SOURCE=..\common\TransportBase.cpp
+DEP_CPP_TRANSPORT_BASE=\
+	"..\common\TransportBase.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\TransportBase.o" : $(SOURCE) $(DEP_CPP_TRANSPORT_BASE) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\TransportBase.o" $(CPP_PROJ)
+
+SOURCE=.\interface\Transport.cpp
+DEP_CPP_TRANSPORT=\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\Transport.o" : $(SOURCE) $(DEP_CPP_TRANSPORT) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\Transport.o" $(CPP_PROJ)
+
+SOURCE=..\common\FileSystemDrvr.cpp
+DEP_CPP_FILE_SYSTEM_DRVR=\
+	".\interface\Transport.h"\
+	"..\common\FileSystemDrvr.h"\
+	
+"$(INTDIR)\FileSystemDrvr.o" : $(SOURCE) $(DEP_CPP_FILE_SYSTEM_DRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\FileSystemDrvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\FileSystemSrvr.cpp
+DEP_CPP_FILE_SYSTEM_SRVR=\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\FileSystemSrvr.o" : $(SOURCE) $(DEP_CPP_FILE_SYSTEM_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\FileSystemSrvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\TCPIPSystemSrvr.cpp
+DEP_CPP_TCPIP_SYSTEM_SRVR=\
+	"..\common\TransportBase.h"\
+	"..\common\TCPIPSystemSrvr.h"\
+	
+"$(INTDIR)\TCPIPSystemSrvr.o" : $(SOURCE) $(DEP_CPP_TCPIP_SYSTEM_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\TCPIPSystemSrvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\Listener.cpp
+DEP_CPP_LISTENER=\
+	"..\common\Listener.h"\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\Listener.o" : $(SOURCE) $(DEP_CPP_LISTENER) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\Listener.o" $(CPP_PROJ)
+
+SOURCE=.\Interface\Listener_srvr.cpp
+DEP_CPP_LISTENER_SRVR=\
+	"..\common\Listener.h"\
+	".\interface\Listener_srvr.h"\
+	
+"$(INTDIR)\Listener_srvr.o" : $(SOURCE) $(DEP_CPP_LISTENER_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\Listener_srvr.o" $(CPP_PROJ)
+
+SOURCE=..\Common\ODBCMXTraceMsgs.cpp
+
+"$(INTDIR)\ODBCMXTraceMsgs.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\ODBCMXTraceMsgs.o"
+
+
+SOURCE=.\SrvrMain.cpp
+
+"$(INTDIR)\SrvrMain.o" : $(SOURCE) "$(INTDIR)" ".\prodregc.cpp"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\SrvrMain.o" -Wnostdfiles
+
+SOURCE=.\prodregc.cpp
+
+"$(INTDIR)\prodregc.o" : $(SOURCE) $(DEP_CPP_EVENT) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\prodregc.o" $(CPP_PROJ)
+
+
+SOURCE=.\SrvrConnect.cpp
+
+"$(INTDIR)\SrvrConnect.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\SrvrConnect.o"
+
+
+SOURCE=.\SrvrSMD.cpp
+
+"$(INTDIR)\SrvrSMD.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\SrvrSMD.o"
+
+
+SOURCE=..\Common\security.cpp
+
+"$(INTDIR)\security.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\security.o"
+	
+SOURCE=.\DBTService.cpp
+
+"$(INTDIR)\DBTService.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\DBTService.o"
+
+SOURCE=.\DBTServiceList.cpp
+
+"$(INTDIR)\DBTServiceList.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\DBTServiceList.o"
+
+SOURCE=.\DBTmsgcat.cpp
+
+"$(INTDIR)\DBTmsgcat.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\DBTmsgcat.o"
+
+SOURCE=.\interface\odbcs_srvr.cpp
+DEP_CPP_ODBCS_SRVR=\
+	".\interface\odbcs_srvr.h"\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\odbcs_srvr.o" : $(SOURCE) $(DEP_CPP_ODBCS_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\odbcs_srvr.o" $(CPP_PROJ)
+
+SOURCE=.\interface\odbcs_srvr_res.cpp
+DEP_CPP_ODBCS_SRVR_RES=\
+	".\interface\odbcs_srvr_res.h"\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\odbcs_srvr_res.o" : $(SOURCE) $(DEP_CPP_ODBCS_SRVR_RES) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\odbcs_srvr_res.o" $(CPP_PROJ)
+
+SOURCE=..\common\marshaling.cpp
+DEP_CPP_MARSHALING=\
+	"..\common\marshaling.h"\
+	
+"$(INTDIR)\marshaling.o" : $(SOURCE) $(DEP_CPP_MARSHALING) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\marshaling.o" $(CPP_PROJ)
+
+SOURCE=.\interface\marshalingsrvr_srvr.cpp
+DEP_CPP_MARSHALING_SRVR=\
+	".\interface\marshalingsrvr_srvr.h"\
+	
+"$(INTDIR)\marshalingsrvr_srvr.o" : $(SOURCE) $(DEP_CPP_MARSHALING_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\marshalingsrvr_srvr.o" $(CPP_PROJ)
+
+SOURCE=.\interface\marshalingsrvr_drvr.cpp
+DEP_CPP_MARSHALING_DRVR=\
+	".\interface\marshalingsrvr_drvr.h"\
+	
+"$(INTDIR)\marshalingsrvr_drvr.o" : $(SOURCE) $(DEP_CPP_MARSHALING_DRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\marshalingsrvr_drvr.o" $(CPP_PROJ)
+
+SOURCE=.\interface\odbcas_drvr.cpp
+DEP_CPP_ODBCAS_DRVR=\
+	".\interface\odbcas_drvr.h"\
+	".\interface\Transport.h"\
+	"..\common\FileSystemSrvr.h"\
+	
+"$(INTDIR)\odbcas_drvr.o" : $(SOURCE) $(DEP_CPP_ODBCAS_DRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\odbcas_drvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\swap.cpp
+DEP_CPP_SWAP=\
+	"..\common\swap.h"\
+	
+"$(INTDIR)\swap.o" : $(SOURCE) $(DEP_CPP_SWAP) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\swap.o" $(CPP_PROJ)
+
+SOURCE=.\interface\swaps_srvr.cpp
+DEP_CPP_SWAPS_SRVR=\
+	".\interface\swaps_srvr.h"\
+	
+"$(INTDIR)\swaps_srvr.o" : $(SOURCE) $(DEP_CPP_SWAPS_SRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\swaps_srvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\QSInterfaceDrvr.cpp
+DEP_CPP_QSINT_DRVR=\
+	"..\common\QSInterfaceDrvr.h"\
+	
+"$(INTDIR)\QSInterfaceDrvr.o" : $(SOURCE) $(DEP_CPP_QSINT_DRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\QSInterfaceDrvr.o" $(CPP_PROJ)
+
+SOURCE=..\common\QSMarshalingDrvr.cpp
+DEP_CPP_QSMARSHALING_DRVR=\
+	"..\common\QSMarshalingDrvr.h"\
+	
+"$(INTDIR)\QSMarshalingDrvr.o" : $(SOURCE) $(DEP_CPP_QSMARSHALING_DRVR) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\QSMarshalingDrvr.o" $(CPP_PROJ)
+
+SOURCE=..\Common\CommonNSKFunctions.cpp
+
+"$(INTDIR)\CommonNSKFunctions.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\CommonNSKFunctions.o"
+
+!ENDIF 

@@ -1,0 +1,162 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# Script for display data in the Trafodion configuration database
+
+function Usage
+{
+    echo "Usage: ${0##/*/} -c | --cluster | -p | --process | -q | --persistent | -r | --procdef | -u | --uniqstr"
+    echo
+    echo "-c, --cluster     Displays cluster wide registry values"
+    echo "-p, --process     Displays all process specific registry values"
+    echo "-p<proc>          Displays specific process registry values"
+    echo "--process=<proc>  Displays specific process registry values"
+    echo "-q, --persistent  Displays persistent processes"
+    echo "-r, --procdef     Displays process defintions"
+    echo "-u, --uniqstr     Displays unique strings"
+    echo "-h, --help        Displays this help message"
+}
+
+function monRegClusterData
+{
+
+# Monitor registry: cluster keys and values
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select k.keyName, "=", d.dataValue from monRegKeyName k, monRegClusterData d where k.keyId = d.keyId;
+.quit
+EOF
+
+}
+
+function monRegSpecificProcData
+{
+
+# Monitor registry: process keys and values for a specific process
+
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select p.procName, ": ", k.keyName, "=", d.dataValue from monRegProcName p, monRegKeyName k, monRegProcData d where p.procId = d.procId and k.keyId = d.keyId and p.procName = "$1";
+.quit
+EOF
+
+}
+
+function monRegProcData
+{
+
+# Monitor registry: process keys and values
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select p.procName, ": ", k.keyName, "=", d.dataValue from monRegProcName p, monRegKeyName k, monRegProcData d where p.procId = d.procId and k.keyId = d.keyId;
+.quit
+EOF
+
+}
+
+function persistentProcs
+{
+sqlite3 sqconfig.db <<EOF
+.headers on
+.mode column
+select * from persist;
+EOF
+}
+
+
+function procs
+{
+
+sqlite3 sqconfig.db <<EOF
+.headers on
+.mode column
+select * from procs;
+EOF
+
+}
+
+function uniqueStrings
+{
+
+sqlite3 sqconfig.db <<EOF
+.headers on
+select * from monRegUniqueStrings;
+EOF
+
+}
+
+# options may be followed by one colon to indicate they have a required argument
+if ! options=$(getopt -o chp::qru -l cluster,process::,persistent,procdef,uniqstr,help -- "$@")
+then
+    # something went wrong, getopt will put out an error message for us
+    Usage
+    exit 1
+fi
+
+eval set -- $options
+
+if [[ $# == 1 ]]; then
+   Usage
+fi
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+        -c|--cluster)
+            monRegClusterData
+            ;;
+
+        -p|--process)
+            if [[ -n "$2" ]];
+            then
+                monRegSpecificProcData $2
+            else
+                monRegProcData
+            fi
+
+            ;;
+
+        -q|--persistent)
+            persistentProcs
+            ;;
+
+        -r|--procdef)
+            procs
+            ;;
+
+        -u|--uniqstr)
+            uniqueStrings
+            ;;
+
+        -h|--help)
+            Usage
+            ;;
+
+    esac
+    shift
+done
+

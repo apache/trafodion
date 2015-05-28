@@ -1,0 +1,20 @@
+#! /bin/sh
+
+# Specialized filter for  project to filter out
+# 1. Syskey values
+# 2. "Funny names" for index columns appearing multiple times
+#    (done twice, since it may appear multiple times)
+# 3. refreshed elapsed time
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
+sed "
+s/2[0-9]\{16,18\}/@syskey@/
+s/_[0-9]\{9\}_[0-9]\{4\} /_nnnnnnnnn_nnnn /
+s/_[0-9]\{9\}_[0-9]\{4\} /_nnnnnnnnn_nnnn /
+/^Task: /s/\(ET: \)[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9]\\{3,\\}$/\1hh:mm:ss.xxx/
+" $fil

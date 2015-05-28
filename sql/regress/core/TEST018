@@ -1,0 +1,86 @@
+-- TEST018 (CORE), index maintenance
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality:
+--   Testing for new Binder IM scheme,
+-- Limitation:
+--   Requires DP volumes named $SYSTEM, $DATA, $DATA2.
+--   Skipped for Release code on NSK
+--   Skipped for MP tables.
+-- History: 
+--             Testing for new Binder IM scheme,
+--   02/11/03: Originally TEST018 of fullstack. TEST018orig section
+--             of the test, covering simple cases, is moved to CORE. 
+--             Remaining portion covering more extensive cases is moved to 
+--             optimizer.
+
+--------------------------------------------------------------------
+control query default TIMEOUT '120';
+
+-- Original test, simple cases, now subsumed in the new cases above
+-- but retained here "just in case".
+
+drop index T018;
+drop table T018orig;
+
+log  LOG018 clear;
+
+create table T018orig (a int NOT NULL, b int, c int, primary key (a))
+#ifMX
+no partition
+#ifMX
+;
+create index T018 on T018orig(b);
+
+-- insertion
+--
+insert into T018orig values (1,2,3),(2,3,4),(3,4,5);
+select * from T018orig;
+
+-- updating
+--
+update T018orig set b = b + 10 where a = 1;
+update T018orig set b = b + 100 where b = 3;
+update T018orig set b = b + 1000 where c = 5;
+update T018orig set b = b + 10000;
+select * from T018orig;
+
+update T018orig set c = c + 10 where a = 1;
+update T018orig set c = c + 100 where b = 10103;
+update T018orig set c = c + 1000 where c = 5;
+update T018orig set c = c + 10000;
+select * from T018orig;
+
+-- deletion
+--
+delete from T018orig where a = 1;
+delete from T018orig where b = 10103;
+delete from T018orig where c = 11005;
+select * from T018orig;
+
+-- verify fix to solution 10-110216-6174: "a null operand is not allowed in
+-- function NVL"
+select isnull(null, 123) from (values(1)) as t;
+select ISNULL(B, null) FROM (values(1),(null)) as t(b);
+
+drop table T018orig;
+
+log;
+exit;
+

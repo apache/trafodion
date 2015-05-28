@@ -1,0 +1,584 @@
+>>
+>>obey test314(ddl);
+>>
+>>create schema cs314s;
+
+--- SQL operation complete.
+>>set schema cs314s;
+
+--- SQL operation complete.
+>>
+>>
+>>obey test314(ISO_tests);
+>>
+>>select converttohex(cast(      x'80 90 A0 B0 C0 82 D0 E0 F0 FF' as char(09))) from (values(0))x;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)            
+------------------
+
+8090A0B0C082D0E0F0
+
+--- 1 row(s) selected.
+>>select converttohex(cast(      x'80 90 A0 B0 C0 82 D0 E0 F0 FF' as char(10))) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+8090A0B0C082D0E0F0FF
+
+--- 1 row(s) selected.
+>>select converttohex(cast(      x'C2 80 C2 81 C2 82 DF BE DF BF' as char(12))) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+C280C281C282DFBEDFBF2020
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF' as char(12 BYTES) character set utf8)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+C280C281C282DFBEDFBF2020
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF' as char(10 BYTES) character set utf8)) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF' as char(09 BYTES) character set utf8)) from (values(0))x;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)            
+------------------
+
+C280C281C282DFBE20
+
+--- 1 row(s) selected.
+>>select converttohex(x'C2 80' || _utf8 x'C2 80') from (values(0))x;
+
+(EXPR)      
+------------
+
+C382C280C280
+
+--- 1 row(s) selected.
+>>select 'BAD' from (values(0))x where x'C2 80'  = _utf8 x'C2 80';
+
+--- 0 row(s) selected.
+>>select 'OK ' from (values(0))x where x'C2 80' != _utf8 x'C2 80';
+
+(EXPR)
+------
+
+OK    
+
+--- 1 row(s) selected.
+>>select 'OK ' from (values(0))x where x'80' = _utf8 x'C2 80';
+
+(EXPR)
+------
+
+OK    
+
+--- 1 row(s) selected.
+>>select 'BAD' from (values(0))x where x'90A0B0C0D0E0F0FF' != _utf8 x'C290C2A0C2B0C380C390C3A0C3B0C3BF';
+
+--- 0 row(s) selected.
+>>select 'BAD' from (values(0))x where x'C2 80' || _utf8 x'C2 80' != _utf8 x'C382C280C280';
+
+--- 0 row(s) selected.
+>>select 'BAD' from (values(0))x where _utf8 x'C2 80' || x'C2 80' != _utf8 x'C280C382C280';
+
+--- 0 row(s) selected.
+>>
+>>select converttohex(substr(      x'C2 80 C2 81 C2 82 DF BE DF BF',1,3)) from (values(0))x;
+
+(EXPR)
+------
+
+C280C2
+
+--- 1 row(s) selected.
+>>select converttohex(substr(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',1,3)) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282        
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(substr(      x'C2 80 C2 81 C2 82 DF BE DF BF',3,2)) from (values(0))x;
+
+(EXPR)
+------
+
+C281  
+
+--- 1 row(s) selected.
+>>select converttohex(substr(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',3,2)) from (values(0))x;
+
+(EXPR)          
+----------------
+
+C282DFBE        
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(insert(      x'C2 80 C2 81 C2 82 DF BE DF BF', 2, 0, 'Z')) from (values(0))x;
+
+(EXPR)                                    
+------------------------------------------
+
+C25A80C281C282DFBEDFBF                    
+
+--- 1 row(s) selected.
+>>select converttohex(insert(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 2, 0, 'Z')) from (values(0))x;
+
+(EXPR)                                    
+------------------------------------------
+
+C2805AC281C282DFBEDFBF                    
+
+--- 1 row(s) selected.
+>>select converttohex(insert(      x'C2 80 C2 81 C2 82 DF BE DF BF', 2, 3, 'Z')) from (values(0))x;
+
+(EXPR)                                    
+------------------------------------------
+
+C25AC282DFBEDFBF                          
+
+--- 1 row(s) selected.
+>>select converttohex(insert(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 2, 3, 'Z')) from (values(0))x;
+
+(EXPR)                                    
+------------------------------------------
+
+C2805ADFBF                                
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(replace(      x'C2 80 C2 81 C2 82 DF BE DF BF',       x'C2 82',       x'DC B7')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281DCB7DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',       x'C2 82',       x'DC B7')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', _utf8 x'C2 82',       x'DC B7')) from (values(0))x;
+
+(EXPR)                                  
+----------------------------------------
+
+C280C281C39CC2B7DFBEDFBF                
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', _utf8 x'C2 82', _utf8 x'DC B7')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281DCB7DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(      x'C2 80 C2 81 C2 82 DF BE DF BF')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>-- Try certain characters whose LOWER value is an ISO88591 value even though they themselves are not.
+>>select converttohex(LOWER(_ucs2 x'0178')) from (values(0))x;
+
+(EXPR)
+------
+
+00FF  
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 x'0178' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C5B8  
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(_utf8 x'C5 B8')) from (values(0))x;
+
+(EXPR)
+------
+
+C3BF  
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(_ucs2 x'0130')) from (values(0))x;
+
+(EXPR)
+------
+
+0069  
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 x'0130' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C4B0  
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(_utf8 x'C4 B0')) from (values(0))x;
+
+(EXPR)
+------
+
+69    
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(TRANSLATE(_ucs2 x'0178' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)
+------
+
+C3BF  
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(LOWER(_ucs2 x'0178') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C3BF  
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(TRANSLATE(_ucs2 x'0130' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)
+------
+
+69    
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(LOWER(_ucs2 x'0130') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+69    
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(TRANSLATE(_ucs2 x'01300178' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)      
+------------
+
+69C3BF      
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(LOWER(_ucs2 x'01300178') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+69C3BF      
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(TRANSLATE(_ucs2 x'01780130' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)      
+------------
+
+C3BF69      
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(LOWER(_ucs2 x'01780130') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+C3BF69      
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(      x'C2 80 C2 81 C2 82 DF BE DF BF')) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF')) from (values(0))x;
+
+(EXPR)                                                      
+------------------------------------------------------------
+
+C280C281C282DFBEDFBF                                        
+
+--- 1 row(s) selected.
+>>-- Try certain characters whose UPPER value is an ISO88591 value even though they themselves are not.
+>>select converttohex(UPPER(_ucs2 x'017F')) from (values(0))x;
+
+(EXPR)      
+------------
+
+0053        
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 x'017F' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C5BF  
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_utf8 x'C5 BF')) from (values(0))x;
+
+(EXPR)      
+------------
+
+53          
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_ucs2 x'0131')) from (values(0))x;
+
+(EXPR)      
+------------
+
+0049        
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 x'0131' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C4B1  
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_utf8 x'C4 B1')) from (values(0))x;
+
+(EXPR)      
+------------
+
+49          
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(TRANSLATE(_ucs2 x'017F' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)            
+------------------
+
+53                
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(UPPER(_ucs2 x'017F') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)            
+------------------
+
+53                
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 x'017F' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C5BF  
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(TRANSLATE(_ucs2 x'0131' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)            
+------------------
+
+49                
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(UPPER(_ucs2 x'0131') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)            
+------------------
+
+49                
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(TRANSLATE(_ucs2 x'0131017F' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)                              
+------------------------------------
+
+4953                                
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(UPPER(_ucs2 x'0131017F') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)                              
+------------------------------------
+
+4953                                
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(TRANSLATE(_ucs2 x'017F0131' using UCS2toUTF8))) from (values(0))x;
+
+(EXPR)                              
+------------------------------------
+
+5349                                
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(UPPER(_ucs2 x'017F0131') using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)                              
+------------------------------------
+
+5349                                
+
+--- 1 row(s) selected.
+>>--
+>>select converttohex(LEFT(      x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
+
+(EXPR)  
+--------
+
+C280C281
+
+--- 1 row(s) selected.
+>>select converttohex(LEFT(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C280C281C282DFBE    
+
+--- 1 row(s) selected.
+>>select converttohex(RIGHT(      x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+DFBEDFBF            
+
+--- 1 row(s) selected.
+>>select converttohex(RIGHT(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
+
+(EXPR)              
+--------------------
+
+C281C282DFBEDFBF    
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(      x'C2 80 C2 81 C2 82 DF BE DF BF', 12,       x'DC B7')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+DCB7C280C281C282DFBEDFBF
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 12,       x'DC B7')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------
+
+C39CC2B7C39CC2B7C39CC2B7C39CC280C281C282DFBEDFBF                                                
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 12, _utf8 x'DC B7')) from (values(0))x;
+
+(EXPR)                                                              
+--------------------------------------------------------------------
+
+DCB7DCB7DCB7DCB7DCB7DCB7DCB7C280C281C282DFBEDFBF                    
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(      x'C2 80 C2 81 C2 82 DF BE DF BF', 12,       x'DC B7')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+C280C281C282DFBEDFBFDCB7
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 12,       x'DC B7')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------
+
+C280C281C282DFBEDFBFC39CC2B7C39CC2B7C39CC2B7C39C                                                
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF', 12, _utf8 x'DC B7')) from (values(0))x;
+
+(EXPR)                                                              
+--------------------------------------------------------------------
+
+C280C281C282DFBEDFBFDCB7DCB7DCB7DCB7DCB7DCB7DCB7                    
+
+--- 1 row(s) selected.
+>>
+>>select DECODE(x'C2 80', _utf8 x'C2 80', 'BAD', 'C2 80', 'BAD', x'C2'|| x'80', 'GOOD') from (values(0))x;
+
+(EXPR)
+------
+
+GOOD  
+
+--- 1 row(s) selected.
+>>select DECODE(_utf8 x'C2 80', x'C2 80', 'BAD', _utf8'80', 'BAD', x'80', 'GOOD') from (values(0))x;
+
+(EXPR)
+------
+
+GOOD  
+
+--- 1 row(s) selected.
+>>--
+>>select converttohex(TRANSLATE(_iso88591 x'F7' using ISO88591toUTF8)) from (values(0))x;
+
+(EXPR)
+------
+
+C3B7  
+
+--- 1 row(s) selected.
+>>
+>>
+>>obey test314(clnup);
+>>
+>>drop schema cs314s cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>log;

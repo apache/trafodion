@@ -1,0 +1,570 @@
+LOG aqatdml06 Clear;
+---------------------------------------------------------------------
+-- File: SQLQAT15                Formerly $cats.testest.qat012
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--     This test unit is a positive local test for the select statement.
+-- It tests join-form select statements (selects on more than one table)
+-- with where clauses (SELECT-FROM-WHERE).
+--     This test unit uses the select global data base (sqldd01d).
+-- Each test case in this test unit tests a particular feature of select
+-- statements with where clauses.  For each test case, at least one
+-- select statement is executed against the following combinations of
+-- objects:
+--               bt/bt
+--               bt/pv
+--               bt/sv
+--               pv/pv
+--               pv/sv
+--               sv/sv
+--               bt same
+--               pv same
+--               sv same
+--               bt/bt/bt
+
+--     The testcases in this testunit are as follows:
+--         A0: SELECT WHERE columns are compared
+--         A1: SELECT WHERE a column or expression is BETWEEN
+--             other columns or values or expressions.
+--         A2: SELECT WHERE column or expression is IN an
+--             expression list
+--         A3: SELECT WHERE <predicate>, where <predicate> contains
+--             AND, OR, NOT
+--         A4: use of SELECT WHERE ... for browse access,for stable access
+--            , for repeatable access
+--         A5: SELECT aggregate functions with WHERE predicate
+
+-- All testcases are documented further below.
+
+-- *******************  End test unit comments  ****************************
+
+-- <testunit-summary>
+-- select #5 pos/loc ufi joins where clause
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+-- select-test
+
+-- <testcase A0>
+
+--    <detail>
+--       joins where clause select statement test case - this tests
+--       the use of a where predicate that compares columns from the
+--       tables involved in the join.
+
+--    <templates>
+--       US00
+
+-- <ufi-input>
+      select *
+      from btsel01,btsel03
+      where  btsel01.pic_x_7 =  btsel03.pic_x_7;
+-- <ufi-input>
+      select *
+      from btsel01,pvsel04
+      where  btsel01.large_int =  pvsel04.medium_int;
+-- <ufi-input>
+      select *
+      from btsel01,svsel13
+      where decimal_3_unsigned = new_name_1;
+-- <ufi-input>
+      select *
+      from pvsel01,pvsel04
+      where  pvsel01.medium_int >  pvsel04.medium_int;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where small_int <> new_name_1;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where new_name_3 = col_8;
+-- <ufi-input>
+      select *
+      from btsel01 firstt, btsel01 secondd
+      where firstt.small_int = secondd.small_int;
+-- <ufi-input>
+      select *
+      from pvsel01 firstt, pvsel01 secondd
+      where firstt.small_int = secondd.large_int;
+-- <ufi-input>
+      select *
+      from svsel13 firstt, svsel13 secondd
+      where firstt.new_name_3 <> secondd.new_name_3;
+-- <ufi-input>
+      select *
+      from btsel01,btsel03,btsel04
+      where small_int =  btsel04.medium_int;
+-- <ufi-input>
+      select *
+      from btsel01 X,btsel03 Y
+      where X.binary_64_s = Y.binary_64_s;
+-- <ufi-input>
+      select *
+      from pvsel02,pvsel03,pvsel04
+      where pic_x_1 = new_name_3;
+-- <end-input>
+
+
+
+-- <testcase A1>
+
+-- <detail>
+--    select joins where clause test case - this tests the use of a
+--    BETWEEN predicate in a where clause.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select *
+      from btsel01,btsel03
+      where  btsel01.binary_32_u between pic_comp_1 and
+             btsel03.binary_32_u;
+-- <ufi-input>
+      select *
+      from btsel01,pvsel01
+      where  btsel01.small_int between  btsel01.medium_int
+            and  pvsel01.large_int;
+-- <ufi-input>
+      select *
+      from btsel01,svsel13
+      where  svsel13.pic_comp_1 between  svsel13.new_name_1
+            and  btsel01.small_int;
+-- <ufi-input>
+      select *
+      from pvsel01,pvsel04
+      where  pvsel04.pic_comp_1 between 100 and
+             pvsel01.small_int;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where  pvsel01.small_int between new_name_1 and
+            pic_comp_1;
+-- <ufi-input>
+      select *
+      from  svsel13,svsel11
+      where medium_int between col_7
+            and 1000;
+-- <ufi-input>
+      select *
+      from btsel03 firstt,btsel03 secondd
+      where firstt.binary_64_s between secondd.pic_9_7
+            and 1201;
+-- <ufi-input>
+      select *
+      from pvsel03 firstt, pvsel03 secondd
+      where firstt.new_name_1 between secondd.new_name_2
+            and 100;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where firstt.medium_int between secondd.pic_comp_1
+            and 1000;
+-- <ufi-input>
+      select *
+      from btsel03 X,btsel04 Y
+      where Y.medium_int between X.binary_64_s and pic_comp_1;
+-- <ufi-input>
+      select * from btsel02,btsel03,btsel04
+      where pic_x_1 between  btsel03.pic_x_7 and 'B';
+-- <end-input>
+
+
+
+-- <testcase A2>
+
+-- <detail>
+--    select joins where clause test case - this tests the use
+--    of an IN predicate in the where clause.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select *
+      from btsel03,btsel04
+      where pic_comp_1 in (medium_int,binary_64_s);
+-- <ufi-input>
+      select *
+      from btsel03,pvsel01
+      where binary_64_s in (small_int,medium_int,large_int);
+-- <ufi-input>
+      select *
+      from btsel08,svsel13
+      where medium_int in (large_int,pic_comp_1);
+-- <ufi-input>
+      select *
+      from pvsel01,pvsel04
+      where  pvsel04.medium_int in ( pvsel01.medium_int,
+            large_int, pvsel01.small_int);
+-- <ufi-input>
+      select *
+      from pvsel04,svsel13
+      where  svsel13.medium_int in ( pvsel04.medium_int,
+             pvsel04.pic_comp_1,80);
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where medium_int in (col_1,col_3);
+-- <ufi-input>
+      select *
+      from btsel05 firstt,btsel05 secondd
+      where firstt.col_2 in (secondd.col_5,secondd.col_6,
+                            secondd.col_4);
+-- <ufi-input>
+      select *
+      from pvsel04 firstt,pvsel04 secondd
+      where firstt.medium_int in (secondd.pic_comp_1,
+                                 secondd.pic_comp_1);
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where firstt.medium_int in (secondd.new_name_1,
+            secondd.pic_comp_1);
+-- <ufi-input>
+      select *
+      from btsel07 X,btsel08 Y
+      where X.pic_x_b in (Y.pic_1,pic_252);
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      where pic_x_1 in ( btsel03.pic_x_7, btsel04.pic_x_7);
+-- <end-input>
+
+
+
+-- <testcase A3>
+
+-- <detail>
+--    select joins where clause test case - this tests the use of AND,
+--    OR, NOT in the where clause predicate.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select *
+      from btsel04,btsel06
+      where ( btsel04.var_char like 'b_%') or
+            ( btsel06.pic_x_a like '__e');
+-- <ufi-input>
+      select *
+      from btsel04,pvsel01
+      where ( btsel04.medium_int =  pvsel01.small_int)
+            and ( btsel04.pic_comp_1 > 500);
+
+
+
+
+-- <ufi-input>
+      select *
+      from btsel04,svsel13
+      where ( btsel04.medium_int =  svsel13.medium_int)
+            and not ( btsel04.pic_x_7 like 'sue');
+
+-- <ufi-input>
+      select *
+      from pvsel01,pvsel04
+      where ( pvsel01.large_int =  pvsel04.medium_int)
+            or ( pvsel01.pic_x_7 =  pvsel04.pic_x_7);
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where large_int < 0 and
+            new_name_1 = 80;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where (new_name_1 = 80) and
+            (new_name_3 = '7') and
+            ((col_6 = 'bobby') or
+             (col_6 = 'michael'));
+-- <ufi-input>
+      select *
+      from btsel03 firstt,btsel03 secondd
+      where (firstt.binary_32_u <> secondd.binary_32_u) and
+            firstt.pic_x4_a like 'jo%';
+-- <ufi-input>
+      select *
+      from pvsel03 firstt,pvsel03 secondd
+      where (firstt.new_name_1 = secondd.new_name_1) and
+            ((firstt.new_name_2 * 15) < secondd.new_name_1);
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where (firstt.new_name_1 = secondd.new_name_1) and
+            ((firstt.new_name_2 * 15) < secondd.new_name_1);
+-- <ufi-input>
+      select *
+      from btsel03 X,btsel04 Y
+      where (X.binary_64_s = Y.pic_comp_1) or
+            (X.pic_x_7 = Y.pic_x_7);
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      where (pic_x_1 = 'c') and
+            (pic_9_7 = 50) and
+            (var_char = 'christopher');
+-- <end-input>
+
+
+
+-- <testcase A4>
+
+-- <detail>
+--    select joins where clause test case - this tests the use
+--    of the for browse access, for stable access , and for repeatable access
+--    clauses.  Only syntax is checked here.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select *
+      from btsel02,btsel03
+      where pic_x_1 = 'c'
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03
+      where pic_x_1 = 'c'
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03
+      where pic_x_1 = 'c'
+      for repeatable access;
+
+-- <comment> **** audited table, non-audited table ****
+-- <comment> **** must specify for browse access for this test ****
+-- <ufi-input>
+      select *
+      from btsel03,btsel05
+      where pic_x4_a = pic_x_a
+      for browse access;
+
+-- <ufi-input>
+      select *
+      from btsel03,pvsel01
+      where  pvsel01.small_int =  btsel03.binary_64_s
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel03,pvsel01
+      where  pvsel01.small_int =  btsel03.binary_64_s
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel03,pvsel01
+      where  pvsel01.small_int =  btsel03.binary_64_s
+      for repeatable access;
+
+-- <ufi-input>
+      select *
+      from btsel03,svsel13
+      where binary_64_s = medium_int
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel03,svsel13
+      where binary_64_s = medium_int
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel03,svsel13
+      where binary_64_s = medium_int
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from pvsel03,pvsel04
+      where new_name_3 = pic_x_7
+      for browse access;
+-- <ufi-input>
+      select *
+      from pvsel03,pvsel04
+      where new_name_3 = pic_x_7
+      for stable access;
+-- <ufi-input>
+      select *
+      from pvsel03,pvsel04
+      where new_name_3 = pic_x_7
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where  pvsel01.small_int =  svsel13.medium_int
+      for browse access;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where  pvsel01.small_int =  svsel13.medium_int
+      for stable access;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      where  pvsel01.small_int =  svsel13.medium_int
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where new_name_1 = col_7
+      for browse access;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where new_name_1 = col_7
+      for stable access;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      where new_name_1 = col_7
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from btsel03 firstt,btsel03 secondd
+      where firstt.binary_64_s = secondd.binary_64_s
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel03 firstt,btsel03 secondd
+      where firstt.binary_64_s = secondd.binary_64_s
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel03 firstt,btsel03 secondd
+      where firstt.binary_64_s = secondd.binary_64_s
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from pvsel03 firstt,pvsel03 secondd
+      where firstt.new_name_1 = secondd.new_name_1
+      for browse access;
+-- <ufi-input>
+      select *
+      from pvsel03 firstt,pvsel03 secondd
+      where firstt.new_name_1 = secondd.new_name_1
+      for stable access;
+-- <ufi-input>
+      select *
+      from pvsel03 firstt,pvsel03 secondd
+      where firstt.new_name_1 = secondd.new_name_1
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where firstt.pic_comp_1 = secondd.pic_comp_1
+      for browse access;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where firstt.pic_comp_1 = secondd.pic_comp_1
+      for stable access;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      where firstt.pic_comp_1 = secondd.pic_comp_1
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from btsel05 firstt,btsel05 secondd
+      where firstt.col_1 = secondd.col_1
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel05 firstt,btsel05 secondd
+      where firstt.col_1 = secondd.col_1
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel05 firstt,btsel05 secondd
+      where firstt.col_1 = secondd.col_1
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      where pic_x_1 =  btsel04.pic_x_7
+      for browse access;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      where pic_x_1 =  btsel04.pic_x_7
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      where pic_x_1 =  btsel04.pic_x_7
+      for repeatable access;
+-- <end-input>
+
+
+
+-- <testcase A5>
+
+-- <detail>
+--    select joins where clause select test case - this tests the
+--    selection of aggregate functions (COUNT, AVG, MAX, MIN, SUM)
+--    from multiple tables.  Aggregates are tested in the SELECT
+--    clause in conjunction with WHERE predicates.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select count(*)
+      from btsel01 firstt, btsel01 secondd
+      where firstt.var_char = 'thomas';
+-- <ufi-input>
+      select count(*)
+      from btsel01 firstt, btsel01 secondd
+      where firstt.small_int = secondd.small_int;
+-- <ufi-input>
+      select count(*)
+      from btsel01,pvsel04
+      where  btsel01.large_int =  pvsel04.medium_int;
+-- <ufi-input>
+      select avg(decimal_1)
+      from svsel13, btsel01
+      where decimal_3_unsigned = new_name_1;
+-- <ufi-input>
+      select count(distinct firstt.medium_int)
+      from pvsel01 firstt, pvsel01 secondd 
+      where firstt.medium_int not in (1000,10000);
+-- <ufi-input>
+      select avg(distinct  pvsel04.medium_int)
+      from pvsel01, pvsel04
+      where  pvsel01.medium_int >
+             pvsel04.medium_int;
+-- <ufi-input>
+      select max(ALL  svsel13.new_name_1 /  pvsel03.new_name_2)
+      from svsel13, pvsel03
+      where (( pvsel03.new_name_1 = 80) or
+             ( svsel13.new_name_1 = 90)) and
+            (( pvsel03.new_name_2 = 5) or
+             ( svsel13.new_name_2 = 6));
+-- <ufi-input>
+      select sum(binary_32_u + pic_comp_1)
+      from btsel03, btsel04
+      where pic_comp_1 in (medium_int, binary_64_s);
+-- <ufi-input>
+      select avg(svsel13.pic_comp_1) +
+             sum( btsel01.pic_comp_1)
+      from svsel13, btsel01
+      where  svsel13.pic_comp_1 > 100;
+-- <ufi-input>
+      select avg(col_7) * sum(pic_comp_1)
+      from svsel13, svsel11
+      where new_name_3 = col_8;
+-- <ufi-input>
+      select max( btsel01.pic_x_7), min( btsel03.pic_x_7)
+      from btsel01, btsel03
+      where  btsel01.pic_x_7 =  btsel03.pic_x_7;
+-- <end-input>
+
+
+
+-- <end-test>
+LOG;

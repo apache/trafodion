@@ -1,0 +1,89 @@
+-- Test: TEST012
+-- Functionality: This tests LONG VARCHAR CHARACTER SET UCS2 and LONGWVARCHAR data types
+-- Expected files:   EXPECTED012
+-- Tables created:   tlongvarchar0, tlongwvarchar0 and tlongwvarchar1
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table tlongvarchar0;
+drop table tlongwvarchar0;
+drop table tlongwvarchar1;
+
+log LOG012 clear;
+
+create table tlongvarchar0(a long varchar(10) character set ucs2);
+create table tlongwvarchar0(a longwvarchar(50));
+create table tlongwvarchar1(
+                            a longwvarchar default _ucs2'good day', 
+                            b longwvarchar default _ucs2'today', 
+                            c int, d real)
+#ifNSK
+attribute blocksize 4096
+#ifNSK
+;
+
+
+showddl tlongvarchar0;
+showddl tlongwvarchar0;
+invoke  tlongwvarchar1;
+
+insert into tlongvarchar0 values(N'4356'), (_ucs2'today');
+insert into tlongwvarchar0 values(N'4356'), (_ucs2'tomorrow');
+insert into tlongwvarchar1 values(N'abc', N'4356', 1, 2), (_ucs2'today', _ucs2'tomorrow', 2, 3);
+insert into tlongwvarchar1(c, d) values(1, 2);
+
+select cast(_ucs2'abcd' as longwvarchar(20)) from (values(1))x;
+select char_length(cast(_ucs2'abcd' as longwvarchar(20))) from (values(1))x;
+select octet_length(cast(_ucs2'abcd' as longwvarchar(20))) from (values(1))x;
+select char_length(cast(_ucs2'abcd' as longwvarchar)) from (values(1))x;
+
+select a || _ucs2'_suffix' from tlongvarchar0;
+select a || _ucs2'_suffix' from tlongwvarchar0;
+select a || _ucs2'_suffix' from tlongwvarchar1;
+
+update tlongwvarchar0 set a = _ucs2'the day after tomorrow';
+update tlongwvarchar1 set a = _ucs2'the day after tomorrow';
+delete from tlongwvarchar0;
+
+-- test min/max values
+control query default Min_LONG_VARCHAR_DEFAULT_SIZE '2';
+control query default Min_LONG_VARCHAR_DEFAULT_SIZE '3';
+control query default Min_LONG_WVARCHAR_DEFAULT_SIZE '4';
+control query default Min_LONG_WVARCHAR_DEFAULT_SIZE '9';
+
+control query default MAX_LONG_VARCHAR_DEFAULT_SIZE '11';
+control query default MAX_LONG_VARCHAR_DEFAULT_SIZE '10';
+control query default MAX_LONG_WVARCHAR_DEFAULT_SIZE '111';
+control query default MAX_LONG_WVARCHAR_DEFAULT_SIZE '100';
+
+-- A valid range must be maintained (i.e., MIN <= MAX). The following 
+-- four CQD should fail
+control query default MIN_LONG_VARCHAR_DEFAULT_SIZE '12';
+control query default MIN_LONG_WVARCHAR_DEFAULT_SIZE '101';
+control query default MAX_LONG_VARCHAR_DEFAULT_SIZE '2';
+control query default MAX_LONG_WVARCHAR_DEFAULT_SIZE '6';
+
+drop table tlongvarchar0;
+drop table tlongwvarchar0;
+drop table tlongwvarchar1;
+
+log;
+
+

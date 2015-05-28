@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+let lv_sqmonitor_up=0
+let lv_num_checks=0
+let lv_max_checks=10
+let lv_sleep_time=5
+let lv_first_time=1
+
+while [ $lv_sqmonitor_up '==' 0 ]; do
+    sqshell -a <<EOF >$MY_SQROOT/logs/sqcheckmon.log 2>&1
+EOF
+    let lv_sqshell_ret=$?
+    if [ $lv_sqshell_ret '==' 0 ]; then
+	echo "Able to connect to the SQ monitor."
+	let lv_sqmonitor_up=1
+    else
+	if [ $lv_first_time '==' 1 ]; then
+	    echo -n "Trying to connect to the SQ monitor "
+	    let lv_first_time=0
+	fi
+	let ++lv_num_checks
+	let lv_max_checks_done=(lv_num_checks '>' lv_max_checks)
+	if [ $lv_max_checks_done '==' 0 ]; then
+	    echo -n "."
+	    sleep $lv_sleep_time
+	else
+	    echo
+	    echo "There seems to be a problem connecting to the SQ monitor. "
+	    exit 1
+	fi
+    fi
+done
+
+exit 0

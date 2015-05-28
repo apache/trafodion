@@ -1,0 +1,65 @@
+//------------------------------------------------------------------
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+README for ODB tool. 
+
+This readme will help you get started on using ODB tool. Documentation for ODB tool
+can be found on Trafodion Wiki site
+
+1. Install and configure Trafodion Linux or Windows ODBC driver 
+2. Create a datasource for Trafodion
+3. LD_LIBRARY_PATH should contain both Trafodion ODB and  unix odbc libraries
+4. Using isql, connect to Trafodion datasource
+3. Execute odb tool by executing 'odb64luo -h' which will display the parameters that can be
+   used to load/extract data to/from Trafodion tables
+
+The following env vars will have to be set:
+export ODBCHOME=<path to ini files>
+export ODBCSYSINI=${ODBCHOME}
+export ODBCINI=${ODBCSYSINI}/odbc.ini
+export AppUnicodeType=utf16
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<path to Trafodion odbc linux driver>:/usr/lib64:<path to unixodbc>
+
+Example table definition:
+
+
+    ( region_id      INT NOT NULL 
+    , region_name    VARCHAR2(25) 
+    );
+
+Example map file:
+
+REGION_ID:IRAND:1:10000
+REGION_NAME:CRAND:25
+
+Example commands:
+
+1. For loading a table called REGIONS in schema QA with 10000 rows using 8 parallel threads and rowset size of 500:
+
+odb64luo -u xx -p xx -d traf -l src=nofile:tgt=TRAFODION.QA.REGIONS:map=regions.map:max=10000:rows=500:parallel=8
+
+2. To extract data from the same table:
+
+odb64luo -u xx -p xx -d traf -e src=TRAFODION.QA.REGIONS:tgt=regions.dat
+
+3. To copy data from one table to similar table (table should exist):
+
+odb64luo -u xx:xx -p xx:xx -d traf:traf -cp src=TRAFODION.QA.REGIONS:tgt=TRAFODION.QA.REGIONS_COPY
+

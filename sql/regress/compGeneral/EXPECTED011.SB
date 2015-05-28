@@ -1,0 +1,2065 @@
+>>
+>>----------------------------------------------------------------------
+>>-- Q1
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b >= (select max (t44.a)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          5
+
+--- 1 row(s) selected.
+>>
+>>-- Q2
+>>-- test with key column pred heuristic (no longer used)
+>>cqd comp_bool_168 'off';
+
+--- SQL operation complete.
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b >= (select max (t44.b)
++>                      from t44
++>                      where t40.c = t44.a) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: Join predicate is on a leading key column of inner table.)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+
+--- 9 row(s) selected.
+>>
+>>-- same, now without the heuristic
+>>cqd comp_bool_168 reset;
+
+--- SQL operation complete.
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b >= (select max (t44.b)
++>                      from t44
++>                      where t40.c = t44.a) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+
+--- 9 row(s) selected.
+>>
+>>-- Q3
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b >= (select max (t44.a)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          5
+
+--- 1 row(s) selected.
+>>
+>>-- Q4
+>>prepare XX from
++>Select t40.a
++>From t40
++>Where (select max (t41.b) 
++>             From t41                 
++>             Where  t40.c = t41.c) = (select max (t42.b) from t42  where t40.d = t42.d) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         13
+         14
+         15
+         16
+         17
+         18
+         19
+         20
+         21
+         22
+         23
+         24
+         25
+         26
+         27
+         28
+         29
+         30
+         31
+         32
+         33
+         34
+         35
+         36
+         37
+         38
+         39
+         40
+         41
+         42
+         43
+         44
+         45
+         46
+         47
+         48
+         49
+         50
+         51
+         52
+         53
+         54
+         55
+         56
+         57
+         58
+         59
+         60
+         61
+         62
+         63
+         64
+         65
+         66
+         67
+         68
+         69
+         70
+         71
+         72
+         73
+         74
+         75
+         76
+         77
+         78
+         79
+         80
+         81
+         82
+         83
+         84
+         85
+         86
+         87
+         88
+         89
+         90
+         91
+         92
+         93
+         94
+         95
+         96
+         97
+         98
+         99
+
+--- 100 row(s) selected.
+>>
+>>-- Q5
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b > (select max (t41.b)
++>                      from t41
++>                      where t40.c = t41.c
++>                      and t41.d > (select avg (t42.d)
++>                                        from t42
++>                                        where t40.e = t42.e
++>                                        AND t41.f > t42.f)) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+--- 0 row(s) selected.
+>>
+>>
+>>-- Q6
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = 3
++>and t40.c =
++>     (select max(t41.c)
++>      from t41
++>      where t41.b = 4 and t40.d = t41.d
++>      and t41.e = 
++>          (select max(t42.e)
++>           from t42
++>           where t42.b = 5 and t41.f = t42.f and t40.g = t42.g   
++>           and t42.h = 
++>             (select avg(t43.h)
++>             from t43
++>             where t43.b = 6 and t40.i = t43.i and t41.j = t43.j and t43.a = t42.a))) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+--- 0 row(s) selected.
+>>
+>>--- has a tsj-tsj-join backbone. The last join is not a tsj because t43 does not have a 
+>>-- direct relation with t42. t43 and t42 appear on the bottom right and since the scan on t43 
+>>-- does not need anything from t42 this join is not a tsj. The scan on t43 does need inputs 
+>>-- t40 and t41 though. This query tests that we unnest tsj as well as joins that need inputs 
+>>-- from parent tsjs
+>>-- Q7
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = 3
++>and t40.c =
++>     (select max(t41.c)
++>      from t41
++>      where t41.b = 4 and t40.d = t41.d
++>      and t41.e = 
++>          (select max(t42.e)
++>           from t42
++>           where t42.b = 5 and t41.f = t42.f and t40.g = t42.g   
++>           and t42.h = 
++>             (select avg(t43.h)
++>             from t43
++>             where t43.b = 6 and t40.i = t43.i and t41.j = t43.j))) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+--- 0 row(s) selected.
+>>
+>>
+>>
+>>-- IN with OR outside subquery, requires Join-Agg transformation
+>>-- Q8
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (select t44.a
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      t40.b = 1 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>-- IN with OR outside subquery, requires Join-Agg transformation
+>>-- Q9
+>>prepare XX from 
++>select t40.a
++>from t40
++>where t40.b in (select t44.a
++>                      from t44)
++>  OR
++>      t40.b = 1 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+
+--- 10 row(s) selected.
+>>
+>>-- ANY with OR outside subquery, requires Join-Agg transformation
+>>-- Q10
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = any (select t44.a
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      t40.b = 1 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>
+>>-- EXISTS with OR outside subquery, requires Join-Agg transformation
+>>-- Q11
+>>prepare XX from
++>select t40.a
++>from t40
++>where exists (select t44.a
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      t40.b = 1 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>
+>>-- NOT ANY with OR outside subquery, requires Join-Agg transformation
+>>-- Q12
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b <> any (select t44.a
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      t40.b = 1 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>-- Tree Subquery with >= predicate
+>>-- Test sort_gb + sort working correctly - expect unnested plan with correct
+>>-- execution output.
+>>
+>>-- Q13
+>>prepare XX from 
++>select *  
++>from t50 as r 
++>where r.b > (select max(s.b) 
++>               from t51 as s 
++>               where r.c >=  s.d and s.d > (select max(t.d) 
++>			                      from t53 as t 
++>                                              where s.e >= t.d and r.f >= t.f))
++>order by r.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A            B            C            D            E            F            G            H            I            J
+-----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
+
+         11           11           11           11           11           11            1            1            1            1
+         22           22           22           22           22           22            1            1            1            1
+
+--- 2 row(s) selected.
+>>
+>>-- Tree Subquery with = predicate
+>>-- Test sort_gb + sort working correctly - expect unnested plan with correct
+>>-- execution output.
+>>
+>>-- Q14
+>>prepare XX from 
++>select *  
++>from t50 as r 
++>where r.b = (select max(s.b) 
++>               from t51 as s 
++>               where r.c =  s.d and s.d > (select max(t.d) 
++>			                      from t53 as t 
++>                                              where s.e = t.d and r.f = t.f))
++>order by r.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+--- 0 row(s) selected.
+>>
+>>-- IN with AND, uses SemiJoin transformation
+>>-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+>>-- final plan shuld have only a join.
+>>-- Q15
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (select t44.a
++>                      from t44
++>		where t40.c = t44.b)
++>  AND
++>      t40.b = 1 
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>execute XX ;
+>>#endif
+>>
+>>-- IN with AND, uses SemiJoin transformation
+>>-- correlation predicate on clustering key of inner table.
+>>-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+>>-- final plan shuld have only a join.
+>>-- Q16
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (select t44.b
++>                      from t44
++>		where t40.c = t44.a)
++>  AND
++>      t40.b = 1 
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>-- IN with OR inside subquery, requires Semijoin transformation
+>>-- correlation predicate on clustering key of inner table.
+>>-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+>>-- final plan shuld have only a join.
+>>-- Q17
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (select t44.a
++>                      from t44
++>                      where t40.c = t44.a OR t44.b = 1)
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+
+--- 10 row(s) selected.
+>>
+>>
+>>-- IN with OR inside subquery, requires Semijoin transformation
+>>-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+>>-- final plan shuld have only a join.
+>>-- Q18
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (select t44.a
++>                      from t44
++>                      where t40.c = t44.b OR t44.b = 1)
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- ANY with AND, uses SemiJoin transformation
+>>-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+>>-- final plan shuld have only a join.
+>>-- Q19
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = any (select t44.a
++>                      from t44
++>		where t40.c = t44.b)
++>  AND
++>      t40.b = 1 
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>execute XX ;
+>>#endif
+>>
+>>-- ANY with OR inside subquery, requires Semijoin transformation
+>>-- which is later transformed to inner join
+>>-- Q20
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = any (select t44.a
++>                      from t44
++>                      where t40.c = t44.b OR t44.b = 1)
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>execute XX ;
+>>#endif
+>>
+>>-- EXISTS with AND, uses SemiJoin transformation
+>>-- which then gets transformed to innerjoin + groupby
+>>control query default SEMIJOIN_TO_INNERJOIN_TRANSFORMATION 'on' ;
+
+--- SQL operation complete.
+>>
+>>-- Q21
+>>prepare XX from
++>select t40.a
++>from t40
++>where exists (select t44.a
++>                      from t44
++>		where t40.c = t44.b)
++>  AND
++>      t40.b = 1 
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>execute XX ;
+>>#endif
+>>
+>>
+>>control query default SEMIJOIN_TO_INNERJOIN_TRANSFORMATION reset ;
+
+--- SQL operation complete.
+>>
+>>control query default comp_int_22 '1' ;
+
+--- SQL operation complete.
+>>
+>>-- Q22
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b in (1,2,3) 
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>
+>>control query default comp_int_22 reset ;
+
+--- SQL operation complete.
+>>
+>>-- Q23
+>>select vch7, nint, ch3, nnum5
++>              from TTF t1
++>              where ( (select t1.nnum9 from TTF t2
++>                    where t1.nnum9 = 0.09
++>                    group by t1.nnum9
++>                    ) > 0 )
++>           order by 1, 2
++>           ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by)
+
+VCH7     NINT    CH3  NNUM5       
+-------  ------  ---  ------------
+
+abcdefg       3  cc            2.0
+abcdefg       5  cc            2.0
+
+--- 2 row(s) selected.
+>>
+>>-- Q24
+>>select  t1.nint
++>             from TTF t1
++>             where ( select t1.nnum5 from TTFONE t2 where t1.nint = 2 ) > 1
++>           ORDER BY 1
++>           ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+NINT  
+------
+
+     2
+
+--- 1 row(s) selected.
+>>
+>>-- Q25
+>>select vch7, nint, ch3, nnum5
++>              from TTF t1
++>              where ( (select t1.nnum9 from TTF t2
++>                    where t1.nnum9 = 0.09) > 0 )
++>order by vch7, nint;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Q26
+>>select * from ( select vch7, vch5, nint from TTF
++>                       where
++>                     ( select ( select ( select ( select ( select
++>                     ( select ( select ( select ( select ( select
++>                     ( select ( select ( select ( select ( select
++>                     ( select ( select ( select ( select ( select
++>                     ( select  count(t2.nint) from TTF t20 )
++>                       from TTF t19) from TTF t18)
++>                       from TTF t17) from TTF t16)
++>                       from TTF t15) from TTF t14)
++>                       from TTF t13) from TTF t12)
++>                       from TTF t11) from TTF t10)
++>                       from TTF t9) from TTF t8)
++>                       from TTF t7) from TTF t6)
++>                       from TTF t5) from TTF t4)
++>                       from TTF t3) from TTF t2)
++>                       from TTF t1) from TTF t0)
++>                     >= 1
++>           ) dt 
++>order by dt.vch7, dt.vch5;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>
+>>
+>>-- Testcase for solution 10-071128-9152
+>>-- 
+>>-- only need to prepare it, as we would get a warning or an abend with the bug
+>>-- during compile
+>>--
+>>
+>>-- Q27
+>>prepare XX from
++>select distinct cast(?p as pic x(5))
++>              from t60
++>              where ( (select min(sbin0_4) from t60),?pn)
++>                  = ( (select min(sdec6_4) from t60),?pn)
++>           order by 1
++>           ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
+
+--- SQL command prepared.
+>>
+>>
+>>----------------------------------------------------------------------
+>>-- Test cases for phase 2 (in addition to the ones above that now will be
+>>-- Unnested
+>>
+>>-- Test count(col)
+>>-- Q28
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b <= (select count (t44.a)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+
+--- 3 row(s) selected.
+>>
+>>-- Test count(col) with equal 
+>>-- Q29
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = (select count (t44.a)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          2
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- Test count(*)
+>>-- Q30
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b <= (select count (*)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+
+--- 3 row(s) selected.
+>>
+>>-- Test count(*) with equal 
+>>-- Q31
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = (select count (*)
++>                      from t44
++>                      where t40.c = t44.b) 
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          2
+
+--- 2 row(s) selected.
+>>
+>>-- Test multilevel count - Only one level should get unnested
+>>-- Q32
+>>prepare XX from
++>Select count(t40.a)
++>From t40
++>Where (select count (t41.b) 
++>             From t41                 
++>             Where  t40.c = t41.c) = (select count (t42.b) from t42  where t40.d = t42.d) ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+(EXPR)              
+--------------------
+
+               10000
+
+--- 1 row(s) selected.
+>>
+>>-- Test IS NOT FALSE 
+>>-- Q33
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = (select t44.a
++>          from t44
++>          where t40.c = t44.b) IS NOT FALSE
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>
+>>-- Test  NOT IN - should NOT get unnested
+>>-- Q34
+>>prepare XX from
++>select count(t40.a)
++>from t40
++>where t40.b NOT IN 
++>       (select t44.a
++>          from t44
++>          where t40.c = t44.b);
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+                9995
+
+--- 1 row(s) selected.
+>>
+>>-- TEST ANY 
+>>-- Q35
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b = any (select t44.a
++>          from t44
++>          where t40.c = t44.b)
++>OR
++>  t40.d = 1
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>-- Test OR Tree
+>>-- Q36
+>>prepare XX from
++>Select t40.a
++>from t40
++>where t40.b < (select count (t41.b)
++>                      from t41
++>                      where t40.c = t41.c) OR
++>                     t40.e  < (select min (t44.b)
++>                      From t44
++>                      Where t40.d = t44.b)
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+A          
+-----------
+
+          0
+
+--- 1 row(s) selected.
+>>
+>>-- Test Exist
+>>-- Q37
+>>prepare XX from
++>select t40.a  
++>from t40  
++>where  t40.b  > (select  t41.e  
++>                 from t41  
++>                 where  t41.c = t40.a  and  t41.d=5 and   exists (select t42.g
++>                    from t42  
++>                    where   t42.h = t41.d  and  t42.h < t40.a ))
++>order by t40.a;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[2997]  (Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>execute XX ;
+>>#endif
+>>
+>>-- Q38
+>>prepare XX from
++>select count(t40.a)
++>from t40 
++>where not exists (select * 
++>                   from t41 
++>                   where t40.b = t41.b);
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+                9900
+
+--- 1 row(s) selected.
+>>
+>>-- Q39
+>>prepare XX from
++>select t40.a 
++>from t40 
++>where exists (select * 
++>                from t41 where t40.b = t41.b)
++>order by t40.a;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         13
+         14
+         15
+         16
+         17
+         18
+         19
+         20
+         21
+         22
+         23
+         24
+         25
+         26
+         27
+         28
+         29
+         30
+         31
+         32
+         33
+         34
+         35
+         36
+         37
+         38
+         39
+         40
+         41
+         42
+         43
+         44
+         45
+         46
+         47
+         48
+         49
+         50
+         51
+         52
+         53
+         54
+         55
+         56
+         57
+         58
+         59
+         60
+         61
+         62
+         63
+         64
+         65
+         66
+         67
+         68
+         69
+         70
+         71
+         72
+         73
+         74
+         75
+         76
+         77
+         78
+         79
+         80
+         81
+         82
+         83
+         84
+         85
+         86
+         87
+         88
+         89
+         90
+         91
+         92
+         93
+         94
+         95
+         96
+         97
+         98
+         99
+
+--- 100 row(s) selected.
+>>
+>>
+>>-- ALL subquery....
+>>-- Q40
+>>prepare XX from
++>select count(t40.a)
++>from t40
++>where t40.b > all (select t41.b
++>                            from t41
++>                            where t40.c = t41.c);
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+                9900
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- ALL subquery....  gets translated into != all
+>>-- Q41
+>>prepare XX from
++>select count(t40.a)
++>from t40 
++>where t40.b not in (select t41.b from t41);
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+                9900
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>
+>>-- Test Select list unnesting
+>>-- Q42
+>>prepare XX from
++>select (select t40.a 
++>          from t40 
++>          where t40.b = t41.b) , t41.a from t41 where t41.b > 10
++>order by 1,2;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)       A          
+-----------  -----------
+
+         11           11
+         12           12
+         13           13
+         14           14
+         15           15
+         16           16
+         17           17
+         18           18
+         19           19
+         20           20
+         21           21
+         22           22
+         23           23
+         24           24
+         25           25
+         26           26
+         27           27
+         28           28
+         29           29
+         30           30
+         31           31
+         32           32
+         33           33
+         34           34
+         35           35
+         36           36
+         37           37
+         38           38
+         39           39
+         40           40
+         41           41
+         42           42
+         43           43
+         44           44
+         45           45
+         46           46
+         47           47
+         48           48
+         49           49
+         50           50
+         51           51
+         52           52
+         53           53
+         54           54
+         55           55
+         56           56
+         57           57
+         58           58
+         59           59
+         60           60
+         61           61
+         62           62
+         63           63
+         64           64
+         65           65
+         66           66
+         67           67
+         68           68
+         69           69
+         70           70
+         71           71
+         72           72
+         73           73
+         74           74
+         75           75
+         76           76
+         77           77
+         78           78
+         79           79
+         80           80
+         81           81
+         82           82
+         83           83
+         84           84
+         85           85
+         86           86
+         87           87
+         88           88
+         89           89
+         90           90
+         91           91
+         92           92
+         93           93
+         94           94
+         95           95
+         96           96
+         97           97
+         98           98
+         99           99
+
+--- 89 row(s) selected.
+>>
+>>
+>>-- Test Having Clause
+>>-- Q43
+>>prepare XX from
++>select max(t40.b), t40.c from t40
++>group by t40.c,t40.d
++>having t40.c = (select max(t41.a) from t41 where t41.d = t40.d) 
++>order by 1,2;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)       C          
+-----------  -----------
+
+          0            0
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+          8            8
+          9            9
+         10           10
+         11           11
+         12           12
+         13           13
+         14           14
+         15           15
+         16           16
+         17           17
+         18           18
+         19           19
+         20           20
+         21           21
+         22           22
+         23           23
+         24           24
+         25           25
+         26           26
+         27           27
+         28           28
+         29           29
+         30           30
+         31           31
+         32           32
+         33           33
+         34           34
+         35           35
+         36           36
+         37           37
+         38           38
+         39           39
+         40           40
+         41           41
+         42           42
+         43           43
+         44           44
+         45           45
+         46           46
+         47           47
+         48           48
+         49           49
+         50           50
+         51           51
+         52           52
+         53           53
+         54           54
+         55           55
+         56           56
+         57           57
+         58           58
+         59           59
+         60           60
+         61           61
+         62           62
+         63           63
+         64           64
+         65           65
+         66           66
+         67           67
+         68           68
+         69           69
+         70           70
+         71           71
+         72           72
+         73           73
+         74           74
+         75           75
+         76           76
+         77           77
+         78           78
+         79           79
+         80           80
+         81           81
+         82           82
+         83           83
+         84           84
+         85           85
+         86           86
+         87           87
+         88           88
+         89           89
+         90           90
+         91           91
+         92           92
+         93           93
+         94           94
+         95           95
+         96           96
+         97           97
+         98           98
+         99           99
+
+--- 100 row(s) selected.
+>>
+>>-- Test Having Clause with count in subquery
+>>-- Q44
+>>prepare XX from
++>select max(t40.b), t40.c from t40
++>group by t40.c,t40.d
++>having t40.c = (select count(t41.a) from t41 where t41.d = t40.d) 
++>order by 1,2;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+(EXPR)       C          
+-----------  -----------
+
+          1            1
+
+--- 1 row(s) selected.
+>>
+>>-- Test Insert-Select
+>>-- Q45
+>>create table ui1 like t40 ;
+
+--- SQL operation complete.
+>>prepare XX from
++>insert into ui1 (select *
++>                from t40
++>                where t40.b <= (select count (*)
++>                      from t44
++>                      where t40.c = t44.b));
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+--- 3 row(s) inserted.
+>>
+>>select * from ui1 
++>  order by ui1.a;
+
+A            B            C            D            E            F            G            H            I            J
+-----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
+
+          0            0            0            0            0            0            1            1            1            1
+          1            1            1            1            1            1            1            1            1            1
+          2            2            2            2            2            2            1            1            1            1
+
+--- 3 row(s) selected.
+>>
+>>-- Test Delete-Select
+>>-- Q46
+>>prepare XX from
++>delete from ui1 where ui1.a in (select t40.a
++>                from t40
++>                where t40.b <= (select count (*)
++>                      from t44
++>                      where t40.c = t44.b)) ;
+
+*** WARNING[2997]  (Attempting to unnest Subquery)
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+--- 3 row(s) deleted.
+>>
+>>select * from ui1
++>  order by ui1.a;
+
+--- 0 row(s) selected.
+>>
+>>control query default subquery_unnesting reset ;
+
+--- SQL operation complete.
+>>
+>>-- original pblm qry.
+>>  select A.a,  (select b from mxtest2 where b = B.b)
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>-- qry suggested by Bob with convertible LOJ in select list.  LOJ is converted.
+>>select A.a,  
++>  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
++>   where mxtest4.c = 'a')
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>-- Same as last one but with outer reference in select list. One LOJ is converted now, results are right.
+>>select A.a,  
++>  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
++>   where mxtest4.c = B.b)
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>-- same as Bob's suggestion but with an expression
+>>select A.a,  
++>  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
++>   where mxtest4.c||'b' = 'a')
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>-- same as one of the previous one but with an expression. One LOJ gets transformed.
+>>select A.a,  
++>  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
++>   where mxtest4.c = B.b||'b')
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>select A.a,
++>  (select a from mxtest3 left join 
++>   (select c||B.b as c from mxtest4) T on b  = '1'
++>   where T.c = 'b')
++>  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+A           (EXPR)    
+----------  ----------
+
+xx          ?         
+xx          ?         
+ss          ?         
+
+--- 3 row(s) selected.
+>>
+>>-- Genesis soln. 10-100916-3116 
+>>Select a from Tlike where a like
++>  case when 'DOG' like '%DOG%' then 'abc%'
++>       when 'CAT' like '%CAT%' then 'abcdef%' end;
+
+A       
+--------
+
+abc     
+abcd    
+abcde   
+abcdefg 
+abcdefgh
+abcedf  
+
+--- 6 row(s) selected.
+>>
+>>select * from 
++>(select *, 'abc%' p from Tlike union 
++> select *, 'abcdef%' p from Tlike) U, Tlike 
++>where 'abcd' like p or Tlike.a = 'aaa';
+
+A         P        A       
+--------  -------  --------
+
+aaa       abc%     aaa     
+aaa       abc%     abc     
+aaa       abc%     abcd    
+aaa       abc%     abcde   
+aaa       abc%     abcdefg 
+aaa       abc%     abcdefgh
+aaa       abc%     abcedf  
+aaa       abcdef%  aaa     
+abc       abc%     aaa     
+abc       abc%     abc     
+abc       abc%     abcd    
+abc       abc%     abcde   
+abc       abc%     abcdefg 
+abc       abc%     abcdefgh
+abc       abc%     abcedf  
+abc       abcdef%  aaa     
+abcd      abc%     aaa     
+abcd      abc%     abc     
+abcd      abc%     abcd    
+abcd      abc%     abcde   
+abcd      abc%     abcdefg 
+abcd      abc%     abcdefgh
+abcd      abc%     abcedf  
+abcd      abcdef%  aaa     
+abcde     abc%     aaa     
+abcde     abc%     abc     
+abcde     abc%     abcd    
+abcde     abc%     abcde   
+abcde     abc%     abcdefg 
+abcde     abc%     abcdefgh
+abcde     abc%     abcedf  
+abcde     abcdef%  aaa     
+abcdefg   abc%     aaa     
+abcdefg   abc%     abc     
+abcdefg   abc%     abcd    
+abcdefg   abc%     abcde   
+abcdefg   abc%     abcdefg 
+abcdefg   abc%     abcdefgh
+abcdefg   abc%     abcedf  
+abcdefg   abcdef%  aaa     
+abcdefgh  abc%     aaa     
+abcdefgh  abc%     abc     
+abcdefgh  abc%     abcd    
+abcdefgh  abc%     abcde   
+abcdefgh  abc%     abcdefg 
+abcdefgh  abc%     abcdefgh
+abcdefgh  abc%     abcedf  
+abcdefgh  abcdef%  aaa     
+abcedf    abc%     aaa     
+abcedf    abc%     abc     
+abcedf    abc%     abcd    
+abcedf    abc%     abcde   
+abcedf    abc%     abcdefg 
+abcedf    abc%     abcdefgh
+abcedf    abc%     abcedf  
+abcedf    abcdef%  aaa     
+
+--- 56 row(s) selected.
+>>
+>>prepare show_join_oper
++>from
++>select OPERATOR
++>from table(explain(null, 'XX')) e
++>where SEQ_NUM = 5;
+
+--- SQL command prepared.
+>>
+>>-- Test LeftJoin to Inner Join transformation for BETWEEN
+>>-- Should not see a LeftJoin in the explain output
+>>-- Q47
+>>prepare XX from
++>select mxtest1.a
++>from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
++>where mxtest2.a between 'aa' and 'bb';
+
+--- SQL command prepared.
+>>
+>>execute show_join_oper;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- Test LeftJoin to Inner Join transformation for LIKE
+>>-- Should not see a LeftJoin in the explain output
+>>-- Q48
+>>prepare XX from
++>select mxtest1.a
++>from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
++>where mxtest2.a like '_B%';
+
+--- SQL command prepared.
+>>
+>>execute show_join_oper;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- Test LeftJoin to Inner Join transformation for NOT
+>>-- Should not see a LeftJoin in the explain output
+>>-- Q49
+>>prepare XX from
++>select mxtest1.a
++>from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
++>where NOT mxtest2.a = 'a';
+
+--- SQL command prepared.
+>>
+>>execute show_join_oper;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- bug no. 4138 from bugzilla
+>>-- abs of unsigned type used to give internal error
+>>-- the fix is to drop the abs in the binder if child 
+>>-- is unsigned. Use showplan or display to verify.
+>>select abs(a) from ui2 ;
+
+(EXPR)    
+----------
+
+         1
+
+--- 1 row(s) selected.
+>>
+>>-- Test whether pulled up preds are retained in a LeftJoin
+>>-- 10-101216-5228 
+>>-- Q50
+>>prepare XX from
++>SELECT A, B  FROM LJ1  WHERE  B IN
++>(
++>SELECT  LJ2.C  FROM LJ2  WHERE
++>LJ2.E  >= 1
++>
++>OR    -- offending predicate
++>LJ2.D =  ANY
++>(SELECT LJ3.F FROM LJ3  WHERE
++>(LJ3.H < LJ2. E
++>AND  LJ3.H > LJ1.A)
++>)
++>)
++>ORDER BY A
++>;
+
+--- SQL command prepared.
+>>
+>>execute XX;
+
+A            B     
+-----------  ------
+
+          4       2
+          8       4
+
+--- 2 row(s) selected.
+>>
+>>-- bug #1893
+>>prepare c1 from UPDATE SQLF177 SET (C2,C3) = (C2 + cast( ? as INT),?)  WHERE C1 = ? ;
+
+--- SQL command prepared.
+>>
+>>
+>>log;

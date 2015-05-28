@@ -1,0 +1,11 @@
+1267,1268c1267
+< COL_11
+< ------
+---
+> *** ERROR[2054] Arkcmp was unable to compile this query.  This is probably due to an incorrect control query shape specification.
+1270c1269
+<    212
+---
+> *** ERROR[8822] Unable to prepare the statement.
+1272d1270
+< --- 1 row(s) selected.

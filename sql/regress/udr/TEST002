@@ -1,0 +1,297 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
+
+-- We may use fake hardware settings to parallelize UDFs
+--control query default ARKCMP_FAKE_HW 'ON';
+--control query default DEF_NUM_SMP_CPUS '4';
+--control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '1';
+--control query default ATTEMPT_ESP_PARALLELISM 'ON';
+
+
+obey TEST002(clean_up);
+log LOG002 clear;
+sh rm -f LOG002-SECONDARY;
+obey TEST002(compile_libs);
+obey TEST002(create_tables);
+obey TEST002(register_functions);
+obey TEST002(tests);
+log;
+--obey TEST002(clean_up);
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table doc_table;
+drop table t002_Timeseries;
+drop table_mapping function timeseries;
+drop table_mapping function tokenizer;
+drop table_mapping function tokenizer1;
+drop library TEST002;
+
+?section compile_libs
+--------------------------------------------------------------------------
+log;
+sh rm -f ./TEST002.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST002.cpp
+  2>&1 | tee -a LOG002-SECONDARY;
+set pattern $$DLL$$ TEST002.dll;
+log LOG002;
+
+?section create_tables
+--------------------------------------------------------------------------
+create table doc_table (a int not null, text_data varchar(4000), primary key (a));
+insert into doc_table values
+ (1,'Hello world! Hello world! This is a sample ');
+
+create table t002_Timeseries(p int,
+                     ts timestamp,
+                     val1 int,
+                     val2 numeric(9,2));
+insert into t002_Timeseries values
+ (1, timestamp '2015-01-01 00:00:00',  1,  1.00),
+ (1, timestamp '2015-01-01 00:01:00', 60, 60.00),
+ (2, timestamp '2015-01-01 00:00:03',  1,  1.00),
+ (2, timestamp '2015-01-01 00:01:00', 60, 60.00),
+ (3, timestamp '2015-01-01 00:00:00',  1,  1.00),
+ (3, timestamp '2015-01-01 00:00:00',  2,  2.00),
+ (3, timestamp '2015-01-01 00:00:06',  6,  6.00),
+ (3, timestamp '2015-01-01 00:00:07',  7,  6.00),
+ (3, timestamp '2015-01-01 00:00:30', 30,  null),
+ (3, timestamp '2015-01-01 00:00:35',null,   35),
+ (3, timestamp '2015-01-01 00:00:40',null, null),
+ (3, timestamp '2015-01-01 00:01:00', 60, 60.00);
+
+?section register_functions
+--------------------------------------------------------------------------
+
+create library TEST002 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
+
+create table_mapping function tokenizer(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER'
+language cpp
+library TEST002;
+
+-- Register tokenizer1 without column information
+create table_mapping function tokenizer1(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER'
+library TEST002;
+
+?section tests
+--------------------------------------------------------------------------
+select token, count(*) from
+UDF(tokenizer(TABLE(select text_data from doc_table), ' ')) XO(token)
+group by token order by 2,1;
+
+prepare s1 from
+select * from 
+UDF(tokenizer(TABLE(select text_data from 
+doc_table where a < ?p2), cast(?p1 as char(1)))) XO(token);
+
+set param ?p1 ' ' ;
+set param ?p2 2;
+execute s1 ;
+
+select token, count(*) from 
+UDF(tokenizer(TABLE(select * from (values
+('This is the first row'),
+('This is the second row'),
+('This is the third row'),
+('This is the fourth row'),
+('This is the fifth row'),
+('This is the sixth row'),
+('This is the seventh row'),
+('This is the eigth row')
+) as val(text_data) ), ' ')) XO(token)
+group by token 
+order by token;
+
+select * from 
+UDF(tokenizer(TABLE(select text_data from doc_table), 1)) XO(token);
+
+
+select * from 
+UDF(tokenizer(TABLE(select text_data from doc_table), ' ', 1)) XO(token);
+
+prepare s1 from
+select token, count(*) from
+UDF(tokenizer1(TABLE(select * from (values
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo1.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo2.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo3.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo4.txt')
+) as val(text_data) ), ' ')) XO(token)
+group by token
+order by 2,1;
+
+execute s1 ;
+
+-- some simple tests for the event_log_reader predefined TMUDF
+-- (result of the UDF is not deterministic)
+select [last 0] * from udf(event_log_reader());
+select [last 0] log_ts + interval '1' day,
+                severity || 'x',
+                substring(component from 1 for 2),
+                node_number + 1,
+                cpu + 2,
+                pin * 4,
+                process_name || query_id,
+                sql_code,
+                message,
+                log_file_node,
+                log_file_name,
+                log_file_line -1,
+                case when parse_status = ' ' then 'ok' else parse_status end
+from udf(event_log_reader('f'));
+select coalesce(min(log_file_node), 0) from udf(event_log_reader('f')) x
+where x.log_file_line <100;
+
+-- copy a file with known content to the log directory and see whether
+-- we get the correct results
+sh cp $$scriptsdir$$/udr/TEST002.sample_events $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+
+select count(*) as num_events,
+       max(log_file_line) as num_lines,
+       count(distinct query_id) num_query_ids,
+       sum(case when parse_status = ' ' then 0 else 1 end) num_parse_errors
+from udf(event_log_reader('f'))
+where log_file_name = 'master_exec_regr_999_99999.log';
+-- there are 22 events in 33 lines in this file, with 13 unique query ids and 3 parse errors
+
+select * from udf(event_log_reader('f'))
+where log_file_name = 'master_exec_regr_999_99999.log'
+  and (log_file_line in (1,3,8,16,23) or parse_status <> ' ')
+order by log_file_line;
+-- lines 20, 30 and 31 have parse errors and are also displayed
+
+sh rm $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+
+-- some negative test cases
+prepare s from select * from udf(event_log_reader(10));
+-- parameter must be a string
+prepare s from select * from udf(event_log_reader(?));
+-- parameter must be available at compile time
+prepare s from select * from udf(event_log_reader(table(select * from (values (1)) as x)));
+-- table-valued input not allowed
+prepare s from select query_id, log_file_name, parse_status
+from udf(event_log_reader());
+-- log_file_name and parse_status columns not available without 'f' option
+
+-- some simple tests for the timeseries builtin UDF
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FCI',
+                    'VAL1', 'LCI',
+                    'VAL2', 'FCI',
+                    'VAL2', 'LCI',
+                    'VAL1', 'FL',
+                    'VAL1', 'LL',
+                    'VAL2', 'FL',
+                    'VAL2', 'LL',
+                    'VAL1', 'FLi',
+                    'VAL1', 'LLi',
+                    'VAL2', 'FLi',
+                    'VAL2', 'LLi'));
+
+-- negative tests
+
+select * from udf(timeseries());
+-- must have one table-valued input
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          order by p),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+-- order by must be for a timestamp value
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          order by ts),
+                    'SLICE_TIME',
+                    5,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+-- time slice width must be an interval
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'AB',
+                    'VAL1', 'LC'));
+-- 'AB' is not a valid instruction
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL9', 'FC'));
+-- There is no column VAL9
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL9', 'FC',
+                    'VAL1'));
+-- Arguments not in pairs of column names and instructions
+
+-- eclipse timeseries builtin function with a true UDF
+create table_mapping function timeseries(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER'
+library TEST002;
+
+select token, count(*) from
+UDF(timeseries(TABLE(select text_data from doc_table), ' ')) XO(token)
+group by token order by 2,1;
+-- should do tokenizing, not timeseries
+
+drop table_mapping function timeseries;

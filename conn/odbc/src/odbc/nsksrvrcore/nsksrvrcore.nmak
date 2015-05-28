@@ -1,0 +1,656 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on NskSrvrCore.dsp
+!IF "$(CFG)" == ""
+CFG=NskSrvrCore - Win32 Debug
+!MESSAGE No configuration specified. Defaulting to NskSrvrCore - Win32 Debug.
+!ENDIF 
+
+!IF "$(CFG)" != "NskSrvrCore - Win32 Release" && "$(CFG)" != "NskSrvrCore - Win32 Debug" \
+&& "$(CFG)" != "NskSrvrCore - Yosemite Debug" && "$(CFG)" != "NskSrvrCore - Yosemite Release"
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "NskSrvrCore.nmak" CFG="NskSrvrCore - Win32 Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "NskSrvrCore - Win32 Release" (based on\
+ "Win32 (x86) Console Application")
+!MESSAGE "NskSrvrCore - Win32 Debug" (based on\
+ "Win32 (x86) Console Application")
+!MESSAGE "NskSrvrCore - Yosemite Release"
+!MESSAGE "NskSrvrCore - Yosemite Debug" 
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+!IF  "$(CFG)" == "NskSrvrCore - Win32 Release"
+
+COMP_ROOT=
+NSKINCLUDE=$(NSKTOOLS)\nsk\inc
+OUTDIR=.\Release
+INTDIR=.\Release
+OUTLIBDIR=..\..\..\lib\NskRelease
+# Begin Custom Macros
+OutDir=.\Release
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\CommonDiags.o"
+	-@erase "$(INTDIR)\CSrvrStmt.o"
+	-@erase "$(INTDIR)\DrvrSrvr.o"	
+	-@erase "$(INTDIR)\EventMsgs.o"
+	-@erase "$(INTDIR)\RegValues.o"
+	-@erase "$(INTDIR)\sqlinterface.o"
+	-@erase "$(INTDIR)\SQLWrapper.o"
+	-@erase "$(INTDIR)\srvrcommon.o"
+	-@erase "$(INTDIR)\srvrfunctions.o"
+	-@erase "$(INTDIR)\srvrkds.o"
+	-@erase "$(INTDIR)\srvrothers.o"
+	-@erase "$(INTDIR)\windows.o"
+	-@erase "$(INTDIR)\NskUtil.o"
+   	-@erase "$(INTDIR)\ResStatistics.o"
+   	-@erase "$(INTDIR)\ResStatisticsSession.o"
+	-@erase "$(INTDIR)\ResStatisticsStatement.o"
+	-@erase "$(OUTLIBDIR)\MXOCORE.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(NSKTOOLS)\nsk\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Wextensions -Ww -Woptimize=2 -Wsystype=oss \
+-Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 \
+-DNSK_PLATFORM -DTCL_MEM_DEBUG  -Dset_fieldalign \
+-DDBT_EXT \
+-I$(NSKTOOLS)\nsk\inc \
+-I$(NSKTOOLS)\nsk\inc\fs \
+-Iy:\include \
+-I$(NSKTOOLS)\nsk\inc\tmf_tipapi \
+-I..\common \
+-I..\Krypton \
+-I$(NSKTOOLS)\kds\inc \
+-I..\EventMsgs \
+-I..\srvrMsg \
+-I. \
+-I.\src \
+-I..\OssCfgCl\src \
+-I..\CmdCfgDll \
+-I$(NSKTOOLS)\dependencies \
+-I..\dependencies\windows \
+
+CPP_OBJS=.\Release/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(NSKTOOLS)\nsk\bin\nld.exe
+LINK32_FLAGS=-verbose -ansistreams -r -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on \
+-L $(NSKTOOLS)\nsk\lib -L y:\lib -lcli \
+-Bdynamic \
+-obey $(NSKTOOLS)\nsk\lib\libc.obey
+LINK32_OBJS= \
+	"$(INTDIR)\CommonDiags.o" \
+	"$(INTDIR)\CSrvrStmt.o" \
+	"$(INTDIR)\DrvrSrvr.o" \
+	"$(INTDIR)\EventMsgs.o" \
+	"$(INTDIR)\RegValues.o" \
+	"$(INTDIR)\sqlinterface.o" \
+	"$(INTDIR)\SQLWrapper.o" \
+	"$(INTDIR)\srvrcommon.o" \
+	"$(INTDIR)\srvrfunctions.o" \
+	"$(INTDIR)\srvrkds.o" \
+	"$(INTDIR)\windows.o" \
+	"$(INTDIR)\srvrothers.o" \
+	"$(INTDIR)\NskUtil.o" \
+	"$(INTDIR)\ResStatistics.o" \
+   	"$(INTDIR)\ResStatisticsSession.o" \
+   	"$(INTDIR)\ResStatisticsStatement.o"
+
+"$(OUTLIBDIR)\MXOCORE.lib" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOCORE.lib" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ELSEIF  "$(CFG)" == "NskSrvrCore - Win32 Debug"
+
+COMP_ROOT=
+NSKINCLUDE=$(NSKTOOLS)\nsk\inc
+OUTDIR=.\Debug
+INTDIR=.\Debug
+OUTLIBDIR=..\..\..\lib\NskDebug
+# Begin Custom Macros
+OutDir=.\Debug
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\CommonDiags.o"
+	-@erase "$(INTDIR)\CSrvrStmt.o"
+	-@erase "$(INTDIR)\DrvrSrvr.o"
+	-@erase "$(INTDIR)\EventMsgs.o"
+	-@erase "$(INTDIR)\RegValues.o"
+	-@erase "$(INTDIR)\sqlinterface.o"
+	-@erase "$(INTDIR)\SQLWrapper.o"
+	-@erase "$(INTDIR)\srvrcommon.o"
+	-@erase "$(INTDIR)\srvrfunctions.o"
+	-@erase "$(INTDIR)\srvrkds.o"
+	-@erase "$(INTDIR)\srvrothers.o"
+	-@erase "$(INTDIR)\windows.o"
+	-@erase "$(INTDIR)\NskUtil.o"
+   	-@erase "$(INTDIR)\ResStatistics.o"
+   	-@erase "$(INTDIR)\ResStatisticsSession.o"
+	-@erase "$(INTDIR)\ResStatisticsStatement.o"
+	-@erase "$(OUTLIBDIR)\MXOCORE.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)" 
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(NSKTOOLS)\nsk\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Winspect -Wextensions -Ww -Woptimize=0 \
+-Wsystype=oss -Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 \
+-D_DEBUG -DNSK_PLATFORM -DTCL_MEM_DEBUG -Dset_fieldalign \
+-DDBT_EXT \
+-I$(NSKTOOLS)\nsk\inc \
+-Iy:\include \
+-I$(NSKTOOLS)\nsk\inc\fs \
+-I$(NSKTOOLS)\nsk\inc\tmf_tipapi \
+-I..\common \
+-I..\Krypton \
+-I$(NSKTOOLS)\kds\inc \
+-I..\EventMsgs \
+-I..\srvrMsg \
+-I. \
+-I.\src \
+-I..\OssCfgCl\src \
+-I..\CmdCfgDll \
+-I$(NSKTOOLS)\dependencies \
+-I..\dependencies\windows \
+
+CPP_OBJS=.\Debug/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(NSKTOOLS)\nsk\bin\nld.exe
+LINK32_FLAGS=-verbose -ansistreams -r -Bdynamic -set saveabend on -set systype oss \
+-set highpin on -set highrequestor on -set inspect on \
+-L $(INTDIR) -L $(NSKTOOLS)\nsk\lib -L y:\lib -lcli \
+-obey $(NSKTOOLS)\nsk\lib\libc.obey
+LINK32_OBJS= \
+	"$(INTDIR)\CommonDiags.o" \
+	"$(INTDIR)\CSrvrStmt.o" \
+	"$(INTDIR)\DrvrSrvr.o" \
+	"$(INTDIR)\EventMsgs.o" \
+	"$(INTDIR)\RegValues.o" \
+	"$(INTDIR)\sqlinterface.o" \
+	"$(INTDIR)\SQLWrapper.o" \
+	"$(INTDIR)\srvrcommon.o" \
+	"$(INTDIR)\srvrfunctions.o" \
+	"$(INTDIR)\srvrkds.o" \
+	"$(INTDIR)\windows.o" \
+	"$(INTDIR)\srvrothers.o" \
+	"$(INTDIR)\NskUtil.o" \
+	"$(INTDIR)\ResStatistics.o" \
+	"$(INTDIR)\ResStatisticsSession.o" \
+   	"$(INTDIR)\ResStatisticsStatement.o"
+
+"$(OUTLIBDIR)\MXOCORE.lib" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOCORE.lib" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+
+!ELSEIF  "$(CFG)" == "NskSrvrCore - Yosemite Release"
+
+COMP_ROOT=H:
+NSKINCLUDE=$(COMP_ROOT)\usr\include
+OUTDIR=.\YosRelease
+INTDIR=.\YosRelease
+OUTLIBDIR=..\..\..\lib\YosemiteRelease
+CFGCLDIR=..\..\..\..\lib\YosemiteRelease
+
+# Begin Custom Macros
+OutDir=.\YosRelease
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\CommonDiags.o"
+	-@erase "$(INTDIR)\CSrvrStmt.o"
+	-@erase "$(INTDIR)\DrvrSrvr.o"	
+	-@erase "$(INTDIR)\EventMsgs.o"
+	-@erase "$(INTDIR)\RegValues.o"
+	-@erase "$(INTDIR)\sqlinterface.o"
+	-@erase "$(INTDIR)\SQLWrapper.o"
+	-@erase "$(INTDIR)\srvrcommon.o"
+	-@erase "$(INTDIR)\srvrfunctions.o"
+	-@erase "$(INTDIR)\srvrkds.o"
+	-@erase "$(INTDIR)\srvrothers.o"
+	-@erase "$(INTDIR)\windows.o"
+	-@erase "$(INTDIR)\NskUtil.o"
+    	-@erase "$(INTDIR)\ResStatistics.o"
+    	-@erase "$(INTDIR)\ResStatisticsSession.o"
+	-@erase "$(INTDIR)\ResStatisticsStatement.o"
+	-@erase "$(OUTLIBDIR)\MXOCORE.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(COMP_ROOT)\usr\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Wextensions -Ww -Woptimize=2 -Wsystype=oss \
+-Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 -WIEEE_float -Wtarget=tns/e \
+-DNSK_PLATFORM -DTCL_MEM_DEBUG  -Dset_fieldalign \
+-DDBT_EXT \
+-I$(COMP_ROOT)\dependencies\sql \
+-I$(COMP_ROOT)\usr\include \
+-Ix:\include \
+-I..\common \
+-I..\Krypton \
+-I$(COMP_ROOT)\kds\inc \
+-I..\EventMsgs \
+-I..\srvrMsg \
+-I. \
+-I.\src \
+-I..\OssCfgCl\src \
+-I..\CmdCfgDll \
+-I$(COMP_ROOT)\dependencies\tmf_tipapi \
+-I$(COMP_ROOT)\dependencies \
+-I$(COMP_ROOT)\dependencies\fs \
+-I..\dependencies\windows 
+
+CPP_OBJS=.\Release/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(COMP_ROOT)\usr\bin\eld.exe
+LINK32_FLAGS=-verbose -r -Bdynamic \
+-set FLOATTYPE IEEE_FLOAT \
+-L $(INTDIR) -L $(COMP_ROOT)\usr\lib \
+-l x:\lib\yos\zclidll \
+-lcppc -lcrtl -lcpp3 -lcre
+LINK32_OBJS= \
+	"$(INTDIR)\CommonDiags.o" \
+	"$(INTDIR)\CSrvrStmt.o" \
+	"$(INTDIR)\DrvrSrvr.o" \
+	"$(INTDIR)\EventMsgs.o" \
+	"$(INTDIR)\RegValues.o" \
+	"$(INTDIR)\sqlinterface.o" \
+	"$(INTDIR)\SQLWrapper.o" \
+	"$(INTDIR)\srvrcommon.o" \
+	"$(INTDIR)\srvrfunctions.o" \
+	"$(INTDIR)\srvrkds.o" \
+	"$(INTDIR)\windows.o" \
+	"$(INTDIR)\srvrothers.o" \
+	"$(INTDIR)\NskUtil.o" \
+	"$(INTDIR)\ResStatistics.o" \
+	"$(INTDIR)\ResStatisticsSession.o" \
+    	"$(INTDIR)\ResStatisticsStatement.o"
+
+"$(OUTLIBDIR)\MXOCORE.lib" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOCORE.lib" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ELSEIF  "$(CFG)" == "NskSrvrCore - Yosemite Debug"
+
+COMP_ROOT=H:
+NSKINCLUDE=$(COMP_ROOT)\usr\include
+OUTDIR=.\YosDebug
+INTDIR=.\YosDebug
+OUTLIBDIR=..\..\..\lib\YosemiteDebug
+CFGCLDIR=..\..\..\..\lib\YosemiteDebug
+
+# Begin Custom Macros
+OutDir=.\YosDebug
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ELSE 
+
+ALL : "$(OUTLIBDIR)\MXOCORE.lib"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\CommonDiags.o"
+	-@erase "$(INTDIR)\CSrvrStmt.o"
+	-@erase "$(INTDIR)\DrvrSrvr.o"
+	-@erase "$(INTDIR)\EventMsgs.o"
+	-@erase "$(INTDIR)\RegValues.o"
+	-@erase "$(INTDIR)\sqlinterface.o"
+	-@erase "$(INTDIR)\SQLWrapper.o"
+	-@erase "$(INTDIR)\srvrcommon.o"
+	-@erase "$(INTDIR)\srvrfunctions.o"
+	-@erase "$(INTDIR)\srvrkds.o"
+	-@erase "$(INTDIR)\srvrothers.o"
+	-@erase "$(INTDIR)\windows.o"
+	-@erase "$(INTDIR)\NskUtil.o"
+   	-@erase "$(INTDIR)\ResStatistics.o"
+   	-@erase "$(INTDIR)\ResStatisticsSession.o"
+	-@erase "$(INTDIR)\ResStatisticsStatement.o"
+	-@erase "$(OUTLIBDIR)\MXOCORE.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)" 
+
+"$(OUTLIBDIR)" :
+    if not exist "$(OUTLIBDIR)/$(NULL)" mkdir "$(OUTLIBDIR)"
+
+CPP=$(COMP_ROOT)\usr\bin\c89.exe
+CPP_PROJ=-g -Wnostdinc -Winspect -Wextensions -Ww -Woptimize=0 \
+-Wsystype=oss -Wrefalign=2 -Wfieldalign=auto -Wenv=common \
+-Wversion3 -WIEEE_float -Wtarget=tns/e \
+-D_DEBUG -DNSK_PLATFORM -DTCL_MEM_DEBUG -Dset_fieldalign \
+-DDBT_EXT \
+-I$(COMP_ROOT)\dependencies\sql \
+-I$(COMP_ROOT)\usr\include \
+-Ix:\include \
+-I..\common \
+-I..\Krypton \
+-I$(COMP_ROOT)\kds\inc \
+-I..\EventMsgs \
+-I..\srvrMsg \
+-I. \
+-I.\src \
+-I..\OssCfgCl\src \
+-I..\CmdCfgDll \
+-I$(COMP_ROOT)\dependencies\tmf_tipapi \
+-I$(COMP_ROOT)\dependencies \
+-I$(COMP_ROOT)\dependencies\fs \
+-I..\dependencies\windows \
+-I..\dependencies\include \
+-I..\dependencies\nsk 
+
+CPP_OBJS=.\Debug/
+
+.c{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(CPP_OBJS)}.o::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+	
+LINK32=$(COMP_ROOT)\usr\bin\eld.exe
+LINK32_FLAGS=-verbose -r -Bdynamic \
+-set FLOATTYPE IEEE_FLOAT \
+-L $(INTDIR) -L $(COMP_ROOT)\usr\lib \
+-l x:\lib\yos\zclidll \
+-lcppc -lcrtl -lcpp3 -lcre
+
+LINK32_OBJS= \
+	"$(INTDIR)\CommonDiags.o" \
+	"$(INTDIR)\CSrvrStmt.o" \
+	"$(INTDIR)\DrvrSrvr.o" \
+	"$(INTDIR)\EventMsgs.o" \
+	"$(INTDIR)\RegValues.o" \
+	"$(INTDIR)\sqlinterface.o" \
+	"$(INTDIR)\SQLWrapper.o" \
+	"$(INTDIR)\srvrcommon.o" \
+	"$(INTDIR)\srvrfunctions.o" \
+	"$(INTDIR)\srvrkds.o" \
+	"$(INTDIR)\windows.o" \
+	"$(INTDIR)\srvrothers.o" \
+	"$(INTDIR)\NskUtil.o" \
+	"$(INTDIR)\ResStatistics.o" \
+	"$(INTDIR)\ResStatisticsSession.o" \
+   	"$(INTDIR)\ResStatisticsStatement.o"
+
+"$(OUTLIBDIR)\MXOCORE.lib" : "$(OUTDIR)" "$(OUTLIBDIR)" $(LINK32_OBJS)
+    $(LINK32) -o "$(OUTLIBDIR)\MXOCORE.lib" $(LINK32_FLAGS) $(LINK32_OBJS)
+
+!ENDIF 
+
+!IF "$(CFG)" == "NskSrvrCore - Win32 Release" || "$(CFG)" == "NskSrvrCore - Win32 Debug" || \
+"$(CFG)" == "NskSrvrCore - Yosemite Release" || "$(CFG)" == "NskSrvrCore - Yosemite Debug"
+
+SOURCE=..\Common\CommonDiags.cpp
+DEP_CPP_COMMO=\
+	"..\common\CommonDiags.h"\
+	"$(NSKINCLUDE)\sys\timeb.h"\
+	
+NODEP_CPP_COMMO=\
+	"..\Common\stdafx.h"\
+	
+
+"$(INTDIR)\CommonDiags.o" : $(SOURCE) $(DEP_CPP_COMMO) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\CommonDiags.o" $(CPP_PROJ) 
+
+SOURCE=.\CSrvrStmt.cpp
+DEP_CPP_CSRVR=\
+	".\CSrvrStmt.h"\
+	".\sqlinterface.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	".\srvrkds.h"\
+	
+
+"$(INTDIR)\CSrvrStmt.o" : $(SOURCE) $(DEP_CPP_CSRVR) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\CSrvrStmt.o"
+
+
+!IF "$(CFG)" == "NskSrvrCore - Win32 Release" || "$(CFG)" == "NskSrvrCore - Win32 Debug"
+SOURCE=..\Common\DrvrSrvr.cpp
+DEP_CPP_DRVRS=\
+	"..\Krypton\odbcCommon.h"\
+	"$(NSKTOOLS)\kds\inc\cee.h"\
+	"$(NSKTOOLS)\kds\inc\idltype.h"\
+!ELSE
+SOURCE=..\Common\DrvrSrvr.cpp
+DEP_CPP_DRVRS=\
+	"..\Krypton\odbcCommon.h"\
+	"$(COMP_ROOT)\kds\inc\cee.h"\
+	"$(COMP_ROOT)\kds\inc\idltype.h"\
+!ENDIF	
+
+"$(INTDIR)\DrvrSrvr.o" : $(SOURCE) $(DEP_CPP_DRVRS) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\DrvrSrvr.o"
+
+
+SOURCE=..\Common\EventMsgs.cpp
+DEP_CPP_EVENT=\
+	"..\common\EventMsgs.h"\
+	
+"$(INTDIR)\EventMsgs.o" : $(SOURCE) $(DEP_CPP_EVENT) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\EventMsgs.o"
+
+
+SOURCE=..\Common\RegValues.cpp
+DEP_CPP_REGVA=\
+	"..\common\EventMsgs.h"\
+	"..\common\Global.h"\
+	"..\Common\odbcmxProductName.h"\
+	"..\common\odbcMxSecurity.h"\
+	"..\common\RegValues.h"\
+	
+"$(INTDIR)\RegValues.o" : $(SOURCE) $(DEP_CPP_REGVA) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\RegValues.o"
+
+SOURCE=.\ResStatistics.cpp
+
+"$(INTDIR)\ResStatistics.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\ResStatistics.o"
+
+
+SOURCE=.\ResStatisticsSession.cpp
+
+"$(INTDIR)\ResStatisticsSession.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\ResStatisticsSession.o"
+
+SOURCE=.\ResStatisticsStatement.cpp
+
+"$(INTDIR)\ResStatisticsStatement.o" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\ResStatisticsStatement.o"
+
+SOURCE=.\sqlinterface.cpp
+DEP_CPP_SQLIN=\
+	".\CSrvrStmt.h"\
+	".\sqlinterface.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	".\srvrkds.h"\
+	
+"$(INTDIR)\sqlinterface.o" : $(SOURCE) $(DEP_CPP_SQLIN) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\sqlinterface.o"
+
+
+SOURCE=.\srvrcommon.cpp
+DEP_CPP_SRVRC=\
+	".\CSrvrStmt.h"\
+	".\sqlinterface.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	".\srvrkds.h"\
+	
+"$(INTDIR)\srvrcommon.o" : $(SOURCE) $(DEP_CPP_SRVRC) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\srvrcommon.o"
+
+
+SOURCE=.\srvrfunctions.cpp
+DEP_CPP_SRVRF=\
+	".\srvrfunctions.h"\
+	
+"$(INTDIR)\srvrfunctions.o" : $(SOURCE) $(DEP_CPP_SRVRF) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\srvrfunctions.o"
+
+
+SOURCE=.\srvrkds.cpp
+DEP_CPP_SRVRK=\
+	".\CSrvrStmt.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	
+"$(INTDIR)\srvrkds.o" : $(SOURCE) $(DEP_CPP_SRVRK) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\srvrkds.o"
+
+
+SOURCE=.\srvrothers.cpp
+DEP_CPP_SRVRO=\
+	".\CSrvrStmt.h"\
+	".\sqlinterface.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	".\srvrkds.h"\
+	
+"$(INTDIR)\srvrothers.o" : $(SOURCE) $(DEP_CPP_SRVRO) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\srvrothers.o"
+
+
+SOURCE=..\Dependencies\windows\windows.cpp
+DEP_CPP_WINDOWS=\
+	"..\Dependencies\windows\windows.h"\
+
+"$(INTDIR)\windows.o": $(SOURCE) $(DEP_CPP_WINDOWS) "$(INTDIR)"
+	$(CPP) -c $(SOURCE) -o "$(INTDIR)\windows.o" $(CPP_PROJ)
+
+
+SOURCE=.\NskUtil.cpp
+DEP_CPP_SRVRC=\
+	".\CSrvrStmt.h"\
+	".\sqlinterface.h"\
+	".\srvrcommon.h"\
+	".\srvrfunctions.h"\
+	".\srvrkds.h"\
+	
+"$(INTDIR)\NskUtil.o" : $(SOURCE) $(DEP_CPP_SRVRC) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\NskUtil.o"
+
+SOURCE=.\SQLWrapper.cpp
+DEP_CPP_SQLWRAPPER=\
+	".\SQLWrapper.h"\
+	
+
+"$(INTDIR)\SQLWrapper.o" : $(SOURCE) $(DEP_CPP_SQLWRAPPER) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) -c $(SOURCE) -o "$(INTDIR)\SQLWrapper.o"
+
+
+!ENDIF 
+

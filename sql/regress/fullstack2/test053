@@ -1,0 +1,125 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- DATETIME, math, string functions
+
+?section ddb
+drop table t053t1;
+drop table t053t2;
+drop table t053d;
+
+?section cdb
+log LOG053 clear;
+
+create table t053t1 (a date not null, b timestamp not null);
+create table t053t2 (a int, b double precision);
+
+insert into t053t1 values (date '1998-02-04', timestamp '1997-06-03:10:10:10.00000');
+
+insert into t053t2 values (45, 45);
+
+?section dml
+select dayname(a), dayname(b) from t053t1;
+select monthname(a) from t053t1 where monthname(b) = 'June';
+
+select dayofyear(a), dayofyear(b) from t053t1;
+
+select week(a), week(b) from t053t1;
+
+select quarter(a), quarter(b) from t053t1;
+
+-- more date-time function tests
+insert into t053t1 values (date '1901-10-10',
+                           timestamp '1901-10-10 23:15:00.300000');
+insert into t053t1 values (date '1999-12-31',
+                           timestamp '1999-12-31 23:59:59.999999');
+insert into t053t1 values (date '2000-01-01',
+                           timestamp '2000-01-01 23:59:59.999999');
+insert into t053t1 values (date '1998-02-04', -- a duplicate row
+			   timestamp '1997-06-03:10:10:10.00000');
+
+-- check that a special rounding mode does not affect date-time calculations
+control query default ROUNDING_MODE '2';
+
+select a,b,DATEDIFF(DAY,a,b) as DIFF,WEEK(b) as WEEK,
+       DATE_TRUNC('SECOND', b) as TRUNC_SECOND,
+       DATE_TRUNC('MINUTE', b) as TRUNC_MINUTE,
+       DATE_TRUNC('HOUR', b) as TRUNC_HOUR,
+       DATE_TRUNC('DAY', b) as TRUNC_DAY,
+       DATE_TRUNC('DECADE', b) as TRUNC_DECADE
+ from t053t1
+   group by a,b
+   having DATE_PART('YEAR',b) in (1901,1997,1999,2000);
+
+-- should return one row
+SELECT b, WEEK(b) from t053t1 where week(b) = 41;
+
+-- should return two rows
+SELECT b, DATEDIFF(WEEK, b, timestamp '2000-12-31 23:59:59.999999')
+  from t053t1 where
+  DATEDIFF(WEEK, b, timestamp '2000-12-31 23:59:59.999999') = 53;
+
+-- division in an argument within WEEK(...) should follow the rounding mode
+control query default ROUNDING_MODE '1';
+select WEEK(b+175499),WEEK(b+CAST(350999/2 as int)) from t053t1
+	where a = date '1901-10-10';
+
+-- Math functions
+select ACOS(a), ASIN(a), ATAN(a), COS(a), COSH(a), SIN(a), SINH(a), TAN(a), TANH(a) from t053t2;
+
+
+-- Subtraction between two datetime columns containing a null value
+-- no longer returns error.
+-- Case: 10-980825-1690
+create table t053d (a date, b date);
+insert into t053d values (date '1998-09-04', null);
+select a - b from t053d;
+select (a - b) day from t053d;
+
+
+-- Parser now supportes the syntax DAY(<value-expression>)
+-- Case: 10-980901-0398
+select day(date '1998-09-04') from (values(1)) x(a);
+
+-- An error is no longer returned if the start position in a SUBSTRING
+-- function exceeds the max length.
+-- Case: 10-980901-0431
+select substring('aaa' from 30 for 2) from (values(1)) x(a);
+
+
+-- The CHAR function no longer returns error on certain valid values.
+-- Case: 10-980902-1131
+select ascii(char(254)) from (values(1)) x(a);
+
+
+-- The REPEAT function was not type propagating its operand. It does
+--  so now.
+--  Case: 10-980902-1225
+
+
+-- should return error.
+select replace('ab', 'ab', current_date) from (values(1)) x(a);
+
+-- test fix to genesis case 10-030220-1214. This used to cause an NSK cpu halt.
+insert into t053t2(b) values(
+162769514214177976464774676766466427976779777977979777789879764347467647767649
+);
+
+log;
+
+obey TEST053(ddb);

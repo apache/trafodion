@@ -1,0 +1,12 @@
+123,124c123
+< (EXPR)       (EXPR)
+< -----------  ---------
+---
+> *** ERROR[4019] The select list of a subquery in a select list must be scalar (degree of one).
+126,127c125
+<          10  abc
+<          10  abc
+---
+> *** ERROR[8822] The statement was not prepared.
+129d126
+< --- 2 row(s) selected.

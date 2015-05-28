@@ -1,0 +1,3130 @@
+>>obey TEST020(tests);
+>>create table  test020t1 (c1 int not null primary key,
++>                      c2 char(20) default 't20t1''s column c2');
+
+--- SQL operation complete.
+>>invoke test020t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.TEST020T1
+-- Definition current  Wed Nov 19 00:06:00 2014
+
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               CHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591't20t1''s column c2'
+  )
+
+--- SQL operation complete.
+>>showddl test020t1;
+
+CREATE TABLE TRAFODION.SCH.TEST020T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               CHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591't20t1''s column c2'
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>insert into test020t1(c1) values (1), (3), (2);
+
+--- 3 row(s) inserted.
+>>select * from test020t1;
+
+C1           C2                  
+-----------  --------------------
+
+          1  t20t1's column c2   
+          2  t20t1's column c2   
+          3  t20t1's column c2   
+
+--- 3 row(s) selected.
+>>
+>>create table  test020t2 (c char(15) not null, d int not null,
++>                      primary key (c, d));
+
+--- SQL operation complete.
+>>invoke test020t2;
+
+-- Definition of Trafodion table TRAFODION.SCH.TEST020T2
+-- Definition current  Wed Nov 19 00:06:02 2014
+
+  (
+    C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>showddl test020t2;
+
+CREATE TABLE TRAFODION.SCH.TEST020T2
+  (
+    C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (C ASC, D ASC)
+  )
+;
+
+--- SQL operation complete.
+>>insert into test020t2 values ('Donald''s', 1),
++>                          ('Minie''s', 5),
++>                          ('zebra"', 23);
+
+--- 3 row(s) inserted.
+>>select * from test020t2;
+
+C                D          
+---------------  -----------
+
+Donald's                   1
+Minie's                    5
+zebra"                    23
+
+--- 3 row(s) selected.
+>>
+>>-- duplicate partitioning key values
+>>create table test020t3 (test020t3_c1 time not null primary key);
+
+--- SQL operation complete.
+>>
+>>create table test020t4 (test020t4_c1 real not null primary key);
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------
+>>-- test cases for solution 10-030507-6228 --
+>>--------------------------------------------
+>>
+>>-- The following Create Table statement should execute successfully
+>>create table test020t31 (g0 smallint default 32767 not null not droppable,
++>  primary key (g0) not droppable);
+
+--- SQL operation complete.
+>>insert into test020t31 default values;
+
+--- 1 row(s) inserted.
+>>select * from test020t31;
+
+G0    
+------
+
+ 32767
+
+--- 1 row(s) selected.
+>>-- The following Drop Table statement should execute successfully
+>>drop table test020t31;
+
+--- SQL operation complete.
+>>
+>>-- The following Create Table statement should fail
+>>create table test020t31 (g0 smallint no default primary key);
+
+*** ERROR[1135] Clustering key column G0 must be assigned a NOT NULL NOT DROPPABLE constraint.
+
+--- SQL operation failed with errors.
+>>drop table if exists test020t31;
+
+--- SQL operation complete.
+>>
+>>-- The following Create Table statement should fail
+>>create table test020t31 (g0 smallint default 32768 not null primary key);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:32768 Target Type:LARGEINT(IBIN64S) Max Target Value:32767. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+
+*** ERROR[1186] Column G0 is of type SMALLINT SIGNED which is not compatible with the default value's type, 32768.
+
+--- SQL operation failed with errors.
+>>
+>>--
+>>-- Test columns named SYSKEY
+>>--
+>>
+>>-- Expecting error 1080 message: Duplicate references to column SYSKEY
+>>--                               in the create request
+>>-- when the following Create Table command is executed.
+>>create table test020t5(syskey int);
+
+*** ERROR[1080] The DDL request has duplicate references to column SYSKEY.
+
+--- SQL operation failed with errors.
+>>
+>>create table test020t5(c int not null not droppable primary key not droppable,
++>                    syskey char(4));
+
+--- SQL operation complete.
+>>invoke test020t5;
+
+-- Definition of Trafodion table TRAFODION.SCH.TEST020T5
+-- Definition current  Wed Nov 19 00:06:22 2014
+
+  (
+    C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYSKEY                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl test020t5;
+
+CREATE TABLE TRAFODION.SCH.TEST020T5
+  (
+    C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYSKEY                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (C ASC)
+  )
+;
+
+--- SQL operation complete.
+>>insert into test020t5 values (1, 'abcd'), (2, 'efgh');
+
+--- 2 row(s) inserted.
+>>select * from test020t5;
+
+C            SYSKEY
+-----------  ------
+
+          1  abcd  
+          2  efgh  
+
+--- 2 row(s) selected.
+>>alter table test020t5 add constraint test020t5c1 check (syskey >= 'aaaa');
+
+--- SQL operation complete.
+>>showddl test020t5;
+
+CREATE TABLE TRAFODION.SCH.TEST020T5
+  (
+    C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYSKEY                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (C ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
+  CHECK (TRAFODION.SCH.TEST020T5.SYSKEY >= 'aaaa')
+
+--- SQL operation complete.
+>>-- Expecting an error message when the following insert statement is executed.
+>>insert into test020t5 values (3, '1234');
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.TEST020T5C1 on table TRAFODION.SCH.TEST020T5.
+
+--- 0 row(s) inserted.
+>>--------------------------------------------
+>>-- test cases for solution 10-040607-6721 --
+>>--------------------------------------------
+>>-- Expect success when an index is created specifying only a user-specified SYSKEY.
+>>create index test020t5_ix1 on test020t5 (syskey);
+
+--- SQL operation complete.
+>>
+>>-- Expect success when index column list has a user-specified SYSKEY in any position.
+>>alter table test020t5 add column d int;
+
+--- SQL operation complete.
+>>create index test020t5_i1 on test020t5 (d, syskey);
+
+--- SQL operation complete.
+>>create index test020t5_i2 on test020t5 (syskey, d);
+
+--- SQL operation complete.
+>>
+>>-- Expect success when a key value is specified for a user-specified SYSKEY.
+>>create index test020t5_i3 on test020t5 (c, syskey);
+
+--- SQL operation complete.
+>>
+>>-- Expect success when a partition is added that specifies a value for a user-specified SYSKEY.
+>>insert into test020t5(c,syskey,d) values (350,'efgh',375);
+
+--- 1 row(s) inserted.
+>>
+>>-- system-generated column SYSKEY
+>>create table test020t6(c int);
+
+--- SQL operation complete.
+>>invoke test020t6;
+
+-- Definition of Trafodion table TRAFODION.SCH.TEST020T6
+-- Definition current  Wed Nov 19 00:07:09 2014
+
+  (
+    C                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl test020t6;
+
+CREATE TABLE TRAFODION.SCH.TEST020T6
+  (
+    C                                INT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>-- Expecting error 1139 message:
+>>--   System-generated column SYSKEY of base table TEST020T6C1 cannot
+>>--   appear in the search condition of a Check constraint definition.
+>>-- when the following alter statement is executed.
+>>alter table test020t6 add constraint test020t6c1 check (syskey >= 0);
+
+*** ERROR[1139] System-generated column SYSKEY of base table TRAFODION.SCH.TEST020T6 cannot appear in the search condition of a check constraint definition.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------
+>>-- test cases for solution 10-040607-6721 --
+>>--------------------------------------------
+>>-- Expecting error 1112:
+>>-- An index column list cannot consist only of the system-generated SYSKEY.
+>>create index test020t6_ix1 on test020t6 (syskey);
+
+*** ERROR[1112] An index column list cannot contain only the system-generated column SYSKEY.
+
+--- SQL operation failed with errors.
+>>
+>>-- Expect success when index column list has the system-generated SYSKEY in the last position,
+>>-- but failure with error 1089 if the system-generated SYSKEY is not in the last position.
+>>alter table test020t6 add column d int;
+
+--- SQL operation complete.
+>>create index test020t6_i1 on test020t6 (d, syskey);
+
+--- SQL operation complete.
+>>create index test020t6_i2 on test020t6 (syskey, d);
+
+*** ERROR[1089] The system generated column SYSKEY must be specified last or not specified at all in the index column list.
+
+--- SQL operation failed with errors.
+>>
+>>-- Expect this to succeed: 
+>>create index test020t6_i3 on test020t6 (c, syskey);
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------
+>>-- test cases for solution 10-070515-4764 --
+>>--------------------------------------------
+>>-- Droppable primary key Store By (no unique) needs SYSKEY column.
+>>CREATE TABLE test020t32_S
++>  (
++>    ATEST                                INT NOT NULL
++>  , BTEST                                INT NOT NULL
++>  , CTEST                                INT NOT NULL
++>  , DTEST                                INT NOT NULL
++>  , PRIMARY KEY (ATEST, CTEST)     DROPPABLE
++>  )
++>  STORE BY        (ATEST, CTEST)
++>#ifndef SEABASE_REGRESS
++>  PARTITION BY (CTEST)
++>#endif
++>  ;
+
+--- SQL operation complete.
+>>insert into test020t32_S values (11, 12, 13, 14);
+
+--- 1 row(s) inserted.
+>>select * from test020t32_S;
+
+ATEST        BTEST        CTEST        DTEST      
+-----------  -----------  -----------  -----------
+
+         11           12           13           14
+
+--- 1 row(s) selected.
+>>
+>>-- This SELECT will show the SYSKEY column
+>>
+>>-- Droppable primary key Store By Unique doesn't need SYSKEY column.
+>>-- Store By Unique (collist) requires CQD DBTR_PROCESS or parserflags.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>CREATE TABLE test020t32_NS
++>  (
++>    ATEST                                INT NOT NULL
++>  , BTEST                                INT NOT NULL
++>  , CTEST                                INT NOT NULL
++>  , DTEST                                INT NOT NULL
++>  , PRIMARY KEY (ATEST, CTEST)     DROPPABLE
++>  )
++>  STORE BY UNIQUE (ATEST, CTEST)
++>#ifndef SEABASE_REGRESS
++>  PARTITION BY (CTEST)
++>#endif
++>  ;
+
+--- SQL operation complete.
+>>insert into test020t32_NS values (11, 12, 13, 14);
+
+--- 1 row(s) inserted.
+>>select * from test020t32_NS;
+
+ATEST        BTEST        CTEST        DTEST      
+-----------  -----------  -----------  -----------
+
+         11           12           13           14
+
+--- 1 row(s) selected.
+>>
+>>-- This SELECT will NOT have the SYSKEY column
+>>
+>>----------------------------------------
+>>-- test cases for case 10-990624-2287 --
+>>----------------------------------------
+>>
+>>create table TEST020T28 (a int not null unique);
+
+--- SQL operation complete.
+>>
+>>create table TEST020T29 (a int);
+
+--- SQL operation complete.
+>>
+>>alter table TEST020T29 add constraint TEST020T29CNT1 foreign key (a) references TEST020T28(a);
+
+--- SQL operation complete.
+>>
+>>insert into TEST020T28 values (1),(2),(3);
+
+--- 3 row(s) inserted.
+>>
+>>insert into TEST020T29 values (null);
+
+--- 1 row(s) inserted.
+>>
+>>alter table TEST020T29 drop constraint TEST020T29CNT1;
+
+--- SQL operation complete.
+>>
+>>insert into TEST020T29 values (1),(null), (3);
+
+--- 3 row(s) inserted.
+>>
+>>alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
+
+*** ERROR[1143] Validation of constraint TRAFODION.SCH.TEST020T29CNT2 failed; incompatible data exists in referencing base table TEST020T29 and referenced base table TEST020T28.  To display the data that violates the constraint, please use the following DML statement: TBD
+
+--- SQL operation failed with errors.
+>>-- expecting error reported
+>>
+>>select * from TEST020T29;
+
+A          
+-----------
+
+          ?
+          1
+          ?
+          3
+
+--- 4 row(s) selected.
+>>
+>>----------------------------------------
+>>-- test cases for case 10-990805-2213 --
+>>----------------------------------------
+>>create table test020t30 (ssnum char(9) upshift not null unique);
+
+--- SQL operation complete.
+>>create table test020t31 (ssnum char(9) upshift not null unique);
+
+--- SQL operation complete.
+>>
+>>insert into TEST020T30 values ('A23456789');
+
+--- 1 row(s) inserted.
+>>insert into TEST020T30 values ('b66666666');
+
+--- 1 row(s) inserted.
+>>insert into TEST020T30 values ('C55555555');
+
+--- 1 row(s) inserted.
+>>
+>>insert into TEST020T31 values ('D22222222');
+
+--- 1 row(s) inserted.
+>>insert into TEST020T31 values ('B66666666');
+
+--- 1 row(s) inserted.
+>>
+>>--this alter should fail
+>>alter table TEST020T31 add constraint C44B FOREIGN KEY (ssnum) references TEST020T30(ssnum);
+
+*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: TBD
+
+--- SQL operation failed with errors.
+>>
+>>------------------------------------------------------
+>>-- Verify that Catalog Manager code issues an error --
+>>-- message when RI circular dependency occurs.      --
+>>------------------------------------------------------
+>>
+>>create table test020t17 (c int not null references test020t17 primary key);
+
+--- SQL operation complete.
+>>
+>>create table test020t18 (c int not null constraint test020t18pk primary key);
+
+--- SQL operation complete.
+>>create table test020t19 (c int not null constraint test020t18uq unique
++>                                     constraint test020t19ri
++>                                                references test020t18);
+
+--- SQL operation complete.
+>>alter  table test020t18 add constraint test020t18ri foreign key (c)
++>                                              references test020t19 (c);
+
+*** ERROR[1188] Referential integrity constraint TRAFODION.SCH.TEST020T18RI for table TRAFODION.SCH.TEST020T18 could not be created due to circular dependency: .
+
+--- SQL operation failed with errors.
+>>
+>>create table test020t21 (c1 int not null constraint test020t21uq unique);
+
+--- SQL operation complete.
+>>create table test020t22 (c2 int not null constraint test020t22uq unique
++>                                      constraint test020t22ri
++>                                                 references test020t21 (c1));
+
+--- SQL operation complete.
+>>create table test020t23 (c3 int not null constraint test020t23uq unique
++>                                      constraint test020t23ri
++>                                                 references test020t22 (c2));
+
+--- SQL operation complete.
+>>alter  table test020t21 add constraint test020t21ri foreign key (c1)
++>                                              references test020t23 (c3);
+
+*** ERROR[1188] Referential integrity constraint TRAFODION.SCH.TEST020T21RI for table TRAFODION.SCH.TEST020T21 could not be created due to circular dependency: .
+
+--- SQL operation failed with errors.
+>>
+>>create table test020t24 (c41 int not null, c42 char(40), c43 int not null,
++>                      constraint test020t24pk primary key (c41, c43));
+
+--- SQL operation complete.
+>>create table test020t25 (c51 int not null, c52 int not null,
++>                      constraint test020t25uq unique (c51, c52),
++>                      constraint test020t25ri foreign key (c51, c52)
++>                                           references test020t24);
+
+--- SQL operation complete.
+>>create table test020t26 (c61 char(40), c62 int not null, c63 int not null,
++>                      constraint test020t26uq unique (c63, c62),
++>                      constraint test020t26ri foreign key (c63, c62)
++>                                           references test020t25 (c51, c52));
+
+--- SQL operation complete.
+>>create table test020t27 (c71 int not null, c72 int not null,
++>                      constraint test020t27pk primary key (c71, c72),
++>                      constraint test020t27ri foreign key (c71, c72)
++>                                           references test020t26 (c63, c62));
+
+--- SQL operation complete.
+>>alter  table test020t24 add constraint test020t24ri foreign key (c41, c43)
++>                                              references test020t27;
+
+*** ERROR[1188] Referential integrity constraint TRAFODION.SCH.TEST020T24RI for table TRAFODION.SCH.TEST020T24 could not be created due to circular dependency: .
+
+--- SQL operation failed with errors.
+>>
+>>-------------------------------------------------------------
+>>-- Verify that RI constraint definitions take advantage    --
+>>-- of storage keys and existing indexes whenever possible. --
+>>-------------------------------------------------------------
+>>
+>>create table test020t8 (c1 int not null, c2 int not null, c3 int not null,
++> constraint test020t8uq1 unique (c2,c3),
++> constraint test020t8uq2 unique (c1,c2,c3));
+
+--- SQL operation complete.
+>>
+>>create table test020t9 (r1 int not null, r2 int not null, r3 int not null);
+
+--- SQL operation complete.
+>>create unique index test020t9ix on test020t9 (r1,r2);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r2,r3) of RI constraint test020t9ri
+>>-- will take advantage of existing unique index test020t9ix
+>>alter table test020t9 add constraint test020t9ri foreign key (r1,r2,r3)
++> references test020t8 (c1,c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table test020t10 (c1 int not null primary key);
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r1) of RI constraint test020t9ri2
+>>-- will take advantage of existing unique index test020t9ix
+>>alter table test020t9 add constraint test020t9ri2 foreign key (r1)
++> references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI2
+  FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r2) of RI constraint test020t9ri3
+>>-- will take advantage of existing unique index test020t9ix
+>>alter table test020t9 add constraint test020t9ri3 foreign key (r1,r2)
++> references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI2
+  FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI3
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r2,r1) of RI constraint test020t9ri4
+>>-- will NOT take advantage of existing unique index test020t9ix.
+>>-- A new non-unique index (named test020t9ri4) will be created for
+>>-- RI constraint test020t9ri4.
+>>alter table test020t9 add constraint test020t9ri4 foreign key (r2,r1)
++> references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI2
+  FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI3
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI4
+  FOREIGN KEY
+  (
+    R2
+  , R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r2) of RI constraint test020t9ri5
+>>-- will take advantage of the existing non-unique index test020t9ri4.
+>>alter table test020t9 add constraint test020t9ri5 foreign key (r2)
++> references test020t10 (c1);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI5 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI2
+  FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI3
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI4
+  FOREIGN KEY
+  (
+    R2
+  , R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI5
+  FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r2,r1,r3) of RI constraint test020t9ri6
+>>-- will NOT  take advantage of existing non-unique index test020t9ri4.
+>>-- A new non-unique index (named test020t9ri6) will be created for
+>>-- RI constraint test020t9ri6.
+>>alter table test020t9 add constraint test020t9ri6 foreign key (r2,r1,r3)
++> references test020t8 (c1,c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t9;
+
+CREATE TABLE TRAFODION.SCH.TEST020T9
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T9IX ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
+  (
+    R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI5 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI6 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  , R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI2
+  FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI3
+  FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI4
+  FOREIGN KEY
+  (
+    R2
+  , R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI5
+  FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI6
+  FOREIGN KEY
+  (
+    R2
+  , R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table test020t11 (r1 int, r2 int not null, r3 int not null,
++> constraint test020t11uq1 unique (r2,r3));
+
+--- SQL operation complete.
+>>showddl test020t11;
+
+CREATE TABLE TRAFODION.SCH.TEST020T11
+  (
+    R1                               INT DEFAULT NULL
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T11UQ1 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11UQ1 UNIQUE
+  (
+    R2
+  , R3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r2) of RI constraint test020t11ri1 will NOT
+>>-- take advantage of the existing unique index test020t11uq1.
+>>-- A new non-unique index (named test020t11ri1) will be created for
+>>-- RI constraint test020t11ri1.
+>>alter table test020t11 add constraint test020t11ri1
++> foreign key (r3) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t11;
+
+CREATE TABLE TRAFODION.SCH.TEST020T11
+  (
+    R1                               INT DEFAULT NULL
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI1 ON TRAFODION.SCH.TEST020T11
+  (
+    R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T11UQ1 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11UQ1 UNIQUE
+  (
+    R2
+  , R3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI1 FOREIGN KEY
+  (
+    R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r3) of RI constraint test020t11ri2 will NOT
+>>-- take advantage of the existing unique index test020t11uq1.
+>>-- A new non-unique index (named test020t11ri2) will be created
+>>-- for RI constraint test020t11ri2.
+>>alter table test020t11 add constraint test020t11ri2
++> foreign key (r2) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t11;
+
+CREATE TABLE TRAFODION.SCH.TEST020T11
+  (
+    R1                               INT DEFAULT NULL
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI1 ON TRAFODION.SCH.TEST020T11
+  (
+    R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI2 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T11UQ1 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11UQ1 UNIQUE
+  (
+    R2
+  , R3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI1 FOREIGN KEY
+  (
+    R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r2,r3) of RI constraint test020t11ri3 will
+>>-- NOT take advantage of the existing unique index test020t11uq1.
+>>-- A new non-unique index (named test020t11ri3) will be created
+>>-- for RI constraint test020t11ri3.
+>>alter table test020t11 add constraint test020t11ri3
++> foreign key (r2,r3) references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t11;
+
+CREATE TABLE TRAFODION.SCH.TEST020T11
+  (
+    R1                               INT DEFAULT NULL
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI1 ON TRAFODION.SCH.TEST020T11
+  (
+    R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI2 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T11RI3 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T11UQ1 ON TRAFODION.SCH.TEST020T11
+  (
+    R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11UQ1 UNIQUE
+  (
+    R2
+  , R3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI1 FOREIGN KEY
+  (
+    R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T11 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T11RI3 FOREIGN KEY
+  (
+    R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>
+>>create table test020t12 (r1 int not null, r2 int not null, r3 int not null,
++> r4 int not null) store by (r1, r3);
+
+--- SQL operation complete.
+>>showddl test020t12;
+
+CREATE TABLE TRAFODION.SCH.TEST020T12
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r3) of RI constraint test020t12ri1 will
+>>-- take advantage of the existing storage keys (r1,r3).
+>>alter table test020t12 add constraint test020t12ri1
++> foreign key (r1,r3) references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t12;
+
+CREATE TABLE TRAFODION.SCH.TEST020T12
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC)
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r1) of RI constraint test020t12ri2 will
+>>-- take advantage of the existing storage keys (r1,r3).
+>>alter table test020t12 add constraint test020t12ri2
++> foreign key (r1) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t12;
+
+CREATE TABLE TRAFODION.SCH.TEST020T12
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC)
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI2 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r3,r4) of RI constraint test020t12ri3
+>>-- will NOT take advantage of the existing storage keys (r1,r3).
+>>-- A new non-unique index (named test020t12ri3) will be created
+>>-- for RI constraint test020t12ri3.
+>>alter table test020t12 add constraint test020t12ri3
++> foreign key (r1,r3,r4) references test020t8 (c1,c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t12;
+
+CREATE TABLE TRAFODION.SCH.TEST020T12
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC)
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI3 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  , R4 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI2 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI3 FOREIGN KEY
+  (
+    R1
+  , R3
+  , R4
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r3) of RI constraint test020t12ri4 will
+>>-- NOT take advantage of the existing storage keys (r1,r3).
+>>-- A new non-unique index (named test020t12ri4) will be created
+>>-- for RI constraint test020t12ri4.
+>>alter table test020t12 add constraint test020t12ri4
++> foreign key (r3) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t12;
+
+CREATE TABLE TRAFODION.SCH.TEST020T12
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC)
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI3 ON TRAFODION.SCH.TEST020T12
+  (
+    R1 ASC
+  , R3 ASC
+  , R4 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T12RI4 ON TRAFODION.SCH.TEST020T12
+  (
+    R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI2 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI3 FOREIGN KEY
+  (
+    R1
+  , R3
+  , R4
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T12 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T12RI4 FOREIGN KEY
+  (
+    R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table test020t13 (r1 int not null, r2 int not null, r3 int not null,
++> r4 int, constraint test020t13pk primary key (r2,r3));
+
+--- SQL operation complete.
+>>showddl test020t13;
+
+CREATE TABLE TRAFODION.SCH.TEST020T13
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT DEFAULT NULL
+  , PRIMARY KEY (R2 ASC, R3 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r2,r3) of RI constraint test020t13ri1 will
+>>-- take advantage of the existing storage keys (the columns of
+>>-- the non-droppable primary key constraint test020t13pk).
+>>alter table test020t13 add constraint test020t13ri1
++> foreign key (r2,r3) references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t13;
+
+CREATE TABLE TRAFODION.SCH.TEST020T13
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT DEFAULT NULL
+  , PRIMARY KEY (R2 ASC, R3 ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI1 FOREIGN KEY
+  (
+    R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r2) of RI constraint test020t13ri2 will
+>>-- take advantage of the existing storage keys (the columns of
+>>-- the non-droppable primary key constraint test020t13pk).
+>>alter table test020t13 add constraint test020t13ri2
++> foreign key (r2) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t13;
+
+CREATE TABLE TRAFODION.SCH.TEST020T13
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT DEFAULT NULL
+  , PRIMARY KEY (R2 ASC, R3 ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI2 ON TRAFODION.SCH.TEST020T13
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI1 FOREIGN KEY
+  (
+    R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r2,r3,r4) of RI constraint test020t13ri3 will
+>>-- take advantage of the existing storage keys (the columns of
+>>-- the non-droppable primary key constraint test020t13pk).
+>>alter table test020t13 add constraint test020t13ri3
++> foreign key (r2,r3,r4) references test020t8 (c1,c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t13;
+
+CREATE TABLE TRAFODION.SCH.TEST020T13
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT DEFAULT NULL
+  , PRIMARY KEY (R2 ASC, R3 ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI2 ON TRAFODION.SCH.TEST020T13
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI3 ON TRAFODION.SCH.TEST020T13
+  (
+    R2 ASC
+  , R3 ASC
+  , R4 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI1 FOREIGN KEY
+  (
+    R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI3 FOREIGN KEY
+  (
+    R2
+  , R3
+  , R4
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r2,r3) of RI constraint test020t11ri4
+>>-- will NOT take advantage of the storage keys (r2,r3).  A
+>>-- new non-unique index (named test020t13ri4) will be created
+>>-- for RI constraint test020t13ri4.
+>>alter table test020t13 add constraint test020t13ri4
++> foreign key (r1,r2,r3) references test020t8 (c1,c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t13;
+
+CREATE TABLE TRAFODION.SCH.TEST020T13
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R4                               INT DEFAULT NULL
+  , PRIMARY KEY (R2 ASC, R3 ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI2 ON TRAFODION.SCH.TEST020T13
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI3 ON TRAFODION.SCH.TEST020T13
+  (
+    R2 ASC
+  , R3 ASC
+  , R4 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T13RI4 ON TRAFODION.SCH.TEST020T13
+  (
+    R1 ASC
+  , R2 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI1 FOREIGN KEY
+  (
+    R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI3 FOREIGN KEY
+  (
+    R2
+  , R3
+  , R4
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T13 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T13RI4 FOREIGN KEY
+  (
+    R1
+  , R2
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C1
+  , C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- Note that the primary key (r2) of constraint test020t14pk is
+>>-- not the storage key.  A unique index (named test020t14pk) will be
+>>-- created for primary key constraint test020t14pk.
+>>create table test020t14 (r1 int not null, r2 int not null, r3 int not null,
++>-- constraint test020t14pk primary key (r2) droppable)
++>  constraint test020t14pk unique(r2) )
++> store by (r1,r3,r2);
+
+--- SQL operation complete.
+>>showddl test020t14;
+
+CREATE TABLE TRAFODION.SCH.TEST020T14
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC, R2 ASC)
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T14PK ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT TRAFODION.SCH.TEST020T14PK
+  UNIQUE
+  (
+    R2
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r3) of RI constraint test020t14ri1 will
+>>-- take advantage of the existing storage keys (r1,r3,r2).
+>>alter table test020t14 add constraint test020t14ri1
++> foreign key (r1,r3) references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t14;
+
+CREATE TABLE TRAFODION.SCH.TEST020T14
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC, R2 ASC)
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T14PK ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT TRAFODION.SCH.TEST020T14PK
+  UNIQUE
+  (
+    R2
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create index test020t14ndx on test020t14(r2);
+
+--- SQL operation complete.
+>>showddl test020t14;
+
+CREATE TABLE TRAFODION.SCH.TEST020T14
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC, R2 ASC)
+;
+
+CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T14PK ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT TRAFODION.SCH.TEST020T14PK
+  UNIQUE
+  (
+    R2
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r1) of RI constraint test020t14ri2 will
+>>-- take advantage of the existing index test020t14ndx.
+>>alter table test020t14 add constraint test020t14ri2
++> foreign key (r2) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t14;
+
+CREATE TABLE TRAFODION.SCH.TEST020T14
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC, R2 ASC)
+;
+
+CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX TEST020T14PK ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT TRAFODION.SCH.TEST020T14PK
+  UNIQUE
+  (
+    R2
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- This will remove the system defined index created when the primary key
+>>-- was created
+>>alter table test020t14 drop constraint test020t14pk;
+
+--- SQL operation complete.
+>>showddl test020t14;
+
+CREATE TABLE TRAFODION.SCH.TEST020T14
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (R1 ASC, R3 ASC, R2 ASC)
+;
+
+CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
+  (
+    R1 ASC
+  , R3 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI1 FOREIGN KEY
+  (
+    R1
+  , R3
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T14 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T14RI2 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table test020t15 (r1 int not null,
++> constraint test020t15pk primary key (r1) droppable);
+
+--- SQL operation complete.
+>>showddl test020t15;
+
+CREATE TABLE TRAFODION.SCH.TEST020T15
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (R1 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r1) of RI constraint test020t15ri1
+>>-- will NOT take advantage of the unique index test020t15pk
+>>-- because it associates with the droppable primary key
+>>-- constraint test020t15pk.  A new non-unique index (named
+>>-- test020t15ri1) will be created for RI constraint test020t15ri1.
+>>alter table test020t15 add constraint test020t15ri1
++> foreign key (r1) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t15;
+
+CREATE TABLE TRAFODION.SCH.TEST020T15
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (R1 ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T15 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T15RI1 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table test020t16 (r1 int not null, r2 int not null, r3 int not null);
+
+--- SQL operation complete.
+>>create unique index test020t16ix1 on test020t16 (r2);
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user should be able to drop the index test020t16ix1.
+>>drop index test020t16ix1;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- Define the index test02016ix1 again.
+>>create unique index test020t16ix1 on test020t16 (r2);
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign key (r2) of RI constraint test020t16ri1 will
+>>-- take advantage of the existing unique index test020t16ix1.
+>>alter table test020t16 add constraint test020t16ri1
++> foreign key (r2) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user can no longer remove the index test020t16ix1 because it
+>>-- is used by the foreign key (r2) of RI constraint test020t16ri1.
+>>drop index test020t16ix1;
+
+*** ERROR[1059] Request failed.  Dependent constraint  exists.
+
+--- SQL operation failed with errors.
+>>
+>>create unique index test020t16ix2 on test020t16 (r1,r2);
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX2 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The foreign keys (r1,r2) of RI constraint test020t16ri2 will
+>>-- take advantage of the existing unique index test020t16ix2.
+>>alter table test020t16 add constraint test020t16ri2
++> foreign key (r1,r2) references test020t8 (c2,c3);
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX2 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI2 FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user can no longer remove the index test020t16ix1 because it
+>>-- is used by the foreign key (r1,r2) of RI constraint test020t16ri2.
+>>drop index test020t16ix2;
+
+*** ERROR[1059] Request failed.  Dependent constraint  exists.
+
+--- SQL operation failed with errors.
+>>
+>>-- The foreign key (r1) of RI constraint test020t16ri3 will
+>>-- take advantage of the existing unique index test020t16ix2.
+>>alter table test020t16 add constraint test020t16ri3
++> foreign key (r1) references test020t10;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX2 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T16RI3 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI2 FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI3 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user cannot remove the index test020t16ix1 because it is
+>>-- used by the foreign key (r1) of RI constraint test020t16ri3
+>>-- and the foreign keys (r1,r2) of RI constraint test020t16ri2.
+>>drop index test020t16ix2;
+
+*** ERROR[1059] Request failed.  Dependent constraint  exists.
+
+--- SQL operation failed with errors.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX2 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T16RI3 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI2 FOREIGN KEY
+  (
+    R1
+  , R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T8
+  (
+    C2
+  , C3
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI3 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>alter table test020t16 drop constraint test020t16ri2;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX2 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  , R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T16RI3 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI3 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user is still not able to remove the index test020t16ix1 because
+>>-- it is used by the foreign key (r1) of RI constraint test020t16ri3.
+>>drop index test020t16ix2;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T16RI3 ON TRAFODION.SCH.TEST020T16
+  (
+    R1 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI3 FOREIGN KEY
+  (
+    R1
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>alter table test020t16 drop constraint test020t16ri3;
+
+--- SQL operation complete.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- The user should be able to remove index test020t16ix2 now because
+>>-- the index no longer assocates with any constraints.
+>>drop index test020t16ix2;
+
+*** ERROR[1389] Object TRAFODION.SCH.TEST020T16IX2 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>showddl test020t16;
+
+CREATE TABLE TRAFODION.SCH.TEST020T16
+  (
+    R1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , R3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE UNIQUE INDEX TEST020T16IX1 ON TRAFODION.SCH.TEST020T16
+  (
+    R2 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020T16 ADD CONSTRAINT
+  TRAFODION.SCH.TEST020T16RI1 FOREIGN KEY
+  (
+    R2
+  )
+ REFERENCES TRAFODION.SCH.TEST020T10
+  (
+    C1
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- Table with key columns in not-natural order.
+>>-- SHOWDDL should get it right, both in this process and in another.
+>>create table test020t20 (c1 int not null, c2 int not null, c3 int not null, 
++>  primary key (c3, c1));
+
+--- SQL operation complete.
+>>showddl test020t20;
+
+CREATE TABLE TRAFODION.SCH.TEST020T20
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C3                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (C3 ASC, C1 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>obey TEST020(test_10_020913_3920);
+>>-- Set up test case using female_actors, male_actors, directors, movie_titles
+>>create table test020_female_actors 
++>  (f_no int not null,
++>   f_name varchar(30) not null,
++>   f_realname varchar(50) default null,
++>   f_birthday date constraint TEST020_mdl check (f_birthday > date '1900-02-02'),
++>   primary key (f_no) not droppable);
+
+--- SQL operation complete.
+>>
+>>create table test020_male_actors
++>  (m_no int not null not droppable unique,
++>   m_name varchar (30) not null,
++>   m_realname varchar (50) default null,
++>   m_birthday date constraint TEST020_md2 check (m_birthday > date '1900-01-01'));
+
+--- SQL operation complete.
+>>
+>>create table test020_directors 
++>  (d_no int not null not droppable,
++>   d_name varchar (20) not null,
++>  "d_specialty" varchar (15) not null,
++>   primary key (d_no),
++>   constraint TEST020_td1 check ("d_specialty" <> 'Music Video'),
++>   unique (d_no, "d_specialty"));
+
+--- SQL operation complete.
+>>
+>>insert into test020_directors values
++>  (0, 'no director named', 'unknown'),
++>  (1234, 'Alfred Hitchcock', 'Mystery'),
++>  (1345, 'Clint Eastwood', 'Action'),
++>  (1456, 'Fred Zinneman', 'Western'),
++>  (1567, 'George Cukor', 'Drama'),
++>  (1789, 'Roger Corman', 'Scary');
+
+--- 6 row(s) inserted.
+>>
+>>insert into test020_male_actors values 
++>  (0, 'no male actor', 'no male actor', current_date),
++>  (1111, 'Cary Grant', 'Archibold Alic Leach', date '1904-01-18'),
++>  (1222, 'Gary Cooper', 'Frank James Cooper', date '1901-05-07'),
++>  (1333, 'Clint Eastwood', 'Clinton Eastwood Jr', date '1930-05-31');
+
+--- 4 row(s) inserted.
+>>
+>>insert into test020_female_actors values
++>  (0, 'no female actor', 'no female actor', current_date),
++>  (6111, 'Grace Kelly', 'Grace Patricia Kelly', date '1929-11-12'),
++>  (6123, 'Katherine Hepburn', 'Katherin Houghlin Hepburn', date '1907-05-12'),
++>  (6124, 'Joan Crawford', 'Lucille Fay LeSueyr', date '1904-03-23'),
++>  (6125, 'Ingrid Bergman', 'Ingrid Bergman', date '1915-08-29');
+
+--- 5 row(s) inserted.
+>>
+>>create table test020_movie_titles
++>  (mv_no int not null,
++>   mv_name varchar (40) not null,
++>   mv_malestar int default NULL constraint test020_ma_fk 
++>      references test020_male_actors(m_no),
++>   mv_femalestar int default NULL,
++>   mv_director int default 0 not null,
++>   mv_yearmade int check (mv_yearmade > 1901),
++>   mv_star_rating char (4),
++>   mv_movietype varchar (15),
++>   primary key (mv_no) not droppable,
++>   constraint TEST020_d_fk foreign key (mv_director, mv_movietype) references
++>    test020_directors (d_no, "d_specialty"));
+
+--- SQL operation complete.
+>>
+>>insert into test020_movie_titles values
++>  (1, 'To Catch a Thief', 1111,6111,1234,1955, '****', 'Mystery'),
++>  (2, 'High Noon', 1222,6111,1456,1951, '****', 'Western'),
++>  (3, 'Unforgiven', 1333,0,1345,1990, '***', 'Action'),
++>  (4, 'The Women', 0, 6124, 1567, 1939, '****', 'Drama'),
++>  (5, 'The Philadelphia Story', 1111,6123,1567, 1940, '****', 'Drama'),
++>  (6, 'Notorious', 1111, 6125, 1234,1946, '****', 'Mystery');
+
+--- 6 row(s) inserted.
+>>
+>>-- This test was cause error 1082 to return in Genesis case 10-020913-3920
+>>-- After the fix, this test should succeed.
+>>alter table test020_movie_titles 
++>   add constraint test020_fa_fk 
++>       foreign key (mv_femalestar) references test020_female_actors;
+
+--- SQL operation complete.
+>>
+>>obey TEST020(test_10_030916_9668);
+>>create table test020_10_030916_9668 (col1 interval minute(2) to second(2) not null,
++>  primary key (col1)) ;
+
+--- SQL operation complete.
+>>
+>>insert into test020_10_030916_9668 values (interval '96:59.8' minute to second);
+
+--- 1 row(s) inserted.
+>>select * from test020_10_030916_9668;
+
+COL1     
+---------
+
+ 96:59.80
+
+--- 1 row(s) selected.
+>>
+>>obey TEST020(test_LP_1360493);
+>>create table tmp_LP_1360493
++> (sbin0_4 integer not null
++> , varchar0_500 varchar(11) default 'GDAAIAAA' not null heading 'varchar0_500 no nulls'
++> , sdec16_uniq numeric(18,0) signed not null
++> );
+
+--- SQL operation complete.
+>>
+>>create view view_LP_1360493
++> as select * from tmp_LP_1360493 where sdec16_uniq > 3000
++> union
++> select * from tmp_LP_1360493 where sdec16_uniq < 2500;
+
+--- SQL operation complete.
+>>
+>>create table test020_LP_1360493
++> ( vch15 varchar(15)
++> , nint integer
++> , ch3 char(3)
++> , nlarge largeint);
+
+--- SQL operation complete.
+>>
+>>insert into test020_LP_1360493
++> values ('1st orig value' ,99 , 'o' , 1 )
++> , ('2nd orig value' ,98 , 'ov' , 2 )
++> , ('5th orig value' ,95 , 'o ' , 5 )
++> , ('6 is short' ,97 , 'o' , 6 )
++> , ('7' ,94 , 'OVC' , 7 );
+
+--- 5 row(s) inserted.
+>>
+>>select * from test020_LP_1360493;
+
+VCH15            NINT         CH3  NLARGE              
+---------------  -----------  ---  --------------------
+
+1st orig value            99  o                       1
+2nd orig value            98  ov                      2
+5th orig value            95  o                       5
+6 is short                97  o                       6
+7                         94  OVC                     7
+
+--- 5 row(s) selected.
+>>
+>>update test020_LP_1360493 set vch15 = (select max(c)
++>from (select varchar0_500 from view_LP_1360493 ) dt(c)) where nint=95;
+
+--- 1 row(s) updated.
+>>
+>>drop table tmp_LP_1360493 cascade;
+
+--- SQL operation complete.
+>>
+>>select * from test020_LP_1360493;
+
+VCH15            NINT         CH3  NLARGE              
+---------------  -----------  ---  --------------------
+
+1st orig value            99  o                       1
+2nd orig value            98  ov                      2
+?                         95  o                       5
+6 is short                97  o                       6
+7                         94  OVC                     7
+
+--- 5 row(s) selected.
+>>
+>>-- enforced option
+>>create table test020_t33 (a int not null primary key);
+
+--- SQL operation complete.
+>>create table test020_t34 (a int not null primary key, b int not null,
++>   constraint t34_1 foreign key (b) references test020_t33 not enforced);
+
+*** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation complete.
+>>showddl test020_t34;
+
+CREATE TABLE TRAFODION.SCH.TEST020_T34
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
+  (
+    B ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
+  FOREIGN KEY
+  (
+    B
+  )
+ REFERENCES TRAFODION.SCH.TEST020_T33
+  (
+    A
+  )
+ NOT ENFORCED
+;
+
+--- SQL operation complete.
+>>-- should succeed, ref constr not enforced
+>>insert into test020_t34 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>delete from test020_t34;
+
+--- 1 row(s) deleted.
+>>alter table test020_t34 drop constraint t34_1;
+
+--- SQL operation complete.
+>>alter table test020_t34 add constraint t34_1 foreign key(b) references test020_t33(a) not enforced;
+
+*** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation complete.
+>>showddl test020_t34;
+
+CREATE TABLE TRAFODION.SCH.TEST020_T34
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
+  (
+    B ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
+  FOREIGN KEY
+  (
+    B
+  )
+ REFERENCES TRAFODION.SCH.TEST020_T33
+  (
+    A
+  )
+ NOT ENFORCED
+;
+
+--- SQL operation complete.
+>>-- should succeed, ref constr not enforced
+>>insert into test020_t34 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- self referencing constraints
+>>cqd traf_allow_self_ref_constr 'ON';
+
+--- SQL operation complete.
+>>create table test020t40 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tu1 unique (b);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tc1 foreign key (b) references test020t40(a);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tc2 foreign key (a) references test020t40(b);
+
+--- SQL operation complete.
+>>
+>>-- next 2 drops should fail
+>>alter table test020_t34 drop constraint test020tu1;
+
+*** ERROR[1052] Constraint cannot be dropped because it does not belong to the specified table.
+
+--- SQL operation failed with errors.
+>>alter table test020_t34 drop constraint test020tc1;
+
+*** ERROR[1052] Constraint cannot be dropped because it does not belong to the specified table.
+
+--- SQL operation failed with errors.
+>>
+>>alter table test020t40 drop constraint test020tc2;
+
+--- SQL operation complete.
+>>alter table test020t40 drop constraint test020tc1;
+
+--- SQL operation complete.
+>>drop table test020t40;
+
+--- SQL operation complete.
+>>
+>>log;

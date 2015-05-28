@@ -1,0 +1,377 @@
+#!/usr/bin/expect -f
+#
+# Test monitor's ability to store and retrieve registry configuration
+# data.
+#
+#
+
+# Helper function
+proc quitTest {code} {
+   send "shutdown\n"
+
+   expect {
+      "Shutdown notice" {}
+      timeout {send_user "*** ERROR *** Missing \"Shutdown notice\"\n"}
+   }
+
+   # Give monitor time to shut down
+   sleep 5
+
+   send "quit\n" 
+
+   send_user "*** Test aborted due to error ***\n"
+
+   exit $code
+}
+
+
+# Define test log file
+#log_file -noappend test001.log 
+
+#=====================================================================
+# Begin test by starting monitor shell process
+#=====================================================================
+
+spawn shell
+
+# Initial shell prompt
+expect "SHELL] %"
+
+send "startup\n"
+
+# Shell prompt following startup
+expect "Z000001] %"
+
+# Display node configuration
+send "node\n"
+
+expect "Z000001] %"
+
+#=====================================================================
+# Set cluster wide key/value pairs.  Verify that we get expected
+# configuration change notices.
+#=====================================================================
+
+send "set ckey0=cluster0\n\n"
+send "set ckey1=cluster1\n\n"
+send "set ckey2=cluster2\n\n"
+send "set ckey3=cluster3\n\n"
+send "set ckey4=cluster4\n\n"
+send "set ckey5=cluster5\n\n"
+# Reset key2 to cluster2a
+send "set ckey2=cluster2a\n\n"
+
+# Ensure final "Configuration Change Notice" is emitted
+send "\n\n"
+
+# Setting the cluster wide key/value pairs above should produce 
+# configuration change notices.  Make sure we got them all.
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY0" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY0\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY1" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY1\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY2" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY2\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY3" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY3\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY4" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY4\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY5" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY5\"\n"; quitTest 1 }
+   }
+expect {
+   "Configuration Change Notice for Group: CLUSTER Key: CKEY2" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for CKEY2\"\n"; quitTest 1 }
+   }
+
+#=====================================================================
+# Set node specific key/value pairs.  Alter the value of some keys to
+# make sure the new value overwrites the original.  Verify that we get
+# expected configuration change notices.
+#=====================================================================
+
+send "set {nid 0}nkey1=node0-1\n\n"
+send "set {nid 0}nkey2=node0-2\n\n"
+send "set {nid 0}nkey3=node0-3\n\n"
+send "set {nid 0}nkey2=node0-2a\n\n"
+
+send "set {nid 1}nkey1=node1-1\n"
+send "set {nid 1}nkey2=node1-2\n"
+send "set {nid 1}nkey3=node1-3\n"
+send "set {nid 1}nkey2=node1-2a\n"
+
+send "set {nid 2}nkey1=node2-1\n"
+send "set {nid 2}nkey2=node2-2\n"
+send "set {nid 2}nkey3=node2-3\n"
+send "set {nid 2}nkey2=node2-2a\n"
+
+# Wait for configuration change notices.  Node numbering may vary based
+# on configuration so allow any node number.
+expect {
+   -re "Configuration Change Notice for Group: NODE. Key: NKEY1" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for Group: NODEx Key: NKEY1\"\n"; quitTest 1 }
+   }
+expect {
+   -re "Configuration Change Notice for Group: NODE. Key: NKEY2" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for Group: NODEx Key: NKEY2\"\n"; quitTest 1 }
+   }
+expect {
+   -re "Configuration Change Notice for Group: NODE. Key: NKEY3" {}
+   timeout {send_user "*** ERROR *** Missing \"Configuration Change Notice for Group: NODEx Key: NKEY3\"\n"; quitTest 1 }
+   }
+
+
+#=====================================================================
+# Set process specific key/value pairs.  Alter the value of some keys
+# to make sure the new value overwrites the original.
+#=====================================================================
+
+send "set {process \$abc}key1=abc-1\n"
+send "set {process \$abc}key2=abc-2\n"
+send "set {process \$abc}key3=abc-3\n"
+send "set {process \$abc}key2=abc-2a\n"
+
+send "set {process \$def}key1=def-1\n"
+send "set {process \$def}key2=def-2\n"
+send "set {process \$def}key3=def-3\n"
+send "set {process \$def}key2=def-2a\n"
+
+# Force final "Configuration Change Notice" to be emitted
+send "\n\n"
+
+
+#=====================================================================
+# Validate that the registry contains the key/value pairs that were
+# set above.   For a virtual cluster we connect to each node (using
+# "monitor" command) and verify all registry values.  For a real
+# cluster we only connect to one node since the "monitor" command
+# does not work on real clusters.
+#=====================================================================
+
+
+set count 0
+
+while {$count < 3} {
+
+   #=====================================================================
+   # Display and validate configuration data for cluster
+   #=====================================================================
+
+   send "show\n"
+
+   expect {
+      "Configuration Global Group: CLUSTER" {}
+      timeout {send_user "*** ERROR *** Missing \"Configuration Global Group: CLUSTER\"\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY0(.*)= cluster0"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY0\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY1(.*)= cluster1"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY1\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY2(.*)= cluster2"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY2\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY3(.*)= cluster3"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY3\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY4(.*)= cluster4"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY4\n"; quitTest 1}
+   }
+
+   expect {
+      -re "CKEY5(.*)= cluster5"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key CKEY5\n"; quitTest 1}
+   }
+
+
+   #=====================================================================
+   # Display and validate configuration data for node 0
+   #=====================================================================
+
+   send "show {nid 0}\n"
+
+   expect {
+      "Configuration Local Group: NODE0" {
+         expect {
+            -re "NKEY1(.*)= node0-1"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE0/NKEY1\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY2(.*)= node0-2a"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE0/NKEY2\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY3(.*)= node0-3"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE0/NKEY3\n"; quitTest 1}
+         }
+      }
+      "Configuration Group: UNKNOWN" {}
+      timeout {send_user "*** ERROR *** Missing \"Configuration Local Group: NODE0\"\n"; quitTest 1}
+   }
+
+
+   #=====================================================================
+   # Display and validate configuration data for node 1
+   #=====================================================================
+
+   send "show {nid 1}\n"
+
+   expect {
+      "Configuration Local Group: NODE1" {
+         expect {
+            -re "NKEY1(.*)= node1-1"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE1/NKEY1\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY2(.*)= node1-2a"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE1/NKEY2\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY3(.*)= node1-3"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE1/NKEY3\n"; quitTest 1}
+         }
+      }
+      "Configuration Group: UNKNOWN" {}
+      timeout {send_user "*** ERROR *** Missing \"Configuration Local Group: NODE1\"\n"; quitTest 1}
+   }
+
+
+   #=====================================================================
+   # Display and validate configuration data for node 2
+   #=====================================================================
+
+   send "show {nid 2}\n"
+
+   expect {
+      "Configuration Local Group: NODE2" {
+         expect {
+            -re "NKEY1(.*)= node2-1"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE2/NKEY1\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY2(.*)= node2-2a"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE2/NKEY2\n"; quitTest 1}
+         }
+
+         expect {
+            -re "NKEY3(.*)= node2-3"  {}
+            timeout {send_user "*** ERROR *** Missing configuration key NODE2/NKEY3\n"; quitTest 1}
+         }
+      }
+      "Configuration Group: UNKNOWN" {}
+      timeout {send_user "*** ERROR *** Missing \"Configuration Local Group: NODE2\"\n"; quitTest 1}
+   }
+
+
+   #=====================================================================
+   # Display and validate configuration data for process $ABC
+   #=====================================================================
+
+   send "show {process \$abc}\n"
+
+   expect {
+      "Configuration Global Group: PROCESS \$ABC" {}
+      timeout {send_user "*** ERROR *** Missing \"Configuration Global Group: PROCESS \$ABC\"\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY1(.*)= abc-1"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$ABC/KEY1\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY2(.*)= abc-2a"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$ABC/KEY2\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY3(.*)= abc-3"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$ABC/KEY3\n"; quitTest 1}
+   }
+
+   #=====================================================================
+   # Display and validate configuration data for process $DEF
+   #=====================================================================
+
+   send "show {process \$DEF}\n"
+
+   expect {
+      "Configuration Global Group: PROCESS \$DEF" {}
+      timeout {send_user "*** ERROR *** Missing Configuration Global Group: PROCESS $DEF\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY1(.*)= def-1"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$DEF/KEY1\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY2(.*)= def-2a"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$DEF/KEY2\n"; quitTest 1}
+   }
+
+   expect {
+      -re "KEY3(.*)= def-3"  {}
+      timeout {send_user "*** ERROR *** Missing configuration key \$DEF/KEY3\n"; quitTest 1}
+   }
+
+
+   #=====================================================================
+   # On virtual cluster proceed to next node.
+   # On real cluster, we are done.
+   #=====================================================================
+
+   # Figure out if we are executing in a virtual nodes environment
+   if { [info exists env(SQ_VIRTUAL_NODES) ] } {
+      set count [expr $count+1]
+      if { $count < 3 } {
+         send "monitor $count\n"
+      }
+   } else {
+      set count 3
+   }
+
+}
+
+send "shutdown\n"
+
+expect {
+   "Shutdown notice" {}
+   timeout {send_user "*** ERROR *** Missing \"Shutdown notice\"\n"}
+}
+
+# Give monitor time to shut down
+sleep 5
+
+send "quit\n" 
+
+send_user "Test completed, no errors\n"
+
+# display overall pass/fail indication

@@ -1,0 +1,41 @@
+exec {nid 0,nowait,name $x01,out x01.log} server
+exec {nid 1,nowait,name $x02,out x02.log} server
+exec {nid -1,nowait,name $x03,out x03.log} server
+exec {nid -1,nowait,name $x04,out x04.log} server
+exec {nid -1,nowait,name $x05,out x05.log} server
+exec {nid -1,nowait,name $x06,out x06.log} server
+exec {nid -1,nowait,name $x07,out x07.log} server
+exec {nid -1,nowait,name $x08,out x08.log} server
+exec {nid -1,nowait,name $x09,out x09.log} server
+exec {nid -1,nowait,name $x10,out x10.log} server
+exec {nid -1,nowait,name $x11,out x11.log} server
+exec {nid -1,nowait,name $x12,out x12.log} server
+exec {nid -1,nowait,name $x13,out x13.log} server
+exec {nid -1,nowait,name $x14,out x14.log} server
+exec {nid -1,nowait,name $x15,out x15.log} server
+exec {nid -1,nowait,name $x16,out x16.log} server
+exec {nid -1,nowait,name $x17,out x17.log} server
+! Give servers a chance to start
+delay 5
+ps
+! ok lets stop them now
+kill $x01
+wait $x01
+kill $x02
+kill $x03
+kill $x04
+kill $x05
+kill $x06
+kill $x07
+kill $x08
+kill $x09
+kill $x10
+kill $x11
+kill $x12
+kill $x13
+kill $x14
+kill $x15
+kill $x16
+kill $x17
+ps
+

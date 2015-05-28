@@ -1,0 +1,216 @@
+-- Test: TEST061 (CORE)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Tests several Genesis cases related to Parser/Binder, Catman
+--                and some Unicode features for NT
+-- Expected files: EXPECTED061
+-- Limitations: This test is run for MX only.
+-- Revision history:
+--     (01/23/03): This test is created from earlier TEST061 of core. 
+--                 The earlier test061 created 63 tables. That has been 
+--                 cleaned up. The tests that were testing only parsing/binding
+--                 features were moved into another test (TEST061 in COMPGENERAL
+--                 test suite). Some tables are now being reused.
+
+
+-- This test consists of those parts of TEST061 that should go into core
+#ifNT
+control query default risk_premium_serial '1.0';
+#ifNT
+set schema $$TEST_SCHEMA$$;
+
+obey TEST061(clnupmxonly);
+
+log LOG061 clear;
+
+obey TEST061(mxonly);
+
+obey TEST061(clnupmxonly);
+log;
+exit;
+
+?section mxonly
+
+-- test genesis case 10-980520-2421 and genesis case 10-980527-5980
+create table t2421
+(a pic 9v, b picture v9, c pic s99(09)v9(08), d pic s9v9, e pic sv9, f pic s9v,
+ h pic 99v9);
+invoke t2421;
+insert into t2421 values(0,0.1,2,3,0.4,5,1.23);
+select * from t2421;
+
+
+-- picture variant (from Ken Luu's catman/test101)
+create table  t101t2 ( c01 picture XX
+                     , c02 picture X(2)
+                     , c12 pic XXXXXXXXXXXXXXXXXXXXX
+                     , c13 pic X(21)
+                     );
+invoke        t101t2;
+showddl       t101t2;
+insert into   t101t2 values ('ab',  '4', 'abcdefghijklmnopqrstu', '1'),
+                            ('21',  'A', '123456789012345678901', 'B');
+select * from t101t2;
+
+
+-- the following (taken from catman/test104) broke as we were trying to fix
+-- the NCHAR default value bug; reproduced here to avoid breaking it again.
+create table  t104t2 (c char(15) not null, d int not null,
+                      primary key (c, d))
+  range partition (add first key ('Mickey''s', 2) location $$partition$$,
+                   add first key ('sad"story', 10) location $$partition2$$);
+invoke t104t2;
+showddl t104t2;
+
+
+#ifNT
+-- test genesis case: 10-980515-9563
+-- It tests the result of natural joins 
+
+create table BTlocal5
+(char2_2             NChar(2)               not null,
+ varchar3_4          NChar Varying(8)            not null,
+ sbinneg15_nuniq     Largeint);
+
+create table BTlocal5c
+(char2_2             NChar(2)               not null,
+ varchar3_4          NChar Varying(8)            not null,
+ sbinneg15_nuniq     Largeint);
+
+Insert Into BTlocal5 Values ( N'AA',  N'BA',  -4344);
+Insert Into BTlocal5 Values ( N'AA', N'BAA',  -4344);
+Insert Into BTlocal5 Values ( N'BA', N'AA',   -3552);
+Insert Into BTlocal5 Values ( N'BA', N'CA',   -2389);
+Insert Into BTlocal5 Values ( N'DA', N'CA',   -2789);
+Insert Into BTlocal5 Values ( N'EA', N'DA',   -1950);
+
+Insert Into BTlocal5c select * from BTlocal5;
+
+create view  VNlocal5 ( n1, c2, c4 ) as
+select max(BTlocal5.sbinneg15_nuniq) , min(BTlocal5.char2_2)
+     , max(BTlocal5c.varchar3_4)
+from BTlocal5
+left  join BTlocal5c
+on BTlocal5.char2_2   = BTlocal5c.varchar3_4
+group by BTlocal5.sbinneg15_nuniq, BTlocal5.char2_2, BTlocal5c.varchar3_4;
+
+select * from VNlocal5 order by 1,2,3;
+
+select n1,c2,c4 from VNlocal5 natural join VNlocal5 t order by n1,c2;
+--end
+
+
+-- test genesis cases: 10-980508-4495, 10-980901-0430 and 10-980512-6420
+
+create table t4495 (a int, b nchar varying(15));
+insert into t4495 values (100, N'abcdefgh');
+insert into t4495 values (200, N'defgh');
+insert into t4495 values (300, N'abc');
+
+create view vut4495 (inta, varchar20)
+   as select * from t4495 where a > 200
+   union select * from t4495 where a< 150;
+
+-- These give an error 1127 - The specified table is not a base table.
+
+create index  t061i1 on vut4495(a);
+
+create table t061t33(t061t3_c int references vut4495);
+create table t061t4(t061t4_c int references vut4495(a));
+create table t061t5(t061t5_c int, foreign key(t061t5_c) references vut4495);
+create table t061t6(t061t6_c int, foreign key(t061t6_c) references vut4495(a));
+
+select * from vut4495;
+
+-- used to get an error: "operands of the LIKE predicate must be character"
+
+select varchar20 from vut4495 where varchar20 like N'%a%';
+
+-- test genesis case: 10-980508-4452
+-- comment out because view text can not contain ucs2 string literals.
+--create view vut4495b as select * from t4495 where b < N'bbb';
+--select * from vut4495b;
+--showddl vut4495b;
+
+set param ?p_param _ucs2' bcDEFg8i ';
+select substring((b || ?p_param ) from 2) as From2 from t4495;
+
+-- the original bug was an assertion failure here
+
+-- this is OK
+
+select substring((b || N' bcDEFg8i ') from 2) as From2 from t4495;
+
+
+-- not OK: opds with different char sets are illegal
+         select substring((b || ' bcDEFg8i ') from 2) as From2 from t4495;
+
+-- set param is a sqlci command and it does not know about N'strings'
+set param ?DoYouKnowTheWayToSanJose N'otAchance';
+
+#ifNT
+
+-- test genesis case: 10-980603-2116
+-- It is used to test to select data from a view created with 
+-- sum(distinct...) function
+ 
+CREATE TABLE t2116t1 (
+  pic_x_7                PIC X(7)          not null
+, binary_signed          numeric (4, 0) signed not null
+, binary_64_s            numeric (18,3) SIGNED not null
+, PRIMARY KEY (binary_signed) );
+
+CREATE TABLE t2116t3 (
+  pic_x_7        PIC X(7)            not null
+, binary_64_s    numeric (18,2) SIGNED      not null );
+
+CREATE VIEW t2116v1 (col_1)
+AS SELECT sum (distinct t2116t1.binary_signed)
+   FROM t2116t1, t2116t3
+   WHERE t2116t1.binary_64_s > t2116t3.binary_64_s AND
+       ( t2116t1.pic_x_7 <> t2116t3.pic_x_7 );
+
+insert into t2116t1 values ('walter',50,200);
+insert into t2116t1 values ('9',8000,2000);
+insert into t2116t1 values ('michael',-5000,2000);
+insert into t2116t1 values ('jimmy',3000,2000);
+insert into t2116t3 values ('A',200);
+insert into t2116t3 values ('7',1200);
+insert into t2116t3 values ('5',1000);
+insert into t2116t3 values ('michael',1500);
+insert into t2116t3 values ('7',2000);
+insert into t2116t3 values ('B',3000);
+insert into t2116t3 values ('michael',4000);
+
+select * from t2116v1;
+
+?section clnupmxonly
+drop table t2421;
+drop table t101t2;
+drop table t104t2;
+drop view  VNlocal5;
+drop table BTlocal5;
+drop table BTlocal5c;
+drop view vut4495;
+--drop view vut4495b;
+drop table t4495;
+drop view t2116v1;
+drop table t2116t3;
+drop table t2116t1;
+

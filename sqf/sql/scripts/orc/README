@@ -1,0 +1,16 @@
+Try out an OrcFile Reader.
+
+- Create a Hive table (stored as orc) and load data into it
+
+  ./load_orc_store
+
+
+- Build a Java program that reads the orc file (created and loaded in the above step)
+
+  . ./build
+
+- Execute the program 
+
+  . ./run_me
+
+Please look at the above mentioned convenience files (load_orc_store, build, run_me) and change as appropriate.

@@ -1,0 +1,119 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#  Sets up the regression test environment for SQL on Linux
+#
+#  By default, it sets up:
+#      Debug Build
+#      Intel tools
+#      NeoQuest (new) TSE
+#      Threaded IO ON (in case it's needed for embedded compiles)
+#
+
+#
+# Start by setting the defaults if they aren't already set
+#
+export SQ_USE_INTC=${SQ_USE_INTC:-1}
+export NQ_TSE=${NQ_TSE:-1}
+export USE_THREADED_IO=${USE_THREADED_IO:-1}
+export SQ_BUILD_TYPE=${SQ_BUILD_TYPE:-debug}
+export LC_ALL=en_US
+
+# Don't source sqenv.sh if already sourced
+if [ "$SQ_STARTUP" == "" ]; then
+
+  #
+  # First, we need to find our root ... we have to make some assumptions
+  # as to where we currently are.  Since it has to be the regress subdir
+  # we'll assume we can find the root by pruning some of the path
+  #
+  CURR_ROOT=$(echo `pwd` | sed -e 's#\(.*\)/sql/regress/tools#\1#g')
+
+  # Now CURR_ROOT should be correct for developer builds but we also
+  # need to allow sqenv.sh to be at top level for EC-hosted regressions,
+  # do check that.
+  # So try to both locations to source the sqenv to pick up everything else
+  if [[ -f ${CURR_ROOT}/sqenv.sh ]]; then
+     pushd ${CURR_ROOT}
+     . ./sqenv.sh
+     popd
+  else
+      if [[ -f ${CURR_ROOT}/sqf/sqenv.sh ]]; then
+         pushd ${CURR_ROOT}/sqf
+         . ./sqenv.sh
+         popd
+      else
+         echo "ERROR:  Unable to find / source ${CURR_ROOT}/sqenv.sh"
+         echo "        or ${CURR_ROOT}/sqf/sqenv.sh"
+         echo "Your SQF environment is NOT set correctly"
+         return 1
+      fi
+  fi
+fi   # sourcing sqend.sh
+
+if [ -z "$MY_SQROOT" ]; then
+  echo ERROR: MY_SQROOT is not set.
+  return 1
+fi
+
+#
+# Finally, add the regression variables and make sure the directories
+# actually exist
+#
+export MY_SQROOT=$MY_SQROOT
+export SQLMX_MODULE_DIR=${MY_SQROOT}/sql/sqlmx/USERMODULES
+export SQLMX_SYSMODULE_DIR=${MY_SQROOT}/sql/sqlmx/SYSTEMMODULES
+
+if [ -z "$mxcidir" ]; then
+  export mxcidir=${MY_SQROOT}/export/bin${SQ_MBTYPE}
+fi
+if [ -z "$mxcmpdir" ]; then
+  export mxcmpdir=${MY_SQROOT}/export/bin${SQ_MBTYPE}
+fi
+if [ -z "$rundir" ]; then
+  export rundir=${MY_SQROOT}/rundir
+fi
+if [ -z "$scriptsdir" ]; then
+  export scriptsdir=${MY_SQROOT}/sql/regress
+fi
+if [ -z "$mxlibdir" ]; then
+  export mxlibdir=${MY_SQROOT}/export/lib
+fi
+
+for i in $mxcmpdir $mxcidir $rundir $scriptsdir $mxlibdir
+do
+  if [ ! -d $dir ]; then
+    echo "ERROR: $i does not exist or is not a directory."
+    return 1
+  fi
+done
+
+if [ -d $MY_SQROOT/sql/local_hadoop ]; then
+  . $(dirname $(which swhadoop))/sw_env.sh
+fi
+
+echo ""
+echo "***********"
+echo ""
+echo "Regression test env vars are now set - cd to $scriptsdir and run!"
+echo ""
+echo "***********"
+echo ""
+
+

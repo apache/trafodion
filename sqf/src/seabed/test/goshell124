@@ -1,0 +1,84 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+if [ $# -lt 2 ]; then
+	echo "goshell124 <cli> <srv>"
+	exit 1
+fi
+xclient=$1
+xserver=$2
+shift
+shift
+
+# setup
+. ./gosetup
+
+maxcp=1
+if [ "$1" = "-maxcp" ]; then
+	maxcp="$2"
+	shift
+	shift
+fi
+maxsp=1
+if [ "$1" = "-maxsp" ]; then
+	maxsp="$2"
+	shift
+	shift
+fi
+
+echo "********* TEST `date` $xclient/$xserver *********"
+tcheck -setup
+. ./goshellsetup
+echo "node" >> $TMP
+echo "! Start the monitor processes across the cluster" >> $TMP
+echo "startup" >> $TMP
+echo "! Start the test server" >> $TMP
+n=0
+while [[ $n -lt $maxsp ]]; do
+echo "exec {nowait,name \$srv$n} $xserver -server -maxcp $maxcp -maxsp $maxsp $*" >> $TMP
+n=`expr $n + 1`
+done
+echo "! Display process status of our processes" >> $TMP
+echo "ps" >> $TMP
+echo "! Start the client process" >> $TMP
+n=0
+while [[ $n -lt $maxcp ]]; do
+echo "exec {nowait,name \$cli$n} $xclient -client -maxcp $maxcp -maxsp $maxsp $*" >> $TMP
+n=`expr $n + 1`
+done
+echo "delay 5" >> $TMP
+echo "! Display process status to see new processes" >> $TMP
+echo "ps" >> $TMP
+echo "! Wait for our processes to stop, then stop the monitor processes and exit." >> $TMP
+n=0
+while [[ $n -lt $maxsp ]]; do
+echo "wait \$srv$n" >> $TMP
+n=`expr $n + 1`
+done
+n=0
+while [[ $n -lt $maxcp ]]; do
+echo "wait \$cli$n" >> $TMP
+n=`expr $n + 1`
+done
+echo "shutdown" >> $TMP
+echo "exit" >> $TMP
+echo "eof" >> $TMP
+. ./goshellfilter
+
+tcheck $xclient

@@ -1,0 +1,80 @@
+echo ===set cluster global group
+set ckey0=cluster0
+set ckey1=cluster1
+set ckey2=cluster2
+set ckey3=cluster3
+set ckey4=cluster4
+set ckey5=cluster5
+set ckey6=cluster6
+set ckey7=cluster7
+set ckey8=cluster8
+set ckey9=cluster9
+set ckey10=cluster10
+set ckey11=cluster11
+set ckey12=cluster12
+set ckey13=cluster13
+set ckey14=cluster14
+set ckey15=cluster15
+set ckey16=cluster16
+set ckey17=cluster17
+set ckey18=cluster18
+set ckey19=cluster19
+set ckey20=cluster20
+set ckey21=cluster21
+set ckey22=cluster22
+set ckey23=cluster23
+set ckey24=cluster24
+set ckey25=cluster25
+set ckey26=cluster26
+set ckey27=cluster27
+set ckey28=cluster28
+set ckey29=cluster29
+set ckey30=cluster30
+set ckey31=cluster31
+set ckey32=cluster32
+set ckey33=cluster33
+set ckey34=cluster34
+set ckey35=cluster35
+set ckey36=cluster36
+set ckey37=cluster37
+set ckey38=cluster38
+set ckey39=cluster39
+echo ===reset key2 to cluster2a
+set ckey2=cluster2a
+echo ===set node 0 local group
+set {nid 0}nkey1=node0-1
+set {nid 0}nkey2=node0-2
+set {nid 0}nkey3=node0-3
+echo ===reset key2 to node0-2a
+set {nid 0}nkey2=node0-2a
+echo ===set node 1 local group
+set {nid 1}nkey1=node1-1
+set {nid 1}nkey2=node1-2
+set {nid 1}nkey3=node1-3
+echo ===reset key2 to node1-2a
+set {nid 1}nkey2=node1-2a
+echo ===set node 2 local group
+set {nid 2}nkey1=node2-1
+set {nid 2}nkey2=node2-2
+set {nid 2}nkey3=node2-3
+echo ===reset key2 to node2-2a
+set {nid 2}nkey2=node2-2a
+echo ===set process $ABC local group
+set {process $abc}key1=abc-1
+set {process $abc}key2=abc-2
+set {process $abc}key3=abc-3
+echo ===reset key2 to abc-2a
+set {process $abc}key2=abc-2a
+echo ===set process $DEF local group
+set {process $def}key1=def-1
+set {process $def}key2=def-2
+set {process $def}key3=def-3
+echo ===reset key2 to def-2a
+set {process $def}key2=def-2a
+echo === show configuration from monitor in node0
+show
+show {nid 0}
+show {nid 1}
+show {nid 2}
+show {process $abc}
+show {process $DEF}

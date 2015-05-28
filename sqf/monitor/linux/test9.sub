@@ -1,0 +1,12 @@
+! test primary / backup process device handling
+set {process $DATA} ZONE=0
+set {process $DATA} ZONE-M=2
+set {process $DATA} DEVICE=$DATA-P
+set {process $DATA} DEVICE-M=$DATA-M
+show {process $DATA}
+exec {debug,name $DATA,type TSE,nowait,nid=0} nsserver
+delay 2
+ps
+!kill the primary process
+!ps
+!kill $data

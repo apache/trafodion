@@ -1,0 +1,5060 @@
+>>
+>>obey test311(ddl);
+>>
+>>create schema cs311s;
+
+--- SQL operation complete.
+>>set schema cs311s;
+
+--- SQL operation complete.
+>>
+>>
+>>obey test311(icat_tests);
+>>
+>>--
+>>-- NOTE: CHAR() function is giving non-deterministic results in R2.4
+>>--       CONSEQUENTLY, TESTS USING CHAR() FUNCTION ARE COMMENTED OUT.
+>>----------------------------------------------------------------------
+>>--
+>>-- Tests for ASCII function
+>>--
+>>create volatile table cs311t1 (a1 char(8) character set iso88591) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t1 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t1 values('u1u1');
+
+--- 1 row(s) inserted.
+>>create volatile table cs311t2 (u1 char(8) character set ucs2) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t2 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t2 values('u1u1');
+
+--- 1 row(s) inserted.
+>>--
+>>select * from cs311t1 order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>>select ascii('a') from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>>select ascii(CHAR(97)) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select ascii(CHAR(97, ISO88591)) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>-- Following 4 queries should give error since ASCII doesn't work on UCS2
+>>select ascii(CHAR(97, UCS2)) from cs311t1 order by 1;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select ascii( _ucs2'a') from cs311t1 order by 1;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select ascii(u1) from cs311t2 order by 1;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select ascii( TRANSLATE(_iso88591'abcdefghijklmnop' using Iso88591ToUCS2) ) from cs311t2 order by 1;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--
+>>select * from cs311t2, cs311t1 order by 1;
+
+U1                A1      
+----------------  --------
+
+a1a1              a1a1    
+a1a1              u1u1    
+u1u1              a1a1    
+u1u1              u1u1    
+
+--- 4 row(s) selected.
+>>select * from cs311t2, cs311t1 where 'a' = CHAR(ASCII('a1a1')) order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              a1a1    
+a1a1              u1u1    
+u1u1              a1a1    
+u1u1              u1u1    
+
+--- 4 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t2, cs311t1 where 'u' = CHAR(ASCII('u1u1'),UCS2) order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              a1a1    
+a1a1              u1u1    
+u1u1              a1a1    
+u1u1              u1u1    
+
+--- 4 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t2, cs311t1 where 'u' = lower(CHAR(ASCII(upper(a1)))) order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              u1u1    
+u1u1              u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t2, cs311t1 where CHAR(ASCII('a1a1')) = 'a' order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              a1a1    
+a1a1              u1u1    
+u1u1              a1a1    
+u1u1              u1u1    
+
+--- 4 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t2, cs311t1 where CHAR(ASCII('u1u1'),UCS2) = 'u' order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              a1a1    
+a1a1              u1u1    
+u1u1              a1a1    
+u1u1              u1u1    
+
+--- 4 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t2, cs311t1 where lower(CHAR(ASCII(upper(a1)))) = 'u' order by 1,2;
+
+U1                A1      
+----------------  --------
+
+a1a1              u1u1    
+u1u1              u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>--
+>>select ascii((select 'a1a1' from cs311t1 where a1='u1u1')) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>>select ascii((select 'a1a1' from cs311t2 where u1='a1a1')) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>>select a1 from cs311t1 where ascii(a1) = ascii((select min(a1) from cs311t1)) order by 1;
+
+A1      
+--------
+
+a1a1    
+
+--- 1 row(s) selected.
+>>select a1 from cs311t1 where ascii(a1) = ascii((select TRANSLATE(max(u1) using UCS2toISO88591) from cs311t2)) order by 1;
+
+A1      
+--------
+
+u1u1    
+
+--- 1 row(s) selected.
+>>select a1 from cs311t1 where ascii(a1) = ascii((select max(TRANSLATE(u1 using UCS2toISO88591)) from cs311t2)) order by 1;
+
+A1      
+--------
+
+u1u1    
+
+--- 1 row(s) selected.
+>>--
+>>select ascii((select CHAR(97) from cs311t1 where a1='u1u1')) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select ascii((select CHAR(97) from cs311t2 where u1='a1a1')) from cs311t1 order by 1;
+
+(EXPR)    
+----------
+
+        97
+        97
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>--
+>>select a1 from cs311t1 where              97 = ascii((select min('a') from cs311t1 where a1='u1u1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min('a') from cs311t1 where a1='u1u1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min(_iso88591'a') from cs311t1 where a1='u1u1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where              97 = ascii((select min(CHAR(97)) from cs311t1 where a1='u1u1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min(CHAR(97)) from cs311t1 where a1='u1u1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>--
+>>select a1 from cs311t1 where              97 = ascii((select min('a') from cs311t2 where u1='a1a1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min('a') from cs311t2 where u1='a1a1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min(_iso88591'a') from cs311t2 where u1='a1a1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where              97 = ascii((select min(CHAR(97)) from cs311t2 where u1='a1a1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select a1 from cs311t1 where ascii(CHAR(97)) = ascii((select min(CHAR(97)) from cs311t2 where u1='a1a1')) order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>--
+>>-- Tests for basic UNIONs
+>>--
+>>create volatile table cs311t3 (a1 char(8) character set iso88591) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t3 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t3 values('u1u1');
+
+--- 1 row(s) inserted.
+>>create volatile table cs311t4 (u1 char(8) character set ucs2) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t4 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t4 values('u1u1');
+
+--- 1 row(s) inserted.
+>>select * from cs311t3 order by 1;
+
+A1      
+--------
+
+a1a1    
+u1u1    
+
+--- 2 row(s) selected.
+>>select * from cs311t4 order by 1;
+
+U1              
+----------------
+
+a1a1            
+u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3 union (select * from cs311t4) order by 1;
+
+A1              
+----------------
+
+a1a1            
+u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3 union all (select * from cs311t4) order by 1;
+
+A1              
+----------------
+
+a1a1            
+a1a1            
+u1u1            
+u1u1            
+
+--- 4 row(s) selected.
+>>--
+>>-- Tests for basic SQL functions
+>>--
+>>select * from cs311t3, cs311t4 order by 1;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = case when a1 > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = case when a1 > 'a1a' then 'a1a1' else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = coalesce(cast(NULL as varchar(8) character set ISO88591), u1, a1) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = substr('a1a1zzzz',1,4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = concat( substr(a1,1,2), 'a1' ) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = decode(a1,'a1a1','Found', u1, 'u1u1', 'b1b1', 'b1b1', 'NotFound') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+u1u1      u1u1            
+
+--- 1 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = insert('a1', 2, 0, '1a') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = replace(u1, 'u1', 'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = replace('u1u1', 'u1', 'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = replace(_ISO88591'u1u1', 'u1', 'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = replace('u1u1', _ISO88591'u1', 'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = replace('u1u1', 'u1', _ISO88591'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = isnull(a1,'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = isnull(u1,'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = isnull('a1a1','a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = isnull(CAST(NULL as char(8) character set iso88591),'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = LOWER('A1A1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = LEFT('a1a1ZZZZ',4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = LPAD('a1',4,'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = LPAD(substr(a1,1,2),4,'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NULLIF(a1,u1) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      u1u1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NULLIF(a1,'a1b1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NVL(a1,'a1b1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NVL(a1,'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NVL('a1a1','a1b1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NVL(cast(NULL as char(8) character set iso88591),'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = NVL(cast(NULL as char(8)),'a1a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = right(TRIM(u1),4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = right('    ' || TRIM(u1),4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = right(_ISO88591'    ' || TRIM(u1),4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = right('    ' || TRIM(a1),4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = right('ZZZZa1a1',4) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = RPAD('a1',4,'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = RPAD(substr(a1,1,2),4,'a1') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = trim(u1) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = trim('  a1a1  ') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = rtrim(u1) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = rtrim('  a1a1  ') order by 1,2;
+
+--- 0 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = ltrim(u1) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = ltrim('  a1a1  ') order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = UPPER('a1a1') order by 1,2;
+
+--- 0 row(s) selected.
+>>select * from cs311t3, cs311t4 where a1 = cast('u1u1' as varchar(8) ) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>--
+>>-- Tests for ASSIGN
+>>--
+>>create volatile table cs311t10 (a1 char(80) character set iso88591, u1 char(80) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t10 values(CHAR(96), CHAR(96));
+
+--- 1 row(s) inserted.
+>> -- SEE NOTE ABOVE
+>>insert into cs311t10 values(SPACE(3), SPACE(3));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(SPACE(3, ISO88591), SPACE(3, ISO88591));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(SPACE(3, UCS2), SPACE(3, UCS2));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(DATEFORMAT(DATE'2009-04-15',USA), DATEFORMAT(DATE'2009-04-15',USA));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(DAYNAME(DATE'2009-04-15'), DAYNAME(DATE'2009-04-15'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(MONTHNAME(DATE'2009-04-15'), MONTHNAME(DATE'2009-04-15'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(CONVERTTOHEX(_ucs2'abc'), CONVERTTOHEX(_ucs2'abc'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(CONVERTTOHEX(_iso88591'abc'), CONVERTTOHEX(_iso88591'abc'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(CASE when 1=1 then 'abc' else 'def' end, CASE when 1=1 then 'abc' else 'def' end);
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(CASE when 1=1 then _iso88591'abc' else _iso88591'def' end,
++>                          CASE when 1=1 then _iso88591'abc' else _iso88591'def' end);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(CAST('abc' as varchar(4)), CAST('abc' as varchar(4)));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(CAST(_iso88591'abc' as varchar(4)), CAST(_iso88591'abc' as varchar(4)));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(COALESCE('abc','def','xyz'), COALESCE('abc','def','xyz'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(COALESCE(_iso88591'abc',_iso88591'def',_iso88591'xyz'),
++>                          COALESCE(_iso88591'abc',_iso88591'def',_iso88591'xyz'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(CONCAT('abc','def'), CONCAT('abc','def'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(CONCAT(_iso88591'abc',_iso88591'def'), CONCAT(_iso88591'abc',_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(_iso88591'abc' || _iso88591'def', _iso88591'abc' || _iso88591'def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(_iso88591'abc' || _ucs2'def', _iso88591'abc' || _ucs2'def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(_ucs2'abc' || _iso88591'def', _ucs2'abc' || _iso88591'def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(DECODE('abc','def','EQ','NE'), DECODE('abc','def','EQ','NE'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE'),
++>                          DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(INSERT('abcghi',4,0,'def'), INSERT('abcghi',4,0,'def'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(INSERT(_iso88591'abcghi',4,0,_iso88591'def'),
++>                          INSERT(_iso88591'abcghi',4,0,_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(ISNULL('abc','def'), ISNULL('abc','def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(ISNULL(_iso88591'abc',_iso88591'def'), ISNULL(_iso88591'abc',_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LEFT('abcdef',3), LEFT('abcdef',3));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LEFT(_iso88591'abcdef',3), LEFT(_iso88591'abcdef',3));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LOWER('ABC'), LOWER('ABC'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LOWER(_iso88591'ABC'), LOWER(_iso88591'ABC'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LPAD('def',6,'abc'), LPAD('def',6,'abc'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LPAD(_iso88591'def',6,_iso88591'abc'), LPAD(_iso88591'def',6,_iso88591'abc'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LTRIM('   abc'), LTRIM('   abc'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(LTRIM(_iso88591'   abc'), LTRIM(_iso88591'   abc'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(NULLIF('abc','def'), NULLIF('abc','def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(NULLIF(_iso88591'abc',_iso88591'def'), NULLIF('abc_iso88591',_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(NVL('abc','def'), NVL('abc','def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(NVL(_iso88591'abc',_iso88591'def'), NVL(_iso88591'abc',_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(REPLACE('abcxyzghi','xyz','def'), REPLACE('abcxyzghi','xyz','def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def'),
++>                          REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RIGHT('defabc',3), RIGHT('defabc',3));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RIGHT(_iso88591'defabc',3), RIGHT(_iso88591'defabc',3));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RPAD('abc',6,'def'), RPAD('abc',6,'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RPAD(_iso88591'abc',6,_iso88591'def'), RPAD(_iso88591'abc',6,_iso88591'def'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RTRIM('abc   '), RTRIM('abc   '));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(RTRIM(_iso88591'abc   '), RTRIM(_iso88591'abc   '));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(SUBSTR('abcdefghi',1,6), SUBSTR('abcdefghi',1,6));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(SUBSTR(_iso88591'abcdefghi',1,6), SUBSTR(_iso88591'abcdefghi',1,6));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRANSLATE('abcdef' using UCS2toISO88591),
++>                          TRANSLATE('abcdef' using UCS2toISO88591));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRANSLATE('abcdef' using ISO88591toUCS2),
++>                          TRANSLATE('abcdef' using ISO88591toUCS2));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRANSLATE(_iso88591'abcdef' using UCS2toISO88591),
++>                          TRANSLATE(_iso88591'abcdef' using UCS2toISO88591));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2),
++>                          TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRIM('   abc   '), TRIM('   abc   '));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(TRIM(_iso88591'   abc   '), TRIM(_iso88591'   abc   '));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into cs311t10 values(UPPER('abcdef'), UPPER('abcdef'));
+
+--- 1 row(s) inserted.
+>>insert into cs311t10 values(UPPER(_iso88591'abcdef'), UPPER(_iso88591'abcdef'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>select count(*) from cs311t10;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for Comparisons
+>>--
+>>create volatile table cs311t20 (a1 char(20) character set iso88591, u1 char(20) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t20 values(CHAR(97), CHAR(97) );
+
+--- 1 row(s) inserted.
+>> -- SEE NOTE ABOVE
+>>insert into cs311t20 values(SPACE(3), SPACE(3) );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values(DATEFORMAT(DATE'2009-04-15',USA), DATEFORMAT(DATE'2009-04-15',USA) );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values(DAYNAME(DATE'2009-04-15'), DAYNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values(MONTHNAME(DATE'2009-04-15'), MONTHNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values(CONVERTTOHEX(_ucs2'abc'), CONVERTTOHEX(_ucs2'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values(CONVERTTOHEX(_iso88591'abc'), CONVERTTOHEX(_iso88591'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('abc', 'abc') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('ABC', 'ABC') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('def', 'def') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('abcdef', 'abcdef') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('ABCDEF', 'ABCDEF') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('abcdefghi', 'abcdefghi') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('xyz', 'xyz') ;
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('EQ','EQ');
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('NE','NE');
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('abcghi', 'abcghi');
+
+--- 1 row(s) inserted.
+>>insert into cs311t20 values('abcdefghi', 'abcdefghi');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>select * from cs311t20 order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+006100620063          006100620063                            
+04/15/2009            04/15/2009                              
+616263                616263                                  
+ABC                   ABC                                     
+ABCDEF                ABCDEF                                  
+April                 April                                   
+EQ                    EQ                                      
+NE                    NE                                      
+Wednesday             Wednesday                               
+a                     a                                       
+abc                   abc                                     
+abcdef                abcdef                                  
+abcdefghi             abcdefghi                               
+abcghi                abcghi                                  
+def                   def                                     
+xyz                   xyz                                     
+
+--- 17 row(s) selected.
+>>select * from cs311t20 where a1 = CHAR(97) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+a                     a                                       
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t20 where u1 = CHAR(97) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+a                     a                                       
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t20 where a1 = SPACE(3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = SPACE(3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = SPACE(3, ISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = SPACE(3, UCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = DATEFORMAT(DATE'2009-04-15',USA) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+04/15/2009            04/15/2009                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = DATEFORMAT(DATE'2009-04-15',USA) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+04/15/2009            04/15/2009                              
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = DAYNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Wednesday             Wednesday                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = DAYNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Wednesday             Wednesday                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = MONTHNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+April                 April                                   
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = MONTHNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+April                 April                                   
+
+--- 1 row(s) selected.
+>>--
+>>create volatile table cs311t21 (a1 char(80) character set iso88591, u1 char(80) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t21 values(CURRENT_USER, CURRENT_USER);
+
+--- 1 row(s) inserted.
+>>select 'a1 = CURRENT_USER' from cs311t21 where a1 = CURRENT_USER order by 1;
+
+(EXPR)           
+-----------------
+
+a1 = CURRENT_USER
+
+--- 1 row(s) selected.
+>>select 'u1 = CURRENT_USER' from cs311t21 where u1 = CURRENT_USER order by 1;
+
+(EXPR)           
+-----------------
+
+u1 = CURRENT_USER
+
+--- 1 row(s) selected.
+>>select 'a1 = SESSION_USER' from cs311t21 where a1 = SESSION_USER order by 1;
+
+(EXPR)           
+-----------------
+
+a1 = SESSION_USER
+
+--- 1 row(s) selected.
+>>select 'u1 = SESSION_USER' from cs311t21 where u1 = SESSION_USER order by 1;
+
+(EXPR)           
+-----------------
+
+u1 = SESSION_USER
+
+--- 1 row(s) selected.
+>>select 'a1 = USER' from cs311t21 where a1 = USER order by 1;
+
+(EXPR)   
+---------
+
+a1 = USER
+
+--- 1 row(s) selected.
+>>select 'u1 = USER' from cs311t21 where u1 = USER order by 1;
+
+(EXPR)   
+---------
+
+u1 = USER
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t20 order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+                                                              
+006100620063          006100620063                            
+04/15/2009            04/15/2009                              
+616263                616263                                  
+ABC                   ABC                                     
+ABCDEF                ABCDEF                                  
+April                 April                                   
+EQ                    EQ                                      
+NE                    NE                                      
+Wednesday             Wednesday                               
+a                     a                                       
+abc                   abc                                     
+abcdef                abcdef                                  
+abcdefghi             abcdefghi                               
+abcghi                abcghi                                  
+def                   def                                     
+xyz                   xyz                                     
+
+--- 17 row(s) selected.
+>>select * from cs311t20 where a1 = CONVERTTOHEX(_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+006100620063          006100620063                            
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CONVERTTOHEX(_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+006100620063          006100620063                            
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = CONVERTTOHEX(_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+616263                616263                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CONVERTTOHEX(_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+616263                616263                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = CASE when 1=1 then 'abc' else 'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CASE when 1=1 then _iso88591'abc' else _iso88591'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = CAST('abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CAST('abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = COALESCE('abc','def','xyz') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'xyz') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = CONCAT('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = CONCAT(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = _iso88591'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = _iso88591'abc' || _ucs2'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = _iso88591'abc' || _ucs2'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = _ucs2'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = _ucs2'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = DECODE('abc','def','EQ','NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = INSERT('abcghi',4,0,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = INSERT(_iso88591'abcghi',4,0,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = ISNULL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = ISNULL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = LEFT('abcdef',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = LEFT(_iso88591'abcdef',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = LOWER('ABC') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = LOWER(_iso88591'ABC') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = LPAD('def',6,'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = LPAD(_iso88591'def',6,_iso88591'abc') order by 1;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = LTRIM('   abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = LTRIM(_iso88591'   abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = NULLIF('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = NULLIF(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = NVL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = NVL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = REPLACE('abcxyzghi','xyz','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = RIGHT('defabc',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = RIGHT(_iso88591'defabc',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = RPAD('abc',6,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = RPAD(_iso88591'abc',6,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = RTRIM('abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = RTRIM(_iso88591'abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = SUBSTR('abcdefghi',1,6) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = SUBSTR(_iso88591'abcdefghi',1,6) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = TRANSLATE('abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = TRANSLATE('abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = TRANSLATE('abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = TRANSLATE('abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = TRANSLATE(_iso88591'abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = TRANSLATE(_iso88591'abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = TRIM('   abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = TRIM(_iso88591'   abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where a1 = UPPER('abcdef') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ABCDEF                ABCDEF                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t20 where u1 = UPPER(_iso88591'abcdef') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ABCDEF                ABCDEF                                  
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for Concatenation
+>>--
+>>create volatile table cs311t30 (a1 char(20) character set iso88591, u1 char(20) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>create volatile table cs311t31 (a1 char(80) character set iso88591, u1 char(80) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t30 values('ZA','ZA');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z','Z');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z'||DATEFORMAT(DATE'2009-04-15',USA),'Z'||DATEFORMAT(DATE'2009-04-15',USA) );
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z' || DAYNAME(DATE'2009-04-15'), 'Z' || DAYNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z' || MONTHNAME(DATE'2009-04-15'), 'Z' || MONTHNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t31 values(CURRENT_USER, CURRENT_USER);
+
+--- 1 row(s) inserted.
+>>insert into cs311t31 values('Z'||CURRENT_USER, 'Z'||CURRENT_USER);
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z' || CONVERTTOHEX(_ucs2'abc'), 'Z' || CONVERTTOHEX(_ucs2'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Z' || CONVERTTOHEX(_iso88591'abc'), 'Z' || CONVERTTOHEX(_iso88591'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Za','Za');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zd','Zd');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zabc','Zabc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zdef','Zdef');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zxyz','Zxyz');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('ZEQ','ZEQ');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('ZNE','ZNE');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zabcdef','Zabcdef');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('ZABCDEF','ZABCDEF');
+
+--- 1 row(s) inserted.
+>>insert into cs311t30 values('Zabcdefghi','Zabcdefghi');
+
+--- 1 row(s) inserted.
+>>select * from cs311t30 order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+Z006100620063         Z006100620063                           
+Z04/15/2009           Z04/15/2009                             
+Z616263               Z616263                                 
+ZA                    ZA                                      
+ZABCDEF               ZABCDEF                                 
+ZApril                ZApril                                  
+ZEQ                   ZEQ                                     
+ZNE                   ZNE                                     
+ZWednesday            ZWednesday                              
+Za                    Za                                      
+Zabc                  Zabc                                    
+Zabcdef               Zabcdef                                 
+Zabcdefghi            Zabcdefghi                              
+Zd                    Zd                                      
+Zdef                  Zdef                                    
+Zxyz                  Zxyz                                    
+
+--- 17 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CHAR(97) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t30 where a1 = _ucs2'Z' || CHAR(97) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t30 where a1 = _iso88591'Z' || SPACE(3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || SPACE(3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || SPACE(3, ISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || SPACE(3, ISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || SPACE(3, UCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || SPACE(3, UCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z                     Z                                       
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || DATEFORMAT(DATE'2009-04-15',USA) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z04/15/2009           Z04/15/2009                             
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || DATEFORMAT(DATE'2009-04-15',USA) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z04/15/2009           Z04/15/2009                             
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || DAYNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZWednesday            ZWednesday                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || DAYNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZWednesday            ZWednesday                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || MONTHNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZApril                ZApril                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || MONTHNAME(DATE'2009-04-15') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZApril                ZApril                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t31 where a1 != USER AND (a1 != _iso88591'Z' || USER) order by 1,2;
+
+--- 0 row(s) selected.
+>>select '_iso88591''Z'' || CURRENT_USER' from cs311t31 where a1 = _iso88591'Z' || CURRENT_USER order by 1;
+
+(EXPR)                      
+----------------------------
+
+_iso88591'Z' || CURRENT_USER
+
+--- 1 row(s) selected.
+>>select '_ucs2''Z'' || CURRENT_USER' from cs311t31 where a1 = _ucs2'Z' || CURRENT_USER order by 1;
+
+(EXPR)                  
+------------------------
+
+_ucs2'Z' || CURRENT_USER
+
+--- 1 row(s) selected.
+>>select '_iso88591''Z'' || SESSION_USER' from cs311t31 where a1 = _iso88591'Z' || SESSION_USER order by 1;
+
+(EXPR)                      
+----------------------------
+
+_iso88591'Z' || SESSION_USER
+
+--- 1 row(s) selected.
+>>select '_ucs2''Z'' || SESSION_USER' from cs311t31 where a1 = _ucs2'Z' || SESSION_USER order by 1;
+
+(EXPR)                  
+------------------------
+
+_ucs2'Z' || SESSION_USER
+
+--- 1 row(s) selected.
+>>select '_iso88591''Z'' || USER' from cs311t31 where a1 = _iso88591'Z' || USER order by 1;
+
+(EXPR)              
+--------------------
+
+_iso88591'Z' || USER
+
+--- 1 row(s) selected.
+>>select '_ucs2''Z'' || USER' from cs311t31 where a1 = _ucs2'Z' || USER order by 1;
+
+(EXPR)          
+----------------
+
+_ucs2'Z' || USER
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CONVERTTOHEX(_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z006100620063         Z006100620063                           
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CONVERTTOHEX(_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z006100620063         Z006100620063                           
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CONVERTTOHEX(_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z616263               Z616263                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CONVERTTOHEX(_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Z616263               Z616263                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CASE when 1=1 then 'abc' else 'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CASE when 1=1 then 'abc' else 'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CASE when 1=1 then _iso88591'abc' else _iso88591'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CAST('abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CAST('abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || COALESCE('abc','def','xyz') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || COALESCE('abc','def','xyz') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || COALESCE(_iso88591'abc',_iso88591'def',_iso88591'xyz') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || CONCAT('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CONCAT('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || CONCAT(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || (_iso88591'abc' || _iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || (_iso88591'abc' || _ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || (_iso88591'abc' || _ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || (_ucs2'abc' || _iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || (_ucs2'abc' || _iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || DECODE('abc','def','EQ','NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZNE                   ZNE                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || DECODE('abc','def','EQ','NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZNE                   ZNE                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZNE                   ZNE                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || INSERT('abcghi',4,0,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || INSERT('abcghi',4,0,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || INSERT(_iso88591'abcghi',4,0,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || ISNULL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || ISNULL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || ISNULL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || LEFT('abcdef',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LEFT('abcdef',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LEFT(_iso88591'abcdef',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || LOWER('ABC') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LOWER('ABC') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LOWER(_iso88591'ABC') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || LPAD('def',6,'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LPAD('def',6,'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LPAD(_iso88591'def',6,_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || LTRIM('   abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LTRIM('   abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || LTRIM(_iso88591'   abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || NULLIF('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || NULLIF('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || NULLIF(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || NVL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || NVL('abc','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || NVL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || REPLACE('abcxyzghi','xyz','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || REPLACE('abcxyzghi','xyz','def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdefghi            Zabcdefghi                              
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || RIGHT('defabc',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RIGHT('defabc',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RIGHT(_iso88591'defabc',3) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || RPAD('abc',6,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RPAD('abc',6,'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RPAD(_iso88591'abc',6,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || RTRIM('abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RTRIM('abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || RTRIM(_iso88591'abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || SUBSTR('abcdefghi',1,6) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || SUBSTR('abcdefghi',1,6) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || SUBSTR(_iso88591'abcdefghi',1,6) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || TRANSLATE('abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRANSLATE('abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || TRANSLATE('abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRANSLATE('abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || TRANSLATE(_iso88591'abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRANSLATE(_iso88591'abcdef' using UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRANSLATE(_iso88591'abcdef' using ISO88591toUCS2) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabcdef               Zabcdef                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || TRIM('   abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRIM('   abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || TRIM(_iso88591'   abc   ') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Zabc                  Zabc                                    
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _iso88591'Z' || UPPER('abcdef') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZABCDEF               ZABCDEF                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || UPPER('abcdef') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZABCDEF               ZABCDEF                                 
+
+--- 1 row(s) selected.
+>>select * from cs311t30 where a1 = _ucs2'Z' || UPPER(_iso88591'abcdef') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ZABCDEF               ZABCDEF                                 
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for SQL Functions - that they can accept any combination
+>>-- of ISO and UCS2 character sets
+>>--
+>>create volatile table cs311t40 (a1 char(20) character set iso88591, u1 char(20) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t40 values('ZA','ZA');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z','Z');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z'||DATEFORMAT(DATE'2009-04-15',USA),'Z'||DATEFORMAT(DATE'2009-04-15',USA) );
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z' || DAYNAME(DATE'2009-04-15'), 'Z' || DAYNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z' || MONTHNAME(DATE'2009-04-15'), 'Z' || MONTHNAME(DATE'2009-04-15') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z' || CONVERTTOHEX(_ucs2'abc'), 'Z' || CONVERTTOHEX(_ucs2'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Z' || CONVERTTOHEX(_iso88591'abc'), 'Z' || CONVERTTOHEX(_iso88591'abc') );
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Za','Za');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zd','Zd');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('abc','abc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('def','def');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zabc','Zabc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zdef','Zdef');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zxyz','Zxyz');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('EQ','EQ');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('ZEQ','ZEQ');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('ZNE','ZNE');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('NE','NE');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('abcdef','abcdef');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zabcdef','Zabcdef');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('ABCDEF','ABCDEF');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('ZABCDEF','ZABCDEF');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('abcdefghi','abcdefghi');
+
+--- 1 row(s) inserted.
+>>insert into cs311t40 values('Zabcdefghi','Zabcdefghi');
+
+--- 1 row(s) inserted.
+>>select * from cs311t40 order by a1;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+ABCDEF                ABCDEF                                  
+EQ                    EQ                                      
+NE                    NE                                      
+Z                     Z                                       
+Z006100620063         Z006100620063                           
+Z04/15/2009           Z04/15/2009                             
+Z616263               Z616263                                 
+ZA                    ZA                                      
+ZABCDEF               ZABCDEF                                 
+ZApril                ZApril                                  
+ZEQ                   ZEQ                                     
+ZNE                   ZNE                                     
+ZWednesday            ZWednesday                              
+Za                    Za                                      
+Zabc                  Zabc                                    
+Zabcdef               Zabcdef                                 
+Zabcdefghi            Zabcdefghi                              
+Zd                    Zd                                      
+Zdef                  Zdef                                    
+Zxyz                  Zxyz                                    
+abc                   abc                                     
+abcdef                abcdef                                  
+abcdefghi             abcdefghi                               
+def                   def                                     
+
+--- 24 row(s) selected.
+>>select * from cs311t40 where a1 = _iso88591'Z' || CHAR(97) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t40 where a1 = _iso88591'Z' || TRANSLATE( CHAR(97) USING UCS2toISO88591) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>> -- SEE NOTE ABOVE
+>>select * from cs311t40 where a1 = _iso88591'Z' || 'a'  order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = _iso88591'Z' || CAST('a' as VARCHAR(1)) order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+Za                    Za                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = CASE when 1=1 then _iso88591'abc' else _ucs2'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = CASE when 1=1 then _ucs2'abc' else _iso88591'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = CASE when 1=1 then _ucs2'abc' else _ucs2'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CASE when 1=1 then _iso88591'abc' else _iso88591'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CASE when 1=1 then _iso88591'abc' else _ucs2'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CASE when 1=1 then _ucs2'abc' else _iso88591'def' end order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_iso88591'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_iso88591'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = COALESCE(_ucs2'abc',_ucs2'def',_ucs2'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_ucs2'def',_ucs2'ghi',_iso88591'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_ucs2'def',_iso88591'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_ucs2'abc',_iso88591'def',_ucs2'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = COALESCE(_iso88591'abc',_ucs2'def',_ucs2'ghi',_ucs2'jkl') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = CONCAT(_iso88591'abc',_ucs2'def') order by 1;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = CONCAT(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = CONCAT(_ucs2'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CONCAT(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CONCAT(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = CONCAT(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = _iso88591'abc' || _ucs2'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = _ucs2'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = _ucs2'abc' || _ucs2'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = _iso88591'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = _iso88591'abc' || _ucs2'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = _ucs2'abc' || _iso88591'def' order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_iso88591'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_ucs2'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_ucs2'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_iso88591'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_iso88591'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_ucs2'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_ucs2'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_iso88591'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_ucs2'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_ucs2'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_iso88591'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_iso88591'abc',_ucs2'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = DECODE(_ucs2'abc',_ucs2'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_ucs2'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_ucs2'def',_iso88591'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_iso88591'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_iso88591'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_ucs2'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_ucs2'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_ucs2'def',_ucs2'EQ',_iso88591'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_ucs2'def',_iso88591'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_ucs2'abc',_iso88591'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = DECODE(_iso88591'abc',_ucs2'def',_ucs2'EQ',_ucs2'NE') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+NE                    NE                                      
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = INSERT(_iso88591'abcghi',4,0,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = INSERT(_ucs2'abcghi',4,0,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = INSERT(_ucs2'abcghi',4,0,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = INSERT(_iso88591'abcghi',4,0,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = INSERT(_iso88591'abcghi',4,0,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = INSERT(_ucs2'abcghi',4,0,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = ISNULL(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = ISNULL(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = ISNULL(_ucs2'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = ISNULL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = ISNULL(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = ISNULL(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = LPAD(_iso88591'def',6,_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = LPAD(_ucs2'def',6,_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = LPAD(_ucs2'def',6,_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = LPAD(_iso88591'def',6,_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = LPAD(_iso88591'def',6,_ucs2'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = LPAD(_ucs2'def',6,_iso88591'abc') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = NULLIF(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = NULLIF(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = NULLIF(_ucs2'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NULLIF(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NULLIF(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NULLIF(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = NVL(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = NVL(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = NVL(_ucs2'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NVL(_iso88591'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NVL(_iso88591'abc',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = NVL(_ucs2'abc',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abc                   abc                                     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_iso88591'abcxyzghi',_ucs2'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_ucs2'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_ucs2'abcxyzghi',_ucs2'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_ucs2'abcxyzghi',_iso88591'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_iso88591'abcxyzghi',_ucs2'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = REPLACE(_ucs2'abcxyzghi',_ucs2'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_iso88591'abcxyzghi',_ucs2'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_ucs2'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_ucs2'abcxyzghi',_ucs2'xyz',_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_ucs2'abcxyzghi',_iso88591'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = REPLACE(_iso88591'abcxyzghi',_ucs2'xyz',_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdefghi             abcdefghi                               
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t40 where a1 = RPAD(_iso88591'abc',6,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = RPAD(_ucs2'abc',6,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where a1 = RPAD(_ucs2'abc',6,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = RPAD(_iso88591'abc',6,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = RPAD(_iso88591'abc',6,_ucs2'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>select * from cs311t40 where u1 = RPAD(_ucs2'abc',6,_iso88591'def') order by 1,2;
+
+A1                    U1                                      
+--------------------  ----------------------------------------
+
+abcdef                abcdef                                  
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for TRANSLATE
+>>--
+>>create volatile table cs311t50 (a1 char(8) character set iso88591, u1 char(8) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t50 values('abc','abc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t50 values('abc','def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>select * from cs311t50 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>
+>>--Following should work without errors
+>>select * from cs311t50 where a1 = u1 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = a1 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE(u1 using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(a1 using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE(a1 using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(u1 using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE('abc' using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(_iso88591'abc' using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE(TRANSLATE(u1 using UCS2toISO88591) using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(TRANSLATE(a1 using ISO88591toUCS2) using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select TRANSLATE(u1 using UCS2toISO88591) from cs311t50 order by 1;
+
+(EXPR)  
+--------
+
+abc     
+
+--- 1 row(s) selected.
+>>select TRANSLATE(a1 using ISO88591toUCS2) from cs311t50 order by 1;
+
+(EXPR)          
+----------------
+
+abc             
+
+--- 1 row(s) selected.
+>>select TRANSLATE(TRANSLATE(u1 using UCS2toISO88591) using ISO88591toUCS2) from cs311t50 order by 1;
+
+(EXPR)          
+----------------
+
+abc             
+
+--- 1 row(s) selected.
+>>select TRANSLATE(TRANSLATE(a1 using ISO88591toUCS2) using UCS2toISO88591) from cs311t50 order by 1;
+
+(EXPR)  
+--------
+
+abc     
+
+--- 1 row(s) selected.
+>>--
+>>--The following should work without errors ... because of Implicit Casting of literals
+>>select * from cs311t50 where a1 = TRANSLATE('abc' using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select TRANSLATE('abc' using ISO88591toUCS2) from cs311t50 order by 1;
+
+(EXPR)
+------
+
+abc   
+
+--- 1 row(s) selected.
+>>--
+>>--The following should work without errors ... because of Implicit Casting of literals
+>>--HOWEVER, it is possible we should make these give errors.
+>>select * from cs311t50 where u1 = TRANSLATE(_iso88591'abc' using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(_ucs2'abc' using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from cs311t50 order by 1;
+
+(EXPR)
+------
+
+abc   
+
+--- 1 row(s) selected.
+>>select TRANSLATE(_ucs2'abc' using ISO88591toUCS2) from cs311t50 order by 1;
+
+(EXPR)
+------
+
+abc   
+
+--- 1 row(s) selected.
+>>--
+>>--The following should work without errors ... but only because the return value from the
+>>--inner Function Invocation gets the Implicit Casting/Translation feature applied to it.
+>>select * from cs311t50 where a1 = TRANSLATE(TRANSLATE(u1 using UCS2toISO88591) using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(TRANSLATE(a1 using ISO88591toUCS2) using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE(TRIM(a1) using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(TRIM(u1) using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where a1 = TRANSLATE(TRIM(_iso88591'abc') using UCS2toISO88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(TRIM(_ucs2'abc') using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t50 where u1 = TRANSLATE(TRIM('abc') using ISO88591toUCS2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>--
+>>--Following should get errors
+>>select * from cs311t50 where a1 = TRANSLATE(u1 using ISO88591toUCS2) order by 1,2;
+
+*** ERROR[4106] The character set for the operand of function TRANSLATE must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from cs311t50 where u1 = TRANSLATE(a1 using UCS2toISO88591) order by 1,2;
+
+*** ERROR[4106] The character set for the operand of function TRANSLATE must be UCS2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select TRANSLATE(u1 using ISO88591toUCS2) from cs311t50  order by 1;
+
+*** ERROR[4106] The character set for the operand of function TRANSLATE must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select TRANSLATE(a1 using UCS2toISO88591) from cs311t50  order by 1;
+
+*** ERROR[4106] The character set for the operand of function TRANSLATE must be UCS2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--
+>>-- Tests for CAST
+>>--
+>>create volatile table cs311t60 (a1 char(8) character set iso88591, u1 char(8) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t60 values('abc','abc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t60 values('abc','def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>select * from cs311t60 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>
+>>select * from cs311t60 where a1 = CAST('abc' as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST('abc' as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where a1 = CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t60 where a1 = CAST(a1 as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST(u1 as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where a1 = CAST(u1 as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST(a1 as varchar(4)) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t60 where a1 = CAST('abc' as varchar(4) character set ucs2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where a1 = CAST(_iso88591'abc' as varchar(4) character set ucs2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST(_iso88591'abc' as varchar(4) character set iso88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t60 where a1 = CAST(a1 as varchar(4) character set ucs2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where a1 = CAST(u1 as varchar(4) character set ucs2) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t60 where u1 = CAST(a1 as varchar(4) character set iso88591) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for UNIONs
+>>--
+>>create volatile table cs311t70 (a1 char(8) character set iso88591, u1 char(8) character set ucs2 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t70 values('abc','abc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t70 values('abc','def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>--
+>>create volatile table cs311t71 (a1 char(8) character set ucs2, u1 char(8) character set iso88591 ) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t71 values('abc','abc');
+
+--- 1 row(s) inserted.
+>>insert into cs311t71 values('abc','def');
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>--
+>>select * from cs311t70 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t71 order by 1,2;
+
+A1                U1      
+----------------  --------
+
+abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 union (select * from cs311t71) order by 1,2;
+
+A1                U1              
+----------------  ----------------
+
+abc               abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t70 union all (select * from cs311t71) order by 1,2;
+
+A1                U1              
+----------------  ----------------
+
+abc               abc             
+abc               abc             
+
+--- 2 row(s) selected.
+>>--
+>>select * from cs311t70, cs311t71 where cs311t70.a1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70, cs311t71 where cs311t70.a1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70 union (select * from cs311t70 union (select * from cs311t71)) order by 1,2;
+
+A1                U1              
+----------------  ----------------
+
+abc               abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t70 union (select * from cs311t71 union (select * from cs311t70)) order by 1,2;
+
+A1                U1              
+----------------  ----------------
+
+abc               abc             
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70 natural join cs311t71 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+abc       abc             
+
+--- 1 row(s) selected.
+>>select * from cs311t70 cross join cs311t71  order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t71 cross join cs311t70  order by 1,2,3,4;
+
+A1                U1        A1        U1              
+----------------  --------  --------  ----------------
+
+abc               abc       abc       abc             
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70 inner join cs311t71 on cs311t70.a1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 inner join cs311t71 on cs311t70.u1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 inner join cs311t71 on cs311t70.u1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 inner join cs311t71 on cs311t70.a1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70 left outer join cs311t71 on cs311t70.u1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 left outer join cs311t71 on cs311t70.a1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 left outer join cs311t71 on cs311t70.u1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 left outer join cs311t71 on cs311t70.a1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70 right outer join cs311t71 on cs311t70.u1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 right outer join cs311t71 on cs311t70.a1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 right outer join cs311t71 on cs311t70.u1 = cs311t71.u1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70 right outer join cs311t71 on cs311t70.a1 = cs311t71.a1 order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>select * from cs311t70, cs311t71 where cs311t70.u1 = (select cs311t71.u1 from cs311t71 where cs311t71.a1 = 'def') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>--
+>>select * from cs311t70, cs311t71 where cs311t70.u1 > any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'def') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 < any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'def') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 <= any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'def') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 >= any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'def') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 > any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'abc') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 < any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'abc') order by 1,2,3,4;
+
+--- 0 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 <= any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'abc') order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>select * from cs311t70, cs311t71 where cs311t70.u1 >= any (select cs311t71.a1 from cs311t71 where cs311t71.u1 = 'abc') order by 1,2,3,4;
+
+A1        U1                A1                U1      
+--------  ----------------  ----------------  --------
+
+abc       abc               abc               abc     
+
+--- 1 row(s) selected.
+>>--
+>>-- Tests for subqueries
+>>--
+>>create volatile table cs311t80 (a1 char(8) character set iso88591) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t80 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t80 values('u1u1');
+
+--- 1 row(s) inserted.
+>>create volatile table cs311t81 (u1 char(8) character set ucs2) no partition;
+
+--- SQL operation complete.
+>>insert into cs311t81 values('a1a1');
+
+--- 1 row(s) inserted.
+>>insert into cs311t81 values('u1u1');
+
+--- 1 row(s) inserted.
+>>
+>>select * from cs311t80, cs311t81 order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t80, cs311t81 where a1 = case when a1 > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where a1 = case when (select min(a1) from cs311t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where u1 = case when (select min(a1) from cs311t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>--
+>>select * from cs311t80, cs311t81 where (select min(a1) from cs311t80) = case when (select min(a1) from cs311t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where (select min(u1) from cs311t81) = case when (select min(a1) from cs311t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>--
+>>select * from cs311t80, cs311t81 where a1 = case when a1 > 'a1a' then (select min(u1) from cs311t81) else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where u1 = case when a1 > 'a1a' then (select min(u1) from cs311t81) else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>--
+>>select * from cs311t80, cs311t81 where a1 = case when (select min(a1) from cs311t80) > 'a1a' then (select min(u1) from cs311t81) else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where u1 = case when (select min(a1) from cs311t80) > 'a1a' then (select min(u1) from cs311t81) else 'a100' end order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>--
+>>select * from cs311t80, cs311t81 where a1 = (select min(case when a1 > 'a1a' then u1 else 'a100' end) from cs311t80, cs311t81) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+
+--- 2 row(s) selected.
+>>select * from cs311t80, cs311t81 where u1 = (select min(case when a1 > 'a1a' then u1 else 'a100' end) from cs311t80, cs311t81) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+u1u1      a1a1            
+
+--- 2 row(s) selected.
+>>--
+>>select * from cs311t80, cs311t81 where (select min(a1) from cs311t80) = (select min(case when a1 > 'a1a' then u1 else 'a100' end) from cs311t80, cs311t81) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>select * from cs311t80, cs311t81 where (select min(u1) from cs311t81) = (select min(case when a1 > 'a1a' then u1 else 'a100' end) from cs311t80, cs311t81) order by 1,2;
+
+A1        U1              
+--------  ----------------
+
+a1a1      a1a1            
+a1a1      u1u1            
+u1u1      a1a1            
+u1u1      u1u1            
+
+--- 4 row(s) selected.
+>>--
+>>#ifdef TRIGGERS_EVER_WORK_ON_VOLATILE_TABLES
+>>--
+>>-- Tests for TRIGGERS
+>>--
+>>create volatile table cs311t90 (
++>   UCS2_col1  varchar(36)  character set UCS2  no default not null,
++>   UCS2_col2  varchar(36)  character set UCS2  no default not null,
++>   ISO_col1   varchar(36)  character set ISO88591,
++>   ISO_col2   varchar(36)  character set ISO88591
++>   )no partitions;
+>>--
+>>create TRIGGER TRG1_cs311t90   before UPDATE on cs311t90   REFERENCING NEW as TRG  FOR EACH ROW
++>       set TRG.UCS2_col2 = _ISO88591'abc' ;
+>>--
+>>insert into cs311t90 values('Test1','Test1','Test1','Test1'), ('test111','test1111','test111','test1111');
+>>UPDATE cs311t90 set ISO_col2 = _ISO88591'Iso1' where UCS2_col1 = _iso88591'Test1';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set ISO_col2 = _ISO88591'Iso1' where UCS2_col1 = _iso88591'Test1';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>insert into cs311t90 values('Test2','Test2','Test2','Test2'), ('test222','test2222','test222','test2222');
+>>UPDATE cs311t90 set ISO_col2 = _ucs2'UCS2' where UCS2_col1 = _iso88591'Test2';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set ISO_col2 = _ucs2'UCS2' where UCS2_col1 = _iso88591'Test2';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>insert into cs311t90 values('Test3','Test3','Test3','Test3'), ('test333','test3333','test333','test3333');
+>>UPDATE cs311t90 set UCS2_col1 = _ISO88591'Iso3' where ISO_col2 = _ucs2'Test3';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set UCS2_col1 = _ISO88591'Iso3' where ISO_col2 = _ucs2'Test3';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>DROP TRIGGER TRG1_cs311t90;
+>>create TRIGGER TRG1_cs311t90   before UPDATE on cs311t90   REFERENCING NEW as TRG  FOR EACH ROW
++>       set TRG.ISO_col2 = _ucs2'abc' ;
+>>--
+>>insert into cs311t90 values('Test4','Test4','Test4','Test4'), ('test444','test4444','test444','test4444');
+>>UPDATE cs311t90 set ISO_col1 = _ISO88591'Iso4' where UCS2_col1 = _iso88591'Test4';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set ISO_col1 = _ISO88591'Iso4' where UCS2_col1 = _iso88591'Test4';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>insert into cs311t90 values('Test5','Test5','Test5','Test5'), ('test555','test5555','test555','test5555');
+>>UPDATE cs311t90 set ISO_col1 = _ucs2'UCS5' where UCS2_col1 = _iso88591'Test5';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set ISO_col1 = _ucs2'UCS5' where UCS2_col1 = _iso88591'Test5';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>insert into cs311t90 values('Test6','Test6','Test6','Test6'), ('test666','test6666','test666','test6666');
+>>UPDATE cs311t90 set UCS2_col1 = _ISO88591'Iso6' where UCS2_col2 = _ucs2'Test6';
+>>select * from cs311t90 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t90 set UCS2_col1 = _ISO88591'Iso6' where UCS2_col2 = _ucs2'Test6';
+>>select * from cs311t90 order by 1,2,3,4;
+>>--
+>>-- Tests for TRIGGERS on tables with primary key.
+>>-- NOTE: Tables with a primary key column can take different paths through optimizer.
+>>--
+>>create volatile table cs311t91 (
++>   PRKY       int no default not null,
++>   UCS2_col1  varchar(36)  character set UCS2  no default not null,
++>   UCS2_col2  varchar(36)  character set UCS2  no default not null,
++>   ISO_col1   varchar(36)  character set ISO88591,
++>   ISO_col2   varchar(36)  character set ISO88591,
++>   PRIMARY KEY (PRKY) ) STORE BY primary key;
+>>--
+>>create TRIGGER TRG1_cs311t91   before UPDATE on cs311t91   REFERENCING NEW as TRG  FOR EACH ROW
++>       set TRG.UCS2_col2 = _ISO88591'abc' ;
+>>--
+>>insert into cs311t91 values(1,'Test1','Test1','Test1','Test1'), (2,'test111','test1111','test111','test1111');
+>>UPDATE cs311t91 set ISO_col2 = _ISO88591'Iso1' where UCS2_col1 = _iso88591'Test1';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set ISO_col2 = _ISO88591'Iso1' where UCS2_col1 = _iso88591'Test1';
+>>select * from cs311t91 order by 1,2,3,4;
+>>--
+>>insert into cs311t91 values(3,'Test2','Test2','Test2','Test2'), (4,'test222','test2222','test222','test2222');
+>>UPDATE cs311t91 set ISO_col2 = _ucs2'UCS2' where UCS2_col1 = _iso88591'Test2';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set ISO_col2 = _ucs2'UCS2' where UCS2_col1 = _iso88591'Test2';
+>>select * from cs311t91 order by 1,2,3,4;
+>>--
+>>insert into cs311t91 values(5,'Test3','Test3','Test3','Test3'), (6,'test333','test3333','test333','test3333');
+>>UPDATE cs311t91 set UCS2_col1 = _ISO88591'Iso3' where ISO_col2 = _ucs2'Test3';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set UCS2_col1 = _ISO88591'Iso3' where ISO_col2 = _ucs2'Test3';
+>>select * from cs311t91 order by 1,2,3,4;
+>>--
+>>DROP TRIGGER TRG1_cs311t91;
+>>create TRIGGER TRG1_cs311t91   before UPDATE on cs311t91   REFERENCING NEW as TRG  FOR EACH ROW
++>       set TRG.ISO_col2 = _ucs2'abc' ;
+>>--
+>>insert into cs311t91 values(7,'Test4','Test4','Test4','Test4'), (8,'test444','test4444','test444','test4444');
+>>UPDATE cs311t91 set ISO_col1 = _ISO88591'Iso4' where UCS2_col1 = _iso88591'Test4';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set ISO_col1 = _ISO88591'Iso4' where UCS2_col1 = _iso88591'Test4';
+>>select * from cs311t91 order by 1,2,3,4;
+>>--
+>>insert into cs311t91 values(9,'Test5','Test5','Test5','Test5'), (10,'test555','test5555','test555','test5555');
+>>UPDATE cs311t91 set ISO_col1 = _ucs2'UCS5' where UCS2_col1 = _iso88591'Test5';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set ISO_col1 = _ucs2'UCS5' where UCS2_col1 = _iso88591'Test5';
+>>select * from cs311t91 order by 1,2,3,4;
+>>--
+>>insert into cs311t91 values(11,'Test6','Test6','Test6','Test6'), (12,'test666','test6666','test666','test6666');
+>>UPDATE cs311t91 set UCS2_col1 = _ISO88591'Iso6' where UCS2_col2 = _ucs2'Test6';
+>>select * from cs311t91 order by 1,2,3,4;
+>>-- Do same thing again.
+>>UPDATE cs311t91 set UCS2_col1 = _ISO88591'Iso6' where UCS2_col2 = _ucs2'Test6';
+>>select * from cs311t91 order by 1,2,3,4;
+>>#endif
+>>--
+>>-- Tests for multi-row VALUES
+>>--
+>>create volatile table cs311t92 (
++>  bname CHAR(66) NO DEFAULT NOT NULL
++>  )no partitions;
+
+--- SQL operation complete.
+>>insert into cs311t92 VALUES(_iso88591'abcdefghi'), ('xyz');
+
+--- 2 row(s) inserted.
+>>insert into cs311t92 VALUES(converttohex('abcdefghi')), (converttohex('xyz'));
+
+--- 2 row(s) inserted.
+>>--
+>>-- Tests for RPAD and LPAD
+>>--
+>>insert into cs311t92 select RPAD(_ISO88591 x'c3b6c3bac3bb' || '789ABCDEFG',10) from  (values(1)) x(a);
+
+--- 1 row(s) inserted.
+>>insert into cs311t92 select LPAD(_UCS2'456' || '789',10) from  (values(1)) x(a);
+
+--- 1 row(s) inserted.
+>>
+>>select * from cs311t92 order by 1;
+
+BNAME                                                             
+------------------------------------------------------------------
+
+    456789                                                        
+616263646566676869                                                
+78797A                                                            
+abcdefghi                                                         
+xyz                                                               
+öúû789A                                                        
+
+--- 6 row(s) selected.
+>>select left(bname,40) from cs311t92 order by 1;
+
+(EXPR)                                  
+----------------------------------------
+
+    456789                              
+616263646566676869                      
+78797A                                  
+abcdefghi                               
+xyz                                     
+öúû789A                              
+
+--- 6 row(s) selected.
+>>
+>>obey test311(clnup);
+>>
+>>drop schema cs311s cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>log;

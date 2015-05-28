@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+# Script for updating Authentication Configuration.
+
+function printUsage {
+
+  echo 
+  echo "Usage: $script_name"
+  echo "       Script for updating Authentication Configuration"
+  echo
+}
+
+# ===================================================================
+# start of MAIN
+# ===================================================================
+
+script_name=`/bin/basename $0`
+
+while [ $# -gt 0 ]; do
+  case $1 in
+
+    -h | --help)
+      printUsage
+      exit 2
+      ;;
+
+    **)
+      echo ""
+      echo "ERROR:  Invalid option: $1 "
+      printUsage
+      exit 2
+      ;;
+
+  esac
+  shift
+done
+
+if [  -z $MY_SQROOT ]; then
+  echo
+  echo "The MY_SQROOT environment variable does not exist."
+  echo "Please ensure sqenv.sh has been sourced, and re-run $script_name."
+  echo
+  exit 1;
+fi
+
+if [ -z "$CACERTS_DIR" ]; then
+  CACERTS_DIR=$HOME/cacerts
+fi
+
+# Creating folders for storing certificates
+
+# Note - For Bright Clusters, installer sets up all files on the head node
+# and then puts the copy of the image on the slave nodes.
+# Hence any file copied to the slave nodes by scripts via pdcp get wiped out.
+# All the files should first get copied to the local node.
+# In case of clusters this is the head node - not part of MY_NODES.
+
+echo "Creating folders for storing certificates"
+if [ ! -d "$CACERTS_DIR" ]; then
+  mkdir -p -m 700 $CACERTS_DIR;
+else
+  chmod 700 $CACERTS_DIR
+fi
+
+#Create local folder for storing CA certicates
+SQCACERTS_DIR=$MY_SQROOT/cacerts
+if [ ! -d "$SQCACERTS_DIR" ]; then
+  mkdir -p -m 700 $SQCACERTS_DIR;
+else
+  chmod 700 $SQCACERTS_DIR
+fi
+
+#Create local folder for storing SQ certicates
+SQCERT_DIR=$MY_SQROOT/sqcert
+if [ ! -d "$SQCERT_DIR" ]; then
+  mkdir -p -m 700 $SQCERT_DIR;
+else
+  chmod 700 $SQCERT_DIR
+fi
+
+#cp -p -r $CACERTS_DIR $MY_SQROOT 2> /dev/null
+
+#if [ -n "$CLUSTERNAME" ]; then  
+#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $CACERTS_DIR $MY_SQROOT 2> /dev/null
+#
+#  cp -p -r $HOME/sqcert $MY_SQROOT 2> /dev/null
+#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $HOME/sqcert $MY_SQROOT 2> /dev/null
+#
+#fi
+exit 0;
+

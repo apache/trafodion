@@ -1,0 +1,253 @@
+# ****************************************************************************
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+# ****************************************************************************
+
+ifndef obj
+$(error Makerules.build is included improperly)
+endif
+
+# OBJDIR is the name of the directory to store the objects (without the
+#    TARGTYPE and FLAVOR added to the path).
+# SRCPATH is a space separated path that lists the location of the source
+#     files.  It may be overriden by an individual makefile.
+# TARGOBJDIR is the location of the intermediate objects
+# FINALOBJ is the location and name of the target of the included makefile
+OBJDIR := $(patsubst %.%, %, $(basename $(obj)))
+SRCPATH := $(OBJDIR)
+TARGOBJDIR := $(OBJDIR)/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)
+
+# Reset some values that may be set in lower makefiles.  Any values
+# that may be set in the lower makefiles and used within any of the
+# makerules files should be cleared below.
+CPPSRC         :=
+RESSRC         :=
+RES_OFILE      :=
+CSRC           :=
+GINC           :=
+LSRC           :=
+YSRC           :=
+YINC           :=
+LEX_PREFIX     := yy
+JSRC           :=
+SPECIAL_JSRC   :=
+JARPREFIX      :=
+JARFILE        :=
+JAR_APPEND     :=
+CFLAGS         :=
+CXXFLAGS       :=
+LDFLAGS        :=
+DEFS           :=
+INCLUDE_DIRS   :=
+GMAKE_INC_DIRS :=
+DEP_LIBS       :=
+DEP_DLLS       :=
+SYS_LIBS       :=
+SQLCLIOPT      :=
+USES_ROSETTA   :=
+USES_EID       :=
+NSKOBJ         :=
+ASMOBJ         :=
+INSTALL_OBJ    :=
+EXTERN_OBJS    :=
+EXTRA_LIBS     :=
+EXTERN_LIBS    :=
+TARGET         := $(obj)
+LIB_NAME       :=
+C_INC_OVERRIDE :=
+PACKAGE        :=
+DLL_NAME_1     :=
+DLL_NAME_2     :=
+
+# Include the makefile for this object
+include $(OBJDIR)/Makefile
+
+# Include any dependencies that were generated during the last build
+# of this object
+-include $(TARGOBJDIR)/depend/d_*
+
+# This is the path and name of the target file that is being created.
+# It is defined here in case the makefile redefines TARGET.
+FINALOBJ := $(RESULTDIR)/$(notdir $(TARGET))
+
+# Create output directory and dependency directory if not already present
+_dummy := $(if $(wildcard $(TARGOBJDIR)),,$(shell mkdir -p $(TARGOBJDIR)))
+_dummy := $(if $(wildcard $(TARGOBJDIR)/depend),,\
+	$(shell mkdir -p $(TARGOBJDIR)/depend))
+
+# If this is an executable, then add "bin" to SRCPATH.  This must be done
+# before the find_first function below.
+ifeq ($(filter-out $(DUMMY_EXES), $(obj)),)
+  SRCPATH += bin
+endif
+
+# The below find_first function returns the first name of a directory
+# containing a source file.  This gets around a problem in that GNU
+# make does not support target-specific VPATH values.  Since this is
+# a non-recursive make, we find the source files manually to get around
+# this limitation in GNU make.  This function is meant to be called
+# with the "call" function and has the following parameters:
+#   $1 - The name of the source file
+#   $2 - This list of source locations
+ifeq ($(words $(SRCPATH)),1)
+  find_first=$(TOPDIR)/$(2)/$(1)
+else
+  find_first=$(firstword $(foreach dir,$(2),$(wildcard $(TOPDIR)/$(dir)/$(1))) \
+	unknownsrcpath/$(1))
+endif
+
+# Reset OBJ_PATHS to an empty string.
+OBJ_PATHS :=
+
+# This appends any yacc (bison) objects to the list of objects to compile,
+# and builds the rules for compiling yacc code.
+ifdef YSRC
+  YINC += $(OBJDIR)
+  OBJ_PATHS += $(patsubst %.y,$(TARGOBJDIR)/$(YACC_PREFIX)%.$(OBJSUFFIX),$(YSRC))
+  $(FINALOBJ): YACC_PREFIX := $(YACC_PREFIX)
+  $(FINALOBJ): YACC_VAR_PREFIX := $(YACC_VAR_PREFIX)
+  $(FINALOBJ): YINC := $(YINC)
+  $(foreach srcfile,$(YSRC),$(eval $(call YACC_BUILD_template,\
+    $(TARGOBJDIR)/$(YACC_PREFIX)$(basename $(srcfile)),\
+    $(call find_first,$(srcfile),$(SRCPATH)))))
+endif
+
+# This appends any lex (flex) objects to the list of objects to compile,
+# and builds the rules for compiling lex code.
+ifdef LSRC
+  YINC += $(OBJDIR)
+  OBJ_PATHS += $(patsubst %.l,$(TARGOBJDIR)/%.$(OBJSUFFIX),$(LSRC:%.ll=%.l))
+  $(foreach srcfile,$(LSRC),$(eval $(call LEX_BUILD_template,\
+  $(TARGOBJDIR)/$(basename $(srcfile)),$(call find_first,$(srcfile),$(SRCPATH)))))
+endif
+
+# Append the C++ objects to OBJ_PATHS and builds the rules for
+# compiling C++ code.  This rule must appear after the lex and yacc
+# rules above.
+ifdef CPPSRC
+  OBJ_PATHS += $(patsubst %.cpp,$(TARGOBJDIR)/%.$(OBJSUFFIX),$(CPPSRC))
+  $(foreach srcfile,$(CPPSRC),$(eval $(call CPP_BUILD_template,\
+  $(call find_first,$(srcfile),$(SRCPATH)))))
+endif
+
+# Append the C++ objects to OBJ_PATHS and builds the rules for
+# compiling C++ code.  This rule must appear after the lex and yacc
+# rules above.
+ifdef CSRC
+  OBJ_PATHS += $(patsubst %.c,$(TARGOBJDIR)/%.$(OBJSUFFIX),$(CSRC))
+  $(foreach srcfile,$(CSRC),$(eval $(call C_BUILD_template,\
+  $(call find_first,$(srcfile),$(SRCPATH)))))
+endif
+
+# Dependencies and rules for making a library object.
+ifeq ($(filter-out $(DUMMY_LIBS), $(obj)),)
+  FINALOBJ := $(RESULTDIR)/$(LIBPREFIX)$(notdir $(TARGET))
+  FINAL_LIBS += $(FINALOBJ)
+  $(FINALOBJ): $(OBJ_PATHS) $(DEP_LIB_PATHS) $(EXTERN_OBJS)
+	@rm -f $@
+	$(build_lib_rule)
+endif
+
+# Windows resource file handling
+ifdef RESSRC
+  RES_OFILE := $(TARGOBJDIR)/$(notdir $(RESSRC:%.rc=%.res))
+  $(RES_OFILE) : $(RESSRC)
+	$(build_rc_rule)
+  $(RES_OFILE) : ALL_DEFS:=$(ALL_DEFS)
+  $(RES_OFILE) : ALL_INCLUDES:=$(ALL_INCLUDES)
+  $(RES_OFILE) : RESSRC:=$(RESSRC)
+  $(RES_OFILE) : RES_OFILE:=$(RES_OFILE)
+endif
+
+# Use platform-specific template to create rules for building DLL.
+ifeq ($(filter-out $(DUMMY_DLLS), $(obj)),)
+  FINALOBJ := $(RESULTDIR)/$(LIBPREFIX)$(notdir $(TARGET))
+  FINAL_DLLS += $(FINALOBJ)
+  $(eval $(call DLL_BUILD_template))
+endif
+
+# Dependencies and rules for making an executable object.
+ifeq ($(filter-out $(DUMMY_EXES), $(obj)),)
+  FINAL_EXES += $(FINALOBJ)
+  $(FINALOBJ): $(DLL_DEP_LIB_PATHS)
+  $(FINALOBJ): $(OBJ_PATHS) $(EXTERN_OBJS) $(EXTRA_LIBS) $(RES_OFILE) \
+               $(DEP_LIB_PATHS) $(DEP_DLL_PATHS) $(EXTERN_LIBS)
+	@rm -f $@
+	$(link_exe_rule)
+  ifeq ($(QINSTALL),yes)
+	$(qinstall_exe_rule)
+  endif
+endif
+
+# The following lines make sure that these variable are instantiated
+# for this target at this time.  This may not seem too important, but
+# is critical to ensure that the settings for each makefile are used
+# instead of settings of some unrelated makefile.
+$(OBJ_PATHS): ALL_DEFS := $(ALL_DEFS)
+$(OBJ_PATHS): ALL_CXXFLAGS := $(ALL_CXXFLAGS)
+$(OBJ_PATHS): ALL_CFLAGS := $(ALL_CFLAGS)
+$(OBJ_PATHS): ALL_INCLUDES := $(ALL_INCLUDES)
+$(OBJ_PATHS): OBJDIR := $(OBJDIR)
+$(FINALOBJ): TARGOBJDIR := $(TARGOBJDIR)
+$(FINALOBJ): SRCPATH := $(SRCPATH)
+$(FINALOBJ): OBJDIR := $(OBJDIR)
+$(FINALOBJ): ALL_EXE_LDFLAGS := $(ALL_EXE_LDFLAGS)
+$(FINALOBJ): ALL_DLL_LDFLAGS := $(ALL_DLL_LDFLAGS)
+$(FINALOBJ): ALL_LIB_LDFLAGS := $(ALL_LIB_LDFLAGS)
+$(FINALOBJ): OBJ_PATHS := $(OBJ_PATHS)
+$(FINALOBJ): SYS_LIBS := $(SYS_LIBS)
+$(FINALOBJ): DEP_LIB_PATHS := $(DEP_LIB_PATHS)
+$(FINALOBJ): DEP_DLL_PATHS := $(DEP_DLL_PATHS)
+$(FINALOBJ): DEP_LIB_NAMES := $(DEP_LIB_NAMES)
+$(FINALOBJ): DEP_DLL_NAMES := $(DEP_DLL_NAMES)
+$(FINALOBJ): DEP_LIBS := $(DEP_LIBS)
+$(FINALOBJ): DEP_DLLS := $(DEP_DLLS)
+$(FINALOBJ): LOC_LIBS := $(LOC_LIBS)
+$(FINALOBJ): EXTERN_OBJS := $(EXTERN_OBJS)
+$(FINALOBJ): EXTERN_LIBS := $(EXTERN_LIBS)
+$(FINALOBJ): EXTRA_LIBS := $(EXTRA_LIBS)
+$(FINALOBJ): RES_OFILE := $(RES_OFILE)
+$(FINALOBJ): RESSRC := $(RESSRC)
+$(FINALOBJ): LINK_EXTERN_LIB := $(LINK_EXTERN_LIB)
+$(FINALOBJ): obj := $(obj)
+$(FINALOBJ): YACC_VAR_PREFIX := $(YACC_VAR_PREFIX)
+
+# This rule builds any .o files that are to be installed with the
+# product.  These are not linked into any other object.
+# NOTE: This rule only is set up for C code.  If any future code
+# needs this rule with C++ code, then this rule will need to be
+# modified.
+ifdef INSTALL_OBJ
+  FINAL_INSTALL_OBJS += $(patsubst %,$(RESULTDIR)/%,$(INSTALL_OBJ))
+  INSTALL_OBJ_CSRC := $(INSTALL_OBJ:%.$(OBJSUFFIX)=%.c)
+  $(foreach srcfile,$(INSTALL_OBJ_CSRC),$(eval $(call C_RESULTOBJ_template,\
+  $(call find_first,$(srcfile),$(SRCPATH)))))
+endif
+
+# These are the rules dealing with Java.
+JAVA_OBJS :=
+
+ifdef JSRC
+  $(eval $(call JAR_BUILD_template))
+endif
+
+# These dependencies will rebuild all of the objects in a directory if the
+# makefile for that directory changes.
+# $(OBJ_PATHS): $(OBJDIR)/Makefile
+# $(INSTALL_OBJ): $(OBJDIR)/Makefile
+# $(JAVA_OBJS): $(OBJDIR)/Makefile

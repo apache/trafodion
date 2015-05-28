@@ -1,0 +1,20 @@
+g++ -g -o chk_hba -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux  -L${JAVA_HOME}/jre/lib/amd64/server -ljvm CheckIfHbaseAvailable.cpp
+
+$JAVA_HOME/bin/javac CheckHBase.java
+
+$JAVA_HOME/bin/javac TestHBaseClient.java
+
+$JAVA_HOME/bin/javac HBPerf.java
+
+$JAVA_HOME/bin/javac HBPerfWrite.java
+
+$JAVA_HOME/bin/javac HBPerf_counter.java
+
+$JAVA_HOME/bin/javac HBPerf_agg_count.java
+
+$JAVA_HOME/bin/javac HBTransPerf.java
+
+# (Needs work for HBase 0.98) 
+#$JAVA_HOME/bin/javac ListRS.java
+
+echo "Done"

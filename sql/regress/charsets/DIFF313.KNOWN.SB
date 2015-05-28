@@ -1,0 +1,316 @@
+5727c5727,5729
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> --- SQL operation failed with errors.
+5740c5742
+< Test1 abc Test1 Iso1
+---
+> Test1 Test1 Test1 Iso1
+5753c5755
+< Test1 abc Test1 Iso1
+---
+> Test1 Test1 Test1 Iso1
+5769,5770c5771,5772
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+---
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+5784,5785c5786,5787
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+---
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+5802,5804c5804,5806
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+5819,5821c5821,5823
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+5830c5832,5836
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> *** ERROR[1031] Object SEABASE.CS313S.TRG1_CS313T90 could not be dropped.
+> 
+> --- SQL operation failed with errors.
+5834c5840,5842
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> --- SQL operation failed with errors.
+5847,5850c5855,5858
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+5866,5869c5874,5877
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+5888,5892c5896,5900
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+< Test5 Test5 UCS5 abc
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+> Test5 Test5 UCS5 Test5
+5909,5913c5917,5921
+< Iso3 abc Test3 Test3
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+< Test5 Test5 UCS5 abc
+---
+> Iso3 Test3 Test3 Test3
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+> Test5 Test5 UCS5 Test5
+5933,5938c5941,5946
+< Iso3 abc Test3 Test3
+< Iso6 Test6 Test6 abc
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+< Test5 Test5 UCS5 abc
+---
+> Iso3 Test3 Test3 Test3
+> Iso6 Test6 Test6 Test6
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+> Test5 Test5 UCS5 Test5
+5956,5961c5964,5969
+< Iso3 abc Test3 Test3
+< Iso6 Test6 Test6 abc
+< Test1 abc Test1 Iso1
+< Test2 abc Test2 UCS2
+< Test4 Test4 Iso4 abc
+< Test5 Test5 UCS5 abc
+---
+> Iso3 Test3 Test3 Test3
+> Iso6 Test6 Test6 Test6
+> Test1 Test1 Test1 Iso1
+> Test2 Test2 Test2 UCS2
+> Test4 Test4 Iso4 Test4
+> Test5 Test5 UCS5 Test5
+5987c5995,5997
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> --- SQL operation failed with errors.
+6000c6010
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6013c6023
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6029c6039
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6031c6041
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6044c6054
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6046c6056
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6062c6072
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6064c6074
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6066c6076
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6079c6089
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6081c6091
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6083c6093
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6090c6100,6104
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> *** ERROR[1031] Object SEABASE.CS313S.TRG1_CS313T91 could not be dropped.
+> 
+> --- SQL operation failed with errors.
+6094c6108,6110
+< --- SQL operation complete.
+---
+> *** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node @system@.
+> 
+> --- SQL operation failed with errors.
+6107c6123
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6109c6125
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6111c6127
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6113c6129
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6126c6142
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6128c6144
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6130c6146
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6132c6148
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6148c6164
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6150c6166
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6152c6168
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6154c6170
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6156c6172
+<  9 Test5 Test5 UCS5 abc
+---
+>  9 Test5 Test5 UCS5 Test5
+6169c6185
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6171c6187
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6173c6189
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6175c6191
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6177c6193
+<  9 Test5 Test5 UCS5 abc
+---
+>  9 Test5 Test5 UCS5 Test5
+6193c6209
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6195c6211
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6197c6213
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6199c6215
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6201c6217
+<  9 Test5 Test5 UCS5 abc
+---
+>  9 Test5 Test5 UCS5 Test5
+6203c6219
+<  11 Iso6 Test6 Test6 abc
+---
+>  11 Iso6 Test6 Test6 Test6
+6216c6232
+<  1 Test1 abc Test1 Iso1
+---
+>  1 Test1 Test1 Test1 Iso1
+6218c6234
+<  3 Test2 abc Test2 UCS2
+---
+>  3 Test2 Test2 Test2 UCS2
+6220c6236
+<  5 Iso3 abc Test3 Test3
+---
+>  5 Iso3 Test3 Test3 Test3
+6222c6238
+<  7 Test4 Test4 Iso4 abc
+---
+>  7 Test4 Test4 Iso4 Test4
+6224c6240
+<  9 Test5 Test5 UCS5 abc
+---
+>  9 Test5 Test5 UCS5 Test5
+6226c6242
+<  11 Iso6 Test6 Test6 abc
+---
+>  11 Iso6 Test6 Test6 Test6

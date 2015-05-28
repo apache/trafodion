@@ -1,0 +1,194 @@
+LOG aqatddl01 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:  Create order entry database.
+---------------------------------------------------------------------
+-- OBJECTIVE: The Tesseract Test Library environment depends
+--            on the availablity of a 'global' database, accessible
+--            to all test units.  This test unit creates and populates
+--            the needed tables and views.
+--
+-- METHOD:    Identify existing datasets (e.g. from the ENFORM class
+--            and manuals); create new datasets (e.g. to test all data
+--            types; to allow joins).
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table ORDERS.
+---------------------------------------------------------------------
+  CREATE TABLE orders (
+        ordernum               PIC 9(3) not null ,
+        omonth                 PIC 9(2)   not null ,
+        oday                   PIC 9(2)   not null ,
+        oyear                  PIC 9(2)   not null ,
+        dmonth                 PIC 9(2)   not null ,
+        dday                   PIC 9(2)   not null ,
+        dyear                  PIC 9(2)   not null ,
+        salesman               PIC 9(4) not null ,
+        custnum                PIC 9(4) not null ,
+        PRIMARY KEY (ordernum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX order0 ON orders (
+        salesman
+        )
+     ;
+---------------------------------------------------------------------
+  CREATE INDEX order1 ON orders (
+        custnum
+        )
+     ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table CUSTOMER.
+---------------------------------------------------------------------
+  CREATE TABLE customer (
+        custnum                PIC 9(4)  not null ,
+        custname               PIC X(18) not null ,
+        address                PIC X(22) not null ,
+        city                   PIC X(14) not null ,
+        state                  PIC X(12) not null ,
+        PRIMARY KEY (custnum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX custome0 ON customer (
+        custname
+        )
+     ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table FROMSUP.
+---------------------------------------------------------------------
+  CREATE TABLE fromsup (
+        partnum                PIC 9(4)  not null ,
+        suppnum                PIC 9(3)  not null ,
+        partcost               PIC 9(6)V9(2) COMP not null ,
+        PRIMARY KEY ( partnum, suppnum ) 
+        )
+     ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table ODETAIL.
+---------------------------------------------------------------------
+  CREATE TABLE odetail (
+        ordernum               PIC 9(3)  not null ,
+        partnum                PIC 9(4)  not null ,
+        quantity               PIC 9(3) COMP not null ,
+        PRIMARY KEY ( ordernum, partnum ) 
+        )
+     ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table PARTS.
+---------------------------------------------------------------------
+  CREATE TABLE parts (
+        partnum                PIC 9(4)  not null ,
+        partname               PIC X(18) not null ,
+        inventory              PIC S9(3) COMP   not null ,
+        location               PIC X(3)  not null ,
+        price                  PIC 9(6)V9(2) COMP not null ,
+        PRIMARY KEY (partnum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX parts0 ON parts (
+        partname
+        )
+     ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table SUPPLIER.
+---------------------------------------------------------------------
+  CREATE TABLE supplier (
+        suppnum                PIC 9(3)   not null ,
+        suppname               PIC X(18)  not null ,
+        address                PIC X(22)  not null ,
+        city                   PIC X(14)  not null ,
+        state                  PIC X(12)  not null ,
+        PRIMARY KEY (suppnum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX supplyr0 ON supplier (
+        suppname
+        )
+     ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table REGION.
+---------------------------------------------------------------------
+  CREATE TABLE region (
+        regnum                 PIC 9(2)    not null ,
+        regname                PIC X(12) not null ,
+        location               VARCHAR (14)  not null ,
+        manager                PIC 9(4)  not null ,
+        PRIMARY KEY (regnum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX region0 ON region (
+        regname
+        )
+     ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table BRANCH.
+---------------------------------------------------------------------
+  CREATE TABLE branch (
+        regnum                 PIC 9(2)  not null ,
+        branchnum              PIC 9(2)  not null ,
+        branchname             VARCHAR (14)  not null ,
+        manager                PIC 9(4) not null ,
+        PRIMARY KEY ( regnum, branchnum ) 
+        )
+     ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Table EMPLOYEE.
+---------------------------------------------------------------------
+  CREATE TABLE employee (
+        empnum                 PIC 9(4)   not null ,
+        empname                PIC X(18)  not null ,
+        regnum                 PIC 9(2)     not null ,
+        branchnum              PIC 9(2)     not null ,
+        job                    VARCHAR (12)  not null ,
+        age                    PIC 9(2) COMP not null ,
+        salary                 PIC 9(6) COMP not null ,
+        vacation               PIC 9(2) COMP   not null ,
+        PRIMARY KEY (empnum) 
+        )
+     ;
+---------------------------------------------------------------------
+
+  CREATE INDEX employe0 ON employee (
+        empname
+        )
+     ;
+---------------------------------------------------------------------
+  CREATE INDEX employe1 ON employee (
+        regnum,
+        branchnum
+        )
+     ;
+---------------------------------------------------------------------
+LOG;

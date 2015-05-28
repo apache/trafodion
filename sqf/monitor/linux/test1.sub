@@ -1,0 +1,19 @@
+! General tests for monitor functionality. This includes
+!  Open, Close, NewProcess, ProcessInfo and sync node state
+!  between nodes.
+node
+ps
+exec {nowait,name $SERV0,nid 0,in #default,out #default}server
+exec {nowait,pri 5,name $SERV1,in #default,out #default}server
+exec {pri 10,name $CLIENT,nid 0,in #default, out #default}client
+delay 1
+ps
+delay 1
+ps
+ps
+ps
+exec {nowait,out /dev/null} pingpong2 client
+exec {nowait,out /dev/null} pingpong2 client
+exec {nowait,out /dev/null} pingpong2 client
+exec {nowait,out /dev/null} pingpong2 client
+exec pingpong2 client

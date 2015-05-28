@@ -1,0 +1,720 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests default and first key value string literals
+-- Tests other default and first key values.
+-- Checks duplicate first key values.
+--
+-- Test column named SYSKEY
+--
+-- Verify that RI constraint definitions take advantage
+-- of storage keys and existing indexes whenever possible.
+--
+-- Verify that Catalog Manager code issues an error message
+-- when RI circular dependency occurs.
+--
+
+set schema $$TEST_SCHEMA$$;
+obey TEST020(clean_up);
+log   LOG020 clear;
+obey TEST020(tests);
+obey TEST020(test_10_020913_3920);
+obey TEST020(test_10_030916_9668);
+obey TEST020(test_LP_1360493);
+log;
+obey TEST020(clean_up);
+exit;
+
+?section clean_up
+drop table test020t1;
+drop table test020t2;
+drop table test020t3;
+drop table test020t4;
+drop table test020t5;
+drop table test020t6;
+drop table test020t7;
+drop table test020t9;
+drop table test020t11;
+drop table test020t12;
+drop table test020t13;
+drop table test020t14;
+drop table test020t15;
+drop table test020t16;
+drop table test020t10;
+drop table test020t8;
+drop table test020t17;
+drop table test020t19;
+drop table test020t18;
+drop table test020t20;
+drop table test020t23;
+drop table test020t22;
+drop table test020t21;
+drop table test020t27;
+drop table test020t26;
+drop table test020t25;
+drop table test020t24;
+drop table test020t29;
+drop table test020t28;
+drop table test020t31;
+drop table test020t30;
+drop table test020t32_S;
+drop table test020t32_NS;
+drop table test020_female_actors cascade;
+drop table test020_male_actors cascade;
+drop table test020_directors cascade;
+drop table test020_movie_titles cascade;
+drop table test020t31;
+drop table test020_10_030916_9668;
+drop table test020_LP_1360493;
+drop table test020_t34 cascade;
+drop table test020_t33 cascade;
+drop table test020t40 cascade;
+
+?section tests
+create table  test020t1 (c1 int not null primary key,
+                      c2 char(20) default 't20t1''s column c2');
+invoke test020t1;
+showddl test020t1;
+insert into test020t1(c1) values (1), (3), (2);
+select * from test020t1;
+
+create table  test020t2 (c char(15) not null, d int not null,
+                      primary key (c, d));
+invoke test020t2;
+showddl test020t2;
+insert into test020t2 values ('Donald''s', 1),
+                          ('Minie''s', 5),
+                          ('zebra"', 23);
+select * from test020t2;
+
+-- duplicate partitioning key values
+create table test020t3 (test020t3_c1 time not null primary key);
+
+create table test020t4 (test020t4_c1 real not null primary key);
+
+--------------------------------------------
+-- test cases for solution 10-030507-6228 --
+--------------------------------------------
+
+-- The following Create Table statement should execute successfully
+create table test020t31 (g0 smallint default 32767 not null not droppable,
+  primary key (g0) not droppable);
+insert into test020t31 default values;
+select * from test020t31;
+-- The following Drop Table statement should execute successfully
+drop table test020t31;
+
+-- The following Create Table statement should fail
+create table test020t31 (g0 smallint no default primary key);
+drop table if exists test020t31;
+
+-- The following Create Table statement should fail
+create table test020t31 (g0 smallint default 32768 not null primary key);
+
+--
+-- Test columns named SYSKEY
+--
+
+-- Expecting error 1080 message: Duplicate references to column SYSKEY
+--                               in the create request
+-- when the following Create Table command is executed.
+create table test020t5(syskey int);
+
+create table test020t5(c int not null not droppable primary key not droppable,
+                    syskey char(4));
+invoke test020t5;
+showddl test020t5;
+insert into test020t5 values (1, 'abcd'), (2, 'efgh');
+select * from test020t5;
+alter table test020t5 add constraint test020t5c1 check (syskey >= 'aaaa');
+showddl test020t5;
+-- Expecting an error message when the following insert statement is executed.
+insert into test020t5 values (3, '1234');
+--------------------------------------------
+-- test cases for solution 10-040607-6721 --
+--------------------------------------------
+-- Expect success when an index is created specifying only a user-specified SYSKEY.
+create index test020t5_ix1 on test020t5 (syskey);
+
+-- Expect success when index column list has a user-specified SYSKEY in any position.
+alter table test020t5 add column d int;
+create index test020t5_i1 on test020t5 (d, syskey);
+create index test020t5_i2 on test020t5 (syskey, d);
+
+-- Expect success when a key value is specified for a user-specified SYSKEY.
+create index test020t5_i3 on test020t5 (c, syskey);
+
+-- Expect success when a partition is added that specifies a value for a user-specified SYSKEY.
+insert into test020t5(c,syskey,d) values (350,'efgh',375);
+
+-- system-generated column SYSKEY
+create table test020t6(c int);
+invoke test020t6;
+showddl test020t6;
+-- Expecting error 1139 message:
+--   System-generated column SYSKEY of base table TEST020T6C1 cannot
+--   appear in the search condition of a Check constraint definition.
+-- when the following alter statement is executed.
+alter table test020t6 add constraint test020t6c1 check (syskey >= 0);
+
+--------------------------------------------
+-- test cases for solution 10-040607-6721 --
+--------------------------------------------
+-- Expecting error 1112:
+-- An index column list cannot consist only of the system-generated SYSKEY.
+create index test020t6_ix1 on test020t6 (syskey);
+
+-- Expect success when index column list has the system-generated SYSKEY in the last position,
+-- but failure with error 1089 if the system-generated SYSKEY is not in the last position.
+alter table test020t6 add column d int;
+create index test020t6_i1 on test020t6 (d, syskey);
+create index test020t6_i2 on test020t6 (syskey, d);
+
+-- Expect this to succeed: 
+create index test020t6_i3 on test020t6 (c, syskey);
+
+--------------------------------------------
+-- test cases for solution 10-070515-4764 --
+--------------------------------------------
+-- Droppable primary key Store By (no unique) needs SYSKEY column.
+CREATE TABLE test020t32_S
+  (
+    ATEST                                INT NOT NULL
+  , BTEST                                INT NOT NULL
+  , CTEST                                INT NOT NULL
+  , DTEST                                INT NOT NULL
+  , PRIMARY KEY (ATEST, CTEST)     DROPPABLE
+  )
+  STORE BY        (ATEST, CTEST)
+#ifndef SEABASE_REGRESS
+  PARTITION BY (CTEST)
+#endif
+  ;
+insert into test020t32_S values (11, 12, 13, 14);
+select * from test020t32_S;
+
+-- This SELECT will show the SYSKEY column
+
+-- Droppable primary key Store By Unique doesn't need SYSKEY column.
+-- Store By Unique (collist) requires CQD DBTR_PROCESS or parserflags.
+set parserflags 1;
+CREATE TABLE test020t32_NS
+  (
+    ATEST                                INT NOT NULL
+  , BTEST                                INT NOT NULL
+  , CTEST                                INT NOT NULL
+  , DTEST                                INT NOT NULL
+  , PRIMARY KEY (ATEST, CTEST)     DROPPABLE
+  )
+  STORE BY UNIQUE (ATEST, CTEST)
+#ifndef SEABASE_REGRESS
+  PARTITION BY (CTEST)
+#endif
+  ;
+insert into test020t32_NS values (11, 12, 13, 14);
+select * from test020t32_NS;
+
+-- This SELECT will NOT have the SYSKEY column
+
+----------------------------------------
+-- test cases for case 10-990624-2287 --
+----------------------------------------
+
+create table TEST020T28 (a int not null unique);
+        
+create table TEST020T29 (a int);
+        
+alter table TEST020T29 add constraint TEST020T29CNT1 foreign key (a) references TEST020T28(a);
+        
+insert into TEST020T28 values (1),(2),(3);
+        
+insert into TEST020T29 values (null);
+        
+alter table TEST020T29 drop constraint TEST020T29CNT1;
+        
+insert into TEST020T29 values (1),(null), (3);
+        
+alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
+-- expecting error reported
+        
+select * from TEST020T29;
+
+----------------------------------------
+-- test cases for case 10-990805-2213 --
+----------------------------------------
+create table test020t30 (ssnum char(9) upshift not null unique);
+create table test020t31 (ssnum char(9) upshift not null unique);
+
+insert into TEST020T30 values ('A23456789');
+insert into TEST020T30 values ('b66666666');
+insert into TEST020T30 values ('C55555555');
+       
+insert into TEST020T31 values ('D22222222');
+insert into TEST020T31 values ('B66666666');
+        
+--this alter should fail
+alter table TEST020T31 add constraint C44B FOREIGN KEY (ssnum) references TEST020T30(ssnum);
+
+------------------------------------------------------
+-- Verify that Catalog Manager code issues an error --
+-- message when RI circular dependency occurs.      --
+------------------------------------------------------
+
+create table test020t17 (c int not null references test020t17 primary key);
+
+create table test020t18 (c int not null constraint test020t18pk primary key);
+create table test020t19 (c int not null constraint test020t18uq unique
+                                     constraint test020t19ri
+                                                references test020t18);
+alter  table test020t18 add constraint test020t18ri foreign key (c)
+                                              references test020t19 (c);
+
+create table test020t21 (c1 int not null constraint test020t21uq unique);
+create table test020t22 (c2 int not null constraint test020t22uq unique
+                                      constraint test020t22ri
+                                                 references test020t21 (c1));
+create table test020t23 (c3 int not null constraint test020t23uq unique
+                                      constraint test020t23ri
+                                                 references test020t22 (c2));
+alter  table test020t21 add constraint test020t21ri foreign key (c1)
+                                              references test020t23 (c3);
+
+create table test020t24 (c41 int not null, c42 char(40), c43 int not null,
+                      constraint test020t24pk primary key (c41, c43));
+create table test020t25 (c51 int not null, c52 int not null,
+                      constraint test020t25uq unique (c51, c52),
+                      constraint test020t25ri foreign key (c51, c52)
+                                           references test020t24);
+create table test020t26 (c61 char(40), c62 int not null, c63 int not null,
+                      constraint test020t26uq unique (c63, c62),
+                      constraint test020t26ri foreign key (c63, c62)
+                                           references test020t25 (c51, c52));
+create table test020t27 (c71 int not null, c72 int not null,
+                      constraint test020t27pk primary key (c71, c72),
+                      constraint test020t27ri foreign key (c71, c72)
+                                           references test020t26 (c63, c62));
+alter  table test020t24 add constraint test020t24ri foreign key (c41, c43)
+                                              references test020t27;
+
+-------------------------------------------------------------
+-- Verify that RI constraint definitions take advantage    --
+-- of storage keys and existing indexes whenever possible. --
+-------------------------------------------------------------
+
+create table test020t8 (c1 int not null, c2 int not null, c3 int not null,
+ constraint test020t8uq1 unique (c2,c3),
+ constraint test020t8uq2 unique (c1,c2,c3));
+
+create table test020t9 (r1 int not null, r2 int not null, r3 int not null);
+create unique index test020t9ix on test020t9 (r1,r2);
+showddl test020t9;
+
+-- The foreign keys (r1,r2,r3) of RI constraint test020t9ri
+-- will take advantage of existing unique index test020t9ix
+alter table test020t9 add constraint test020t9ri foreign key (r1,r2,r3)
+ references test020t8 (c1,c2,c3);
+showddl test020t9;
+
+create table test020t10 (c1 int not null primary key);
+
+-- The foreign key (r1) of RI constraint test020t9ri2
+-- will take advantage of existing unique index test020t9ix
+alter table test020t9 add constraint test020t9ri2 foreign key (r1)
+ references test020t10;
+showddl test020t9;
+
+-- The foreign keys (r1,r2) of RI constraint test020t9ri3
+-- will take advantage of existing unique index test020t9ix
+alter table test020t9 add constraint test020t9ri3 foreign key (r1,r2)
+ references test020t8 (c2,c3);
+showddl test020t9;
+
+-- The foreign keys (r2,r1) of RI constraint test020t9ri4
+-- will NOT take advantage of existing unique index test020t9ix.
+-- A new non-unique index (named test020t9ri4) will be created for
+-- RI constraint test020t9ri4.
+alter table test020t9 add constraint test020t9ri4 foreign key (r2,r1)
+ references test020t8 (c2,c3);
+showddl test020t9;
+
+-- The foreign key (r2) of RI constraint test020t9ri5
+-- will take advantage of the existing non-unique index test020t9ri4.
+alter table test020t9 add constraint test020t9ri5 foreign key (r2)
+ references test020t10 (c1);
+showddl test020t9;
+
+-- The foreign keys (r2,r1,r3) of RI constraint test020t9ri6
+-- will NOT  take advantage of existing non-unique index test020t9ri4.
+-- A new non-unique index (named test020t9ri6) will be created for
+-- RI constraint test020t9ri6.
+alter table test020t9 add constraint test020t9ri6 foreign key (r2,r1,r3)
+ references test020t8 (c1,c2,c3);
+showddl test020t9;
+
+create table test020t11 (r1 int, r2 int not null, r3 int not null,
+ constraint test020t11uq1 unique (r2,r3));
+showddl test020t11;
+
+-- The foreign key (r2) of RI constraint test020t11ri1 will NOT
+-- take advantage of the existing unique index test020t11uq1.
+-- A new non-unique index (named test020t11ri1) will be created for
+-- RI constraint test020t11ri1.
+alter table test020t11 add constraint test020t11ri1
+ foreign key (r3) references test020t10;
+showddl test020t11;
+
+-- The foreign key (r3) of RI constraint test020t11ri2 will NOT
+-- take advantage of the existing unique index test020t11uq1.
+-- A new non-unique index (named test020t11ri2) will be created
+-- for RI constraint test020t11ri2.
+alter table test020t11 add constraint test020t11ri2
+ foreign key (r2) references test020t10;
+showddl test020t11;
+
+-- The foreign keys (r2,r3) of RI constraint test020t11ri3 will
+-- NOT take advantage of the existing unique index test020t11uq1.
+-- A new non-unique index (named test020t11ri3) will be created
+-- for RI constraint test020t11ri3.
+alter table test020t11 add constraint test020t11ri3
+ foreign key (r2,r3) references test020t8 (c2,c3);
+showddl test020t11;
+
+
+create table test020t12 (r1 int not null, r2 int not null, r3 int not null,
+ r4 int not null) store by (r1, r3);
+showddl test020t12;
+
+-- The foreign keys (r1,r3) of RI constraint test020t12ri1 will
+-- take advantage of the existing storage keys (r1,r3).
+alter table test020t12 add constraint test020t12ri1
+ foreign key (r1,r3) references test020t8 (c2,c3);
+showddl test020t12;
+
+-- The foreign key (r1) of RI constraint test020t12ri2 will
+-- take advantage of the existing storage keys (r1,r3).
+alter table test020t12 add constraint test020t12ri2
+ foreign key (r1) references test020t10;
+showddl test020t12;
+
+-- The foreign keys (r1,r3,r4) of RI constraint test020t12ri3
+-- will NOT take advantage of the existing storage keys (r1,r3).
+-- A new non-unique index (named test020t12ri3) will be created
+-- for RI constraint test020t12ri3.
+alter table test020t12 add constraint test020t12ri3
+ foreign key (r1,r3,r4) references test020t8 (c1,c2,c3);
+showddl test020t12;
+
+-- The foreign key (r3) of RI constraint test020t12ri4 will
+-- NOT take advantage of the existing storage keys (r1,r3).
+-- A new non-unique index (named test020t12ri4) will be created
+-- for RI constraint test020t12ri4.
+alter table test020t12 add constraint test020t12ri4
+ foreign key (r3) references test020t10;
+showddl test020t12;
+
+create table test020t13 (r1 int not null, r2 int not null, r3 int not null,
+ r4 int, constraint test020t13pk primary key (r2,r3));
+showddl test020t13;
+
+-- The foreign keys (r2,r3) of RI constraint test020t13ri1 will
+-- take advantage of the existing storage keys (the columns of
+-- the non-droppable primary key constraint test020t13pk).
+alter table test020t13 add constraint test020t13ri1
+ foreign key (r2,r3) references test020t8 (c2,c3);
+showddl test020t13;
+
+-- The foreign key (r2) of RI constraint test020t13ri2 will
+-- take advantage of the existing storage keys (the columns of
+-- the non-droppable primary key constraint test020t13pk).
+alter table test020t13 add constraint test020t13ri2
+ foreign key (r2) references test020t10;
+showddl test020t13;
+
+-- The foreign keys (r2,r3,r4) of RI constraint test020t13ri3 will
+-- take advantage of the existing storage keys (the columns of
+-- the non-droppable primary key constraint test020t13pk).
+alter table test020t13 add constraint test020t13ri3
+ foreign key (r2,r3,r4) references test020t8 (c1,c2,c3);
+showddl test020t13;
+
+-- The foreign keys (r1,r2,r3) of RI constraint test020t11ri4
+-- will NOT take advantage of the storage keys (r2,r3).  A
+-- new non-unique index (named test020t13ri4) will be created
+-- for RI constraint test020t13ri4.
+alter table test020t13 add constraint test020t13ri4
+ foreign key (r1,r2,r3) references test020t8 (c1,c2,c3);
+showddl test020t13;
+
+-- Note that the primary key (r2) of constraint test020t14pk is
+-- not the storage key.  A unique index (named test020t14pk) will be
+-- created for primary key constraint test020t14pk.
+create table test020t14 (r1 int not null, r2 int not null, r3 int not null,
+-- constraint test020t14pk primary key (r2) droppable)
+  constraint test020t14pk unique(r2) )
+ store by (r1,r3,r2);
+showddl test020t14;
+
+-- The foreign keys (r1,r3) of RI constraint test020t14ri1 will
+-- take advantage of the existing storage keys (r1,r3,r2).
+alter table test020t14 add constraint test020t14ri1
+ foreign key (r1,r3) references test020t8 (c2,c3);
+showddl test020t14;
+
+create index test020t14ndx on test020t14(r2);
+showddl test020t14;
+
+-- The foreign key (r1) of RI constraint test020t14ri2 will
+-- take advantage of the existing index test020t14ndx.
+alter table test020t14 add constraint test020t14ri2
+ foreign key (r2) references test020t10;
+showddl test020t14;
+
+-- This will remove the system defined index created when the primary key
+-- was created
+alter table test020t14 drop constraint test020t14pk;
+showddl test020t14;
+
+create table test020t15 (r1 int not null,
+ constraint test020t15pk primary key (r1) droppable);
+showddl test020t15;
+
+-- The foreign key (r1) of RI constraint test020t15ri1
+-- will NOT take advantage of the unique index test020t15pk
+-- because it associates with the droppable primary key
+-- constraint test020t15pk.  A new non-unique index (named
+-- test020t15ri1) will be created for RI constraint test020t15ri1.
+alter table test020t15 add constraint test020t15ri1
+ foreign key (r1) references test020t10;
+showddl test020t15;
+
+create table test020t16 (r1 int not null, r2 int not null, r3 int not null);
+create unique index test020t16ix1 on test020t16 (r2);
+showddl test020t16;
+
+-- The user should be able to drop the index test020t16ix1.
+drop index test020t16ix1;
+showddl test020t16;
+
+-- Define the index test02016ix1 again.
+create unique index test020t16ix1 on test020t16 (r2);
+showddl test020t16;
+
+-- The foreign key (r2) of RI constraint test020t16ri1 will
+-- take advantage of the existing unique index test020t16ix1.
+alter table test020t16 add constraint test020t16ri1
+ foreign key (r2) references test020t10;
+showddl test020t16;
+
+-- The user can no longer remove the index test020t16ix1 because it
+-- is used by the foreign key (r2) of RI constraint test020t16ri1.
+drop index test020t16ix1;
+
+create unique index test020t16ix2 on test020t16 (r1,r2);
+showddl test020t16;
+
+-- The foreign keys (r1,r2) of RI constraint test020t16ri2 will
+-- take advantage of the existing unique index test020t16ix2.
+alter table test020t16 add constraint test020t16ri2
+ foreign key (r1,r2) references test020t8 (c2,c3);
+showddl test020t16;
+
+-- The user can no longer remove the index test020t16ix1 because it
+-- is used by the foreign key (r1,r2) of RI constraint test020t16ri2.
+drop index test020t16ix2;
+
+-- The foreign key (r1) of RI constraint test020t16ri3 will
+-- take advantage of the existing unique index test020t16ix2.
+alter table test020t16 add constraint test020t16ri3
+ foreign key (r1) references test020t10;
+showddl test020t16;
+
+-- The user cannot remove the index test020t16ix1 because it is
+-- used by the foreign key (r1) of RI constraint test020t16ri3
+-- and the foreign keys (r1,r2) of RI constraint test020t16ri2.
+drop index test020t16ix2;
+showddl test020t16;
+
+alter table test020t16 drop constraint test020t16ri2;
+showddl test020t16;
+
+-- The user is still not able to remove the index test020t16ix1 because
+-- it is used by the foreign key (r1) of RI constraint test020t16ri3.
+drop index test020t16ix2;
+showddl test020t16;
+
+alter table test020t16 drop constraint test020t16ri3;
+showddl test020t16;
+
+-- The user should be able to remove index test020t16ix2 now because
+-- the index no longer assocates with any constraints.
+drop index test020t16ix2;
+showddl test020t16;
+
+-- Table with key columns in not-natural order.
+-- SHOWDDL should get it right, both in this process and in another.
+create table test020t20 (c1 int not null, c2 int not null, c3 int not null, 
+  primary key (c3, c1));
+showddl test020t20;
+
+?section subset1
+set schema $$TEST_SCHEMA$$;
+showddl test020t20;
+
+?section test_10_020913_3920
+-- Set up test case using female_actors, male_actors, directors, movie_titles
+create table test020_female_actors 
+  (f_no int not null,
+   f_name varchar(30) not null,
+   f_realname varchar(50) default null,
+   f_birthday date constraint TEST020_mdl check (f_birthday > date '1900-02-02'),
+   primary key (f_no) not droppable);
+
+create table test020_male_actors
+  (m_no int not null not droppable unique,
+   m_name varchar (30) not null,
+   m_realname varchar (50) default null,
+   m_birthday date constraint TEST020_md2 check (m_birthday > date '1900-01-01'));
+
+create table test020_directors 
+  (d_no int not null not droppable,
+   d_name varchar (20) not null,
+  "d_specialty" varchar (15) not null,
+   primary key (d_no),
+   constraint TEST020_td1 check ("d_specialty" <> 'Music Video'),
+   unique (d_no, "d_specialty"));
+
+insert into test020_directors values
+  (0, 'no director named', 'unknown'),
+  (1234, 'Alfred Hitchcock', 'Mystery'),
+  (1345, 'Clint Eastwood', 'Action'),
+  (1456, 'Fred Zinneman', 'Western'),
+  (1567, 'George Cukor', 'Drama'),
+  (1789, 'Roger Corman', 'Scary');
+
+insert into test020_male_actors values 
+  (0, 'no male actor', 'no male actor', current_date),
+  (1111, 'Cary Grant', 'Archibold Alic Leach', date '1904-01-18'),
+  (1222, 'Gary Cooper', 'Frank James Cooper', date '1901-05-07'),
+  (1333, 'Clint Eastwood', 'Clinton Eastwood Jr', date '1930-05-31');
+  
+insert into test020_female_actors values
+  (0, 'no female actor', 'no female actor', current_date),
+  (6111, 'Grace Kelly', 'Grace Patricia Kelly', date '1929-11-12'),
+  (6123, 'Katherine Hepburn', 'Katherin Houghlin Hepburn', date '1907-05-12'),
+  (6124, 'Joan Crawford', 'Lucille Fay LeSueyr', date '1904-03-23'),
+  (6125, 'Ingrid Bergman', 'Ingrid Bergman', date '1915-08-29'); 
+
+create table test020_movie_titles
+  (mv_no int not null,
+   mv_name varchar (40) not null,
+   mv_malestar int default NULL constraint test020_ma_fk 
+      references test020_male_actors(m_no),
+   mv_femalestar int default NULL,
+   mv_director int default 0 not null,
+   mv_yearmade int check (mv_yearmade > 1901),
+   mv_star_rating char (4),
+   mv_movietype varchar (15),
+   primary key (mv_no) not droppable,
+   constraint TEST020_d_fk foreign key (mv_director, mv_movietype) references
+    test020_directors (d_no, "d_specialty"));
+
+insert into test020_movie_titles values
+  (1, 'To Catch a Thief', 1111,6111,1234,1955, '****', 'Mystery'),
+  (2, 'High Noon', 1222,6111,1456,1951, '****', 'Western'),
+  (3, 'Unforgiven', 1333,0,1345,1990, '***', 'Action'),
+  (4, 'The Women', 0, 6124, 1567, 1939, '****', 'Drama'),
+  (5, 'The Philadelphia Story', 1111,6123,1567, 1940, '****', 'Drama'),
+  (6, 'Notorious', 1111, 6125, 1234,1946, '****', 'Mystery');
+
+-- This test was cause error 1082 to return in Genesis case 10-020913-3920
+-- After the fix, this test should succeed.
+alter table test020_movie_titles 
+   add constraint test020_fa_fk 
+       foreign key (mv_femalestar) references test020_female_actors;
+
+?section test_10_030916_9668 
+create table test020_10_030916_9668 (col1 interval minute(2) to second(2) not null,
+  primary key (col1)) ;
+
+insert into test020_10_030916_9668 values (interval '96:59.8' minute to second);
+select * from test020_10_030916_9668;
+
+?section test_LP_1360493
+create table tmp_LP_1360493
+ (sbin0_4 integer not null
+ , varchar0_500 varchar(11) default 'GDAAIAAA' not null heading 'varchar0_500 no nulls'
+ , sdec16_uniq numeric(18,0) signed not null
+ );
+
+create view view_LP_1360493
+ as select * from tmp_LP_1360493 where sdec16_uniq > 3000
+ union
+ select * from tmp_LP_1360493 where sdec16_uniq < 2500;
+
+create table test020_LP_1360493
+ ( vch15 varchar(15)
+ , nint integer
+ , ch3 char(3)
+ , nlarge largeint);
+
+insert into test020_LP_1360493
+ values ('1st orig value' ,99 , 'o' , 1 )
+ , ('2nd orig value' ,98 , 'ov' , 2 )
+ , ('5th orig value' ,95 , 'o ' , 5 )
+ , ('6 is short' ,97 , 'o' , 6 )
+ , ('7' ,94 , 'OVC' , 7 );
+
+select * from test020_LP_1360493;
+
+update test020_LP_1360493 set vch15 = (select max(c)
+from (select varchar0_500 from view_LP_1360493 ) dt(c)) where nint=95;
+
+drop table tmp_LP_1360493 cascade;
+
+select * from test020_LP_1360493;
+
+-- enforced option
+create table test020_t33 (a int not null primary key);
+create table test020_t34 (a int not null primary key, b int not null,
+   constraint t34_1 foreign key (b) references test020_t33 not enforced);
+showddl test020_t34;
+-- should succeed, ref constr not enforced
+insert into test020_t34 values (1,1);  
+
+delete from test020_t34;
+alter table test020_t34 drop constraint t34_1;
+alter table test020_t34 add constraint t34_1 foreign key(b) references test020_t33(a) not enforced;
+showddl test020_t34;
+-- should succeed, ref constr not enforced
+insert into test020_t34 values (1,1);  
+
+-- self referencing constraints
+cqd traf_allow_self_ref_constr 'ON';
+create table test020t40 (a int not null primary key, b int not null);
+alter table test020t40 add constraint test020tu1 unique (b);
+alter table test020t40 add constraint test020tc1 foreign key (b) references test020t40(a);
+alter table test020t40 add constraint test020tc2 foreign key (a) references test020t40(b);
+
+-- next 2 drops should fail
+alter table test020_t34 drop constraint test020tu1;
+alter table test020_t34 drop constraint test020tc1;
+
+alter table test020t40 drop constraint test020tc2;
+alter table test020t40 drop constraint test020tc1;
+drop table test020t40;
+

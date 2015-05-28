@@ -1,0 +1,60 @@
+
+  README for Trafodion Command Interface (TrafCI) Installation
+  ---------------------------------------------------------------------
+
+  Distributed files
+  -----------------
+  README                - This README file
+  trafciInstaller.jar   - For Windows & any *nix platforms
+
+
+  INSTALL:
+  --------
+  On *nix platforms (all unix variants including linux), the only supported
+  installation method is using the command line install (trafciInstaller.jar).
+
+  For more details, please refer to the Trafodion Command Interface Guide.
+
+  For Windows platforms, TrafCI supports two different installation methods.
+
+  Method 1: Use the trafciInstaller.jar file for command line install. 
+            This is similar to the installation method for *nix platforms. 
+
+            a.) Set JAVA_HOME/bin to your PATH
+	    b.) To install, java -jar trafciInstaller.jar cm
+                Set the location for Type4 jar file and set the location to install trafci
+
+  Method 2: GUI Installer. On Windows machine double click on trafciInstaller.jar file and following the instructions on the dialog.
+
+
+Output of a command line install:
+---------------------------------
+******************************************************************
+***                                                            ***
+*** Welcome to Trafodion Command Interface Installer           ***
+***                                                            ***
+***                                                            ***
+***    NOTE: The installer requires the JDBC Type 4            ***
+***          Driver to be installed on your workstation.       ***
+***                                                            ***
+******************************************************************
+
+Type Y for a standard installation, or N for optional components only.
+
+Standard Installation [Y]: Y
+
+JDBC Type 4 Driver JAR File
+-----------------------------
+Enter the location and file name [/usr/local/trafci/jdbcT4.jar]: 
+
+
+Trafodion Command Interface
+--------------------------------
+Enter the installation directory [/usr/local/]:.
+Extracted 18 files from the
+/tmp/trafciInstaller.jar
+archive into the
+/tmp/clients/trafci
+directory.
+
+Core TRAFCI files installed.

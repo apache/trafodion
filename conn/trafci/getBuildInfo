@@ -1,0 +1,5 @@
+#!/bin/sh
+
+buildId=`../../sqf/build-scripts/build.id`
+echo "bldId=$buildId" > buildId
+

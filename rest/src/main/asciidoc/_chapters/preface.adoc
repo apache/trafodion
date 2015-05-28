@@ -1,0 +1,33 @@
+////
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+////
+
+[preface]
+= Preface
+:doctype: article
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+The Trafodion REST server is packaged within the trafodion-{projectVersion}.tar.gz file on the link:http://downloads.trafodion.org[Trafodion download site]. 
+This document describes server version {projectVersion}. Herein you will find either the definitive documentation on a REST server topic
+as of its standing when the referenced REST server version shipped, or it will point to the location in 
+link:http://docs.trafodion.org/rest_docs/apidocs/index.html[javadoc], where the pertinent information can be found.
+
+.About This document
+This document is a work in progress. The source can be found in the _core/rest/src/main/ascidoc_ directory.

@@ -1,0 +1,416 @@
+>>
+>>create table t014t1s (a int, b int not null);
+
+--- SQL operation complete.
+>>insert into t014t1s values (1,1), (2,2);
+
+--- 2 row(s) inserted.
+>>
+>>create table t014t1t as select * from t014t1s;
+
+--- 2 row(s) inserted.
+>>log;
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:07 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(a,b) as select * from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:11 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(a,b) as select a*a*a*a, b ** b from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:15 2012
+
+  (
+    A                                LARGEINT DEFAULT NULL
+  , B                                DOUBLE PRECISION NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A                     B                        
+--------------------  -------------------------
+
+                   1   1.00000000000000000E+000
+                  16   4.00000000000000000E+000
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(c,d) as select * from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:18 2012
+
+  (
+    C                                INT DEFAULT NULL
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C            D          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t as select a c, b d from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:22 2012
+
+  (
+    C                                INT DEFAULT NULL
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C            D          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t as select a+1 c, b+1 d from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:26 2012
+
+  (
+    C                                NUMERIC(11, 0) DEFAULT NULL
+  , D                                NUMERIC(11, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C                     D                   
+--------------------  --------------------
+
+                   2                     2
+                   3                     3
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(c,d) as select a+1, b+1 from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:29 2012
+
+  (
+    C                                NUMERIC(11, 0) DEFAULT NULL
+  , D                                NUMERIC(11, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C                     D                   
+--------------------  --------------------
+
+                   2                     2
+                   3                     3
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:33 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          2            2
+          3            3
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>#ifndef SEABASE_REGRESS
+>>begin work;
+>>#endif
+>>create table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+
+--- 2 row(s) inserted.
+>>invoke t014t1t;
+
+-- Definition of Seabase table CAT.SCH.T014T1T
+-- Definition current  Thu Mar 22 15:48:36 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          2            2
+          3            3
+
+--- 2 row(s) selected.
+>>#ifndef SEABASE_REGRESS
+>>commit work;
+>>#endif
+>>
+>>#ifndef SEABASE_REGRESS
+>>drop table t014t1t;
+>>create volatile table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+>>invoke t014t1t;
+>>select * from t014t1t;
+>>#endif
+>>
+>>-- tests with table attributes
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t store by (b) as select a,b from t014t1s;
+
+--- 2 row(s) inserted.
+>>showddl t014t1t;
+
+CREATE TABLE CAT.SCH.T014T1T
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(c,d) store by (d) as select a,b from t014t1s;
+
+--- 2 row(s) inserted.
+>>showddl t014t1t;
+
+CREATE TABLE CAT.SCH.T014T1T
+  (
+    C                                INT DEFAULT NULL
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (D ASC)
+;
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C            D          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t(c int,d int not null) store by (d) as select a,b from t014t1s;
+
+--- 2 row(s) inserted.
+>>showddl t014t1t;
+
+CREATE TABLE CAT.SCH.T014T1T
+  (
+    C                                INT DEFAULT NULL
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (D ASC)
+;
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+C            D          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>create table t014t1t (a, b int not null) as select * from t014t1s;
+
+--- 2 row(s) inserted.
+>>showddl t014t1t;
+
+CREATE TABLE CAT.SCH.T014T1T
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+--- SQL operation complete.
+>>select * from t014t1t;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>-- negative tests
+>>
+>>drop table t014t1t;
+
+--- SQL operation complete.
+>>
+>>-- number of columns mismatch
+>>create table t014t1t (a) as select * from t014t1s;
+
+*** ERROR[4023] The degree of each row value constructor (2) must equal the degree of the target table column list (1).
+
+*** ERROR[8822] The statement was not prepared.
+
+--- 0 row(s) inserted.
+>>
+>>-- expressions in AS query must be renamed
+>>create table t014t1t as select a+1, b+1 from t014t1s;
+
+*** ERROR[1099] Column 1 is unnamed.  You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- datatype of AS query columns and target tables must match
+>>create table t014t1t (a char(10), b date) as select * from t014t1s;
+
+*** ERROR[4039] Column A is of type CHAR(10), incompatible with the value's type, INTEGER.
+
+*** ERROR[8822] The statement was not prepared.
+
+--- 0 row(s) inserted.
+>>
+>>-- cannot use CTAS in a compound Create Schema Stmt
+>>create schema tempsch create table t014t1 as select * from t014t1s;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create schema tempsch create table t014t1 as select * from t014t1s;
+                                                                  ^ (67 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>log;

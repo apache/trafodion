@@ -1,0 +1,185 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         stringBuf.h
+ * RCS:          $Id: 
+ * Description:  A simple buffer class for conversion routines
+ *               
+ *               
+ * Created:      7/8/98
+ * Modified:     $ $Date: 2006/11/01 01:38:09 $ (GMT)
+ * Language:     C++
+ * Status:       $State: Exp $
+ *
+ *
+ *
+ *
+ *****************************************************************************
+ */
+
+#ifndef _STRING_BUF_H
+#define _STRING_BUF_H
+
+#if !defined(MODULE_DEBUG) 
+#include "Platform.h"
+#include "BaseTypes.h"
+#include "NAWinNT.h"
+#endif
+
+#ifdef NA_DEBUG_C_RUNTIME
+#include <iostream>
+#endif // NA_DEBUG_C_RUNTIME 
+
+template <class T> class stringBuf
+{
+
+public:
+
+NA_EIDPROC stringBuf(T* buf, Int32 len, CollHeap* heap = 0) : 
+      buf_(buf), bufSize_(len), count_(len), alloc_(FALSE), heap_(heap) {};
+
+NA_EIDPROC stringBuf(T* buf, Int32 iBufSize, Int32 iStrLen, CollHeap* heap = 0) : 
+      buf_(buf), bufSize_(iBufSize),
+      count_(iStrLen <= iBufSize? iStrLen : iBufSize),
+      alloc_(FALSE), heap_(heap) {};
+
+NA_EIDPROC  stringBuf(Int32 len, CollHeap* heap = 0) : 
+      bufSize_(len),
+      count_(len), // should be set to 0, but keep the existing behavior for now
+      alloc_(FALSE), heap_(heap)
+  {
+    if ( len == 0 ) 
+        buf_ = 0;
+    else {
+        alloc_ = TRUE;
+        buf_ = (heap) ? (new (heap) T[len]) : 
+                      new T[len];
+    }
+    if (buf_ != NULL)
+    {
+      if (bufSize_ > 0)
+        buf_[0] = 0;
+    }
+  };
+
+NA_EIDPROC
+  ~stringBuf() 
+  {
+     if ( alloc_ ) {
+       if ( heap_ ) 
+            NADELETEBASIC(buf_, heap_);
+       else
+            delete [] buf_;
+     }
+  };
+
+NA_EIDPROC
+  inline Int32 getBufSize() const { return bufSize_; }
+
+NA_EIDPROC
+  inline Int32 getStrLen() const { return count_; } // same as length()
+
+NA_EIDPROC
+  inline Int32 length() const { return count_; }
+
+NA_EIDPROC
+  inline void setStrLen(Int32 x) { count_ = (x <= bufSize_) ? x : bufSize_; } // avoid buffer overrun
+
+NA_EIDPROC
+  inline void setLength(Int32 x) { count_ = x; }
+
+NA_EIDPROC
+  inline T* data() const { return buf_; }
+
+NA_EIDPROC
+  T operator() (Int32 i) const { return buf_[i]; };
+
+NA_EIDPROC
+  T last() const { return buf_[getStrLen()-1]; };
+
+NA_EIDPROC
+  void decrementAndNullTerminate() { /* if (count > 0) */ buf_[--count_]=0; }
+
+NA_EIDPROC
+  void zeroOutBuf(Int32 startPos = 0)
+  {
+    if (startPos >= 0 && buf_ && bufSize_ > 0 && bufSize_ - startPos > 0)
+    {
+      memset((void*)&buf_[startPos], 0, (size_t)((bufSize_-startPos)*sizeof(T)));
+      count_ = startPos;
+    }
+  };
+
+#ifdef NA_DEBUG_C_RUNTIME
+NA_EIDPROC
+  ostream& print(ostream& out) { 
+
+      Int32 i=0;
+      for (; i<count_; i++ ) 
+         out << Int32(buf_[i]) << " ";
+
+      out << endl;
+      for ( i=0; i<count_; i++ ) 
+         out << hex << Int32(buf_[i]) << " ";
+
+      out << endl;
+      return out;
+  };
+#endif // NA_DEBUG_C_RUNTIME
+
+private:
+  T* buf_;
+  Int32 bufSize_;
+  Int32 count_;
+  NABoolean alloc_;
+  CollHeap* heap_;
+};
+
+// define the type of char and wchar buffer used in these
+// conversion routines.
+typedef stringBuf<NAWchar> NAWcharBuf;
+typedef stringBuf<unsigned char> charBuf;
+
+//
+// Check and optionally allocate space for char or NAWchar typed buffer. The 
+// following comments apply to both the NAWchar and char version of 
+// checkSpace().
+//
+//  case 1: target buffer pointer 'target' is not NULL 
+//        if has enough space to hold SIZE chars, then 'target' 
+//        is returned; otherwise, NULL is returned. 
+//  case 2: target buffer pointer 'target' is NULL 
+//        a buffer of SIZE is allocated from the heap (if the heap argument 
+//        is not NULL), or from the C runtime system heap if NA_NO_C_RUNTIME is
+//        not defined. Otherwise, a NULL is returned.
+//  For either case, SIZE is defined as olen + (addNullAtEnd) ? 1 : 0.
+//
+//  If addNullAtEnd is TRUE, a NULL will be inserted at the beginning of 'target' 
+//  if it is not NULL. 
+//
+NA_EIDPROC
+NAWcharBuf* checkSpace(CollHeap* heap, Int32 olen, NAWcharBuf*& target, NABoolean addNullAtEnd);
+
+NA_EIDPROC
+charBuf* checkSpace(CollHeap* heap, Int32 olen, charBuf*& target, NABoolean addNullAtEnd);
+
+#endif

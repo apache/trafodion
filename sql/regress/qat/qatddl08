@@ -1,0 +1,289 @@
+LOG aqatddl08 Clear;
+---------------------------------------------------------------------
+-- File: SQLQAT08                Formerly $cats.testest.qat008
+-- Component: NonStop SQL Regression Test Suite
+-- Description: create multiple-data-type database:
+--                         CREATE SHORTHAND VIEWS
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel01 - The VIEW equals the base table.
+---------------------------------------------------------------------
+  CREATE VIEW svsel01
+     AS SELECT *
+     FROM btsel10
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel02 - Simple selection of columns.
+---------------------------------------------------------------------
+  CREATE VIEW svsel02
+     AS SELECT
+        binary_unsigned
+      , pic_x_a
+      , pic_x_7
+      , decimal_10
+     FROM btsel10
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel03 - Simple selection of rows.
+---------------------------------------------------------------------
+  CREATE VIEW svsel03
+     AS SELECT *
+     FROM btsel10
+     WHERE ( decimal_10 > 100 )
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel04 - With rows and columns, and renamed columns.
+---------------------------------------------------------------------
+  CREATE VIEW svsel04
+      ( new_name_1
+      , new_name_2
+      , new_name_3
+        )
+     AS SELECT
+        pic_x_a
+      , pic_x_7
+      , char_10
+     FROM btsel10
+     WHERE ( pic_x_7 < 'the' ) AND
+           NOT ( decimal_10 BETWEEN 10 AND pic_9_7 )
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel05 - Cross product on key sequenced and entry
+-- sequenced tables, with SYSKEY from each.
+---------------------------------------------------------------------
+  CREATE VIEW svsel05
+      ( new_name_ks_s
+      , new_name_ks_x
+      , new_name_es_s
+      , new_name_es_x
+        )
+     AS SELECT
+        btsel05.SYSKEY
+      , btsel05.pic_x_b
+      , btsel25.SYSKEY
+      , btsel25.pic_x_1
+     FROM btsel05, btsel25
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel06 - Cross product on key sequenced and entry
+-- sequenced tables, withOUT SYSKEY from each.
+---------------------------------------------------------------------
+  CREATE VIEW svsel06
+      ( new_name_ks_x
+      , new_name_es_x
+        )
+     AS SELECT
+        btsel05.pic_x_b
+      , btsel25.pic_x_1
+     FROM btsel05, btsel25
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel07 - Select aggregates and functions.
+---------------------------------------------------------------------
+  CREATE VIEW svsel07
+      ( count_all
+      , avg_distinct
+      , avg_all
+      , max_all
+      , min_all
+      , sum_all
+        )
+     AS SELECT
+        count (*)
+      , avg   ( distinct binary_32_u )
+      , avg   ( all binary_32_u )
+      , max   ( all (binary_32_u + pic_9_7 ) )
+      , min   ( (pic_9_7 - binary_32_u) / binary_64_s )
+      , sum   ( all (binary_32_u - pic_9_7 ) )
+     FROM btsel03
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel08 - Only one DISTINCT aggregate per VIEW:
+---------------------------------------------------------------------
+  CREATE VIEW svsel08
+      ( max_distinct )
+     AS SELECT
+        max   ( distinct binary_32_u )
+     FROM btsel03
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel09 - Only one DISTINCT aggregate per VIEW:
+---------------------------------------------------------------------
+  CREATE VIEW svsel09
+      ( min_distinct )
+     AS SELECT
+        min   ( distinct binary_32_u )
+     FROM btsel03
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel10 - Only one DISTINCT aggregate per VIEW:
+-- For 'sum distinct', see svsel12 below.
+---------------------------------------------------------------------
+  CREATE VIEW svsel10
+      ( count_distinct )
+     AS SELECT
+        count ( distinct binary_32_u )
+     FROM btsel03
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW svsel11
+---------------------------------------------------------------------
+  CREATE VIEW svsel11
+      ( col_1
+      , col_2
+      , col_3
+      , col_4
+      , col_5
+      , col_6
+      , col_7
+      , col_8
+        )
+     AS SELECT
+        btsel01.binary_signed
+      , btsel01.large_int
+      , btsel01.medium_int
+      , btsel01.pic_decimal_3
+      , btsel01.pic_x_1
+      , btsel01.pic_x_7
+      , btsel01.small_int
+      , btsel03.pic_x_7
+     FROM btsel01, btsel03
+-- For shorthand VIEW (unlike protection VIEW) WHERE clause can
+-- reference columns not found in SELECT list:
+     WHERE btsel01.binary_64_s = btsel03.binary_64_s
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW with expressions and aggregate functions,
+-- rather than simple column mappings.
+---------------------------------------------------------------------
+  CREATE VIEW svsel12 (
+        col_1
+      , col_3
+      , col_4
+      , col_5
+        )
+     AS SELECT
+        sum (distinct btsel01.binary_signed)
+      , AVG (btsel01.pic_decimal_3)
+      , MAX (btsel01.pic_x_1)
+      , MIN (btsel01.pic_x_7)
+     FROM btsel01, btsel03
+-- For shorthand VIEW (unlike protection VIEW) WHERE clause can
+-- reference columns not found in SELECT list:
+     WHERE btsel01.binary_64_s > btsel03.binary_64_s AND
+        ( btsel01.pic_x_7 <> btsel03.pic_x_7 )
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW on two protection VIEWs.
+---------------------------------------------------------------------
+  CREATE VIEW svsel13(new_name_1, new_name_2, new_name_3, new_name_4,
+                      var_char, medium_int, pic_x_7, pic_comp_1)
+     AS SELECT *
+        FROM pvsel03, pvsel04
+        WHERE pvsel03.new_name_3 = pvsel04.pic_x_7
+  --   CATALOG <subvol_for_data>
+  ;
+
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Shorthand VIEW on another shorthand VIEW, with GROUP BY,
+-- ORDER BY.
+  CREATE VIEW svsel14
+     AS SELECT
+           new_name_1, new_name_3
+        FROM svsel13
+        GROUP BY
+           new_name_1, new_name_3
+  ;
+---------------------------------------------------------------------
+
+
+
+---------------------------------------------------------------------
+-- Mixed shorthand VIEW.
+---------------------------------------------------------------------
+  CREATE VIEW svsel15
+-- For columns for btsel05
+      ( mixed_1 , mixed_2 , mixed_3 , mixed_4 , mixed_5
+-- For columns for btsel06
+      , mixed_11, mixed_12, mixed_13
+-- For columns for btsel07
+      , mixed_21, mixed_22, mixed_23
+      )
+     AS SELECT btsel05.pic_x_a , btsel05.pic_x_b , btsel05.pic_x_c
+             , btsel05.col_1   , btsel05.col_2
+             , btsel06.pic_x_a , btsel06.pic_x_b , btsel06.pic_x_c
+             , btsel07.*
+        FROM btsel05, btsel06,
+           btsel07
+        WHERE btsel05.pic_x_a = btsel06.pic_x_a
+           AND btsel06.pic_x_b = btsel07.pic_x_b
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- 12-table VIEW
+---------------------------------------------------------------------
+  CREATE VIEW svsel16
+     AS SELECT btsel12.data_x3
+             , btsel12.data_93
+             , btsel15.small_int
+             , btsel18.binary_signed
+             , btsel23.pic_comp_2
+        FROM btsel12, btsel13,
+             btsel14, btsel15,
+             btsel16, btsel17,
+             btsel18, btsel19,
+             btsel20, btsel21,
+             btsel22, btsel23
+        WHERE  btsel12.data_93 = btsel13.data_93
+     AND (btsel12.data_93 = btsel14.data_93)
+     AND (btsel12.data_93 = btsel15.data_93)
+     AND (btsel15.small_int = btsel16.small_int)
+     AND (btsel15.small_int = btsel17.small_int)
+     AND (btsel15.small_int = btsel18.small_int)
+     AND (btsel18.binary_signed = btsel19.binary_signed)
+     AND (btsel18.binary_signed = btsel20.binary_signed)
+     AND (btsel18.binary_signed = btsel21.binary_signed)
+     AND (btsel21.pic_comp_2    = btsel22.pic_comp_2)
+     AND (btsel21.pic_comp_2 = btsel23.pic_comp_2 )
+  ;
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+  CREATE VIEW  svsel17
+     ( a , b , c )
+     AS SELECT svsel16.data_x3
+             , svsel16.pic_comp_2
+             , btsel24.data_x3
+        FROM svsel16, btsel24
+        WHERE svsel16.data_x3 = btsel24.data_x3
+     ;
+---------------------------------------------------------------------
+LOG;

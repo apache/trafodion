@@ -1,0 +1,623 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+/* SCHEMA PRODUCED DATE - TIME : 2/09/2010 - 13:13:33 */
+#pragma section constants
+/* Constant SQLMX-VERSION created on 02/09/2010 at 13:13 */
+#define SQLMX_VERSION 18182U
+/* Constant SQLMX-VAL-EXTERNAL-SSID created on 02/09/2010 at 13:13 */
+#define SQLMX_VAL_EXTERNAL_SSID "TANDEM.236.0"
+/* Constant SQLMX-SSN created on 02/09/2010 at 13:13 */
+#define SQLMX_SSN 236
+/* Constant SQLMX-DDL-CLI-FAILURE created on 02/09/2010 at 13:13 */
+#define SQLMX_DDL_CLI_FAILURE 500
+/* Constant SQLMX-ABORT created on 02/09/2010 at 13:13 */
+#define SQLMX_ABORT 501
+/* Constant SQLMX-ASSERTION-FAILURE created on 02/09/2010 at 13:13 */
+#define SQLMX_ASSERTION_FAILURE 502
+/* Constant SQLMX-OPT-PASS1-FAILURE created on 02/09/2010 at 13:13 */
+#define SQLMX_OPT_PASS1_FAILURE 503
+/* Constant SQLMX-OPT-PASS2-FAILURE created on 02/09/2010 at 13:13 */
+#define SQLMX_OPT_PASS2_FAILURE 504
+/* Constant SQLMX-CLI-RECOMP-OCCURED created on 02/09/2010 at 13:13 */
+#define SQLMX_CLI_RECOMP_OCCURED 505
+/* Constant SQLMX-CLI-RECLAIM-OCCURED created on 02/09/2010 at 13:13 */
+#define SQLMX_CLI_RECLAIM_OCCURED 506
+/* Constant SQLMX-SRT-DISK-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_SRT_DISK_INFO 507
+/* Constant SQLMX-EXEC-RT-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_EXEC_RT_INFO 508
+/* Constant SQLMX-DIST-CAT-REGISTER created on 02/09/2010 at 13:13 */
+#define SQLMX_DIST_CAT_REGISTER 509
+/* Constant SQLMX-DIST-CAT-REMOVE created on 02/09/2010 at 13:13 */
+#define SQLMX_DIST_CAT_REMOVE 510
+/* Constant SQLMX-DIST-SCH-REPLICATE created on 02/09/2010 at 13:13 */
+#define SQLMX_DIST_SCH_REPLICATE 511
+/* Constant SQLMX-DIST-CAT-STATE-CHANGE created on 02/09/2010 at 13:13 */
+#define SQLMX_DIST_CAT_STATE_CHANGE 512
+/* Constant SQLMX-DIST-SCH-REMOVE created on 02/09/2010 at 13:13 */
+#define SQLMX_DIST_SCH_REMOVE 513
+/* Constant SQLMX-ERR97-OCCURED created on 08/10/2011 at 10:31 */
+#define SQLMX_ERR97_OCCURED 516
+/* Constant SQLMX-PM-OPERATION-STARTED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_OPERATION_STARTED 521
+/* Constant SQLMX-PM-TGT-CREATED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_TGT_CREATED 522
+/* Constant SQLMX-PM-TGT-CREATED-SUM created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_TGT_CREATED_SUM 523
+/* Constant SQLMX-PM-LOAD-START-DBIO created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOAD_START_DBIO 524
+/* Constant SQLMX-PM-LOAD-START-URC created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOAD_START_URC 525
+/* Constant SQLMX-PM-LOAD-START-ARC created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOAD_START_ARC 526
+/* Constant SQLMX-PM-LOAD-STATUS created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOAD_STATUS 527
+/* Constant SQLMX-PM-LOAD-COMPLETED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOAD_COMPLETED 528
+/* Constant SQLMX-PM-ONLINE-DUMP created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_ONLINE_DUMP 529
+/* Constant SQLMX-PM-DUMP-SUMMARY created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_DUMP_SUMMARY 530
+/* Constant SQLMX-PM-COMMIT-STARTED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_COMMIT_STARTED 531
+/* Constant SQLMX-PM-LOCK-REQUESTED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOCK_REQUESTED 532
+/* Constant SQLMX-PM-LOCK-STATUS created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_LOCK_STATUS 533
+/* Constant SQLMX-PM-PART-LABEL-UPDATED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_PART_LABEL_UPDATED 534
+/* Constant SQLMX-PM-FUPRELOAD-CREATED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_FUPRELOAD_CREATED 535
+/* Constant SQLMX-PM-ROW-HIDING-ON created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_ROW_HIDING_ON 536
+/* Constant SQLMX-PM-OPERATION-COMPLETED created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_OPERATION_COMPLETED 537
+/* Constant SQLMX-PM-OPERATION-FAIL created on 02/09/2010 at 13:13 */
+#define SQLMX_PM_OPERATION_FAIL 538
+/* Constant SQLMX-EVT-AUD-INIT created on 02/09/2010 at 13:13 */
+#define SQLMX_EVT_AUD_INIT 539
+/* Constant SQLMX-EVT-AUD-STATUS created on 02/09/2010 at 13:13 */
+#define SQLMX_EVT_AUD_STATUS 540
+/* Constant SQLMX-EVT-AUD-START created on 02/09/2010 at 13:13 */
+#define SQLMX_EVT_AUD_START 541
+/* Constant SQLMX-EVT-AUD-DONE created on 02/09/2010 at 13:13 */
+#define SQLMX_EVT_AUD_DONE 542
+/* Constant SQLMX-EVT-AUD-TERM created on 02/09/2010 at 13:13 */
+#define SQLMX_EVT_AUD_TERM 543
+/* Constant SQLMX-OPR-ATT-CRITICAL-EVT created on 02/09/2010 at 13:13 */
+#define SQLMX_OPR_ATT_CRITICAL_EVT 544
+/* Constant SQLMX-OPR-ATT-HIGH-EVT created on 02/09/2010 at 13:13 */
+#define SQLMX_OPR_ATT_HIGH_EVT 545
+/* Constant SQLMX-OPR-ATT-MEDIUM-EVT created on 02/09/2010 at 13:13 */
+#define SQLMX_OPR_ATT_MEDIUM_EVT 546
+/* Constant SQLMX-OPR-ATT-LOW-EVT created on 02/09/2010 at 13:13 */
+#define SQLMX_OPR_ATT_LOW_EVT 547
+/* Constant SQLMX-UTIL-OP-START created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_START 551
+/* Constant SQLMX-UTIL-OP-END created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_END 552
+/* Constant SQLMX-UTIL-OP-ERROR created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_ERROR 553
+/* Constant SQLMX-UTIL-OP-COMMIT-START created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_COMMIT_START 554
+/* Constant SQLMX-UTIL-OP-RECOVERY created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_RECOVERY 555
+/* Constant SQLMX-UTIL-OP-AUDCOMPR-ALTER created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_AUDCOMPR_ALTER 556
+/* Constant SQLMX-UTIL-OP-EXTENTS-ALTER created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_EXTENTS_ALTER 557
+/* Constant SQLMX-UTIL-OP-COMMIT-END created on 02/09/2010 at 13:13 */
+#define SQLMX_UTIL_OP_COMMIT_END 558
+/* Constant SQLMX-UGDG-OP-START created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_OP_START 560
+/* Constant SQLMX-UGDG-OP-COMPLETED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_OP_COMPLETED 561
+/* Constant SQLMX-UGDG-SCH-UPGRADED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UPGRADED 562
+/* Constant SQLMX-UGDG-SCH-DOWNGRADED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWNGRADED 563
+/* Constant SQLMX-UGDG-SCH-UPGRADE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UPGRADE 564
+/* Constant SQLMX-UGDG-SCH-DOWNGRADE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWNGRADE 565
+/* Constant SQLMX-UGDG-DEFSCH-CREATE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_DEFSCH_CREATE 566
+/* Constant SQLMX-UGDG-MD-UPGRADE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_UPGRADE 567
+/* Constant SQLMX-UGDG-MD-DOWNGRADE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_DOWNGRADE 568
+/* Constant SQLMX-UGDG-SCH-SETVER created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_SETVER 569
+/* Constant SQLMX-UGDG-FILE-LABELS created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_FILE_LABELS 570
+/* Constant SQLMX-UGDG-MD-REMOVE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_REMOVE 571
+/* Constant SQLMX-UGDG-DEFSCH-REMOVE created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_DEFSCH_REMOVE 572
+/* Constant SQLMX-UGDG-OP-CANCEL created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_OP_CANCEL 573
+/* Constant SQLMX-UGDG-OP-RESUME created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_OP_RESUME 574
+/* Constant SQLMX-UGDG-SCH-UP-CANCEL created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UP_CANCEL 575
+/* Constant SQLMX-UGDG-SCH-DOWN-CANCEL created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWN_CANCEL 576
+/* Constant SQLMX-UGDG-SCH-UP-CANCELED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UP_CANCELED 577
+/* Constant SQLMX-UGDG-SCH-DOWN-CANCELED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWN_CANCELED 578
+/* Constant SQLMX-UGDG-MD-UP-NOTREQ created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_UP_NOTREQ 579
+/* Constant SQLMX-UGDG-MD-DOWN-NOTREQ created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_DOWN_NOTREQ 580
+/* Constant SQLMX-UGDG-SCH-SETVER-NOTREQ created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_SETVER_NOTREQ 581
+/* Constant SQLMX-UGDG-FILE-LABELS-NOTREQ created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_FILE_LABELS_NOTREQ 582
+/* Constant SQLMX-UGDG-MD-REMOVE-NOTREQ created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_MD_REMOVE_NOTREQ 583
+/* Constant SQLMX-UGDG-SCH-UP-COMPLETED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UP_COMPLETED 584
+/* Constant SQLMX-UGDG-SCH-DOWN-COMPLETED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWN_COMPLETED 585
+/* Constant SQLMX-UGDG-SCH-UP-NOTSTARTED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_UP_NOTSTARTED 586
+/* Constant SQLMX-UGDG-SCH-DOWN-NOTSTARTED created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_SCH_DOWN_NOTSTARTED 587
+/* Constant SQLMX-UGDG-METADATA-FIXUP created on 02/09/2010 at 13:13 */
+#define SQLMX_UGDG_METADATA_FIXUP 588
+/* Constant SQLMX-MVQR-INFO created on 4/13/2010 17:27 */
+#define SQLMX_MVQR_INFO 596
+/* Constant SQLMX_MVQR_ERROR  created on 4/13/2010 17:27 */
+#define SQLMX_MVQR_ERROR 597
+/* Constant SQLMX_MVQR_FAILURE created on 4/13/2010 17:27 */
+#define SQLMX_MVQR_FAILURE 598
+/* Constant SQLMX-ASSERTION-LOOP created on 02/09/2010 at 13:13 */
+#define SQLMX_ASSERTION_LOOP 600
+/* Constant SQLMX-ERROR-LOOP created on 02/09/2010 at 13:13 */
+#define SQLMX_ERROR_LOOP 601
+/* Constant SQLMX-MVREFRESH-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_MVREFRESH_INFO 602
+/* Constant SQLMX-MVREFRESH-ERROR created on 02/09/2010 at 13:13 */
+#define SQLMX_MVREFRESH_ERROR 603
+/* Constant SQLMX-UAF-CREATE-USER created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_CREATE_USER 604
+/* Constant SQLMX-UAF-DROP-USER created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_DROP_USER 605
+/* Constant SQLMX-UAF-GRANT-REVOKE-ROLE created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_GRANT_REVOKE_ROLE 606
+/* Constant SQLMX-UAF-MANAGE-SUPER created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_MANAGE_SUPER 607
+/* Constant SQLMX-UAF-CHANGE-PASSWORD created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_CHANGE_PASSWORD 608
+/* Constant SQLMX-UAF-SECURITY-CHANGE created on 02/09/2010 at 13:13 */
+#define SQLMX_UAF_SECURITY_CHANGE 609
+/* Constant SQLMX-LDAP-OPERR created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_OPERR 610
+/* Constant SQLMX-LDAP-AUTHEN created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_AUTHEN 611
+/* Constant SQLMX-LDAP-SENDMSG created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_SENDMSG 612
+/* Constant SQLMX-LDAP-USER-MGMT created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_USER_MGMT 613
+/* Constant SQLMX-LDAP-SERVER-CNFG created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_SERVER_CNFG 614
+/* Constant SQLMX-LDAP-DAEMON-PROCESS created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_DAEMON_PROCESS 615
+/* Constant SQLMX-LDAP-CONFIG-PROCESS created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_CONFIG_PROCESS 616
+/* Constant SQLMX-LDAP-USER-AUDIT created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_USER_AUDIT 617
+/* Constant SQLMX-LDAP-STATUS-MSG created on 02/09/2010 at 13:13 */
+#define SQLMX_LDAP_STATUS_MSG 618
+/* Constant SQLMX-UAFSRV-START-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_START_INFO 620
+/* Constant SQLMX-UAFSRV-STATUS-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_STATUS_INFO 621
+/* Constant SQLMX-UAFSRV-FILEIO-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_FILEIO_ERR 622
+/* Constant SQLMX-UAFSRV-LOG-ROLLOVER-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_LOG_ROLLOVER_ERR 623
+/* Constant SQLMX-UAFSRV-SAFE-SPI-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_SAFE_SPI_ERR 624
+/* Constant SQLMX-UAFSRV-SAFEGUARD-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_SAFEGUARD_ERR 625
+/* Constant SQLMX-UAFSRV-LOG-FILE-CODE-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_LOG_FILE_CODE_ERR 626
+/* Constant SQLMX-UAFSRV-SQL-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_SQL_ERR 627
+/* Constant SQLMX-UAFSRV-STOP-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_UAFSRV_STOP_ERR 630
+/* Constant SQLMX-PWD-SS-STARTED created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_STARTED 650
+/* Constant SQLMX-PWD-SS-SETUP-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_SETUP_ERR 651
+/* Constant SQLMX-PWD-SS-CONNECT-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_CONNECT_ERR 652
+/* Constant SQLMX-PWD-SS-DISCONNECT-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_DISCONNECT_ERR 653
+/* Constant SQLMX-PWD-SS-INTERNAL-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_INTERNAL_ERR 654
+/* Constant SQLMX-PWD-SS-AUTH-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_SS_AUTH_ERR 655
+/* Constant SQLMX-PWD-INIT-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_INIT_ERR 656
+/* Constant SQLMX-PWD-AUTHEN-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_PWD_AUTHEN_ERR 657
+/* Constant SQLMX-SEC-LOGON-RESULT created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_LOGON_RESULT 700
+/* Constant SQLMX-SEC-FSE created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_FSE 701
+/* Constant SQLMX-SEC-FSE-DETAIL-NUM created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_FSE_DETAIL_NUM 702
+/* Constant SQLMX-SEC-FSE-NO-FILE created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_FSE_NO_FILE 703
+/* Constant SQLMX-SEC-SQL-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_SQL_ERR 704
+/* Constant SQLMX-SEC-UNKNOWN-CASE created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_UNKNOWN_CASE 705
+/* Constant SQLMX-SEC-UNKNOWN-EVENTNUM created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_UNKNOWN_EVENTNUM 706
+/* Constant SQLMX-SEC-UNSUPPORTED-DATATYPE created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_UNSUPPORTED_DATATYPE 707
+/* Constant SQLMX-SEC-NO-MEMORY created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_NO_MEMORY 708
+/* Constant SQLMX-POS-ERROR-1154 created on 02/09/2010 at 13:13 */
+#define SQLMX_POS_ERROR_1154 1154
+/* Constant SQLMX-SEC-DEVMODE-WARNING created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_DEVMODE_WARNING 709
+/* Constant SQLMX-SEC-CONFIG-ERR created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_CONFIG_ERR 710
+/* Constant SQLMX-SEC-CONFIG-ERR-CRITICAL created on 02/09/2010 at 13:13 */
+#define SQLMX_SEC_CONFIG_ERR_CRITICAL 711
+/* Constant DDL-CLI-FAILURE created on 02/09/2010 at 13:13 */
+#define DDL_CLI_FAILURE 1
+/* Constant EXECUTABLE-NAME created on 02/09/2010 at 13:13 */
+#define EXECUTABLE_NAME 2
+/* Constant PROCESS-ID created on 02/09/2010 at 13:13 */
+#define PROCESS_ID 3
+/* Constant FILE-NAME created on 02/09/2010 at 13:13 */
+#define FILE_NAME 4
+/* Constant LINE-NUMBER created on 02/09/2010 at 13:13 */
+#define LINE_NUMBER 5
+/* Constant SQL-MESSAGE created on 02/09/2010 at 13:13 */
+#define SQL_MESSAGE 6
+/* Constant SQL-TEXT created on 02/09/2010 at 13:13 */
+#define SQL_TEXT 7
+/* Constant PM-OP-TYPE created on 02/09/2010 at 13:13 */
+#define PM_OP_TYPE 8
+/* Constant PM-OBJ-TYPE created on 02/09/2010 at 13:13 */
+#define PM_OBJ_TYPE 9
+/* Constant PM-ANSI-NAME created on 02/09/2010 at 13:13 */
+#define PM_ANSI_NAME 10
+/* Constant PM-GUARDIAN-NAME created on 02/09/2010 at 13:13 */
+#define PM_GUARDIAN_NAME 11
+/* Constant PM-INTERVAL created on 02/09/2010 at 13:13 */
+#define PM_INTERVAL 12
+/* Constant PM-UNITS-READ created on 02/09/2010 at 13:13 */
+#define PM_UNITS_READ 13
+/* Constant PM-UNIT-NAME created on 02/09/2010 at 13:13 */
+#define PM_UNIT_NAME 14
+/* Constant PM-ERRTEXT created on 02/09/2010 at 13:13 */
+#define PM_ERRTEXT 15
+/* Constant PM-SQLCODE created on 02/09/2010 at 13:13 */
+#define PM_SQLCODE 16
+/* Constant PM-DUMP-FILE created on 02/09/2010 at 13:13 */
+#define PM_DUMP_FILE 17
+/* Constant PM-AUD-INTERVAL created on 02/09/2010 at 13:13 */
+#define PM_AUD_INTERVAL 18
+/* Constant PM-AUD-RECS-READ created on 02/09/2010 at 13:13 */
+#define PM_AUD_RECS_READ 19
+/* Constant PM-AUD-RECS-REDO created on 02/09/2010 at 13:13 */
+#define PM_AUD_RECS_REDO 20
+/* Constant PM-AUD-DISTANCE-TO-EOF created on 02/09/2010 at 13:13 */
+#define PM_AUD_DISTANCE_TO_EOF 21
+/* Constant PM-AUD-PROG-RATE created on 02/09/2010 at 13:13 */
+#define PM_AUD_PROG_RATE 22
+/* Constant PM-AUD-READ-RATE created on 02/09/2010 at 13:13 */
+#define PM_AUD_READ_RATE 23
+/* Constant PM-AUD-REDO-RATE created on 02/09/2010 at 13:13 */
+#define PM_AUD_REDO_RATE 24
+/* Constant PM-AUD-NUM created on 02/09/2010 at 13:13 */
+#define PM_AUD_NUM 25
+/* Constant CLI-RECOMP-OCCURED created on 02/09/2010 at 13:13 */
+#define CLI_RECOMP_OCCURED 26
+/* Constant CLI-STMT-ID created on 02/09/2010 at 13:13 */
+#define CLI_STMT_ID 27
+/* Constant CLI-MODULE-NAME created on 02/09/2010 at 13:13 */
+#define CLI_MODULE_NAME 28
+/* Constant CLI-RECLAIM-OCCURED created on 02/09/2010 at 13:13 */
+#define CLI_RECLAIM_OCCURED 29
+/* Constant CLI-MEM-FREESIZE created on 02/09/2010 at 13:13 */
+#define CLI_MEM_FREESIZE 30
+/* Constant CLI-MEM-TOTALSIZE created on 02/09/2010 at 13:13 */
+#define CLI_MEM_TOTALSIZE 31
+/* Constant CLI-TOTAL-CONTEXTS created on 02/09/2010 at 13:13 */
+#define CLI_TOTAL_CONTEXTS 32
+/* Constant CLI-TOTAL-STATEMENTS created on 02/09/2010 at 13:13 */
+#define CLI_TOTAL_STATEMENTS 33
+/* Constant SRT-DISK-ERROR created on 02/09/2010 at 13:13 */
+#define SRT_DISK_ERROR 34
+/* Constant SRT-PCT-FREE created on 02/09/2010 at 13:13 */
+#define SRT_PCT_FREE 35
+/* Constant SRT-DISK-NAME created on 02/09/2010 at 13:13 */
+#define SRT_DISK_NAME 36
+/* Constant SQLMX-POS-INFO created on 02/09/2010 at 13:13 */
+#define SQLMX_POS_INFO 37
+/* Constant SQLMX-POS-ERROR created on 02/09/2010 at 13:13 */
+#define SQLMX_POS_ERROR 38
+/* Constant SRT-ERROR-MSG created on 02/09/2010 at 13:13 */
+#define SRT_ERROR_MSG 39
+/* Constant CREATOR-PROCESS created on 02/09/2010 at 13:13 */
+#define CREATOR_PROCESS 40
+/* Constant EXPLAIN-NODE created on 02/09/2010 at 13:13 */
+#define EXPLAIN_NODE 41
+/* Constant ERROR-SEVERITY created on 02/09/2010 at 13:13 */
+#define ERROR_SEVERITY 42
+/* Constant ERROR-EVENT-TARGET created on 02/09/2010 at 13:13 */
+#define ERROR_EVENT_TARGET 43
+/* Constant ERROR-EXPERIENCE-LEVEL created on 02/09/2010 at 13:13 */
+#define ERROR_EXPERIENCE_LEVEL 44
+/* Constant ERROR-SQL-ID created on 02/09/2010 at 13:13 */
+#define ERROR_SQL_ID 45
+/* Constant UTIL-NAME created on 02/09/2010 at 13:13 */
+#define UTIL_NAME 46
+/* Constant UTIL-STATUS created on 02/09/2010 at 13:13 */
+#define UTIL_STATUS 47
+/* Constant SCHEMA-VER-SRC created on 02/09/2010 at 13:13 */
+#define SCHEMA_VER_SRC 48
+/* Constant SCHEMA-VER-TARGET created on 02/09/2010 at 13:13 */
+#define SCHEMA_VER_TARGET 49
+/* Constant DEF-SCHEMA-NAME created on 02/09/2010 at 13:13 */
+#define DEF_SCHEMA_NAME 50
+/* Constant NORMALIZED-OPERATION created on 02/09/2010 at 13:13 */
+#define NORMALIZED_OPERATION 51
+/* Constant ERROR-CLASS created on 02/09/2010 at 13:13 */
+#define ERROR_CLASS 52
+/* Constant ERROR-DETAIL created on 02/09/2010 at 13:13 */
+#define ERROR_DETAIL 53
+/* Constant USER-NAME created on 02/09/2010 at 13:13 */
+#define USER_NAME 54
+/* Constant ROLE-VALUE created on 02/09/2010 at 13:13 */
+#define ROLE_VALUE 55
+/* Constant LDAP-OPERR created on 02/09/2010 at 13:13 */
+#define LDAP_OPERR 56
+/* Constant LDAP-ERRTYPE created on 02/09/2010 at 13:13 */
+#define LDAP_ERRTYPE 57
+/* Constant LDAP-ERRCODE created on 02/09/2010 at 13:13 */
+#define LDAP_ERRCODE 58
+/* Constant LDAP-MSG created on 02/09/2010 at 13:13 */
+#define LDAP_MSG 59
+/* Constant FILE-SYSTEM-ERRCODE created on 02/09/2010 at 13:13 */
+#define FILE_SYSTEM_ERRCODE 60
+/* Constant SPI-ERRCODE created on 02/09/2010 at 13:13 */
+#define SPI_ERRCODE 61
+/* Constant SAFEGUARD-ERRCODE created on 02/09/2010 at 13:13 */
+#define SAFEGUARD_ERRCODE 62
+/* Constant OLD-FILE-NAME created on 02/09/2010 at 13:13 */
+#define OLD_FILE_NAME 63
+/* Constant FILE-CODE created on 02/09/2010 at 13:13 */
+#define FILE_CODE 64
+/* Constant EXIT-CODE created on 02/09/2010 at 13:13 */
+#define EXIT_CODE 65
+/* Constant SQL-CODE created on 02/09/2010 at 13:13 */
+#define SQL_CODE 66
+/* Constant SEC-ALIASNAME created on 02/09/2010 at 13:13 */
+#define SEC_ALIASNAME 67
+/* Constant SEC-USERNAME created on 02/09/2010 at 13:13 */
+#define SEC_USERNAME 68
+/* Constant SEC-LOGON-RESULT created on 02/09/2010 at 13:13 */
+#define SEC_LOGON_RESULT 69
+/* Constant SEC-ERROR created on 02/09/2010 at 13:13 */
+#define SEC_ERROR 70
+/* Constant SEC-SQLCODE created on 02/09/2010 at 13:13 */
+#define SEC_SQLCODE 71
+/* Constant SEC-FILENAME created on 02/09/2010 at 13:13 */
+#define SEC_FILENAME 72
+/* Constant SEC-ERROR-DETAIL created on 02/09/2010 at 13:13 */
+#define SEC_ERROR_DETAIL 73
+/* Constant SEC-OPERATION created on 02/09/2010 at 13:13 */
+#define SEC_OPERATION 74
+/* Constant SEC-ERROR-TEXT created on 02/09/2010 at 13:13 */
+#define SEC_ERROR_TEXT 75
+/* Constant SEC-MSG-SRC created on 02/09/2010 at 13:13 */
+#define SEC_MSG_SRC 76
+/* Constant SEC-MSG-TYPE created on 02/09/2010 at 13:13 */
+#define SEC_MSG_TYPE 77
+/* Constant SEC-TYPE created on 02/09/2010 at 13:13 */
+#define SEC_TYPE 78
+/* Constant SEC-UNKNOWN-TYPE-VALUE created on 02/09/2010 at 13:13 */
+#define SEC_UNKNOWN_TYPE_VALUE 79
+/* Constant SEC-EVENTNUM created on 02/09/2010 at 13:13 */
+#define SEC_EVENTNUM 80
+/* Constant SEC-SPI-DATATYPE created on 02/09/2010 at 13:13 */
+#define SEC_SPI_DATATYPE 81
+/* Token Code TKN-DDL-CLI-FAILURE created on 02/09/2010 at 13:13 */
+#define TKN_DDL_CLI_FAILURE 33488897LU
+/* Token Code TKN-EXECUTABLE-NAME created on 02/09/2010 at 13:13 */
+#define TKN_EXECUTABLE_NAME 33488898LU
+/* Token Code TKN-PROCESS-ID created on 02/09/2010 at 13:13 */
+#define TKN_PROCESS_ID 33488899LU
+/* Token Code TKN-FILE-NAME created on 02/09/2010 at 13:13 */
+#define TKN_FILE_NAME 33488900LU
+/* Token Code TKN-LINE-NUMBER created on 02/09/2010 at 13:13 */
+#define TKN_LINE_NUMBER 33488901LU
+/* Token Code TKN-SQL-MESSAGE created on 02/09/2010 at 13:13 */
+#define TKN_SQL_MESSAGE 33488902LU
+/* Token Code TKN-SQL-TEXT created on 02/09/2010 at 13:13 */
+#define TKN_SQL_TEXT 33488903LU
+/* Token Code TKN-CLI-RECOMP-OCCURED created on 02/09/2010 at 13:13 */
+#define TKN_CLI_RECOMP_OCCURED 33488922LU
+/* Token Code TKN-STATEMENT-ID created on 02/09/2010 at 13:13 */
+#define TKN_STATEMENT_ID 33488923LU
+/* Token Code TKN-MODULE-NAME created on 02/09/2010 at 13:13 */
+#define TKN_MODULE_NAME 33488924LU
+/* Token Code TKN-CLI-RECLAIM-OCCURED created on 02/09/2010 at 13:13 */
+#define TKN_CLI_RECLAIM_OCCURED 33488925LU
+/* Token Code TKN-MEM-FREESIZE created on 02/09/2010 at 13:13 */
+#define TKN_MEM_FREESIZE 33488926LU
+/* Token Code TKN-MEM-TOTALSIZE created on 02/09/2010 at 13:13 */
+#define TKN_MEM_TOTALSIZE 33488927LU
+/* Token Code TKN-TOTAL-CONTEXTS created on 02/09/2010 at 13:13 */
+#define TKN_TOTAL_CONTEXTS 33488928LU
+/* Token Code TKN-TOTAL-STATEMENTS created on 02/09/2010 at 13:13 */
+#define TKN_TOTAL_STATEMENTS 33488929LU
+/* Token Code TKN-PM-OP-TYPE created on 02/09/2010 at 13:13 */
+#define TKN_PM_OP_TYPE 33488904LU
+/* Token Code TKN-PM-OBJ-TYPE created on 02/09/2010 at 13:13 */
+#define TKN_PM_OBJ_TYPE 33488905LU
+/* Token Code TKN-PM-ANSI-NAME created on 02/09/2010 at 13:13 */
+#define TKN_PM_ANSI_NAME 33488906LU
+/* Token Code TKN-PM-GUARDIAN-NAME created on 02/09/2010 at 13:13 */
+#define TKN_PM_GUARDIAN_NAME 33488907LU
+/* Token Code TKN-PM-INTERVAL created on 02/09/2010 at 13:13 */
+#define TKN_PM_INTERVAL 67633164LU
+/* Token Code TKN-PM-UNITS-READ created on 02/09/2010 at 13:13 */
+#define TKN_PM_UNITS_READ 67633165LU
+/* Token Code TKN-PM-UNIT-NAME created on 02/09/2010 at 13:13 */
+#define TKN_PM_UNIT_NAME 33488910LU
+/* Token Code TKN-PM-ERRTEXT created on 02/09/2010 at 13:13 */
+#define TKN_PM_ERRTEXT 33488911LU
+/* Token Code TKN-PM-SQLCODE created on 02/09/2010 at 13:13 */
+#define TKN_PM_SQLCODE 50593808LU
+/* Token Code TKN-PM-DUMP-FILE created on 02/09/2010 at 13:13 */
+#define TKN_PM_DUMP_FILE 33488913LU
+/* Token Code TKN-SRT-DISK-ERROR created on 02/09/2010 at 13:13 */
+#define TKN_SRT_DISK_ERROR 33685538LU
+/* Token Code TKN-SRT-PCT-FREE created on 02/09/2010 at 13:13 */
+#define TKN_SRT_PCT_FREE 33488931LU
+/* Token Code TKN-DISK-NAME created on 02/09/2010 at 13:13 */
+#define TKN_DISK_NAME 33488932LU
+/* Token Code TKN-SRT-ERROR-MSG created on 02/09/2010 at 13:13 */
+#define TKN_SRT_ERROR_MSG 33488935LU
+/* Token Code TKN-CREATOR-PROCESS created on 02/09/2010 at 13:13 */
+#define TKN_CREATOR_PROCESS 33488936LU
+/* Token Code TKN-EXPLAIN-NODE created on 02/09/2010 at 13:13 */
+#define TKN_EXPLAIN_NODE 33488937LU
+/* Token Code TKN-PM-AUD-INTERVAL created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_INTERVAL 67633170LU
+/* Token Code TKN-PM-AUD-RECS-READ created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_RECS_READ 67633171LU
+/* Token Code TKN-PM-AUD-RECS-REDO created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_RECS_REDO 67633172LU
+/* Token Code TKN-PM-AUD-DISTANCE-TO-EOF created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_DISTANCE_TO_EOF 67633173LU
+/* Token Code TKN-PM-AUD-PROG-RATE created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_PROG_RATE 67633174LU
+/* Token Code TKN-PM-AUD-READ-RATE created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_READ_RATE 67633175LU
+/* Token Code TKN-PM-AUD-REDO-RATE created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_REDO_RATE 67633176LU
+/* Token Code TKN-PM-AUD-NUM created on 02/09/2010 at 13:13 */
+#define TKN_PM_AUD_NUM 33685529LU
+/* Token Code TKN-ERROR-SEVERITY created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_SEVERITY 33488938LU
+/* Token Code TKN-ERROR-EVENT-TARGET created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_EVENT_TARGET 33488939LU
+/* Token Code TKN-ERROR-EXPERIENCE-LEVEL created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_EXPERIENCE_LEVEL 33488940LU
+/* Token Code TKN-ERROR-SQL-ID created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_SQL_ID 33488941LU
+/* Token Code TKN-UTIL-NAME created on 02/09/2010 at 13:13 */
+#define TKN_UTIL_NAME 33488942LU
+/* Token Code TKN-UTIL-STATUS created on 02/09/2010 at 13:13 */
+#define TKN_UTIL_STATUS 33488943LU
+/* Token Code TKN-SCHEMA-VER-SRC created on 02/09/2010 at 13:13 */
+#define TKN_SCHEMA_VER_SRC 33685552LU
+/* Token Code TKN-SCHEMA-VER-TARGET created on 02/09/2010 at 13:13 */
+#define TKN_SCHEMA_VER_TARGET 33685553LU
+/* Token Code TKN-DEF-SCHEMA-NAME created on 02/09/2010 at 13:13 */
+#define TKN_DEF_SCHEMA_NAME 33488946LU
+/* Token Code TKN-NORMALIZED-OPERATION created on 02/09/2010 at 13:13 */
+#define TKN_NORMALIZED_OPERATION 33488947LU
+/* Token Code TKN-ERROR-CLASS created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_CLASS 33488948LU
+/* Token Code TKN-ERROR-DETAIL created on 02/09/2010 at 13:13 */
+#define TKN_ERROR_DETAIL 33488949LU
+/* Token Code TKN-USER-NAME created on 02/09/2010 at 13:13 */
+#define TKN_USER_NAME 33488950LU
+/* Token Code TKN-ROLE-VALUE created on 02/09/2010 at 13:13 */
+#define TKN_ROLE_VALUE 33488951LU
+/* Token Code TKN-LDAP-OPERR created on 02/09/2010 at 13:13 */
+#define TKN_LDAP_OPERR 33488952LU
+/* Token Code TKN-LDAP-ERRTYPE created on 02/09/2010 at 13:13 */
+#define TKN_LDAP_ERRTYPE 33488953LU
+/* Token Code TKN-LDAP-ERRCODE created on 02/09/2010 at 13:13 */
+#define TKN_LDAP_ERRCODE 50593850LU
+/* Token Code TKN-LDAP-MSG created on 02/09/2010 at 13:13 */
+#define TKN_LDAP_MSG 33488955LU
+/* Token Code TKN-FILE-SYSTEM-ERRCODE created on 02/09/2010 at 13:13 */
+#define TKN_FILE_SYSTEM_ERRCODE 33488956LU
+/* Token Code TKN-SPI-ERRCODE created on 02/09/2010 at 13:13 */
+#define TKN_SPI_ERRCODE 33488957LU
+/* Token Code TKN-SAFEGUARD-ERRCODE created on 02/09/2010 at 13:13 */
+#define TKN_SAFEGUARD_ERRCODE 33488958LU
+/* Token Code TKN-OLD-FILE-NAME created on 02/09/2010 at 13:13 */
+#define TKN_OLD_FILE_NAME 33488959LU
+/* Token Code TKN-FILE-CODE created on 02/09/2010 at 13:13 */
+#define TKN_FILE_CODE 33488960LU
+/* Token Code TKN-EXIT-CODE created on 02/09/2010 at 13:13 */
+#define TKN_EXIT_CODE 33488961LU
+/* Token Code TKN-SQL-CODE created on 02/09/2010 at 13:13 */
+#define TKN_SQL_CODE 33488962LU
+/* Token Code TKN-SEC-ALIASNAME created on 02/09/2010 at 13:13 */
+#define TKN_SEC_ALIASNAME 33488963LU
+/* Token Code TKN-SEC-USERNAME created on 02/09/2010 at 13:13 */
+#define TKN_SEC_USERNAME 33488964LU
+/* Token Code TKN-SEC-LOGON-RESULT created on 02/09/2010 at 13:13 */
+#define TKN_SEC_LOGON_RESULT 17301573LU
+/* Token Code TKN-SEC-ERROR created on 02/09/2010 at 13:13 */
+#define TKN_SEC_ERROR 33685574LU
+/* Token Code TKN-SEC-SQLCODE created on 02/09/2010 at 13:13 */
+#define TKN_SEC_SQLCODE 50593863LU
+/* Token Code TKN-SEC-FILENAME created on 02/09/2010 at 13:13 */
+#define TKN_SEC_FILENAME 33488968LU
+/* Token Code TKN-SEC-ERROR-DETAIL created on 02/09/2010 at 13:13 */
+#define TKN_SEC_ERROR_DETAIL 33685577LU
+/* Token Code TKN-SEC-OPERATION created on 02/09/2010 at 13:13 */
+#define TKN_SEC_OPERATION 33488970LU
+/* Token Code TKN-SEC-ERROR-TEXT created on 02/09/2010 at 13:13 */
+#define TKN_SEC_ERROR_TEXT 33488971LU
+/* Token Code TKN-SEC-MSG-SRC created on 02/09/2010 at 13:13 */
+#define TKN_SEC_MSG_SRC 33488972LU
+/* Token Code TKN-SEC-MSG-TYPE created on 02/09/2010 at 13:13 */
+#define TKN_SEC_MSG_TYPE 33488973LU
+/* Token Code TKN-SEC-TYPE created on 02/09/2010 at 13:13 */
+#define TKN_SEC_TYPE 33488974LU
+/* Token Code TKN-SEC-UNKNOWN-TYPE-VALUE created on 02/09/2010 at 13:13 */
+#define TKN_SEC_UNKNOWN_TYPE_VALUE 33685583LU
+/* Token Code TKN-SEC-EVENTNUM created on 02/09/2010 at 13:13 */
+#define TKN_SEC_EVENTNUM 33685584LU
+/* Token Code TKN-SEC-SPI-DATATYPE created on 02/09/2010 at 13:13 */
+#define TKN_SEC_SPI_DATATYPE 33685585LU
+/* Definition SQLMX-VAL-SSID created on 02/09/2010 at 13:13 */
+#pragma fieldalign shared2 __sqlmx_val_ssid
+typedef struct __sqlmx_val_ssid
+{
+   union
+   {
+      char                            z_filler[8];
+      /*value is "TANDEM  "*/
+      char                            z_owner[8];
+   } u_z_filler;
+   short                           z_number;
+   /*value is 236*/
+   unsigned short                  z_version;
+   /*value is 18182*/
+} sqlmx_val_ssid_def;
+#define sqlmx_val_ssid_def_Size 12

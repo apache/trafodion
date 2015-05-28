@@ -1,0 +1,552 @@
+-- Tests for SeaBase
+-- Added July 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST011(setup);
+obey TEST011(clnup);
+
+log LOG011 clear;
+obey TEST011(tests);
+obey TEST011(clnup);
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+
+cqd query_cache '0';
+
+?section clnup
+drop table T011T1;
+drop table t011tT3;
+drop table T011T2;
+drop table t011t4;
+
+drop view v;
+drop table t011t5;
+drop table t011t6a;
+drop table t011t6b;
+
+-- delete explain for statement explstmt from repository
+set parserflags 131072;
+delete from trafodion."_REPOS_".metric_query_table
+  where query_id like 'MXID%EXPLSTMT%';
+reset parserflags 131072;
+
+?section tests
+
+create table T011T1 (a int not null, b char(10), primary key(a));
+
+invoke T011T1;
+
+insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+select * from T011T1;
+
+select * from T011T1 where a = 2;
+select * from t011t1 where a = 1 or a = 2;
+select * from t011t1 where a = 1 or a = 4;
+select * from t011t1 where a = 5;
+
+select * from T011T1 where a > 1;
+
+select * from T011T1 where a >= 1;
+
+select * from t011t1 where a < 3;
+select * from t011t1 where a <= 3;
+
+select * from t011t1 where a > 1 and a < 3;
+select * from t011t1 where a >= 2 and a < 4;
+select * from t011t1 where a >= 2 and a <= 3;
+select * from t011t1 where a >= 3 and a < 5;
+
+select * from t011t1 where a > 4 and a < 2;
+
+delete from t011t1 where a = 1;
+select * from t011t1;
+
+delete from t011t1 where a > 2 and a <= 3;
+select * from t011t1;
+
+delete from t011t1;
+select * from t011t1;
+
+insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+delete from t011t1 where a >= 3 and a < 4;
+select * from t011t1;
+
+select * from (delete from t011t1 where a = 2)x;
+select * from (delete from t011t1) x;
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'ON';
+cqd hbase_updel_cursor_opt 'ON';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'ON';
+cqd hbase_updel_cursor_opt 'OFF';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'OFF';
+cqd hbase_updel_cursor_opt 'OFF';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+drop table if exists t011t3;
+create table if not exists t011t3 (a int not null, b int not null, c char(500), 
+                                            primary key(a,b)); 
+
+-- should return error 4246
+prepare s from 
+upsert using load into t011t3 (a,b) values (1,2);
+
+prepare s from
+upsert with no rollback into t011t3
+  select
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  from (values(1)) as starter
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+explain options 'f' s;
+execute s;
+
+delete from t011t3;
+
+prepare s from
+upsert using load into t011t3
+  select
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  from (values(1)) as starter
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+explain options 'f' s;
+execute s;
+
+-- singleton plan test LP bug 1342141
+create table T011T2 (a int not null, b char(500), 
+                     c int not null, primary key(a))
+salt using 4 partitions;
+
+insert into T011T2 values (1, 'a', 11), (2, 'b', 22), (3, 'c', 33);
+insert into T011T2 values (10, 'aa', 110), (20, 'bb', 220), (30, 'cc', 330);
+insert into T011T2 values (11, 'aaa', 111), (22, 'bbb', 222), (33, 'ccc', 333);
+update statistics for table T011T2 on every column;
+
+-- should get serial plans
+explain options 'f' 
+select b, c 
+from T011T2 
+where a = ?;
+
+-- try with cardinality hint, still should see serial plan 
+explain options 'f'
+select b, c
+from T011T2 << cardinality 1e7 >>
+where a = ?;
+
+-- transaction optimization tests
+delete from t011t1;
+
+-- next 4 explains should not choose external transaction
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+explain options 'f' select * from t011t1 where a = 1;
+
+-- next 2 explains should not choose external transaction
+explain options 'f' upsert using load into t011t1 values (1,'a'), (2,'b');
+explain options 'f' upsert with no rollback into t011t1 values (1,'a'), (2,'b');
+
+-- next 3 explains should choose external transaction with 'return' on error
+begin work;
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+commit work;
+
+-- next 3 explains should choose external transaction with 'return' on error
+set transaction autocommit off;
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+set transaction autocommit on;
+
+-- next 3 explains should choose external transaction with abort on error
+explain options 'f' insert into t011t1 values (?[10], ?[10]);
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+-- next 3 explains should choose external transaction with abort on error
+create index t011t1i1 on t011t1(b);
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+drop index t011t1i1;
+
+-- next 4 explain should choose external transaction with abort on error
+explain options 'f' insert into t011t1 values (1,'a'), (2,'b');
+explain options 'f' delete from t011t1 where a = 1 or a = 2;
+explain options 'f' update t011t1 set b = 'b' where a = 1 or a = 2;
+explain options 'f' insert into t011t1 select a,c from t011t3;
+
+
+
+
+-- test for update/delete where current of
+cqd hbase_sql_iud_semantics reset;
+cqd hbase_rowset_vsbb_opt reset;
+cqd hbase_updel_cursor_opt reset;
+set envvar sqlci_cursor;
+
+delete from t011t1;
+insert into T011T1 values (1, 'a'), (2, 'b');
+
+declare c cursor for select * from t011t1 for update of b;
+open c;
+fetch c;
+update t011t1 set b = 'aa' where current of c;
+fetch c;
+update t011t1 set b = 'bb' where current of c;
+update t011t1 set b = 'bb' where current of c;
+fetch c;
+update t011t1 set b = 'bb' where current of c;
+close c;
+select * from t011t1;
+
+open c;
+fetch c;
+delete from t011t1 where current of c;
+select * from t011t1;
+fetch c;
+delete from t011t1 where current of c;
+fetch c;
+delete from t011t1 where current of c;
+close c;
+
+select * from t011t1;
+
+
+-- tests for large columns
+create table t011t4 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200000 bytes) character set utf8);
+insert into t011t4 values ('a', repeat('b', 200), 'c', repeat('d', 400));
+select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
+
+update t011t4 set b = repeat('b', 100000);
+select left(b, 50) from t011t4;
+
+upsert into t011t4 values ('a', repeat('b', 100000), 'c', repeat('d', 100000)),
+                               ('a', repeat('b', 50000), 'c', repeat('d', 50000));
+select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
+
+-- negative test
+create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200001 bytes) character set utf8);
+
+-- tests for repository explain
+-- check for repository tables
+get tables in schema trafodion."_REPOS_";
+invoke trafodion."_REPOS_".metric_query_table;
+
+-- delete explain for statement explstmt from repository
+set parserflags 131072;
+delete from trafodion."_REPOS_".metric_query_table
+  where query_id like 'MXID%EXPLSTMT%';
+reset parserflags 131072;
+
+-- prepare stmt and store explain in repository
+prepare explstmt from select * from t011t1;
+store explain for explstmt in repository;
+
+-- get qid for the prepared stmt
+get qid for statement explstmt;
+
+-- retrieve explain plan from repository based on the qid and return it.
+select seq_num, operator from table(explain(null, 
+    'EXPLAIN_QID=' || (get qid for statement explstmt))) 
+  order by seq_num desc;
+
+-- return explain info from the input explain plan
+select seq_num, operator from table(explain(null,
+   'EXPLAIN_PLAN=' || (select explain_plan from trafodion."_REPOS_".metric_query_table
+                                   where query_id = (get qid for statement explstmt))))
+  order by seq_num desc;
+
+-- compile and explain a statement.
+select seq_num, operator from table(explain(null, 
+       'EXPLAIN_STMT=select * from t011t1'))
+  order by seq_num desc;
+
+
+-- prepare stmt and store it with a user specified query id.
+-- this is to test formatted explain display based on a query id.
+prepare explstmt2 from select * from t011t1;
+get qid for statement explstmt2;
+set qid MXID123456 for explstmt2;
+get qid for statement explstmt2;
+
+store explain for explstmt2 in repository;
+explain options 'f' qid MXID123456 from repository;
+
+-- error: no explain available
+cqd generate_explain 'OFF';
+prepare explstmt3 from select * from t011t1;
+store explain for explstmt3 in repository;
+explain options 'f' select * from t011t1;
+cqd generate_explain 'ON';
+
+-- error: explain too large to be stored in repository
+prepare explstmt4 from select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+;
+store explain for explstmt4 in repository;
+explain options 'f' explstmt4;
+
+-- duplicate column reference, should return error
+create table t011t5(a int, a int);
+create table t011t5 (a int, b int, a int);
+create table t011t5 (a int, b int);
+create view v as select a,a from t011t5;
+create view v as select a,b,1 as z,b from t011t5;
+create view v as select 1 as b, 2 as a, 1 as b from t011t5;
+create view v as select a,b from t011t5;
+
+-- Test for the bug 1452424
+create table t011t6a (
+a int not null, b int, c int,
+d char(2), e char(4), f char(8))
+attribute extent (1024, 1024), maxextents 15 store by (a);
+
+insert into t011t6a values
+ (1,10,100,'d1','e1','f1'),
+ (2,20,200,'d2','e2','f2'),
+ (3,30,300,'d3','e3','f3'),
+ (4,40,400,'d4','e4','f4'),
+ (5,50,500,'d5','e5','f5'),
+ (6,60,600,'d6','e6','f6'),
+ (7,70,700,'d7','e7','f7'),
+ (8,80,800,'d8','e8','f8'),
+ (9,90,900,'d9','e9','f9'),
+ (10,100,1000,'da','ea','fa'),
+ (11,110,1100,'db','eb','fb'),
+ (12,120,1200,'dc','ec','fc'),
+ (13,130,1300,'dd','ed','fd'),
+ (14,140,1400,'de','ee','fe'),
+ (15,150,1500,'df','ef','ff');
+
+create table t011t6b (
+ a int not null, 
+ b int,
+ c int,
+ d char(10),
+ e varchar(10),
+ f char(10),
+ v1 int not null,
+ v2 int not null,
+ v3 int not null,
+ v4 int not null,
+ v5 int not null)
+ store by (a, v1, v2, v3, v4, v5) AS (
+ select * from t011t6a
+ transpose 10 as v1
+ transpose 100,22,222 as v2
+ transpose 1000,33,333 as v3
+ transpose 10000,44,444 as v4
+ transpose 100000,55,555 as v5);
+
+-- should be 1215
+select count(*) from t011t6b;
+
+insert into t011t6b (
+select * from t011t6a
+transpose 0 as v1
+transpose 1,3,5,7 as v2
+transpose 2,4,6,8 as v3
+transpose 3,5,7,9 as v4
+transpose 4,6,8,10 as v5);
+
+-- should be 5055
+select count(*) from t011t6b;
+
+prepare x1 from update t011t6b
+set b = (select a from t011t6a where a = 1), c = (select a from t011t6a where a = 11), 
+d = (select d from t011t6a where a = 15), e = (select e from t011t6a where c = 1000),
+f = (select f from t011t6a where b = 100) where v1 < 100000 and v2 < 99 and v3 < 500;
+
+explain options 'f' x1;
+-- 4110 updated
+execute x1;
+
+prepare x2 from delete from t011t6b
+where d = (select d from t011t6a where a = 15) and 
+e = (select e from t011t6a where c = 1000) 
+and f = (select f from t011t6a where b = 100);
+
+explain options 'f' x2;
+-- 4110 deleted
+execute x2;
+
+--- shoud be 945
+select count(*) from t011t6b;
+
+drop table t011t6a ;
+drop table t011t6b ;
+

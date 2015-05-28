@@ -1,0 +1,253 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# This OSS script (stats_profile) is for the histogram automation project
+# that uses a set of queries to discover the histograms
+# that will be needed.  
+#
+# These needed histograms will be marked during query preparation.
+# If the "run" option is specified, they will be generated automatically.  
+# 
+# Usage: stats_profile <query_file | -log log_file> [run]
+#
+#        query_file: a file with queries separated by ;
+#        log_file: an mxci log file
+#        run: set this flag to automatically update necessary statistics
+#
+
+# SQ port. Need the extension package to handle conditional expressions
+shopt -s extglob
+
+ME=${0##*/}			# get name of this script
+function show_error {
+cat <<EOF
+
+To use a set of queries to profile the histograms that are needed for histogram automation
+  
+Usage: ${ME} <query_file | -log log_file> [run]
+
+          query_file: a file with queries separated by ;
+          log_file: an mxci log file
+          run: set this flag to automatically update necessary statistics
+          
+EOF
+  exit 1
+}
+
+function check_readable {
+  if [[ ! -r "$1" ]]; then
+    echo "Cannot read $1"
+    exit 1
+  fi
+}
+
+LINUX=0
+if [ `uname` = "Linux" ]; then
+  LINUX=1
+fi
+
+STARTTIME=`date`
+typeset -i NUMQ=0
+# Check arguments
+LOGFILE=""
+QUERYFILE=""
+RUN=FALSE
+case $# in 
+  1)  check_readable $1
+      QUERYFILE=$1 ;; 
+  2)  if [[ $1 = "-log" ]]; then 
+        check_readable $2 
+        LOGFILE=$2
+      elif [[ $2 = run ]]; then
+        check_readable $1 
+        QUERYFILE=$1
+        RUN=TRUE
+      else
+        show_error
+      fi ;;
+  3)  if [[ $1 = "-log" && $3 = run ]]; then 
+        check_readable $2 
+        LOGFILE=$2
+        RUN=TRUE
+      else
+        show_error
+      fi ;;
+  *)  show_error ;;
+esac
+
+
+# check environment and
+# specify a log file to keep track of this program 
+# and a load file for mxci to prepare queries
+if [[ `uname` = NONSTOP_KERNEL ]]; then
+  # nsk
+  PATH=$mxcidir:$PATH
+  LOG=\/tmp\/USTATS_PROFILE_LOG
+  LOADFILE=\/tmp\/USTATS_PROFILE_LOAD
+  MXCI=mxci
+elif [ $LINUX -ne 1 ]; then
+  # nt
+  LOG=$TMP\\USTATS_PROFILE_LOG
+  LOADFILE=$TMP\\USTATS_PROFILE_LOAD
+  MXCI=sqlci
+else
+  # SQ
+  LOG=$MY_SQROOT/tmp/USTATS_PROFILE_LOG
+  LOADFILE=$MY_SQROOT/tmp/USTATS_PROFILE_LOAD
+  export SQLMX_TERMINAL_CHARSET=UTF8
+  MXCI=$MY_SQROOT/export/bin32/sqlci
+fi
+
+# start logging
+echo "=== Statistics profiling log starting at $STARTTIME ===" > $LOG
+# set the following CQD to turn on histogram automation
+echo "control query default USTAT_AUTOMATION_INTERVAL '1440';" > $LOADFILE
+
+# if the input is a log file
+# extract its queries into a load file for mxci
+# a query may be in the form of ">>a_query;" or
+# ">>begin_a_query"
+# "+>part_a_query"
+# "+>end_a_query;"
+if [[ -n "$LOGFILE" ]]; then
+  echo "== Processing an mxci log..." >> $LOG
+  while read ALOGLINE; do
+    echo "= $ALOGLINE" >> $LOG
+    # only consider lines starting with >> or +>
+    if [[ "$ALOGLINE" = [\>\+]\>* ]]; then
+      typeset ULOGLINE="$ALOGLINE"
+      ULOGLINE=$(echo $ULOGLINE | tr '[:lower:]' '[:upper:]')
+      # ignore exit and log because we do our own log and exit
+      if [[ "$ULOGLINE" = \>\>*(\ )EXIT\; || "$ULOGLINE" = \>\>*(\ )LOG[\;\ ] ]]; then
+        continue
+      fi
+      # prepare queries
+      if [[ "$ULOGLINE" = \>\>*(\ )SELECT* || "$ULOGLINE" = \>\>*(\ )INSERT* || \
+        "$ULOGLINE" = \>\>*(\ )UPDATE* || "$ULOGLINE" = \>\>*(\ )DELETE* ]]; then
+        echo "PREPARE P FROM ${ALOGLINE##>>}" >> $LOADFILE
+        NUMQ=NUMQ+1
+      else 
+        # other commands or +>
+        echo "${ALOGLINE##[+>]>}" >> $LOADFILE
+      fi
+    fi
+  done < $LOGFILE
+fi
+
+# if the input is a query file
+# prepare its content into a load file for mxci
+# assume the line items (ended with ;) in the query file 
+# are all valid sql commands ordered in proper sequence
+if [[ -n "$QUERYFILE" ]]; then
+  echo "== Processing a query file..." >> $LOG
+  CONTINUE=FALSE
+  while read ACOMMAND; do
+    echo "= $ACOMMAND"  >> $LOG
+    typeset UCOMMAND="$ACOMMAND"
+    UCOMMAND=$(echo $UCOMMAND | tr '[:lower:]' '[:upper:]')
+    if [[ "$CONTINUE" = TRUE ]]; then
+      # continue from previous line
+      echo "$ACOMMAND"  >> $LOADFILE
+    else
+      if [[ "$UCOMMAND" = *(\ )SELECT* || "$UCOMMAND" = *(\ )UPDATE* 
+        || "$UCOMMAND" = *(\ )INSERT* || "$UCOMMAND" = *(\ )DELETE* ]]; then
+        # prepare queries
+        echo "PREPARE P FROM $ACOMMAND" >> $LOADFILE
+        NUMQ=NUMQ+1
+      else 
+        # for others, like set schema, etc., just execute it
+        echo "$ACOMMAND" >> $LOADFILE
+      fi
+    fi
+    # if there is no ;, the query continues in the next line
+    if [[ "$ACOMMAND" = *\;* ]]; then
+      # if one line has more than one query, this is not allowed
+      if [[ "$ACOMMAND" != *\;*(\ ) || "$ACOMMAND" = *\;*\;* ]]; then
+        echo "Invalid line item: $ACOMMAND" | tee -a $LOG
+        exit 1
+      fi
+      CONTINUE=FALSE
+    else
+      CONTINUE=TRUE
+    fi
+  done < $QUERYFILE
+fi
+
+# close up the load file
+echo "exit;" >> $LOADFILE
+
+# Indicate the number of queries to process.
+echo "  $NUMQ queries in this profile." | tee -a $LOG
+
+# run mxci
+echo "== Starting an mxci session..." >> $LOG
+
+# Must run twice.  There is a problem with the shell when run from an SPJ.
+# The write to $LOG is unsynced, so can't get the output from that here.
+# Instead have to assign output of MXCI to 'check' variable to look for errors.
+$MXCI < $LOADFILE >> $LOG
+check=$($MXCI < $LOADFILE)
+
+sp_errcnt=0
+for word in $check; do
+  if [[ $word = "ERROR[8822]" ]]; then
+    let sp_errcnt=$sp_errcnt+1
+  fi
+done
+
+# print summary
+echo "**********************************************" >> $LOG
+echo "  $NUMQ queries processed in this profile." | tee -a $LOG
+if [[ $sp_errcnt != 0 ]]; then 
+  echo "  ERROR: $sp_errcnt queries were not prepared.  See file $LOG" | tee -a $LOG
+else                           
+  echo "  0 errors detected." | tee -a $LOG
+fi
+echo "  Log file: $LOG" >> $LOG
+echo "  Load file: $LOADFILE" >> $LOG
+echo "  Start time: $STARTTIME" >> $LOG
+echo "  End time: `date`" >> $LOG
+echo "**********************************************" >> $LOG
+
+# automatically update statistics
+if [[ $RUN = TRUE ]]; then
+  if [[ $sp_errcnt != 0 ]]; then 
+    echo "  Skipping run of update statistics due to errors." | tee -a $LOG
+  else 
+    echo "  Performing update statistics for necessary histograms on automated tables." | tee -a $LOG
+    STARTTIME=`date`
+
+    if [ $LINUX -eq 1 ]; then
+      sh $MY_SQROOT/export/lib/mx_ustat/USAS.sh;
+    elif [[ $mxcidir != "" ]]; then
+      $mxcidir/USAS.sh;
+    else                          
+      /usr/tandem/mx_ustat/USAS.sh;
+    fi
+
+    # print summary
+    echo "**********************************************" >> $LOG
+    echo "  Completed: Update statistics for necessary histograms." | tee -a $LOG
+    echo "  Start time: $STARTTIME" >> $LOG
+    echo "  End time: `date`" >> $LOG
+    echo "**********************************************" >> $LOG
+  fi
+fi
+

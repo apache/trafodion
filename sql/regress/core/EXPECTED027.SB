@@ -1,0 +1,135 @@
+>>
+>>#ifNSK
+>>-- -------------------------------------------------------------
+>>-- (soln 10-090922-4789) Test HJ with wide input rows ( > 56 KB)
+>>-- -------------------------------------------------------------
+>>control query default COMP_BOOL_140 'OFF';
+>>
+>>select [last 0] t3.vc1, t3.vc2, t4.vc  from
++>  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
++>     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+>>
+>>-- should return Optimizer assertion (to be fixed - soln 10-090109-8311)
+>>
+>>control query default COMP_BOOL_140 'ON';
+>> -- avoid Optimizer assertion
+>>
+>>select [last 0] t3.vc1, t3.vc2, t4.vc  from
++>  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
++>     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+>>
+>>-- should get error 7352 (input row to upper HJ longer than hash buffer size)
+>>
+>>-- CQS: Send a large row (~ 96 KB) thru exchange; and use an Ordered HJ 
+>>-- to avoid the hash buffer limit (that's a DP2 limit for the overflow, 
+>>-- hence does not apply to OHJ)
+>>
+>>control query shape exchange(OHJ(cut,cut));
+>>
+>>
+>>select [last 0] t3.vc1, t3.vc2, t4.vc  from
++>  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
++>     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+>>
+>>-- should succeed with no error
+>>
+>>control query shape cut;
+>>
+>>#ifNSK
+>>
+>>-- -------------------------------------------------------------
+>>-- (soln 10-091103-5991) Test FOJ with input to after join pred
+>>-- -------------------------------------------------------------
+>>
+>>-- This query uses an input parameter (the current timestamp) for an
+>>-- after-join-predicate in an FOJ
+>>SELECT [LAST 0] 1 FROM   VW027_ALERTS 
++>  WHERE ALARM_CREATE_LCT_TS BETWEEN 
++>    CAST(DATE_SUB(CURRENT_DATE, INTERVAL '29' DAY) AS TIMESTAMP(6)) 
++>    AND CURRENT_TIMESTAMP 
++>FOR READ UNCOMMITTED ACCESS ;
+
+--- 0 row(s) selected.
+>>
+>>-- should pass (earlier buggy code got ERROR[8416]) 
+>>
+>>-- -------------------------------------------------------------
+>>-- (soln 10-090504-1337) Test FOJ with input to left join expr
+>>-- -------------------------------------------------------------
+>>set param ?p 1234;
+>>insert into t027inner values (1234,5678);
+
+--- 1 row(s) inserted.
+>>select * from 
++>   t027outer t1 full outer join 
++>     (select * from t027inner where t027inner.i1 = ?p) t2 
++>         on t1.o1 = t2.i1 and t1.o2 = t2.i2;
+
+O1           O2           I1           I2         
+-----------  -----------  -----------  -----------
+
+          ?            ?         1234         5678
+
+--- 1 row(s) selected.
+>>
+>>-- value of I1 should be 1234 !!
+>>
+>>-- ------------------------------------------------------------------------
+>>-- (soln 10-090706-2833) Test Distinct Partial HGB with a HAVING expression
+>>-- ------------------------------------------------------------------------
+>>#ifdef SEABASE_REGRESS
+>>control query shape
++>implicit enforcers
++>join (
++>  join (
++>   join (
++>     cut,
++>     hash_groupby(cut)),
++>   cut),
++>  cut);
+
+--- SQL operation complete.
+>>#else
+>>control query shape 
++>implicit enforcers
++>join (
++>  join (
++>   join (
++>     cut,
++>     hash_groupby(hash_groupby(cut))),
++>   cut),
++>  cut);
+>>#endif
+>>
+>>
+>>select *
++>from  (select a from t027t1 x) x
++>     left outer join
++>      (select y1.a, y2.c
++>       from t027t1 y1 join t027t1 y2 on y1.b=y2.b
++>       where y1.a <> ''
++>       group by 1,2) y
++>      on x.a=y.a
++>     right outer join
++>      (select a from t027t1 z) z
++>      on x.a=z.a
++>     inner join
++>      (select a from t027t1 w) w
++>      on x.a=w.a
++>;
+
+A           A           C            A           A         
+----------  ----------  -----------  ----------  ----------
+
+abc         abc                   1  abc         abc       
+def         def                   2  def         def       
+
+--- 2 row(s) selected.
+>>
+>>-- should work (in prior code the ESPs abended!)
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>log;

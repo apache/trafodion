@@ -1,0 +1,19 @@
+.TH CKILLALL 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+ckillall \- cluster process killall
+.LP
+.SH SYNOPSIS
+.B ckillall
+.SH DESCRIPTION
+.LP
+.B ckillall
+will send a SIGKILL to all SQ processes
+over all nodes in a cluster.
+.B ckillall
+will work like pkillall if the host is not a cluster-system.
+.LP
+ckillall will query the user before executing the command when executed 
+in an interactive mode.
+Does it silently when executed from within a script.
+.SH SEE ALSO
+.I kill.

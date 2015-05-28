@@ -1,0 +1,21 @@
+.TH UPDATE_SQL 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+update_sql \- Update sql/sqlmx directory
+.LP
+.SH SYNOPSIS
+.B update_sql
+[
+.B \-i |
+.B \-q
+]
+.SH DESCRIPTION
+.LP
+.B update_sql
+updates the $MY_SQROOT/sql/sqlmx directory on all the nodes.
+.SH USAGE
+.TP 7
+.BI -i
+specifies the directory to copy/update (from the current node to the same location on all nodes).
+.TP
+.BI -q
+will perform some operations quietly.

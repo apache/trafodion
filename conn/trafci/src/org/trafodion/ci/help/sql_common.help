@@ -1,0 +1,356 @@
+
+ @@@@@HELP
+
+   The command interface supports these commands:
+
+    @           LOG                     SET TIMING
+    ALIAS       OBEY                    SHOW ALIAS
+    CLEAR       QUIT                    SHOW ALIASES
+    CONNECT     RECONNECT               SHOW COLSEP
+    DELAY       REPEAT                  SHOW ERRORCODE
+    DISCONNECT  RESET LASTERROR         SHOW HISTOPT
+    ENV         SAVEHIST                SHOW IDLETIMEOUT
+    EXIT        SESSION (SHOW SESSION)  SHOW LASTERROR
+                SET COLSEP              SHOW MARKUP
+    FC          SET CONNECTOPT ROLE     SHOW ROLE
+    GOTO        SET HISTOPT             SHOW SESSION
+    HELP        SET IDLETIMEOUT         SHOW TIME
+    HISTORY     SET MARKUP              SHOW TIMING
+    IF...THEN   SET PROMPT              SPOOL
+    LABEL       SET TIME                VERSION
+    LOCALHOST  
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET
+
+   The command interface supports these SET commands:
+
+    SET COLSEP           SET IDLETIMEOUT  SET TIME    
+    SET CONNECTOPT ROLE  SET MARKUP       SET TIMING  
+    SET HISTOPT          SET PROMPT                   
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW
+
+   The command interface supports these SHOW commands:
+
+    SHOW ALIAS      SHOW IDLETIMEOUT  SHOW SESSION   
+    SHOW ALIASES    SHOW LASTERROR    SHOW TIME      
+    SHOW COLSEP     SHOW MARKUP       SHOW TIMING    
+    SHOW ERRORCODE  SHOW ROLE           
+    SHOW HISTOPT                            
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@HELP
+
+   These interface commands can be run only in SQL mode, which
+   is the default mode in TRAFCI:
+
+    /               SET PARAM           SHOW PROCEDURES             
+    GET STATISTICS  SET SQLPROMPT       SHOW RECCOUNT              
+    PRUN            SET SQLTERMINATOR   SHOW SCHEMA        
+    RESET PARAM     SET STATISTICS      SHOW SCHEMAS           
+    RUN             SHOW ACTIVITYCOUNT  SHOW SQLPROMPT        
+    SET FETCHSIZE   SHOW FETCHSIZE      SHOW SQLTERMINATOR  
+    SET LIST_COUNT  SHOW LIST_COUNT     SHOW SYNONYMS                         
+                    SHOW MVGROUPS       SHOW TABLE  
+                    SHOW MVS            SHOW TABLES               
+                    SHOW PARAM          SHOW VIEWS                
+                    SHOW PREPARED       
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+   SQL mode also supports SQL statements. For descriptions of 
+   the SQL statements, see the SQL Reference Manual.
+
+ @@@@@SET
+
+   SQL mode supports these SET commands:
+
+    SET FETCHSIZE   SET PARAM      SET SQLTERMINATOR  
+    SET LIST_COUNT  SET SQLPROMPT  SET STATISTICS     
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW
+
+   SQL mode supports these SHOW commands:
+
+    SHOW ACTIVITYCOUNT  SHOW PARAM       SHOW SQLTERMINATOR  
+    SHOW FETCHSIZE      SHOW PREPARED    SHOW STATISTICS     
+    SHOW INDEXES        SHOW PROCEDURES  SHOW SYNONYMS       
+    SHOW LIST_COUNT     SHOW RECCOUNT    SHOW TABLE          
+    SHOW MVGROUPS       SHOW SCHEMA      SHOW TABLES         
+    SHOW MVS            SHOW SCHEMAS     SHOW VIEWS        
+                        SHOW SQLPROMPT            
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@/
+
+   The / command executes the previously executed SQL statement. This command
+   does not repeat an interface command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+
+ @@@@@GET STATISTICS
+
+   The GET STATISTICS command returns formatted statistics for the last
+   executed SQL statement.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@PRUN
+
+   The PRUN command runs script files in parallel.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@RESET PARAM
+
+   The RESET PARAM command clears all parameter values or a specified
+   parameter value in the current session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@RUN
+
+   The RUN command executes the previously executed SQL statement. This
+   command does not repeat an interface command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET FETCHSIZE
+
+   The SET FETCHSIZE command allows you to change the default fetchsize used
+   by JDBC. Setting the value to 0 sets the fetchsize to the default value
+   used in JDBC.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET LIST_COUNT
+
+   The SET LIST_COUNT command sets the maximum number of rows to be returned
+   by SELECT statements that are executed after this command. The default is
+   zero, which means that all rows are returned.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET PARAM
+
+   The SET PARAM command associates a parameter name with a parameter value
+   in the current session. 
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET SQLPROMPT
+
+   The SET SQLPROMPT command sets the SQL prompt of the current session to a
+   specified string. The default is SQL>.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET SQLTERMINATOR
+
+   The SET SQLTERMINATOR command sets the SQL statement terminator of the
+   current session. The default is a semicolon (;).
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET STATISTICS
+
+   The SET STATISTICS command automatically retrieves the statistics
+   information for a query being executed. The results returned are the same
+   as would have been returned if the GET STATISTICS command was executed.
+   The default is OFF which means the statistics information is not
+   automatically printed for any queries.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+
+ @@@@@SHOW ACTIVITYCOUNT
+
+   The SHOW ACTIVITYCOUNT command provides an alias for SHOW RECCOUNT.
+   ACTIVITYCOUNT is an alias for RECCOUNT.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW FETCHSIZE
+
+   The SHOW FETCHSIZE command displays the fetch size value for the current
+   Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW INDEXES
+
+   The SHOW INDEXES command displays all indexes on all tables and 
+   materialized views in the current schema of the Command Interface
+   session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW LIST_COUNT
+
+   The SHOW LIST_COUNT command displays the maximum number of rows to be
+   returned by SELECT statements in the current Command Interface session.
+   The default is zero, which means that all rows are returned.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW MVGROUPS
+
+   The SHOW MVGROUPS command displays all or a set of the materialized view
+   groups in the current schema of the Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW MVS
+
+   The SHOW MVS command displays all or a set of the materialized views in
+   the current schema of the Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW PARAM
+
+   The SHOW PARAM command displays the parameters that are set in the current
+   Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW PREPARED
+
+   The SHOW PREPARED command displays the prepared statements in the current
+   Command Interface session. If a pattern is specified, all prepared
+   statements matching the prepared statement name pattern are displayed. By
+   default, all prepared statements in the current session are displayed.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW PROCEDURES
+
+   The SHOW PROCEDURES command displays the procedures (Stored Procedures in
+   Java) in the current schema of the Command Interface session. If a
+   pattern is specified, all procedures matching the pattern are displayed.
+   By default, all procedures in the current schema of the Command Interface
+   session are displayed.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW RECCOUNT
+
+   The SHOW RECCOUNT command displays the record count of the previously
+   executed SQL statement. If the previously executed command was an
+   interface command, the Command Interface returns zero. Otherwise, the
+   Command Interface returns the count of the previously executed SQL
+   statement. For commands that invoke the catalog APIs-SHOW TABLES, VIEWS,
+   SYNONYMS, MVS, and so on-SHOW RECCOUNT returns the count of the database
+   objects.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SCHEMA
+
+   The SHOW SCHEMA command displays the current schema of the Command
+   Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SCHEMAS
+
+   The SHOW SCHEMAS command displays all or a set of the schemas that exist
+   in the default catalog of the current Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SQLPROMPT
+
+   The SHOW SQLPROMPT command displays the value of the SQL prompt for the
+   current Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SQLTERMINATOR
+
+   The SHOW SQLTERMINATOR command displays the SQL statement terminator of
+   the current Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW STATISTICS
+
+   The SHOW STATISTICS command displays if statistics has been enabled or
+   disabled for the current session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SYNONYMS
+
+   The SHOW SYNONYMS command displays all or a set of the synonyms in the
+   current schema of the Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW TABLE
+
+   The SHOW TABLE command displays information about the indexes,
+   materialized views, synonyms, or triggers associated with a 
+   specified table or materialized view.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW TABLES
+
+   The SHOW TABLES command displays all or a set of the tables that exist in
+   the current schema of the Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW VIEWS
+
+   The SHOW VIEWS command displays all or a set of the views that exist in
+   the current schema of the Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+

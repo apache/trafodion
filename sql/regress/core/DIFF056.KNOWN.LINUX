@@ -1,0 +1,120 @@
+1259,1269c1259,1269
+<           1         ?  ?     ?
+<           2         ?  ?     ?
+<          12         ?  ?     ?
+<          16         ?  ?     ?
+<          17         ?  ?     ?
+<          18         ?  ?     ?
+<          20         ?  6     ?
+<          52        22  D     ?
+<          61         ?  ?     character varying(255)
+<          62        23  E     variable length column
+<          63        99  ?     variable length column vch2
+---
+>           1         0
+>           2         0
+>          12         0
+>          16         0
+>          17         0
+>          18         0
+>          20         0  6
+>          52        22  D
+>          61         0  ?     character varying(255)
+>          62        23  ?     ?
+>          63        99  ?     ?
+1491a1492,1505
+>           0                                                                                                                                                                                                                                                                                          ?
+>           0                                                                                                                                                                                                                                                                                          ?
+>           0                                                                                                                                                                                                                                                                                          ?
+>           0                                                                                                                                                                                                                                                                                          ?
+>           0  ?                                                                                                                                                                                                                                                                                       ?
+>           0  ?                                                                                                                                                                                                                                                                             11116385.28
+>           0  ?                                                                                                                                                                                                                                                                             11116385.28
+>           0  ?                                                                                                                                                                                                                                                                83           11116385.28
+>           0  ?                                                                                                                                                                                                                                                                83           11116385.28
+>           0  ?                                                                                                                                                                                                                                                                VV           11116385.85
+>           0  EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE007P6RRT Mom sprinted beneath those worms??? A few horses got out beside Derek??? Those dogs ambled across dad??? An American and Ben leaped neatly over those string???                                                91           11116385.76
+>           0  VVCCHH2                                                                                                                                                                                                                                                          VV           11116385.85
+>           0  VVCCHH2                                                                                                                                                                                                                                                          VV           11116385.85
+>           0  variable length column                                                                                                                                                                                                                                                        11116385.28
+1493d1506
+<           2  VVCCHH2                                                                                                                                                                                                                                                          VV                  7.20
+1496,1497d1508
+<          17  VVCCHH2                                                                                                                                                                                                                                                          VV                  7.20
+<          18  VVCCHH2                                                                                                                                                                                                                                                          VV                  7.20
+1499d1509
+<          52  ?                                                                                                                                                                                                                                                                ?                   7.20
+1501,1503d1510
+<          62  variable length column                                                                                                                                                                                                                                           ?                   7.20
+<          63  variable length column vch2                                                                                                                                                                                                                                      ?                   7.20
+<          72  ?                                                                                                                                                                                                                                                                ?                   7.20
+1505,1506d1511
+<          74  ?                                                                                                                                                                                                                                                                ?                   7.20
+<          81  ?                                                                                                                                                                                                                                                                ?                   7.20
+1508,1510d1512
+<          83  vch2_83                                                                                                                                                                                                                                                          83                  7.20
+<          84  Bill and Joe ran softly near one of the hill. Some birds sprinted over Madelyn! Racoons and cats and blue birds. Oh My! Violet and Fred rushed sadly towards some door! Genelle and Janine split steadily across one of the string???                            83                  7.20
+<          91  EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE007P6RRT Mom sprinted beneath those worms??? A few horses got out beside Derek??? Those dogs ambled across dad??? An American and Ben leaped neatly over those string???                                                91                  7.20
+1512,1513d1513
+<         101  ?                                                                                                                                                                                                                                                                ?                   7.20
+<         102  VCH6                                                                                                                                                                                                                                                             ?                   1.02
+1523,1528c1523
+< ORDERS       VCH2                                                                                                                                                                                                                                                             VARYING(2)  num_10
+< -----------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------  ------------
+< 
+<         102  VCH6                                                                                                                                                                                                                                                             ?                   1.02
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.
+1533c1528
+< --- 8 row(s) updated.
+---
+> --- 10 row(s) updated.
+1539a1535
+> 
+1541d1536
+<           2         17.30  NN          1234567.89
+1544,1545d1538
+<          17         17.30  NN          1234567.89
+<          18         17.30  NN          1234567.89
+1547d1539
+<          52          7.20  ?                    ?
+1549,1551d1540
+<          62          7.20  ?                    ?
+<          63          7.20  ?                    ?
+<          72          7.20  ?                    ?
+1553,1561c1542
+<          74          7.20  ?                    ?
+<          81          7.20  ?                    ?
+<          82          7.20  AB                   ?
+<          83          7.20  83                   ?
+<          84          7.20  83                   ?
+<          91         17.30  NN                9.10
+<          92         17.30  NN                9.20
+<         101          7.20  ?                    ?
+<         102          1.02  ?                    ?
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+1563c1544
+< --- 22 row(s) selected.
+---
+> --- 6 row(s) selected.
+1608,1610c1589,1591
+<          83  83                  7.20  ?               ?
+<          84  83                  7.20  ?               ?
+<          91  NN                 17.30  ?            9.10
+---
+>          83  NN                 17.30  ?               ?
+>          84  NN                 17.30  ?               ?
+>          91  91                  7.20  ?            9.10
+1613c1594
+<         102  ?                   1.02  ?               ?
+---
+>         102  NN                 11.12  ?               ?
+1790,1791c1771,1772
+<          83            ?  83              -1  CD
+<          84         8.23  83              -1  CD
+---
+>          83            ?  NN              -1  CD
+>          84         8.23  NN              -1  CD

@@ -1,0 +1,360 @@
+Microsoft Developer Studio Workspace File, Format Version 5.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "ASSrvr"=.\assrvr\ASSrvr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    ASSrvr
+    .\ASSrvr
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "CASrvr"=.\CASrvr\CASrvr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    CASrvr
+    .\CASrvr
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "CfgCl"=.\CfgCl\CfgCl.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    CfgCl
+    .\CfgCl
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "CfgSvc"=.\CfgSvc\CfgSvc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    CfgSvc
+    .\CfgSvc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "CfgSvcWrapper"=.\CfgSvcWrapper\CfgSvcWrapper.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    CfgSvcWrapper
+    .\CfgSvcWrapper
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "EventMsgs"=.\EventMsgs\EventMsgs.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    EventMsgs
+    .\EventMsgs
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "InitSv"=.\initsv\InitSv.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    InitSv
+    .\InitSv
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Krypton"=.\Krypton\Krypton.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    Krypton
+    .\Krypton
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "ODBC"=.\ODBC.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    ODBC
+    .
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name Krypton
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SrvrMsg
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name EventMsgs
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SrvrCore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name Srvr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SrvrWrapper
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name ASSrvr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name odbcService
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name CfgCl
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name OdbcStart
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name CfgSvc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name CfgSvcWrapper
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name InitSv
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name odbcInit
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SetOlePath
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name TdmODBCOLE
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name CASrvr
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "OdbcStart"=.\odbcstart\OdbcStart.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    OdbcStart
+    .\OdbcStart
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SetOlePath"=.\SetOlePath\SetOlePath.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    SetOlePath
+    .\SetOlePath
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Srvr"=.\Srvr\Srvr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    Srvr
+    .\Srvr
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SrvrCore"=.\SrvrCore\SrvrCore.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    SrvrCore
+    .\SrvrCore
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SrvrMsg"=.\SrvrMsg\SrvrMsg.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    SrvrMsg
+    .\SrvrMsg
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SrvrWrapper"=.\SrvrWrapper\SrvrWrapper.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    SrvrWrapper
+    .\SrvrWrapper
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "TdmODBCOLE"=.\TdmOdbcOle\TdmODBCOLE.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    TdmODBCOLE
+    .\TdmOdbcOle
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "odbcInit"=.\odbcInit\odbcInit.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    odbcInit
+    .\odbcInit
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "odbcService"=.\odbcservice\odbcService.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    odbcService
+    .\odbcService
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+    begin source code control
+    ODBC
+    .
+    end source code control
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

@@ -1,0 +1,986 @@
+>>---------------------------------------------------------------------
+>>-- File: SQLQAT09                Formerly $cats.testest.qat009
+>>-- Component: NonStop SQL Regression Test Suite
+>>-- Description: Populate data base with values of special use to the
+>>--              SELECT tests.
+>>---------------------------------------------------------------------
+>>---------------------------------------------------------------------
+>>insert into btsel01 values ('A','steven','C','walter','bob',
++>                                     'B',50,50,200,50,0.12,100.9,
++>                                     10,10000,1000000000,4,.5,90,
++>                                     1.1,0.1,1);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values ('A','bobby','A','bobby','bop',
++>                                     'B',60,60,1200,60,0.79,100.99,
++>                                     1000,8000,-1000,5,.6,100,
++>                                     2.1,0.2,2);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values
++>                                     ('D','steven','B','9','bat','thomas',
++>                                     8000,70,2000,500,0.10,100.999,
++>                                     90,10000,1000,7,.7,110,
++>                                     3.1,0.3,3);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values
++>                                     ('D','melissa','C','7','pop','jimmy',
++>                                     1000,80,1500,500,0.20,100.9999,
++>                                     80,9000,999,5,.8,120,
++>                                     4.1,0.4,4);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values ('E','monica','Q','sue','pat',
++>                                     'christopher',
++>                                     2000,90,1200,3000,0.30,100.99999,
++>                                     2000,8000,-1000000,1,.9,80,
++>                                     5.1,0.5,5);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values
++>                                     ('D','michelle','D','michael','rat',
++>                                     'thomas',
++>                                     -5000,90,2000,500,0.40,100.8,
++>                                     90,8000,200,7,.93,140,
++>                                     6.1,0.6,6);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values ('C','maureen','E','jimmy','rum',
++>                                     'marilyn',
++>                                     3000,80,2000,500,0.50,100.7,
++>                                     9000,1000,2000,8,.97,150,
++>                                     7.1, 0.7,7);
+
+--- 1 row(s) inserted.
+>>
+>>insert into btsel01 values ('C','marcia','Z','johnny','dum',
++>                                     'thomas',
++>                                     4000,40,2000,50,0.60,100.6,
++>                                     8000,5000,0,9,.99,110,
++>                                     8.1,0.8,8);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel01 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel02 values ('B');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('C');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('B');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('Q');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('B');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('C');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('Q');
+
+--- 1 row(s) inserted.
+>>insert into btsel02 values ('Q');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel02 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel03 values ('A',5,'make',90,200);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('7',6,'joe',80,1200);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('8',6,'joe',80,1200);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('5',1000,'5',100,1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('michael',50,'dave',50,1500);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('7',6,'john',80,2000);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('B',6,'mark',80,3000);
+
+--- 1 row(s) inserted.
+>>insert into btsel03 values ('michael',70,'joan',50,4000);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel03 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel04 values ('tom',1000,'7',200);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('bob',999,'A',300);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('sue',200,'sue',100);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('bobby',200,'sue',100);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('bill',2000,'B',500);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('christopher',1000,'white',1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('william',1000,'black',2000);
+
+--- 1 row(s) inserted.
+>>insert into btsel04 values ('marilyn',2000,'green',3000);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel04 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel05 values ('joe','A','al','pablo','david',
++>                                     'amy','amy','steve','steve','walt',
++>                                     'mojo','joe','percy');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('sue','A','in','peggy','diane',
++>                                     'zora','cathy','mary','mary',
++>                                     'rhoda','debra','sue','madge');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('deb','D','jo','lowry','mary',
++>                                     'sunny','debra','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('can','D','by','lowry','steve',
++>                                     'slope','debby','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('box','C','to','howie','debra',
++>                                     'snow','debbi','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('red','B','go','lowry','sue',
++>                                     'ski','cammy','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('why','B','so','lowry','amy',
++>                                     'squaw','tammy','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>insert into btsel05 values ('not','B','on','lowry','mary',
++>                                     'mogul','pammy','junk','junk',
++>                                     'junk','junk','junk','junk');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel05 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel06 values  ('joe','Z','in',100,200,100,200,
++>                                      200,100,100,100,50,100,100,200,
++>                                      100,200,200,100,100,100,50,100,
++>                                      100,200,100,200,200,100,100,100,
++>                                      100,200,100,200,200,100,100,100,
++>                                      50,100);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                      ('sue','Q','on',200,400,100,100,400,
++>                                      100,100,50,100,200,200,400,100,100,
++>                                      400,100,100,50,100,200,200,400,100,
++>                                      100,400,100,100,50,200,400,100,100,
++>                                      400,100,100,50,100,200);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('pam','D','al',900,1000,900,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('sue','C','by',300,1000,500,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('joe','A','jo',100,1000,200,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('joe','B','to',300,1000,400,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('joe','C','go',100,1000,200,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel06 values
++>                                     ('sue','D','so',200,1000,300,1000,1000,
++>                                     50,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000,1000,1000,1000,1000,1000,1000,1000,
++>                                     1000);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel06 on every column;
+>>-- ------------------------------------------------------------------
+>>insert into btsel07 values  ('jo','Z','jo');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('al','Q','al');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('P','P','P');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('B','A','ed');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('jo','C','ek');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('JO','D','em');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('al','E','bo');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  (' al','F','di');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  ('al ','F','al');
+
+--- 1 row(s) inserted.
+>>insert into btsel07 values  (' al','F','al');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel07 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel08 values (3000,'george','D');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (100,'carltons','E');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (1000,'harveys','B');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (300,'Q','X');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (2000,'alexander','B');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (400,'joseph','X');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (200,'squaw','X');
+
+--- 1 row(s) inserted.
+>>insert into btsel08 values (4000,'valley','D');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel08 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel09 values
++>   ('sue','mary','Z','MARY',3,10,20);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('deb','bill','Y','BILL',4,10,30);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('can','come','X','TED',7,77,77);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('joe','over','W','maria',7,90,100);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('box','here','R','debby',5,11,50);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('red','long','S','tommy',5,15,70);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('not','time','P','diane',7,20,40);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('why','gone','R','billy',7,15,30);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('\ts','t_go','j','to%go',0,0,0);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('\t_','junk','j','\%',0,0,0);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('_t%','junk','j','_%',0,0,0);
+
+--- 1 row(s) inserted.
+>>insert into btsel09 values
++>   ('%t_','junk','j','%_',0,0,0);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel09 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel10 values
++>   ('tom','tom',3,'abadefih',100,100,-100);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('bob','bobby',2,'ebediih',90,100,-1000);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('sue','sue',1,'ebedafiih',110,80,100);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('rod','for',400,'inside',25,60,0);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('don','who',50,'outside',10000,100,-100);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('jon','does',1000,'offsides',50000, 500,100);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('ron','they',2000,'onsides',10000,100, -100);
+
+--- 1 row(s) inserted.
+>>insert into btsel10 values
++>   ('rob','bobby',2,'ebediih',90,100,-1000);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel10 on every column;
+>>-- ------------------------------------------------------------------
+>>insert into btsel11 values
++>   ('bob','bob', 100,'abadefih', 160,200,200);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('dan','sue', 100,'ebediih', 100,100,60);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('boe','tommy', 200,'ebedafiih', 200,50,50);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('bar','where', 300,'gone', 200,9999,-100);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('car','who', 400,'done', 160,500,500);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('tar','what', 500,'none', 100,8888,0);
+
+--- 1 row(s) inserted.
+>>insert into btsel11 values
++>   ('jar','how', 600,'inside', 160,500,500);
+
+--- 1 row(s) inserted.
+>>insert into btsel11
++>   values ('mar','why', 50,'house', 50,7777,0);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel11 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel12 values ('tom',100);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('bob',200);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('run',300);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('sun',400);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('fun',500);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('gun',600);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('nun',700);
+
+--- 1 row(s) inserted.
+>>insert into btsel12 values ('pun',800);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel12 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel13 values (100);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (200);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (250);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (350);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (450);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (550);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (650);
+
+--- 1 row(s) inserted.
+>>insert into btsel13 values (750);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel13 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel14 values (100);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (200);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (125);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (150);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (175);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (225);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (275);
+
+--- 1 row(s) inserted.
+>>insert into btsel14 values (325);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel14 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel15 values (1000,100);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (2000,200);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (1111,90);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (2222,80);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (3333,70);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (4444,60);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (5555,50);
+
+--- 1 row(s) inserted.
+>>insert into btsel15 values (6666,40);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel15 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel16 values (1000,167);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (2000,168);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8500,169);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8501,170);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8502,171);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8503,172);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8504,173);
+
+--- 1 row(s) inserted.
+>>insert into btsel16 values (8505,174);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel16 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel17 values (1000,248);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (2000,249);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7500,250);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7501,251);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7502,252);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7503,253);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7504,254);
+
+--- 1 row(s) inserted.
+>>insert into btsel17 values (7505,255);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel17 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel18 values (-5000,1000,401);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (8000,2000,402);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2001,6001,403);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2002,6002,404);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2003,6003,405);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2004,6004,406);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2005,6005,407);
+
+--- 1 row(s) inserted.
+>>insert into btsel18 values (2006,6006,408);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel18 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel19 values (-5000,409);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (8000,410);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2007,411);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2008,412);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2009,413);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2010,414);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2011,415);
+
+--- 1 row(s) inserted.
+>>insert into btsel19 values (2012,416);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel19 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel20 values (-5000,417);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (8000,418);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2013,419);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2014,420);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2015,421);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2016,422);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2017,423);
+
+--- 1 row(s) inserted.
+>>insert into btsel20 values (2018,424);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel20 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel21 values (0.12,-5000,425);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (-0.25,8000,426);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.01,5000,427);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.02,5001,428);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.03,5002,429);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.04,5003,430);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.05,5004,431);
+
+--- 1 row(s) inserted.
+>>insert into btsel21 values (0.06,5005,432);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel21 on every column;
+>>-- -----------------------------------------------------------------
+>>
+>>insert into btsel22 values (0.12,433);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (-0.25,434);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.07,435);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.08,436);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.09,437);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.10,438);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.11,439);
+
+--- 1 row(s) inserted.
+>>insert into btsel22 values (0.92,440);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel22 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel23 values (0.12,441);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (-0.25,442);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.13,443);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.14,444);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.15,445);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.16,446);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.17,447);
+
+--- 1 row(s) inserted.
+>>insert into btsel23 values (0.18,448);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel23 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel24 values (0.79,'tom');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.19,'bob');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.20,'toe');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.21,'woe');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.22,'pin');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.23,'sin');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.24,'win');
+
+--- 1 row(s) inserted.
+>>insert into btsel24 values (0.25,'kin');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel24 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel25 values ('B', 'joe');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('C', 'why');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('D', 'not');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('E', ' al');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('Q', 'al ');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('B', 'bar');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('C', 'car');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('D', '   ');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('E', 'joe');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values ('Q', 'sue');
+
+--- 1 row(s) inserted.
+>>insert into btsel25 values (' ', 'sue');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel25 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel26 values 
++>  ( 'A', 2, 2, 2, 2, .9, .2, .9, .2, 99999999999999999,
++>    99999999999999999, 99999999.9, 1.1, 999999999.1, 9.99999999, 2,
++>    .2, 2, .2, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'B', 999999999999999999, 1, 999999999999999999, 1,
++>    .999999999999999999, .000000000000000001 , .999999999999999999,
++>    .00000000000001, -99999999999999999, 99999999999999999,
++>    -99999999.9, 1.899999999, 999999998.1, 9.99999999, 999999999,
++>    .999999999, 999999999, .999999999, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'C', -999999999999999999, 1, -999999999999999999, 1,
++>    .999999999999999999, .000000000000000002, .999999999999999999,
++>    .00000000000002, 0, 99999999, 99999999.9, 9.999999999,
++>    -999999999.9, 9.99999999, 0, 0, 0, 0, .9
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'D', 100000000000000000, 899999999999999999, 100000000000000000,
++>    899999999999999999, .999999999999999999, .1, .999999999999999999,
++>    .000000000000000002, 0, 100, 9999999.9, 4.4, 0, 8, 0, 0, 0, 0, .1
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'E', 999999999999999999, 3, 999999999999999999,
++>    100000000000000000, .000000000000000001, .9, .999999999999999999,
++>    0, 10, 99999999999999999, 0, 3, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'F', 999999999999999999, 2, 999999999999999999,
++>    -999999999999999999, .1, 0, .999999999999999999, 0,
++>    99999999999999999, 0, 0, 2.5, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'G', 92233720368547758, 999999999999999999, 999999999999999999, 0,
++>    .08, .09, .999999999999999999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++>    0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'H', 999999999999999999, 999999999999999999, 999999999999999999,
++>    0, 0, 0, .999999999999999999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'I', 999999999999999999, 0, 999999999999999999, 0, 0, 0,
++>   .999999999999999999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'J', 999999999999999999, 0, 999999999999999999,
++>    0, 0, 0, .999999999999999999, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'K', 999999999999999999, 0, 999999999999999999,
++>    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'L', 999999999999999999, 0, 999999999999999999,
++>    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'M', 999999999999999999, 0, 999999999999999999,
++>    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'N', 999999999999999999, 0, 0,
++>    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ( 'O', -999999999999999999, 0, 0,
++>    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>insert into btsel26 values
++>  ('P', -999999999999999999, 0, 0,
++>   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++>  );
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel26 on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>insert into btsel27 values
++>  ('A', 1.1001, 1.1);
+
+--- 1 row(s) inserted.
+>>insert into btsel27 values
++>  ('B', 1.0016, .1);
+
+--- 1 row(s) inserted.
+>>insert into btsel27 values
++>  ('C', .0001, 9.9);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table btsel27 on every column;
+>>-- ------------------------------------------------------------------
+>>LOG;

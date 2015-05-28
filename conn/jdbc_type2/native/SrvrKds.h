@@ -1,0 +1,61 @@
+/*************************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**************************************************************************/
+//
+// MODULE: SrvrKds.h
+//
+// PURPOSE:
+//     
+//
+//
+
+#ifndef _SRVRKDS_DEFINED
+#define _SRVRKDS_DEFINED
+
+extern void kdsCreateSQLDescSeq(SQLItemDescList_def *SQLDesc, short numEntries);
+extern void kdsCreateEmptySQLDescSeq(SQLItemDescList_def *SQLDesc);
+extern void kdsCreateSQLErrorException(	odbc_SQLSvc_SQLError *SQLError, 
+								long numConditions);
+extern void kdsCopySQLErrorException(odbc_SQLSvc_SQLError *SQLError, 
+								char *msg_buf,
+								long sqlcode,
+								char *sqlState);
+
+extern void kdsCopyToSQLValueSeq(SQLValueList_def *SQLValueList,
+							 long dataType, 
+							 short indValue, 
+							 void *varPtr, 
+							 long allocLength,
+							 long Charset);
+long kdsCopyToSMDSQLValueSeq(SQLValueList_def *SQLValueList,
+							 long dataType, 
+							 short indValue, 
+							 char *dataValue, 
+							 long allocLength,
+							 long Charset);
+
+void kdsCopyRGErrorException(odbc_SQLSvc_SQLError *SQLError, 
+							RES_HIT_DESC_def *rgPolicyHit);
+
+void kdsCreateSQLWarningException(ERROR_DESC_LIST_def *SQLWarning, 
+								long numConditions);
+void kdsCopyRGWarningException(ERROR_DESC_LIST_def *SQLWarning, 
+							RES_HIT_DESC_def *rgPolicyHit);
+
+#endif

@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+# script that executes the 'sqdiag_core_mask' script in certain SQ directories. 
+
+function storage_core_bt {
+
+	echo "----------------------------------------------------------------------"
+
+	lv_cmd_file=sq_$1_core_bt.cmds
+	echo "echo 'Checking the $2 directories for any cores'" > $lv_cmd_file
+	grep mkdir $MY_SQROOT/sql/scripts/sq_$1.create | sed -e "s/mkdir \-p /sqdiag_core_mask /" -e "s@' &\$@ $3' &@" | sed -r 's/\/\\\$/\/\\\\\\\$/g' >> $lv_cmd_file
+	echo "wait" >> $lv_cmd_file
+
+	chmod +x $lv_cmd_file
+
+	./$lv_cmd_file
+
+	echo "----------------------------------------------------------------------"
+}
+
+function dir_bt {
+
+	lv_dir=$1
+
+	echo
+	echo "----------------------------------------------------------------------"
+	echo "Checking $lv_dir"
+	echo
+
+	if [ -e /usr/bin/pdsh ]; then
+		hosts=`pdsh $MY_NODES hostname|awk '{ print $2 }'|sort`
+	else
+		hosts=`hostname`
+	fi
+    
+	for host in $hosts; do
+		if [ -e /usr/bin/pdsh ]; then
+			ssh="ssh $host"
+		fi
+#		echo $ssh sqdiag_core_mask $lv_dir $2
+		$ssh sqdiag_core_mask $lv_dir $2
+	done
+	echo "----------------------------------------------------------------------"
+}
+
+CORE_DIR=/local/cores/$UID
+pdsh $MY_NODES rm -rf $CORE_DIR/sqdiag_tmp
+dir_bt $CORE_DIR $HOSTNAME
+
+# find unique core files (throw away duplicates, maybe delete them as a future feature)
+rm sqdiag_core_compare.log
+echo
+echo "========================="
+echo "Unique core files"
+echo "========================="
+cksum $CORE_DIR/sqdiag_tmp/mask_* | sort -n -k1 -k3 | uniq --check-chars=15 | awk '{print $3}' | sed -e "s@^.*mask_core@core@" | tee sqdiag_core_compare.log
+echo
+echo "NOTE: unique core file list saved to ./sqdiag_core_compare.log"
+echo
+

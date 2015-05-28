@@ -1,0 +1,82 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# This config file is for sqft2 or similar 4 physical node cluster
+# It is a 3-node fault tolerant mini test instance
+# with a spare node configured
+#
+
+#============================
+# Cluster configuration
+#============================
+
+begin node
+node-id=0;node-name=n054;cores=0-3;processors=2;roles=aggregation,storage
+node-id=1;node-name=n054;cores=4-7;processors=2;roles=aggregation,storage
+node-id=2;node-name=n055;cores=0-3;processors=2;roles=aggregation,storage
+node-id=3;node-name=n055;cores=4-7;processors=2;roles=aggregation,storage
+node-id=4;node-name=n048;cores=0-3;processors=2;roles=connection
+node-id=5;node-name=n048;cores=4-7;processors=2;roles=connection
+node-name=n056;cores=0-7;spares=0,1,2,3,4,5
+end node
+
+# Overflow directories for ssd and hdd. Format: [overflow-type] [directory]
+begin overflow
+hdd $MY_SQROOT/tmp
+#sdd /sdd/directory
+end overflow
+
+#============================
+# Audit configuration
+#============================
+
+# Extents are for data audit volumes only, not $TLOG
+# Minimum is 1550
+begin at_extent_size
+15500
+end at_extent_size
+
+# Files per volume are for data audit volumes only, not $TLOG
+# Minimum is 10
+begin at_files_per_volume
+10
+end at_files_per_volume
+
+# Percentage of audit allowed before TX is DOOMED
+# Maximum is 40
+begin tx_capacity_threshold
+10
+end tx_capacity_threshold
+
+#============================
+# Volume Configuration
+#============================
+
+begin tmase
+$TLOG    0  /database/sqft2 /databasem/sqft2
+end tmase
+
+begin ase
+$AUD000  1  /database/sqft2   /databasem/sqft2
+end ase
+
+begin tse
+$SYSTEM  2  /database/sqft2   /databasem/sqft2
+$DB0000  3  /database/sqft2   /databasem/sqft2
+end tse

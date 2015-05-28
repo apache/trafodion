@@ -1,0 +1,403 @@
+-- Test: TEST001 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Simple queries on basic operators, nulls, set params,
+--                reverse scanning, and ifdef syntax.
+-- Expected files: EXPECTED001, EXPECTED001.MX, EXPECTED001.MP
+-- Table created: t001t1, t001tn2, t001t2, t001t3, t001desc, t001asc,
+--                t001ut1, t001ut2, t001ut3
+-- View created: t001vn
+-- Limitations:
+
+?section ddl
+-- CREATE database
+
+obey test001(clnup);
+
+log LOG001 clear;
+
+create table t001t1 (a int, b char(9), c int, d char(4));
+create table t001tn (a int, b char(9), c int, d char(4) COLLATE SJIS);
+create table t001t2 (a int not null, b char(9), c int, d char(4), primary key (a));
+create table t001t3 (a int not null, b char(9) not null, c int, d char(4), primary key (a, b));
+
+#ifMX
+create table t001ut1 (a int, b nchar(9), c int, d nchar(4));
+create table t001ut2 (a int not null, b nchar(9), c int, d nchar(4), primary key (a));
+create table t001ut3 (a int not null, b nchar(9) not null, c int, d nchar(4), primary key (a, b));
+#ifMX
+
+?section dml
+
+invoke t001t1;
+invoke t001tn;
+invoke t001t2;
+invoke t001t3;
+
+#ifMX
+invoke $$TEST_SCHEMA$$.t001ut1;
+invoke $$TEST_SCHEMA_NAME$$.t001ut2;
+invoke         t001ut3;
+#ifMX
+
+-- INSERT queries
+insert into t001t1 values (10, 'abc', 20, 'xy');
+insert into t001t1(b,d,a,c) values ('defg', 'wx', 10+10, 30);
+insert into t001t2 select * from t001t1;
+insert into t001t3(a,b,c,d) select a,b,c,d from t001t2;
+
+#ifMX
+insert into t001ut1 values (10, N'abc', 20, N'xy');
+insert into t001ut1(b,d,a,c) values (N'defg', N'wx', 10+10, 30);
+insert into t001ut2 select * from t001ut1;
+insert into t001ut3(a,b,c,d) select a,b,c,d from t001ut2;
+#ifMX
+
+-- SELECT queries
+select * from t001t1;
+select t001t2.* from t001t2;
+select * from t001t3;
+
+#ifMX
+select * from t001ut1;
+select t001ut2.* from t001ut2;
+select * from t001ut3;
+#ifMX
+
+-- Error case
+select 0, '0' + 1 from t001t1;
+-- should get type incompatibility error
+
+select cast(b as ansivarchar(8)) from t001t1;	-- err 3178
+create table t001t1_foo(a lsdecimal);		-- err 3178
+
+select * from (select * from t001t1) x;
+
+select a,b from t001t1;
+select a,a from t001t1;
+
+select a+1,a-1,a*1,a/1 from t001t1;
+
+select t001t1.a, t001t1.d from t001t1;
+
+select 1 from t001t1;
+select 1+1 from t001t1;
+
+select * from t001t1 where 1 = 1;
+select * from t001t1 where a = 10;
+select * from t001t1 where a <> 10;
+select * from t001t1 where a = 10 or a = 20;
+select * from t001t1 where a = 10 and a = 20;
+
+-- Error case
+#ifMX
+select 0, N'0' + 1 from t001ut1;
+-- should get type incompatibility error
+
+select * from (select * from t001ut1) x;
+
+select a,b from t001ut1;
+
+select t001ut1.a, t001ut1.d from t001ut1;
+
+select * from t001ut1 where a = 10 and a = 20;
+
+select * from (select * from t001ut1) x , t001ut2;
+#ifMX
+
+#ifMP
+set envvar NCHAR_SJIS_DEBUG;			-- allow charset SJIS on MP
+#ifMP
+
+select a from t001t1 where b like _SJIS'sj';
+select a from t001t1 where b like 'sj'COLLATE SJIS;	-- ok, B gets coerced
+select a from t001t1 where b COLLATE DEFAULT like 'sj'COLLATE SJIS;
+select a from t001t1 where b COLLATE DEFAULT like 'jj' escape 's'COLLATE SJIS;
+
+select a from t001t1 where trim(1 from 2) = '';
+select a from t001t1 where trim(1 from b) = '';
+select a from t001t1 where trim(b from 2) = '';
+
+-- comment out because of the behavior change to NATIONAL_CHARSET in R2.
+-- It is a read-only CQD.
+--control query default NATIONAL_CHARSET 'kanji';
+--select a from t001t1 where trim(N' ' from b) = '';
+--control query default NATIONAL_CHARSET 'sql_text';
+--select a from t001t1 where trim(N' ' from b) = '';	-- ok
+--control query default NATIONAL_CHARSET reset;
+select a from t001t1 where trim(N' ' from b) = '';
+select a from t001t1 where trim(' 'COLLATE SJIS from b COLLATE DEFAULT) = '';
+
+select a from t001t1 where '' = replace(1,2,3);
+select a from t001t1 where '' = replace('a','x','z'COLLATE SJIS);	-- ok, compatible
+select a from t001t1 where '' = replace('a'COLLATE DEFAULT,'xx'COLLATE SJIS,'z');	-- not comparable
+select a from t001t1 where '' = replace('a',2,'z');	-- not comparable
+select a from t001t1 where 99 = position(1 in 2);
+select a from t001t1 where 99 = position('x' in 2);
+select a from t001t1 where 99 = position(1 in 'y');
+select a from t001t1 where 99 = position('xx'COLLATE SJIS in 'y'COLLATE DEFAULT);
+
+select b from t001tn UNION     select d from t001tn;
+			-- not comparable
+select b from t001tn UNION ALL select d from t001tn;
+		     -- ok, no resulting collating sequence, but no comparison
+select * from (
+  select b from t001tn UNION ALL select d from t001tn) u(b) where b='x';
+  			-- not comparable
+select * from (
+  select b from t001tn UNION ALL select d from t001tn) u(b) where b=(select b from t001tn);
+  			-- not comparable
+select b from t001tn UNION     select d COLLATE SJIS from t001tn;
+			-- ok, coerced
+select b COLLATE SJIS from t001tn UNION     select d COLLATE SJIS from t001tn;
+			-- ok
+
+select a COLLATE SJIS from t001tn;
+select b COLLATE Xyzw from t001tn;   -- ok, unknown-coll warning, coll not used
+select b from (select b COLLATE Xyzw from t001tn)x where b>'a';
+
+
+-- JOIN queries
+select t001t1.a, t001t2.a from t001t1 , t001t2 where t001t1.a = t001t2.a;
+
+-- Genesis test case added 12/18/96
+select t001t1.a + t001t2.a from t001t1 , t001t2 where t001t1.a = t001t2.a;
+
+select t001t1.a, t001t2.a from t001t1 join t001t2 on t001t1.a = t001t2.a and t001t1.a = 10 and t001t2.a = 10;
+select t001t1.a, t001t2.a from t001t1 join t001t2 on t001t1.a = 10 or t001t2.a = 10;
+select t001t1.a, t001t2.a from t001t1 join t001t2 on
+t001t1.a = 10 and (t001t1.a = 10 or t001t1.a = 20)
+or t001t2.a = 10 and (t001t2.a = 10 or t001t2.a = 20);
+select t001t1.a, t001t2.a from t001t1 join t001t2 on
+t001t1.a = 10 and (t001t1.a = 10 or t001t1.a = 20)
+and t001t2.a = 10 and (t001t2.a = 10 or t001t2.a = 20);
+
+select * from (select * from t001t1) x , t001t2;
+
+-- NATURAL JOIN queries
+select a from t001t1 x natural join t001t1 y;
+select a from t001t1 natural join t001t2;
+select a from t001t1 natural join t001t2 natural join t001t3;
+select x.a, x.b from (select a, b, c from t001t1 natural join t001t2) x join t001t3
+on x.c = t001t3.c;
+
+#ifMX
+select a from t001ut1 x natural join t001ut1 y;
+select a from t001ut1 natural join t001ut2;
+select a from t001ut1 natural join t001ut2 natural join t001ut3;
+select x.a, x.b from (select a, b, c from t001ut1 natural join t001ut2) x join t001ut3
+on x.c = t001ut3.c;
+
+select count(*) from (select * from t001ut1) x natural join (select * from t001ut2) y ,
+ (select * from t001ut3) z;
+#ifMX
+
+-- AGGREGATE queries
+
+select count(*), min(a), max(a), sum(a), avg(a) from t001t1;
+select count(*), min(a), max(a), sum(a), avg(a) from t001t1 having count(*) > 0;
+select count(*), min(a), max(a), sum(a), avg(a) from t001t1 having count(*) < 0;
+select count(*), sum(a) from t001t1 having count(*) = 2 and sum(a) = 30;
+select sum(t001t1.a) from t001t1 , t001t2;
+select count(*) from (select * from t001t1) x natural join (select * from t001t2) y ,
+ (select * from t001t3) z;
+
+
+-- UPDATE queries
+update t001t1 set a = 10 where a = 10;
+select * from t001t1;
+update t001t1 set a = 100, d = 'yx' where b = 'abc';
+select * from t001t1;
+update t001t1 set c = 55;
+select * from t001t1;
+
+update t001t2 set c = c+1, b = 'gfe' where d = 'wx';
+select * from t001t2;
+
+
+#ifMX
+update t001ut1 set a = 100, d = N'yx' where b = N'abc';
+select * from t001ut1;
+
+update t001ut2 set c = c+1, b = N'gfe' where d = N'wx';
+select * from t001ut2;
+#ifMX
+
+
+-- DELETE queries
+delete from t001t1 where a = 100;
+select * from t001t1;
+
+delete from t001t3;
+select * from t001t3;
+
+delete from t001t1;
+delete from t001t2;
+
+#ifMX
+delete from t001ut3;
+select * from t001ut3;
+
+delete from t001ut1;
+delete from t001ut2;
+#ifMX
+
+-- PREPAREd queries
+prepare s1 from insert into t001t1 values (10, 'abc', 20, 'yz');
+execute s1;
+insert into t001t1 values (30, 'def', 40, 'wx');
+
+prepare s2 from select * from t001t1;
+execute s2;
+
+execute s1;
+execute s2;
+
+prepare s1 from select * from t001t1 where a = 10;
+execute s1;
+
+prepare s2 from select * from t001t1 where a = 30;
+execute s2;
+
+show prepared;
+
+#ifMX
+prepare s1 from insert into t001ut1 values (10, N'abc', 20, N'yz');
+execute s1;
+insert into t001ut1 values (30, N'def', 40, N'wx');
+
+prepare s2 from select * from t001ut1;
+execute s2;
+
+execute s1;
+execute s2;
+
+prepare s1 from select * from t001ut1 where a = 10;
+execute s1;
+
+show prepared;
+#ifMX
+
+-- PARAM queries (all moved to TEST001(core))
+
+-- ----------------------
+-- test reverse scanning
+-- ----------------------
+create table t001desc
+  (
+     a numeric(18) signed    not null,
+     primary key ( a DESC )
+  )
+;
+
+insert into t001desc values(1), (2), (3), (5), (7), (10);
+select a from t001desc where a < 5 order by a;
+
+------------------------------
+
+create table t001asc
+  (
+     a numeric(18) signed    not null,
+     primary key ( a ASC ) 
+  )
+;
+
+insert into t001asc  values(1), (2), (3), (5), (7), (10);
+select a from t001asc where a < 5 order by a DESC;
+
+------------------------------
+
+-- This next bit works if Debug, fails if Release;
+-- and the results (char_length of E) will change after MX-NSK-Rel1,
+-- when we correctly support KANJI as double-byte instead of single.
+--
+-- For now, don't run these tests for MX objects on NSK platform.  It is too 
+-- difficult to create all the different known results for release, debug, 
+-- MX format objects, etc. (rsm)
+
+-- comment out because of the behavior change to NATIONAL_CHARSET in R2.
+-- It is a read-only CQD.
+--#ifNT
+--  control query default NATIONAL_CHARSET 'kanji';
+--  set envvar NCHAR_DEBUG;
+--  create table t001tn2(a int, b char(9), c int, d char(4) COLLATE SJIS,
+--		       e NCHAR(4));
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;
+--  reset envvar NCHAR_DEBUG;
+--  invoke t001vn;
+--  invoke t001tn2;
+--  table  t001vn;
+--  select * from t001tn2 where b=e;	-- not comparable
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;
+--  select e collate sjis from t001tn2;
+--  set envvar NCHAR_DEBUG 2;
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;	-- 3179
+--  select e collate sjis from t001tn2;					-- 3179
+--  reset envvar NCHAR_DEBUG;
+--  update t001tn2 set e =      _kanji'km' collate SJIS || e;
+--  update t001tn2 set e = e || _kanji'km' collate SJISfoo;
+--  control query default NATIONAL_CHARSET 'reset';
+--#ifNT
+--
+--#ifMP
+--  control query default NATIONAL_CHARSET 'kanji';
+--  set envvar NCHAR_DEBUG;
+--  create table t001tn2(a int, b char(9), c int, d char(4) COLLATE SJIS,
+--		       e NCHAR(4));
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;
+--  reset envvar NCHAR_DEBUG;
+--  invoke t001vn;
+--  invoke t001tn2;
+--  table  t001vn;
+--  select * from t001tn2 where b=e;	-- not comparable
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;
+--  select e collate sjis from t001tn2;
+--  set envvar NCHAR_DEBUG 2;
+--  create view  t001vn(ee) as select cast(e as NCHAR(10)) from t001tn2;	-- 3179
+--  select e collate sjis from t001tn2;					-- 3179
+--  reset envvar NCHAR_DEBUG;
+--  update t001tn2 set e =      _kanji'km' collate SJIS || e;
+--  update t001tn2 set e = e || _kanji'km' collate SJISfoo;
+--  control query default NATIONAL_CHARSET 'reset';
+--#ifMP
+
+------------------------------
+
+log;
+obey test001(clnup);
+exit;
+
+
+?section clnup
+-- CLEANUP database
+drop view  t001vn;
+drop table t001tn;
+drop table t001tn2;
+drop table t001t1;
+drop table t001t2;
+drop table t001t3;
+drop table t001desc;
+drop table t001asc;
+
+#ifMX
+drop table t001ut1;
+drop table t001ut2;
+drop table t001ut3;
+#ifMX
+

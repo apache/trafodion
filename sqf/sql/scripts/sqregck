@@ -1,0 +1,136 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+function Usage {
+
+    echo 
+    echo "Usage: $0 [ -i | -d | -f | -h | -v | -q | -r ]"
+    echo 
+    echo "-i <n>    Number of times to check for the SQ registry key (Default $max_checks)"
+    echo "-d <n>    Duration of sleep (in seconds) between each check (Default $sleep_duration)"
+    echo "-f        fast - (its like running $0 -i 1 -d 0)"
+    echo "-h        Help"
+    echo "-v        Verbose"
+    echo "-q        Quiet"
+    echo "-r <reg>  The SQ registry key to be checked"
+    echo
+
+}
+
+function GetOpts {
+
+    while getopts "i:d:r:fqvh" arg
+      do
+      case $arg in 
+	  d)
+	      sleep_duration=${OPTARG}
+	      ;;
+	  i)
+	      max_checks=${OPTARG}
+	      ;;
+	  r)
+	      sq_reg_entry=${OPTARG}
+	      ;;
+	  v)
+	      sqc_verbose=1
+	      ;;
+	  q)
+	      sqc_verbose=0
+	      ;;
+	  f)
+	      sleep_duration=0
+	      max_checks=1
+	      ;;
+	  h)
+	      Usage;
+	      exit 1;
+      esac
+    done
+}
+
+declare -i num_checks
+declare -i max_checks
+declare -i sleep_duration
+declare -i sqc_verbose
+
+declare sq_reg_entry
+declare reg_ck_result
+
+let max_checks=2
+let sleep_duration=1
+let sqc_verbose=1
+
+GetOpts $1 $2 $3 $4 $5 $6 $7 $8 $9
+if [ -z "$sq_reg_entry" ]; then
+    echo "Please specify the SQ registry key to be checked."
+    Usage;
+    exit 1;
+fi
+
+let chk_cnt_result=1
+let num_checks=0
+
+if [ $sqc_verbose '==' 1 ]; then
+    echo -n "Checking"
+fi
+
+while [ $chk_cnt_result '==' 1 ];
+do 
+
+  let ++num_checks
+  if [ $max_checks '==' -1 ]; then
+     let chk_cnt_result=1  #loop forever
+  else
+     let chk_cnt_result=(num_checks '<' max_checks)
+  fi
+  if [ $sqc_verbose '==' 1 ]; then
+      echo -n "."
+  fi
+
+  let reg_ck_result=0
+
+  sq_tmp_reg_entries=`mktemp -t`
+  sqshell -c 'show'  > $sq_tmp_reg_entries
+  reg_ck_test=`grep -a " $sq_reg_entry " $sq_tmp_reg_entries | cut -d '=' -f 2 | cut -d' ' -f 2`
+  if [[ $reg_ck_test != "" ]]; then
+      let reg_ck_result=$reg_ck_test
+  fi
+  rm -f $sq_tmp_reg_entries
+
+  if [ $reg_ck_result '>' 0 ]; then
+      if [ $sqc_verbose '==' 1 ]; then
+         echo 
+         echo "SQ registry key $sq_reg_entry is set to $reg_ck_result"
+      fi
+      exit $reg_ck_result
+  fi
+
+  sleep $sleep_duration
+
+done
+
+if [ $sqc_verbose '==' 1 ]; then
+    echo
+    echo "SQ registry key $sq_reg_entry is not set"
+fi
+
+exit 0
+

@@ -1,0 +1,88 @@
+# INCLUDES
+include $(MY_SQROOT)/macros.gmk #top level
+sinclude depend.mk
+
+ODBCVER := $(shell ./bldODBCVer.sh)
+
+VPATH = ./DrvrManager:./trace:./cli:./TCPIPV4:./Interface:./common:./platform:./security_dll/source
+
+C_FLAGS = -m64 -Dunixcli -DVERSION3 -DMXLINUX -DDISABLE_TRACE -DSIZEOF_LONG=8 -DSIZEOF_LONG_INT=8 -Wall -fPIC -w -DASYNCIO -DTRACE_COMPRESSION -I$(ICU)/linux64/include -I/usr/include/openssl
+
+LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuucNv44 -Wl,--hash-style=both /usr/lib64/libssl.a /usr/lib64/libcrypto.a -Wl,--version-script=linux.exports
+
+ifeq ($(MAKECMDGOALS),linux64_release)
+	OBJDIR = ./obj/linux64/release/
+	vpath %.o $(OBJDIR)
+	C = /usr/bin/gcc
+	CC = /usr/bin/g++
+	LINK = $(CC)
+	CFLAGS = $(C_FLAGS)-O3 
+endif
+
+ifeq ($(MAKECMDGOALS),linux64_debug)
+	OBJDIR = ./obj/linux64/debug/
+	vpath %.o $(OBJDIR)
+	C = /usr/bin/gcc
+	CC = /usr/bin/g++
+	LINK = $(CC)
+	CFLAGS = $(C_FLAGS) -g -DDEBUG 
+endif
+
+OBJ = .o
+LINK = $(CC)
+ODBC_SO_FILE = libtrafodbc
+
+INCLUDE = -I./cli/ -I./Interface  -I../../dependencies/windows/ -I../../dependencies/security/include -I./sql/ -I../../../../../sql/cli -I../../../../../sql/common -I./inc -I../../Krypton/ -I./common/ -I./TCPIPV4/ -I./trace/ -I./platform -I./security_dll/common -I./security_dll/header -I $(MY_SQROOT)/export/include
+
+DMOBJS = dmadmin.o dmcpool.o dmfunctions.o dminstall.o dmmapping.o drvrmanager.o version.o cdatasource.o
+#TROBJS = dotrace.o gettrace.o headers.o init.o traceext.o 
+TROBJS = gettrace.o init.o traceext.o 
+INTOBJS = odbcas_drvr.o odbcs_drvr.o transport.o
+CLIOBJS =  cconnect.o cdesc.o cdiag.o cenv.o chandle.o cstmt.o ctosqlconv.o diagfunctions.o drvrglobal.o drvrnet.o netcommon.o netconnect.o netstmt.o sqlconnect.o sqldesc.o sqlenv.o neofunc.o sqlhandle.o sqlstmt.o sqltocconv.o odbcmsg.o translte.o asyncIO.o charsetconv.o
+COMOBJS = transportbase.o TCPIPUnixDrvr.o marshaling.o marshalingdrvr_drvr.o swapdrvr_drvr.o windows.o compression.o swap.o nskieee.o ExpConvMxcs.o nix.o verslnxdrvr.o
+IP4OBJS = TCPIPV4.o Cipher.o Key.o MessageDigest.o secpwd.o Security.o securityException.o StaticLocking.o utils.o 
+EXPOBJS = sqlexportfunc_drvr.o version_drvr.o cdatasource_drvr.o 
+
+DRVROBJ = $(addprefix $(OBJDIR), $(TROBJS)) $(addprefix $(OBJDIR), $(INTOBJS)) $(addprefix $(OBJDIR), $(CLIOBJS)) $(addprefix $(OBJDIR), $(COMOBJS)) $(addprefix $(OBJDIR), $(IP4OBJS)) 
+#$(addprefix $(OBJDIR), $(SECURITYOBJS))
+DRVRMGROBJ = $(addprefix $(OBJDIR), $(DMOBJS))
+DRVREXPOBJ = $(addprefix $(OBJDIR), $(EXPOBJS))
+
+linux64_debug: dmanager cli interface common ipv4 exp trace
+	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
+	$(LINK) -fPIC -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
+	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
+	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
+
+linux64_release: dmanager cli interface common ipv4 exp trace
+	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64.so -o $(ODBC_SO_FILE)_l64.so $(DRVROBJ) $(DRVRMGROBJ) $(INCLUDE) $(LIBS)
+	$(LINK) -m64 -shared -rdynamic -Wl,-soname,$(ODBC_SO_FILE)_l64_drvr.so -o $(ODBC_SO_FILE)_l64_drvr.so $(DRVROBJ) $(DRVREXPOBJ) $(INCLUDE) $(LIBS)
+	ln -s -f $(ODBC_SO_FILE)_l64_drvr.so $(ODBC_SO_FILE)_drvr_l64.so
+	cp -p $(ODBC_SO_FILE)_drvr_l64.so $(LIBEXPDIR)/.
+
+dmanager: $(DMOBJS)
+
+trace: $(TROBJS)
+
+cli: $(CLIOBJS) 
+
+interface: $(INTOBJS)
+
+common: $(COMOBJS)
+
+ipv4: $(IP4OBJS)
+
+exp: $(EXPOBJS)
+
+clean:
+	rm -rf obj
+	rm -rf libtrafodbc_*
+	rm -rf trace/version.cpp trace/version_drvr.cpp
+
+.cpp.o:
+	mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) $(INCLUDE) $(SSLINC) $(PLATFORMINCLUDE) -c $< -o $(addprefix $(OBJDIR), $@)
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDE) $(SSLINC) -c $< -o $(addprefix $(OBJDIR), $@)
+

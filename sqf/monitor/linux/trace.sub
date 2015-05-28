@@ -1,0 +1,42 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
+set MTRC-MON_TRACE_ENABLE=1
+set MTRC-MON_TRACE_FILE=monitor.trace
+
+set MTRC-MON_TRACE_REQUEST=1
+set MTRC-MON_TRACE_PROCESS=1
+set MTRC-MON_TRACE_SYNC=1
+set MTRC-MON_TRACE_COMM=0
+set MTRC-MON_TRACE_INIT=0
+set MTRC-MON_TRACE_RECOVERY=0
+set MTRC-MON_TRACE_STATS=0
+set MTRC-MON_TRACE_TMSYNC=0
+set MTRC-MON_TRACE_MLIO=0
+set MTRC-MON_TRACE_EVLOG_MSG=1
+set MTRC-MON_TRACE_ENTRY_EXIT=0
+
+set MTRC-MON_TRACE_REQUEST_DETAIL=0
+set MTRC-MON_TRACE_PROCESS_DETAIL=1
+set MTRC-MON_TRACE_SYNC_DETAIL=0
+set MTRC-MON_TRACE_COMM_DETAIL=0
+set MTRC-MON_TRACE_MLIO_DETAIL=0

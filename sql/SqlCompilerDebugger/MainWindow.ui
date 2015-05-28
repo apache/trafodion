@@ -1,0 +1,802 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>720</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>SQL Compiler Query Debugger</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="Resource.qrc">
+    <normaloff>:/file/Resource/Main/SQ_Logo.png</normaloff>:/file/Resource/Main/SQ_Logo.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayoutMidArea">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="margin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QMdiArea" name="mdiArea"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>720</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionClose"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSave_As"/>
+    <addaction name="separator"/>
+    <addaction name="actionPrint"/>
+    <addaction name="actionPrint_Preview"/>
+    <addaction name="actionPrint_Setup"/>
+    <addaction name="separator"/>
+    <addaction name="actionRecent_File"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="actionMemo"/>
+    <addaction name="actionProperties"/>
+    <addaction name="actionItemExpr"/>
+    <addaction name="actionQuery_Analysis"/>
+    <addaction name="actionRules"/>
+    <addaction name="actionHistogram"/>
+   </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>&amp;Options</string>
+    </property>
+    <addaction name="actionContinue"/>
+    <addaction name="actionBreakpoints"/>
+   </widget>
+   <widget class="QMenu" name="menuMemo">
+    <property name="title">
+     <string>&amp;Memo</string>
+    </property>
+    <addaction name="actionStepOneTask"/>
+    <addaction name="actionStepGrp"/>
+    <addaction name="actionStepExpr"/>
+    <addaction name="actionStepTaskNum"/>
+    <addaction name="actionStepTask"/>
+    <addaction name="actionFinishPass"/>
+    <addaction name="actionFinish"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionToolbar"/>
+    <addaction name="actionStatus_Bar"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+    <addaction name="actionCascade"/>
+    <addaction name="actionTile"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionHelp_Topics"/>
+    <addaction name="actionAbout_SqlDbg"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuOptions"/>
+   <addaction name="menuMemo"/>
+   <addaction name="menuView"/>
+   <addaction name="menuWindow"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="iconSize">
+    <size>
+     <width>24</width>
+     <height>24</height>
+    </size>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionPrint"/>
+   <addaction name="separator"/>
+   <addaction name="actionMemo"/>
+   <addaction name="actionProperties"/>
+   <addaction name="actionItemExpr"/>
+   <addaction name="actionQuery_Analysis"/>
+   <addaction name="actionRules"/>
+   <addaction name="actionHistogram"/>
+   <addaction name="separator"/>
+   <addaction name="actionContinue"/>
+   <addaction name="actionBreakpoints"/>
+   <addaction name="separator"/>
+   <addaction name="actionStepOneTask"/>
+   <addaction name="actionStepTaskNum"/>
+   <addaction name="actionStepTask"/>
+   <addaction name="actionStepGrp"/>
+   <addaction name="actionStepExpr"/>
+   <addaction name="actionFinishPass"/>
+   <addaction name="actionFinish"/>
+   <addaction name="separator"/>
+   <addaction name="actionHelp_Topics"/>
+   <addaction name="actionAbout_SqlDbg"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>20</height>
+    </size>
+   </property>
+  </widget>
+  <action name="actionNew">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_NEW</normaloff>:/file/R_NEW</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a new document</string>
+   </property>
+   <property name="statusTip">
+    <string>Create a new document</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_OPEN</normaloff>:/file/R_OPEN</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an existing document</string>
+   </property>
+   <property name="statusTip">
+    <string>Open an existing document</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Close</string>
+   </property>
+   <property name="toolTip">
+    <string>Close the active document</string>
+   </property>
+   <property name="statusTip">
+    <string>Close the active document</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_SAVE</normaloff>:/file/R_SAVE</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the active document</string>
+   </property>
+   <property name="statusTip">
+    <string>Save the active document</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionSave_As">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save &amp;As...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the active document with a new name</string>
+   </property>
+   <property name="statusTip">
+    <string>Save the active document with a new name</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_PRINT</normaloff>:/file/R_PRINT</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Print...</string>
+   </property>
+   <property name="toolTip">
+    <string>Change the printing options</string>
+   </property>
+   <property name="statusTip">
+    <string>Change the printing options</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionPrint_Preview">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Print Pre&amp;view</string>
+   </property>
+   <property name="toolTip">
+    <string>Display full pages</string>
+   </property>
+   <property name="statusTip">
+    <string>Display full pages</string>
+   </property>
+  </action>
+  <action name="actionPrint_Setup">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>P&amp;rint Setup...</string>
+   </property>
+   <property name="iconText">
+    <string>Print Setup</string>
+   </property>
+   <property name="toolTip">
+    <string>Change the printer and printing options</string>
+   </property>
+   <property name="statusTip">
+    <string>Change the printer and printing options</string>
+   </property>
+  </action>
+  <action name="actionRecent_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Recent File</string>
+   </property>
+   <property name="toolTip">
+    <string>Open this document</string>
+   </property>
+   <property name="statusTip">
+    <string>Open this document</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+   <property name="iconText">
+    <string>Exit</string>
+   </property>
+   <property name="toolTip">
+    <string>Quit the application; prompts to save documents</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit the application; prompts to save documents</string>
+   </property>
+  </action>
+  <action name="actionMemo">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_MEMO</normaloff>:/file/R_MEMO</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Memo...</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggles the Display of Memo View</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggles the Display of Memo View</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionProperties">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_PROPERTY</normaloff>:/file/R_PROPERTY</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Properties...</string>
+   </property>
+   <property name="toolTip">
+    <string>Displays detailed properties of current node</string>
+   </property>
+   <property name="statusTip">
+    <string>Displays detailed properties of current node</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionItemExpr">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_ITEMEXPR</normaloff>:/file/R_ITEMEXPR</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;ItemExpr...</string>
+   </property>
+   <property name="toolTip">
+    <string>Displays the item expression associated with the current Selected node</string>
+   </property>
+   <property name="statusTip">
+    <string>Displays the item expression associated with the current Selected node</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionRules">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_RULE</normaloff>:/file/R_RULE</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Rules...</string>
+   </property>
+   <property name="toolTip">
+    <string>Displays the list of rules that can be applied</string>
+   </property>
+   <property name="statusTip">
+    <string>Displays the list of rules that can be applied</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionHistogram">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_HISTOGRAM</normaloff>:/file/R_HISTOGRAM</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Histogram...</string>
+   </property>
+   <property name="toolTip">
+    <string>Displays the Histogram details</string>
+   </property>
+   <property name="statusTip">
+    <string>Displays the Histogram details</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionQuery_Analysis">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_QUERYANALYSIS</normaloff>:/file/R_QUERYANALYSIS</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Query Analysis...</string>
+   </property>
+   <property name="toolTip">
+    <string>Display Query Analysis detail</string>
+   </property>
+   <property name="statusTip">
+    <string>Display Query Analysis detail</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionContinue">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_CONTINUE</normaloff>:/file/R_CONTINUE</iconset>
+   </property>
+   <property name="text">
+    <string>Contin&amp;ue</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue execution and display after next phase of compilation</string>
+   </property>
+   <property name="statusTip">
+    <string>Continue execution and display after next phase of compilation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionBreakpoints">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_BREAKPOINT</normaloff>:/file/R_BREAKPOINT</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Breakpoints...</string>
+   </property>
+   <property name="toolTip">
+    <string>Set breakpoints at which you want to display information</string>
+   </property>
+   <property name="statusTip">
+    <string>Set breakpoints at which you want to display information</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepOneTask">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_STEP</normaloff>:/file/R_STEP</iconset>
+   </property>
+   <property name="text">
+    <string>Step</string>
+   </property>
+   <property name="toolTip">
+    <string>Executes one optimization step</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepGrp">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_STEPGROUP</normaloff>:/file/R_STEPGROUP</iconset>
+   </property>
+   <property name="text">
+    <string>StepGrp</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue execution and stop at specified group</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepExpr">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_STEPEXPR</normaloff>:/file/R_STEPEXPR</iconset>
+   </property>
+   <property name="text">
+    <string>StepExpr</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue execution and stop at specified expression of specified group</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepTaskNum">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_STEPTASKNUM</normaloff>:/file/R_STEPTASKNUM</iconset>
+   </property>
+   <property name="text">
+    <string>StepTaskNum</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue execution and stop at specified task number</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepTask">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_STEPTASK</normaloff>:/file/R_STEPTASK</iconset>
+   </property>
+   <property name="text">
+    <string>StepTask</string>
+   </property>
+   <property name="toolTip">
+    <string>Continue execution and stop at selected task in task list</string>
+   </property>
+   <property name="statusTip">
+    <string>Continue execution and stop at selected task in task list</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFinishPass">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_FINISHPASH</normaloff>:/file/R_FINISHPASH</iconset>
+   </property>
+   <property name="text">
+    <string>FinishPass</string>
+   </property>
+   <property name="toolTip">
+    <string>Finish executing current optimization pass</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFinish">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_FINISH</normaloff>:/file/R_FINISH</iconset>
+   </property>
+   <property name="text">
+    <string>Finish</string>
+   </property>
+   <property name="toolTip">
+    <string>Finish executing all optimization passes</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Toolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the toolbar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show or hide the toolbar</string>
+   </property>
+  </action>
+  <action name="actionStatus_Bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Status Bar</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the status bar</string>
+   </property>
+   <property name="statusTip">
+    <string>Show or hide the status bar</string>
+   </property>
+  </action>
+  <action name="actionNew_Window">
+   <property name="text">
+    <string>&amp;New Window</string>
+   </property>
+   <property name="toolTip">
+    <string>Open another window for the active document</string>
+   </property>
+   <property name="statusTip">
+    <string>Open another window for the active document</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>&amp;Cascade</string>
+   </property>
+   <property name="toolTip">
+    <string>Arrange windows so they overlap</string>
+   </property>
+   <property name="statusTip">
+    <string>Arrange windows so they overlap</string>
+   </property>
+  </action>
+  <action name="actionTile">
+   <property name="text">
+    <string>&amp;Tile</string>
+   </property>
+   <property name="toolTip">
+    <string>Arrange windows as non-overlapping tiles</string>
+   </property>
+   <property name="statusTip">
+    <string>Arrange windows as non-overlapping tiles</string>
+   </property>
+  </action>
+  <action name="actionArrange_Icons">
+   <property name="text">
+    <string>&amp;Arrange Icons</string>
+   </property>
+   <property name="toolTip">
+    <string>Arrange icons at the bottom of the window</string>
+   </property>
+   <property name="statusTip">
+    <string>Arrange icons at the bottom of the window</string>
+   </property>
+  </action>
+  <action name="actionSplit">
+   <property name="text">
+    <string>S&amp;plit</string>
+   </property>
+   <property name="toolTip">
+    <string>Split the active window into panes</string>
+   </property>
+   <property name="statusTip">
+    <string>Split the active window into panes</string>
+   </property>
+  </action>
+  <action name="actionHelp_Topics">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_HELP</normaloff>:/file/R_HELP</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Help Topics</string>
+   </property>
+   <property name="toolTip">
+    <string>List Help topics</string>
+   </property>
+   <property name="statusTip">
+    <string>List Help topics</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionAbout_SqlDbg">
+   <property name="icon">
+    <iconset resource="Resource.qrc">
+     <normaloff>:/file/R_ABOUT</normaloff>:/file/R_ABOUT</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;About SqlDbg...</string>
+   </property>
+   <property name="toolTip">
+    <string>Display program information, version number and copyright</string>
+   </property>
+   <property name="statusTip">
+    <string>Display program information, version number and copyright</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionUpdateMemo">
+   <property name="text">
+    <string>&amp;UpdateMemo...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="Resource.qrc"/>
+ </resources>
+ <connections/>
+</ui>

@@ -1,0 +1,144 @@
+-- Drop tables and create DDL
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table t40;
+drop table t41;
+drop table t42;
+drop table t43;
+drop table t44;
+drop table t50;
+drop table t51;
+drop table t53;
+drop table t60;
+drop table TTF;
+drop table TTFONE;
+
+
+log LOG004 clear;
+create table t40( a int not null, b int, c int, d int, e int, f int, g int, h int, i int, j int, primary key (a)) ;
+create table t41 like t40 ;
+create table t42 like t40 ;
+create table t43 like t40 ;
+create table t44( a int not null, b int, primary key (a)) ; 
+create table t50 like t40 ;
+create table t51 like t40 ;
+create table t53 like t40 ;
+
+create table t60 (sbin0_4 int not null, sdec5_10 Numeric(9,0) signed not null, sdec6_4 Numeric(4,0) signed not null, varchar0_uniq VarChar(8) not null, primary key (sbin0_4));
+
+create table TTF ( vch7 varchar(7)
+                            , nint smallint
+                            , ch3 char(3)
+                            , nnum9 numeric(9,2)
+                            , ch4 char(4)
+                            , nnum5 numeric(5,1)
+                            , vch5 varchar(5)
+                            , nsint smallint signed
+           ) ;
+create table TTFONE (vchar1 varchar(3), nint integer);
+
+
+
+insert into t43 values 
+(1,1,1,1,1,1,1,1,1,1),
+(2,2,2,2,2,2,2,2,2,2),
+(3,3,3,3,3,3,3,3,3,3),
+(4,4,4,4,4,4,4,4,4,4),
+(5,5,5,5,5,5,5,5,5,5),
+(6,11,11,11,11,11,11,11,11,11),
+(7,22,22,22,22,22,22,22,22,22),
+(8,33,33,33,33,33,33,33,33,33),
+(9,44,44,44,44,44,44,44,44,44),
+(0,55,55,55,55,55,55,55,55,55);
+
+insert into t44 values 
+(1,1),
+(2,2),
+(3,3),
+(4,4),
+(5,5),
+(6,1),
+(7,2),
+(8,3),
+(9,4),
+(0,5);
+
+insert into t42 select 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a 
+from t43, t44 ;
+
+insert into t41 select 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a 
+from t43, t44 ;
+
+insert into t40 select
+t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
+t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
+1, 1, 1, 1 from t41, t42 ;
+
+
+insert into t50 values 
+(11,11,11,11,11,11,1,1,1,1),
+(13,13,13,13,13,13,1,1,1,1),
+(22,22,22,22,22,22,1,1,1,1);
+
+insert into t51 values 
+(10,10,10,10,10,10,10,10,10,10),
+(11,11,11,11,11,11,11,11,11,11),
+(13,13,13,13,13,13,13,13,13,13);
+
+insert into t53 values 
+(5,5,5,5,5,5,5,5,5,5),
+(6,11,11,11,11,11,11,11,11,11),
+(7,22,22,22,22,22,22,22,22,22);
+
+insert into t60 values
+(0,-3,-2,'CJAAAAAC'),
+(-1,-0,-2,'AEAAJAAB'),
+(-2,-6,0,'CCAAFAAC'),
+(-2,-2,-1,'AIAALAAA');
+
+insert into TTF values
+                ('a',      1,'a'  ,0.9,       NULL,NULL  ,NULL,0)
+              , ('cc'     ,2,'cc' ,2.00,      'cc',2.0   ,'cc',2)
+              , ('abcdefg',3,'cc' ,0.09,    'alph',2     ,'cc',1)
+              , ('b',      4,'c'  ,1234567.89,'e' ,1234.5,'c' ,12345)
+              , ('abcdefg',5,'cc' ,0.09,      'cc',2     ,'cc',2)
+           ;
+insert into TTFONE values ('cc', 2);
+
+update statistics for table t40 on every column ;
+update statistics for table t41 on every column ;
+update statistics for table t42 on every column ;
+update statistics for table t43 on every column ;
+update statistics for table t44 on every column ;
+update statistics for table t50 on every column ;
+update statistics for table t51 on every column ;
+update statistics for table t53 on every column ;
+update statistics for table t60 on every column ;
+update statistics for table TTF on every column ;
+update statistics for table TTFONE on every column ;
+

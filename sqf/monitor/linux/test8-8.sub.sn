@@ -1,0 +1,45 @@
+!
+! Test TM sync requests with and without collisions
+!           (Spare Nodes configuration)
+!
+!  #### Not a valid test in a virtual cluster ####
+!
+! Note: 'sqconfig' node section must have:
+!       6 logical nodes (3 physical nodes w/ 2 logical nodes each) and
+!       1 or more spare nodes w/ one spare for nids 2 & 3
+!
+! For Example:
+!
+!   begin node
+!   node-id=0;node-name=n7;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=1;node-name=n7;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   node-id=2;node-name=n6;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=3;node-name=n6;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   node-id=4;node-name=n5;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=5;node-name=n5;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   node-name=n4;cores=0-3;spares=0,1,2,3,4,5
+!   end node
+!
+node info
+exec {type dtm,nowait,nid 5,out TM05.lst}testtm
+exec {type dtm,nowait,nid 4,out TM04.lst}testtm
+exec {type dtm,nowait,name $TM03, nid 3,out TM03.lst}testtm
+exec {type dtm,nowait,name $TM02, nid 2,out TM02.lst}testtm
+exec {type dtm,nowait,nid 1,out TM01.lst}testtm
+exec {type dtm,nowait,nid 0,out TM00.lst}testtm
+delay 5
+ps {DTM}
+
+! Start Test8 - Dead TMs test w/ restart of $TM02 and $TM03 in same logical nodes
+!               while TmSync in progress
+event {DTM} 8
+delay 3
+ps {DTM}
+delay 10
+ps {DTM}
+node info
+event {DTM} 9
+delay 5
+ps {DTM}
+
+exit !

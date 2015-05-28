@@ -1,0 +1,260 @@
+>>obey TEST002(setup);
+>>--------------------------------------------------------------------------
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '20' ;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>
+>>cqd HDFS_IO_BUFFERSIZE '3';
+
+--- SQL operation complete.
+>>obey TEST002(tests);
+>>--------------------------------------------------------------------------
+>>
+>>log;
+hdfsBufSize_ = 3072, rangeTailIOSize_ = 16384, hdfsSqlMaxRecLen_ = 8
+>>select count(*) from customer ;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_address ;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from date_dim ;
+
+(EXPR)              
+--------------------
+
+               73049
+
+--- 1 row(s) selected.
+>>select count(*) from household_demographics ;
+
+(EXPR)              
+--------------------
+
+                7200
+
+--- 1 row(s) selected.
+>>select count(*) from item ;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>select count(*) from promotion ;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>select count(*) from store ;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>select count(*) from time_dim ;
+
+(EXPR)              
+--------------------
+
+               86400
+
+--- 1 row(s) selected.
+>>
+>>cqd hive_max_esps '2';
+
+--- SQL operation complete.
+>>prepare s1 from select count(*) from hive.store_sales;
+
+--- SQL command prepared.
+>>explain options 'f' s1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+000
+3    .    4    sort_partial_aggr_ro                                  1.00E+000
+2    .    3    esp_exchange                    1:2(hash2)            1.00E+000
+1    .    2    sort_partial_aggr_le                                  1.00E+000
+.    .    1    hive_scan                       STORE_SALES           2.92E+006
+
+--- SQL operation complete.
+>>execute s1;
+
+(EXPR)              
+--------------------
+
+             2880404
+
+--- 1 row(s) selected.
+>>
+>>
+>>cqd DETAILED_STATISTICS 'ALL';
+
+--- SQL operation complete.
+>>select count(C_CUSTOMER_SK) from hive.customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from table(statistics(NULL,NULL));
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>cqd DETAILED_STATISTICS 'RESET';
+
+--- SQL operation complete.
+>>cqd HDFS_IO_BUFFERSIZE '32';
+
+--- SQL operation complete.
+>>obey TEST002(tests);
+>>--------------------------------------------------------------------------
+>>
+>>log;
+hdfsBufSize_ = 32768, rangeTailIOSize_ = 16384, hdfsSqlMaxRecLen_ = 8
+>>select count(*) from customer ;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_address ;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from date_dim ;
+
+(EXPR)              
+--------------------
+
+               73049
+
+--- 1 row(s) selected.
+>>select count(*) from household_demographics ;
+
+(EXPR)              
+--------------------
+
+                7200
+
+--- 1 row(s) selected.
+>>select count(*) from item ;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>select count(*) from promotion ;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>select count(*) from store ;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>select count(*) from time_dim ;
+
+(EXPR)              
+--------------------
+
+               86400
+
+--- 1 row(s) selected.
+>>
+>>cqd hive_max_esps '2';
+
+--- SQL operation complete.
+>>prepare s1 from select count(*) from hive.store_sales;
+
+--- SQL command prepared.
+>>explain options 'f' s1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+000
+3    .    4    sort_partial_aggr_ro                                  1.00E+000
+2    .    3    esp_exchange                    1:2(hash2)            1.00E+000
+1    .    2    sort_partial_aggr_le                                  1.00E+000
+.    .    1    hive_scan                       STORE_SALES           2.92E+006
+
+--- SQL operation complete.
+>>execute s1;
+
+(EXPR)              
+--------------------
+
+             2880404
+
+--- 1 row(s) selected.
+>>
+>>
+>>cqd DETAILED_STATISTICS 'ALL';
+
+--- SQL operation complete.
+>>select count(C_CUSTOMER_SK) from hive.customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from table(statistics(NULL,NULL));
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>cqd DETAILED_STATISTICS 'RESET';
+
+--- SQL operation complete.
+>>log;

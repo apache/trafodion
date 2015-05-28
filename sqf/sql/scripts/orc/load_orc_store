@@ -1,0 +1,6 @@
+#!/bin/bash
+
+swhive << EOF
+source create_orc_store;
+insert into table orc_store select * from store;
+EOF

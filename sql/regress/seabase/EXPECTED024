@@ -1,0 +1,889 @@
+>>create schema seqsch;
+
+--- SQL operation complete.
+>>set schema seqsch;
+
+--- SQL operation complete.
+>>obey TEST024(setup);
+>>-- add sequence metadata, if  doesn't already exists
+>>initialize trafodion, create sequence;
+
+--- SQL operation complete.
+>>
+>>initialize trafodion, create metadata views;
+
+--- SQL operation complete.
+>>
+>>create sequence test024seq0;
+
+--- SQL operation complete.
+>>
+>>-- return error
+>>create sequence test024seq0;
+
+*** ERROR[1390] Object TRAFODION.SEQSCH.TEST024SEQ0 already exists in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>create sequence test024seq1;
+
+--- SQL operation complete.
+>>create sequence test024seq2 start with 10 minvalue 1 maxvalue 15 increment by 3 cache 2;
+
+--- SQL operation complete.
+>>create sequence test024seq3 maxvalue 3 cycle;
+
+--- SQL operation complete.
+>>create sequence test024seq4 maxvalue 3 no cache;
+
+--- SQL operation complete.
+>>create sequence test024seq5 minvalue 2 maxvalue 5 cache 4;
+
+--- SQL operation complete.
+>>create sequence test024seq6 maxvalue 8 cache 3 increment by 2;
+
+--- SQL operation complete.
+>>create sequence test024seq7;
+
+--- SQL operation complete.
+>>
+>>showddl sequence test024seq0;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ0
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq1;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ1
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq2;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ2
+  START WITH 10 /* NEXT AVAILABLE VALUE 10 */
+  INCREMENT BY 3
+  MAXVALUE 15
+  MINVALUE 1
+  CACHE 2
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq3;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ3
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 3
+  MINVALUE 1
+  CACHE 3
+  CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq4;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ4
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 3
+  MINVALUE 1
+  NO CACHE
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq5;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ5
+  START WITH 2 /* NEXT AVAILABLE VALUE 2 */
+  INCREMENT BY 1
+  MAXVALUE 5
+  MINVALUE 2
+  CACHE 4
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>showddl sequence test024seq6;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ6
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 2
+  MAXVALUE 8
+  MINVALUE 1
+  CACHE 3
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>alter sequence test024seq2 minvalue 5;
+
+*** ERROR[1592] MINVALUE cannot be specified for ALTER SEQUENCE.
+
+--- SQL operation failed with errors.
+>>showddl sequence test024seq2;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ2
+  START WITH 10 /* NEXT AVAILABLE VALUE 10 */
+  INCREMENT BY 3
+  MAXVALUE 15
+  MINVALUE 1
+  CACHE 2
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>drop sequence test024seq0;
+
+--- SQL operation complete.
+>>showddl sequence test024seq0;
+
+*** ERROR[1389] Object TEST024SEQ0 does not exist in Trafodion.
+
+*** ERROR[1389] Object TRAFODION.SEQSCH.TEST024SEQ0 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>set schema temp;
+
+--- SQL operation complete.
+>>get sequences in schema seqsch;
+
+Sequences in schema TRAFODION.SEQSCH
+====================================
+
+TEST024SEQ1
+TEST024SEQ2
+TEST024SEQ3
+TEST024SEQ4
+TEST024SEQ5
+TEST024SEQ6
+TEST024SEQ7
+
+--- SQL operation complete.
+>>set schema seqsch;
+
+--- SQL operation complete.
+>>
+>>create table test024t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>create table test024t2 (z int not null primary key, a int not null, b int not null);
+
+--- SQL operation complete.
+>>
+>>obey TEST024(select_queries);
+>>-- next 3 stmts will return 1, 2, 2
+>>select seqnum(test024seq1) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq1, next) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq1, current) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>-- next 3 stmts will return 10, 13, error
+>>select seqnum(test024seq2) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq2) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                  13
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq2) from (values(1)) x(a);
+
+*** ERROR[1579] This sequence has reached its max and cannot provide a new value.
+
+--- 0 row(s) selected.
+>>
+>>-- Next 4 stmts will return 1,2,3,1
+>>select seqnum(test024seq3) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq3) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq3) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq3) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>showddl sequence test024seq3;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ3
+  START WITH 1 /* NEXT AVAILABLE VALUE 4 */
+  INCREMENT BY 1
+  MAXVALUE 3
+  MINVALUE 1
+  CACHE 3
+  CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>-- Next 3 stmts will return 1,2,3
+>>select seqnum(test024seq4) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq4) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq4) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>showddl sequence test024seq4;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ4
+  START WITH 1 /* NEXT AVAILABLE VALUE 4 */
+  INCREMENT BY 1
+  MAXVALUE 3
+  MINVALUE 1
+  NO CACHE
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>-- Next 5 stmts will return 2,3,4,5,error
+>>select seqnum(test024seq5) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq5) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq5) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   4
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq5) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq5) from (values(1)) x(a);
+
+*** ERROR[1579] This sequence has reached its max and cannot provide a new value.
+
+--- 0 row(s) selected.
+>>
+>>-- Next 4 stmts will return 1,3,5,7,error
+>>select seqnum(test024seq6) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq6) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq6) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq6) from (values(1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>select seqnum(test024seq6) from (values(1)) x(a);
+
+*** ERROR[1579] This sequence has reached its max and cannot provide a new value.
+
+--- 0 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(seq_name), 40), num_calls from 
++>  "_MD_".sequences_view where schema_name = 'SEQSCH';
+
+(EXPR)                                                                                                                                                            NUM_CALLS
+----------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------
+
+SEQSCH.TEST024SEQ1                                                                                                                                                                   1
+SEQSCH.TEST024SEQ2                                                                                                                                                                   2
+SEQSCH.TEST024SEQ3                                                                                                                                                                   3
+SEQSCH.TEST024SEQ4                                                                                                                                                                   3
+SEQSCH.TEST024SEQ5                                                                                                                                                                   2
+SEQSCH.TEST024SEQ6                                                                                                                                                                   3
+SEQSCH.TEST024SEQ7                                                                                                                                                                   0
+
+--- 7 row(s) selected.
+>>
+>>-- where preds
+>>insert into test024t1 values (1,1), (2,2);
+
+--- 2 row(s) inserted.
+>>
+>>-- return 0 rows
+>>select * from test024t1 where a < seqnum(test024seq7);
+
+--- 0 row(s) selected.
+>>
+>>-- return 1
+>>select * from test024t1 where a < seqnum(test024seq7);
+
+A            B          
+-----------  -----------
+
+          1            1
+
+--- 1 row(s) selected.
+>>
+>>-- return 1,2
+>>select * from test024t1 where a < seqnum(test024seq7);
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>
+>>obey TEST024(insert_queries);
+>>delete from test024t1;
+
+--- 2 row(s) deleted.
+>>insert into test024t1 values (seqnum(test024seq7), 10);
+
+--- 1 row(s) inserted.
+>>insert into test024t1 values (seqnum(test024seq7), 10);
+
+--- 1 row(s) inserted.
+>>insert into test024t1 values (seqnum(test024seq7), 10);
+
+--- 1 row(s) inserted.
+>>
+>>-- error, dup insert
+>>insert into test024t1 values (seqnum(test024seq7, current), 10);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>
+>>-- return 4,5,6
+>>select * from test024t1;
+
+A            B          
+-----------  -----------
+
+          4           10
+          5           10
+          6           10
+
+--- 3 row(s) selected.
+>>
+>>-- inserts 7,8,9
+>>insert into test024t2 select seqnum(test024seq7), a, b from test024t1;
+
+--- 3 row(s) inserted.
+>>
+>>-- return 7,8,9
+>>select * from test024t2;
+
+Z            A            B          
+-----------  -----------  -----------
+
+          7            4           10
+          8            5           10
+          9            6           10
+
+--- 3 row(s) selected.
+>>
+>>-- seq num generation is independent of enclosing explicit or implicit transaction
+>>drop sequence test024seq8;
+
+*** ERROR[1389] Object TRAFODION.SEQSCH.TEST024SEQ8 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>create sequence test024seq8;
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>showddl sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>select seqnum(test024seq8) from (values (1)) x(a);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>showddl sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>rollback work;
+
+--- SQL operation complete.
+>>showddl sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>drop sequence test024seq8;
+
+--- SQL operation complete.
+>>create sequence test024seq8;
+
+--- SQL operation complete.
+>>showddl sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>delete from test024t1;
+
+--- 3 row(s) deleted.
+>>insert into test024t1 values (1,1);
+
+--- 1 row(s) inserted.
+>>insert into test024t1 values (seqnum(test024seq8), 10);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>showddl sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>
+>>-- alter sequence
+>>drop sequence test024seq8;
+
+--- SQL operation complete.
+>>create sequence test024seq8 cache 5;
+
+--- SQL operation complete.
+>>prepare s from select seqnum(test024seq8) from (values (1)) x(a);
+
+--- SQL command prepared.
+>>showddl  sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 5
+  NO CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>alter sequence test024seq8 maxvalue 2 cycle;
+
+--- SQL operation complete.
+>>showddl  sequence test024seq8;
+
+CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
+  START WITH 1 /* NEXT AVAILABLE VALUE 6 */
+  INCREMENT BY 1
+  MAXVALUE 2
+  MINVALUE 1
+  CACHE 5
+  CYCLE
+  LARGEINT
+;
+
+--- SQL operation complete.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   4
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- select from metadata sequences view
+>>invoke trafodion."_MD_".sequences_view;
+
+-- Definition of Trafodion view TRAFODION."_MD_".SEQUENCES_VIEW
+-- Definition current  Mon Dec  1 13:28:27 2014
+
+  (
+    CATALOG_NAME                     VARCHAR(256 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SCHEMA_NAME                      VARCHAR(256 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SEQ_NAME                         VARCHAR(256 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , START_VALUE                      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INCREMENT                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MAX_VALUE                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MIN_VALUE                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CYCLE_OPTION                     CHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CACHE_OPTION                     CHAR(1) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CACHE_SIZE                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NEXT_VALUE                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_CALLS                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select catalog_name, schema_name, seq_name, start_value, increment, max_value, min_value, cycle_option, cache_option, cache_size, next_value from trafodion."_MD_".sequences_view where schema_name = 'SEQSCH';
+
+CATALOG_NAME                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                       SEQ_NAME                                                                                                                                                                                                                                                          START_VALUE           INCREMENT             MAX_VALUE             MIN_VALUE             CYCLE_OPTION  CACHE_OPTION  CACHE_SIZE            NEXT_VALUE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------  --------------------  --------------------  --------------------  ------------  ------------  --------------------  --------------------
+
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ1                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             Y                               25                    26
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ2                                                                                                                                                                                                                                                                         10                     3                    15                     1  N             Y                                2                    16
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ3                                                                                                                                                                                                                                                                          1                     1                     3                     1  Y             Y                                3                     4
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ4                                                                                                                                                                                                                                                                          1                     1                     3                     1  N             N                                0                     4
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ5                                                                                                                                                                                                                                                                          2                     1                     5                     2  N             Y                                4                     6
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ6                                                                                                                                                                                                                                                                          1                     2                     8                     1  N             Y                                3                     9
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ7                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             Y                               25                    26
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ8                                                                                                                                                                                                                                                                          1                     1                     2                     1  Y             Y                                5                     6
+
+--- 8 row(s) selected.
+>>
+>>obey TEST024(error_cases);
+>>create sequence error_seq maxvalue -1;
+
+*** ERROR[1572] MAXVALUE value cannot be a negative number for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue -1;
+
+*** ERROR[1572] MINVALUE value cannot be a negative number for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq maxvalue 0;
+
+*** ERROR[1571] MAXVALUE value cannot be zero for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 0;
+
+*** ERROR[1571] MINVALUE value cannot be zero for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 10 maxvalue 5;
+
+*** ERROR[1570] MAXVALUE must be greater than MINVALUE for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq increment by  0;
+
+*** ERROR[1571] INCREMENT BY value cannot be zero for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq increment by  -1;
+
+*** ERROR[1572] INCREMENT BY value cannot be a negative number for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 11 maxvalue 23 increment by 14;
+
+*** ERROR[1575] INCREMENT BY value cannot be greater than the difference between MINVALUE and MAXVALUE for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 5 maxvalue 10 start with 3;
+
+*** ERROR[1573] START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 5 maxvalue 10 start with 20;
+
+*** ERROR[1573] START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq cache 1;
+
+*** ERROR[1577] CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq minvalue 1 maxvalue 3 cache 10;
+
+*** ERROR[1577] CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for CREATE SEQUENCE.
+
+--- SQL operation failed with errors.
+>>alter sequence error_seq start with 50;
+
+*** ERROR[1389] Object ERROR_SEQ does not exist in Trafodion.
+
+*** ERROR[1389] Object TRAFODION.SEQSCH.ERROR_SEQ does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq;
+
+--- SQL operation complete.
+>>alter sequence error_seq start with 50;
+
+*** ERROR[1592] START WITH cannot be specified for ALTER SEQUENCE.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>obey TEST024(clean_up);
+>>drop sequence test024seq0;
+
+*** ERROR[1389] Object TRAFODION.SEQSCH.TEST024SEQ0 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>drop sequence test024seq1;
+
+--- SQL operation complete.
+>>drop sequence test024seq2;
+
+--- SQL operation complete.
+>>drop sequence test024seq3;
+
+--- SQL operation complete.
+>>drop sequence test024seq4;
+
+--- SQL operation complete.
+>>drop sequence test024seq5;
+
+--- SQL operation complete.
+>>drop sequence test024seq6;
+
+--- SQL operation complete.
+>>drop sequence test024seq7;
+
+--- SQL operation complete.
+>>drop sequence test024seq8;
+
+--- SQL operation complete.
+>>drop sequence error_seq;
+
+--- SQL operation complete.
+>>
+>>drop table test024t1;
+
+--- SQL operation complete.
+>>drop table test024t2;
+
+--- SQL operation complete.
+>>
+>>drop schema seqsch cascade;
+
+--- SQL operation complete.
+>>
+>>log;

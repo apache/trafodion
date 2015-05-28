@@ -1,0 +1,1648 @@
+drop table trunctmp;
+LOG aqatdml12 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--   This test unit is a positive and negative local test for arithmetic
+--expressions as they appear in the select statement.  Precedence,  type
+--propagation, and expression overflow in SELECT statement expressions
+--are all tested. Truncation on assignment is also tested here, in the
+--context of INSERT and UPDATE. Truncation on assignment in SELECT INTO
+--statements is performed.  This is a 'select statement test unit' only
+--in the sense that the bulk of the tests are done in the context of select
+--statements. This test unit is really a test of arithmetic expression
+--handling in SQL.
+--   This test unit uses tables btsel26, btsel27 and various
+--other tables from the select global database.  The assignment
+--truncation tests also create, use, and drop temporary tables. The
+--testcases in this testunit are as follows:
+
+--     A0: precedence tests
+--     A1: addition/subtraction overflow (column values only)
+--     A2: addition/subtraction overflow (columns, literals)
+--     A3: multiplication overflow
+--     A4: division overflow
+--     A5: aggregate overflow
+--     A6: type propagation
+--     A7: insert statement assignment truncation
+--     A8: update statement assignment truncation
+--     A9: select into truncation tests
+
+--All testcases are documented further below.
+
+--****************** end test unit comments  ***************************
+
+--<testunit-summary>
+--select #12 pos/neg/loc ufi/prep
+
+--<testunit-specs>
+--mode-type ufi/prep
+--test-type functional
+--form-type pos/neg/loc
+-- select-test is not specified because INSERT and UPDATE tests
+-- are performed in the arithmetic truncation testcases.
+
+
+--<testcase A0>
+
+--   <testcase-summary>
+--       select expression precedence test-
+--       this tests the accuracy of the
+--       various precedence rules in the
+--       processing of SQL expressions.
+
+--   <detail>
+--       various SQL expressions are tested in SELECT statements.  Most
+--       of the expressions contain no parenthesis to check the accuracy
+--       of the default precedence rules. Some expressions with
+--       parenthesis are used to verify the ability of parens to override
+--       the default precedence(s).
+
+
+--   <templates>
+--       US00
+
+--  Boolean/comp op precedence
+
+--  check precedence of AND over OR
+--  correct answer: first 2 records (insertion order, based on SYSKEY)
+-- <ufi-input>
+       select *
+       from btsel06
+       where col_42 <> col_43 AND
+             col_44 < col_45 OR
+             col_66 = col_67 AND
+             col_68 > col_69;
+
+--  check precedence of NOT over OR
+--  correct answer: all records
+-- <ufi-input>
+       select *
+       from btsel08
+       where not pic_252 > pic_1 OR
+                 pic_252 > pic_1;
+
+--  check precedence of NOT over AND
+--  correct answer: all records except last 2
+-- <ufi-input>
+       select *
+       from btsel06
+       where col_2 > col_3 AND
+         NOT col_26 = col_27 AND
+             col_69 = col_70;
+
+--  check precedence of BETWEEN predicate and NOT BETWEEN
+-- <ufi-input>
+       select *
+       from btsel06
+       where NOT col_28 = 50 AND
+             NOT col_1 NOT BETWEEN 100 AND 800 AND
+             NOT col_70 <= 200 OR
+                 col_69 NOT BETWEEN 100 AND 300;
+
+--  check precedence of IN and NOT IN
+-- <ufi-input>
+       select *
+       from btsel06
+       where NOT col_6 NOT IN (50,150,250)
+             AND col_1 IN (100,200,300)
+             OR  col_3 IN (900,1900);
+
+--  check precedence of LIKE and NOT LIKE
+-- <ufi-input>
+       select *
+       from btsel06
+       where NOT pic_x_a NOT LIKE '__e'
+             AND pic_x_c NOT LIKE 'in'
+             AND pic_x_b NOT LIKE 'Q'
+             OR  pic_x_b LIKE 'D';
+
+--  check precedence of NOT NOT NOT
+-- <ufi-input>
+       select *
+       from btsel06
+       where NOT NOT NOT col_6 < 100;
+
+--  check precedence of NOT (NOT (NOT
+-- <ufi-input>
+--       select *
+--       from btsel06
+--       where NOT (NOT (NOT col_6 < 100));
+
+
+
+--  arithmetic precedence
+
+--  check pri of monadic -
+-- <ufi-input>
+       select -large_int * medium_int + -small_int
+       from btsel01;
+
+--  check pri of monadic +
+-- <ufi-input>
+       select +large_int * medium_int + +large_int
+       from btsel01;
+
+--  check pri of *, / vs. +, -
+-- <ufi-input>
+       select binary_signed + binary_32_u - pic_comp_1
+              * decimal_1 / pic_decimal_3 + decimal_3_unsigned
+       from btsel01;
+
+--  check pri of * vs. / and + vs. - (should be same)
+-- <ufi-input>
+       select binary_signed - binary_32_u + pic_comp_1
+              / decimal_1 * pic_decimal_3 + decimal_3_unsigned
+       from btsel01;
+
+--  check pri of monadic -, preceded by subtraction operator
+-- <ufi-input>
+       select -large_int * medium_int - -small_int
+       from btsel01;
+
+--  check pri of aggregates
+-- <ufi-input>
+       select avg(small_int) + -max(large_int) *
+              sum(medium_int)
+       from btsel01;
+
+--  check pri of expr inside aggr.
+-- <ufi-input>
+       select avg(binary_signed + binary_32_u - pic_comp_1
+                  * decimal_1 / pic_decimal_3 + decimal_3_unsigned)
+       from btsel01;
+
+
+
+--  arithmetic/boolean/comp op
+
+--  complex query
+--  correct answer: all records except first 2.
+-- <ufi-input>
+       select *
+       from btsel01
+       where NOT small_int + medium_int - medium_int + medium_int
+                 * small_int / pic_decimal_1 * pic_decimal_1 < large_int
+             AND binary_signed BETWEEN 1000 and 10000
+             AND pic_decimal_1 + pic_decimal_2 * 2 <= 8
+             OR  pic_x_7 NOT LIKE '__%'
+             OR  pic_decimal_3 <> 8
+             AND pic_decimal_3 >= 6;
+
+--  same as above, with parens that change the evaluation order
+-- <ufi-input>
+       select *
+       from btsel01
+       where NOT small_int + medium_int - medium_int + medium_int
+                 * small_int / pic_decimal_1 * pic_decimal_1 < large_int
+             AND binary_signed BETWEEN 1000 and 10000
+             AND pic_decimal_1 + pic_decimal_2 * 2 <= 8
+             OR ( pic_x_7 NOT LIKE '__%'
+                  OR  pic_decimal_3 <> 8)
+             AND pic_decimal_3 >= 6;
+
+--  same as above, with meaningless parens
+-- <ufi-input>
+       select *
+       from btsel01
+       where NOT small_int + medium_int - medium_int + medium_int
+                 * small_int / pic_decimal_1 * pic_decimal_1 < large_int
+             AND binary_signed BETWEEN 1000 and 10000
+             AND pic_decimal_1 + pic_decimal_2 * 2 <= 8
+             OR  pic_x_7 NOT LIKE '__%'
+             OR  (pic_decimal_3 <> 8
+                  AND pic_decimal_3 >= 6) ;
+
+--  select a huge arithmetic expression with parens
+-- <ufi-input>
+       select ((binary_signed * (binary_64_s + pic_comp_1) -
+                (pic_comp_2 + pic_comp_3) * small_int
+               ) * medium_int - large_int / decimal_1
+              ) + decimal_2_signed * decimal_3_unsigned / pic_decimal_3
+       from btsel01;
+
+-- <end-input>
+
+
+-- <testcase A1>
+
+-- <testcase-summary>
+--     select expression arithmetic
+--     overflow test - this tests
+--     overflow from addition and
+--     subtraction in select expressions
+--     of column values only (no literals).
+
+-- <detail>
+--       Testing of overflow from the operations of addition
+--       and subtraction is tested.  There are four different
+--       levels of overflow: no overflow, possible overflow,
+--       precision overflow, and actual overflow. Possible
+--       overflow means the computed precision of the result
+--       exceeds 18. Precision overflow means that the precision of the
+--       actual runtime result exceeded 18, but did not exceed the
+--       maximum value that can be stored in a binary 64 variable.
+--       Actual overflow means the actual runtime result exceeded
+--       the maximum value that can be stored in a binary 64 variable.
+--         Expressions involving only columns are tested. Signed and
+--       unsigned column values are tested, as are binary and decimal
+--       column values.
+
+-- <templates>
+--     US00
+
+--  column/column
+--  signed
+
+--  possible overflow, binary columns, actual values small -> no overflow
+-- <ufi-input>
+      select large_bin_1 + large_bin_2
+      from btsel26
+      where selector = 'A';
+
+--  possible overflow, decimal columns, actual values small ->
+--  no overflow
+-- <ufi-input>
+      select large_dec_1 + large_dec_2
+      from btsel26
+      where selector = 'A';
+
+--  possible overflow, binary columns, actual values large
+--  (result should be one less than precision overflow)
+-- <ufi-input>
+      select large_bin_1 + large_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  same as above, with decimal columns
+-- <ufi-input>
+      select large_dec_1 + large_dec_2
+      from btsel26
+      where selector = 'D';
+
+--  precision overflow, binary columns, result positive
+-- <ufi-input>
+      select large_bin_1 + large_bin_2
+      from btsel26
+      where selector = 'B';
+
+--  precision overflow, decimal columns, result positive
+-- <ufi-input>
+      select large_dec_1 + large_dec_2
+      from btsel26
+      where selector = 'B';
+
+--  precision overflow, binary columns, result negative
+--  (underflow)
+-- <ufi-input>
+      select large_bin_1 - large_bin_2
+      from btsel26
+      where selector = 'C';
+
+--  precision overflow, dec cols, result negative
+--  (underflow)
+-- <ufi-input>
+      select large_dec_1 - large_dec_2
+      from btsel26
+      where selector = 'C';
+
+--  precision overflow, binary columns, scale 18
+--  (add .9 + .2, scales of both = .18)
+-- <ufi-input>
+      select small_bin_1 + small_bin_2
+      from btsel26
+      where selector = 'A';
+
+--  same as above, dec columns
+-- <ufi-input>
+      select small_dec_1 + small_dec_2
+      from btsel26
+      where selector = 'A';
+
+--  precision overflow, binary columns
+-- <ufi-input>
+      select small_bin_1 + small_bin_2
+      from btsel26
+      where selector = 'B';
+
+--  same, dec columns
+-- <ufi-input>
+      select small_dec_1 + small_dec_2
+      from btsel26
+      where selector = 'B';
+
+--  precision overflow, bin columns
+-- <ufi-input>
+      select small_bin_1 + small_bin_2
+      from btsel26
+      where selector = 'C';
+
+--  same , dec columns
+-- <ufi-input>
+      select small_dec_1 + small_dec_2
+      from btsel26
+      where selector = 'C';
+
+--  no overflow possible, bin cols, result positive
+-- <ufi-input>
+      select semi_large_bin_1 + semi_large_bin_2
+      from btsel26
+      where selector = 'A';
+
+--  no overflow possible, bin cols, result negative
+-- <ufi-input>
+      select semi_large_bin_1 - semi_large_bin_2
+      from btsel26
+      where selector = 'B';
+
+--  precision overflow, binary columns
+-- <ufi-input>
+      select one_nine_bin + nine_one_bin
+      from btsel26
+      where selector = 'A';
+
+--  overflow possible, result largest value possible with no
+--  precision overflow
+-- <ufi-input>
+      select one_nine_bin + nine_one_bin
+      from btsel26
+      where selector = 'B';
+
+--  actual overflow, cols bin, result positive
+-- <ufi-input>
+      select large_bin_1 + small_bin_1
+      from btsel26
+      where selector = 'B';
+
+--  same as above, dec cols
+-- <ufi-input>
+      select large_dec_1 + small_dec_1
+      from btsel26
+      where selector = 'B';
+
+--  actual overflow, cols bin, result negative
+--  (underflow)
+-- <ufi-input>
+      select large_bin_1 - small_bin_1
+      from btsel26
+      where selector = 'C';
+
+--  actual overflow by 1
+-- <ufi-input>
+      select large_bin_1 + small_bin_2
+      from btsel26
+      where selector = 'G';
+
+--  one less than actual overflow
+-- <ufi-input>
+      select large_bin_1 + small_bin_1
+      from btsel26
+      where selector = 'G';
+
+--  overflow possible (technically but not really), binary cols,
+--  actual values small - no overflow
+-- <ufi-input>
+      select nine_zero_bin_u + zero_nine_bin_u
+      from btsel26
+      where selector  = 'A';
+
+--  same as above, dec cols
+-- <ufi-input>
+      select nine_zero_dec_u + zero_nine_dec_u
+      from btsel26
+      where selector  = 'A';
+
+--  possible overflow, bin cols, actual values large
+--  result should be .000 000 001 less than overflow
+-- <ufi-input>
+      select nine_zero_bin_u + zero_nine_bin_u
+      from btsel26
+      where selector = 'B';
+
+--  same as above, dec cols
+-- <ufi-input>
+      select nine_zero_dec_u + zero_nine_dec_u
+      from btsel26
+      where selector = 'B';
+
+--  actual overflow, binary cols
+-- <ufi-input>
+      select nine_zero_bin_u + zero_nine_bin_u
+             + zero_nine_bin_u
+      from btsel26
+      where selector = 'B';
+
+--  same as above, dec cols
+-- <ufi-input>
+      select nine_zero_dec_u + zero_nine_dec_u
+             + zero_nine_dec_u
+      from btsel26
+      where selector = 'B';
+
+--  actual underflow, bin cols
+-- <ufi-input>
+      select -nine_zero_bin_u - zero_nine_bin_u
+             - zero_nine_bin_u
+      from btsel26
+      where selector = 'B';
+-- <end-input>
+
+
+-- <testcase A2>
+
+-- <testcase-summary>
+--     Select expression arithmetic
+--     overflow test - this tests
+--       overflow from addition and
+--       subtraction in select expressions
+--       of column values and literals, and
+--       select expressions of literals and
+--       literals.
+
+-- <detail>
+--         Testing of overflow from the operations of addition
+--       and subtraction is tested.
+--         Expressions involving a column with a literal and
+--       literal/literal expressions are tested.
+
+-- <templates>
+--     US00
+
+--  column/literal
+
+--  precision overflow, binary column
+--  add .9 + .2, scale of column = .18
+-- <ufi-input>
+      select small_bin_1 + .200000000000000000
+      from btsel26
+      where selector = 'A';
+
+--  precision overflow, binary column
+--  add .9 + .2, scale of column = .18, scale of literal = 1
+-- <ufi-input>
+      select small_bin_1 + .2
+      from btsel26
+      where selector = 'A';
+
+--  precision overflow, dec column
+-- <ufi-input>
+      select small_dec_1 + .000000000000000001
+      from btsel26
+      where selector = 'B';
+
+--  precision overflow, dec column
+-- <ufi-input>
+      select small_dec_1 + .000000000000000002
+      from btsel26
+      where selector = 'C';
+
+--  literal/literal
+
+--  precision overflow ?
+-- <ufi-input>
+      select .900000000000000000 + .200000000000000000
+      from btsel26;
+
+--  precision overflow
+-- <ufi-input>
+      select .999999999999999999 + .000000000000000001
+      from btsel26;
+
+--  precision overflow
+-- <ufi-input>
+      select .999999999999999999 + .000000000000000002
+      from btsel26 ;
+
+--  actual overflow ?
+-- <ufi-input>
+      select 10.0 + .900000000000000000
+      from btsel26;
+
+--  actual overflow ?
+-- <ufi-input>
+      select .90000000000000000000
+      from btsel26;
+
+--  actual overflow ?
+-- <ufi-input>
+      select 10.999999999999999999
+      from btsel26;
+
+-- <end-input>
+
+-- <testcase A3>
+
+-- <testcase-summary>
+--       select expression arithmetic
+--       overflow test - this tests
+--       overflow from multiplication
+--       in select expressions  of
+--       column values only (no literals).
+
+-- <detail>
+--         Testing of overflow from multiplication is tested.
+--       There are four different levels of overflow: no overflow,
+--       possible overflow, precision overflow, and actual overflow.
+--       Possible overflow means the computed precision of the result
+--       exceeds 18. Precision overflow means that the precision of the
+--       actual runtime result exceeded 18, but did not exceed the
+--       maximum value that can be stored in a binary 64 variable.
+--       Actual overflow means the actual runtime result exceeded
+--       the maximum value that can be stored in a binary 64 variable.
+--         Expressions involving only columns are tested. Signed and
+--       unsigned column values are tested, as are binary and decimal
+--       column values.
+
+-- <templates>
+--     US00
+
+--  signed
+
+--  no overflow possible, result positive
+-- <ufi-input>
+      select eight_one_bin * one_eight_bin
+      from btsel26
+      where selector = 'A';
+
+--  no overflow possible, result negative
+-- <ufi-input>
+      select eight_one_bin * one_eight_bin
+      from btsel26
+      where selector = 'B';
+
+--  overflow possible, result positive
+-- <ufi-input>
+      select eight_one_bin * one_nine_bin
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow, result positive
+-- <ufi-input>
+      select nine_one_bin * one_eight_bin
+      from btsel26
+      where selector = 'A';
+
+--  actual overflow, result negative (underflow)
+-- <ufi-input>
+      select nine_one_bin * one_eight_bin
+      from btsel26
+      where selector = 'C';
+
+--  actual overflow, scale 18; bin cols.
+-- <ufi-input>
+      select one_nine_bin * one_nine_bin
+      from btsel26
+      where selector = 'D';
+
+--  possible overflow only, scale 18; bin cols.
+-- <ufi-input>
+      select one_nine_bin * one_nine_bin
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (right end only), result positive
+--  scale = 36
+-- <ufi-input>
+      select small_bin_1 * small_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (right end only), result negative
+--  scale = 36
+-- <ufi-input>
+      select small_bin_1 * -small_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (left end only) result positive
+-- <ufi-input>
+      select large_bin_1 * large_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (left end only) result negative
+-- <ufi-input>
+      select large_bin_1 * -large_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (scale > 18), precision = 19
+-- <ufi-input>
+      select small_bin_1 * zero_one_bin
+      from btsel26
+      where selector = 'D';
+
+--  actual overflow (scale > 18) precision = 20
+-- <ufi-input>
+      select small_bin_1 * zero_one_bin
+      from btsel26
+      where selector = 'C';
+
+
+--  unsigned
+
+--  actual overflow, bin cols
+-- <ufi-input>
+      select nine_zero_bin_u * zero_nine_bin_u
+             * nine_zero_bin_u
+      from btsel26
+      where selector = 'B';
+
+--  actual underflow, bin cols
+-- <ufi-input>
+      select nine_zero_bin_u * -zero_nine_bin_u
+             * nine_zero_bin_u
+      from btsel26
+      where selector = 'B';
+
+--  actual overflow, dec cols
+-- <ufi-input>
+      select nine_zero_dec_u * zero_nine_dec_u
+             * nine_zero_dec_u
+      from btsel26
+      where selector = 'B';
+
+--  actual underflow, dec cols
+-- <ufi-input>
+      select nine_zero_dec_u * -zero_nine_dec_u
+             * nine_zero_dec_u
+      from btsel26
+      where selector = 'B';
+
+-- <end-input>
+
+
+-- <testcase A4>
+
+-- <testcase-summary>
+--       select expression arithmetic
+--       overflow test - this tests
+--       overflow from division
+--       in select expressions of
+--       column values only (no literals).
+
+-- <detail>
+--         Testing of overflow from division is tested.
+--       There are three different levels of overflow: no overflow,
+--       precision overflow, and actual overflow.
+--       Precision overflow means that the precision of the
+--       actual runtime result exceeded 18, but did not exceed the
+--       maximum value that can be stored in a binary 64 variable.
+--       Actual overflow means the actual runtime result exceeded
+--       the maximum value that can be stored in a binary 64 variable.
+--         Expressions involving only binary columns are tested.
+
+-- <templates>
+--     US00
+
+
+--  no left overflow or right truncation, scale positive
+-- <ufi-input>
+      select large_bin_1 / large_bin_2
+      from btsel26
+      where selector = 'E';
+
+--  right truncation, scale 0
+-- <ufi-input>
+      select large_bin_1 / large_bin_2
+      from btsel26
+      where selector = 'F' ;
+
+--  precision overflow (precision > 18)
+-- <ufi-input>
+      select large_bin_1 / small_bin_2
+      from btsel26
+      where selector = 'D';
+
+--  actual left overflow, result positive , scale negative
+-- <ufi-input>
+      select large_bin_1 / small_bin_1
+      from btsel26
+      where selector = 'F';
+
+--  actual left overflow, result negative, scale negative
+-- <ufi-input>
+      select -large_bin_1 / small_bin_1
+      from btsel26
+      where selector = 'F';
+
+--  right truncation, result positive
+--  scale positive
+-- <ufi-input>
+      select small_bin_1 / semi_large_bin_1
+      from btsel26
+      where selector = 'E';
+
+--  right truncation, result negative
+--  scale positive
+-- <ufi-input>
+      select -small_bin_1 / semi_large_bin_1
+      from btsel26
+      where selector = 'E';
+
+--  no left overflow, scale negative
+-- <ufi-input>
+      select semi_large_bin_1 / small_bin_1
+      from btsel26
+      where selector = 'F';
+
+--  right truncation, scale negative
+-- <ufi-input>
+      select large_bin_1 / one_nine_bin
+      from btsel26
+      where selector = 'F';
+
+--  no left overflow or right truncation, decimal places in result
+-- <ufi-input>
+      select semi_large_bin_2 / one_eight_bin
+      from btsel26
+      where selector = 'D';
+
+-- <end-input>
+
+-- <testcase A5>
+
+-- <testcase-summary>
+--     this testcase is an arithmetic
+--     overflow test for aggregates
+
+-- <detail>
+--      min, max, count are tested to ensure the proper precision
+--      and scale of the result. Note no overflow is possible for
+--      these aggregates.  Most of the tests here are for SUM and
+--      AVG. For SUM - there are two kinds of overflow - overflow
+--      in the computation and overflow in the result. Note that
+--      there can never be overflow in the result for AVG.
+
+-- <templates>
+--     US00
+
+--  MAX, MIN
+
+--  max, scale = 0
+-- <ufi-input>
+       select max(large_bin_1)
+       from btsel26;
+
+--  max, scale = 9
+-- <ufi-input>
+       select max(one_nine_bin)
+       from btsel26;
+
+--  min, scale = 0
+-- <ufi-input>
+       select min(large_bin_1)
+       from btsel26;
+
+--  min, scale = 9
+-- <ufi-input>
+       select min(one_nine_bin)
+       from btsel26;
+
+--  COUNT
+
+--  count, original scale = 0
+-- <ufi-input>
+       select count(distinct large_bin_1)
+       from btsel26;
+
+--  count, original scale = 9
+-- <ufi-input>
+       select count(distinct one_nine_bin)
+       from btsel26;
+
+--  count(*)
+-- <ufi-input>
+       select count(*)
+       from btsel26;
+
+--  SUM
+
+--  sum, no overflow, scale = 0
+-- <ufi-input>
+       select sum(semi_large_bin_1)
+       from btsel26;
+
+--  sum, overflow in calculation and result
+-- <ufi-input>
+       select sum(large_bin_1)
+       from btsel26
+       where (selector <> 'O') and (selector <> 'P');
+
+--  sum, overflow in calculation only
+-- <ufi-input>
+       select sum(large_bin_1)
+       from btsel26;
+
+--  sum, underflow in calculation and result
+-- <ufi-input>
+       select sum(-large_bin_1)
+       from btsel26
+       where (selector <> 'O') and (selector <> 'P');
+
+--  sum, no overflow, scale > 0
+-- <ufi-input>
+       select sum(small_dec_2)
+       from btsel26;
+
+--  sum, overflow in calculation and result, scale > 0
+-- <ufi-input>
+       select sum(small_dec_1)
+       from btsel26;
+
+--  AVG
+
+--  avg, no overflow, scale = 0
+-- <ufi-input>
+       select avg(semi_large_bin_1)
+       from btsel26;
+
+--  avg, no overflow in result, overflow in calculation
+--  (impossible to get overflow in result)
+-- <ufi-input>
+       select avg(large_bin_1)
+       from btsel26
+       where (selector <> 'O') and (selector <> 'P');
+
+--  avg, underflow in calculation
+-- <ufi-input>
+       select avg(-large_bin_1)
+       from btsel26;
+
+--  avg, no overflow, scale > 0
+-- <ufi-input>
+       select avg(small_dec_2)
+       from btsel26;
+
+--  avg, overflow, scale > 0
+-- <ufi-input>
+       select avg(small_dec_1)
+       from btsel26;
+
+--  SUM, overflow based on order records are evaluated
+
+--  sum, no overflow in calculation or result IF the calculation
+--  is done in 'insertion' order (file with SYSKEY)
+-- <ufi-input>
+       select sum(large_dec_1)
+       from btsel26;
+
+--  sum, no overflow in result, overflow in calculation
+--  IF the calculation done based on alternate index on large_dec_1
+-- <ufi-input>
+       select sum(large_dec_1)
+       from btsel26
+       where large_dec_1 <> 2;
+
+-- <end-input>
+
+
+-- <testcase A6>
+
+-- <testcase-summary>
+--       this testcase tests type
+--       propagation of expressions.
+
+-- <detail>
+--       type propagation tests are conducted for various data
+--       types and resultant data types
+
+-- <templates>
+--       US00
+
+--  sbin data
+
+--  result bin 16
+--  p = 3, s = 2
+-- <ufi-input>
+         select pic_comp_2 + pic_comp_2
+         from btsel01
+         where binary_signed = 60;
+
+--  result bin 16
+--  p = 4, s = 4
+-- <ufi-input>
+        select pic_comp_2 * pic_comp_2
+        from btsel01
+        where binary_signed = 60;
+
+--  result bin 32
+--  p = 9, s = 0
+-- <ufi-input>
+        select (binary_signed + small_int) * small_int
+        from btsel01
+        where binary_signed = 60;
+
+--  result bin 64
+--  p = 18, s = 8
+-- <ufi-input>
+        select (binary_signed + small_int) / binary_64_s
+        from btsel01
+        where binary_signed = 60;
+
+--  unsigned data
+
+--  result bin 16
+--  p = 4, s = 0
+-- <ufi-input>
+        select decimal_3_unsigned + decimal_3_unsigned
+        from btsel01
+        where binary_signed = 60;
+
+--  result bin 32
+--  p = 9, s = 0
+-- <ufi-input>
+        select (col_2 + col_7) * col_6
+        from btsel06
+        where pic_x_b = 'Q';
+
+--  result bin 64
+--  p = 12, s = 2
+-- <ufi-input>
+        select binary_32_u * decimal_3_unsigned
+        from btsel01
+        where binary_signed = 60;
+
+--  sdec data
+
+--  result bin 16
+--  p =   3, s = 1
+-- <ufi-input>
+        select pic_decimal_1 - pic_decimal_3
+        from btsel01
+        where pic_decimal_1 = 1.1;
+
+--  result bin 32
+--  p = 9, s = 0
+-- <ufi-input>
+        select col_9 * col_10 + col_9
+        from btsel06
+        where pic_x_b = 'Q';
+
+--  result bin 64
+--  p = 18, s = 9
+-- <ufi-input>
+        select col_47 / col_48 * col_70
+        from btsel06
+        where pic_x_b = 'Q';
+
+--  constant data
+
+--  result bin 16
+--  p = 4, s = 2
+-- <ufi-input>
+        select decimal_2_signed + 4.7
+        from btsel01
+        where binary_32_u = 60;
+
+--  result bin 32
+--  p = 8, s = 2
+-- <ufi-input>
+        select decimal_3_unsigned * 9.08 + 10000
+        from btsel01
+        where binary_32_u = 60;
+
+--  result bin 64
+--  p = 18, s = 16
+-- <ufi-input>
+        select (17.496 / 85) + (63 * medium_int) - small_int
+        from btsel01
+        where binary_32_u = 60;
+
+--  mixed/complex/aggregates
+
+--  result bin 16
+-- <ufi-input>
+        select pic_comp_2 - decimal_2_signed * pic_decimal_3
+        from btsel01
+        where binary_32_u = 60;
+
+--  result bin 16
+-- <ufi-input>
+        select max(pic_comp_2) - min(decimal_2_signed) *
+               max(pic_decimal_3)
+        from btsel01
+        where binary_32_u = 60;
+
+--  result bin 32
+-- <ufi-input>
+        select decimal_3_unsigned + small_int - decimal_1
+        from btsel01
+        where binary_32_u = 60;
+
+--  result bin 64
+-- <ufi-input>
+        select ((decimal_1 + decimal_3_unsigned) *
+                binary_32_u - pic_comp_2
+               ) / pic_comp_1 + pic_comp_3 * decimal_2_signed
+        from btsel01;
+
+--  result bin 64
+-- <ufi-input>
+        select sum(pic_comp_3) + sum(large_int) + avg(binary_32_u)
+        from btsel01;
+
+-- <end-input>
+
+
+-- <testcase A7>
+
+-- <testcase-summary>
+--       this testcase tests assignment
+--       truncation using INSERT stmts.
+
+-- <detail>
+--       truncation assignment is tested by first creating
+--       a temporary table, trunctmp, using the
+--       sqlt041d catalog.  Test statements that insert
+--       various values into the various columns are run. Only
+--       one column is tested per test statement - all other
+--       column values are set to 0.
+
+
+--  create table trunctmp
+-- <ufi-input>
+set parserflags 1024; -- allow no audit
+         create table trunctmp (
+              two_three_bin      numeric(5,3) signed 
+            , smallest_bin       numeric (18,18) signed
+            , smallest_dec       decimal (18,18) signed
+            , largest_bin        numeric (18,0) signed
+            , largest_dec        decimal (18,0) signed
+            , semi_large_bin     numeric (17,0) signed
+            , semi_large_dec     decimal (17,0) signed
+            )
+--           CATALOG sqlt041d
+?ifMX
+            --ATTRIBUTE 
+?ifMX
+            --NO AUDIT
+         ;
+reset parserflags 1024;
+
+--  test first field :  +- 2.3 bin
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (1.0001,0,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (1.1001,0,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (1.0016,0,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (.0001,0,0,0,0,0,0);
+
+--  second field : +- .18 bin
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,.000000000000000001,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,.0000000000000000001,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,.1000000000000000001,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,.1000000000000000016,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,1.1,0,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,1.100000000000000001,0,0,0,0,0);
+
+-- <ufi-input>
+-- for some reason the backpatching of 9.9 into smallest_bin numeric(18,18)
+-- fails on NT & MIPS as expected but succeeds unexpectedly on IPF.
+        Insert into trunctmp
+           values (0,9.9,0,0,0,0,0);
+
+--  third field : +- .18 dec
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,.000000000000000001,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,.0000000000000000001,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,.1000000000000000001,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,.1000000000000000016,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,1.1,0,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,1.100000000000000001,0,0,0,0);
+
+--  fourth field : +- 18.0 bin
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,1000000000000000000,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,9900000000000000000,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,1.1,0,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,.1,0,0,0);
+
+--  fifth field +- 18.0 (dec)
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,0,1000000000000000000,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,0,1.1,0,0);
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,0,.1,0,0);
+
+--  sixth field : +- 17.0 bin
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,0,0,100000000000000000,0);
+
+--  seventh field : +- 17.0 dec
+
+-- <ufi-input>
+        Insert into trunctmp
+           values (0,0,0,0,0,0,100000000000000000,0);
+
+-- <end-input>
+
+-- <display>
+         select *
+         from trunctmp;
+
+-- <testcase A8>
+
+-- <testcase-summary>
+--       this testcase tests assignment
+--       truncation using UPDATE stmts.
+
+-- <detail>
+--       truncation assignment is tested by first creating
+--       a temporary table, trunctmp, using the
+--       Test statements that update
+--       various values of the various columns are run. Only
+--       one column is tested per test statement - all other
+--       column values are set to 0.
+
+
+--  create table trunctmp
+-- <ufi-input>
+	 drop table trunctmp;
+set parserflags 1024; -- allow no audit
+         create table trunctmp (
+              selector           char(1)
+            , two_three_bin      numeric(5,3) signed 
+            , smallest_bin       numeric (18,18) signed
+            , smallest_dec       decimal (18,18) signed
+            , largest_bin        numeric (18,0) signed
+            , largest_dec        decimal (18,0) signed
+            , semi_large_bin     numeric (17,0) signed
+            , semi_large_dec     decimal (17,0) signed
+            )
+--           CATALOG sqlt041d
+?ifMX
+            --ATTRIBUTE 
+?ifMX
+            --NO AUDIT
+
+         ;
+reset parserflags 1024;
+
+--  insert blank records into table
+-- <ufi-input>
+        Insert into trunctmp
+           values ('A',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('B',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('C',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('D',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('E',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('F',0,0,0,0,0,0,0);
+-- <ufi-input>
+        Insert into trunctmp
+           values ('G',0,0,0,0,0,0,0);
+
+
+
+--  test first field :  +- 2.3 bin
+
+-- <ufi-input>
+        Update trunctmp
+           set two_three_bin = 1.0001
+        where selector = 'A';
+
+-- <ufi-input>
+        Update trunctmp
+           set two_three_bin = 1.1001
+        where selector = 'B';
+
+-- <ufi-input>
+        Update trunctmp
+           set two_three_bin = 1.0016
+        where selector = 'C';
+
+-- <ufi-input>
+        Update trunctmp
+           set two_three_bin = .0001
+        where selector = 'D';
+
+--  second field : +- .18 bin
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = .000000000000000001
+        where selector = 'A';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = .000000000000000001
+        where selector = 'B';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = .100000000000000001
+        where selector = 'C';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = .100000000000000016
+        where selector = 'D';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = 1.1
+        where selector = 'E';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = 1.100000000000000001
+        where selector = 'F';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_bin = 9.9
+        where selector = 'G';
+
+--  third field : +- .18 dec
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = .000000000000000001
+        where selector = 'A';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = .000000000000000001
+        where selector = 'B';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = .100000000000000001
+        where selector = 'C';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = .100000000000000016
+        where selector = 'D';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = 1.1
+        where selector = 'E';
+
+-- <ufi-input>
+        Update trunctmp
+           set smallest_dec = 1.100000000000000001
+        where selector = 'F';
+
+--  fourth field : +- 18.0 bin
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_bin = 100000000000000000
+        where selector = 'A';
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_bin = 990000000000000000
+        where selector = 'B';
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_bin = 1.1
+        where selector = 'C';
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_bin = .1
+        where selector = 'D';
+
+--  fifth field +- 18.0 (dec)
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_dec = 100000000000000000
+        where selector = 'A';
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_dec = 1.1
+        where selector = 'B';
+
+-- <ufi-input>
+        Update trunctmp
+           set largest_dec = .1
+        where selector = 'C';
+
+--  sixth field : +- 17.0 bin
+
+-- <ufi-input>
+        Update trunctmp
+           set semi_large_bin = 100000000000000000
+        where selector = 'A';
+
+--  seventh field : +- 17.0 dec
+
+-- <ufi-input>
+        Update trunctmp
+           set semi_large_dec = 100000000000000000
+        where selector = 'A';
+
+-- <end-input>
+
+-- <display>
+         select *
+         from trunctmp;
+         drop table trunctmp;
+
+-- <testcase A9>
+
+-- <testcase-summary>
+--     select into assignment truncation
+--     test - this tests the accuracy
+--     of assignment truncation when
+--     values are selected from a SQL
+--     table and assigned to a host var.
+
+-- <detail>
+--     select into statements are executed for various SQL types
+--     and host variable types. The host variables are then inserted
+--     into a SQL dummy table which is displayed in the display code.
+
+-- <templates>
+--    BS05
+
+-- <host-vars>
+--       ?section declare
+--          01 two-three-bin-var       PIC S9(2)V9(3) COMP.
+--          01 zero-eighteen-bin-var   PIC SV9(18) COMP.
+--          01 zero-eighteen-dec-var   PIC SV9(18) .
+--          01 eighteen-zero-bin-var   PIC S9(18) COMP.
+--          01 eighteen-zero-dec-var   PIC S9(18) .
+--       ?section init
+--          move zeros to two-three-bin-var.
+--          move zeros to zero-eighteen-bin-var.
+--          move zeros to zero-eighteen-dec-var.
+--          move zeros to eighteen-zero-bin-var.
+--          move zeros to eighteen-zero-dec-var.
+
+--  create dummy table seltemp
+-- <prep-input>
+set parserflags 1024; -- allow no audit
+         create table seltemp (
+              two_four_bin      numeric(6,4)
+            , zero_eighteen_bin numeric(18,18)
+            , zero_eighteen_dec decimal(18,18)
+            , eighteen_zero_bin numeric (18,0)
+            , eighteen_zero_dec decimal(18,0)
+            )
+?ifMX
+            --ATTRIBUTE 
+?ifMX
+            --NO AUDIT
+         ;
+reset parserflags 1024;
+
+-- <prep-input>  intentional INTO cluase
+        select two_four_bin
+--       into :two-three-bin-var
+        from btsel27
+        where selector = 'A';
+
+-- <prep-input>
+        select two_four_bin
+--       into :two-three-bin-var
+        from btsel27
+        where selector = 'A';
+
+set param ?twoThreeBinVar 1.1001;
+
+-- <prep-input>
+        insert into seltemp
+           values (?twoThreeBinVar,0,0,0,0);
+
+-- <prep-input>
+        select two_four_bin
+--       into :two-three-bin-var
+        from btsel27
+        where selector = 'B';
+
+set param ?twoThreeBinVar 1.0016;
+
+-- <prep-input>
+        insert into seltemp
+           values (?twoThreeBinVar,0,0,0,0);
+
+-- <prep-input>
+        select two_four_bin
+--       into :two-three-bin-var
+        from btsel27
+        where selector = 'C' ;
+
+set param ?twoThreeBinVar .0001;
+-- <prep-input>
+        insert into seltemp
+           values (?twoThreeBinVar,0,0,0,0);
+
+-- <prep-input>
+        select one_one_bin
+--       into :eighteenZeroBinVar
+        from btsel27
+        where selector = 'A';
+
+set param ?eighteenZeroBinVar 1.1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,?eighteenZeroBinVar,0);
+
+-- <prep-input>
+        select one_one_bin
+--       into :eighteen-zero-bin-var
+        from btsel27
+        where selector = 'B';
+
+set param ?eighteenZeroBinVar .1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,?eighteenZeroBinVar,0);
+
+-- <prep-input>
+        select one_one_bin
+--       into :eighteen-zero-dec-var
+        from btsel27
+        where selector = 'A';
+
+set param ?eighteenZeroDecVar 1.1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,0,?eighteenZeroDecVar);
+
+-- <prep-input>
+        select one_one_bin
+--       into :eighteen-zero-dec-var
+        from btsel27
+        where selector = 'B';
+
+set param ?eighteenZeroDecVar .1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,0,?eighteenZeroDecVar);
+
+--  precision overflow
+-- <prep-input>
+        select one_one_bin
+--       into :zero-eighteen-bin-var
+        from btsel27
+        where selector = 'A';
+
+set param ?zeroEighteenBinVar 1.1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,?zeroEighteenBinVar,0,0,0);
+
+--  actual overflow
+-- <prep-input>
+        select one_one_bin
+--       into :zero-eighteen-bin-var
+        from btsel27
+        where selector = 'C';
+
+set param ?zeroEighteenBinVar 9.9;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,?zeroEighteenBinVar,0,0,0);
+
+--  actual overflow
+-- <prep-input>
+        select one_one_bin
+--       into :zero-eighteen-dec-var
+        from btsel27
+        where selector = 'A';
+
+set param ?zeroEighteenDecVar 1.1;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,?zeroEighteenDecVar,0,0,0);
+
+--  actual overflow
+-- <prep-input>
+        select one_one_bin
+--       into :zero-eighteen-dec-var
+        from btsel27
+        where selector = 'C';
+
+set param ?zeroEighteenDecVar 9.9;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,?zeroEighteenDecVar,0,0,0);
+
+--  precision overflow
+-- <prep-input>
+        select large_bin_1 * 10
+--       into :eighteen-zero-bin-var
+        from btsel26
+        where selector = 'D';
+
+set param ?eighteenZeroBinVar 1000000000000000000;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,?eighteenZeroBinVar,0);
+
+--  actual overflow
+-- <prep-input>
+        select large_bin_1 * 10
+--       into :eighteen-zero-dec-var
+        from btsel26
+        where selector = 'D';
+
+set param ?eighteenZeroDecVar 1000000000000000000;
+
+-- <prep-input>
+        insert into seltemp
+           values (0,0,0,0,?eighteenZeroDecVar);
+
+-- <end-input>
+
+-- <display>
+          select *
+          from seltemp;
+          drop table seltemp;
+
+show param;
+
+-- <end-test>
+LOG;

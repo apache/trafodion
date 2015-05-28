@@ -1,0 +1,2473 @@
+>>---------------------------------------------------------------------
+>>-- Component: NonStop SQL Regression Test Suite
+>>-- Description:
+>>--    This test unit is a positive local test for the select statement.
+>>-- It tests SELECT statements with uncorrelated subqueries in their HAVING
+>>-- clauses.
+>>--    This test unit uses the order-entry database (sqldd01d).  Each
+>>-- test case in this test unit tests a particular relationship between
+>>-- the outer query(s) and the subquery(s).  The following attributes
+>>-- are varied inside of testcases.  Note that all of these attributes
+>>-- are not tested in every testcase - some of these attributes only apply
+>>-- to certain types of tests.
+>>--       Attributes varied:
+>>--               objects:  joins
+>>--                         subquery and outer query on same table
+>>--                         views
+>>
+>>--      columns selected:  one column
+>>--                         * (one column table if not inside exists)
+>>--                         distinct -- subquery only
+>>--                                  -- outer query only
+>>--                                  -- both
+>>--   name qualifications:  necessary
+>>--                         unnecessary
+>>
+>>--               no where clause in subquery
+>>--               group by/having in subquery
+>>--               subquery returning only one record with IN,=ANY,=ALL
+>>
+>>--    The test cases in this test unit are as follows:
+>>--       testcase A0: SELECT ... HAVING ... IN ... SUBQUERY
+>>--       testcase A1: simple comparison operators: SELECT ... HAVING ...
+>>--                      (<,<=,=,<>,>,>=) ... SUBQUERY
+>>--       testcase A2: quantified comparison operators: >=ANY,=ALL,etc.
+>>--       testcase A3: multiple nested subqueries, multiple subqueries
+>>--                    connected with AND,OR, and SELECTs with subqueries
+>>--                    (uncorrelated) in both the WHERE clause and HAVING
+>>--                    clause
+>>--       testcase A4: subqueries with for browse access,
+>>--                    for stable access, for repeatable access
+>>--       testcase A5: SELECT aggregate functions with aggregates in
+>>--                    subquery
+>>
+>>
+>>-- All testcases are documented further below.
+>>
+>>-- ***********************   end test unit comments   ***********************
+>>
+>>
+>>-- <testunit-summary>
+>>-- select #8 pos/loc ufi subq unc having
+>>
+>>-- <testunit-specs>
+>>
+>>-- mode-type ufi
+>>-- test-type functional
+>>-- form-type pos/loc
+>>-- select-test
+>>
+>>-- <testcase A0>
+>>
+>>--    <detail>
+>>--        uncorrelated subquery in having clause test - tests the use of the
+>>--        IN operator connecting the outer query with the subquery. Vary
+>>--        attributes as described in testunit comments above.  Test the
+>>--        use of NOT IN.
+>>
+>>
+>>--    <templates>
+>>--       US00
+>>
+>>-- <comment> Get supplier numbers for suppliers who supply part 4102.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      6  
+      8  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> Get supplier numbers for suppliers who DON'T supply part 4102.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum NOT in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> Get employee numbers who are regional managers (notice no         >
+>>-- <comment> where clause in subquery)
+>>-- <ufi-input>
+>>      select empnum
++>      from employee
++>      group by empnum
++>      having empnum in
++>        (select manager
++>         from region);
+
+EMPNUM  
+------  
+
+     1  
+    29  
+    43  
+    72  
+    87  
+   104  
+   343  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> get part numbers, for parts supplied by supplier 15
+>>-- <comment> and supplied by at least one other supplier.
+>>-- <ufi-input>
+>>      select partnum
++>      from fromsup
++>      where suppnum <> 15
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from fromsup
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- <comment> get part numbers, for parts supplied by supplier 15
+>>-- <comment> and supplied by at least one other supplier, eliminate
+>>-- <comment> duplicate part numbers
+>>-- <ufi-input>
+>>      select distinct partnum
++>      from fromsup
++>      where suppnum <> 15
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from fromsup
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>-- <comment> same as above, only use aliases.
+>>-- <ufi-input>
+>>      select distinct partnum
++>      from fromsup X
++>      where X.suppnum <> 15
++>      group by partnum
++>      having X.partnum in
++>        (select Y.partnum
++>         from fromsup Y
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- <comment> get salesman numbers and order numbers for salesman
+>>-- <comment> who have orders for parts costing > 50000
+>>-- <ufi-input>
+>>      select salesman,ordernum
++>      from orders
++>      group by ordernum, salesman
++>      having  orders.ordernum in
++>        (select  odetail.ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         and price > 50000);
+
+SALESMAN  ORDERNUM  
+--------  --------  
+
+     205        21  
+     212        25  
+     222        30  
+     204        32  
+     231        35  
+     218        38  
+     207        41  
+     212        45  
+     225        48  
+     210        51  
+     205        66  
+     221       122  
+
+--- 12 row(s) selected.
+>>
+>>-- <comment> get salesman numbers who have orders for parts prices > 50000
+>>-- <comment> (eliminate duplicate salesman numbers and order numbers)
+>>-- <ufi-input>
+>>      select distinct salesman
++>      from orders
++>      group by salesman,ordernum
++>      having ordernum in
++>        (select distinct ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         and price > 50000);
+
+SALESMAN  
+--------  
+
+     205  
+     212  
+     222  
+     204  
+     231  
+     218  
+     207  
+     225  
+     210  
+     221  
+
+--- 10 row(s) selected.
+>>
+>>-- <comment> get parts numbers with a cost > 10000
+>>-- <ufi-input>
+>>      select partnum
++>      from parts
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from expfroms);
+
+PARTNUM  
+-------  
+
+    212  
+    244  
+   1403  
+   3103  
+   4102  
+   4103  
+   5505  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who are in the same
+>>-- <comment> state as supplier 1. (This tests the use of IN with a
+>>-- <comment> subquery that returns only one record).
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by state, suppnum
++>      having state IN
++>        (select state
++>         from supplier
++>         where suppnum = 1);
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>-- <testcase A1>
+>>
+>>-- <detail>
+>>--    uncorrelated subquery in having clause test - this tests the use of
+>>--    simple comparison operators (<,<=,=,<>,.,>=) connecting the outer
+>>--    query with the subquery. Note that the subquery can return at most
+>>--    one record.
+>>
+>>-- <templates>
+>>--    US00
+>>
+>>-- <comment> get supplier numbers for suppliers who are in the same state
+>>-- <comment> as supplier 1.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum, state
++>      having state =
++>        (select state
++>         from supplier
++>         where suppnum = 1);
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who are in the same state
+>>-- <comment> as supplier 1 (use aliases).
+>>      select suppnum
++>      from supplier X
++>      group by suppnum, X.state
++>      having X.state =
++>        (select Y.state
++>         from supplier Y
++>         where suppnum = 1);
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- <comment> get partnumbers for parts whose cost is 6000, and are not
+>>-- <comment> supplied by supplier #10.
+>>-- <ufi-input>
+>>      select partnum
++>      from parts
++>      group by partnum
++>      having partnum =
++>        (select distinct partnum
++>         from fromsup
++>         where partcost = 6000
++>         and suppnum <> 10);
+
+PARTNUM  
+-------  
+
+   4101  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get customer numbers for customers who have not ordered parts
+>>-- <comment> stored at location 'V67'
+>>-- <ufi-input>
+>>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum <>
++>        (select col_12
++>         from partsfor
++>         where col_2 = 'V67');
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get customer numbers for customers who have not ordered parts
+>>-- <comment> stored at location 'V67', order by customer number
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum <>
++>        (select col_12
++>         from partsfor
++>         where col_2 = 'V67')
++>      order by custnum;
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> same as first, only use a join instead of the view partsfor
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum <>
++>        (select custnum
++>         from orders,odetail,parts
++>         where ( orders.ordernum =  odetail.ordernum) and
++>               ( odetail.partnum =  parts.partnum) and
++>               (location = 'V67'));
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> same as first, but eliminate customers in Texas
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      where state <> 'Texas'
++>      group by custnum
++>      having custnum <>
++>        (select col_12
++>         from partsfor
++>         where col_2 = 'V67');
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get supplier numbers whose price for part #4102 is less
+>>-- <comment> than or equal to supplier number 8
+>>-- <ufi-input>
+>>      select suppnum
++>      from fromsup
++>      group by suppnum,partnum,partcost
++>      having partcost <=
++>        (select partcost
++>         from fromsup
++>         where partnum = 4102
++>         and suppnum = 8)
++>      AND partnum = 4102;
+
+SUPPNUM  
+-------  
+
+      6  
+      8  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> same as above, but AND condition before the subquery
+>>-- <ufi-input>
+>>      select suppnum
++>      from fromsup
++>      group by suppnum,partnum,partcost
++>      having partnum = 4102
++>      and partcost <=
++>        (select partcost
++>         from fromsup
++>         where partnum = 4102
++>         and suppnum = 8);
+
+SUPPNUM  
+-------  
+
+      6  
+      8  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>
+>>-- <testcase A2>
+>>
+>>-- <detail>
+>>--    uncorrelated subquery in having clause test case - this tests the use
+>>--    of the quantified comparison operators (=ANY,>=ALL,etc.). These
+>>--    operators can be used with subqueries that return sets, not just
+>>--    single records.
+>>
+>>-- <templates>
+>>--    US00
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 4102
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102);
+
+SUPPNUM  
+-------  
+
+      6  
+      8  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> same as above , with SOME instead of ANY
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum =SOME
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102);
+
+SUPPNUM  
+-------  
+
+      6  
+      8  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> Get supplier numbers for suppliers who DON'T supply part 4102.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum <>ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+      8  
+     10  
+     15  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> Get supplier names for suppliers who DON'T supply part 4102.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum <>ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+      8  
+     10  
+     15  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> Get supplier names for suppliers who DON'T supply part 4102.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum <>SOME
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+      8  
+     10  
+     15  
+
+--- 7 row(s) selected.
+>>
+>>
+>>-- <comment> Get employee numbers who are regional managers (notice no
+>>-- <comment> where clause in subquery)
+>>-- <ufi-input>
+>>      select empnum
++>      from employee
++>      group by empnum
++>      having empnum =ANY
++>        (select manager
++>         from region);
+
+EMPNUM  
+------  
+
+     1  
+    29  
+    43  
+    72  
+    87  
+   104  
+   343  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> get part numbers, for parts supplied by supplier 15
+>>-- <comment> and supplied by at least one other supplier
+>>-- <ufi-input>
+>>      select partnum
++>      from fromsup
++>      where suppnum <> 15
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from fromsup
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- <comment> get part numbers, for parts supplied by supplier 15
+>>-- <comment> and supplied by at least one other supplier, eliminate
+>>-- <comment> duplicate part numbers
+>>-- <ufi-input>
+>>      select distinct partnum
++>      from fromsup
++>      where suppnum <> 15
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from fromsup
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>-- <comment> same as above, only use aliases.
+>>-- <ufi-input>
+>>      select distinct partnum
++>      from fromsup X
++>      where X.suppnum <> 15
++>      group by partnum
++>      having X.partnum in
++>        (select Y.partnum
++>         from fromsup Y
++>         where suppnum = 15);
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>
+>>
+>>-- <comment> get salesman numbers and order numbers for salesman
+>>-- <comment> who have orders for parts costing > 50000
+>>-- <ufi-input>
+>>      select salesman,ordernum
++>      from orders
++>      group by ordernum,salesman
++>      having  orders.ordernum =SOME
++>        (select  odetail.ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         and price > 50000);
+
+SALESMAN  ORDERNUM  
+--------  --------  
+
+     205        21  
+     212        25  
+     222        30  
+     204        32  
+     231        35  
+     218        38  
+     207        41  
+     212        45  
+     225        48  
+     210        51  
+     205        66  
+     221       122  
+
+--- 12 row(s) selected.
+>>
+>>-- <comment> get salesman numbers who have orders for parts prices > 50000
+>>-- <comment> (eliminate duplicate salesman numbers and order numbers)
+>>-- <ufi-input>
+>>      select distinct salesman
++>      from orders
++>      group by ordernum,salesman
++>      having ordernum =ANY
++>        (select distinct ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         and price > 5000);
+
+SALESMAN  
+--------  
+
+     205  
+     212  
+     222  
+     204  
+     231  
+     218  
+     207  
+     225  
+     210  
+     221  
+
+--- 10 row(s) selected.
+>>
+>>-- <comment> get part numbers with a cost > 10000
+>>-- <ufi-input>
+>>      select partnum
++>      from parts
++>      group by partnum
++>      having partnum =SOME
++>        (select partnum
++>         from expfroms);
+
+PARTNUM  
+-------  
+
+    212  
+    244  
+   1403  
+   3103  
+   4102  
+   4103  
+   5505  
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who are in the same
+>>-- <comment> state as supplier 1. (This tests the use of =ANY with a
+>>-- <comment> subquery that returns only one record).
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by state, suppnum
++>      having state =ANY
++>        (select state
++>         from supplier
++>         where suppnum = 1);
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> get supplier numbers whose price for part 4102 is less
+>>-- <comment> than some other supplier who supplies part 4102
+>>-- <ufi-input>
+>>      select suppnum
++>      from fromsup
++>      group by suppnum, partnum, partcost
++>      having partcost <SOME
++>        (select partcost
++>         from fromsup
++>         where partnum = 4102)
++>      and partnum = 4102;
+
+SUPPNUM  
+-------  
+
+      6  
+     15  
+
+--- 2 row(s) selected.
+>>
+>>-- <comment> same as above, with ANY instead of SOME
+>>-- <ufi-input>
+>>      select suppnum
++>      from fromsup
++>      group by suppnum, partnum, partcost
++>      having partcost <ANY
++>        (select partcost
++>         from fromsup
++>         where partnum = 4102)
++>      and partnum = 4102;
+
+SUPPNUM  
+-------  
+
+      6  
+     15  
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers whose price for part 4102 is less
+>>-- <comment> than or equal to ALL suppliers who supply part 4102
+>>-- <ufi-input>
+>>      select suppnum
++>      from fromsup
++>      group by suppnum,partnum,partcost
++>      having partcost <=ALL
++>        (select partcost
++>         from fromsup
++>         where partnum = 4102)
++>      and partnum = 4102;
+
+SUPPNUM  
+-------  
+
+      6  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get supplier numbers who are in the same state as supplier        r
+>>-- <comment> 1 (this tests the use of =ALL with a subquery that only
+>>-- <comment> returns one record).
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by state, suppnum
++>      having state =ALL
++>        (select state
++>         from supplier
++>         where suppnum = 1);
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> get the salesmans' empnum (if any) who has the only order
+>>-- <comment> where at least one part has been ordered in quanities > 25
+>>-- <ufi-input>
+>>      select salesman
++>      from orders
++>      group by salesman, ordernum
++>      having ordernum =ALL
++>        (select ordernum
++>         from odetail
++>         where quantity > 25);
+
+SALESMAN  
+--------  
+
+     221  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> same as previous, with where ordernum > 100
+>>-- <ufi-input>
+>>      select salesman
++>      from orders
++>      where ordernum > 100
++>      group by salesman, ordernum
++>      having ordernum =ALL
++>        (select ordernum
++>         from odetail
++>         where quantity > 25);
+
+SALESMAN  
+--------  
+
+     221  
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- <comment> same as first, but with 'select DISTINCT ordernum'
+>>-- <ufi-input>
+>>      select salesman
++>      from orders
++>      group by salesman, ordernum
++>      having ordernum =ALL
++>        (select distinct ordernum
++>         from odetail
++>         where quantity > 25);
+
+SALESMAN  
+--------  
+
+     221  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get supplier names whose state is not equal to some
+>>-- <comment> customer state
+>>-- <ufi-input>
+>>      select S.suppname
++>      from supplier S
++>      group by state, suppname
++>      having state <>ANY
++>        (select C.state
++>         from customer C);
+
+SUPPNAME            
+------------------  
+
+DATA TERMINAL CO    
+DISPLAY INC         
+TANDEM COMPUTERS    
+INFOMATION STORAGE  
+MAGNETICS CORP      
+STEELWORK INC       
+DATADRIVE           
+
+--- 7 row(s) selected.
+>>
+>>-- <comment> get supplier names whose state is not equal to ALL
+>>-- <comment> customer states
+>>-- <ufi-input>
+>>      select suppname
++>      from supplier
++>      group by state, suppname
++>      having state <>ALL
++>        (select state
++>         from customer);
+
+SUPPNAME            
+------------------  
+
+INFOMATION STORAGE  
+MAGNETICS CORP      
+
+--- 2 row(s) selected.
+>>
+>>-- <comment> same as above, add group by,having clauses
+>>-- <ufi-input>
+>>      select suppname
++>      from supplier
++>      group by state, suppname
++>      having state <>ALL
++>        (select state
++>         from customer
++>         group by state
++>         having state <> 'Texas');
+
+SUPPNAME            
+------------------  
+
+INFOMATION STORAGE  
+MAGNETICS CORP      
+
+--- 2 row(s) selected.
+>>
+>>-- <comment> get the salesmens' names who sold the part whose price
+>>-- <comment> is greater than or equal to all parts
+>>-- <ufi-input>
+>>      select col_11
++>      from partsfor
++>      group by col_11, col_3
++>      having col_3 >=ALL
++>        (select col_3
++>         from partsfor);
+
+COL_11  
+------  
+
+   212  
+
+--- 1 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>-- <testcase A3>
+>>
+>>-- <detail>
+>>--    uncorrelated subquery in having clause test unit - this tests
+>>--    multiply nested subqueries and multiple subqueries connected
+>>--    with and/or.
+>>
+>>-- <templates>
+>>--    US00
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 4102
+>>-- <comment> and part 5504
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having (suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102))
++>      and (suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504));
+
+SUPPNUM  
+-------  
+
+      6  
+     15  
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 4102
+>>-- <comment> and part 5504 - replace AND condition in having clause
+>>-- <comment> with a where clause
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      where suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504
++>        )
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      6  
+     15  
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 4102
+>>-- <comment> OR 5504   -- same as above, replace 'and' with 'or'
+>>-- <ufi-input>
+>>
+>>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having (suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102))
++>      or (suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504));
+
+SUPPNUM  
+-------  
+
+      2  
+      6  
+      8  
+     15  
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who DON'T supply parts
+>>-- <comment> 4102 or 5504 -- same as previous, add NOT before entire
+>>-- <comment> predicate.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having NOT ((suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102))
++>      or (suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504))) ;
+
+SUPPNUM  
+-------  
+
+      1  
+      3  
+     10  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who DON'T supply parts
+>>-- <comment> 4102 or 5504 -- same as previous, but use both a subquery
+>>-- <comment> in a where clause and in a having clause.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      where suppnum <>ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504
++>        )
++>      group by suppnum
++>      having suppnum NOT in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who supply parts 4102,
+>>-- <comment> 5504, and 5505.
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having (suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102))
++>      and (suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504))
++>      and (suppnum =SOME
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5505));
+
+SUPPNUM  
+-------  
+
+     15  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get employee numbers who have salary >= 30000 and age < 30
+>>-- <ufi-input>
+>>
+>>      select empnum
++>      from emppub
++>      group by empnum
++>      having empnum in
++>        (select empnum
++>         from employee
++>         where salary >= 30000)
++>      and empnum in
++>        (select empnum
++>         from employee
++>         where age < 30000);
+
+EMPNUM  
+------  
+
+     1  
+    23  
+    29  
+    32  
+    39  
+    43  
+    65  
+    72  
+    75  
+    87  
+    89  
+    93  
+   104  
+   109  
+   111  
+   129  
+   178  
+   180  
+   205  
+   212  
+   213  
+   214  
+   215  
+   216  
+   218  
+   220  
+   221  
+   222  
+   225  
+   227  
+   228  
+   229  
+   231  
+   232  
+   321  
+   337  
+   343  
+
+--- 37 row(s) selected.
+>>
+>>
+>>-- <comment> get job titles for employees who work in the Chicago branch
+>>-- <comment> of the Central region, excluding programmers, order by job title  b
+>>-- <ufi-input>
+>>
+>>      select job
++>      from employee
++>      where job <> 'PROGRAMMER'
++>      group by job, regnum, branchnum
++>      having (regnum  in
++>        (select regnum
++>         from region
++>         where regname = 'CENTRAL'))
++>      and (branchnum in
++>        (select branchnum
++>         from branch
++>         where branchname = 'CHICAGO'
++>         group by branchnum))
++>      order by job;
+
+JOB           
+------------  
+
+MANAGER       
+SALESMAN      
+SECRETARY     
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who supply at least
+>>-- <comment> one part whose inventory is negative (less than 0)
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         group by suppnum,partnum
++>         having partnum in
++>           (select partnum
++>            from parts
++>            where inventory < 0)
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+     15  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who supply at least
+>>-- <comment> one part whose inventory is negative (less than 0) - use
+>>-- <comment> subquery in having clause , subquery in where clause (mixed)
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum in
++>           (select partnum
++>            from parts
++>            where inventory < 0)
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+     15  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get supplier names for suppliers who supply at least
+>>-- <comment> one part whose inventory is negative (less than 0) - use
+>>-- <comment> subquery in having clause, subquery in where clause (mixed)
+>>-- <ufi-input>
+>>      select suppname
++>      from supplier
++>      where suppnum in
++>        (select suppnum
++>         from fromsup
++>         group by suppnum,partnum
++>         having partnum in
++>           (select partnum
++>            from parts
++>            where inventory < 0)
++>        );
+
+SUPPNAME            
+------------------  
+
+TANDEM COMPUTERS    
+DATA TERMINAL CO    
+DISPLAY INC         
+INFOMATION STORAGE  
+DATADRIVE           
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> same as first, except use =SOME instead of IN
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum =SOME
++>        (select suppnum
++>         from fromsup
++>         group by suppnum,partnum
++>         having partnum =ANY
++>           (select partnum
++>            from parts
++>            where inventory < 0)
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+     15  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 'LP__900_LPM'
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum IN
++>        (select suppnum
++>         from fromsup
++>         group by suppnum, partnum
++>         having partnum =
++>           (select partnum
++>            from parts
++>            where partname = 'LP  900 LPM'));
+
+SUPPNUM  
+-------  
+
+      2  
+      6  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 'LP__900_LPM'
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum IN
++>        (select suppnum
++>         from fromsup
++>         where partnum =
++>           (select partnum
++>            from parts
++>            where partname = 'LP  900 LPM'));
+
+SUPPNUM  
+-------  
+
+      2  
+      6  
+     15  
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> get supplier names for suppliers who supply part 'LP__900_LPM'
+>>-- <ufi-input>
+>>      select suppname
++>      from supplier
++>      where suppnum IN
++>        (select suppnum
++>         from fromsup
++>         group by suppnum, partnum
++>         having partnum =
++>           (select partnum
++>            from parts
++>            where partname = 'LP  900 LPM'));
+
+SUPPNAME            
+------------------  
+
+DATA TERMINAL CO    
+INFOMATION STORAGE  
+DATADRIVE           
+
+--- 3 row(s) selected.
+>>
+>>-- <comment> get age of those employees whose salary is less than or
+>>-- <comment> equal to the salary of the youngest employee
+>>-- <ufi-input>
+>>      select age
++>      from employee
++>      group by age, salary
++>      having salary <=
++>        (select salary
++>         from employee
++>         group by age, salary
++>         having age <= ALL
++>           (select age
++>            from employee
++>           )
++>        );
+
+AGE    
+-----  
+
+   24  
+   26  
+   19  
+   22  
+   24  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get age of those employees whose salary is less than or
+>>-- <comment> equal to the salary of the youngest employee
+>>-- <ufi-input>
+>>      select age
++>      from employee
++>      where salary <=
++>        (select salary
++>         from employee
++>         group by age, salary
++>         having age <= ALL
++>           (select age
++>            from employee
++>           )
++>        );
+
+AGE    
+-----  
+
+   24  
+   26  
+   19  
+   22  
+   24  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get age of those employees whose salary is less than or
+>>-- <comment> equal to the salary of the youngest employee
+>>-- <ufi-input>
+>>      select X.age
++>      from employee X
++>      group by age, salary
++>      having X.salary <=
++>        (select salary
++>         from employee Y
++>         group by age, salary
++>         having Y.age <= ALL
++>           (select Z.age
++>            from employee Z
++>           )
++>        );
+
+AGE    
+-----  
+
+   24  
+   26  
+   19  
+   22  
+   24  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get salesman names who have orders for parts priced < 8000
+>>-- <comment> (eliminate duplicate salesman names,order numbers, and
+>>-- <comment> records where the price = 8000)
+>>-- <ufi-input>
+>>      select distinct salesman
++>      from orders
++>      group by salesman, ordernum
++>      having ordernum in
++>        (select distinct ordernum
++>         from odetail,parts
++>         group by ordernum,  odetail.partnum,
++>                   parts.partnum, price
++>         having  odetail.partnum =  parts.partnum
++>         and price <
++>          (select distinct price
++>           from parts
++>           where price = 8000));
+
+SALESMAN  
+--------  
+
+     205  
+     212  
+     222  
+     204  
+     231  
+     218  
+     207  
+     225  
+     210  
+     221  
+
+--- 10 row(s) selected.
+>>
+>>-- <comment> get salesman names who have orders for parts priced < 8000
+>>-- <comment> (eliminate duplicate salesman names,order numbers, and
+>>-- <comment> records where the price = 8000)
+>>-- <ufi-input>
+>>      select distinct salesman
++>      from orders
++>      group by salesman, ordernum
++>      having ordernum in
++>        (select distinct ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         group by ordernum, price
++>         having price <
++>          (select distinct price
++>           from parts
++>           where price = 8000));
+
+SALESMAN  
+--------  
+
+     205  
+     212  
+     222  
+     204  
+     231  
+     218  
+     207  
+     225  
+     210  
+     221  
+
+--- 10 row(s) selected.
+>>
+>>-- <comment> get customer numbers who have orders for parts supplied by
+>>-- <comment> suppliers in MASS.
+>>-- <ufi-input>
+>>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum in
++>        (select custnum
++>         from orders
++>         group by ordernum, custnum
++>         having ordernum in
++>           (select distinct ordernum
++>            from odetail
++>            group by ordernum, partnum
++>            having partnum in
++>              (select distinct partnum
++>               from fromsup
++>               group by partnum, suppnum
++>               having suppnum in
++>                 (select suppnum
++>                  from supplier
++>                  where state = 'MASS'
++>                 )
++>              )
++>           )
++>        );
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3210  
+   3333  
+   5635  
+   7654  
+
+--- 11 row(s) selected.
+>>
+>>
+>>-- <comment> get customer numbers who have orders for parts supplied by
+>>-- <comment> suppliers in Mass.
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum in
++>        (select custnum
++>         from orders
++>         where ordernum in
++>           (select distinct ordernum
++>            from odetail
++>            group by ordernum, partnum
++>            having partnum in
++>              (select distinct partnum
++>               from fromsup
++>               where suppnum in
++>                 (select suppnum
++>                  from supplier
++>                  where state = 'MASS'
++>                 )
++>              )
++>           )
++>        );
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3210  
+   3333  
+   5635  
+   7654  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get customer names who have orders for parts supplied by
+>>-- <comment> suppliers in Mass.
+>>-- <ufi-input>
+>>
+>>      select custname
++>      from customer
++>      where custnum in
++>        (select custnum
++>         from orders
++>         group by ordernum, custnum
++>         having ordernum in
++>           (select distinct ordernum
++>            from odetail
++>            group by ordernum, partnum
++>            having partnum in
++>              (select distinct partnum
++>               from fromsup
++>               group by partnum, suppnum
++>               having suppnum in
++>                 (select suppnum
++>                  from supplier
++>                  where state = 'MASS'
++>                 )
++>              )
++>           )
++>        );
+
+CUSTNAME            
+------------------  
+
+CENTRAL UNIVERSITY  
+BROWN MEDICAL CO    
+STEVENS SUPPLY      
+PREMIER INSURANCE   
+FRESNO STATE BANK   
+METALL-AG.          
+DATASPEED           
+BESTFOOD MARKETS    
+DEUTSCHE STAHL      
+VEREINIGTE CHEMIE   
+MOTOR DISTRIBUTING  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get customer numbers who have orders for parts supplied by        y
+>>-- <comment> suppliers in Mass, where the order month is less than 4
+>>-- <ufi-input>
+>>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum in
++>        (select custnum
++>         from orders
++>         where ordernum in
++>           (select distinct ordernum
++>            from odetail
++>            group by ordernum, partnum
++>            having partnum in
++>              (select distinct partnum
++>               from fromsup
++>               group by partnum, suppnum
++>               having suppnum in
++>                 (select suppnum
++>                  from supplier
++>                  where state = 'MASS'
++>                 )
++>              )
++>           )
++>         and omonth < 4
++>        );
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    543  
+    926  
+   1234  
+   7654  
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- <comment> get salesman names for salesman who work in the Central region
+>>-- <ufi-input>
+>>      select empname
++>      from salecust
++>      group by empname
++>      having empname in
++>        (select empname
++>         from emppub
++>         group by empname, regnum
++>         having regnum in
++>           (select regnum
++>            from region
++>            where regname = 'CENTRAL'
++>           )
++>        );
+
+EMPNAME             
+------------------  
+
+MARK FOLEY          
+RICHARD BARTON      
+
+--- 2 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who supply at least
+>>-- <comment> one part whose inventory is negative, eliminate duplicates
+>>-- <comment> with group by
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum in
++>           (select partnum
++>            from parts
++>            where inventory < 0)
++>         group by suppnum
++>        );
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+     15  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> same as above, but eliminate supplier #2
+>>-- <ufi-input>
+>>       select suppnum
++>       from supplier
++>       group by suppnum
++>       having suppnum in
++>         (select suppnum
++>          from fromsup
++>          where partnum in
++>            (select partnum
++>             from parts
++>             where inventory < 0)
++>          group by suppnum
++>          having suppnum <> 2
++>         );
+
+SUPPNUM  
+-------  
+
+      1  
+      3  
+      6  
+     15  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> get age of those employees who are not 22 and whose salary
+>>-- <comment> is less than or equal to the salary of the youngest employee
+>>-- <comment> under 40.
+>>-- <ufi-input>
+>>       select age
++>       from employee
++>       where age <> 22
++>       group by age, salary
++>       having salary <=
++>         (select salary
++>          from employee
++>          group by salary, age
++>          having age <=ALL
++>            (select age
++>             from employee
++>             group by age
++>             having age <40
++>            )
++>         )
++>       order by age;
+
+AGE    
+-----  
+
+   19  
+   24  
+   24  
+   26  
+
+--- 4 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>-- <testcase A4>
+>>
+>>-- <detail>
+>>--    uncorrelated subquery in having clause test - this tests the use of
+>>--    for browse access, for stable access,
+>>--    and for repeatable access in uncorrelated subqueries.
+>>
+>>
+>>-- <templates>
+>>--    US00
+>>
+>>-- <comment> get part numbers, for parts supplied by supplier 15
+>>-- <comment> and supplied by at least one other supplier.
+>>-- <ufi-input>
+>>      select partnum
++>      from fromsup
++>      where suppnum <> 15
++>      group by partnum
++>      having partnum in
++>        (select partnum
++>         from fromsup
++>         where suppnum = 15
++>         for browse access
++>        )
++>      for repeatable access;
+
+PARTNUM  
+-------  
+
+   4101  
+   4102  
+   4103  
+   5101  
+   5103  
+   5504  
+
+--- 6 row(s) selected.
+>>
+>>
+>>-- <comment> get salesman numbers and order numbers for salesman
+>>-- <comment> who have orders for parts costing > 50000
+>>-- <ufi-input>
+>>      select salesman,ordernum
++>      from orders
++>      group by ordernum, salesman
++>      having orders.ordernum in
++>        (select  odetail.ordernum
++>         from odetail,parts
++>         where  odetail.partnum =  parts.partnum
++>         and price > 50000
++>         for repeatable access
++>        );
+
+SALESMAN  ORDERNUM  
+--------  --------  
+
+     205        21  
+     212        25  
+     222        30  
+     204        32  
+     231        35  
+     218        38  
+     207        41  
+     212        45  
+     225        48  
+     210        51  
+     205        66  
+     221       122  
+
+--- 12 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who are in the same state
+>>-- <comment> as supplier 1 (use aliases).
+>>      select suppnum
++>      from supplier X
++>      group by suppnum, X.state
++>      having X.state =
++>        (select Y.state
++>         from supplier Y
++>         where suppnum = 1
++>         for browse access
++>        )
++>      for repeatable access;
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+     10  
+
+--- 4 row(s) selected.
+>>
+>>-- <comment> get customer numbers for customers who have not ordered parts
+>>-- <comment> stored at location 'V67'
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum <>
++>        (select col_12
++>         from partsfor
++>         where col_2 = 'V67'
++>         for browse access
++>        );
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> same as above, only use a join instead of the view partsfor
+>>-- <ufi-input>
+>>      select custnum
++>      from customer
++>      group by custnum
++>      having custnum <>
++>        (select custnum
++>         from orders,odetail,parts
++>         where ( orders.ordernum =  odetail.ordernum) and
++>               ( odetail.partnum =  parts.partnum) and
++>               (location = 'V67')
++>                for repeatable access
++>        );
+
+CUSTNUM  
+-------  
+
+     21  
+    123  
+    143  
+    324  
+    543  
+    926  
+   1234  
+   3333  
+   5635  
+   7654  
+   7777  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get supplier numbers for suppliers who supply part 4102
+>>-- <comment> and part 5504
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having (suppnum in
++>        (select suppnum
++>         from fromsup
++>         where partnum = 4102
++>         for browse access)
++>        )
++>      and (suppnum =ANY
++>        (select suppnum
++>         from fromsup
++>         where partnum = 5504
++>         for stable access)
++>        );
+
+SUPPNUM  
+-------  
+
+      6  
+     15  
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- <comment> get supplier numbers for suppliers who supply at least
+>>-- <comment> one part whose inventory is negative (less than 0)
+>>-- <ufi-input>
+>>      select suppnum
++>      from supplier
++>      group by suppnum
++>      having suppnum in
++>        (select suppnum
++>         from fromsup
++>         group by suppnum,partnum
++>         having partnum in
++>           (select partnum
++>            from parts
++>            where inventory < 0
++>            for browse access
++>           )
++>         for repeatable access
++>        )
++>      for stable access;
+
+SUPPNUM  
+-------  
+
+      1  
+      2  
+      3  
+      6  
+     15  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get age of those employees whose salary is less than or
+>>-- <comment> equal to the salary of the youngest employee
+>>-- <ufi-input>
+>>      select X.age
++>      from employee X
++>      group by age, salary
++>      having X.salary <=
++>        (select salary
++>         from employee Y
++>         group by age, salary
++>         having Y.age <= ALL
++>           (select Z.age
++>            from employee Z
++>            for repeatable access
++>           )
++>         for stable access
++>        )
++>      for browse access;
+
+AGE    
+-----  
+
+   24  
+   26  
+   19  
+   22  
+   24  
+
+--- 5 row(s) selected.
+>>
+>>-- <comment> get salesman names who have orders for parts priced < 8000
+>>-- <comment> (eliminate duplicate salesman names,order numbers, and
+>>-- <comment> records where the price = 8000)
+>>-- <ufi-input>
+>>      select distinct salesman
++>      from orders
++>      group by salesman, ordernum
++>      having ordernum in
++>        (select distinct ordernum
++>         from odetail,parts
++>         group by ordernum,  odetail.partnum,
++>                   parts.partnum, price
++>         having  odetail.partnum =  parts.partnum
++>         and price <
++>          (select distinct price
++>           from parts
++>           where price = 8000
++>           for browse access
++>          )
++>         for repeatable access
++>        )
++>      for stable access;
+
+SALESMAN  
+--------  
+
+     205  
+     212  
+     222  
+     204  
+     231  
+     218  
+     207  
+     225  
+     210  
+     221  
+
+--- 10 row(s) selected.
+>>
+>>-- <comment> get salesman names for salesman who work in the Central region
+>>-- <ufi-input>
+>>      select empname
++>      from salecust
++>      group by empname
++>      having empname in
++>        (select empname
++>         from emppub
++>         group by empname, regnum
++>         having regnum in
++>           (select regnum
++>            from region
++>            where regname = 'CENTRAL'
++>            for stable access
++>           )
++>         for repeatable access
++>        )
++>      for browse access;
+
+EMPNAME             
+------------------  
+
+MARK FOLEY          
+RICHARD BARTON      
+
+--- 2 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>
+>>-- <testcase A5>
+>>
+>>-- <detail>
+>>--    select uncorrelated subquery in HAVING clause test - this tests the
+>>--    selection of aggregate functions (COUNT, AVG, MAX, MIN, SUM).
+>>--    Aggregates are tested in the SELECT clause and in the HAVING clause.
+>>
+>>-- <templates>
+>>--    US00
+>>
+>>-- <comment> get region #, branch #  and the average payroll for the
+>>-- <comment> branch(es) with the highest average payroll
+>>-- <ufi-input>
+>>      select regnum,branchnum, avg(salary)
++>      from employee
++>      group by regnum, branchnum
++>      having avg(salary) >=ALL
++>        (select avg(salary)
++>         from employee
++>         group by regnum, branchnum
++>        );
+
+REGNUM  BRANCHNUM  (EXPR)                
+------  ---------  --------------------  
+
+     4          1                 38750  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get region #, branch #  and the average payroll for the
+>>-- <comment> branch(es) with the highest TOTAL payroll
+>>-- <ufi-input>
+>>      select regnum,branchnum, avg(salary)
++>      from employee
++>      group by regnum, branchnum
++>      having sum(salary) >=ALL
++>        (select sum(salary)
++>         from employee
++>         group by regnum, branchnum
++>        );
+
+REGNUM  BRANCHNUM  (EXPR)                
+------  ---------  --------------------  
+
+    99          1                 28191  
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> get job, average salary, and average age for jobs whose average
+>>-- <comment> salary is greater than the average salary of the job with the
+>>-- <comment> lowest average employee age.
+>>-- <ufi-input>
+>>      select job, avg(salary), avg(age)
++>      from employee
++>      group by job
++>      having avg(salary) >=ALL
++>        (select avg(salary)
++>         from employee
++>         group by job
++>         having avg(age) <=ALL
++>           (select avg(age)
++>            from employee
++>            group by job
++>           )
++>        );
+
+JOB           (EXPR)                (EXPR)                
+------------  --------------------  --------------------  
+
+SALESMAN                     29071                    35  
+SYS.-ANAL.                   27600                    31  
+SECRETARY                    22142                    30  
+PROGRAMMER                   22666                    31  
+MANAGER                      37000                    36  
+ENGINEER                     29333                    30  
+SYST.-ANAL                   31407                    35  
+
+--- 7 row(s) selected.
+>>      -- ++++++ may take a long (an hour) time to run
+>>
+>>?ignore
+>>-- <comment> get job, average salary, and average distinct age for jobs
+>>-- <comment> whose average salary is greater than the average salary of the
+>>-- <comment> job with the lowest average distinct employee age.
+>>-- <ufi-input>
+>>      select job, avg(salary), avg(distinct age)
++>      from employee
++>      group by job
++>      having avg(salary) >=ALL
++>        (select avg(salary)
++>         from employee
++>         group by job
++>         having avg(distinct age) <=ALL
++>           (select avg(distinct age)
++>            from employee
++>            group by job
++>           )
++>        );
+>>       -- +++++ may take a long (an hour) time to run
+>>?ignore
+>>
+>>-- <comment> get the salaries and minimum age of employees with that salary
+>>-- <comment> where the salary is greater than the average salary for all
+>>-- <comment> employees.
+>>-- <ufi-input>
+>>      select salary, min(age)
++>      from employee
++>      group by salary
++>      having salary >
++>        (select avg(salary)
++>         from employee
++>        );
+
+SALARY      (EXPR)  
+----------  ------  
+
+     39500      37  
+     37000      34  
+     36000      39  
+     38000      39  
+     35000      35  
+     40000      41  
+     32000      28  
+     39000      31  
+     33000      31  
+     50000      21  
+     31000      32  
+     32222      36  
+
+--- 12 row(s) selected.
+>>
+>>-- <comment> get the salaries and minimum age of employees with that salary
+>>-- <comment> where the salary is greater than the 'median' salary for all
+>>-- <comment> employees.
+>>-- <ufi-input>
+>>      select salary, min(age)
++>      from employee
++>      group by salary
++>      having salary >
++>        (select min(salary) + ((max(salary) - min(salary)) / 2)
++>         from employee
++>        );
+
+SALARY      (EXPR)  
+----------  ------  
+
+     39500      37  
+     37000      34  
+     36000      39  
+     38000      39  
+     35000      35  
+     40000      41  
+     32000      28  
+     39000      31  
+     33000      31  
+     50000      21  
+     32222      36  
+
+--- 11 row(s) selected.
+>>
+>>-- <comment> get the salaries and minimum age of employees with that
+>>-- <comment> salary where the minimum age is greater than the average age
+>>-- <comment> of all employees
+>>-- <ufi-input>
+>>      select salary, min(age)
++>      from employee
++>      group by salary
++>      having min(age) >
++>        (select avg(age)
++>         from employee
++>        );
+
+SALARY      (EXPR)  
+----------  ------  
+
+     39500      37  
+     36000      39  
+     38000      39  
+     35000      35  
+     40000      41  
+     27000      37  
+     22000      55  
+     32222      36  
+
+--- 8 row(s) selected.
+>>
+>>-- <comment> get the salaries and the number of employees who make that
+>>-- <comment> salary, such that more employees make that salary than any
+>>-- <comment> other
+>>-- <ufi-input>
+>>      select salary, count(*)
++>      from employee
++>      group by salary
++>      having count(*) >=ALL
++>        (select count(*)
++>         from employee
++>         group by salary
++>        );
+
+SALARY      (EXPR)                
+----------  --------------------  
+
+     32000                     6  
+
+--- 1 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>
+>>-- <end-test>
+>>LOG;

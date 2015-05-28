@@ -1,0 +1,314 @@
+-- Test: TEST015 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: BIGNUM support
+-- Expected files: EXPECTED016
+-- Table created:
+-- Limitations:
+-- To do:
+-- Revision history:
+
+drop table t016t1 cascade;
+drop table t016t2 cascade;
+drop table t016t3 cascade;
+drop table t016t4 cascade;
+drop table t016t5 cascade;
+drop table t016t6 cascade;
+drop table temp cascade;
+drop table t016t2t1 cascade;
+drop table t016t2t2 cascade;
+drop table t016err;
+drop mvgroup mvg_016;
+
+drop procedure rs016;
+
+#ifNT
+control query default ARKCMP_FAKE_HW 'ON';
+control query default DEF_NUM_SMP_CPUS '2';
+control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '1';
+#ifNT
+
+log log016 clear;
+
+-- DDL 
+
+create table t016t1 (a numeric(10) unsigned, 
+		     b numeric(18) unsigned not null,
+	             c numeric(20) default 12345678901234567890, 
+		     d numeric(23) unsigned not null,
+                     e numeric(34,0) not null, 
+		     f numeric(128) not null,
+                     g numeric(10,2) unsigned not null, 
+		     h numeric(18,18) unsigned,
+                     i numeric(25,20) not null, 
+		     j numeric(128,60) unsigned 
+		       default 12345678012345678901234567890.12345678901234567890,
+                     k numeric(128,128), 
+		     l numeric(60,59)) no partition;
+
+create table t016t2(a numeric(39,12) not null, b numeric(20,0) unsigned not null,
+	c numeric(21,21),
+		    primary key(a,b))
+#ifNT
+#ifndef SEABASE_REGRESS
+hash partition by (a,b)
+(add location $$partition2$$, add location $$partition2$$, add location $$partition2$$)
+#endif
+#ifNT
+attribute all mvs allowed
+;
+
+-- MVs not support on seabase
+#ifndef SEABASE_REGRESS
+create MVGroup MVG_016;
+
+-- MV with attribute no audit on refresh 
+create mv MV_no_audit_016
+	refresh on request
+	initialize on refresh
+	--MVAttributes no AuditOnRefresh 
+	store by (a,b)
+	as
+	select a,b,sum(c) sumc
+	from T016t2
+	group by a,b;
+ALTER MVGroup MVG_016 add MV_no_audit_016;
+
+create mv MV_audit_016
+	refresh on request
+	initialize on refresh
+	store by (a,b)
+	as
+	select a,b,min(b) minb
+	from T016t2
+	group by a,b;
+ALTER MVGroup MVG_016 add MV_audit_016;
+
+create table t016t3(a numeric(39,12) not null, b numeric(20,0) unsigned not null,
+		    primary key(a,b)) range partition by (a,b)
+(add first key (12345678901234567890.12) location $$partition2$$, 
+ add first key (22345678901234567890) location $$partition3$$
+)
+;
+#endif
+
+invoke t016t1;
+showddl t016t1;
+
+invoke t016t2;
+showddl t016t2;
+
+#ifndef SEABASE_REGRESS
+invoke t016t3;
+showddl t016t3;
+#endif
+
+----------------------------------------------------------------------------
+-- DDL used to verify fix to SQ2535
+create table t016_2535_2(c1 numeric(20,0) not null , c2 int, primary key (c1));
+
+insert into  t016_2535_2 values (1234567.1234556789, 1);
+insert into  t016_2535_2 values (1234568.234556789, 1);
+
+create table t016_2535_3(c1 numeric(20,0) not null , c2 int not null,
+primary key (c1, c2));
+
+
+insert into  t016_2535_3 values (1234567.1234556789, 1);
+insert into  t016_2535_3 values (1234567.1234556789, 2);
+insert into  t016_2535_3 values (1234568, 1);
+insert into  t016_2535_3 values (1234568, 2);
+insert into  t016_2535_3 values (1234569, 1);
+
+
+-- DML
+insert into t016t2 values (1234567890123456789012345.123456789012, 12345678901234567890, .1);
+insert into t016t2 values (-1234567890123456789012345.123456789012, 12345678901234567890, .2);
+insert into t016t2 values (2234567890123456789012345.123456789012, 12345678901234567890, .3);
+insert into t016t2 values (-1234567890123456789012345.123456789012, 22345678901234567890, .000000000000000000001);
+insert into t016t2 values (10, 20, .30);
+insert into t016t2 values (11, 22, null);
+
+select * from t016t2;
+
+select a+b, a-b, a*b, a/b from t016t2;
+
+select sum(a), sum(b), min(a), min(b), avg(a), avg(b) from t016t2;
+
+select * from t016t2 where a = 1234567890123456789012345.123456789012;
+select * from t016t2 where (a,b) = (-1234567890123456789012345.123456789012, 12345678901234567890);
+select * from t016t2 where b < 22345678901234567890;
+
+update t016t2 set c = 0.123456789012345678901 where a = 10;
+update t016t2 set c = .20 where c is null;
+
+select * from t016t2;
+
+set param ?p 98765432109876543210.12345678901;
+set param ?q 98765432109876543210;
+set param ?r 0.012345678901234567891;
+insert into t016t2 values (?p, ?q, ?r);
+select * from t016t2;
+
+create view t016v1 as select * from t016t1;
+invoke t016v1;
+select * from t016v1;
+
+create view t016v2 (jj,kf) as select j*j, k*f from t016t1;
+invoke t016v2;
+select * from t016v2;
+
+create table t016t2t1 as select * from t016t1;
+invoke t016t2t1;
+select * from t016t2t1;
+
+create table t016t2t2 as select j*j jj, k*f kf from t016t1;
+invoke t016t2t2;
+select * from t016t2t2;
+
+create view t016v3 as select * from t016t2;
+select * from t016v3;
+
+create index t016t1i1 on t016t1(a);
+create index t016t1i2 on t016t1(c);
+create index t016t1i3 on t016t1(k);
+
+create index t016t2i1 on t016t2(a);
+create index t016t2i2 on t016t2(b);
+create index t016t2i3 on t016t2(c) no populate;
+populate index t016t2i3 on t016t2;
+
+-- SPJs not supported on Seabase
+#ifndef SEABASE_REGRESS
+
+-- SPJ returning rowsets
+log;
+sh sh java-compile.ksh TEST016.java 2>LOG016.SECONDARY | tee -a LOG016;
+log LOG016;
+
+create procedure rs016(tablename varchar(20))
+external name 'TEST016.rs016'
+external path $$REGRRUNDIR_Q$$
+language java parameter style java
+dynamic result sets 1 reads sql data;
+
+grant all privileges on t016t2 to sql_user1;
+
+call rs016('t016t2');
+#endif
+
+-- exact numerics
+select
+12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+
+select
+-12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+
+select
+1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+
+select
+-1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678 from (values(1)) x(a);
+
+-- float numerics
+select
+12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+
+select
+-12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+
+select
+1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+
+select
+-1234567890123456789012345678901234567890123456789012345678901234567890.1234567890123456789012345678901234567890123456789012345678e0 from (values(1)) x(a);
+
+-- Utilities
+#ifndef SEABASE_REGRESS
+refresh mvgroup mvg_016 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOG016;
+log LOG016;
+#endif
+
+-- error cases
+create table t016terr(a numeric(23,24)) no partition;
+create table t016terr(a numeric(129,0)) no partition;
+create table t016terr(a numeric(129)) no partition;
+
+control query default cat_large_blocks_large_keys 'OFF';
+create table t016err (a numeric(128,0) not null, b numeric(128,0) not null, c numeric(128,0) not null, d numeric(128,0) not null, e numeric(92) not null,
+primary key(a,b,c,d,e));
+
+-- error cases: exact numerics
+select
+123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+
+select
+-123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+
+select
+1234567890123456789012345678901234567890123456789012345678901234567890.12345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+
+select
+-1234567890123456789012345678901234567890123456789012345678901234567890.12345678901234567890123456789012345678901234567890123456789 from (values(1)) x(a);
+
+
+cqd query_cache '0';
+
+select * from t016_2535_2 where c1 = 1234567.1234556789;
+select * from t016_2535_2 where c1 = 1234567.0;
+select * from t016_2535_2 where c1 = 1234567;
+select * from t016_2535_2 where c1 > 1234567.3;
+select * from t016_2535_2 where c1 >= 1234567.0;
+select * from t016_2535_2 where c1 < 1234567.0;
+select * from t016_2535_2 where c1 <= 1234567.0;
+select * from t016_2535_2 where c1 < 1234568.0;
+select * from t016_2535_2 where c1 <= 1234568.0;
+select * from t016_2535_2 where c1 < 1234568.9;
+select * from t016_2535_2 where c1 <= 1234568.9;
+
+select * from t016_2535_3 where (c1,c2) = (1234567.1234556789, 1);
+select * from t016_2535_3 where (c1,c2) = (1234567.0, 1);
+select * from t016_2535_3 where (c1,c2) = (1234567, 1);
+select * from t016_2535_3 where (c1,c2) >= (1234567, 1);
+select * from t016_2535_3 where (c1,c2) >= (1234567, 2);
+select * from t016_2535_3 where (c1,c2) >= (1234567.76, 2);
+select * from t016_2535_3 where (c1,c2) > (1234567, 1);
+select * from t016_2535_3 where (c1,c2) > (1234567, 2);
+select * from t016_2535_3 where (c1,c2) > (1234565.5, 2);
+select * from t016_2535_3 where (c1,c2) > (1234568.3, 2);
+select * from t016_2535_3 where (c1,c2) < (1234568.3, 2);
+select * from t016_2535_3 where (c1,c2) <= (1234568.3, 2);
+select * from t016_2535_3 where (c1,c2) <= (1234567.3, 0);
+
+drop table t016_2535_2;
+drop table t016_2535_3;
+
+log;
+

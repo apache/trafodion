@@ -1,0 +1,425 @@
+>>sh rm -f LOG001-SECONDARY;
+>>obey TEST001(compile_libs);
+>>--------------------------------------------------------------------------
+>>log;
+>>
+>>obey TEST001(create_tables);
+>>--------------------------------------------------------------------------
+>>create table clicks (userid char(32), ts TIME(6), ipAddr char(15)) ;
+
+--- SQL operation complete.
+>>insert into clicks values
++> ('super-user',cast(time'09:59:59.50 pm' as TIME(6)),'12.345.567.345'),
++> ('super-user',cast(time'11:59:59.50 pm' as TIME(6)),'12.345.567.345'),
++> ('super-services',cast(time'11:59:59.50 pm' as TIME(6)),'12.345.567.345'),
++> ('super-services',cast(time'11:59:59.55 pm' as TIME(6)),'12.345.567.345');
+
+--- 4 row(s) inserted.
+>>
+>>-- for now use VARCHARs for LOBs
+>>--cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
+>>
+>>create table t001_Datatypes (
++>c_char char(15),
++>c_char_upshift char(15) upshift,
++>c_char_not_casespecific char(15) not casespecific,
++>c_char_varying char varying(15),
++>c_char_varying_upshift char varying(15) upshift,
++>c_char_varying_not_casespecific char varying(15) not casespecific,
++>c_varchar varchar(15),
++>c_varchar_upshift varchar(15) upshift,
++>c_varchar_not_casespecific varchar(15) not casespecific,
++>c_nchar nchar(15),
++>c_nchar_upshift nchar(15) upshift,
++>c_nchar_not_casespecific nchar(15) not casespecific,
++>c_nchar_varying nchar varying(15),
++>c_nchar_varying_upshift nchar varying(15) upshift,
++>c_nchar_varying_not_casespecific nchar varying(15) not casespecific,
++>c_numeric numeric(9,2),
++>c_numeric_unsigned numeric(9,2) unsigned,
++>c_decimal decimal(9,2),
++>c_decimal_unsigned decimal(9,2) unsigned,
++>c_integer integer,
++>c_integer_unsigned integer unsigned,
++>c_largeint largeint,
++>c_smallint smallint,
++>c_smallint_unsigned smallint unsigned,
++>c_float float(10),
++>c_real real,
++>c_double_precision double precision,
++>c_date date,
++>c_time time,
++>c_time6 time(6),
++>c_timestamp0 timestamp(0),
++>c_timestamp timestamp,
++>c_timestamp6 timestamp(6),
++>c_interval interval year to month,
++>c_intervals86 interval second(8,6),
++>c_intervald6s interval day(6) to second(6),
++>c_blob blob (length 100),
++>c_clob clob (length 100)
++>);
+
+--- SQL operation complete.
+>>
+>>insert into t001_Datatypes values (
++>'CHAR_1',
++>'char_1',
++>'char_1',
++>'CHARVAR_1',
++>'charvar_1',
++>'charvar_1',
++>'VARCHAR_1',
++>'varchar_1',
++>'varchar_1',
++>'NCHAR_1',
++>'nchar_1',
++>'nchar_1',
++>'NCHARVAR_1',
++>'ncharvar_1',
++>'ncharvar_1',
++>-1,
++>1,
++>-1.11,
++>1.11,
++>-1,
++>1,
++>-1,
++>-1,
++>1,
++>-1.11,
++>-1.11,
++>-1.11,
++>date '2001-01-01',
++>time '01:01:01',
++>time '01:01:01.111111',
++>timestamp '2001-01-01 01:01:01',
++>timestamp '2001-01-01 01:01:01.111111',
++>timestamp '2001-01-01 01:01:01.111111',
++>interval '01-01' year to month,
++>interval '88888888.666666' second(8,6),
++>interval '666666 23:59:59.999999' day(6) to second(6),
++>-- use these when real LOBs are enabled in this test
++>--stringtolob('BLOB_1'),
++>--stringtolob('CLOB_1')
++>-- for now, use simple chars, see cqd TRAF_BLOB_AS_VARCHAR above
++>'BLOB_1',
++>'CLOB_1'
++>);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST001(register_functions);
+>>--------------------------------------------------------------------------
+>>
+>>create library TEST001 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>-- Sessionize uses a compiler interface to
+>>-- create result columns that match those of any input table given
+>>-- and it validates the column name for session id at compile time
+>>create table_mapping function sessionize_dynamic(user_colname char(10),
++>                                                 ts_colname char(20),
++>                                                 timeintval int)
++>external name 'SESSIONIZE_DYNAMIC'
++>library TEST001;
+
+--- SQL operation complete.
+>>
+>>-- This shows that we can share the same binaries for multiple
+>>-- TMUDFs, note that it uses the same external name SESSIONIZE_DYNAMIC
+>>create table_mapping function sessionize_dynamic_shared(user_colname char(10),
++>                                                        ts_colname char(10),
++>                                                        timeintval int)
++>external name 'SESSIONIZE_DYNAMIC'
++>language cpp
++>library TEST001;
+
+--- SQL operation complete.
+>>
+>>-- negative test case, the entry point SESSIONIZE_ERR does not exist
+>>create table_mapping function sessionize_err(dummy char(10))
++>returns (session_id largeint)
++>external name 'SESSIONIZE_NON_EXISTENT'
++>language cpp
++>library TEST001;
+
+*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE_NON_EXISTENT' in library 'TEST001.dll'.
+
+*** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
+
+--- SQL operation failed with errors.
+>>-- For now this will succeed, since we don't load the library during
+>>-- DDL time. We will get an error at runtime, though.
+>>
+>>-- Testing a TMUDF with no table-valued inputs
+>>create table_mapping function fibonacci(start_row int, num_rows int)
++>returns (ordinal int, fibonacci_number largeint)
++>external name 'Fibonacci'
++>language cpp
++>library TEST001;
+
+--- SQL operation complete.
+>>
+>>obey TEST001(tests);
+>>--------------------------------------------------------------------------
+>>--cqd attempt_esp_parallelism 'off' ;
+>>
+>>get table_mapping functions for library TEST001 ;
+
+Table_mapping Functions for Library SCH.TEST001
+===============================================
+
+SCH.FIBONACCI
+SCH.SESSIONIZE_DYNAMIC
+SCH.SESSIONIZE_DYNAMIC_SHARED
+
+--- SQL operation complete.
+>>
+>>showddl table_mapping function sessionize_dynamic;
+
+CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_DYNAMIC
+  (
+    IN USER_COLNAME CHAR(10) CHARACTER SET ISO88591
+  , IN TS_COLNAME CHAR(20) CHARACTER SET ISO88591
+  , IN TIMEINTVAL INTEGER SIGNED
+  )
+  EXTERNAL NAME 'SESSIONIZE_DYNAMIC'
+  LIBRARY TRAFODION.SCH.TEST001
+  LANGUAGE CPP
+  NO SQL
+  SAFE EXECUTION MODE
+  ;
+
+--- SQL operation complete.
+>>
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY 1 ORDER BY 2),
++>                            'USERID',
++>                            'TS',
++>                            60000000));
+
+(EXPR)           USERID                            SESSION_ID            IPADDR
+---------------  --------------------------------  --------------------  ---------------
+
+23:59:59.500000  super-services                                       1  12.345.567.345 
+23:59:59.550000  super-services                                       1  12.345.567.345 
+21:59:59.500000  super-user                                           1  12.345.567.345 
+23:59:59.500000  super-user                                           2  12.345.567.345 
+
+--- 4 row(s) selected.
+>>
+>>-- meant to call sessionize_dynamic_shared, but sharing DLLs
+>>-- is not yet working, getting an error so far
+>>SELECT *
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY ipaddr ORDER BY ts),
++>                            'IPADDR',
++>                            cast('TS' as char(2)),
++>                            60000000)) XO;
+
+SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
+--------------------  --------------------  --------------------------------  --------------------  ---------------
+
+                   1                     1  super-user                          212294253599500000  12.345.567.345 
+                   2                     1  super-user                          212294260799500000  12.345.567.345 
+                   2                     2  super-services                      212294260799500000  12.345.567.345 
+                   2                     3  super-services                      212294260799550000  12.345.567.345 
+
+--- 4 row(s) selected.
+>>
+>>-- uniqueness constraint avoids a groupby
+>>explain options 'f'
++>SELECT distinct ipaddr, session_id, sequence_no
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY ipaddr ORDER BY ts),
++>                            'IPADDR',
++>                            cast('TS' as char(2)),
++>                            60000000)) XO
++>where session_id < 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+2    .    3    tmudf                           XO                    1.00E+002
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  CLICKS                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- predicate on IPADDR is evaluated in child,
+>>-- predicate on SESSION_ID is evaluated in the UDF
+>>prepare s from
++>SELECT *
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY ipaddr ORDER BY ts),
++>                            'IPADDR',
++>                            cast('TS' as char(2)),
++>                            60000000)) XO
++>where SESSION_ID < 2 and
++>      IPADDR = '12.345.567.345';
+
+--- SQL command prepared.
+>>select count(*) from table(explain(null,'S'))
++>where operator = 'TMUDF'
++>  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
+--------------------  --------------------  --------------------------------  --------------------  ---------------
+
+                   1                     1  super-user                          212294253599500000  12.345.567.345 
+
+--- 1 row(s) selected.
+>>
+>>
+>>select *
++>from UDF(fibonacci(1,10)) XO
++>order by 1;
+
+ORDINAL      FIBONACCI_NUMBER    
+-----------  --------------------
+
+          1                     1
+          2                     1
+          3                     2
+          4                     3
+          5                     5
+          6                     8
+          7                    13
+          8                    21
+          9                    34
+         10                    55
+
+--- 10 row(s) selected.
+>>
+>>select sum(fibonacci_number)
++>from UDF(fibonacci(50,10)) XO;
+
+(EXPR)              
+--------------------
+
+       2484365770887
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select * from udf(sessionize_dynamic(table(select * from t001_Datatypes),
++>                                     'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
+
+--- SQL command prepared.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>
+>>-- negative tests
+>>select * from udf(sessionize_err('abc')) XOX(a);
+
+*** ERROR[1389] Object SESSIONIZE_ERR does not exist in Trafodion.
+
+*** ERROR[4450] Function SESSIONIZE_ERR is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- expect error 11246
+>>
+>>-- these should be caught by the compiler interface
+>>select * from udf(sessionize_dynamic(table (select * from clicks), 'TS')) XOX;
+
+*** ERROR[11252] Second scalar parameter must be a string constant (SQLSTATE 38003)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- too few input parameters
+>>select * from udf(sessionize_dynamic(table (select * from clicks), 1,2,3)) XOX;
+
+*** ERROR[11252] Column 1 not found (SQLSTATE 38900)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- not a string parameter
+>>select * from udf(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>                          FROM clicks
++>                          PARTITION BY userid ORDER BY ts),
++>TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>                          FROM clicks
++>                          PARTITION BY userid ORDER BY ts),
++>cast('TS' as char(2)),
++>                    'USERID',
++>                    60000000)) XOX;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from udf(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) a
+s TS                           FROM clicks                           PARTITION 
+BY userid ORDER BY ts), TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS         
+                  FROM clicks                           PARTITION BY userid ORD
+ER BY ts), cast('TS' as char(2)),                     'USERID',                
+     60000000)) XOX;
+             ^ (409 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- too many table-valued arguments (syntax error for now)
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>                                  FROM clicks
++>                                  PARTITION BY userid ORDER BY ts),
++>                            'NONEXISTENTCOL',
++>                            'USERID',
++>                            60000000)) XOX;
+
+*** ERROR[11252] Column NONEXISTENTCOL not found (SQLSTATE 38900)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- non-existent column specified in input parameter
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>                                  FROM clicks
++>                                  PARTITION BY 3 ORDER BY ts),
++>                            'SESSION_ID',
++>                            'TS',
++>                            60000000)) XOX;
+
+*** ERROR[11154] Ordinal number 3 used in PARTITION BY clause of a UDF must be an integer ranging from 1 to the number of columns (2 in this case).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- PARTITION BY 3 has an invalid column number
+>>log;

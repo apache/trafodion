@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# Utilities for Trafodion configuration database
+
+function Usage
+{
+    echo "Usage: ${0##/*/} -c<key> | --cluster=<key> | -u | --clearUniqStr"
+    echo
+    echo "-c<key>              Deletes specific cluster data key and value"
+    echo "--cluster=<key>      Deletes specific cluster data key and value"
+    echo "-u, --clearUniqStr   Clears unique strings"
+    echo "-h, --help           Displays this help message"
+}
+
+function clearUniqueStrings
+{
+
+sqlite3 sqconfig.db <<EOF
+delete from monRegUniqueStrings;
+EOF
+
+}
+
+function delMonClusterDataItem
+{
+sqlite3 sqconfig.db <<EOF
+delete from monRegClusterData where keyId in (select keyId from monRegKeyName where keyname = "$1");
+delete from monRegKeyName where keyname = "$1";
+EOF
+}
+
+# options may be followed by one colon to indicate they have a required argument
+if ! options=$(getopt -o c::u -l cluster::,clearUniqStr,help -- "$@")
+then
+    # something went wrong, getopt will put out an error message for us
+    Usage
+    exit 1
+fi
+
+eval set -- $options
+
+if [[ $# == 1 ]]; then
+   Usage
+fi
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+        -c|--cluster)
+            if [[ -n "$2" ]];
+            then
+                delMonClusterDataItem $2
+            else
+                echo "Missing key name"
+            fi
+
+            ;;
+
+        -u|--clearUniqStr)
+            clearUniqueStrings
+            ;;
+
+        -h|--help)
+            Usage
+            ;;
+
+    esac
+    shift
+done
+

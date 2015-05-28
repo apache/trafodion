@@ -1,0 +1,284 @@
+#!/bin/sh
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# Gather SeaQuest info
+#
+
+function DO_CLUSTER_INFO {
+	echo "------"
+	echo
+	echo "acquiring cluster info..."
+
+	if [ -e $SQ_PDSH ]; then
+		nodelist=`eval "$SQPDSHA hostname" |awk '{print $1}'|sort -u|sed -e 's/://'`
+		echo "node info:"
+		echo $nodelist
+		echo "--"
+		first=1
+		for node in $nodelist; do
+			echo "node $node:"
+			if [ $first = 1 ]; then
+				ssh $node uname -a
+			fi
+			echo -n "Number of cpus  : "
+			cat /proc/cpuinfo|grep "physical id"|sort -u|wc -l
+			if [ $full = 1 ]; then
+				echo "cpu info:"
+				ssh $node cat /proc/cpuinfo|egrep "(cpu id|cpu cores|model name|processor|cpu MHz)"
+			else
+				ssh $node cat /proc/cpuinfo|egrep "(cpu cores)"|head -n1
+			fi
+			if [ $full = 1 ]; then
+				echo "memory info:"
+				ssh $node cat /proc/meminfo
+				echo "network info:"
+				ssh $node cat /proc/net/dev|grep ':'|grep -v 'lo:'|awk '{ print $1 }'
+				echo "--"
+			fi
+			first=0
+		done
+	else
+		echo "cannot find pdsh"
+	fi
+}
+
+function DO_ENV_INFO {
+	echo "------"
+	echo
+	echo "acquiring environment info..."
+
+	if [ $sbi = 0 ]; then
+		echo "cannot find seabedinfo - using env instead"
+	fi
+	if [ $full = 1 ]; then
+		if [ $sbi = 1 ]; then
+			seabedinfo -env|sort
+		else
+			env|sort
+		fi
+	else
+		if [ $sbi = 1 ]; then
+			seabedinfo -env|grep '^[A-Z]'|sort
+		else
+			env|grep '^[A-Z]'|sort
+		fi
+	fi
+
+	if [ $full = 1 ]; then
+		echo
+		echo "acquiring other environment info..."
+		if [ $sbi = 0 ]; then
+			if [ -r "$MY_SQROOT/sql/scripts/mon.env" ]; then
+				echo "sql/scripts/mon.env:"
+				cat $MY_SQROOT/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+				echo
+			fi
+		fi
+		if [ -r "$MY_SQROOT/sql/scripts/mon.env" ]; then
+			echo "sql/scripts/mon.env:"
+			cat $MY_SQROOT/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+			echo
+		fi
+		if [ -r "$MY_SQROOT/sql/scripts/shell.env" ]; then
+			echo "sql/scripts/shell.env:"
+			cat $MY_SQROOT/sql/scripts/shell.env|grep -v '^#'|grep -v '^$'
+			echo
+		fi
+	fi
+
+}
+
+function DO_HOST_INFO {
+	if [ ! -e $SQ_PDSH ]; then
+		echo "------"
+		echo
+		echo "acquiring host info..."
+
+		echo "user=`whoami`"
+		echo "hostname=`hostname`"
+		echo "uname=`uname -a`"
+		if [ $sbi = 1 ]; then
+			sqversion=`seabedinfo --version|head -1|sed -e 's|^.*(||' -e 's|)$||'`
+			echo "sqversion=$sqversion"
+		else
+			echo "sqversion=<unknown>"
+		fi
+		echo -n "Number of cpus  : "
+		cat /proc/cpuinfo|grep "physical id"|sort -u|wc -l
+		if [ $full = 1 ]; then
+		        echo "cpu info:"
+		        cat /proc/cpuinfo|egrep "(cpu id|cpu cores|model name|processor|cpu MHz)"
+		else
+			cat /proc/cpuinfo|egrep "(cpu cores)"|head -n1
+		fi
+		if [ $full = 1 ]; then
+		        echo "memory info:"
+		        cat /proc/meminfo
+		        echo "network info:"
+		        cat /proc/net/dev|grep ':'|grep -v 'lo:'|awk '{ print $1 }'
+		        for file in /etc/*release ; do
+			        echo "cat $file (release file):"
+			        cat $file
+		        done
+	        fi
+	fi
+}
+
+function DO_MISC_INFO {
+	if [ $full = 1 ]; then
+		echo "------"
+		echo
+		echo "acquiring misc info..."
+
+		echo "/sbin/ifconfig:"
+		/sbin/ifconfig
+		echo "cat /etc/hosts:"
+		cat /etc/hosts|grep -v '^#'
+		echo "cat /etc/security/limits.conf:"
+		cat /etc/security/limits.conf|grep -v '^#'
+	fi
+}
+
+#
+# <path> <file>
+# ret contains return
+#
+function DO_PATH {
+	path=$1
+	arg=$2
+	pathlist=`echo $path|sed -e "s/:/ /g"`
+
+	ret=""
+	# walk through args
+	match=0
+	for p in $pathlist; do
+		file=$p/$arg
+		if test -f $file; then
+			ret=$file
+			return 1
+		fi
+	done
+	return 0
+}
+
+function DO_MPI_INFO {
+	echo "------"
+	echo
+	echo "acquiring MPI info..."
+	mpirun -version
+
+	lib=libmpi.so
+	DO_PATH $LD_LIBRARY_PATH $lib
+	if [ $? -ne 0 ]; then
+		bindir=`dirname $ret`
+		echo "$lib found in directory $bindir"
+	else
+		echo "$lib not in LD_LIBRARY_PATH"
+	fi
+}
+
+function DO_SEABED_INFO {
+	echo "------"
+	echo
+	echo "acquiring seabed info..."
+
+	if [ $sbi = 1 ]; then
+		seabedinfo
+	else
+		echo "cannot find seabedinfo"
+	fi
+}
+
+function DO_SQL_INFO {
+	echo "------"
+	echo
+	echo "acquiring sql info..."
+
+	if [ "$MY_SQROOT" ]; then
+		cfg=$MY_SQROOT/sql/scripts/sqconfig
+		if [ -r "$cfg" ]; then
+			echo "cat $cfg:"
+			if [ $full = 1 ]; then
+				cat $cfg
+			else
+				cat $cfg|egrep -v '(^#|^$)'
+			fi
+		else
+			echo "cannot read sql config file '$cfg'"
+			return
+		fi
+	else
+		echo "\$MY_SQROOT not set"
+		return
+	fi
+}
+
+function DO_VERS_INFO {
+	echo "------"
+	echo
+	echo "acquiring version info..."
+
+	if [ $full = 1 ]; then
+		which sqvers > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			sqvers
+		else
+			echo "cannot find sqvers"
+		fi
+	else
+		which sqid > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			sqid
+		else
+			echo "cannot find sqid"
+		fi
+	fi
+}
+
+#
+# main starts here
+#
+full=0
+if [ "$1" = "-h" ]; then
+	prog=`basename $0`
+	echo "usage: $prog [-d]"
+	exit 0
+fi
+if [ "$1" = "-d" ]; then
+	full=1
+fi
+
+which seabedinfo > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+	sbi=1
+else
+	sbi=0
+fi
+
+setup_sqpdsh
+DO_HOST_INFO
+DO_CLUSTER_INFO
+DO_VERS_INFO
+DO_SEABED_INFO
+DO_MPI_INFO
+DO_ENV_INFO
+DO_MISC_INFO
+DO_SQL_INFO
+

@@ -1,0 +1,448 @@
+>>
+>>create table iso(c char(10) character set ISO88591);
+
+--- SQL operation complete.
+>>create table ucs2(c char(10) character set UCS2);
+
+--- SQL operation complete.
+>>
+>>--positive
+>>
+>>set param ?p _ucs2'ab';
+>>set param ?q _ucs2'xb';
+>>select ?q || ?p from (values(1))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+xbab                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+--- 1 row(s) selected.
+>>
+>>-- reset ?p
+>>set param ?p 'ascii';
+>>
+>>--ascii param can be used in any place
+>>set param ?ascii _iso88591'12';
+>>select 1 from (values(1))x where 12 = ?ascii;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>> --implicit conversion
+>>select 1 from (values(1))x where '12' = ?ascii;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>
+>>--ucs2 param can be used in any place
+>>set param ?ucs2 _ucs2'12';
+>>select 1 from (values(1))x where 12 = ?ucs2;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>> --implicit conversion
+>>select 1 from (values(1))x where '12' = ?ucs2;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>
+>>--insert an ucs2 param into an ucs2 table 
+>>set param ?p _ucs2'ab';
+>>insert into ucs2 values(?p);
+
+--- 1 row(s) inserted.
+>>select * from ucs2;
+
+C                   
+--------------------
+
+ab                  
+
+--- 1 row(s) selected.
+>>
+>>--insert an iso88591 param into an iso88591 table 
+>>set param ?p 'ab';
+>>set param ?q _iso88591'ab';
+>>insert into iso values(?p);
+
+--- 1 row(s) inserted.
+>>insert into iso values(?q);
+
+--- 1 row(s) inserted.
+>>select * from iso;
+
+C         
+----------
+
+ab        
+ab        
+
+--- 2 row(s) selected.
+>>
+>>--use named param inside various string functions
+>>set param ?hv _ucs2'w';
+>>select REPLACE(_ucs2'abw', ?hv, _ucs2'z') from (values(1))t;
+
+(EXPR)
+------
+
+abz   
+
+--- 1 row(s) selected.
+>>select REPLACE(_ucs2'abx', _ucs2'x', ?hv) from (values(1))t;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+abw                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+--- 1 row(s) selected.
+>>set param ?hv _ucs2'dfg';
+>>select REPLACE(?hv, _ucs2'fg', _ucs2'hi') from (values(1))t;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+dhi                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+--- 1 row(s) selected.
+>>set param ?hv2 _ucs2'fg';
+>>select REPLACE(?hv, ?hv2, _ucs2'jk') from (values(1))t;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+djk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+--- 1 row(s) selected.
+>>set param ?hv _ucs2'cd';
+>>select REPLACE(_ucs2'xycdcdzw', ?hv, _ucs2'abcdefghijklmnopqrstuvwxyz') from (values(1))t;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+xyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzzw                                                                                                                                                                                                                                                                                                                                                                        
+
+--- 1 row(s) selected.
+>>---
+>>set param ?hv 'w';
+>>select REPLACE('abw', ?hv,'z') from (values(1))t;
+
+(EXPR)
+------
+
+abz   
+
+--- 1 row(s) selected.
+>>select REPLACE('abx', 'x', ?hv) from (values(1))t;
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+abw                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+--- 1 row(s) selected.
+>>set param ?hv 'dfg';
+>>select REPLACE(?hv, 'fg', 'hi') from (values(1))t;
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+dhi                                                                                                                                                                                                                                                            
+
+--- 1 row(s) selected.
+>>set param ?hv2 'fg';
+>>select REPLACE(?hv, ?hv2, 'jk') from (values(1))t;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+djk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+--- 1 row(s) selected.
+>>set param ?hv 'cd';
+>>select REPLACE('xycdcdzw', ?hv, 'abcdefghijklmnopqrstuvwxyz') from (values(1))t;
+
+(EXPR)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+xyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzzw                                                                                                                                                        
+
+--- 1 row(s) selected.
+>>---
+>>set param ?hv _ucs2'w';
+>>select TRIM(?hv  FROM  _ucs2'wwwabcww') from (values(1))t;
+
+(EXPR)          
+----------------
+
+abc             
+
+--- 1 row(s) selected.
+>>set param ?hv _ucs2'wwwdfgww';
+>>select TRIM(_ucs2'w'  FROM  ?hv) from (values(1))t;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+dfg                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+--- 1 row(s) selected.
+>>---
+>>set param ?hv 'w';
+>>select TRIM(?hv  FROM  'wwwabcww') from (values(1))t;
+
+(EXPR)  
+--------
+
+abc     
+
+--- 1 row(s) selected.
+>>set param ?hv 'wwwdfgww';
+>>select TRIM('w' FROM  ?hv) from (values(1))t;
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+dfg                                                                                                                                                                                                                                                            
+
+--- 1 row(s) selected.
+>>---
+>>set param ?hv _ucs2'b';
+>>select LOCATE(?hv, _ucs2'wwwabcww') from (values(1))t;
+
+(EXPR)    
+----------
+
+         5
+
+--- 1 row(s) selected.
+>>set param ?hv _ucs2'wwwdfgww';
+>>select LOCATE(_ucs2'f', ?hv) from (values(1))t;
+
+(EXPR)    
+----------
+
+         5
+
+--- 1 row(s) selected.
+>>---
+>>set param ?hv 'a';
+>>select LOCATE(?hv, 'wwwabcww') from (values(1))t;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>set param ?hv 'wwwdfgww';
+>>select LOCATE('g', ?hv) from (values(1))t;
+
+(EXPR)    
+----------
+
+         6
+
+--- 1 row(s) selected.
+>>---
+>>reset param ?hv;
+>>reset param ?hv2;
+>>
+>>--hexdecimal params
+>>set param ?h1 _ucs2 x'ffab 0064 0069';
+>>show params;
+PARAM ?p ab
+PARAM ?q ab
+PARAM ?ascii 12
+PARAM ?ucs2 12
+PARAM ?h1 ?di
+>>
+>>set param ?x _kanji x'abf0 6365';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?x _kanji x'abf0 6365';
+             ^ (14 characters from start of SQL statement)
+
+>>show params;
+PARAM ?p ab
+PARAM ?q ab
+PARAM ?ascii 12
+PARAM ?ucs2 12
+PARAM ?h1 ?di
+>>
+>>--negative tests
+>>
+>>-- can not set pattern with a string with charset prefix
+>>set pattern $$vol$$ _iso88591'$data08';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set pattern $$vol$$ _iso88591'$data08';
+                    ^ (21 characters from start of SQL statement)
+
+>>
+>>-- can not use a kanji param in a place where ucs2/iso88591 is expected
+>>set param ?x _kanji'12';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?x _kanji'12';
+             ^ (14 characters from start of SQL statement)
+
+>>select 1 from (values(1))x where _ucs2'ab' = ?x;
+
+*** ERROR[15016] PARAM ?x was not found.
+
+--- 0 row(s) selected.
+>>select 1 from (values(1))x where 'ab' = ?x;
+
+*** ERROR[15016] PARAM ?x was not found.
+
+--- 0 row(s) selected.
+>>
+>>-- can not use an ascii param in a place where ucs2/kanji is expected
+>>set param ?ascii '12';
+>>select 1 from (values(1))x where _ucs2'ab' = ?ascii;
+
+--- 0 row(s) selected.
+>>select 1 from (values(1))x where _kanji'ab' = ?ascii;
+
+*** ERROR[3010] Character set KANJI is not yet supported.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select 1 from (values(1))x where _kanji'ab' = ?ascii;
+                                      ^ (39 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- can not use a ucs2 param in a place where kanji is expected
+>>set param ?u _ucs2'12';
+>>select 1 from (values(1))x where _kanji'ab' = ?u;
+
+*** ERROR[3010] Character set KANJI is not yet supported.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select 1 from (values(1))x where _kanji'ab' = ?u;
+                                      ^ (39 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--kanji param in odd length
+>>set param ?k kanji'123';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?k kanji'123';
+             ^ (14 characters from start of SQL statement)
+
+>>set param ?k kanji'a';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?k kanji'a';
+             ^ (14 characters from start of SQL statement)
+
+>>
+>>--unnamed params
+>>
+>>delete from iso;
+
+--- 2 row(s) deleted.
+>>delete from ucs2;
+
+--- 1 row(s) deleted.
+>>
+>>prepare iso from insert into iso values(?);
+
+--- SQL command prepared.
+>>prepare ucs2 from insert into ucs2 values(?);
+
+--- SQL command prepared.
+>>
+>>--OK
+>>execute iso using _iso88591'a';
+
+--- 1 row(s) inserted.
+>> -- OK
+>>
+>>-- OK because it is not required that a string be in ANSI format
+>>execute iso using abb'a';
+
+--- 1 row(s) inserted.
+>>
+>>-- OK because of relaxation
+>>execute iso using _ucs2'a';
+
+--- 1 row(s) inserted.
+>>
+>>--OK
+>>execute ucs2 using _ucs2'a';
+
+--- 1 row(s) inserted.
+>>
+>>-- not OK because of incompatibility
+>>execute ucs2 using _ISO88591'a';
+
+--- 1 row(s) inserted.
+>>
+>>-- not OK because of incompatibility
+>>execute ucs2 using 'a';
+
+--- 1 row(s) inserted.
+>>
+>>-- not OK because of incompatibility
+>>execute ucs2 using _kanji'ab';
+
+*** ERROR[15001] A syntax error occurred at or before: _kanji
+
+>>
+>>-- should get a syntax error because the length is odd.
+>>execute ucs2 using _kanji'a';
+
+*** ERROR[15001] A syntax error occurred at or before: _kanji
+
+>>
+>>select c, converttohex(c) from iso;
+
+C           (EXPR)              
+----------  --------------------
+
+a           61202020202020202020
+abb'a'      61626227612720202020
+a           61202020202020202020
+
+--- 3 row(s) selected.
+>>select c, converttohex(c) from ucs2;
+
+C                     (EXPR)                                  
+--------------------  ----------------------------------------
+
+a                     0061002000200020002000200020002000200020
+a                     0061002000200020002000200020002000200020
+a                     0061002000200020002000200020002000200020
+
+--- 3 row(s) selected.
+>>
+>>drop table iso;
+
+--- SQL operation complete.
+>>drop table ucs2;
+
+--- SQL operation complete.
+>>
+>>log;

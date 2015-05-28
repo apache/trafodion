@@ -1,0 +1,896 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_ZN7SB_Smap3putEPKcS1_
+   fun:_ZN8SB_Props4loadEPKc
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   memcmp
+   Memcheck:Addr8
+   fun:__memcmp_sse4_1
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z14ms_getenv_boolPKcPb
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   msg_init
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_Z12msg_init_enviPPc
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_ZN7SB_Smap3putEPKcS1_
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap4getvEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap7removevEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z9test_smapv
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z14test_smap_enumv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_ZN7SB_Smap3putEPKcS1_
+   fun:_Z16test_smap_resizev
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap6resizeEi
+   fun:_ZN7SB_Smap3putEPKcS1_
+   fun:_Z16test_smap_resizev
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z16test_smap_resizev
+   fun:main
+}
+{
+   thread
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN9SB_Thread4Sthr6createEPcPFPvS2_ES2_
+   fun:_ZN9SB_Thread6Thread5startEv
+   fun:_ZL19sb_timer_tle_insertPKcxP14Timer_TLE_Type
+   fun:_ZL18sb_timer_start_comPKcb19Timer_TLE_Kind_TypeislPsiP15SB_Ms_Event_MgrPFviislE
+   fun:_Z14timer_start_cbislPsPFviislE
+   fun:_ZN11SB_TimerMap18timer_master_startEv
+   fun:_ZN11SB_TimerMap8put_lockEP11SB_TML_TypePvlPFvlS2_Eib
+   fun:_ZN11SB_TimerMap3putEP11SB_TML_TypePvlPFvlS2_Ei
+   fun:_Z14test_timer_mapv
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZL19sb_thread_sthr_dispPv
+   fun:start_thread
+   fun:clone
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN9SB_Thread4Sthr8set_nameEPc
+   fun:_ZL10thread_funPv
+   fun:_ZL19sb_thread_sthr_dispPv
+   fun:start_thread
+   fun:clone
+}
+{
+   thread
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN9SB_Thread4Sthr8set_nameEPc
+   fun:_ZL10thread_funPv
+   fun:_ZL19sb_thread_sthr_dispPv
+   fun:start_thread
+   fun:clone
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   smap
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN7SB_Smap6removeEPKcPc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap4getvEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap7removevEPKc
+   fun:_Z13test_smap_mapP7SB_Smap
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZN8SB_Props5storeEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZN8SB_Props5storeEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZN8SB_Props5storeEPKc
+   fun:_Z10test_propsv
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN8SB_ExcepC1ERKS_
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   excep
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN8SB_ExcepC1ERKS_
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN8SB_ExcepaSERKS_
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   excep
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN8SB_ExcepaSERKS_
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_Z10test_excepv
+   fun:main
+}
+{
+   thread
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN9SB_Thread4Sthr6createEPcPFPvS2_ES2_
+   fun:_ZN9SB_Thread6Thread5startEv
+   fun:_Z12test_thread2v
+   fun:main
+}
+{
+   thread
+   Memcheck:Addr8
+   obj:/lib64/libc-2.12.so
+   fun:_ZN9SB_Thread4Sthr6createEPcPFPvS2_ES2_
+   fun:_ZN9SB_Thread6Thread5startEv
+   fun:_Z12test_thread2v
+   fun:main
+}

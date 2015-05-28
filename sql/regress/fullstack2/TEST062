@@ -1,0 +1,260 @@
+-- TEST062	
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+--		Some random sqlci tricks, and
+--		CONTROL QUERY DEFAULT, CONTROL TABLE, CONTROL SESSION,
+--		SHOWCONTROL testing.
+#ifndef SEABASE_REGRESS
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
+#endif
+
+log LOG062 clear;
+
+?section ABC
+?section def;
+?section ghi ;
+?section jkl + foo
+?section mno+foo
+?section pqr_stu
+?section
+?section;
+?section ;
+?section1 bad
+?sectiona bad
+?ignoreb bad
+?ignore_2 bad
+?ignore not ok!
+abc"bad
+?ignore off (this is a syntax error)
+obey TEST062(abc);
+obey TEST062(DEF);
+obey TEST062(ghi);
+obey TEST062(jkl);
+obey TEST062(mno);
+obey TEST062(pqr);
+obey TEST062(pqr_stu);
+
+env;
+
+set catalog '';			-- 8008
+set catalog 'c.s';		-- 8008
+set schema  's.t.u';		-- 8009
+showcontrol query default showcontrol;	-- no settings in effect; no extlzd attr
+showcontrol all zzfoo;			-- no settings in effect; no extlzd attr
+control query shape cut;
+control table schema_x.t timeout '10';
+control query default SHOWCONTROL_SHOW_ALL 'on';
+showcontrol default catalog, match full; -- CAT
+showcontrol default schema, match full;  -- SCH
+set catalog ' a ';
+showcontrol default catalog, match full; -- A
+showcontrol default schema, match full;  -- SCH
+set schema 'x.y';
+showcontrol default catalog, match full; -- X
+showcontrol default schema, match full;  -- Y
+set schema ' " z " ';
+showcontrol default catalog, match full; -- X
+showcontrol default schema, match full;  -- " z"
+set catalog 'c';
+showcontrol default catalog, match full; -- C
+showcontrol default schema, match full;  -- " z"
+set schema ' z';
+showcontrol default catalog, match full; -- C
+showcontrol default schema, match full;  -- Z
+set schema ' aaa . bbb ';
+showcontrol default catalog, match full; -- AAA
+showcontrol default schema, match full;	 -- BBB
+set catalog 'ccc';
+--showcontrol default sch, match partial;-- CCC + BBB
+--showcontrol default sch, match full;	 -- empty
+showcontrol default schema, match full;  -- BBB
+showcontrol default catalog,match full;  -- CCC
+showcontrol default catalog, match full, no header; --- CCC (no header)
+showcontrol all schema, match full; 	 -- BBB
+showcontrol all sch, match full;	 -- empty
+showcontrol all showcontrol;		 -- unext. + support
+control query default aafoo 'z';	 -- 2050
+control query default zzfoo 'z';	 -- 2050
+control query default def_chunk_size 'z';	-- 2055
+control query default def_chunk_size '0';	-- 2055
+control query default def_chunk_size '';	-- 2055
+control query default def_chunk_size '1000';
+control query default def_chunk_size '-1000';	-- 2055
+control query default def_chunk_size '1.5e+12';	-- 2055
+control query default CPUCOST_DM_GET '1.5e+12';	-- valid
+showcontrol query default def_chunk;
+showcontrol all zzfoo;			-- no settings in effect; no attr
+showcontrol query default def_chunk;
+showcontrol query default;
+control query default CPUCOST_DM_GET '';	-- valid (revert to orig deflt)
+set schema $$TEST_SCHEMA$$;			-- revert to original regress setting
+
+control query default timeout '144';
+showcontrol default;
+control query default timeout reset;
+showcontrol default;
+showcontrol defaults readonly_cursor;	-- TRUE
+
+control query default * reset;
+
+#ifdef SEABASE_REGRESS
+control query default mode_seabase 'ON';
+#endif
+
+
+
+showcontrol default;
+showcontrol default timeout, match full;
+showcontrol defaults REFERENCE_CODE;
+showcontrol defaults readonly_cursor;	-- none in effect
+
+control table * reset;
+control table a timeout ' 123 ';
+control table b timeout '345';
+control table b mdam '   off ';
+control table c timeout '567';
+control table b timeout reset;
+control table "*" timeout '789';
+showcontrol table;
+control table * reset;
+showcontrol table;
+
+control table a timeout ' 123 ';
+control table b timeout '345';
+control table b mdam '   off ';
+control table * timeout '777';
+control table c timeout '567';
+showcontrol table;
+
+control table a timeout ' 123 ';
+control table b timeout '345';
+control table * timeout reset;
+showcontrol table;
+
+control table b timeout '345';
+control table b mdam 'off';
+control table b * reset;
+showcontrol table;
+control table b timeout '345';
+control table b mdam 'off';
+control table b reset;
+showcontrol table;
+
+control table a mdam 'on';
+control table b timeout '3';
+showcontrol table;
+control table * * reset;
+showcontrol table;
+control table b timeout '4';
+control table b timeout '';		-- equiv to reset
+showcontrol table;
+control table b timeout '5';
+control table b timeout ' reset ';
+showcontrol table;
+control table b timeout '6';
+control table b * '7';			-- syntax error
+control table * * '8';			-- syntax error
+control table * * ' ';			-- equiv to reset
+showcontrol table;
+
+control session ' abc ' ' xy ';
+showcontrol session;
+control session 'abc' ' ';
+showcontrol session;
+control session 'abc' 'xy Z';
+control session ' ' '';
+showcontrol session;
+control session ' ' 'x';
+
+control session 'abc' 'xy  Z';
+control session 'eee' reset;
+showcontrol session;
+control session 'abc' reset;
+showcontrol session;
+
+control session '_bc' 'xy';
+control session '' reset;
+showcontrol session;
+control session '_a.b$c9' 'xy';
+control session ' a b c' 'xy';		-- syn err
+control session * reset;
+showcontrol session;
+
+-- Genesis 10-981211-5986 and 10-981217-9085
+control query default timeout '4567';
+#ifndef SEABASE_REGRESS
+set schema HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA;
+delete from SYSTEM_DEFAULTS where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
+insert into SYSTEM_DEFAULTS (ATTRIBUTE, ATTR_VALUE, ATTR_COMMENT)
+  values('OPTIMIZATION_LEVEL', 'FULL', 'in middle of TEST062...');
+delete from SYSTEM_DEFAULTS where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
+insert into SYSTEM_DEFAULTS (ATTRIBUTE, ATTR_VALUE, ATTR_COMMENT) values ('OPTIMIZATION_LEVEL',   '3 ',                '${NEO_COMMENT}');
+#else
+set schema $$TEST_SCHEMA$$;
+#endif
+
+env;							-- *not* $$TEST_SCHEMA$$
+showcontrol default OPTIMIZATION_LEVEL, match full;	-- 3 (*not* FULL!)
+showcontrol default timeout;				-- 4567
+#ifLINUX
+sh mkdir temp062;
+sh mv core.* temp062;
+#ifLINUX
+select TESTABORT;
+#ifLINUX
+sh rm core.*;
+sh mv temp062/core.* .;
+sh rmdir temp062;
+#ifLINUX
+table mxreborn;
+env;						-- still not $$TEST_SCHEMA$$
+showcontrol default OPTIMIZATION_LEVEL, match full;	-- still 3
+showcontrol default timeout;				-- still 4567
+--
+#ifndef SEABASE_REGRESS
+-- restore persistent and session state
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+  where ATTRIBUTE = 'OPTIMIZATION_LEVEL';
+control query default * reset;
+#else
+control query default * reset;
+control query default mode_seabase 'ON';
+set schema $$TEST_SCHEMA$$;
+#endif
+env;                                                    -- back to $$TEST_SCHEMA$$
+set schema $$TEST_SCHEMA$$;     -- back to $$TEST_SCHEMA$$
+showcontrol default OPTIMIZATION_LEVEL, match full;	-- 3
+showcontrol default timeout;                            -- back to 6000
+
+?section eof
+-- firstline cmt
+select * from  	-- another firstline cmt
+
+-- embedded cmt
+tazfoo		-- another embedded cmt
+;		-- post-; cmt
+
+		-- tab cmt
+
+invoke tazfoo
+select * from tazfoo; 
+select * from tazfoo; 
+invoke tazfoo
+
+

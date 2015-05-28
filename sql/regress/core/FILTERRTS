@@ -1,0 +1,110 @@
+
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+sed  "
+s/QID[ ]*MXID[A-Z0-9_]*/QID @QID@/
+s/QID[ ]*'MXID[A-Z0-9_]*'/QID '@QID@'/
+s/Qid[ ]*MXID[A-Z0-9_]*/Qid @QID@/
+s/qid[ ]*MXID[A-Z0-9_]*/qid @QID@/
+s/Start Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Start Time @StartTime@/
+s/End Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/End Time @EndTime@/
+s/Elapsed Time[ ]*[0-9]*:[0-9]*:[0-9]*.[0-9]*/Elapsed Time @ElpasedTime@/
+s/Compile Start Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Compile Start Time @CompileStartTime@/
+s/Compile End Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Compile End Time @CompileEndTime@/
+s/Execute Start Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Execute Start Time @ExecuteStartTime@/
+s/Execute End Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Execute End Time @ExecuteEndTime@/
+s/First Row Returned Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/First Row Returned Time @First Row Returned Time@/
+s/Execution Time[ ]*[0-9]*:[0-9]*:[0-9]*.[0-9]*/Execution Time @ExecutionTime@/
+s/Compile Time[ ]*[0-9]*:[0-9]*:[0-9]*.[0-9]*/Compile Time @CompileTime@/
+s/SQL Error Code[ ]*[0-1]*/SQL Error Code @SQL Error Code@/
+s/Estimated Accessed Rows[ ]*[0-9,]*/Estimated Accessed Rows @EstimatedAccessedRows@/
+s/Estimated Used Rows[ ]*[0-9,]*/Estimated Used Rows @EstimatedUsedRows@/
+s/Last Error before AQR[ ]*[0\-]*[0-9]*/Last Error before AQR @Last Error before AQR@/
+s/Number of AQR retries[ ]*[0-9,]*/Number of AQR retries @Number of AQR retries@/
+s/Delay before AQR[ ]*[0-9,]*/Delay before AQR @Delay before AQR@/
+s/Message Count[ ]*[0-9,]*/Message Count @MessageCount@/
+s/Message Bytes[ ]*[0-9,]*/Message Bytes @MessageBytes@/
+s/Stats Bytes[ ]*[0-9,]*/Stats Bytes @StatsBytes@/
+s/Disk IOs[ ]*[0-9,]*/Disk IOs @Disk IOs@/
+s/Lock Waits[ ]*[0-9,]*/Lock Waits @LockWaits@/
+s/Lock Escalations[ ]*[0-9,]*/Lock Escalations @LockEscalations@/
+s/SQL Process Busy Time[ ]*[0-9,]*/SQL Process Busy Time @SQLProcessBusyTime@/
+s/Disk Process Busy Time[ ]*[0-9,]*/Disk Process Busy Time @DiskProcessBusyTime@/
+s/SQL Space Allocated[ ]*[0-9,]*[ ]*/SQL Space Allocated @SQLSpaceAllocated@/
+s/SQL Space Used[ ]*[0-9,]*[ ]*/SQL Space Used @SQLSpaceUsed@/
+s/SQL Heap Allocated[ ]*[0-9,]*[ ]*/SQL Heap Allocated @SQLHeapAllocated@/
+s/SQL Heap Used[ ]*[0-9,]*[ ]*/SQL Heap Used @SQLHeapUsed@/
+s/EID Space Allocated[ ]*[0-9,]*[ ]*/EID Space Allocated @EIDSpaceAllocated@/
+s/EID Space Used[ ]*[0-9,]*[ ]*/EID Space Used @EIDSpaceUsed@/
+s/EID Heap Allocated[ ]*[0-9,\-]*[ ]*/EID Heap Allocated @EIDHeapAllocated@/
+s/EID Heap Used[ ]*[0-9,]*[ ]*/EID Heap Used @EIDHeapUsed@/
+s/Process Create Time[ ]*[0-9,]*/Process Create Time @ProcessCreateTime@/
+s/Processes Created[ ]*[0-9,]*/Processes Created @ProcessesCreated@/
+s/Opens[ ]*[0-9,]*/Opens @Opens@/
+s/Open Time[ ]*[0-9,]*/Open Time @OpenTime@/
+s/Query Id MXID[A-Z0-9_]*/Query Id @QID@/
+s/Number of Cpus[ ]*[0-9,]*/Number of Cpus @numberofcpus@/
+s/Number of SQL Processes[ ]*[0-9,]*/Number of SQL Processes @numberofsqlprocesses@/
+s/Execution Priority[ ]*[0-9,-]*/Execution Priority @executionpriority@/
+s/Transaction Id[ ]*[\0-9A-Z().-]*/Transaction Id @transactionId@/
+s/Node name[ ]*[\0-9A-Za-z().:-]*/Node name @nodeName@/
+s/RMS Version[ ]*[0-9,]*/RMS Version @rmsVersion@/
+s/SSCP PID[ ]*[0-9,]*/SSCP PID @sscpPID@/
+s/SSCP Creation Timestamp[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/SSCP Creation Timestamp @sscpCreationTimestamp@/
+s/SSMP PID[ ]*[0-9,]*/SSMP PID @ssmpPID@/
+s/SSMP Creation Timestamp[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/SSMP Creation Timestamp @ssmpCreationTimestamp@/
+s/Stats Heap Allocated[ ]*[0-9,]*/Stats Heap Allocated @statsHeapAllocated@/
+s/Stats Heap Used[ ]*[0-9,]*/Stats Heap Used @statsHeapUsed@/
+s/Stats Heap High WM[ ]*[0-9,]*/Stats Heap High WM @statsHeapHighWM@/
+s/No.of Process Stats Heaps[ ]*[0-9,]*/No.of Process Stats Heaps @noOfProcessStatsHeaps@/
+s/No.of Process Regd.[ ]*[0-9,]*/No.of Process Regd. @noOfProcessRegd@/
+s/No.of Query Fragments Regd.[ ]*[0-9,]*/No.of Query Fragments Regd. @noOfQueryFragmentsRegd@/
+s/RMS Semaphore Owner[ ]*[0-9,]*/RMS Semaphore Owner @rmsSemaphoreOwner@/
+s/No.of SSCPs Opened[ ]*[0-9,]*/No.of SSCPs Opened @noOfSSCPsOpened@/
+s/No.of SSCPs Open Deleted[ ]*[0-9,]*/No.of SSCPs Open Deleted @noOfSSCPsOpenDeleted@/
+s/Last GC Time[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/Last GC Time @lastGCTime@/
+s/Queries GCed in Last Run[ ]*[0-9,]*/Queries GCed in Last Run @queriesGCedInLastRun@/
+s/Total Queries GCed[ ]*[0-9,]*/Total Queries GCed @totalQueriesGCed@/
+s/SSMP Request Message Count[ ]*[0-9,]*/SSMP Request Message Count @ssmpRequestMessageCount@/
+s/SSMP Request Message Bytes[ ]*[0-9,]*/SSMP Request Message Bytes @ssmpRequestMessageBytes@/
+s/SSMP Reply Message Count[ ]*[0-9,]*/SSMP Reply Message Count @ssmpReplytMessageCount@/
+s/SSMP Reply Message Bytes[ ]*[0-9,]*/SSMP Reply Message Bytes @ssmpReplyMessageBytes@/
+s/SSCP Request Message Count[ ]*[0-9,]*/SSCP Request Message Count @sscpRequestMessageCount@/
+s/SSCP Request Message Bytes[ ]*[0-9,]*/SSCP Request Message Bytes @sscpRequestMessageBytes@/
+s/SSCP Reply Message Count[ ]*[0-9,]*/SSCP Reply Message Count @sscpReplytMessageCount@/
+s/SSCP Reply Message Bytes[ ]*[0-9,]*/SSCP Reply Message Bytes @sscpReplyMessageBytes@/
+s/No. Query Invalidation Keys[ ]*[0-9]*/No. Query Invalidation Keys/
+s/RMS Stats Reset Timestamp[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/RMS Stats Reset Timestamp @rmsStatsResetTimestamp@/
+/8 EX_HASH_GRBY[A-Z ]*/{N
+s/8 EX_HASH_GRBY[A-Z ]*\n[0-9, -]*/8 #ex_hash_grby bmoStats/
+}
+/bmoStats[ ]*/{N
+s/bmoStats[ ]*\n[0-9, -]*/@bmoStats@/
+}
+s/EX_ROOT[ ]*[0-9, |]*/EX_ROOT @exRootCounters@/
+s/EX_SPLIT_TOP[ ]*[0-9, |]*/EX_SPLIT_TOP @exSplitTopCounters@/
+s/EX_SPLIT_BOTTOM[ ]*[0-9, |]*/EX_SPLIT_BOTTOM @exSplitBottomCounters@/
+s/EX_SEND_TOP[ ]*[0-9, |]*/EX_SEND_TOP @exSendTopCounters@/
+s/EX_SEND_BOTTOM[ ]*[0-9, |]*/EX_SEND_BOTTOM @exSendBottomCounters@/
+s/EX_HASH_GRBY[ ]*[0-9, |A-Z]*/EX_HASH_GRBY @exHashGrbyCounters@/
+s/EX_PARTN_ACCESS[ ]*[A-Za-z0-9, |.#]*/EX_PARTN_ACCESS @exPartnAccessCounters@/
+s/EX_EID_ROOT[ ]*[0-9, |]*/EX_EID_ROOT @exEidRootCounters@/
+s/EX_DP2_SUBS_OPER[ ]*[0-9, |]*/EX_DP2_SUBS_OPER @exDp2SubsOperCounters@/
+
+/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*/{N
+s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/
+}
+/[A-Z0-9]*\.[A-Z0-9]*\.TSTATI[ ]*/{N
+s/[A-Z0-9]*\.[A-Z0-9]*\.TSTATI[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTATI pertableStats/
+}
+/TSTAT(TSTAT)[ ]*/{N
+s/TSTAT(TSTAT)[ ]*\n[0-9 ]*\n[0-9 ,]*/TSTAT(TSTAT) @pertableStats@/
+}
+/pertableStats/{N
+s/pertableStats\n[0-9 ,]*/@pertableStats@/
+}
+" $fil

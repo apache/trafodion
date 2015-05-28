@@ -1,0 +1,11 @@
+  log TEMP1 clear;
+  log TEMP1;
+  execute stat1;
+  log;
+
+  log TEMP2 clear;
+  log TEMP2;
+  execute stat2;
+  log;
+
+  

@@ -1,0 +1,8 @@
+979a980,981
+> *** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+> 
+1042a1045,1048
+> *** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+> 
+> *** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+> 

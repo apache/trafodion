@@ -1,0 +1,220 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# sqcore - script to collect any user core files generated in /database or $MY_SQROOT 
+# across the cluster, and move them to a central location on the head node. Currently, 
+# the script assumes it is run on the head node. The script assumes that the user
+# will take space limitations into consideration.
+#
+
+function Usage {
+
+    echo 
+    echo "Usage: $0 [ -d <directory> | -q | -r | -h  ]"
+    echo 
+    echo "-d        Head node directory where the users cluster core files are to be moved"
+    echo "          The default location is \$MY_SQROOT/logs"
+    echo "-q        Quiet mode (no prompts)"
+    echo "-r        Remove all of a users cluster core files (excluding head node)"
+    echo "-h        Help"
+    echo
+
+}
+
+function GetOpts {
+
+    while getopts "i:d:qrh" arg
+      do
+      case $arg in 
+	  d)
+	      to_path=${OPTARG}
+	      ;;
+	  q)
+	      SQ_QUIET=1
+	      ;;
+          r)
+              SQ_REMOVE=1
+              ;;
+	  h)
+	      Usage;
+	      exit 1;
+              ;;
+          *)
+              Usage;
+              exit 1;
+              ;;
+      esac
+    done
+
+}
+
+function DisplayInput {
+
+    echo
+    echo "Headnode                          : $head"
+    echo "Current Node                      : $current"
+    echo -n "Directory to move files (-d)      : "
+    if [ ! -z $to_path ]; then
+        echo $to_path
+    else
+        echo "Not Specified"
+    fi
+    echo
+
+}
+
+
+###########################################################
+# MAIN portion of sqcore begins
+###########################################################
+declare -i SQ_QUIET=0
+declare -i SQ_REMOVE=0
+declare -i ERR_FLAG=0
+head=`headnode`
+current=`uname -n`
+to_path=$MY_SQROOT/logs
+
+GetOpts $@
+
+if [[ $head != $current ]]; then
+    echo
+    echo "The $0 script must be run on the headnode ($head)."
+    echo
+    exit 1
+fi
+
+if [ ! -d "$to_path" ]; then
+    echo
+    echo "Directory to hold core file does not exist."
+    echo "Please create $to_path (or validate path) and retry. Exiting..."
+    echo
+    exit 2;
+fi
+
+DisplayInput
+
+if [ $SQ_QUIET '==' 0 ]; then
+    if [ $SQ_REMOVE '==' 1 ]; then 
+        echo "All of the users core files will be removed from cluster (excluding head node)"
+    fi
+
+    echo -n "Do you want to continue (Enter n to exit, Any other key to continue): "
+    read ans
+    if [[ $ans == "n" ]]; then
+        echo "Exiting..."
+        exit 3;
+    fi
+    echo
+fi
+
+# Create a list of directory to check for core files (/database and $MY_SQROOT/sql searches.
+# Note that '$' is used as the field separator to parse out node, volume, and path
+
+# The following can be used to pull the database locations from the sqconfig file,
+# which assumes that the file is correctly configured. Note, that if used the zero-based
+# node calculation should be un-commented from the below "if" statement.
+#dirlist=`grep database $MY_SQROOT/sql/scripts/sqconfig | /bin/gawk '{print $2"$"$3"/"$1}'; $SQ_PDSH -a "find -L $MY_SQROOT/sql -name core\.\* | /bin/gawk -F\/core '{print \\\$1}' | uniq" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}'`
+
+MY_NODES_PRM=" -a "
+if [ -n "$MY_NODES" ];then
+    MY_NODES_PRM=$MY_NODES
+fi
+
+dirlist=`$SQ_PDSH $MY_NODES_PRM "find -L $MY_SQROOT/sql -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L $MY_SQROOT/export -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L /database/u*/$USER -name core\.\* 2> /dev/null | /bin/gawk -F \/core '{print \\\$1}'" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}' 2> /dev/null`
+
+if [[ $dirlist == "" ]]; then
+    echo "No core files were found. Exiting..."
+    echo
+    exit 4;
+fi
+
+for i in $dirlist
+do
+    node=`echo $i | /bin/gawk -F$ '{print $1}'`
+    basevolpath=`echo $i | /bin/gawk -F$ '{print $2}'`
+    volume=`echo $i | /bin/gawk -F$ '{print $3}'`
+    # Create path w/escape chars in order to recognize the "\$" in pdsh/scp commands
+    if [[ $volume != "" ]]; then
+        # Need to add one to the zero-based node number if pulled from sqconfig
+        #node=$((1 + `echo $i | /bin/gawk -F$ '{print $1}'`))
+        path="$basevolpath\\\$$volume"
+    else
+        path=`echo $basevolpath | /bin/gawk -F\/core '{print $1}'`
+    fi
+
+    echo "Searching for core files in n$node:$path..."
+    corelist=`$SQ_PDSH -w n$node "ls $path | grep ^core."`
+
+    # Create a list of core files
+    for j in $corelist
+    do
+        file=`echo $j | grep -o "core.*"`
+        if [ $file ]; then
+            # Remove core file if -r supplied
+	    if [ $SQ_REMOVE '==' 1 ]; then
+                echo "  Removing $path/$j..."
+                $SQ_PDSH -w n$node rm -rf $path/$j
+            # Otherwise move core file to head node; in order to prevent overwrites
+            # the core files will be moved using the following format:
+            #   <filename>.<node>.<volume>
+            else
+                # Copy core file only if have proper ownership
+                cowner=`$SQ_PDSH -w n$node ls -l $path/$j | tail -1 | /bin/gawk '{print $4}'`
+                if [[ $cowner != $USER ]]; then
+                    echo "  Current user ($USER) cannot move $path/$j ($cowner). Skipping...";
+                else
+                    echo "  Moving $path/$j..."
+                    if [[ `ls $to_path | grep $file` == "" ]]; then
+                        if [[ $volume != "" ]]; then
+                            scp n$node:$path/$j $head:$to_path/$file.n$node.$volume &> /dev/null
+                        else
+                            scp n$node:$path/$j $head:$to_path/$file.n$node.MY_SQROOT &> /dev/null
+                        fi
+		        if [[ $? != 0 ]]; then
+                            echo "  Error while moving n$node:$path/$j..."
+                            ERR_FLAG=1
+                        else
+                             # If successfully copied off the file, now remove it.
+                             # Is there an scp equivalent for moving files? 
+                             $SQ_PDSH -w n$node rm -rf $path/$j
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    done
+done
+
+echo
+if [ $ERR_FLAG '==' 1 ]; then
+    echo "ERROR: All core files were NOT moved to: $to_path"
+else
+    if [ $SQ_REMOVE '==' 1 ]; then
+        echo "All user core files were removed (excluding head node)."
+    else
+        echo "Moved core files reside in: $to_path"
+    fi
+    echo "Done with $0."
+fi
+echo
+
+exit 0
+

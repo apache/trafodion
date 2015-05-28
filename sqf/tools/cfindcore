@@ -1,0 +1,43 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# 11/12/22 Now uses $MY_NODES
+# 13/05/06 Now allows -c parameter and -g parameters.
+
+grepPortion="core\.\*"
+countPortion="cat"
+while getopts 'hcg:' parmOpt
+do
+    case $parmOpt in
+    h)  echo "Syntax: $0  -h -c -g <expression>"
+        echo " Finds all cores on \$MY_NODES"
+        echo "-h to get this help text"
+        echo "-c to number the cores and therefore give a count."
+        echo "-g <expression> to grep the core names with the expresson specified."
+        exit 0;;
+    c)  countPortion="cat -n";;
+    g)  grepPortion="core\.\*${OPTARG}\*";;
+    ?)  echo "Invalid option specified.   Only -h, -g or -c are allowed."
+        exit 0;;
+    esac
+done
+
+# searches standard core location /cores/$UID for core files
+pdsh $MY_NODES -N "find -L /local/cores/$UID -name ${grepPortion} -exec ls -l --time-style +'%Y-%m-%d %H:%M:%S' '{}' \; \
+  | awk '{print \$6,\$7,\$8}' " 2>/dev/null | sort | ${countPortion}

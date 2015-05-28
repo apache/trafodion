@@ -1,0 +1,437 @@
+
+ @@@@@HELP
+
+   The command interface supports these commands:
+
+    @           LOG                     SHOW ALIAS
+    ALIAS       OBEY                    SHOW ALIASES
+    CLEAR       QUIT                    SHOW COLSEP
+    CONNECT     RECONNECT               SHOW ERRORCODE
+    DELAY       REPEAT                  SHOW HISTOPT
+    DISCONNECT  RESET LASTERROR         SHOW IDLETIMEOUT
+    ENV         SAVEHIST                SHOW LASTERROR
+    EXIT        SESSION (SHOW SESSION)  SHOW MARKUP
+                SET COLSEP              SHOW REMOTEPROCESS
+    FC          SET CONNECTOPT ROLE     SHOW ROLE                    
+    GOTO        SET HISTOPT             SHOW SESSION
+    HELP        SET IDLETIMEOUT         SHOW TIME    
+    HISTORY     SET MARKUP              SHOW TIMING
+    IF...THEN   SET PROMPT              SPOOL   
+    LABEL       SET TIME                VERSION
+    LOCALHOST   SET TIMING                    
+              
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET
+
+   The command interface supports these SET commands:
+
+    SET COLSEP           SET IDLETIMEOUT  SET TIME    
+    SET CONNECTOPT ROLE  SET MARKUP       SET TIMING  
+    SET HISTOPT          SET PROMPT                   
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW
+
+   The command interface supports these SHOW commands:
+
+    SHOW ALIAS      SHOW IDLETIMEOUT   SHOW SESSION   
+    SHOW ALIASES    SHOW LASTERROR     SHOW TIME      
+    SHOW COLSEP     SHOW MARKUP        SHOW TIMING    
+    SHOW ERRORCODE  SHOW REMOTEPROCESS           
+    SHOW HISTOPT    SHOW ROLE                       
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@@
+
+   The @ command executes the SQL statements and interface commands contained
+   in a specified script file. The @ command is executed the same as the OBEY
+   command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@ALIAS
+
+   The ALIAS command allows you to map a string to any interface or SQL
+   command. The syntax of the interface or SQL command is checked only on
+   execution of the mapped string. This command replaces only the first token
+   of a command string, which allows the rest of the tokens to be treated as
+   parameters.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@CLEAR
+
+   The CLEAR command clears the interface window so that only the prompt
+   appears at the top of the window. CLEAR does not clear the log file or
+   reset the settings of the session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@CONNECT
+
+   The CONNECT command creates a new connection to the Trafodion platform from
+   the current or existing Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@DELAY
+
+   The DELAY command allows the Command Interface session to be in sleep
+   mode for the specified interval.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@DISCONNECT
+
+   The DISCONNECT command terminates the connection from the Trafodion
+   platform, not from the Command Interface.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@ENV
+
+   ENV displays attributes of the current Command Interface session. You
+   can also use the SESSION and SHOW SESSION commands to perform the same
+   function.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@EXIT
+
+   The EXIT command disconnects from and exits the Command Interface.
+   EXIT can return a status code. If no status code is specified, zero is
+   returned by default. In addition, a conditional statement can be appended
+   to the command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@FC
+
+   The FC command allows you to edit and reissue a command in the history
+   buffer of a Command Interface session. You can display the commands
+   in the history buffer by using the HISTORY command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@GOTO
+
+   The GOTO command allows you to jump to a designated point in the command
+   history. The point in the command history is designated by a LABEL
+   command. All commands executed after a GOTO statement are ignored until
+   the specified label is set. To set a label, use the LABEL command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@HISTORY
+
+   The HISTORY command displays recently executed commands, identifying each
+   command by a number that you can use to reexecute or edit the command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@IF...THEN
+
+   IF...THEN statements allow for the conditional execution of actions. If
+   the condition is met, the action is executed; otherwise, no action is
+   taken.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@LABEL
+
+   The LABEL command marks a point in the command history that you can jump
+   to by using the GOTO command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@LOCALHOST
+
+   The LOCALHOST command allows you to execute client machine commands.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@LOG
+
+   The LOG command logs the entered commands and their output from the
+   Command Interface to a log file. If this is an obey script file, then
+   the command text from the obey script file is shown on the console.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@MODE
+
+   This command is no longer supported in TRAFCI.
+
+ @@@@@OBEY
+
+   The OBEY command executes the SQL statements and interface commands of a
+   specified script file or an entire directory. This command accepts a
+   single filename or a filename with a wild-card pattern specified.
+   Executing the OBEY command without optional parameters prompts you to
+   enter a filename. If a filename is not specified, then *.sql is used.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@QUIT
+
+   The QUIT command disconnects from and exits the Command Interface.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@RECONNECT
+
+   The RECONNECT command creates a new connection to the Trafodion platform
+   using the login credentials of the last successful connection.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@REPEAT
+
+   The REPEAT command reexecutes a previous command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@RESET LASTERROR
+
+   The RESET LASTERROR command resets the last error code to 0.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SAVEHIST
+
+   The SAVEHIST command saves the session history in a user-specified file.
+   The session history consists of a list of the commands that were executed
+   in the Command Interface session before the SAVEHIST command.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET COLSEP
+
+   The SET COLSEP command sets the column separator and allows you to control
+   the formatting of the result displayed for SQL queries. The SET COLSEP
+   command specifies a delimiter value to use for separating columns in each
+   row of the results. The default delimiter is " "(white space).
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET CONNECTOPT ROLE
+
+   The SET CONNECTOPT ROLE command changes the role during a Command Interface 
+   session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET HISTOPT
+
+   The SET HISTOPT command sets the history option and controls how commands
+   are added to the history buffer. By default, commands within a script file
+   are not added to history. If the history option is set to "ALL," all the
+   commands in the script file are added to the history buffer. If no options
+   are specified, DEFAULT is used.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET IDLETIMEOUT
+
+   The SET IDLETIMEOUT command sets the idle timeout value for the current
+   session. The idle timeout value of a session determines when the session
+   expires after a period of inactivity. The default is 30 minutes.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET MARKUP
+
+   The SET MARKUP command sets the markup format and controls how results are
+   displayed by the Command Interface.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET PROMPT
+
+   The SET PROMPT command sets the prompt of the current session to a
+   specified string and/or to the session variables, which start with %. The
+   default prompt is SQL> in SQL mode.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET TIME
+
+   The SET TIME command causes the local time of the client workstation to be
+   displayed as part of the interface prompt. By default, the local time is
+   not displayed in the interface prompt.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SET TIMING
+
+   The SET TIMING command causes the elapsed time to be displayed after each
+   SQL statement executes. This command does not cause the elapsed time of
+   interface commands to be displayed. By default, the elapsed time is off.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW ALIAS
+
+   The SHOW ALIAS command displays all or a set of aliases available in the
+   current Command Interface session. If a pattern is specified, all aliases
+   matching the pattern are displayed. By default, all aliases in the current
+   session are displayed.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW ALIASES
+
+   The SHOW ALIASES command displays all the aliases available in the current
+   Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW COLSEP
+
+   The SHOW COLSEP command displays the value of the column separator for the
+   current Command Interface session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW ERRORCODE
+
+   The SHOW ERRORCODE command is an alias for the SHOW LASTERROR command.
+   ERRORCODE is an alias for LASTERROR.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW HISTOPT
+
+   The SHOW HISTOPT command displays the value that has been set for the
+   history option.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW IDLETIMEOUT
+
+   The SHOW IDLETIMEOUT command displays the idle timeout value of the
+   current Command Interface session. The idle timeout value of a session
+   determines when the session expires after a period of inactivity.
+   The default is 30 minutes.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW LASTERROR
+
+   The SHOW LASTERROR command displays the error of the last SQL statement
+   that was executed. If the query was successful, 0 is returned; otherwise
+   an SQL error code is returned.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW MARKUP
+
+   The SHOW MARKUP command displays the value set for the markup option.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW MODE
+
+   This command is no longer supported in TRAFCI.
+
+ @@@@@SHOW REMOTEPROCESS
+ 
+   The SHOW REMOTEPROCESS command displays the process name of the DCS
+   server that is handling the current connection.
+   
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW ROLE
+
+   The SHOW ROLE command displays the role in which you are currently logged
+   on during an TRAFCI session.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW SESSION & SESSION
+
+   SHOW SESSION or SESSION displays attributes of the current Command
+   Interface session. You can also use the ENV command to perform the
+   same function.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW TIME
+
+   The SHOW TIME command displays whether the setting for the local time in
+   the interface prompt is ON or OFF.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SHOW TIMING
+
+   The SHOW TIMING command displays whether the setting for the elapsed time
+   is ON or OFF.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@SPOOL
+
+   The SPOOL command logs the entered commands and their output from the
+   Command Interface to a log file.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.
+
+ @@@@@VERSION
+
+   The VERSION command displays the build versions of the Trafodion platform,
+   Trafodion Connectivity Services, Trafodion JDBC Type 4 Driver, and Command
+   Interface.
+
+   For more information, see the Trafodion Command Interface
+   (TRAFCI) Guide.

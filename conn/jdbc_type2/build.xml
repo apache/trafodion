@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+
+<project name="jdbcT2" default="dist">
+
+    <property id="base.dir" name="base.dir" value="."/>
+    <exec executable="/bin/sh">
+        <arg line="getBuildInfo"/>
+    </exec>   
+    <property file="buildId"/>
+    <property name="vproc.str" value="Traf_JDBC_Type2_Build_${bldId}"/>
+    <property name="my_sqroot" value="../../sqf"/>
+
+    <property name="dest.src" value="${base.dir}/src/main/java"/>
+    <property name="package.src" value="${dest.src}/org/trafodion/jdbc/t2"/>
+    <property name="native.src" value="${base.dir}/native"/>
+    <property name="dest.classes" value="${base.dir}/classes"/>
+    <tstamp>
+       <format property="now.timestamp" pattern="yyyy_MM_dd" locale="en" />
+    </tstamp>
+
+    <target name="dist" depends="native">
+       <mkdir dir="dist"/>
+       <property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
+       <property file="jdbct2.jar.version"/>
+       <jar destfile="dist/jdbcT2.jar" compress="true">
+           <fileset dir="classes"/>
+           <manifest id="mf">
+              <attribute name="Main-Class" value="JdbcT2"/>
+              <attribute name="VPROC" value="${vproc.str}"/>
+              <attribute name="Implementation-Version-1" value="${Implementation-Version-1}"/>
+              <attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
+              <attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
+              <attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>
+              <attribute name="Implementation-Version-5" value="${Implementation-Version-5}"/>
+              <attribute name="Implementation-Version-6" value="${Implementation-Version-6}"/>
+           </manifest>
+       </jar>
+      <copy todir="${my_sqroot}/export/lib" overwrite="yes" file="dist/jdbcT2.jar"/>
+    </target>
+
+    <target name="clean">
+      <delete dir="${dest.classes}"/>
+      <delete>
+        <fileset dir="${native.src}" includes="org_*.h"/>
+      </delete>
+      <delete file="${package.src}/DriverInfo.java"/>
+      <delete dir="dist"/>
+      <exec dir="." executable="/usr/bin/make">
+            <arg line="clean"/>
+      </exec>
+     <delete file="${my_sqroot}/export/lib/jdbcT2.jar"/>
+     <delete file="buildId"/>
+    </target>
+
+    <target name="init"> 
+      <mkdir dir="${dest.classes}"/>
+    </target>
+
+    <target name="compile" depends="init">
+<!--
+      <copy file="${package.src}/DriverInfo.java-tmpl" tofile="${package.src}/DriverInfo.java" overwrite="yes"/>
+-->
+      <copy todir="${dest.classes}" overwrite="yes" file="${dest.src}/SQLMXT2Messages_en.properties"/>
+<!--
+      <replace file="${package.src}/DriverInfo.java" token="@@@" value="${vproc.str}" />
+-->
+      <exec executable="/bin/sh">
+         <arg line="../doDrvInfo ${package.src}/DriverInfo.java ${package.src}/DriverInfo.java-tmpl ${vproc.str}"/>
+      </exec>   
+
+      <javac destdir="${dest.classes}" srcdir="${dest.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar:${dest.classes}" includeAntRuntime="false"/>
+    </target>
+
+    <target name="jni" depends="compile">
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.JdbcDebug" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.DataWrapper" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXCallableStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXConnection" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXDatabaseMetaData" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.T2Driver" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXPreparedStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXResultSet" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXStatement" destdir="${native.src}" />
+    </target>
+
+    <target name="native" depends="jni" >
+<!--
+         <copy file="${native.src}/Vproc.cpp-tmpl" tofile="${native.src}/Vproc.cpp" overwrite="yes"/>
+         <copy file="${native.src}/Vproc.h-tmpl" tofile="${native.src}/Vproc.h" overwrite="yes"/>
+
+         <replace file="${native.src}/Vproc.cpp" token="@@@" value="${vproc.str}" />
+         <replace file="${native.src}/Vproc.h" token="@@@" value="${vproc.str}" />
+-->
+<!--
+         <exec dir="." executable="/usr/bin/make">
+            <arg line="clean"/>
+         </exec>
+         <exec dir="." executable="/usr/bin/make">
+            <arg line=""/>
+         </exec>
+-->
+     </target>
+
+</project>

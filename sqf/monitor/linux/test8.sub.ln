@@ -1,0 +1,49 @@
+!
+! Test TM sync requests with and without collisions 
+!           (Logical Node configuration)
+!
+!   Note: 'sqconfig' node section must have:
+!         6 virtual nodes 
+!                or 
+!         6 logical nodes (3 physical nodes w/ 2 logical nodes each)
+!
+! For Example:
+!
+!   begin node
+!   node-id=0;node-name=n7;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=1;node-name=n7;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   node-id=2;node-name=n6;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=3;node-name=n6;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   node-id=4;node-name=n5;cores=0-1;processors=2;roles=connection,aggregation,storage
+!   node-id=5;node-name=n5;cores=2-3;processors=2;roles=connection,aggregation,storage
+!   end node
+!
+exec {type dtm,nowait,nid 5,out TM05.lst}testtm
+exec {type dtm,nowait,nid 4,out TM04.lst}testtm
+exec {type dtm,nowait,name $TM03, nid 3,out TM03.lst}testtm
+exec {type dtm,nowait,name $TM02, nid 2,out TM02.lst}testtm
+exec {type dtm,nowait,nid 1,out TM01.lst}testtm
+exec {type dtm,nowait,nid 0,out TM00.lst}testtm
+delay 5
+ps {DTM}
+
+! Start Test3 - No collision commit test
+event {DTM} 3
+delay 5
+
+! Start Test4 - No collision abort test
+event {DTM} 4
+delay 5
+
+! Start Test5 - Collision commit test
+event {DTM} 5
+delay 30 
+
+! Start Test6 - Collision abort test
+event {DTM} 6
+delay 30
+ 
+! Start Test7 - Dead TM test
+event {DTM} 7
+delay 10
+exit !

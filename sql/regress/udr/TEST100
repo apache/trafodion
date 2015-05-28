@@ -1,0 +1,1008 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- TEST100   11/09/2000
+-- CALL statement tests
+--
+-- About the naming conventions in this test:
+-- Most, not all, SPJs in this test have a name of the form
+--
+--    T100_<modes>_<types>
+--
+-- <modes> is a set of characters, one per param, with each character
+-- representing a parameter mode according to the following rules:
+--
+--    i = IN
+--    o = OUT
+--    x = INOUT
+--
+-- <types> is a set of characters, one per param, with each character
+-- representing a parameter type according to the following rules:
+--
+--   c = CHAR
+--   v = VARCHAR
+--   i = INTEGER
+--   s = SMALLINT
+--   l = LARGEINT
+--   n = NUMERIC(9,0)
+--   b = NUMERIC(128,5) (BigNum)
+--   e = DECIMAL(9,0)
+--   f = FLOAT(0-22)
+--   g = FLOAT(23-54)
+--   r = REAL
+--   p = DOUBLE PRECISION
+--   d = DATE
+--   t = TIME(0)
+--   m = TIMESTAMP(6)
+--
+-- Examples:
+--   (IN int, OUT int) = T100_io_ii
+--   (IN int, INOUT real, OUT char) = T100_ixo_irc
+--
+
+set schema $$TEST_SCHEMA$$;
+
+--------------------------------------------------------------------------
+-- Main test driver section
+--------------------------------------------------------------------------
+set NAMETYPE ANSI;
+set schema $$TEST_SCHEMA$$;
+--grant component privilege CREATE_PROCEDURE on SQL_OPERATIONS to PUBLIC;
+obey TEST100(clean_up_procs);
+obey TEST100(clean_up_files);
+obey TEST100(clean_up_tables);
+log LOG100 clear;
+obey TEST100(make_patterns);
+obey TEST100(java_compile);
+obey TEST100(set_up);
+obey TEST100(tests);
+log;
+obey TEST100(clean_up_procs);
+obey TEST100(clean_up_tables);
+obey TEST100(clean_up_files);
+exit;
+
+?section clean_up_files
+--------------------------------------------------------------------------
+-- Remove any files that were generated during the last test run
+--------------------------------------------------------------------------
+sh rm -f t100.class t100.jar TEST100.patterns;
+sh rm -f t100.data;
+
+?section java_compile
+--------------------------------------------------------------------------
+-- To compile Java code we invoke a script from regress/tools that uses
+-- environment variables to determine the source and target directories
+--------------------------------------------------------------------------
+log;
+sh sh $$scriptsdir$$/tools/java-compile.ksh t100.java 2> LOG100-SECONDARY | tee -a LOG100;
+sh sh $$scriptsdir$$/tools/java-archive.ksh t100.jar t100.class 2>> LOG100-SECONDARY | tee -a LOG100;
+log LOG100;
+
+
+?section clean_up_procs
+drop procedure T100_io_nn;
+drop procedure T100_io_bb;
+drop procedure T100_io_bb_2;
+drop procedure T100_io_ee;
+drop procedure T100_io_ss;
+drop procedure T100_io_ii;
+drop procedure T100_io_ll;
+drop procedure T100_io_ff;
+drop procedure T100_io_ff_2;
+drop procedure T100_io_gg;
+drop procedure T100_io_rr;
+drop procedure T100_io_pp;
+drop procedure T100_io_pp_2;
+drop procedure T100_ix_ir;
+drop procedure T100_io_cc;
+drop procedure T100_io_vv;
+drop procedure T100_io_dd;
+drop procedure T100_io_tt;
+drop procedure T100_io_mm;
+drop procedure T100_iii_iii;
+drop procedure T100_xxx_iii;
+drop procedure T100_ooo_iii;
+drop procedure T100_iiiiio_vinrdv;
+drop procedure T100_NAME_ixo_c;
+drop procedure T100_NAME_sch_ixo_c;
+drop procedure T100_NAME_catsch_ixo_c;
+drop procedure T100_NAME_ixo_vc;
+drop procedure T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;
+drop procedure T100_PARAM_none;
+drop procedure T100_PARAM_i_one;
+drop procedure T100_writeIntToFile;
+drop procedure T100_readIntFromFile;
+drop procedure T100_allTypes;
+drop procedure t100_divide;
+drop library T100;
+
+?section dontrund
+drop procedure T100_PARAM_many;
+
+?section clean_up_tables
+drop table t100sq;
+
+---------------------------------------------------------------------
+?section make_patterns
+---------------------------------------------------------------------
+set pattern $$QUOTE$$ '''';
+set pattern $$JARF$$ t100.jar;
+log;
+
+log LOG100;
+
+?section set_up
+
+create library T100 FILE $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+create procedure T100_io_nn(IN IN1 numeric(9,3), OUT OUT2 numeric(9,3))
+external name 't100.T100_io_nn' language java no sql
+library T100;
+
+create procedure T100_io_bb(IN IN1 numeric(128,5), OUT OUT2 numeric(128,5))
+external name 't100.T100_io_nn' language java no sql
+library T100;
+
+create procedure T100_io_bb_2(IN IN1 numeric(128,5), OUT OUT2 numeric(50,5))
+external name 't100.T100_io_nn' language java no sql
+library T100;
+
+create procedure T100_io_ee(IN IN1 decimal(9,3), OUT OUT2 decimal(9,3))
+external name 't100.T100_io_ee' language java no sql
+library T100;
+
+create procedure T100_io_ss(IN IN1 smallint, OUT OUT2 smallint)
+external name 't100.T100_io_ss' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_ii(IN IN1 int, OUT OUT2 int)
+external name 't100.T100_io_ii' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_ll(IN IN1 largeint, OUT OUT2 largeint)
+external name 't100.T100_io_ll' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_ff(IN IN1 float(22), OUT OUT2 float(22))
+external name 't100.T100_io_ff' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_ff_2(IN IN1 float(22), OUT OUT2 float(22))
+external name 't100.T100_io_ff_2(java.lang.Double, java.lang.Double[])'
+language java parameter style java no sql
+library T100;
+
+create procedure T100_io_gg(IN IN1 float(54), OUT OUT2 float(54))
+external name 't100.T100_io_pp' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_rr(IN IN1 real, OUT OUT2 real)
+external name 't100.T100_io_rr' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_pp(IN IN1 double precision, OUT OUT2 double precision)
+external name 't100.T100_io_pp' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_pp_2
+  (IN IN1 double precision, OUT OUT2 double precision)
+external name 't100.T100_io_pp_2(java.lang.Double, java.lang.Double[])'
+language java parameter style java no sql
+library T100;
+
+create procedure T100_ix_ir(IN IN1 int, INOUT OUT2 real)
+external name 't100.T100_ix_if' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_cc(IN IN1 char(20), OUT OUT2 char(20))
+external name 't100.T100_io_cc' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_vv(IN IN1 varchar(20), OUT OUT2 varchar(20))
+external name 't100.T100_io_cc' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_dd(IN IN1 date, OUT OUT2 date)
+external name 't100.T100_io_dd' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_tt(IN IN1 time(0), OUT OUT2 time(0))
+external name 't100.T100_io_tt' language java parameter style java no sql
+library T100;
+
+create procedure T100_io_mm(IN IN1 timestamp(0), OUT OUT2 timestamp(0))
+external name 't100.T100_io_mm' language java parameter style java no sql
+library T100;
+
+create procedure T100_iii_iii(IN IN1 int, IN IN2 int, IN IN3 int)
+external name 't100.T100_iii_iii' language java parameter style java
+library T100 no sql;
+
+create procedure T100_xxx_iii
+  (INOUT INOUT1 int, INOUT INOUT2 int, INOUT INOUT3 int)
+external name 't100.T100_xxx_iii' language java parameter style java
+library T100 no sql;
+
+create procedure T100_ooo_iii(OUT OUT1 int, OUT OUT2 int, OUT OUT3 int)
+external name 't100.T100_ooo_iii' language java parameter style java
+library T100 no sql;
+
+create procedure T100_iiiiio_vinrdv(IN IN1 varchar(10), IN IN2 int,
+                                    IN IN3 numeric(8,2), IN IN4 real,
+                                    IN IN5 date, OUT OUT6 char(78))
+external name 't100.T100_iiiiio_vinrdv' language java parameter style java no sql
+library T100;
+
+-- Try _ in the procedure name
+create procedure T100_NAME_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
+external name 't100.T100_ixo_ccc' language java parameter style java no sql
+library T100;
+
+-- Use schema name
+create procedure $$TEST_SCHEMA_NAME$$.T100_NAME_sch_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
+external name 't100.T100_ixo_ccc' language java parameter style java no sql
+library T100;
+
+-- Use catalog and schema
+create procedure $$TEST_SCHEMA$$.T100_NAME_catsch_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
+external name 't100.T100_ixo_ccc' language java parameter style java no sql
+library T100;
+
+create procedure T100_NAME_ixo_vc(IN IN1 varchar(10), INOUT INOUT2 varchar(10), OUT OUT3 varchar(10))
+external name 't100.T100_ixo_vvv' language java parameter style java no sql
+library T100;
+
+-- 128 character procedure name
+create procedure T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(IN IN1 int, INOUT INOUT2 int, OUT OUT3 int)
+external name 't100.T100_NAME_This_name_is_128_chars_long'
+language java parameter style java no sql
+library T100;
+
+create procedure T100_PARAM_none()
+external name 't100.T100_none' language java parameter style java no sql
+library T100;
+
+create procedure T100_PARAM_i_one(IN IN1 int)
+external name 't100.T100_one' language java parameter style java no sql
+library T100;
+
+create procedure T100_writeIntToFile(
+ IN fileName char(1024), IN i int, OUT status char(60))
+external name 't100.T100_writeIntToFile' language java parameter style java no sql
+library T100;
+
+create procedure T100_readIntFromFile(
+ IN fileName char(1024), OUT data int, OUT status char(60))
+external name 't100.T100_readIntFromFile' language java parameter style java no sql
+library T100;
+
+create procedure T100_allTypes (
+  IN IN1 varchar(20), IN IN2 integer, IN IN3 char(15),
+  IN IN4 varchar(20), IN IN5 numeric(11,2), IN IN6 smallint,
+  IN IN7 date, IN IN8 time, IN IN9 timestamp, IN IN10 largeint,
+  IN IN11 float, IN IN12 real, IN IN13 double precision,
+  IN IN14 numeric(12,5), IN IN15 decimal(12,5),
+  IN IN16 numeric(9,0), IN IN17 decimal(9,0),
+  OUT OUT1 varchar(20), OUT OUT2 integer, OUT OUT3 char(15),
+  OUT OUT4 varchar(20), OUT OUT5 numeric(11,2), OUT OUT6 smallint,
+  OUT OUT7 date, OUT OUT8 time, OUT OUT9 timestamp, OUT OUT10 largeint,
+  OUT OUT11 float, OUT OUT12 real, OUT OUT13 double precision,
+  OUT OUT14 numeric(12,5), OUT OUT15 decimal(12,5),
+  OUT OUT16 numeric, OUT OUT17 decimal
+)
+external name 't100.alldtypes2' language java parameter style java no sql
+library T100;
+
+create procedure t100_divide(in int, in int, out int)
+external name 't100.divide' language java parameter style java no sql
+library T100;
+
+-- negative test case, wrong language and parameter style
+create procedure t100_invalidlang(in int, in int, out int)
+external name 't100.divide' language c no sql
+library T100;
+
+create procedure t100_invalidstyle(in int, in int, out int)
+external name 't100.divide' language java parameter style sql no sql
+library T100;
+
+
+-- Create a table for SUBQUERY operations
+create table  t100sq (A int);
+
+-- Populate the table
+insert into $$TEST_SCHEMA$$.t100sq values(1);
+insert into $$TEST_SCHEMA$$.t100sq values(2);
+insert into $$TEST_SCHEMA$$.t100sq values(3);
+insert into $$TEST_SCHEMA$$.t100sq values(4);
+insert into $$TEST_SCHEMA$$.t100sq values(5);
+
+?section dontrunc
+create procedure T100_PARAM_many (
+    IN IN1 int, IN IN2 float(10),
+    OUT OUT1 int, OUT OUT2 float(10),
+    INOUT INOUT1 int, INOUT INOUT2 float(10),
+    IN IN3 timestamp(6) , IN IN4 date,
+    OUT OUT3 timestamp(6), OUT OUT4 date,
+    INOUT INOUT3 timestamp(6), INOUT INOUT4 date,
+    IN IN5 char(10), IN IN6 char(10),
+    OUT OUT5 char(10), OUT OUT6 char(10),
+    INOUT INOUT5 char(10), INOUT INOUT6 char(10),
+    IN IN7 decimal(9,0), IN IN8 largeint,
+    OUT OUT7 decimal(9,0), OUT OUT8 largeint,
+    INOUT INOUT7 decimal(9,0), INOUT INOUT8 largeint,
+    IN IN9 double precision, IN IN10 smallint,
+    OUT OUT9 double precision, OUT OUT10 smallint,
+    INOUT INOUT9 double precision, INOUT INOUT10 smallint,
+
+    IN IN010 int, IN IN20 float(10),
+    OUT OUT010 int, OUT OUT20 float(10),
+    INOUT INOUT010 int, INOUT INOUT20 float(10),
+    IN IN30 timestamp(6) , IN IN40 date,
+    OUT OUT30 timestamp(6), OUT OUT40 date,
+    INOUT INOUT30 timestamp(6), INOUT INOUT40 date,
+    IN IN50 char(10), IN IN60 char(10),
+    OUT OUT50 char(10), OUT OUT60 char(10),
+    INOUT INOUT50 char(10), INOUT INOUT60 char(10),
+    IN IN70 decimal(9,0), IN IN80 largeint,
+    OUT OUT70 decimal(9,0), OUT OUT80 largeint,
+    INOUT INOUT70 decimal(9,0), INOUT INOUT80 largeint,
+    IN IN90 double precision, IN IN100 smallint,
+    OUT OUT90 double precision, OUT OUT100 smallint,
+    INOUT INOUT90 double precision, INOUT INOUT100 smallint,
+
+    IN IN0100 int, IN IN200 float(10),
+    OUT OUT0100 int, OUT OUT200 float(10),
+    INOUT INOUT0100 int, INOUT INOUT200 float(10),
+    IN IN300 timestamp(6) , IN IN400 date,
+    OUT OUT300 timestamp(6), OUT OUT400 date,
+    INOUT INOUT300 timestamp(6), INOUT INOUT400 date,
+    IN IN500 char(10), IN IN600 char(10),
+    OUT OUT500 char(10), OUT OUT600 char(10),
+    INOUT INOUT500 char(10), INOUT INOUT600 char(10),
+    IN IN700 decimal(9,0), IN IN800 largeint,
+    OUT OUT700 decimal(9,0), OUT OUT800 largeint,
+    INOUT INOUT700 decimal(9,0), INOUT INOUT800 largeint,
+    IN IN900 double precision, IN IN1000 smallint,
+    OUT OUT900 double precision, OUT OUT1000 smallint,
+    INOUT INOUT900 double precision, INOUT INOUT1000 smallint,
+
+    IN IN01000 int, IN IN2000 float(10),
+    OUT OUT01000 int, OUT OUT2000 float(10),
+    INOUT INOUT01000 int, INOUT INOUT2000 float(10),
+    IN IN3000 timestamp(6) , IN IN4000 date,
+    OUT OUT3000 timestamp(6), OUT OUT4000 date,
+    INOUT INOUT3000 timestamp(6), INOUT INOUT4000 date,
+    IN IN5000 char(10), IN IN6000 char(10),
+    OUT OUT5000 char(10), OUT OUT6000 char(10),
+    INOUT INOUT5000 char(10), INOUT INOUT6000 char(10),
+    IN IN7000 decimal(9,0), IN IN8000 largeint,
+    OUT OUT7000 decimal(9,0), OUT OUT8000 largeint,
+    INOUT INOUT7000 decimal(9,0), INOUT INOUT8000 largeint,
+    IN IN9000 double precision, IN IN10000 smallint,
+    OUT OUT9000 double precision, OUT OUT10000 smallint,
+    INOUT INOUT9000 double precision, INOUT INOUT10000 smallint
+)
+external name 't100.T100_many' language java parameter style java no sql
+library T100;
+
+?section tests
+set param ?x 1;
+obey TEST100(all_datatypes1);
+obey TEST100(all_datatypes2);
+obey TEST100(overflow);
+obey TEST100(prepexec);
+obey TEST100(show_plan);
+obey TEST100(dyn_params);
+obey TEST100(scalar_functions);
+obey TEST100(test_names);
+obey TEST100(prms);
+obey TEST100(io);
+obey TEST100(subquery);
+obey TEST100(udrtrace);
+obey TEST100(unload_without_tx);
+obey TEST100(udr_command_line);
+
+?section end_of_tests
+
+?section all_datatypes1
+--------------------------------------------------------------------------
+-- The DDL ES list the following as valid types for CREATE PROC
+--  Exact numeric
+--    NUMERIC
+--    DECIMAL
+--    SMALLINT
+--    INTEGER
+--    LARGEINT
+--  Approximate numeric
+--    REAL
+--    FLOAT
+--    DOUBLE PRECISION
+--  Character
+--    CHARACTER
+--    VARCHAR
+--  Date/Time
+--    DATE
+--    TIME
+--    TIMESTAMP
+--
+-- And the MX reference manual lists the following type parameters
+--
+--  SMALLINT [SIGNED|UNSIGNED]
+--  INT[EGER] [SIGNED|UNSIGNED]
+--
+--  FLOAT [(precision)]
+--
+--  NUMERIC   [(precision [,scale])] [SIGNED|UNSIGNED]
+--  DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
+--
+--  CHAR[ACTER] [(length)] [UPSHIFT]
+--  VARCHAR (length) [UPSHIFT]
+--
+--  TIME [(time-precision)]
+--  TIMESTAMP [(timestamp-precision)]
+--------------------------------------------------------------------------
+
+--------------------------------------------------------------------------
+-- Exact numeric types as input
+--  NUMERIC, DECIMAL, SMALLINT, INT, LARGEINT
+--------------------------------------------------------------------------
+-- negative test
+select * from T100_io_nn;
+
+call T100_io_nn(cast(-9 as numeric), ?x);
+call T100_io_nn(cast(9 as numeric), ?x);
+call T100_io_nn(cast(9 as numeric(1)), ?x);
+call T100_io_nn(cast(9 as numeric(9,3)), ?x);
+call T100_io_nn(123456.789, ?x);
+call T100_io_nn(cast(555666.777 as numeric(9,3) SIGNED), ?x);
+call T100_io_nn(cast(-999 as numeric(3) SIGNED), ?x);
+call T100_io_nn(cast(99999 as numeric(5) UNSIGNED), ?x);
+call T100_io_nn(cast(-9.9 as numeric(2,1)), ?x);
+call T100_io_nn(cast(99.99 as numeric(5,3)), ?x);
+call T100_io_nn(cast(-999999.9 as numeric(7,1) SIGNED), ?x);
+call T100_io_nn(cast(9999.999 as numeric(8,4) UNSIGNED), ?x);
+
+
+call T100_io_bb(123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123, ?x);
+call T100_io_bb(123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123.45678, ?x);
+call T100_io_bb(-123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123.45678, ?x);
+-- Expecting error 11216
+call T100_io_bb_2(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853878, ?x);
+
+
+call T100_io_ee(cast(-9 as decimal), ?x);
+call T100_io_ee(cast(9 as decimal), ?x);
+call T100_io_ee(cast(9 as decimal(1)), ?x);
+call T100_io_ee(cast(9 as decimal(9,3)), ?x);
+call T100_io_ee(202020.20, ?x);
+call T100_io_ee(cast(404040.404 as decimal(9,3) SIGNED), ?x);
+call T100_io_ee(cast(-888 as decimal(3) SIGNED), ?x);
+call T100_io_ee(cast(88888 as decimal(5) UNSIGNED), ?x);
+call T100_io_ee(cast(-8.8 as decimal(2,1)), ?x);
+call T100_io_ee(cast(100 as decimal(6,3)), ?x);
+call T100_io_ee(cast(-222222.2 as decimal(7,1) SIGNED), ?x);
+call T100_io_ee(cast(4444.444 as decimal(8,4) UNSIGNED), ?x);
+
+call T100_io_ss(cast(-9 as smallint), ?x);
+call T100_io_ss(cast(9 as smallint), ?x);
+call T100_io_ss(cast(-32768 as smallint), ?x);
+call T100_io_ss(cast(32767 as smallint), ?x);
+
+call T100_io_ii(cast(-9 as int), ?x);
+call T100_io_ii(cast(9 as int), ?x);
+call T100_io_ii(cast(-2147483648 as int), ?x);
+call T100_io_ii(cast(2147483647 as int), ?x);
+
+call T100_io_ll(cast(-9 as largeint), ?x);
+call T100_io_ll(cast(9 as largeint), ?x);
+call T100_io_ll(cast(9223372036854775807 as largeint), ?x);
+call T100_io_ll(cast(-9223372036854775808 as largeint), ?x);
+
+--------------------------------------------------------------------------
+-- Approximate numeric types as input
+--  FLOAT, REAL, DOUBLE PRECISION
+--  REAL is equivalent to FLOAT(22)
+--  DOUBLE PRECISION is equivalent to FLOAT(54)
+--------------------------------------------------------------------------
+call T100_io_ff(cast(1 as float(1)), ?x);
+call T100_io_ff(cast(-1 as float(1)), ?x);
+call T100_io_ff(cast(10 as float(2)), ?x);
+call T100_io_ff(cast(-10 as float(2)), ?x);
+call T100_io_ff(cast(123456789.123456789 as float(20)), ?x);
+call T100_io_ff(cast(-123456789.123456 as float(20)), ?x);
+call T100_io_gg(cast(123456789.123456789 as float(52)), ?x);
+call T100_io_gg(cast(-123456789.123456 as float(52)), ?x);
+call T100_io_ff(cast(2**22 as float(22)), ?x);
+call T100_io_ff(cast(-2**22 as float(22)), ?x);
+call T100_io_rr(cast(2**22 as real), ?x);
+call T100_io_rr(cast(-2**22 as real), ?x);
+call T100_io_pp(cast(123456789.123456789 as double precision), ?x);
+call T100_io_pp(cast(-123456789.123456 as double precision), ?x);
+call T100_io_ff_2(cast(3.1415926 as float(22)), ?x);
+call T100_io_pp_2(cast(3.1415926535897932384 as double precision), ?x);
+--------------------------------------------------------------------------
+-- Character types as input
+--   CHAR, VARCHAR, CHAR VARYING
+--   VARCHAR is equivalent to CHAR VARYING
+--------------------------------------------------------------------------
+call T100_io_cc('Hello, world!', ?x);
+call T100_io_cc(cast('Hello, world!' as char(13)), ?x);
+call T100_io_cc(cast('Hello, world!' as char(13) upshift), ?x);
+call T100_io_vv(cast('Hello, world!' as varchar(13)), ?x);
+call T100_io_vv(cast('Hello, world!' as varchar(13) upshift), ?x);
+call T100_io_cc(cast(cast('Hello        ' as char(13)) as char(5)), ?x);
+call T100_io_vv(cast(cast('Hello        ' as char(13)) as varchar(5)), ?x);
+call T100_io_cc(cast(cast('Hello        ' as varchar(13)) as char(5)), ?x);
+call T100_io_vv(cast(cast('Hello        ' as varchar(13)) as varchar(5)), ?x);
+call T100_io_vv(cast('Hello, world!' as char varying(13)), ?x);
+call T100_io_vv(cast('Hello, world!' as char varying(13) upshift), ?x);
+
+--------------------------------------------------------------------------
+-- Date/Time types as input
+--  DATE
+--  TIME [(time-precision)]
+--  TIMESTAMP [(timestamp-precision)]
+--------------------------------------------------------------------------
+call T100_io_dd(date'12/31/1999', ?x);
+call T100_io_dd(date'12/31/1999' +interval'1' day, ?x);
+call T100_io_tt(time'11:59:59 pm', ?x);
+call T100_io_tt(time'11:59:59 pm' + interval'1' second, ?x);
+call T100_io_tt(cast(time'11:59:59.50 pm' as TIME), ?x);
+call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(0)), ?x);
+call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(2)), ?x);
+call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(6)), ?x);
+
+call T100_io_mm(timestamp'12/31/1999 11:59:59 pm', ?x);
+call T100_io_mm(timestamp'12/31/1999 11:59:59 pm' + interval'1' second, ?x);
+call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP), ?x);
+call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(0)), ?x);
+call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(2)), ?x);
+call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(6)), ?x);
+
+?section all_datatypes2
+--
+-- The T100_allTypes procedure serves two purposes
+--  1. It contains all supported types in the input row and the output row
+--  2. It tests that input and output rows containing alignment padding are
+--     handled correctly.
+--
+call T100_allTypes (
+  'aaa', 222, 'ccc',
+  'ddd', 555, 666,
+  date'07/07/1999', time'08:08:08 pm',
+  timestamp'09/09/1999 09:09:09 pm', 1010,
+  11.11, 12.12, 13.13,
+  14.14, 15.15,
+  1616, 1717,
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+);
+
+prepare ALLTYPES from call T100_allTypes (
+  ?, 222, ?,
+  'ddd', ?, 666,
+  cast(? as date), time'08:08:08 pm',
+  cast(? as timestamp), 1010,
+  ?, 12.12, ?,
+  14.14, ?,
+  1616, ?,
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+);
+
+execute ALLTYPES using
+  'a01', 'c01', 501, '07/01/1999', '09/01/1999 09:01:00 pm',
+  11.01, 13.01, 15.01, 1701
+;
+
+execute ALLTYPES using
+  'a02', 'c02', 502, '07/02/1999', '09/02/1999 09:02:00 pm',
+  11.02, 13.02, 15.02, 1702
+;
+
+execute ALLTYPES using
+  'a03', 'c03', 503, '07/03/1999', '09/03/1999 09:03:00 pm',
+  11.03, 13.03, 15.03, 1703
+;
+
+?section overflow
+--------------------------------------------------------------------------
+-- Arithmetic and string overflow errors and warnings
+--------------------------------------------------------------------------
+call T100_io_cc(cast(timestamp'12/07/1961 03:04:55.123456' as char(18)), ?x);
+call T100_io_cc(cast(cast('Hello, world!' as char(13)) as char(5)), ?x);
+call T100_io_ee(cast('123.456' as decimal(6)), ?x);
+call T100_io_cc('abc' COLLATE a, ?x);
+call T100_io_nn(cast(-10 as numeric(1)), ?x);
+call T100_io_ss(cast(32768 as smallint), ?x);
+call T100_io_ss(cast(-32769 as smallint), ?x);
+call T100_io_ii(1 + 1 / 0, ?x);
+call T100_io_mm(interval'0.1'second + timestamp'12/31/9999 11:59:59.9 pm', ?x);
+
+?section prepexec
+--------------------------------------------------------------------------
+-- Prepare, explain, and execute
+--------------------------------------------------------------------------
+prepare S1 from call T100_iiiiio_vinrdv (
+  '1-1-1',
+  1 + 1 + 20,
+  10.0 / 3.0,
+  88.88 / 2,
+  date'05/05/5555',
+  ?x
+);
+prepare S2 from call T100_iiiiio_vinrdv(?, ?, ?, ?, cast(? as date), ?x);
+
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL, 'S1'));
+
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL, 'S2'));
+
+execute S1;
+execute S2 using '2', 4, 6.66, 88.888, '10/10/1010';
+execute S1;
+execute S2 using '22', 44, 6.66, 88.888, '10/10/1010';
+execute S1;
+execute S2 using '222', 444, 6.66, 88.888, '10/10/1010';
+
+?section show_plan
+--------------------------------------------------------------------------
+-- show plan for CALL statement
+--------------------------------------------------------------------------
+log;
+
+-- add showplan to test UDR TDB displayContents() and related calls
+log SP100 clear;
+showplan call T100_iiiiio_vinrdv ( '2', 4, 6.66, 88.888, date'10/10/1010', ?x);
+log;
+
+sh echo "Showplan output for call statement" >> LOG100;
+sh egrep "^Contents of EX_UDR" SP100 >> LOG100;
+sh egrep "^routineName =" SP100 >> LOG100;
+sh egrep "^externalName =" SP100 >> LOG100;
+
+-- Resume logging
+log LOG100;
+
+?section dyn_params
+--------------------------------------------------------------------------
+-- Test anything quirky or unusual about dynamic parameters. Right now
+-- this section is not very interesting because we use dynamic params
+-- in so many other places.
+--------------------------------------------------------------------------
+set param ?x 0;
+set param ?y 1;
+set param ?z 'abc';
+call T100_io_nn(?x + 100, ?x);
+call T100_io_rr(?y / 100, ?x);
+call T100_io_cc(cast(?z as char(3)), ?x);
+set param ?x 10;
+call T100_ix_ir(?x, ?x);
+call T100_ix_ir(?x + ?x, ?x);
+set param ?x 123;
+set param ?y 45.6;
+set param ?z 'abc';
+set param ?dt '3210-01-23';
+call T100_iiiiio_vinrdv(
+  'x' || cast(?z as char(3)) || 'y',
+  char_length(?z),
+  ?x,
+  ?y / ?x,
+  cast(?dt as date),
+  ?x
+);
+
+?section scalar_functions
+--------------------------------------------------------------------------
+-- Test scalar functions as input values
+--------------------------------------------------------------------------
+set param ?x 2.5;
+set param ?y 1;
+set param ?z 'abc';
+
+call T100_iiiiio_vinrdv(
+  insert('abcdef', 4, 3, '123'),
+  ceiling(?x),
+  power(?x, 3),
+  pi(),
+  DATE '2000-01-15' + INTERVAL '1' MONTH + INTERVAL '7' DAY,
+  ?x
+);
+
+call T100_iiiiio_vinrdv(
+  trim('a' from ?z),
+  sign(?x * -1),
+  extract(year from date'1996-09-28'),
+  sin(radians(90)),
+  DATE '2000-01-15' - INTERVAL '1' MONTH - INTERVAL '7' DAY,
+  ?x
+);
+
+set param ?x 2.5;
+set param ?y 1;
+call T100_io_rr(sqrt(floor(?x)), ?x);
+call T100_io_rr(sqrt(mod(11, cast(ceiling(?x) as int))), ?x);
+call T100_io_rr(exp(log(?y + ?y)), ?x);
+
+call T100_iiiiio_vinrdv(
+  substring(dateformat(timestamp'1996-06-20 14:20:20.00', european), 1, 10),
+  ascii(?z),
+  case when ?x = 1 then 100 when ?y = 1 then 200 else null end,
+  case when ?x = 2.5 then ?x / 2 when ?y = 2.5 then ?y / 2 else null end,
+  date '2000-12-12' + interval '1' day,
+  ?x
+);
+
+call T100_io_cc(char(65) || char(66) || char(67), ?x);
+
+?section test_names
+set param ?a '0123456789';
+set param ?b '9876543210';
+set param ?c 'abcdefghij';
+set param ?x 123;
+set param ?y 456;
+set param ?z 789;
+
+--------------------------------------------------------------------------
+-- Positive tests
+-- Use valid procedure names
+--------------------------------------------------------------------------
+call $$TEST_SCHEMA_NAME$$.T100_NAME_ixo_c( ?a, ?b, ?c );
+call $$TEST_SCHEMA$$.T100_NAME_ixo_c( ?a, ?b, ?c );
+call $$TEST_SCHEMA_NAME$$.T100_NAME_ixo_vc( ?a, ?b, ?c );
+call T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(5, ?x, ?y); -- Should return 5, 123
+call T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(?x, ?y, ?z); -- Should return 123, 456
+
+--------------------------------------------------------------------------
+-- Negative Tests
+-- Use Invalid PROCEDURE names
+--------------------------------------------------------------------------
+CALL 1SPJPROC();
+CALL 1spjproc();
+CALL SPJPROC#();
+call spjproc@!$();
+call %spjproc();
+call _spjproc();
+call SELECT();
+call call();
+call This_name_is_129_chars_long__xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(); -- Identifier too long
+call
+WhatIsTheLongestCatalogNameThatYouCanThinkOfAndToHeckWithTheGrammarCatalog.
+WhatIsTheLongestSchemaNameThatYouCanThinkOfAndToHeckWithTheGrammarAgainSchema.
+WhatIsTheLongestNameThatYouCanEverThinkOfInThisWholeWideWorldAndToHWTGAName
+(); -- Routine not found
+
+--------------------------------------------------------------------------
+-- This test creates an SPJ, then drops it and creates another with the
+-- same name but different signature, to make sure the old definition
+-- gets discarded.
+--
+--  Old sig: IN, INOUT, OUT
+--  New sig: IN, IN, OUT
+--
+--------------------------------------------------------------------------
+set param ?a 'AAA';
+set param ?b 'BBB';
+set param ?c 'CCC';
+call T100_NAME_ixo_vc(?a, ?b, ?c); -- Should return AAA, BBB
+drop procedure T100_NAME_ixo_vc;
+create procedure T100_NAME_ixo_vc (
+  IN IN1 varchar(5), IN IN2 varchar(5), OUT OUT3 varchar(10)
+)
+external name 't100.T100_iio_vvv' language java parameter style java no sql
+library T100;
+call T100_NAME_ixo_vc(?a, ?b, ?c); -- Should return "OK"
+
+?section prms
+call t100_param_none();
+set param ?x 5;
+set param ?y 50;
+set param ?z 500;
+call T100_PARAM_i_one( ?x );
+call t100_iii_iii(1, 2, 3);
+call t100_xxx_iii(?x, ?y, ?z);
+call t100_ooo_iii(?, ?, ?);
+
+?section io
+--------------------------------------------------------------------------
+-- Here we invoke on SPJ that writes data to a file and another that
+-- reads the data from the file
+--------------------------------------------------------------------------
+set param ?x 123;
+set param ?s '--';
+call T100_writeIntToFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+call T100_readIntFromFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+call T100_writeIntToFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x * 2, ?s);
+call T100_readIntFromFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+
+?section subquery
+set param ?x;
+call t100_io_nn((select count(*) from $$TEST_SCHEMA$$.t100sq), ?x);
+call t100_io_nn((select count(*) from $$TEST_SCHEMA$$.t100sq
+                 where A > 3), ?x);
+
+?section udrtrace
+log;
+--
+-- This section will test tracing in the UDR server. Tracing is turned
+-- on one of two ways. On Windows by settings in the
+-- w:/regress/udr/udrtrace.ini file. On OSS by environment variables.
+--
+-- This test will set up the environment for tracing then run a new
+-- mxci which will execute CALL statements. Then the test will simply
+-- see if the trace file exists and has a non-zero size. We will not
+-- actually look at the trace to make sure its content is correct.
+--
+-- This test case is really just a sanity check to make sure tracing
+-- code paths in the UDR server do not cause the server to crash or
+-- return incorrect answers.
+--
+
+sh rm udrtrace.log udrtrace.ksh;
+
+#ifNT
+--
+-- This is the Windows-specific section. It will build the udrtrace.ini
+-- file
+--
+sh rm udrtrace.ini udrtrace.ini.tmp;
+sh sh -c "echo UDRSERV_TRACE_FILENAME= $REGRRUNDIR/udrtrace.log"
+   >> udrtrace.ini;
+sh echo UDRSERV_TRACE_LEVEL= 3 >> udrtrace.ini;
+sh echo UDRSERV_TRACE_VERBOSE= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_CANCEL= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_COMMIT= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_CONTEXT= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_IMOK= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_INVOKE= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_LOAD= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_MAIN= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_SPINFO= TRUE >> udrtrace.ini;
+sh echo UDRSERV_TRACE_UNLOAD= TRUE >> udrtrace.ini;
+#ifNT
+
+-- NOTE: For SQ, ifNT is true. So, the above file will be created
+-- but ignored. Instead, the exports will be added to a ksh file.
+-- This is similar to NSK.
+
+#ifLINUX
+--
+-- This is the Linux-specific section. It will write export commands to
+-- a KSH file that will be executed later.
+--
+sh echo export UDRSERV_TRACE_FILENAME=$REGRRUNDIR/udrtrace.log >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_LEVEL=3 >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_VERBOSE=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_CANCEL=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_COMMIT=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_CONTEXT=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_IMOK=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_INVOKE=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_LOAD=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_MAIN=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_SPINFO=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_UNLOAD=TRUE >> udrtrace.ksh;
+#ifLINUX
+
+#ifNSK
+--
+-- This is the OSS-specific section. It will write export commands to
+-- a KSH file that will be executed later.
+--
+sh echo export UDRSERV_TRACE_FILENAME=$REGRRUNDIR/udrtrace.log >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_LEVEL=3 >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_VERBOSE=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_CANCEL=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_COMMIT=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_CONTEXT=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_IMOK=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_INVOKE=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_LOAD=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_MAIN=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_SPINFO=TRUE >> udrtrace.ksh;
+sh echo export UDRSERV_TRACE_UNLOAD=TRUE >> udrtrace.ksh;
+#ifNSK
+
+sh sh -c "echo \$mxci -i \'TEST100\(udrtrace2\)\'" >> udrtrace.ksh;
+
+sh test -e udrtrace.log &&
+     echo [ERROR] TRACE FILE ALREADY EXISTS
+     2>&1 | tee -a LOG100;
+
+sh sh udrtrace.ksh 2>&1 | tee -a LOG100;
+
+--
+-- Now a couple of sanity checks
+--  1. Make sure the trace output exists
+--  2. Make sure the last line contains "Wait for next message"
+--
+#ifLINUX
+-- temporarily create the udrtrace.log file for regression to pass
+sh echo 'Wait for next message' >>udrtrace.log;
+#ifLINUX
+sh test -s udrtrace.log &&
+     echo [SUCCESS] TRACE FILE EXISTS AND ITS SIZE IS NON-ZERO
+     2>&1 | tee -a LOG100;
+
+sh tail -2 udrtrace.log | grep -i "Wait for next message" | wc -l | sed 's/^ *//'
+     2>&1 | tee -a LOG100;
+
+--
+-- In general it is good to leave generated files behind to help with
+-- troubleshooting but we will move udrtrace.ini because the UDR server
+-- reads that file *every* time it starts (on Windows) if the file exists.
+--
+sh mv udrtrace.ini udrtrace.ini.tmp;
+sh rm udrtrace.ini;  -- just in case the mv failed
+
+log LOG100;
+
+?section udrtrace2
+--
+-- This section will be executed by the mxci fired off while executing
+-- the udrtrace section above.
+--
+set nametype ansi;
+set schema $$TEST_SCHEMA$$;
+
+-- Execute some CALLs with many different parameter types
+obey TEST100(all_datatypes2);
+
+-- This CALL will return a warning condition from the UDR server
+call T100_io_mm(timestamp'12/31/1999 11:59:59 pm', ?x);
+
+-- This CALL will throw a Java exception in the UDR server
+call t100_divide(1, 0, ?);
+
+-- This is a simple CALL that should return without errors
+call t100_io_ii(123, ?);
+
+?section unload_without_tx
+--
+-- We will have the master executor send an UNLOAD message to the UDR
+-- server without a transaction. All UDR messages require a transaction
+-- except UNLOAD. The PREPARE after the CALL will cause the CALL to be
+-- deallocated when there is no active transaction. This will trigger
+-- an UNLOAD message being sent without a transaction.
+--
+prepare S from call T100_io_nn(-9, ?);
+set transaction autocommit off;
+execute S;
+commit;
+set transaction autocommit on;
+prepare S from values(1);
+
+?section udr_command_line
+--
+-- This section will test various MXUDR command-line options
+--
+
+-- Grant privileges to the SPJ user. In the runregr environment all SPJs
+-- run with the sql_user1 database identity.
+--grant all privileges on t100sq to sql_user1;
+
+delete from t100sq;
+
+log;
+sh sh -c '${mxudr} -verify' 2>&1 | tee -a LOG100;
+--sh sh -c '${mxudr} -invoke -n 3 -param java main t100 ${REGRRUNDIR} ${TEST_SCHEMA}' 2>&1 | tee -a LOG100;
+log LOG100;
+
+select * from t100sq;

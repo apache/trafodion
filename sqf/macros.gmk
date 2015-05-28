@@ -1,0 +1,140 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#  Global macros for gmake - can be overridden by lower level makes
+#  as required.
+#
+
+#
+#  First, let's figure out the compiler
+#
+ifndef USE_SINGLE_THREADED_MPI
+  USE_SINGLE_THREADED_MPI=0
+endif
+
+    GCC_TOOL_ROOT     ?= /usr
+  ifeq ($(SQ_PHANDLE_VERIFIER),1)
+    PHVERIF		= -DSQ_PHANDLE_VERIFIER
+  endif
+  CC32             = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS) $(PHVERIF)
+  CXX32            = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS) $(PHVERIF)
+  CC64             = $(CC32)      # for gcc the toolsets are the same
+  CXX64            = $(CXX32)
+  GCCMODE32        = -m32
+  GCCMODE64        = -m64
+  OCC32            = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS) $(PHVERIF)
+  OCXX32           = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS) $(PHVERIF)
+  OCC64            = $(OCC32)
+  OCXX64           = $(OCXX32)
+  SCOPEFLAGS       = $(CLOSED_SOURCE_GPP_OPTS)
+
+#
+#  Now, the build type -- which defines a preset group of compiler and linker
+#  flags as well as the "dbg" vs. "rls" subdir prefix
+#
+BUILD_PLAT      = ${shell uname -s}-${shell uname -m}
+
+ifeq ($(SQ_BUILD_TYPE),release)
+  OUTDIR         := $(BUILD_PLAT)/$(SQ_MTYPE)/rls
+  DBG_FLGS        = -g
+  COVER_FLGS      =
+  OPTIM_FLGS      = -O2 -fno-omit-frame-pointer
+else
+  export SQ_BUILD_TYPE = debug
+  OUTDIR         := $(BUILD_PLAT)/$(SQ_MTYPE)/dbg
+  DBG_FLGS        = -g
+  LNK_FLGS        =
+  OPTIM_FLGS      =
+  ifeq ($(SQ_COVERAGE),1)
+    COVER_FLGS    = --coverage
+    DBG_FLGS     += $(COVER_FLGS)
+    LNK_FLGS     += $(COVER_FLGS)
+  endif
+endif
+BINEXPDIR         = $(MY_SQROOT)/export/bin$(SQ_MBTYPE)
+INCEXPDIR         = $(MY_SQROOT)/export/include
+LIBEXPDIR         = $(MY_SQROOT)/export/lib$(SQ_MBTYPE)
+ifeq ($(SQ_BUILD_PROFILE),generate)
+  OPTIM_FLGS     += -fprofile-generate
+  LNK_FLGS       += -fprofile-generate
+else
+  ifeq ($(SQ_BUILD_PROFILE),use)
+    OPTIM_FLGS     += -fprofile-use
+  endif
+endif
+ifeq ($(SQ_BUILD_DEVPROFILE),prof)
+  DBG_FLGS     += -p
+else
+   ifeq ($(SQ_BUILD_DEVPROFILE),gprof)
+     DBG_FLGS     += -pg
+   endif
+endif
+
+#
+# Allow override of OPTIM_FLGS
+#
+ifdef SQ_BUILD_OPTIM
+  OPTIM_FLGS      = $(SQ_BUILD_OPTIM)
+endif
+
+#
+#  Now we can set some default flags to get rolling
+#
+C32FLAGS   = $(GCCMODE32) $(DBG_FLGS) $(OPTIM_FLGS) -Wall -Werror $(INTEL_TOOL_FLGS)
+CXX32FLAGS = $(GCCMODE32) $(DBG_FLGS) $(OPTIM_FLGS) -Wall -Werror $(INTEL_TOOL_FLGS)
+
+C64FLAGS   = $(GCCMODE64) $(DBG_FLGS) $(OPTIM_FLGS) -Wall -Werror $(INTEL_TOOL_FLGS)
+CXX64FLAGS = $(GCCMODE64) $(DBG_FLGS) $(OPTIM_FLGS) -Wall -Werror $(INTEL_TOOL_FLGS)
+
+#
+# some macros to help test compiler combinations
+# Example usage:
+#   Use gcc, debug, 32-bit
+#   $(CHKCIPRE); $(CHKCIGCC); $(CHKCIDEB); $(CHKCI32); $(CHKCIPOST)
+#
+#
+CHKCIPRE  = rm -fr $(BUILD_PLAT); cwd=$$PWD; cd $$MY_SQROOT
+CHKCIPOST = cd $$cwd; $(MAKE) $(MAKEFLAGS) clean; $(MAKE) $(MAKEFLAGS)
+
+CHKCIGCC  = export SQ_OR_INTC=0
+CHKCIICC  = x=1
+
+CHKCI32   = . sqenv.sh
+CHKCI64   = . sq64env.sh
+
+CHKCIDEB  = x=1
+CHKCIREL  = export SQ_BUILD_TYPE=release
+
+DEPEXCLUDES = -exclude1 /usr/ -exclude2 /designs/ -exclude3 /opt/ -exclude4 /home/
+ifdef HOMEGCC
+  LINKGCC	:= $(shell if test -L /home; then echo "-exclude5 `readlink /home`/"; fi)
+  DEPEXCLUDES += $(LINKGCC)
+endif
+
+# nice make - limit jobs to # of cores
+MAKEJCNT  := $(shell grep processor /proc/cpuinfo | wc -l)
+MAKEJ	  = nice make -j$(MAKEJCNT)
+
+# Uncomment to build monitor/seabed with concurrent request changes
+USE_CONCURRENT_REQ = 1
+
+# compiler-depend
+CDEPFLAGS	= -Wp,-MD,$(CDEP_FILE) -Wp,-MT,$@
+CDEPFILES	= $(CDEP_DIR)/*.dep
+CDEP_DIR	= $(OUTDIR)/depend
+CDEP_FILE	= $(CDEP_DIR)/$<.dep

@@ -1,0 +1,197 @@
+-- Tests for Hbase - stats-based split of range-partitions
+-- Added March 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+set schema trafodion.hbase;
+obey TEST013(clean_up);
+
+log LOG013 clear;
+
+prepare reporter from
+select seq_num, inst_num, tdb_name, est_rows, act_rows
+from  table(statistics(NULL,'XX'))
+where TDB_NAME like '%SPLIT_BOTTOM%'
+order by seq_num, tdb_name, inst_num;
+
+
+obey TEST013(setup);
+
+cqd risk_premium_serial '1.2';
+cqd HBASE_MIN_BYTES_PER_ESP_PARTITION '10';
+control query default detailed_statistics 'ALL';
+cqd query_cache '0';
+cqd HBASE_RANGE_PARTITIONING 'SYSTEM';
+cqd PARALLEL_NUM_ESPS '8';
+cqd MAX_ESPS_PER_CPU_PER_OP '4';
+
+obey TEST013(test_char);
+obey TEST013(test_date);
+obey TEST013(test_numeric);
+obey TEST013(test_time);
+obey TEST013(test_timestamp);
+
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+create schema trafodion.hbase;
+-- CHAR ----
+create table char8(a char(10) not null not droppable, b char(20), primary key (a)) ;
+
+insert into char8 values
+('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'),
+('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10');
+
+update statistics for table char8 clear;
+update statistics for table char8 on every column;
+
+-- DATE ----
+
+create table date8 (a date not null not droppable, b int, primary key (a));
+
+insert into date8 values
+(date '01-02-2013', 1),
+(date '02-02-2013', 2),
+(date '03-02-2013', 3),
+(date '04-02-2013', 4),
+(date '05-02-2013', 5),
+(date '06-02-2013', 6),
+(date '07-02-2013', 7),
+(date '08-02-2013' ,8),
+(date '09-02-2013', 9),
+(date '10-02-2013', 10);
+
+update statistics for table date8 clear;
+update statistics for table date8 on every column;
+
+-- NUMERIC ----
+
+create table numeric10dot2 (a numeric(10,2) not null not droppable, b int, primary key (a)) salt using 12 partitions ;
+
+insert into numeric10dot2 values
+(1.20, 1), (1.30, 2), (1.40, 3), (1.50, 4), (1.60, 1),
+(1.70, 2), (1.80, 3), (1.90, 4), (2.00, 3), (2.10, 3);
+
+update statistics for table numeric10dot2 clear;
+update statistics for table numeric10dot2 on every column;
+
+-- TIME ----
+
+create table time2 (a time(2) not null not droppable, b int, primary key (a))
+salt using 8 partitions ;
+
+insert into time2 values (time '12:01:01', 1), 
+(time '12:01:02', 2), (time '12:01:03', 3), (time '12:01:04', 4), 
+(time '12:01:05', 5), (time '12:01:06', 6), (time '12:01:07', 7), 
+(time '12:01:08', 8), (time '12:01:09', 9), (time '12:01:19', 10);
+
+
+update statistics for table time2 clear;
+update statistics for table time2 on every column;
+
+-- TIMESTAMP ----
+
+create table timestamp2 (a timestamp(2) not null not droppable, b int, 
+                        primary key (a)) ;
+
+insert into timestamp2 values
+(timestamp '2014-01-01 12:01:01.4', 1),
+(timestamp '2014-01-01 12:01:02.4', 2),
+(timestamp '2014-01-01 12:01:03.12', 3),
+(timestamp '2014-01-01 12:01:04.13', 4),
+(timestamp '2014-01-01 12:01:05.14', 5),
+(timestamp '2014-01-01 12:01:06.19', 6),
+(timestamp '2014-01-01 12:01:07.20', 7),
+(timestamp '2014-01-01 12:01:08.21', 8),
+(timestamp '2014-01-01 12:01:09.30', 9),
+(timestamp '2014-01-01 12:01:19.31', 10);
+
+
+update statistics for table timestamp2 clear;
+update statistics for table timestamp2 on every column;
+
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table if exists char8;
+drop table if exists date8;
+drop table if exists numeric10dot2;
+drop table if exists time2;
+drop table if exists timestamp2;
+drop schema trafodion.hbase cascade;
+
+
+?section test_char
+--------------------------------------------------------------------------
+
+prepare xx from
+SELECT b, count(b) FROM char8 <<+ cardinality 10e8 >> group by b ;
+
+explain options 'f' xx;
+execute xx;
+execute reporter;
+
+
+?section test_date
+--------------------------------------------------------------------------
+
+prepare xx from
+SELECT b, count(b) FROM date8 <<+ cardinality 10e8 >> group by b ;
+
+explain options 'f' xx;
+execute xx;
+execute reporter;
+
+?section test_numeric
+--------------------------------------------------------------------------
+
+prepare xx from
+SELECT b, count(b) FROM numeric10dot2 <<+ cardinality 10e10 >>
+group by b ;
+
+explain options 'f' xx;
+execute xx;
+execute reporter;
+
+
+?section test_time
+--------------------------------------------------------------------------
+prepare xx from
+SELECT b, count(b) FROM time2 <<+ cardinality 10e8 >>
+group by b
+;
+
+explain options 'f' xx;
+execute xx;
+execute reporter;
+
+
+?section test_timestamp
+--------------------------------------------------------------------------
+prepare xx from
+SELECT b, count(b) FROM timestamp2 <<+ cardinality 10e8 >>
+group by b
+;
+
+explain options 'f' xx;
+execute xx;
+execute reporter;
+
+

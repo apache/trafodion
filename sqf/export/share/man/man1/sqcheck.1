@@ -1,0 +1,46 @@
+.TH SQCHECK 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+sqcheck \- Check the status of the SQ env
+.LP
+.SH SYNOPSIS
+.B sqcheck
+.B \-i <nn> | 
+.B \-d <nn> | 
+.B \-c <cc> | 
+.B \-f |
+.B \-r |
+.B \-h |
+.B \-v | 
+.B \-q 
+.SH DESCRIPTION
+.LP
+.B sqcheck
+will check the status of the SQ environment.
+.SH USAGE
+.TP 7
+.BI -i 
+<nn> - Number of times the check for SQ processes be done (Default 2)
+.TP
+.BI -d
+<nn> - Duration of sleep (in seconds) between each check  (Default 1)
+.TP
+.BI -c
+<cc>  Which component to check: [all | tse | ase | dtm | backout | amp | dcs | rms] (Default all)
+.TP
+.BI -f
+fast - (its like running ./sqcheck -i 1 -d 0)
+.TP
+.BI -r
+reset the iteration counter if the process count increases (as compared to the count in the last iteration)
+.TP
+.BI -h
+Help
+.TP
+.BI -v
+Verbose
+.TP
+.BI -q
+Quiet
+.LP
+.SH SEE ALSO
+.I sqps

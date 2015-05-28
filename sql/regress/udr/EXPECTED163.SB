@@ -1,0 +1,983 @@
+>>sh rm -f LOG163-SECONDARY;
+>>sh rm -f LOG163-UDFMETADATA;
+>>obey TEST163(compile_libs);
+>>--------------------------------------------------------------------------
+>>log;
+>>
+>>obey TEST163(create_tables);
+>>--------------------------------------------------------------------------
+>>create table t1 (a int not null, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>insert into t1 values
++> (1,1,-10), (2,1,null), (3,1,-20), (4,1,null), (5,1,-30),
++> (6,1,null), (7,1,-40), (8,1,null), (9,1,-50), (10,1,null);
+
+--- 10 row(s) inserted.
+>>
+>>create table t2 (a int not null, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>insert into t2 values
++> (10,10,-100), (20,10,null), (30,10,-200), (40,10,null), (50,10,-300),
++> (60,10,null), (70,10,-400), (80,10,null), (90,10,-500), (100,10,null);
+
+--- 10 row(s) inserted.
+>>
+>>create table t3 AS select * from t1 T;
+
+--- 10 row(s) inserted.
+>>
+>>create table t5 (a int not null, b char(32), c char, primary key(a));
+
+--- SQL operation complete.
+>>insert into t5 values
++> (25, 'Neo', ' ');
+
+--- 1 row(s) inserted.
+>>
+>>
+>>obey TEST163(register_functions);
+>>--------------------------------------------------------------------------
+>>create library TEST163 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>
+>>-- Adds two given integer values
+>>create function ADD2( INVAL1 int, INVAL2 int) returns OUTVAL int
++> language c parameter style sql external name 'add2'
++> library TEST163
++> deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>create function SWAP2( INVAL1 int, INVAL2 int) returns (OUTVAL1 int,OUTVAL2 int)
++> language c parameter style sql external name 'swap2'
++> library TEST163
++> deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>create function SWAP2CHAR( INVAL1 char(32), INVAL2 char(32)) returns (OUTVAL1 char(32),OUTVAL2 char(32))
++> language c parameter style sql external name 'swap2char'
++> library TEST163
++> deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>obey TEST163(tests);
+>>--------------------------------------------------------------------------
+>>-- UDF in GroupBy:
+>>
+>>select a  from t1 group by t1.a,add2(t1.a,t1.b)  order by a;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+
+--- 10 row(s) selected.
+>>
+>>select add2(a,b)  from t1 group by 1 order by 1;
+
+OUTVAL     
+-----------
+
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+
+--- 10 row(s) selected.
+>>
+>>-- should succeed
+>>select a,add2(a,b) from t1 group by a,2;
+
+A            OUTVAL     
+-----------  -----------
+
+          1            2
+          2            3
+          3            4
+          4            5
+          5            6
+          6            7
+          7            8
+          8            9
+          9           10
+         10           11
+
+--- 10 row(s) selected.
+>>
+>>-- should fail
+>>select a,add2(a,b) from t1 group by a;
+
+*** ERROR[4005] Column reference B must be a grouping column or be specified within an aggregate.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- should fail
+>>select a,add2(a,b) from t1 group by b;
+
+*** ERROR[4005] Column reference A must be a grouping column or be specified within an aggregate.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- should fail
+>>select a,add2(a,b) from t1 group by 2;
+
+*** ERROR[4005] Column reference A must be a grouping column or be specified within an aggregate.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Subquery in GroupBy
+>>
+>>select a  from t1 group by t1.a,(select max(t2.a) from t2) order by a;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+
+--- 10 row(s) selected.
+>>
+>>select a,(select max(t2.a) from t2)  from t1 group by t1.a,2 order by a;
+
+A            (EXPR)     
+-----------  -----------
+
+          1          100
+          2          100
+          3          100
+          4          100
+          5          100
+          6          100
+          7          100
+          8          100
+          9          100
+         10          100
+
+--- 10 row(s) selected.
+>>
+>>-- UDF in Aggregate
+>>
+>>select max(add2(a,b)) from t1;
+
+(EXPR)     
+-----------
+
+         11
+
+--- 1 row(s) selected.
+>>
+>>-- Subquery in Aggregate
+>>
+>>select max((select count(*) from t2 where t1.a=t2.b)) from t1;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>-- UDFs in order by
+>>-- Should fail, we don't support function calls in order by clause, 
+>>-- only ordinals.
+>>select a from t1 order by add2(t1.a,t1.b);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select a from t1 order by add2(t1.a,t1.b);
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select add2(a,b) from t1 order by 1;
+
+OUTVAL     
+-----------
+
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+
+--- 10 row(s) selected.
+>>
+>>-- Subqueries in order by
+>>
+>>-- select a from t1 order by (select t2.a from t2);
+>>
+>>select (select count(t2.a) from t2)  from t1 order by 1;
+
+(EXPR)              
+--------------------
+
+                  10
+                  10
+                  10
+                  10
+                  10
+                  10
+                  10
+                  10
+                  10
+                  10
+
+--- 10 row(s) selected.
+>>
+>>
+>>-- UDFs and subqueries with First N
+>>
+>>select [First 2] a, add2(a,b) from t1 order by a;
+
+A            OUTVAL     
+-----------  -----------
+
+          1            2
+          2            3
+
+--- 2 row(s) selected.
+>>
+>>select [First 2] a, (select max(t2.a) from t2 where t2.a=t1.b) from t1 order by a;
+
+A            (EXPR)     
+-----------  -----------
+
+          1            ?
+          2            ?
+
+--- 2 row(s) selected.
+>>
+>>-- MVF UDF in GroupBy:
+>>
+>>-- Should group by a,b,a
+>>select a  from t1 group by t1.a,swap2(t1.a,t1.b) ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+
+--- 10 row(s) selected.
+>>
+>>-- Should fail
+>>select swap2(a,b)  from t1 group by 1,2;
+
+*** ERROR[4007] The select list index 2 is out of range.  It must be between 1 and the number of select expressions, which in this case is 1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should group by (output1, output2) or (b,a)
+>>select swap2(a,b)  from t1 group by 1;
+
+OUTVAL1      OUTVAL2    
+-----------  -----------
+
+          1            1
+          1            2
+          1            3
+          1            4
+          1            5
+          1            6
+          1            7
+          1            8
+          1            9
+          1           10
+
+--- 10 row(s) selected.
+>>
+>>-- Subquery of degree > 1 in GroupBy
+>>-- should group by a, max(t2.a), max(t2.b)
+>>select a  from t1 group by t1.a,(select max(t2.a),max(t2.b) from t2) ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+
+--- 10 row(s) selected.
+>>
+>>-- should work, grouping by t1.a, max(t2.a),max(t2.b)
+>>select a,(select max(t2.a),max(t2.b) from t2)  from t1 group by t1.a,2 ;
+
+A            (EXPR)       (EXPR)     
+-----------  -----------  -----------
+
+          1          100           10
+          2          100           10
+          3          100           10
+          4          100           10
+          5          100           10
+          6          100           10
+          7          100           10
+          8          100           10
+          9          100           10
+         10          100           10
+
+--- 10 row(s) selected.
+>>
+>>-- should group by a, max(t2.a), max(t2.b)
+>>select a,(select max(t2.a),max(t2.b) from t2)  from t1 group by t1.a,2 ;
+
+A            (EXPR)       (EXPR)     
+-----------  -----------  -----------
+
+          1          100           10
+          2          100           10
+          3          100           10
+          4          100           10
+          5          100           10
+          6          100           10
+          7          100           10
+          8          100           10
+          9          100           10
+         10          100           10
+
+--- 10 row(s) selected.
+>>
+>>-- MVF UDF in Aggregate
+>>
+>>select max(swap2(a,b)) from t1;
+
+*** ERROR[4476] Function MAX accepts exactly one operand.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Subquery of degree > 1 in Aggregate
+>>
+>>select stddev((select max(t2.a),max(t2.b) from t2 where t1.a=t2.b)) from t1;
+
+*** ERROR[4079] The operands of function STDDEV must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- MVF UDFs in order by
+>>
+>>select swap2(a,b) from t1 order by 1,2;
+
+OUTVAL1      OUTVAL2    
+-----------  -----------
+
+          1            1
+          1            2
+          1            3
+          1            4
+          1            5
+          1            6
+          1            7
+          1            8
+          1            9
+          1           10
+
+--- 10 row(s) selected.
+>>
+>>-- Subqueries of degree > 1 in order by
+>>
+>>-- we don't support subqueries or udfs in order by clause as syntax
+>>-- select a from t1 order by (select t2.a,t2.b from t2);
+>>
+>>select (select count(t2.a), min(t2.b) from t2)  from t1 order by 1,2;
+
+(EXPR)                (EXPR)     
+--------------------  -----------
+
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+                  10           10
+
+--- 10 row(s) selected.
+>>
+>>-- UDFs and subqueries with First N
+>>
+>>select [First 2] a, swap2(a,b) from t1 order by a,2,3;
+
+A            OUTVAL1      OUTVAL2    
+-----------  -----------  -----------
+
+          1            1            1
+          2            1            2
+
+--- 2 row(s) selected.
+>>
+>>select [First 2] a, (select max(t2.a),max(t2.b) from t2 where t2.a=t1.b) from t1 order by a,2,3;
+
+A            (EXPR)       (EXPR)     
+-----------  -----------  -----------
+
+          1            ?            ?
+          2            ?            ?
+
+--- 2 row(s) selected.
+>>
+>>-- UDFs in updates
+>>
+>>update t1 set (b,c) = (add2(a,b),add2(b,c));
+
+--- 10 row(s) updated.
+>>
+>>-- Subqueries in updates
+>>
+>>update t1 set (b,c) = ((select max(t2.a) from t2 where t2.b = t1.a),(select max(t2.b) from t2 where t2.a = t1.a));
+
+--- 10 row(s) updated.
+>>
+>>update t1 set (b,c) = (select t2.a,t2.b from t2 where t2.a = t1.a);
+
+--- 10 row(s) updated.
+>>
+>>-- MVFs UDFs in updates
+>>
+>>update t1 set (b,c) = (swap2(a,b));
+
+--- 10 row(s) updated.
+>>
+>>-- Subqueries of degree > 1 in updates
+>>
+>>update t1 set (b,c) = (select max(t2.a),max(t2.b) from t2 where t2.b = t1.a);
+
+--- 10 row(s) updated.
+>>
+>>update t1 set (b,c) = (select t2.a,t2.b from t2 where t2.a = t1.a);
+
+--- 10 row(s) updated.
+>>
+>>-- create/select
+>>
+>>select * from t3;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1          -10
+          2            1            ?
+          3            1          -20
+          4            1            ?
+          5            1          -30
+          6            1            ?
+          7            1          -40
+          8            1            ?
+          9            1          -50
+         10            1            ?
+
+--- 10 row(s) selected.
+>>
+>>select a, swap2(b,c) from t3;
+
+A            OUTVAL1      OUTVAL2    
+-----------  -----------  -----------
+
+          1          -10            1
+          2            ?            1
+          3          -20            1
+          4            ?            1
+          5          -30            1
+          6            ?            1
+          7          -40            1
+          8            ?            1
+          9          -50            1
+         10            ?            1
+
+--- 10 row(s) selected.
+>>
+>>create table t4 AS select a, swap2(b,c) from t3 T;
+
+--- 10 row(s) inserted.
+>>
+>>select * from t4;
+
+A            OUTVAL1      OUTVAL2    
+-----------  -----------  -----------
+
+          1          -10            1
+          2            ?            1
+          3          -20            1
+          4            ?            1
+          5          -30            1
+          6            ?            1
+          7          -40            1
+          8            ?            1
+          9          -50            1
+         10            ?            1
+
+--- 10 row(s) selected.
+>>
+>>
+>>-- detect expansion of inputs to builtin functions
+>>-- we should not expand the i for the ABS(i). since the rename already
+>>-- ensured the correct degree. This query should work.
+>>select i, abs(i) from
++>   (select swap2(c1,c2) from (values(1,2)) as X(c1,c2)) as T(i,x);
+
+I            (EXPR)              
+-----------  --------------------
+
+          2                     2
+
+--- 1 row(s) selected.
+>>
+>>-- Character functions
+>>-- Should fail, parser passes in the ' ' when only one parameter given
+>>select trim((select c,b from t5)) from t1;
+
+*** ERROR[4479] Function TRIM accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select trim((select c,b,a from t5)) from t1;
+
+*** ERROR[4479] Function TRIM accepts only 2 operand(s), 4 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail, parser passed in ' ' as the first param.
+>>select trim(swap2char(c,b))  from t5;
+
+*** ERROR[4479] Function TRIM accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select trim(' ' from swap2char(c,b))  from t5;
+
+*** ERROR[4479] Function TRIM accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- lpad/rpad takes optional parameters, thus the parser will not prevent
+>>-- us from putting a subquery or MVF with degree > 1 as an input, so we have
+>>-- to check again at bind time that we have the correct number of params.
+>>-- LPAD takes a char-expr, count, [char] as params
+>>-- Unfortunately when we use subqueries or MVFs as inputs, the lpad code
+>>-- is unable to guess at the size of the pads, and uses 32K, which seems to
+>>-- force everything else to be big too.
+>>-- It also appears that the repeat functionality of lpad/rpad is
+>>-- broken when the length is not known at compile time...
+>>
+>>-- should work
+>>select cast(lpad('hello  ',(select a,b from t5)) as char(40)) from t1;
+
+(EXPR)                                  
+----------------------------------------
+
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+Neo               hello                 
+
+--- 10 row(s) selected.
+>>
+>>-- should not work
+>>select cast(lpad('hello  ',(select a,b,c from t5)) as char(40)) from t1;
+
+*** ERROR[4479] Function LPAD accepts only 2 operand(s), 4 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- should work
+>>select cast(rpad('hello  ',(select a,b from t5)) as char(40)) from t1;
+
+(EXPR)                                  
+----------------------------------------
+
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+hello  Neo                              
+
+--- 10 row(s) selected.
+>>
+>>-- should not work
+>>select cast(rpad('hello  ',(select a,b,c from t5)) as char(40)) from t1;
+
+*** ERROR[4479] Function RPAD accepts only 2 operand(s), 4 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Math functions
+>>-- Should fail
+>>select power((select a,b from t1), 2) from t1;
+
+*** ERROR[4479] Function POWER accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select power(swap2(a,b), 2)  from t1;
+
+*** ERROR[4479] Function POWER accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select power(2,(select a,b from t1)) from t1;
+
+*** ERROR[4479] Function POWER accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select power(2,swap2(a,b))  from t1;
+
+*** ERROR[4479] Function POWER accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select stddev((select a,b from t1), 2) from t1;
+
+*** ERROR[4077] Function STDDEV accepts only one or two operands.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select stddev(swap2(a,b), 2)  from t1;
+
+*** ERROR[4077] Function STDDEV accepts only one or two operands.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select stddev(2,(select a,b from t1)) from t1;
+
+*** ERROR[4077] Function STDDEV accepts only one or two operands.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select stddev(2,swap2(a,b))  from t1;
+
+*** ERROR[4077] Function STDDEV accepts only one or two operands.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Moving functions
+>>
+>>-- Should fail
+>>-- we have a 3 argument movingmin that was passed 4 arguments.
+>>select movingmin(a,(select a,b from t1), 2) from t1 sequence by b;
+
+*** ERROR[4479] Function MOVINGMIN accepts only 3 operand(s), 4 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>-- we have a 3 argument movingmin that was passed 4 arguments.
+>>select movingmin(a,swap2(a,b), 2)  from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed, but it will fail since the parser used a different
+>>-- constructor that sets the arity to 2, so we will not be able to expand.
+>>-- we have a 2 argument movingmin that was passed 3 arguments.
+>>select movingmin(a,(select a,b from t1)) from t1 sequence by b;
+
+*** ERROR[4479] Function MOVINGMIN accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed
+>>-- we have a 2 argument movingmin that was passed 3 arguments.
+>>select movingmin(a,swap2(a,b))  from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed, but fails since we are not allowing UDFs in sequence funcs.
+>>select offset (a,swap2(a,b)) from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select offset (a,3,swap2(a,b)) from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select offset (a,swap2(a,b),3) from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed 
+>>select offset (a,(select a,b from t1)) from t1 sequence by b;
+
+*** ERROR[4479] Function OFFSET accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select offset (a,3,(select a,b from t1)) from t1 sequence by b;
+
+*** ERROR[4479] Function OFFSET accepts only 3 operand(s), 4 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should fail
+>>select rows since (a<b, swap2(a,b)) from t1 sequence by b;
+
+*** ERROR[4461] User-defined function SWAP2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed, but fails since we are not allowing UDFs in sequence funcs.
+>>select rows since (a<b, add2(a,b)) from t1 sequence by b;
+
+*** ERROR[4461] User-defined function ADD2 appears in the argument list of a sequence function.  This is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Should succeed
+>>select rows since (a<b, (select a from t1)) from t1 sequence by b;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Should fail
+>>select rows since (a<b, (select a,b from t1)) from t1 sequence by b;
+
+*** ERROR[4479] Function ROWS SINCE accepts only 2 operand(s), 3 were provided due to a multi-output Function or Subquery.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Query Caching test
+>>-- Compile a query with a UDF
+>>-- Flush the cache
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>cqd query_cache '4096';
+
+--- SQL operation complete.
+>>
+>>prepare s1 from select swap2(a,b) from t1;
+
+--- SQL command prepared.
+>>
+>>-- Should show an entry in the cache for the above query, with no hits.
+>>select phase, num_hits, cast(text as char(55))
++>  from table(querycacheentries('user', 'local'))
++>  order by plan_id, phase;
+
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              0  select swap2(a,b) from t1;                                                                                                                                                                                                  
+
+--- 1 row(s) selected.
+>>
+>>-- This should be found in the cache
+>>prepare s1 from select swap2(a,b) from t1;
+
+--- SQL command prepared.
+>>
+>>
+>>-- Should see a hit in the output
+>>select phase, num_hits, cast(text as char(55))
++>from table(querycacheentries('user', 'local'))
++>order by plan_id, phase;
+
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              1  select swap2(a,b) from t1;                                                                                                                                                                                                  
+
+--- 1 row(s) selected.
+>>
+>>-- Flush the cache
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>cqd query_cache '4096';
+
+--- SQL operation complete.
+>>values (add2(1,3));
+
+OUTVAL     
+-----------
+
+          4
+
+--- 1 row(s) selected.
+>>
+>>-- Should see an entry in the cache
+>>select phase, num_hits, cast(text as char(55))
++>from table(querycacheentries('user', 'local'))
++>order by plan_id, phase;
+
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              0  values (add2(1,3));                                                                                                                                                                                                         
+
+--- 1 row(s) selected.
+>>
+>>-- should get a plan cache hit
+>>values (add2(3,3));
+
+OUTVAL     
+-----------
+
+          6
+
+--- 1 row(s) selected.
+>>
+>>-- Should the use counter for the cache entry go up.
+>>select phase, num_hits, cast(text as char(55))
++>from table(querycacheentries('user', 'local'))
++>order by plan_id, phase;
+
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              1  values (add2(1,3));                                                                                                                                                                                                         
+
+--- 1 row(s) selected.
+>>
+>>-- Nested subqueries
+>>select (select a, (select (select b,c from t1) from t2) from t1) from t2 ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from t1 where (a,b,c) = (select a, (select (select b,c from t1) from t2) from t1) ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>select (select a, (select (select swap2(b,c) from t1) from t2) from t1) from t2 ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from t1 where (a,b,c) = (select a, (select (select swap2(b,c) from t1) from t2) from t1) ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>select a from t1 group by a,(select a,b from t2 group by a,b,(select b ,c from t1));
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>select a from t1 group by a,(select a,b from t2 group by a,b,swap2(b,c));
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>
+>>log;

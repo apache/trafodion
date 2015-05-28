@@ -1,0 +1,2713 @@
+>>
+>>create table t012t1(a int, b char(10), c varchar(30));
+
+--- SQL operation complete.
+>>?ifMX
+>>create table t012ut1(a int, b nchar(10), c nchar varying(30));
+
+--- SQL operation complete.
+>>?ifMX
+>>
+>>create table t012t3(
++>    a smallint not null, b smallint, 
++>    c smallint unsigned not null, d smallint unsigned,
++>    e int not null, f int,
++>    g int unsigned not null, h int unsigned,
++>    i largeint not null,
++>    j decimal(3,0) , k decimal(2,0) unsigned not null,
++>    l decimal(7,0) not null, m decimal(9,0) unsigned,
++>    n decimal(17,0), o decimal(9,0) unsigned
++>    ) no partition;
+
+--- SQL operation complete.
+>>
+>>?section dml
+>>-- INSERT queries
+>>insert into t012t1 values(10, 'abcdef', 'ghij');
+
+--- 1 row(s) inserted.
+>>insert into t012t1 values(20, 'ABCDEF', 'GHIJ');
+
+--- 1 row(s) inserted.
+>>insert into t012t1 values(30, '   abc   ', '   def   ');
+
+--- 1 row(s) inserted.
+>>insert into t012t1 values(40, 'test', 'trim on non-space');
+
+--- 1 row(s) inserted.
+>>
+>>?ifMX
+>>insert into t012ut1 values(10, N'abcdef', N'ghij');
+
+--- 1 row(s) inserted.
+>>insert into t012ut1 values(20, N'ABCDEF', N'GHIJ');
+
+--- 1 row(s) inserted.
+>>insert into t012ut1 values(30, N'   abc   ', N'   def   ');
+
+--- 1 row(s) inserted.
+>>insert into t012ut1 values(40, N'test', N'trim on non-space');
+
+--- 1 row(s) inserted.
+>>?ifMX
+>>
+>>insert into t012t3 values
++>  (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
++>  (1,1,1,1,1,1,1,1,1,1,1,1,1,1,1),
++>  (3,3,3,3,3,3,3,3,3,3,3,3,3,3,3),
++>  (4,4,4,4,4,4,4,4,4,4,4,4,4,4,4),
++>  (-1,-1,1,1,-1,-1,1,1,-1,-1,1,-1,1,-1,1),
++>  (-3,-3,3,3,-3,-3,3,3,-3,-3,3,-3,3,-3,3),
++>  (-4,-4,4,4,-4,-4,4,4,-4,-4,4,-4,4,-4,4),
++>  (0,1,0,1,0,1,0,1,0,0,1,0,1,0,1);
+
+--- 8 row(s) inserted.
+>>
+>>insert into t012t3 values 
++>(0, null, 0, null, 0, null, 0, null, 0, 
++> null, 0, 0,  null, null, null);
+
+--- 1 row(s) inserted.
+>>
+>>-- SELECT queries
+>>select * from t012t1;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 4 row(s) selected.
+>>
+>>?ifMX
+>>select * from t012ut1;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>?ifMX
+>>
+>>-- testing LOWER function
+>>select lower(b),lower(c) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+abcdef      ghij                          
+abcdef      ghij                          
+   abc         def                        
+test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select lower(lower(b)),lower(lower(c)) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+abcdef      ghij                          
+abcdef      ghij                          
+   abc         def                        
+test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where lower(c) = 'ghij';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select lower(b),lower(c) from t012ut1;
+
+(EXPR)                (EXPR)
+--------------------  ------------------------------------------------------------
+
+abcdef                ghij                                                        
+abcdef                ghij                                                        
+   abc                   def                                                      
+test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select lower(lower(b)),lower(lower(c)) from t012ut1;
+
+(EXPR)                (EXPR)
+--------------------  ------------------------------------------------------------
+
+abcdef                ghij                                                        
+abcdef                ghij                                                        
+   abc                   def                                                      
+test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where lower(c) = N'ghij';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing UPPER function
+>>select upper(b),upper(c) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+ABCDEF      GHIJ                          
+ABCDEF      GHIJ                          
+   ABC         DEF                        
+TEST        TRIM ON NON-SPACE             
+
+--- 4 row(s) selected.
+>>select upper(upper(b)), upper(upper(c)) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+ABCDEF      GHIJ                          
+ABCDEF      GHIJ                          
+   ABC         DEF                        
+TEST        TRIM ON NON-SPACE             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where upper(c) = 'GHIJ';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select upper(b),upper(c) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+   ABC                                                           DEF                                                                                                                                                                              
+TEST                                                          TRIM ON NON-SPACE                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select upper(upper(b)), upper(upper(c)) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+   ABC                                                           DEF                                                                                                                                                                              
+TEST                                                          TRIM ON NON-SPACE                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where upper(c) = N'GHIJ';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing UPSHIFT function (same as UPPER)
+>>select upshift(b),upshift(c) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+ABCDEF      GHIJ                          
+ABCDEF      GHIJ                          
+   ABC         DEF                        
+TEST        TRIM ON NON-SPACE             
+
+--- 4 row(s) selected.
+>>select upshift(upshift(b)), upshift(upshift(c)) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+ABCDEF      GHIJ                          
+ABCDEF      GHIJ                          
+   ABC         DEF                        
+TEST        TRIM ON NON-SPACE             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where upshift(c) = 'GHIJ';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select upshift(b),upshift(c) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+   ABC                                                           DEF                                                                                                                                                                              
+TEST                                                          TRIM ON NON-SPACE                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select upshift(upshift(b)), upshift(upshift(c)) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+   ABC                                                           DEF                                                                                                                                                                              
+TEST                                                          TRIM ON NON-SPACE                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where upshift(c) = N'GHIJ';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing LOWER and UPPER together
+>>select lower(upper(b)),lower(upper(c)) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+abcdef      ghij                          
+abcdef      ghij                          
+   abc         def                        
+test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select upper(lower(b)),upper(lower(c)) from t012t1;
+
+(EXPR)      (EXPR)                        
+----------  ------------------------------
+
+ABCDEF      GHIJ                          
+ABCDEF      GHIJ                          
+   ABC         DEF                        
+TEST        TRIM ON NON-SPACE             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where lower(upper(c)) = 'ghij';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>select * from t012t1 where upper(lower(c)) = 'GHIJ';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select lower(upper(b)),lower(upper(c)) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+abcdef                                                        ghij                                                                                                                                                                                
+abcdef                                                        ghij                                                                                                                                                                                
+   abc                                                           def                                                                                                                                                                              
+test                                                          trim on non-space                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select upper(lower(b)),upper(lower(c)) from t012ut1;
+
+(EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+ABCDEF                                                        GHIJ                                                                                                                                                                                
+   ABC                                                           DEF                                                                                                                                                                              
+TEST                                                          TRIM ON NON-SPACE                                                                                                                                                                   
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where lower(upper(c)) = N'ghij';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where upper(lower(c)) = N'GHIJ';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing CHAR_LENGTH function
+>>select b,char_length(b),c,char_length(c) from t012t1;
+
+B           (EXPR)      C                               (EXPR)    
+----------  ----------  ------------------------------  ----------
+
+abcdef              10  ghij                                     4
+ABCDEF              10  GHIJ                                     4
+   abc              10     def                                   9
+test                10  trim on non-space                       17
+
+--- 4 row(s) selected.
+>>select max(char_length(b)), max(char_length(c)) from t012t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10          17
+
+--- 1 row(s) selected.
+>>select min(char_length(b)), min(char_length(c)) from t012t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10           4
+
+--- 1 row(s) selected.
+>>select sum(char_length(b)), sum(char_length(c)) from t012t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  40                    34
+
+--- 1 row(s) selected.
+>>select avg(char_length(b)), avg(char_length(c)) from t012t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  10                     8
+
+--- 1 row(s) selected.
+>>select distinct char_length(b), char_length(c) from t012t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10           4
+        10           9
+        10          17
+
+--- 3 row(s) selected.
+>>select b,char_length(b),'',char_length('') from t012t1;
+
+B           (EXPR)      (EXPR)  (EXPR)    
+----------  ----------  ------  ----------
+
+abcdef              10                   0
+ABCDEF              10                   0
+   abc              10                   0
+test                10                   0
+
+--- 4 row(s) selected.
+>>select * from t012t1 where char_length(c) = 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>select * from t012t1 where char_length(b) + 5 = 15;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where char_length(c) <> 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 2 row(s) selected.
+>>select * from t012t1 where char_length(c) > 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 2 row(s) selected.
+>>select * from t012t1 where char_length(c) >= 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where char_length(c) < 5;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>select * from t012t1 where char_length(c) <= 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select b,char_length(b),c,char_length(c) from t012ut1;
+
+B                     (EXPR)      C                                                             (EXPR)
+--------------------  ----------  ------------------------------------------------------------  ----------
+
+abcdef                        10  ghij                                                                   4
+ABCDEF                        10  GHIJ                                                                   4
+   abc                        10     def                                                                 9
+test                          10  trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select max(char_length(b)), max(char_length(c)) from t012ut1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10          17
+
+--- 1 row(s) selected.
+>>select min(char_length(b)), min(char_length(c)) from t012ut1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10           4
+
+--- 1 row(s) selected.
+>>select sum(char_length(b)), sum(char_length(c)) from t012ut1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  40                    34
+
+--- 1 row(s) selected.
+>>select avg(char_length(b)), avg(char_length(c)) from t012ut1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  10                     8
+
+--- 1 row(s) selected.
+>>select distinct char_length(b), char_length(c) from t012ut1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+        10           4
+        10           9
+        10          17
+
+--- 3 row(s) selected.
+>>select b,char_length(b),'',char_length('') from t012ut1;
+
+B                     (EXPR)      (EXPR)  (EXPR)    
+--------------------  ----------  ------  ----------
+
+abcdef                        10                   0
+ABCDEF                        10                   0
+   abc                        10                   0
+test                          10                   0
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where char_length(c) = 4;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where char_length(b) + 5 = 15;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where char_length(c) <> 4;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where char_length(c) > 4;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where char_length(c) >= 4;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where char_length(c) < 5;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where char_length(c) <= 4;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing OCTET_LENGTH function
+>>select b,octet_length(b),c,octet_length(c) from t012t1;
+
+B           (EXPR)      C                               (EXPR)    
+----------  ----------  ------------------------------  ----------
+
+abcdef              10  ghij                                     4
+ABCDEF              10  GHIJ                                     4
+   abc              10     def                                   9
+test                10  trim on non-space                       17
+
+--- 4 row(s) selected.
+>>select b,octet_length(b),'',octet_length('') from t012t1;
+
+B           (EXPR)      (EXPR)  (EXPR)    
+----------  ----------  ------  ----------
+
+abcdef              10                   0
+ABCDEF              10                   0
+   abc              10                   0
+test                10                   0
+
+--- 4 row(s) selected.
+>>select * from t012t1 where octet_length(c) = 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>select * from t012t1 where octet_length(b) + 5 = 15;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where octet_length(c) <> 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 2 row(s) selected.
+>>select * from t012t1 where octet_length(c) > 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 2 row(s) selected.
+>>select * from t012t1 where octet_length(c) >= 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 4 row(s) selected.
+>>select * from t012t1 where octet_length(c) < 5;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>select * from t012t1 where octet_length(c) <= 4;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         20  ABCDEF      GHIJ                          
+
+--- 2 row(s) selected.
+>>
+>>?ifMX
+>>select b,octet_length(b),c,octet_length(c) from t012ut1;
+
+B                     (EXPR)      C                                                             (EXPR)
+--------------------  ----------  ------------------------------------------------------------  ----------
+
+abcdef                        20  ghij                                                                   8
+ABCDEF                        20  GHIJ                                                                   8
+   abc                        20     def                                                                18
+test                          20  trim on non-space                                                     34
+
+--- 4 row(s) selected.
+>>select b,octet_length(b),'',octet_length('') from t012ut1;
+
+B                     (EXPR)      (EXPR)  (EXPR)    
+--------------------  ----------  ------  ----------
+
+abcdef                        20                   0
+ABCDEF                        20                   0
+   abc                        20                   0
+test                          20                   0
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where octet_length(c) = 8;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where octet_length(b) + 5 = 25;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where octet_length(c) <> 8;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where octet_length(c) > 8;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where octet_length(c) >= 8;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where octet_length(c) < 10;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where octet_length(c) <= 8;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+
+--- 2 row(s) selected.
+>>?ifMX
+>>
+>>-- testing POSITION function
+>>-- tests moved to TEST038(Core) marked "-- *"
+>>select b, position('ab' in b) from t012t1;
+
+B           (EXPR)    
+----------  ----------
+
+abcdef               1
+ABCDEF               0
+   abc               4
+test                 0
+
+--- 4 row(s) selected.
+>>-- * select b, position('xy' in b) from t012t1;
+>>select b, position('ef' in b) from t012t1;
+
+B           (EXPR)    
+----------  ----------
+
+abcdef               5
+ABCDEF               0
+   abc               0
+test                 0
+
+--- 4 row(s) selected.
+>>-- * select b, position('f' in b) from t012t1;
+>>-- * select c, position('hi' in c) from t012t1;
+>>-- * select b, position('' in b), c, position('' in c) from t012t1;
+>>-- * select b, position('' in '') from t012t1;
+>>select * from t012t1 where position('b' in b) = 2;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+
+--- 1 row(s) selected.
+>>select * from t012t1 where position('b' in b) <> 0;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         30     abc         def                        
+
+--- 2 row(s) selected.
+>>select * from t012t1 where position('b' in b) > 1;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         30     abc         def                        
+
+--- 2 row(s) selected.
+>>select * from t012t1 where position('b' in b) >= 2;
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+         30     abc         def                        
+
+--- 2 row(s) selected.
+>>-- * select * from t012t1 where position('b' in b) < 3;
+>>-- * select * from t012t1 where position('b' in b) <= 2;
+>>
+>>?ifMX
+>>select b, position(N'ab' in b) from t012ut1;
+
+B                     (EXPR)    
+--------------------  ----------
+
+abcdef                         1
+ABCDEF                         0
+   abc                         4
+test                           0
+
+--- 4 row(s) selected.
+>>select b, position(N'xy' in b) from t012ut1;
+
+B                     (EXPR)    
+--------------------  ----------
+
+abcdef                         0
+ABCDEF                         0
+   abc                         0
+test                           0
+
+--- 4 row(s) selected.
+>>select b, position(N'ef' in b) from t012ut1;
+
+B                     (EXPR)    
+--------------------  ----------
+
+abcdef                         5
+ABCDEF                         0
+   abc                         0
+test                           0
+
+--- 4 row(s) selected.
+>>select b, position(N'f' in b) from t012ut1;
+
+B                     (EXPR)    
+--------------------  ----------
+
+abcdef                         6
+ABCDEF                         0
+   abc                         0
+test                           0
+
+--- 4 row(s) selected.
+>>select c, position(N'hi' in c) from t012ut1;
+
+C                                                             (EXPR)    
+------------------------------------------------------------  ----------
+
+ghij                                                                   2
+GHIJ                                                                   0
+   def                                                                 0
+trim on non-space                                                      0
+
+--- 4 row(s) selected.
+>>select b, position(N'' in b), c, position(N'' in c) from t012ut1;
+
+B                     (EXPR)      C                                                             (EXPR)
+--------------------  ----------  ------------------------------------------------------------  ----------
+
+abcdef                         1  ghij                                                                   1
+ABCDEF                         1  GHIJ                                                                   1
+   abc                         1     def                                                                 1
+test                           1  trim on non-space                                                      1
+
+--- 4 row(s) selected.
+>>select b, position(N'' in N'') from t012ut1;
+
+B                     (EXPR)    
+--------------------  ----------
+
+abcdef                         1
+ABCDEF                         1
+   abc                         1
+test                           1
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) = 2;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+
+--- 1 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) <> 0;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         30     abc                   def                                                      
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) > 1;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         30     abc                   def                                                      
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) >= 2;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         30     abc                   def                                                      
+
+--- 2 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) < 3;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         40  test                  trim on non-space                                           
+
+--- 3 row(s) selected.
+>>select * from t012ut1 where position(N'b' in b) <= 2;
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+         20  ABCDEF                GHIJ                                                        
+         40  test                  trim on non-space                                           
+
+--- 3 row(s) selected.
+>>?ifMX
+>>
+>>-- testing SUBSTRING function
+>>select b,substring(b from 2 for 1) as u,char_length(substring(b from 2 for 1)) len from t012t1;
+
+B           U  LEN       
+----------  -  ----------
+
+abcdef      b           1
+ABCDEF      B           1
+   abc                  1
+test        e           1
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2),char_length(substring(b from 2)) from t012t1;
+
+B           (EXPR)     (EXPR)    
+----------  ---------  ----------
+
+abcdef      bcdef               9
+ABCDEF      BCDEF               9
+   abc        abc               9
+test        est                 9
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 1),char_length(substring(c from 2 for 1)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            h                1
+GHIJ                            H                1
+   def                                           1
+trim on non-space               r                1
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2),char_length(substring(c from 2)) from t012t1;
+
+C                               (EXPR)                         (EXPR)
+------------------------------  -----------------------------  ----------
+
+ghij                            hij                                     3
+GHIJ                            HIJ                                     3
+   def                            def                                   8
+trim on non-space               rim on non-space                       16
+
+--- 4 row(s) selected.
+>>select b,substring(b from 6 for 1),char_length(substring(b from 6 for 1)) from t012t1;
+
+B           (EXPR)  (EXPR)    
+----------  ------  ----------
+
+abcdef      f                1
+ABCDEF      F                1
+   abc      c                1
+test                         1
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 3),char_length(substring(c from 2 for 3)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            hij              3
+GHIJ                            HIJ              3
+   def                            d              3
+trim on non-space               rim              3
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2 for 4),char_length(substring(b from 2 for 4)) from t012t1;
+
+B           (EXPR)  (EXPR)    
+----------  ------  ----------
+
+abcdef      bcde             4
+ABCDEF      BCDE             4
+   abc        ab             4
+test        est              4
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 5),char_length(substring(c from 2 for 5)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            hij              3
+GHIJ                            HIJ              3
+   def                            def            5
+trim on non-space               rim o            5
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2 for 0),char_length(substring(b from 2 for 0)) from t012t1;
+
+B           (EXPR)  (EXPR)    
+----------  ------  ----------
+
+abcdef                       0
+ABCDEF                       0
+   abc                       0
+test                         0
+
+--- 4 row(s) selected.
+>>select b,substring(b from -8 for 2),char_length(substring(b from -8 for 2)) from t012t1;
+
+B           (EXPR)  (EXPR)    
+----------  ------  ----------
+
+abcdef                       0
+ABCDEF                       0
+   abc                       0
+test                         0
+
+--- 4 row(s) selected.
+>>select c,substring(c from -2 for 6),char_length(substring(c from -2 for 6)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            ghi              3
+GHIJ                            GHI              3
+   def                                           3
+trim on non-space               tri              3
+
+--- 4 row(s) selected.
+>>select c,substring(c from -1 for 6),char_length(substring(c from -1 for 6)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            ghij             4
+GHIJ                            GHIJ             4
+   def                             d             4
+trim on non-space               trim             4
+
+--- 4 row(s) selected.
+>>select c,substring(c from 0 for 6),char_length(substring(c from 0 for 6)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            ghij             4
+GHIJ                            GHIJ             4
+   def                             de            5
+trim on non-space               trim             5
+
+--- 4 row(s) selected.
+>>select c,substring(c from 1 for 6),char_length(substring(c from 1 for 6)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                            ghij             4
+GHIJ                            GHIJ             4
+   def                             def           6
+trim on non-space               trim o           6
+
+--- 4 row(s) selected.
+>>select c,substring(c from 7 for 3),char_length(substring(c from 7 for 3)) from t012t1;
+
+C                               (EXPR)  (EXPR)    
+------------------------------  ------  ----------
+
+ghij                                             0
+GHIJ                                             0
+   def                                           3
+trim on non-space               n n              3
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2),substring(substring(b from 2) from 2) from t012t1;
+
+B           (EXPR)     (EXPR)  
+----------  ---------  --------
+
+abcdef      bcdef      cdef    
+ABCDEF      BCDEF      CDEF    
+   abc        abc       abc    
+test        est        st      
+
+--- 4 row(s) selected.
+>>select b,substring('' from 1 for 2),char_length(substring('' from 1 for 2)) from t012t1;
+
+B           (EXPR)  (EXPR)    
+----------  ------  ----------
+
+abcdef                       0
+ABCDEF                       0
+   abc                       0
+test                         0
+
+--- 4 row(s) selected.
+>>select * from t012t1 where substring(c from 2) = 'hij';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         10  abcdef      ghij                          
+
+--- 1 row(s) selected.
+>>select * from t012t1 where substring(c from 2) <> 'hij';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         20  ABCDEF      GHIJ                          
+         30     abc         def                        
+         40  test        trim on non-space             
+
+--- 3 row(s) selected.
+>>-- The following query should raise a SQL exception. (To be implemented)
+>>-- select b,substring(b from 2 for -2) from t012t1;
+>>
+>>?ifMX
+>>select b,substring(b from 2 for 1),char_length(substring(b from 2 for 1)) from t012ut1;
+
+B                     (EXPR)  (EXPR)    
+--------------------  ------  ----------
+
+abcdef                b                1
+ABCDEF                B                1
+   abc                                 1
+test                  e                1
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2),char_length(substring(b from 2)) from t012ut1;
+
+B                     (EXPR)              (EXPR)    
+--------------------  ------------------  ----------
+
+abcdef                bcdef                        9
+ABCDEF                BCDEF                        9
+   abc                  abc                        9
+test                  est                          9
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 1),char_length(substring(c from 2 for 1)) from t012ut1;
+
+C                                                             (EXPR)  (EXPR)
+------------------------------------------------------------  ------  ----------
+
+ghij                                                          h                1
+GHIJ                                                          H                1
+   def                                                                         1
+trim on non-space                                             r                1
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2),char_length(substring(c from 2)) from t012ut1;
+
+C                                                             (EXPR)                                                      (EXPR)
+------------------------------------------------------------  ----------------------------------------------------------  ----------
+
+ghij                                                          hij                                                                  3
+GHIJ                                                          HIJ                                                                  3
+   def                                                          def                                                                8
+trim on non-space                                             rim on non-space                                                    16
+
+--- 4 row(s) selected.
+>>select b,substring(b from 6 for 1),char_length(substring(b from 6 for 1)) from t012ut1;
+
+B                     (EXPR)  (EXPR)    
+--------------------  ------  ----------
+
+abcdef                f                1
+ABCDEF                F                1
+   abc                c                1
+test                                   1
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 3),char_length(substring(c from 2 for 3)) from t012ut1;
+
+C                                                             (EXPR)  (EXPR)
+------------------------------------------------------------  ------  ----------
+
+ghij                                                          hij              3
+GHIJ                                                          HIJ              3
+   def                                                          d              3
+trim on non-space                                             rim              3
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2 for 4),char_length(substring(b from 2 for 4)) from t012ut1;
+
+B                     (EXPR)    (EXPR)    
+--------------------  --------  ----------
+
+abcdef                bcde               4
+ABCDEF                BCDE               4
+   abc                  ab               4
+test                  est                4
+
+--- 4 row(s) selected.
+>>select c,substring(c from 2 for 5),char_length(substring(c from 2 for 5)) from t012ut1;
+
+C                                                             (EXPR)      (EXPR)
+------------------------------------------------------------  ----------  ----------
+
+ghij                                                          hij                  3
+GHIJ                                                          HIJ                  3
+   def                                                          def                5
+trim on non-space                                             rim o                5
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2 for 0),char_length(substring(b from 2 for 0)) from t012ut1;
+
+B                     (EXPR)  (EXPR)    
+--------------------  ------  ----------
+
+abcdef                                 0
+ABCDEF                                 0
+   abc                                 0
+test                                   0
+
+--- 4 row(s) selected.
+>>select b,substring(b from -8 for 2),char_length(substring(b from -8 for 2)) from t012ut1;
+
+B                     (EXPR)  (EXPR)    
+--------------------  ------  ----------
+
+abcdef                                 0
+ABCDEF                                 0
+   abc                                 0
+test                                   0
+
+--- 4 row(s) selected.
+>>select c,substring(c from -2 for 6),char_length(substring(c from -2 for 6)) from t012ut1;
+
+C                                                             (EXPR)        (EXPR)
+------------------------------------------------------------  ------------  ----------
+
+ghij                                                          ghi                    3
+GHIJ                                                          GHI                    3
+   def                                                                               3
+trim on non-space                                             tri                    3
+
+--- 4 row(s) selected.
+>>select c,substring(c from -1 for 6),char_length(substring(c from -1 for 6)) from t012ut1;
+
+C                                                             (EXPR)        (EXPR)
+------------------------------------------------------------  ------------  ----------
+
+ghij                                                          ghij                   4
+GHIJ                                                          GHIJ                   4
+   def                                                           d                   4
+trim on non-space                                             trim                   4
+
+--- 4 row(s) selected.
+>>select c,substring(c from 0 for 6),char_length(substring(c from 0 for 6)) from t012ut1;
+
+C                                                             (EXPR)        (EXPR)
+------------------------------------------------------------  ------------  ----------
+
+ghij                                                          ghij                   4
+GHIJ                                                          GHIJ                   4
+   def                                                           de                  5
+trim on non-space                                             trim                   5
+
+--- 4 row(s) selected.
+>>select c,substring(c from 1 for 6),char_length(substring(c from 1 for 6)) from t012ut1;
+
+C                                                             (EXPR)        (EXPR)
+------------------------------------------------------------  ------------  ----------
+
+ghij                                                          ghij                   4
+GHIJ                                                          GHIJ                   4
+   def                                                           def                 6
+trim on non-space                                             trim o                 6
+
+--- 4 row(s) selected.
+>>select c,substring(c from 7 for 3),char_length(substring(c from 7 for 3)) from t012ut1;
+
+C                                                             (EXPR)  (EXPR)
+------------------------------------------------------------  ------  ----------
+
+ghij                                                                           0
+GHIJ                                                                           0
+   def                                                                         3
+trim on non-space                                             n n              3
+
+--- 4 row(s) selected.
+>>select b,substring(b from 2),substring(substring(b from 2) from 2) from t012ut1;
+
+B                     (EXPR)              (EXPR)          
+--------------------  ------------------  ----------------
+
+abcdef                bcdef               cdef            
+ABCDEF                BCDEF               CDEF            
+   abc                  abc                abc            
+test                  est                 st              
+
+--- 4 row(s) selected.
+>>select b,substring(N'' from 1 for 2),char_length(substring(N'' from 1 for 2)) from t012ut1;
+
+B                     (EXPR)  (EXPR)    
+--------------------  ------  ----------
+
+abcdef                                 0
+ABCDEF                                 0
+   abc                                 0
+test                                   0
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where substring(c from 2) = N'hij';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         10  abcdef                ghij                                                        
+
+--- 1 row(s) selected.
+>>select * from t012ut1 where substring(c from 2) <> N'hij';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         20  ABCDEF                GHIJ                                                        
+         30     abc                   def                                                      
+         40  test                  trim on non-space                                           
+
+--- 3 row(s) selected.
+>>-- The following query should raise a SQL exception. (To be implemented)
+>>-- select b,substring(b from 2 for -2) from t012ut1;
+>>?ifMX
+>>
+>>-- testing TRIM function
+>>-- tests moved to TEST038(Core) marked "-- *"
+>>select b,trim(leading from b),char_length(trim(leading from b)) from t012t1;
+
+B           (EXPR)      (EXPR)    
+----------  ----------  ----------
+
+abcdef      abcdef              10
+ABCDEF      ABCDEF              10
+   abc      abc                  7
+test        test                10
+
+--- 4 row(s) selected.
+>>-- * select c,trim(leading from c),char_length(trim(leading from c)) from t012t1;
+>>-- * select b,trim(leading ' ' from b),char_length(trim(leading ' ' from b)) from t012t1;
+>>select c,trim(leading ' ' from c),char_length(trim(leading ' ' from c)) from t012t1;
+
+C                               (EXPR)                          (EXPR)
+------------------------------  ------------------------------  ----------
+
+ghij                            ghij                                     4
+GHIJ                            GHIJ                                     4
+   def                          def                                      6
+trim on non-space               trim on non-space                       17
+
+--- 4 row(s) selected.
+>>-- * select b,trim(trailing from b),char_length(trim(trailing from b)) from t012t1;
+>>select c,trim(trailing from c),char_length(trim(trailing from c)) from t012t1;
+
+C                               (EXPR)                          (EXPR)
+------------------------------  ------------------------------  ----------
+
+ghij                            ghij                                     4
+GHIJ                            GHIJ                                     4
+   def                             def                                   6
+trim on non-space               trim on non-space                       17
+
+--- 4 row(s) selected.
+>>-- * select b,trim(both from b),char_length(trim(both from b)) from t012t1;
+>>select c,trim(both from c),char_length(trim(both from c)) from t012t1;
+
+C                               (EXPR)                          (EXPR)
+------------------------------  ------------------------------  ----------
+
+ghij                            ghij                                     4
+GHIJ                            GHIJ                                     4
+   def                          def                                      3
+trim on non-space               trim on non-space                       17
+
+--- 4 row(s) selected.
+>>select b,trim(b),char_length(trim(b)) from t012t1;
+
+B           (EXPR)      (EXPR)    
+----------  ----------  ----------
+
+abcdef      abcdef               6
+ABCDEF      ABCDEF               6
+   abc      abc                  3
+test        test                 4
+
+--- 4 row(s) selected.
+>>select c,trim(c),char_length(trim(c)) from t012t1;
+
+C                               (EXPR)                          (EXPR)
+------------------------------  ------------------------------  ----------
+
+ghij                            ghij                                     4
+GHIJ                            GHIJ                                     4
+   def                          def                                      3
+trim on non-space               trim on non-space                       17
+
+--- 4 row(s) selected.
+>>select b,trim('a' from b),char_length(trim('a' from b)) from t012t1;
+
+B           (EXPR)      (EXPR)    
+----------  ----------  ----------
+
+abcdef      bcdef                9
+ABCDEF      ABCDEF              10
+   abc         abc              10
+test        test                10
+
+--- 4 row(s) selected.
+>>-- * select b,trim('b' from trim('a' from b)),char_length(trim('b' from trim('a' from b))) from t012t1;
+>>select b,trim('t' from b),char_length(trim('t' from b)) from t012t1;
+
+B           (EXPR)      (EXPR)    
+----------  ----------  ----------
+
+abcdef      abcdef              10
+ABCDEF      ABCDEF              10
+   abc         abc              10
+test        est                  9
+
+--- 4 row(s) selected.
+>>-- * select * from t012t1 where trim(c)='def';
+>>-- * select * from t012t1 where trim(leading from c) = 'def';
+>>-- The following query should raise a SQL exception.(To be implemented)  
+>>-- select b,trim('ab' from b),c from t012t1;
+>>
+>>?ifMX
+>>select b,trim(leading from b),char_length(trim(leading from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                        10
+ABCDEF                ABCDEF                        10
+   abc                abc                            7
+test                  test                          10
+
+--- 4 row(s) selected.
+>>select c,trim(leading from c),char_length(trim(leading from c)) from t012ut1;
+
+C                                                             (EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------  ----------
+
+ghij                                                          ghij                                                                   4
+GHIJ                                                          GHIJ                                                                   4
+   def                                                        def                                                                    6
+trim on non-space                                             trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select b,trim(leading N' ' from b),char_length(trim(leading N' ' from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                        10
+ABCDEF                ABCDEF                        10
+   abc                abc                            7
+test                  test                          10
+
+--- 4 row(s) selected.
+>>select c,trim(leading N' ' from c),char_length(trim(leading N' ' from c)) from t012ut1;
+
+C                                                             (EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------  ----------
+
+ghij                                                          ghij                                                                   4
+GHIJ                                                          GHIJ                                                                   4
+   def                                                        def                                                                    6
+trim on non-space                                             trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select b,trim(trailing from b),char_length(trim(trailing from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                         6
+ABCDEF                ABCDEF                         6
+   abc                   abc                         6
+test                  test                           4
+
+--- 4 row(s) selected.
+>>select c,trim(trailing from c),char_length(trim(trailing from c)) from t012ut1;
+
+C                                                             (EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------  ----------
+
+ghij                                                          ghij                                                                   4
+GHIJ                                                          GHIJ                                                                   4
+   def                                                           def                                                                 6
+trim on non-space                                             trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select b,trim(both from b),char_length(trim(both from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                         6
+ABCDEF                ABCDEF                         6
+   abc                abc                            3
+test                  test                           4
+
+--- 4 row(s) selected.
+>>select c,trim(both from c),char_length(trim(both from c)) from t012ut1;
+
+C                                                             (EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------  ----------
+
+ghij                                                          ghij                                                                   4
+GHIJ                                                          GHIJ                                                                   4
+   def                                                        def                                                                    3
+trim on non-space                                             trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select b,trim(b),char_length(trim(b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                         6
+ABCDEF                ABCDEF                         6
+   abc                abc                            3
+test                  test                           4
+
+--- 4 row(s) selected.
+>>select c,trim(c),char_length(trim(c)) from t012ut1;
+
+C                                                             (EXPR)                                                        (EXPR)
+------------------------------------------------------------  ------------------------------------------------------------  ----------
+
+ghij                                                          ghij                                                                   4
+GHIJ                                                          GHIJ                                                                   4
+   def                                                        def                                                                    3
+trim on non-space                                             trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select b,trim(N'a' from b),char_length(trim(N'a' from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                bcdef                          9
+ABCDEF                ABCDEF                        10
+   abc                   abc                        10
+test                  test                          10
+
+--- 4 row(s) selected.
+>>select b,trim(N'b' from trim(N'a' from b)),char_length(trim(N'b' from trim(N'a' from b))) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                cdef                           8
+ABCDEF                ABCDEF                        10
+   abc                   abc                        10
+test                  test                          10
+
+--- 4 row(s) selected.
+>>select b,trim(N't' from b),char_length(trim(N't' from b)) from t012ut1;
+
+B                     (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+abcdef                abcdef                        10
+ABCDEF                ABCDEF                        10
+   abc                   abc                        10
+test                  est                            9
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where trim(c)=N'def';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+
+--- 1 row(s) selected.
+>>select * from t012ut1 where trim(leading from c) = N'def';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+
+--- 1 row(s) selected.
+>>-- The following query should raise a SQL exception.(To be implemented)  
+>>-- select b,trim(N'ab' from b),c from t012ut1;
+>>?ifMX
+>>
+>>-- test CONCAT operation
+>>select b||b,char_length(b||b) from t012t1;
+
+(EXPR)                (EXPR)    
+--------------------  ----------
+
+abcdef    abcdef              20
+ABCDEF    ABCDEF              20
+   abc       abc              20
+test      test                20
+
+--- 4 row(s) selected.
+>>select b||trim(b),char_length(b||trim(b)) from t012t1;
+
+(EXPR)                (EXPR)    
+--------------------  ----------
+
+abcdef    abcdef              16
+ABCDEF    ABCDEF              16
+   abc    abc                 13
+test      test                14
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(b),char_length(trim(b)||trim(b)) from t012t1;
+
+(EXPR)                (EXPR)    
+--------------------  ----------
+
+abcdefabcdef                  12
+ABCDEFABCDEF                  12
+abcabc                         6
+testtest                       8
+
+--- 4 row(s) selected.
+>>select b||'',char_length(b||'') from t012t1;
+
+(EXPR)      (EXPR)    
+----------  ----------
+
+abcdef              10
+ABCDEF              10
+   abc              10
+test                10
+
+--- 4 row(s) selected.
+>>select b||'1234',char_length(b||'1234') from t012t1;
+
+(EXPR)          (EXPR)    
+--------------  ----------
+
+abcdef    1234          14
+ABCDEF    1234          14
+   abc    1234          14
+test      1234          14
+
+--- 4 row(s) selected.
+>>select '1234'||b,char_length('1234'||b) from t012t1;
+
+(EXPR)          (EXPR)    
+--------------  ----------
+
+1234abcdef              14
+1234ABCDEF              14
+1234   abc              14
+1234test                14
+
+--- 4 row(s) selected.
+>>select b, '1234'||'5678' from t012t1;
+
+B           (EXPR)  
+----------  --------
+
+abcdef      12345678
+ABCDEF      12345678
+   abc      12345678
+test        12345678
+
+--- 4 row(s) selected.
+>>select b, '1234'||''||'5678' from t012t1;
+
+B           (EXPR)  
+----------  --------
+
+abcdef      12345678
+ABCDEF      12345678
+   abc      12345678
+test        12345678
+
+--- 4 row(s) selected.
+>>select b, '1234'||' '||'5678' from t012t1;
+
+B           (EXPR)   
+----------  ---------
+
+abcdef      1234 5678
+ABCDEF      1234 5678
+   abc      1234 5678
+test        1234 5678
+
+--- 4 row(s) selected.
+>>select c||c,char_length(c||c) from t012t1;
+
+(EXPR)                                                        (EXPR)    
+------------------------------------------------------------  ----------
+
+ghijghij                                                               8
+GHIJGHIJ                                                               8
+   def      def                                                       18
+trim on non-spacetrim on non-space                                    34
+
+--- 4 row(s) selected.
+>>select c||trim(c),char_length(c||trim(c)) from t012t1;
+
+(EXPR)                                                        (EXPR)    
+------------------------------------------------------------  ----------
+
+ghijghij                                                               8
+GHIJGHIJ                                                               8
+   def   def                                                          12
+trim on non-spacetrim on non-space                                    34
+
+--- 4 row(s) selected.
+>>select trim(c)||trim(c),char_length(trim(c)||trim(c)) from t012t1;
+
+(EXPR)                                                        (EXPR)    
+------------------------------------------------------------  ----------
+
+ghijghij                                                               8
+GHIJGHIJ                                                               8
+defdef                                                                 6
+trim on non-spacetrim on non-space                                    34
+
+--- 4 row(s) selected.
+>>select c||'',char_length(c||'') from t012t1;
+
+(EXPR)                          (EXPR)    
+------------------------------  ----------
+
+ghij                                     4
+GHIJ                                     4
+   def                                   9
+trim on non-space                       17
+
+--- 4 row(s) selected.
+>>select c||'1234',char_length(c||'1234') from t012t1;
+
+(EXPR)                              (EXPR)    
+----------------------------------  ----------
+
+ghij1234                                     8
+GHIJ1234                                     8
+   def   1234                               13
+trim on non-space1234                       21
+
+--- 4 row(s) selected.
+>>select '1234'||c,char_length('1234'||c) from t012t1;
+
+(EXPR)                              (EXPR)    
+----------------------------------  ----------
+
+1234ghij                                     8
+1234GHIJ                                     8
+1234   def                                  13
+1234trim on non-space                       21
+
+--- 4 row(s) selected.
+>>select b||c,char_length(b||c) from t012t1;
+
+(EXPR)                                    (EXPR)    
+----------------------------------------  ----------
+
+abcdef    ghij                                    14
+ABCDEF    GHIJ                                    14
+   abc       def                                  19
+test      trim on non-space                       27
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012t1;
+
+(EXPR)                                    (EXPR)    
+----------------------------------------  ----------
+
+abcdefghij                                        10
+ABCDEFGHIJ                                        10
+abcdef                                             6
+testtrim on non-space                             21
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012t1;
+
+(EXPR)                                              (EXPR)    
+--------------------------------------------------  ----------
+
+abcdefghijabcdef                                            16
+ABCDEFGHIJABCDEF                                            16
+abcdefabc                                                    9
+testtrim on non-spacetest                                   25
+
+--- 4 row(s) selected.
+>>select * from t012t1 where trim(b)||trim(c) = 'abcdef';
+
+A            B           C                             
+-----------  ----------  ------------------------------
+
+         30     abc         def                        
+
+--- 1 row(s) selected.
+>>
+>>?ifMX
+>>select b||b,char_length(b||b) from t012ut1;
+
+(EXPR)                                    (EXPR)    
+----------------------------------------  ----------
+
+abcdef    abcdef                                  20
+ABCDEF    ABCDEF                                  20
+   abc       abc                                  20
+test      test                                    20
+
+--- 4 row(s) selected.
+>>select b||trim(b),char_length(b||trim(b)) from t012ut1;
+
+(EXPR)                                    (EXPR)    
+----------------------------------------  ----------
+
+abcdef    abcdef                                  16
+ABCDEF    ABCDEF                                  16
+   abc    abc                                     13
+test      test                                    14
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(b),char_length(trim(b)||trim(b)) from t012ut1;
+
+(EXPR)                                    (EXPR)    
+----------------------------------------  ----------
+
+abcdefabcdef                                      12
+ABCDEFABCDEF                                      12
+abcabc                                             6
+testtest                                           8
+
+--- 4 row(s) selected.
+>>select b||N'',char_length(b||N'') from t012ut1;
+
+(EXPR)                (EXPR)    
+--------------------  ----------
+
+abcdef                        10
+ABCDEF                        10
+   abc                        10
+test                          10
+
+--- 4 row(s) selected.
+>>select b||N'1234',char_length(b||N'1234') from t012ut1;
+
+(EXPR)                        (EXPR)    
+----------------------------  ----------
+
+abcdef    1234                        14
+ABCDEF    1234                        14
+   abc    1234                        14
+test      1234                        14
+
+--- 4 row(s) selected.
+>>select N'1234'||b,char_length(N'1234'||b) from t012ut1;
+
+(EXPR)                        (EXPR)    
+----------------------------  ----------
+
+1234abcdef                            14
+1234ABCDEF                            14
+1234   abc                            14
+1234test                              14
+
+--- 4 row(s) selected.
+>>select b, N'1234'||N'5678' from t012ut1;
+
+B                     (EXPR)          
+--------------------  ----------------
+
+abcdef                12345678        
+ABCDEF                12345678        
+   abc                12345678        
+test                  12345678        
+
+--- 4 row(s) selected.
+>>select b, N'1234'||N''||N'5678' from t012ut1;
+
+B                     (EXPR)          
+--------------------  ----------------
+
+abcdef                12345678        
+ABCDEF                12345678        
+   abc                12345678        
+test                  12345678        
+
+--- 4 row(s) selected.
+>>select b, N'1234'||N' '||N'5678' from t012ut1;
+
+B                     (EXPR)            
+--------------------  ------------------
+
+abcdef                1234 5678         
+ABCDEF                1234 5678         
+   abc                1234 5678         
+test                  1234 5678         
+
+--- 4 row(s) selected.
+>>select c||c,char_length(c||c) from t012ut1;
+
+(EXPR)                                                                                                                    (EXPR)
+------------------------------------------------------------------------------------------------------------------------  ----------
+
+ghijghij                                                                                                                           8
+GHIJGHIJ                                                                                                                           8
+   def      def                                                                                                                   18
+trim on non-spacetrim on non-space                                                                                                34
+
+--- 4 row(s) selected.
+>>select c||trim(c),char_length(c||trim(c)) from t012ut1;
+
+(EXPR)                                                                                                                    (EXPR)
+------------------------------------------------------------------------------------------------------------------------  ----------
+
+ghijghij                                                                                                                           8
+GHIJGHIJ                                                                                                                           8
+   def   def                                                                                                                      12
+trim on non-spacetrim on non-space                                                                                                34
+
+--- 4 row(s) selected.
+>>select trim(c)||trim(c),char_length(trim(c)||trim(c)) from t012ut1;
+
+(EXPR)                                                                                                                    (EXPR)
+------------------------------------------------------------------------------------------------------------------------  ----------
+
+ghijghij                                                                                                                           8
+GHIJGHIJ                                                                                                                           8
+defdef                                                                                                                             6
+trim on non-spacetrim on non-space                                                                                                34
+
+--- 4 row(s) selected.
+>>select c||N'',char_length(c||N'') from t012ut1;
+
+(EXPR)                                                        (EXPR)    
+------------------------------------------------------------  ----------
+
+ghij                                                                   4
+GHIJ                                                                   4
+   def                                                                 9
+trim on non-space                                                     17
+
+--- 4 row(s) selected.
+>>select c||N'1234',char_length(c||N'1234') from t012ut1;
+
+(EXPR)                                                                (EXPR)
+--------------------------------------------------------------------  ----------
+
+ghij1234                                                                       8
+GHIJ1234                                                                       8
+   def   1234                                                                 13
+trim on non-space1234                                                         21
+
+--- 4 row(s) selected.
+>>select N'1234'||c,char_length(N'1234'||c) from t012ut1;
+
+(EXPR)                                                                (EXPR)
+--------------------------------------------------------------------  ----------
+
+1234ghij                                                                       8
+1234GHIJ                                                                       8
+1234   def                                                                    13
+1234trim on non-space                                                         21
+
+--- 4 row(s) selected.
+>>select b||c,char_length(b||c) from t012ut1;
+
+(EXPR)                                                                            (EXPR)
+--------------------------------------------------------------------------------  ----------
+
+abcdef    ghij                                                                            14
+ABCDEF    GHIJ                                                                            14
+   abc       def                                                                          19
+test      trim on non-space                                                               27
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012ut1;
+
+(EXPR)                                                                            (EXPR)
+--------------------------------------------------------------------------------  ----------
+
+abcdefghij                                                                                10
+ABCDEFGHIJ                                                                                10
+abcdef                                                                                     6
+testtrim on non-space                                                                     21
+
+--- 4 row(s) selected.
+>>select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012ut1;
+
+(EXPR)                                                                                                (EXPR)
+----------------------------------------------------------------------------------------------------  ----------
+
+abcdefghijabcdef                                                                                              16
+ABCDEFGHIJABCDEF                                                                                              16
+abcdefabc                                                                                                      9
+testtrim on non-spacetest                                                                                     25
+
+--- 4 row(s) selected.
+>>select * from t012ut1 where trim(b)||trim(c) = N'abcdef';
+
+A            B                     C
+-----------  --------------------  ------------------------------------------------------------
+
+         30     abc                   def                                                      
+
+--- 1 row(s) selected.
+>>?ifMX
+>>
+>>-- test BIT functions
+>>select bitand(1,1), bitor(1,1), bitxor(1,1), bitnot(1) from (values(1)) x(a);
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)
+-----------  -----------  -----------  ------
+
+          1            1            0      -2
+
+--- 1 row(s) selected.
+>>select bitand(1,-1), bitor(1,-1), bitxor(-1,1), bitnot(-1) from (values(1)) x(a);
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)
+-----------  -----------  -----------  ------
+
+          1           -1           -2       0
+
+--- 1 row(s) selected.
+>>select bitnot(bitnot(1)) from (values(1)) x(a);
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select bitand(1,123456789), bitor(1,123456789), bitxor(1,123456789), bitnot(123456789) from (values(1)) x(a);
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)     
+-----------  -----------  -----------  -----------
+
+          1    123456789    123456788   -123456790
+
+--- 1 row(s) selected.
+>>select bitand(1,-123456789), bitor(1,-123456789), bitxor(-123456789,1), bitnot(-123456789) from (values(1)) x(a);
+
+(EXPR)                (EXPR)                (EXPR)                (EXPR)
+--------------------  --------------------  --------------------  --------------------
+
+                   1            -123456789            -123456790             123456788
+
+--- 1 row(s) selected.
+>>
+>>select 1 & 1, 1 | 1, 1 ^ 1, ~ 1 from (values(1)) x(a);
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)     
+-----------  -----------  -----------  -----------
+
+          1            1            0           -2
+
+--- 1 row(s) selected.
+>>select 1 & 123456789, 1 | 123456789, 1 ^ 123456789, ~ 123456789 from (values(1)) x(a);
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)     
+-----------  -----------  -----------  -----------
+
+          1    123456789    123456788   -123456790
+
+--- 1 row(s) selected.
+>>select 1 | 2 | 4 from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          7
+
+--- 1 row(s) selected.
+>>select 1 & 2 & 4 from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          0
+
+--- 1 row(s) selected.
+>>select ~ (1 | 2 | 4) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+         -8
+
+--- 1 row(s) selected.
+>>select ~ (1 ^ 2 ^ 4) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+         -8
+
+--- 1 row(s) selected.
+>>select 1 & bitor(1,1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select 1 & bitxor(1,1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          0
+
+--- 1 row(s) selected.
+>>
+>>select bitand(a,a), bitand(b,b), bitand(c,c), bitand(d,d),
++>       bitand(e,e), bitand(f,f), bitand(g,g), bitand(h,h),
++>       bitand(i,i), bitand(j,j), bitand(k,k), bitand(l,l),
++>       bitand(m,m), bitand(n,n), bitand(o,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)                (EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)
+-----------  -----------  ----------  ----------  -----------  -----------  ----------  ----------  --------------------  -----------  ----------  -----------  ----------  --------------------  ----------
+
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          1            1           1           1            1            1           1           1                     1            1           1            1           1                     1           1
+          3            3           3           3            3            3           3           3                     3            3           3            3           3                     3           3
+          4            4           4           4            4            4           4           4                     4            4           4            4           4                     4           4
+         -1           -1           1           1           -1           -1           1           1                    -1           -1           1           -1           1                    -1           1
+         -3           -3           3           3           -3           -3           3           3                    -3           -3           3           -3           3                    -3           3
+         -4           -4           4           4           -4           -4           4           4                    -4           -4           4           -4           4                    -4           4
+          0            1           0           1            0            1           0           1                     0            0           1            0           1                     0           1
+          0            ?           0           ?            0            ?           0           ?                     0            ?           0            0           ?                     ?           ?
+
+--- 9 row(s) selected.
+>>
+>>select bitor(a,a), bitor(b,b), bitor(c,c), bitor(d,d),
++>       bitor(e,e), bitor(f,f), bitor(g,g), bitor(h,h),
++>       bitor(i,i), bitor(j,j), bitor(k,k), bitor(l,l),
++>       bitor(m,m), bitor(n,n), bitor(o,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)                (EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)
+-----------  -----------  ----------  ----------  -----------  -----------  ----------  ----------  --------------------  -----------  ----------  -----------  ----------  --------------------  ----------
+
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          1            1           1           1            1            1           1           1                     1            1           1            1           1                     1           1
+          3            3           3           3            3            3           3           3                     3            3           3            3           3                     3           3
+          4            4           4           4            4            4           4           4                     4            4           4            4           4                     4           4
+         -1           -1           1           1           -1           -1           1           1                    -1           -1           1           -1           1                    -1           1
+         -3           -3           3           3           -3           -3           3           3                    -3           -3           3           -3           3                    -3           3
+         -4           -4           4           4           -4           -4           4           4                    -4           -4           4           -4           4                    -4           4
+          0            1           0           1            0            1           0           1                     0            0           1            0           1                     0           1
+          0            ?           0           ?            0            ?           0           ?                     0            ?           0            0           ?                     ?           ?
+
+--- 9 row(s) selected.
+>>
+>>select bitxor(a,a), bitxor(b,b), bitxor(c,c), bitxor(d,d),
++>       bitxor(e,e), bitxor(f,f), bitxor(g,g), bitxor(h,h),
++>       bitxor(i,i), bitxor(j,j), bitxor(k,k), bitxor(l,l),
++>       bitxor(m,m), bitxor(n,n), bitxor(o,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)                (EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)
+-----------  -----------  ----------  ----------  -----------  -----------  ----------  ----------  --------------------  -----------  ----------  -----------  ----------  --------------------  ----------
+
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            0           0           0            0            0           0           0                     0            0           0            0           0                     0           0
+          0            ?           0           ?            0            ?           0           ?                     0            ?           0            0           ?                     ?           ?
+
+--- 9 row(s) selected.
+>>
+>>select bitand(a,b), bitand(c,d), bitand(e,f), bitand(g,h),
++>       bitand(i,i),
++>       bitand(j,k), bitand(l,m), bitand(n,o)
++>from t012t3;
+
+(EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)       (EXPR)       (EXPR)
+-----------  ----------  -----------  ----------  --------------------  -----------  -----------  --------------------
+
+          0           0            0           0                     0            0            0                     0
+          1           1            1           1                     1            1            1                     1
+          3           3            3           3                     3            3            3                     3
+          4           4            4           4                     4            4            4                     4
+         -1           1           -1           1                    -1            1            1                     1
+         -3           3           -3           3                    -3            1            1                     1
+         -4           4           -4           4                    -4            4            4                     4
+          0           0            0           0                     0            0            0                     0
+          ?           ?            ?           ?                     0            ?            ?                     ?
+
+--- 9 row(s) selected.
+>>
+>>select bitor(a,b), bitor(c,d), bitor(e,f), bitor(g,h),
++>       bitor(i,i),
++>       bitor(j,k), bitor(l,m), bitor(n,o)
++>from t012t3;
+
+(EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)       (EXPR)       (EXPR)
+-----------  ----------  -----------  ----------  --------------------  -----------  -----------  --------------------
+
+          0           0            0           0                     0            0            0                     0
+          1           1            1           1                     1            1            1                     1
+          3           3            3           3                     3            3            3                     3
+          4           4            4           4                     4            4            4                     4
+         -1           1           -1           1                    -1           -1           -1                    -1
+         -3           3           -3           3                    -3           -1           -1                    -1
+         -4           4           -4           4                    -4           -4           -4                    -4
+          1           1            1           1                     0            1            1                     1
+          ?           ?            ?           ?                     0            ?            ?                     ?
+
+--- 9 row(s) selected.
+>>
+>>select bitxor(a,b), bitxor(c,d), bitxor(e,f), bitxor(g,h),
++>       bitxor(i,i),
++>       bitxor(j,k), bitxor(l,m), bitxor(n,o)
++>from t012t3;
+
+(EXPR)       (EXPR)      (EXPR)       (EXPR)      (EXPR)                (EXPR)       (EXPR)       (EXPR)
+-----------  ----------  -----------  ----------  --------------------  -----------  -----------  --------------------
+
+          0           0            0           0                     0            0            0                     0
+          0           0            0           0                     0            0            0                     0
+          0           0            0           0                     0            0            0                     0
+          0           0            0           0                     0            0            0                     0
+          0           0            0           0                     0           -2           -2                    -2
+          0           0            0           0                     0           -2           -2                    -2
+          0           0            0           0                     0           -8           -8                    -8
+          1           1            1           1                     0            1            1                     1
+          ?           ?            ?           ?                     0            ?            ?                     ?
+
+--- 9 row(s) selected.
+>>
+>>select bitnot(a), bitnot(b), bitnot(c), bitnot(d), bitnot(e), bitnot(f),
++>       bitnot(g), bitnot(h), bitnot(i), bitnot(j), bitnot(k), bitnot(l),
++>       bitnot(m), bitnot(n), bitnot(o)
++>from t012t3;
+
+(EXPR)  (EXPR)  (EXPR)  (EXPR)  (EXPR)       (EXPR)       (EXPR)      (EXPR)      (EXPR)                (EXPR)  (EXPR)  (EXPR)       (EXPR)      (EXPR)                (EXPR)
+------  ------  ------  ------  -----------  -----------  ----------  ----------  --------------------  ------  ------  -----------  ----------  --------------------  ----------
+
+    -1      -1   65535   65535           -1           -1  4294967295  4294967295                    -1      -1   65535           -1  4294967295                    -1  4294967295
+    -2      -2   65534   65534           -2           -2  4294967294  4294967294                    -2      -2   65534           -2  4294967294                    -2  4294967294
+    -4      -4   65532   65532           -4           -4  4294967292  4294967292                    -4      -4   65532           -4  4294967292                    -4  4294967292
+    -5      -5   65531   65531           -5           -5  4294967291  4294967291                    -5      -5   65531           -5  4294967291                    -5  4294967291
+     0       0   65534   65534            0            0  4294967294  4294967294                     0       0   65534            0  4294967294                     0  4294967294
+     2       2   65532   65532            2            2  4294967292  4294967292                     2       2   65532            2  4294967292                     2  4294967292
+     3       3   65531   65531            3            3  4294967291  4294967291                     3       3   65531            3  4294967291                     3  4294967291
+    -1      -2   65535   65534           -1           -2  4294967295  4294967294                    -1      -1   65534           -1  4294967294                    -1  4294967294
+    -1       ?   65535       ?           -1            ?  4294967295           ?                    -1       ?   65535           -1           ?                     ?           ?
+
+--- 9 row(s) selected.
+>>
+>>select bitand(a,c), bitand(a,d), bitand(a,e), bitand(a,f), bitand(a,g),
++>       bitand(a,h), bitand(a,i), bitand(a,j), bitand(a,k), bitand(a,l),
++>       bitand(a,m), bitand(a,n), bitand(a,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)
+-----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  -----------  -----------  -----------  -----------  --------------------  -----------
+
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          1            1            1            1                     1                     1                     1            1            1            1            1                     1            1
+          3            3            3            3                     3                     3                     3            3            3            3            3                     3            3
+          4            4            4            4                     4                     4                     4            4            4            4            4                     4            4
+          1            1           -1           -1                     1                     1                    -1           -1            1           -1            1                    -1            1
+          1            1           -3           -3                     1                     1                    -3           -3            1           -3            1                    -3            1
+          4            4           -4           -4                     4                     4                    -4           -4            4           -4            4                    -4            4
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          0            ?            0            ?                     0                     ?                     0            ?            0            0            ?                     ?            ?
+
+--- 9 row(s) selected.
+>>
+>>select bitor(a,c), bitor(a,d), bitor(a,e), bitor(a,f), bitor(a,g),
++>       bitor(a,h), bitor(a,i), bitor(a,j), bitor(a,k), bitor(a,l),
++>       bitor(a,m), bitor(a,n), bitor(a,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)
+-----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  -----------  -----------  -----------  -----------  --------------------  -----------
+
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          1            1            1            1                     1                     1                     1            1            1            1            1                     1            1
+          3            3            3            3                     3                     3                     3            3            3            3            3                     3            3
+          4            4            4            4                     4                     4                     4            4            4            4            4                     4            4
+         -1           -1           -1           -1                    -1                    -1                    -1           -1           -1           -1           -1                    -1           -1
+         -1           -1           -3           -3                    -1                    -1                    -3           -3           -1           -3           -1                    -3           -1
+         -4           -4           -4           -4                    -4                    -4                    -4           -4           -4           -4           -4                    -4           -4
+          0            1            0            1                     0                     1                     0            0            1            0            1                     0            1
+          0            ?            0            ?                     0                     ?                     0            ?            0            0            ?                     ?            ?
+
+--- 9 row(s) selected.
+>>
+>>select bitxor(a,c), bitxor(a,d), bitxor(a,e), bitxor(a,f), bitxor(a,g),
++>       bitxor(a,h), bitxor(a,i), bitxor(a,j), bitxor(a,k), bitxor(a,l),
++>       bitxor(a,m), bitxor(a,n), bitxor(a,o)
++>from t012t3;
+
+(EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)       (EXPR)       (EXPR)       (EXPR)       (EXPR)                (EXPR)
+-----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  -----------  -----------  -----------  -----------  --------------------  -----------
+
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+          0            0            0            0                     0                     0                     0            0            0            0            0                     0            0
+         -2           -2            0            0                    -2                    -2                     0            0           -2            0           -2                     0           -2
+         -2           -2            0            0                    -2                    -2                     0            0           -2            0           -2                     0           -2
+         -8           -8            0            0                    -8                    -8                     0            0           -8            0           -8                     0           -8
+          0            1            0            1                     0                     1                     0            0            1            0            1                     0            1
+          0            ?            0            ?                     0                     ?                     0            ?            0            0            ?                     ?            ?
+
+--- 9 row(s) selected.
+>>
+>>select converttobits(a), converttobits(b), converttobits(c), converttobits(d),
++>       converttobits(e), converttobits(f), converttobits(g), converttobits(h),
++>       converttobits(i), converttobits(j), converttobits(k), converttobits(l),
++>       converttobits(m), converttobits(n), converttobits(o)
++>from t012t3;
+
+(EXPR)            (EXPR)            (EXPR)            (EXPR)            (EXPR)                            (EXPR)                            (EXPR)                            (EXPR)                            (EXPR)                                                            (EXPR)                    (EXPR)            (EXPR)                                                    (EXPR)                                                                    (EXPR)                                                                                                                                    (EXPR)
+----------------  ----------------  ----------------  ----------------  --------------------------------  --------------------------------  --------------------------------  --------------------------------  ----------------------------------------------------------------  ------------------------  ----------------  --------------------------------------------------------  ------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------  ------------------------------------------------------------------------
+
+0000000000000000  0000000000000000  0000000000000000  0000000000000000  00000000000000000000000000000000  00000000000000000000000000000000  00000000000000000000000000000000  00000000000000000000000000000000  0000000000000000000000000000000000000000000000000000000000000000  001100000011000000110000  0011000000110000  00110000001100000011000000110000001100000011000000110000  001100000011000000110000001100000011000000110000001100000011000000110000  0011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000  001100000011000000110000001100000011000000110000001100000011000000110000
+0000000100000000  0000000100000000  0000000100000000  0000000100000000  00000001000000000000000000000000  00000001000000000000000000000000  00000001000000000000000000000000  00000001000000000000000000000000  0000000100000000000000000000000000000000000000000000000000000000  001100000011000000110001  0011000000110001  00110000001100000011000000110000001100000011000000110001  001100000011000000110000001100000011000000110000001100000011000000110001  0011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110001  001100000011000000110000001100000011000000110000001100000011000000110001
+0000001100000000  0000001100000000  0000001100000000  0000001100000000  00000011000000000000000000000000  00000011000000000000000000000000  00000011000000000000000000000000  00000011000000000000000000000000  0000001100000000000000000000000000000000000000000000000000000000  001100000011000000110011  0011000000110011  00110000001100000011000000110000001100000011000000110011  001100000011000000110000001100000011000000110000001100000011000000110011  0011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110011  001100000011000000110000001100000011000000110000001100000011000000110011
+0000010000000000  0000010000000000  0000010000000000  0000010000000000  00000100000000000000000000000000  00000100000000000000000000000000  00000100000000000000000000000000  00000100000000000000000000000000  0000010000000000000000000000000000000000000000000000000000000000  001100000011000000110100  0011000000110100  00110000001100000011000000110000001100000011000000110100  001100000011000000110000001100000011000000110000001100000011000000110100  0011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110100  001100000011000000110000001100000011000000110000001100000011000000110100
+1111111111111111  1111111111111111  0000000100000000  0000000100000000  11111111111111111111111111111111  11111111111111111111111111111111  00000001000000000000000000000000  00000001000000000000000000000000  1111111111111111111111111111111111111111111111111111111111111111  101100000011000000110001  0011000000110001  10110000001100000011000000110000001100000011000000110001  001100000011000000110000001100000011000000110000001100000011000000110001  1011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110001  001100000011000000110000001100000011000000110000001100000011000000110001
+1111110111111111  1111110111111111  0000001100000000  0000001100000000  11111101111111111111111111111111  11111101111111111111111111111111  00000011000000000000000000000000  00000011000000000000000000000000  1111110111111111111111111111111111111111111111111111111111111111  101100000011000000110011  0011000000110011  10110000001100000011000000110000001100000011000000110011  001100000011000000110000001100000011000000110000001100000011000000110011  1011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110011  001100000011000000110000001100000011000000110000001100000011000000110011
+1111110011111111  1111110011111111  0000010000000000  0000010000000000  11111100111111111111111111111111  11111100111111111111111111111111  00000100000000000000000000000000  00000100000000000000000000000000  1111110011111111111111111111111111111111111111111111111111111111  101100000011000000110100  0011000000110100  10110000001100000011000000110000001100000011000000110100  001100000011000000110000001100000011000000110000001100000011000000110100  1011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110100  001100000011000000110000001100000011000000110000001100000011000000110100
+0000000000000000  0000000100000000  0000000000000000  0000000100000000  00000000000000000000000000000000  00000001000000000000000000000000  00000000000000000000000000000000  00000001000000000000000000000000  0000000000000000000000000000000000000000000000000000000000000000  001100000011000000110000  0011000000110001  00110000001100000011000000110000001100000011000000110000  001100000011000000110000001100000011000000110000001100000011000000110001  0011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000001100000011000000110000  001100000011000000110000001100000011000000110000001100000011000000110001
+0000000000000000  ?                 0000000000000000  ?                 00000000000000000000000000000000  ?                                 00000000000000000000000000000000  ?                                 0000000000000000000000000000000000000000000000000000000000000000  ?                         0011000000110000  00110000001100000011000000110000001100000011000000110000  ?                                                                         ?                                                                                                                                         ?                                                                       
+
+--- 9 row(s) selected.
+>>
+>>select bitextract(3, 15, 1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select bitextract(3, 14, 1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select bitextract(3, 14, 2) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>select bitextract(3, 0, 1) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          0
+
+--- 1 row(s) selected.
+>>select bitextract(3, 0, 15) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select bitextract(3, 0, 16) from (values(1)) x(a);
+
+(EXPR)     
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>
+>>select a from t012t3 where a = bitand(a,a);
+
+A     
+------
+
+     0
+     1
+     3
+     4
+    -1
+    -3
+    -4
+     0
+     0
+
+--- 9 row(s) selected.
+>>select b from t012t3 where b = bitor(b,b);
+
+B     
+------
+
+     0
+     1
+     3
+     4
+    -1
+    -3
+    -4
+     1
+
+--- 8 row(s) selected.
+>>select c from t012t3 where c = bitxor(c,c);
+
+C    
+-----
+
+    0
+    0
+    0
+
+--- 3 row(s) selected.
+>>
+>>select bitand(a,a) + bitor(a,a) + bitxor(a,a) from t012t3;
+
+(EXPR)              
+--------------------
+
+                   0
+                   2
+                   6
+                   8
+                  -2
+                  -6
+                  -8
+                   0
+                   0
+
+--- 9 row(s) selected.
+>>select converttobits(bitand(a,a) + bitor(a,a) + bitxor(a,a)) from t012t3;
+
+(EXPR)                                                          
+----------------------------------------------------------------
+
+0000000000000000000000000000000000000000000000000000000000000000
+0000001000000000000000000000000000000000000000000000000000000000
+0000011000000000000000000000000000000000000000000000000000000000
+0000100000000000000000000000000000000000000000000000000000000000
+1111111011111111111111111111111111111111111111111111111111111111
+1111101011111111111111111111111111111111111111111111111111111111
+1111100011111111111111111111111111111111111111111111111111111111
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+
+--- 9 row(s) selected.
+>>select converttobits(bitnot(bitand(a,a) + bitor(a,a) + bitxor(a,a))) from t012t3;
+
+(EXPR)                                                          
+----------------------------------------------------------------
+
+1111111111111111111111111111111111111111111111111111111111111111
+1111110111111111111111111111111111111111111111111111111111111111
+1111100111111111111111111111111111111111111111111111111111111111
+1111011111111111111111111111111111111111111111111111111111111111
+0000000100000000000000000000000000000000000000000000000000000000
+0000010100000000000000000000000000000000000000000000000000000000
+0000011100000000000000000000000000000000000000000000000000000000
+1111111111111111111111111111111111111111111111111111111111111111
+1111111111111111111111111111111111111111111111111111111111111111
+
+--- 9 row(s) selected.
+>>
+>>
+>>-- negative BIT function tests
+>>select bitand(1, 1.0) from (values(1)) x(a);
+
+*** ERROR[4047] The operands of function BITAND must have a scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select bitor(1, 1.0) from (values(1)) x(a);
+
+*** ERROR[4047] The operands of function BITOR must have a scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select bitxor(1, 1.0) from (values(1)) x(a);
+
+*** ERROR[4047] The operands of function BITXOR must have a scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select bitand(1e0, 1) from (values(1)) x(a);
+
+*** ERROR[4046] The operands of function BITAND must be exact numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select bitor('a', 1) from (values(1)) x(a);
+
+*** ERROR[4059] The first operand of function BITOR must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select bitnot(1,1) from (values(1)) x(a);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select bitnot(1,1) from (values(1)) x(a);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- test ASCII, CHAR functions
+>>-- all tests moved to TEST038(Core)
+>>-- * select b, { fn CHAR(ASCII(b)) }, c, { fn CHAR(ASCII(c)) } from t012t1;
+>>-- * select b, CHAR(ASCII(b)), c, CHAR(ASCII(c)) from t012t1;
+>>-- * select 'c', CHAR(ASCII('cba')) from t012t1;
+>>
+>>-- * select 65, { fn ASCII(CHAR(65)) } from t012t1;
+>>-- * select 65, ASCII(CHAR(65)) from t012t1;
+>>
+>>-- -ve
+>>-- all tests moved to TEST038(Core)
+>>-- * select { fn ASCII(1) } from t012t1;
+>>
+>>-- * select CHAR(b) from t012t1;
+>>-- * select CHAR(256) from t012t1;
+>>-- * select CHAR(1.1) from t012t1;
+>>
+>>
+>>-- INSERT function
+>>-- test moved to TEST038(Core)
+>>-- * select insert('abc', 2, 1, 'zz') from t012t1;
+>>
+>>-- REPEAT
+>>-- all tests moved to TEST038(Core)
+>>-- * select repeat('aa', 10) from t012t1;
+>>
+>>-- test fix to genesis case: 10-981211-6071
+>>-- makes sure we catch and diagnose invalid repeat count
+>>-- * select REPEAT(b, 9999999999999999999) from t012t1;
+>>-- * select REPEAT(c, 9999999999999999999) from t012t1;
+>>
+>>-- REPLACE
+>>-- test moved to TEST038(Core)
+>>-- * select replace('abcdabcdab', 'cd', 'abc') from t012t1;
+>>
+>>-- SPACE
+>>-- test moved to TEST038(Core)
+>>-- * select 's' || space(10) || 'e', char_length(space(10)) from t012t1;
+>>
+>>-- VEG conversion should not change the result of string function.
+>>-- should return 10
+>>-- test moved to TEST038(Core)
+>>-- * select char_length(b) from t012t1 where b = 'abcdef';
+>>
+>>-- should return 'abcdef    abcdef    '
+>>-- test moved to TEST038(Core)
+>>-- * select repeat(b, 2) from t012t1 where b = 'abcdef';
+>>
+>>
+>>?section clnup
+>>-- CLEANUP database;
+>>drop table t012t1;
+
+--- SQL operation complete.
+>>?ifMX
+>>drop table t012ut1;
+
+--- SQL operation complete.
+>>?ifMX
+>>
+>>drop table t012t3;
+
+--- SQL operation complete.
+>>
+>>log;

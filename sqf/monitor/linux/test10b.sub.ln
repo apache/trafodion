@@ -1,0 +1,28 @@
+! Persistent process kill with abort test
+set {process $ABC} PERSIST_ZONES=2,4
+set {process $ABC} PERSIST_RETRIES=1,10
+exec {name $ABC,nid 2,nowait} server waitforclose
+delay 5
+! process $ABC should start on node 2
+ps
+
+! kill with abort on remote node
+kill {abort} $ABC
+delay 4
+! process $ABC should not be restarted
+ps
+
+set {process $DEF} PERSIST_ZONES=0,2
+set {process $DEF} PERSIST_RETRIES=1,10
+exec {name $DEF,nid 0,nowait} server waitforclose
+delay 5
+! process $DEF should start on node 0
+ps
+
+! kill with abort on local node
+kill {abort} $DEF
+delay 4
+! process $DEF should not be restarted
+ps
+
+exit

@@ -1,0 +1,1054 @@
+-- Test: TEST312
+-- Functionality: This tests Implicit Casting and Translation feature
+--                and the UTF8 character set handling
+-- Expected files:   EXPECTED312
+-- Tables created:   cs312t*
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey test312(clnup);
+
+log log312 clear;
+
+obey test312(ddl);
+
+obey test312(icat_tests);
+
+obey test312(clnup);
+
+log;
+exit;
+
+?section ddl
+
+create schema cs312s;
+set schema cs312s;
+
+?section icat_tests
+
+--
+-- Tests for ASCII function
+--
+create table cs312t1 (i1 char(8) character set iso88591) no partition;
+insert into cs312t1 values('a1a1');
+insert into cs312t1 values('u1u1');
+create table cs312t2 (u1 char(32 BYTES) character set utf8) no partition;
+insert into cs312t2 values('a1a1');
+insert into cs312t2 values('u1u1');
+insert into cs312t2 values(_utf8 x'C3B6C3BAC3BB');
+insert into cs312t2 values(_utf8 x'C396C39AC39B');
+insert into cs312t2 values(_utf8 x'E0A0A0E0A0A1E0A0A2');
+select * from cs312t1 order by 1;
+select * from cs312t2 order by 1;
+select CONVERTTOHEX( u1 ) from cs312t2 where u1 = _utf8 x'C3B6C3BAC3BB';
+select CONVERTTOHEX( u1 ) from cs312t2 where u1 = _utf8 x'E0A0A0E0A0A1E0A0A2';
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where u1 = _utf8 x'C3B6C3BAC3BB';
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where u1 = _utf8 x'E0A0A0E0A0A1E0A0A2';
+select CONVERTTOHEX( u1 ) from cs312t2 where u1 = UPPER(_utf8 x'C3B6C3BAC3BB');
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where u1 = UPPER(_utf8 x'C3B6C3BAC3BB');
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where u1 = _utf8 x'C3B6C3BAC3BB';
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where TRANSLATE(u1 using UTF8toUCS2) = _ucs2 x'00D600DA00DB';
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where TRANSLATE(u1 using UTF8toUCS2) = _ucs2 x'00F600FA00FB';
+select CONVERTTOHEX( u1 ) from cs312t2 where u1 = LOWER(_utf8 x'C396C39AC39B');
+select CONVERTTOHEX( TRANSLATE( u1 using UTF8toUCS2 ) ) from cs312t2 where u1 = LOWER(_utf8 x'C396C39AC39B');
+--
+select ascii('a') from cs312t1 order by 1;
+select ascii(CHAR(97)) from cs312t1 order by 1;
+select ascii(CHAR(97, UTF8)) from cs312t1 order by 1;
+select ascii(CHAR(97, ISO88591)) from cs312t1 order by 1;
+select ascii( _utf8'a') from cs312t1 order by 1;
+select ascii(u1) from cs312t2 where u1 < _ISO88591 x'8000000000000000' order by 1;
+select ascii(u1) from cs312t2 where u1 <= _utf8 x'7f00000000000000' order by 1;
+--The following queries should get an error at runtime
+select ascii(u1) from cs312t2 where u1 > _ISO88591 x'7f' order by 1;
+select ascii(u1) from cs312t2 where u1 > _utf8 x'7f 00000000000000' order by 1;
+--
+select ascii( TRANSLATE(_iso88591'abcdefghijklmnop' using ISO88591toUTF8) ) from cs312t2 order by 1;
+select * from cs312t2, cs312t1 where 'a' = CHAR(ASCII('a1a1')) order by 1,2;
+select * from cs312t2, cs312t1 where 'u' = CHAR(ASCII('u1u1'),UTF8) order by 1,2;
+select * from cs312t2, cs312t1 where 'u' = lower(CHAR(ASCII(upper(i1)))) order by 1,2;
+select * from cs312t2, cs312t1 where CHAR(ASCII('a1a1')) = 'a' order by 1,2;
+select * from cs312t2, cs312t1 where CHAR(ASCII('u1u1'),UTF8) = 'u' order by 1,2;
+select * from cs312t2, cs312t1 where lower(CHAR(ASCII(upper(i1)))) = 'u' order by 1,2;
+--
+select ascii((select 'a1a1' from cs312t1 where i1='u1u1')) from cs312t1 order by 1;
+select ascii((select 'a1a1' from cs312t2 where u1='a1a1')) from cs312t1 order by 1;
+select i1 from cs312t1 where ascii(i1) = ascii((select min(i1) from cs312t1)) order by 1;
+--The following query should get an error at runtime
+select i1 from cs312t1 where ascii(i1) = ascii((select max(u1) from cs312t2)) order by 1;
+-- But this should work:
+select i1 from cs312t1 where ascii(i1) = ascii((select max(u1) from cs312t2 where u1 <= _utf8 x'7f00000000000000')) order by 1;
+--
+select ascii((select CHAR(97) from cs312t1 where i1='u1u1')) from cs312t1 order by 1;
+select ascii((select CHAR(97) from cs312t2 where u1='a1a1')) from cs312t1 order by 1;
+--
+select i1 from cs312t1 where              97 = ascii((select min('a') from cs312t1 where i1='u1u1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min('a') from cs312t1 where i1='u1u1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min(_utf8'a') from cs312t1 where i1='u1u1')) order by 1;
+select i1 from cs312t1 where              97 = ascii((select min(CHAR(97)) from cs312t1 where i1='u1u1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min(CHAR(97)) from cs312t1 where i1='u1u1')) order by 1;
+--
+select i1 from cs312t1 where              97 = ascii((select min('a') from cs312t2 where u1='a1a1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min('a') from cs312t2 where u1='a1a1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min(_utf8'a') from cs312t2 where u1='a1a1')) order by 1;
+select i1 from cs312t1 where              97 = ascii((select min(CHAR(97)) from cs312t2 where u1='a1a1')) order by 1;
+select i1 from cs312t1 where ascii(CHAR(97)) = ascii((select min(CHAR(97)) from cs312t2 where u1='a1a1')) order by 1;
+--
+-- Tests for basic UNIONs
+--
+create table cs312t3 (i1 char(8) character set iso88591) no partition;
+insert into cs312t3 values('a1a1');
+insert into cs312t3 values('u1u1');
+create table cs312t4 (u1 char(32 BYTES) character set utf8) no partition;
+insert into cs312t4 values('a1a1');
+insert into cs312t4 values('u1u1');
+insert into cs312t4 values(_utf8 x'C3B6C3B7C3B8');
+insert into cs312t4 values(_utf8 x'E0A0A0E0A0A1E0A0A2');
+select * from cs312t3 order by 1;
+select * from cs312t4 order by 1;
+select * from cs312t3 union (select * from cs312t4) order by 1;
+select * from cs312t3 union all (select * from cs312t4) order by 1;
+--
+-- Tests for basic SQL functions
+--
+select * from cs312t3, cs312t4 order by 1,2;
+select * from cs312t3, cs312t4 where i1 = case when i1 > 'a1a' then u1 else 'a100' end order by 1,2;
+select * from cs312t3, cs312t4 where i1 = case when u1 > 'a1a' then 'a1a1' else u1 end order by 1,2;
+select * from cs312t3, cs312t4 where i1 = coalesce(cast(NULL as varchar(8) character set ISO88591), u1, i1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = coalesce(cast(NULL as varchar(8) character set UTF8), u1, i1) order by 1,2;
+select * from cs312t3, cs312t4 where u1 = coalesce(cast(NULL as varchar(8) character set UTF8), i1, u1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = substr('a1a1zzzz',1,4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = substr(_utf8 x'C3B6'||'a1a1zzzz',2,4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = substr(_utf8 x'C3B6C3BAC3BB'||'a1a1zzzz',4,4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = substr(_utf8 x'E0A0A0'||'a1a1zzzz',2,4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = concat( substr(i1,1,2), 'a1' ) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = concat( substr(u1,1,2), 'a1' ) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = decode(i1,'a1a1','Found', u1, 'u1u1', 'b1b1', 'b1b1', 'NotFound') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = decode(i1,'a1a1','Found', u1, 'u1u1', _utf8 x'C3B6', 'b1b1', 'NotFound') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = decode(i1,'a1a1','Found', u1, 'u1u1', _utf8 x'E0A0A0', 'b1b1', 'NotFound') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = decode(i1,'a1a1','Found', _utf8 x'E0A0A0', 'b1b1', u1, 'u1u1', 'NotFound') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = insert('a1', 2, 0, '1a') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = insert(_utf8'a1', 2, 0, '1a') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = substr(insert(u1, 2, 0, '1a'),1,4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace(u1, 'u1', 'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace(u1, _utf8'u1', 'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace(u1, _utf8'u1', _utf8'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace('u1u1', 'u1', 'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace(_utf8'u1u1', 'u1', 'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace('u1u1', _utf8'u1', 'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = replace('u1u1', 'u1', _utf8'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull(i1,'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull(u1,'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull('a1a1','a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull(_utf8'a1a1','a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull('a1a1',_utf8'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull(CAST(NULL as char(8) character set iso88591),'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = isnull(CAST(NULL as char(8) character set iso88591),_utf8'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LOWER('A1A1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LEFT('a1a1ZZZZ',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LEFT('a1a1ZZZZ'||_utf8 x'C3B6C3BA',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LEFT('a1a1ZZZZ'||_utf8 x'E0A0A0',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LPAD('a1',4,'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LPAD(substr(i1,1,2),4,'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = LPAD(substr(u1,1,2),4,'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NULLIF(i1,u1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NULLIF(i1,'a1b1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(i1,'a1b1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(i1,'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(i1,_utf8'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL('a1a1','a1b1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL('a1a1',_utf8'a1b1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(cast(NULL as char(8) character set iso88591),'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(cast(NULL as char(8) character set utf8),'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(cast(NULL as char(8)),'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = NVL(cast(NULL as char(8)),_utf8'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(TRIM(u1),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right('    ' || TRIM(u1),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(_ISO88591'    ' || TRIM(u1),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(_utf8'    ' || TRIM(u1),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right('    ' || TRIM(i1),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right('ZZZZa1a1',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(_utf8 x'C3B6'||'ZZZZa1a1',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(_utf8 x'E0A0A0'||'ZZZZa1a1',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(_utf8'F0A0A0A0'||'ZZZZa1a1',4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = RPAD('a1',4,'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = RPAD('a1',4,_utf8 x'C3B6') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = RPAD('a1',4,_utf8 x'C3B6C3BA') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = RPAD('a1',4,_utf8 x'E0A0A0') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(RPAD(_utf8 x'C3B6C3BA',8, 'a1'),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = right(RPAD(_utf8 x'E0A0A0',9, 'a1'),4) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = RPAD(substr(i1,1,2),4,'a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = trim(u1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = trim(_utf8'  a1a1  ') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = rtrim(u1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = rtrim(_utf8'a1a1  ') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = ltrim(u1) order by 1,2;
+select * from cs312t3, cs312t4 where i1 = ltrim(_utf8'  a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = UPPER(_utf8'a1a1') order by 1,2;
+select * from cs312t3, cs312t4 where i1 = cast(_utf8'u1u1' as varchar(8) ) order by 1,2;
+--
+-- Tests for ASSIGN
+--
+create table cs312t10 (i1 char(40) character set iso88591, u1 char(160 BYTES) character set utf8 ) no partition;
+insert into cs312t10 values(CHAR(96), CHAR(96));
+insert into cs312t10 values(SPACE(3), SPACE(3));
+insert into cs312t10 values(SPACE(3, ISO88591), SPACE(3, ISO88591));
+insert into cs312t10 values(SPACE(3, UTF8), SPACE(3, UTF8));
+insert into cs312t10 values(DATEFORMAT(DATE'2009-04-15',USA), DATEFORMAT(DATE'2009-04-15',USA));
+insert into cs312t10 values(DAYNAME(DATE'2009-04-15'), DAYNAME(DATE'2009-04-15'));
+insert into cs312t10 values(MONTHNAME(DATE'2009-04-15'), MONTHNAME(DATE'2009-04-15'));
+insert into cs312t10 values(CURRENT_USER, CURRENT_USER);
+insert into cs312t10 values(SESSION_USER, SESSION_USER);
+insert into cs312t10 values(USER, USER);
+insert into cs312t10 values(CONVERTTOHEX(_utf8'abc'), CONVERTTOHEX(_utf8'abc'));
+insert into cs312t10 values(CONVERTTOHEX(_utf8 x'C3B6'), CONVERTTOHEX(_utf8 x'C3B6'));
+insert into cs312t10 values(CONVERTTOHEX(_utf8 x'C3B6'), CONVERTTOHEX(_utf8 x'E0A0A0'));
+insert into cs312t10 values(CONVERTTOHEX(_iso88591'abc'), CONVERTTOHEX(_iso88591'abc'));
+insert into cs312t10 values(CASE when 1=1 then 'abc' else 'def' end, CASE when 1=1 then 'abc' else 'def' end);
+insert into cs312t10 values(CASE when 1=1 then _utf8'abc' else _utf8'def' end,
+                          CASE when 1=1 then _utf8'abc' else _utf8'def' end);
+insert into cs312t10 values(CAST('abc' as varchar(4)), CAST('abc' as varchar(4)));
+insert into cs312t10 values(CAST(_utf8 x'C3B6C3BB' as varchar(4)), CAST(_utf8 x'C3B6C3BB' as varchar(4)));
+insert into cs312t10 values(CAST(_utf8 x'C3B6C3BB' as varchar(4)), CAST(_utf8 x'E0A0A0' as varchar(4)));
+insert into cs312t10 values(CAST(_utf8'abc' as varchar(4)), CAST(_iso88591'abc' as varchar(4)));
+insert into cs312t10 values(COALESCE('abc','def','xyz'), COALESCE('abc','def','xyz'));
+insert into cs312t10 values(COALESCE(_utf8'abc','def','xyz'), COALESCE(_utf8'abc','def','xyz'));
+insert into cs312t10 values(COALESCE(_utf8 x'C3B6','def','xyz'), COALESCE(_utf8 x'C3B6','def','xyz'));
+insert into cs312t10 values(COALESCE(_utf8 x'C3B6','def','xyz'), COALESCE(_utf8 x'E0A0A0','def','xyz'));
+insert into cs312t10 values(COALESCE(_utf8'abc',_utf8'def',_utf8'xyz'),
+                           COALESCE(_utf8'abc',_utf8'def',_utf8'xyz'));
+insert into cs312t10 values(CONCAT('abc','def'), CONCAT('abc','def'));
+insert into cs312t10 values(CONCAT('abc','def'), CONCAT('abc',_utf8 x'E0A0A0'));
+insert into cs312t10 values(CONCAT(_utf8'abc',_utf8'def'), CONCAT(_iso88591'abc',_iso88591'def'));
+insert into cs312t10 values(CONCAT(_iso88591'abc',_utf8'def'), CONCAT(_iso88591'abc',_utf8 x'E0A0A0'));
+insert into cs312t10 values(_utf8'abc' || _utf8'def', _utf8'abc' || _utf8'def');
+insert into cs312t10 values(_iso88591'abc' || _utf8'def', _iso88591'abc' || _utf8'def');
+insert into cs312t10 values(_utf8'abc' || _iso88591'def', _utf8'abc' || _iso88591'def');
+insert into cs312t10 values(DECODE('abc','def','EQ','NE'), DECODE('abc','def','EQ','NE'));
+insert into cs312t10 values(DECODE(_utf8'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE'),
+                          DECODE(_iso88591'abc',_utf8'def',_utf8'EQ',_utf8'NE'));
+insert into cs312t10 values(INSERT('abcghi',4,0,'def'), INSERT('abcghi',4,0,'def'));
+insert into cs312t10 values(INSERT(_utf8'abcghi',4,0,_utf8'def'),
+                          INSERT(_iso88591'abcghi',4,0,_iso88591'def'));
+create table cs312t10n (pos int, len int) no partition;
+insert into cs312t10n values(1,0),(1,2),(3,4),(7,8);
+create table cs312t10s (c1 char(8) character set utf8) no partition;
+insert into cs312t10s values('12345678');
+select INSERT(_utf8'12345678', pos, len, 'xyz'), OCTET_LENGTH(INSERT(_utf8'12345678', pos, len, 'xyz')), CHAR_LENGTH(INSERT(_utf8'12345678', pos, len, 'xyz')) from cs312t10n order by 1,2,3;
+select INSERT(c1, pos, len, 'xyz'), OCTET_LENGTH(INSERT(c1, pos, len, 'xyz')), CHAR_LENGTH(INSERT(c1, pos, len, 'xyz')) from cs312t10s, cs312t10n order by 1,2,3;
+select pos, len, SUBSTRING(c1, pos, len), CHAR_LENGTH(SUBSTRING(c1, pos, len)) from cs312t10s, cs312t10n order by 1,2,3,4;
+insert into cs312t10 values(ISNULL('abc','def'), ISNULL('abc','def'));
+insert into cs312t10 values(ISNULL(_utf8'abc',_iso88591'def'), ISNULL(_iso88591'abc',_iso88591'def'));
+insert into cs312t10 values(LEFT('abcdef',3), LEFT('abcdef',3));
+insert into cs312t10 values(LEFT(_utf8'abcdef',3), LEFT(_iso88591'abcdef',3));
+insert into cs312t10 values(LOWER('ABC'), LOWER('ABC'));
+insert into cs312t10 values(LOWER(_utf8'ABC'), LOWER(_iso88591'ABC'));
+insert into cs312t10 values(LPAD('def',6,'abc'), LPAD('def',6,'abc'));
+insert into cs312t10 values(LPAD(_utf8'def',6,_iso88591'abc'), LPAD(_iso88591'def',6,_utf8'abc'));
+insert into cs312t10 values(LTRIM('   abc'), LTRIM('   abc'));
+insert into cs312t10 values(LTRIM(_utf8'   abc'), LTRIM(_iso88591'   abc'));
+insert into cs312t10 values(NULLIF('abc','def'), NULLIF('abc','def'));
+insert into cs312t10 values(NULLIF(_utf8'abc',_iso88591'def'), NULLIF('abc_iso88591',_utf8'def'));
+insert into cs312t10 values(NVL('abc','def'), NVL('abc','def'));
+insert into cs312t10 values(NVL(_utf8'abc',_iso88591'def'), NVL(_iso88591'abc',_utf8'def'));
+insert into cs312t10 values(REPLACE('abcxyzghi','xyz','def'), REPLACE('abcxyzghi','xyz','def'));
+insert into cs312t10 values(REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_iso88591'def'),
+                          REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_iso88591'def'));
+insert into cs312t10 values(RIGHT('defabc',3), RIGHT('defabc',3));
+insert into cs312t10 values(RIGHT(_utf8'defabc',3), RIGHT(_iso88591'defabc',3));
+insert into cs312t10 values(RPAD('abc',6,'def'), RPAD('abc',6,'def'));
+insert into cs312t10 values(RPAD(_utf8'abc',6,_iso88591'def'), RPAD(_iso88591'abc',6,_utf8'def'));
+insert into cs312t10 values(RTRIM('abc   '), RTRIM('abc   '));
+insert into cs312t10 values(RTRIM(_utf8'abc   '), RTRIM(_iso88591'abc   '));
+insert into cs312t10 values(SUBSTR('abcdefghi',1,6), SUBSTR('abcdefghi',1,6));
+insert into cs312t10 values(SUBSTR(_utf8'abcdefghi',1,6), SUBSTR(_iso88591'abcdefghi',1,6));
+insert into cs312t10 values(TRANSLATE('abcdef' using UTF8toISO88591),
+                          TRANSLATE('abcdef' using UTF8toISO88591));
+insert into cs312t10 values(TRANSLATE('abcdef' using ISO88591toUTF8),
+                          TRANSLATE('abcdef' using ISO88591toUTF8));
+insert into cs312t10 values(TRANSLATE(_utf8'abcdef' using UTF8toISO88591),
+                          TRANSLATE(_utf8'abcdef' using UTF8toISO88591));
+insert into cs312t10 values(TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8),
+                          TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8));
+insert into cs312t10 values(TRIM('   abc   '), TRIM('   abc   '));
+insert into cs312t10 values(TRIM(_utf8'   abc   '), TRIM(_iso88591'   abc   '));
+insert into cs312t10 values(UPPER('abcdef'), UPPER('abcdef'));
+insert into cs312t10 values(UPPER(_utf8'abcdef'), UPPER(_iso88591'abcdef'));
+select count(*) from cs312t10;
+--
+-- Tests for Comparisons
+--
+create table cs312t20 (i1 char(20) character set iso88591, u1 char(80 BYTES) character set utf8 ) no partition;
+insert into cs312t20 values(CHAR(97), CHAR(97) );
+insert into cs312t20 values(SPACE(3), SPACE(3) );
+insert into cs312t20 values(DATEFORMAT(DATE'2009-04-15',USA), DATEFORMAT(DATE'2009-04-15',USA) );
+insert into cs312t20 values(DAYNAME(DATE'2009-04-15'), DAYNAME(DATE'2009-04-15') );
+insert into cs312t20 values(MONTHNAME(DATE'2009-04-15'), MONTHNAME(DATE'2009-04-15') );
+insert into cs312t20 values(CONVERTTOHEX(_utf8'abc'), CONVERTTOHEX(_utf8'abc') );
+insert into cs312t20 values(CONVERTTOHEX(_iso88591'abc'), CONVERTTOHEX(_iso88591'abc') );
+insert into cs312t20 values('abc', 'abc') ;
+insert into cs312t20 values('ABC', 'ABC') ;
+insert into cs312t20 values('def', 'def') ;
+insert into cs312t20 values('abcdef', 'abcdef') ;
+insert into cs312t20 values('ABCDEF', 'ABCDEF') ;
+insert into cs312t20 values('abcdefghi', 'abcdefghi') ;
+insert into cs312t20 values('xyz', 'xyz') ;
+insert into cs312t20 values('EQ','EQ');
+insert into cs312t20 values('NE','NE');
+insert into cs312t20 values('abcghi', 'abcghi');
+insert into cs312t20 values('abcdefghi', 'abcdefghi');
+select * from cs312t20 order by 1;
+select * from cs312t20 where i1 = CHAR(97) order by 1;
+select * from cs312t20 where u1 = CHAR(97) order by 1;
+select * from cs312t20 where i1 = SPACE(3) order by 1;
+select * from cs312t20 where u1 = SPACE(3) order by 1;
+select * from cs312t20 where u1 = SPACE(3, ISO88591) order by 1;
+select * from cs312t20 where i1 = SPACE(3, UTF8) order by 1;
+select * from cs312t20 where i1 = DATEFORMAT(DATE'2009-04-15',USA) order by 1;
+select * from cs312t20 where u1 = DATEFORMAT(DATE'2009-04-15',USA) order by 1;
+select * from cs312t20 where i1 = DAYNAME(DATE'2009-04-15') order by 1;
+select * from cs312t20 where u1 = DAYNAME(DATE'2009-04-15') order by 1;
+select * from cs312t20 where i1 = MONTHNAME(DATE'2009-04-15') order by 1;
+select * from cs312t20 where u1 = MONTHNAME(DATE'2009-04-15') order by 1;
+--
+create table cs312t21 (i1 char(40) character set iso88591, u1 char(160 BYTES) character set utf8 ) no partition;
+insert into cs312t21 values(CURRENT_USER, CURRENT_USER);
+select 'i1 = CURRENT_USER' from cs312t21 where i1 = CURRENT_USER order by 1;
+select 'u1 = CURRENT_USER' from cs312t21 where u1 = CURRENT_USER order by 1;
+select 'i1 = SESSION_USER' from cs312t21 where i1 = SESSION_USER order by 1;
+select 'u1 = SESSION_USER' from cs312t21 where u1 = SESSION_USER order by 1;
+select 'i1 = USER' from cs312t21 where i1 = USER order by 1;
+select 'u1 = USER' from cs312t21 where u1 = USER order by 1;
+--
+select * from cs312t20 where i1 = CONVERTTOHEX(_utf8'abc') order by 1;
+select * from cs312t20 where u1 = CONVERTTOHEX(_utf8'abc') order by 1;
+select * from cs312t20 where i1 = CONVERTTOHEX(_iso88591'abc') order by 1;
+select * from cs312t20 where u1 = CONVERTTOHEX(_iso88591'abc') order by 1;
+select * from cs312t20 where i1 = CASE when 1=1 then 'abc' else 'def' end order by 1;
+select * from cs312t20 where u1 = CASE when 1=1 then _iso88591'abc' else _utf8'def' end order by 1;
+select * from cs312t20 where i1 = CAST('abc' as varchar(4)) order by 1;
+select * from cs312t20 where u1 = CAST('abc' as varchar(4)) order by 1;
+select * from cs312t20 where i1 = CAST(_utf8'abc' as varchar(4)) order by 1;
+select * from cs312t20 where u1 = CAST(_iso88591'abc' as varchar(4)) order by 1;
+select * from cs312t20 where i1 = COALESCE('abc','def','xyz') order by 1;
+select * from cs312t20 where u1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'xyz') order by 1;
+select * from cs312t20 where i1 = CONCAT(_utf8'abc','def') order by 1;
+select * from cs312t20 where u1 = CONCAT(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t20 where u1 = _iso88591'abc' || _iso88591'def' order by 1;
+select * from cs312t20 where i1 = _iso88591'abc' || _utf8'def' order by 1;
+select * from cs312t20 where u1 = _iso88591'abc' || _utf8'def' order by 1;
+select * from cs312t20 where i1 = _utf8'abc' || _iso88591'def' order by 1;
+select * from cs312t20 where u1 = _utf8'abc' || _iso88591'def' order by 1;
+select * from cs312t20 where i1 = DECODE('abc','def','EQ','NE') order by 1;
+select * from cs312t20 where u1 = DECODE(_utf8'abc',_iso88591'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t20 where i1 = INSERT('abcghi',4,0,'def') order by 1;
+select * from cs312t20 where u1 = INSERT(_utf8'abcghi',4,0,_iso88591'def') order by 1;
+select * from cs312t20 where u1 = INSERT(_iso88591'abcghi',4,0,_utf8'def') order by 1;
+select * from cs312t20 where i1 = ISNULL('abc','def') order by 1;
+select * from cs312t20 where u1 = ISNULL(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t20 where i1 = LEFT('abcdef',3) order by 1;
+select * from cs312t20 where u1 = LEFT(_utf8'abcdef',3) order by 1;
+select * from cs312t20 where i1 = LOWER('ABC') order by 1;
+select * from cs312t20 where u1 = LOWER(_utf8'ABC') order by 1;
+select * from cs312t20 where i1 = LPAD('def',6,'abc') order by 1;
+select * from cs312t20 where u1 = LPAD(_utf8'def',6,_iso88591'abc') order by 1;
+select * from cs312t20 where u1 = LPAD(_iso88591'def',6,_utf8'abc') order by 1;
+select * from cs312t20 where i1 = LTRIM('   abc') order by 1;
+select * from cs312t20 where u1 = LTRIM(_iso88591'   abc') order by 1;
+select * from cs312t20 where u1 = LTRIM(_utf8'   abc') order by 1;
+select * from cs312t20 where i1 = NULLIF('abc','def') order by 1;
+select * from cs312t20 where u1 = NULLIF(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t20 where u1 = NULLIF(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t20 where i1 = NVL('abc','def') order by 1;
+select * from cs312t20 where u1 = NVL(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t20 where u1 = NVL(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t20 where i1 = REPLACE('abcxyzghi','xyz','def') order by 1;
+select * from cs312t20 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t20 where u1 = REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t20 where u1 = REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_iso88591'def') order by 1;
+select * from cs312t20 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_utf8'def') order by 1;
+select * from cs312t20 where i1 = RIGHT(_utf8'defabc',3) order by 1;
+select * from cs312t20 where u1 = RIGHT(_iso88591'defabc',3) order by 1;
+select * from cs312t20 where u1 = RIGHT(_utf8'defabc',3) order by 1;
+select * from cs312t20 where i1 = RPAD('abc',6,'def') order by 1;
+select * from cs312t20 where u1 = RPAD(_iso88591'abc',6,_iso88591'def') order by 1;
+select * from cs312t20 where u1 = RPAD(_utf8'abc',6,_iso88591'def') order by 1;
+select * from cs312t20 where u1 = RPAD(_iso88591'abc',6,_utf8'def') order by 1;
+select * from cs312t20 where i1 = RTRIM(_utf8'abc   ') order by 1;
+select * from cs312t20 where u1 = RTRIM(_iso88591'abc   ') order by 1;
+select * from cs312t20 where i1 = SUBSTR(_utf8'abcdefghi',1,6) order by 1;
+select * from cs312t20 where u1 = SUBSTR(_iso88591'abcdefghi',1,6) order by 1;
+select * from cs312t20 where i1 = TRANSLATE('abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t20 where u1 = TRANSLATE('abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t20 where i1 = TRANSLATE('abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t20 where u1 = TRANSLATE('abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t20 where i1 = TRANSLATE(_utf8'abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t20 where u1 = TRANSLATE(_utf8'abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t20 where i1 = TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t20 where u1 = TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t20 where i1 = TRIM(_utf8'   abc   ') order by 1;
+select * from cs312t20 where u1 = TRIM(_iso88591'   abc   ') order by 1;
+select * from cs312t20 where i1 = UPPER(_utf8'abcdef') order by 1;
+select * from cs312t20 where u1 = UPPER(_iso88591'abcdef') order by 1;
+--
+-- Tests for Concatenation
+--
+create table cs312t30 (i1 char(20) character set iso88591, u1 char(80 BYTES) character set utf8 ) no partition;
+create table cs312t31 (i1 char(40) character set iso88591, u1 char(160 BYTES) character set utf8 ) no partition;
+insert into cs312t30 values('ZA','ZA');
+insert into cs312t30 values('Z','Z');
+insert into cs312t30 values('Z'||DATEFORMAT(DATE'2009-04-15',USA),'Z'||DATEFORMAT(DATE'2009-04-15',USA) );
+insert into cs312t30 values('Z' || DAYNAME(DATE'2009-04-15'), 'Z' || DAYNAME(DATE'2009-04-15') );
+insert into cs312t30 values('Z' || MONTHNAME(DATE'2009-04-15'), 'Z' || MONTHNAME(DATE'2009-04-15') );
+insert into cs312t31 values(CURRENT_USER, CURRENT_USER);
+insert into cs312t31 values('Z'||CURRENT_USER, 'Z'||CURRENT_USER);
+insert into cs312t30 values('Z' || CONVERTTOHEX(_utf8'abc'), 'Z' || CONVERTTOHEX(_utf8'abc') );
+insert into cs312t30 values('Z' || CONVERTTOHEX(_iso88591'abc'), 'Z' || CONVERTTOHEX(_iso88591'abc') );
+insert into cs312t30 values('Za','Za');
+insert into cs312t30 values('Zd','Zd');
+insert into cs312t30 values('Zabc','Zabc');
+insert into cs312t30 values('Zdef','Zdef');
+insert into cs312t30 values('Zxyz','Zxyz');
+insert into cs312t30 values('ZEQ','ZEQ');
+insert into cs312t30 values('ZNE','ZNE');
+insert into cs312t30 values('Zabcdef','Zabcdef');
+insert into cs312t30 values('ZABCDEF','ZABCDEF');
+insert into cs312t30 values('Zabcdefghi','Zabcdefghi');
+select * from cs312t30 order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CHAR(97) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CHAR(97) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || SPACE(3) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || SPACE(3) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || SPACE(3, ISO88591) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || SPACE(3, ISO88591) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || SPACE(3, UTF8) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || SPACE(3, UTF8) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || DATEFORMAT(DATE'2009-04-15',USA) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || DATEFORMAT(DATE'2009-04-15',USA) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || DAYNAME(DATE'2009-04-15') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || DAYNAME(DATE'2009-04-15') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || MONTHNAME(DATE'2009-04-15') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || MONTHNAME(DATE'2009-04-15') order by 1;
+select * from cs312t31 where i1 != USER AND i1 != 'Z'||CURRENT_USER order by 1;
+select '_iso88591''Z'' || CURRENT_USER' from cs312t31 where i1 = _iso88591'Z' || CURRENT_USER order by 1;
+select '_utf8''Z'' || CURRENT_USER' from cs312t31 where i1 = _utf8'Z' || CURRENT_USER order by 1;
+select '_iso88591''Z'' || SESSION_USER' from cs312t31 where i1 = _iso88591'Z' || SESSION_USER order by 1;
+select '_utf8''Z'' || SESSION_USER' from cs312t31 where i1 = _utf8'Z' || SESSION_USER order by 1;
+select '_iso88591''Z'' || USER' from cs312t31 where i1 = _iso88591'Z' || USER order by 1;
+select '_utf8''Z'' || USER' from cs312t31 where i1 = _utf8'Z' || USER order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CONVERTTOHEX(_utf8'abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CONVERTTOHEX(_utf8'abc') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CONVERTTOHEX(_iso88591'abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CONVERTTOHEX(_iso88591'abc') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CASE when 1=1 then 'abc' else 'def' end order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CASE when 1=1 then 'abc' else 'def' end order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CASE when 1=1 then _iso88591'abc' else _iso88591'def' end order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CAST('abc' as varchar(4)) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CAST('abc' as varchar(4)) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CAST(_iso88591'abc' as varchar(4)) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CAST(_iso88591'abc' as varchar(4)) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || COALESCE('abc','def','xyz') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || COALESCE('abc','def','xyz') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || COALESCE(_iso88591'abc',_iso88591'def',_iso88591'xyz') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || CONCAT('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CONCAT('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || CONCAT(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || (_iso88591'abc' || _iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || (_iso88591'abc' || _utf8'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || (_iso88591'abc' || _utf8'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || (_utf8'abc' || _iso88591'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || (_utf8'abc' || _iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || DECODE('abc','def','EQ','NE') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || DECODE('abc','def','EQ','NE') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || INSERT('abcghi',4,0,'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || INSERT('abcghi',4,0,'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || INSERT(_iso88591'abcghi',4,0,_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || ISNULL('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || ISNULL('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || ISNULL(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || LEFT('abcdef',3) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LEFT('abcdef',3) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LEFT(_iso88591'abcdef',3) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || LOWER('ABC') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LOWER('ABC') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LOWER(_iso88591'ABC') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || LPAD('def',6,'abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LPAD('def',6,'abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LPAD(_iso88591'def',6,_iso88591'abc') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || LTRIM('   abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LTRIM('   abc') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || LTRIM(_iso88591'   abc') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || NULLIF('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || NULLIF('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || NULLIF(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || NVL('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || NVL('abc','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || NVL(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || REPLACE('abcxyzghi','xyz','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || REPLACE('abcxyzghi','xyz','def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || RIGHT('defabc',3) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RIGHT('defabc',3) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RIGHT(_iso88591'defabc',3) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || RPAD('abc',6,'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RPAD('abc',6,'def') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RPAD(_iso88591'abc',6,_iso88591'def') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || RTRIM('abc   ') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RTRIM('abc   ') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || RTRIM(_iso88591'abc   ') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || SUBSTR('abcdefghi',1,6) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || SUBSTR('abcdefghi',1,6) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || SUBSTR(_iso88591'abcdefghi',1,6) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || TRANSLATE('abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRANSLATE('abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || TRANSLATE('abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRANSLATE('abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || TRANSLATE(_iso88591'abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRANSLATE(_iso88591'abcdef' using UTF8toISO88591) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRANSLATE(_iso88591'abcdef' using ISO88591toUTF8) order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || TRIM('   abc   ') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRIM('   abc   ') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || TRIM(_iso88591'   abc   ') order by 1;
+select * from cs312t30 where i1 = _iso88591'Z' || UPPER('abcdef') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || UPPER('abcdef') order by 1;
+select * from cs312t30 where i1 = _utf8'Z' || UPPER(_iso88591'abcdef') order by 1;
+--
+-- Tests for SQL Functions - that they can accept any combination
+-- of ISO and UTF8 character sets
+--
+create table cs312t40 (i1 char(20) character set iso88591, u1 char(80 BYTES) character set utf8 ) no partition;
+insert into cs312t40 values('ZA','ZA');
+insert into cs312t40 values('Z','Z');
+insert into cs312t40 values('Z'||DATEFORMAT(DATE'2009-04-15',USA),'Z'||DATEFORMAT(DATE'2009-04-15',USA) );
+insert into cs312t40 values('Z' || DAYNAME(DATE'2009-04-15'), 'Z' || DAYNAME(DATE'2009-04-15') );
+insert into cs312t40 values('Z' || MONTHNAME(DATE'2009-04-15'), 'Z' || MONTHNAME(DATE'2009-04-15') );
+insert into cs312t40 values('Z' || CONVERTTOHEX(_utf8'abc'), 'Z' || CONVERTTOHEX(_utf8'abc') );
+insert into cs312t40 values('Z' || CONVERTTOHEX(_iso88591'abc'), 'Z' || CONVERTTOHEX(_iso88591'abc') );
+insert into cs312t40 values('Za','Za');
+insert into cs312t40 values('Zd','Zd');
+insert into cs312t40 values('abc','abc');
+insert into cs312t40 values('def','def');
+insert into cs312t40 values('Zabc','Zabc');
+insert into cs312t40 values('Zdef','Zdef');
+insert into cs312t40 values('Zxyz','Zxyz');
+insert into cs312t40 values('EQ','EQ');
+insert into cs312t40 values('ZEQ','ZEQ');
+insert into cs312t40 values('ZNE','ZNE');
+insert into cs312t40 values('NE','NE');
+insert into cs312t40 values('abcdef','abcdef');
+insert into cs312t40 values('Zabcdef','Zabcdef');
+insert into cs312t40 values('ABCDEF','ABCDEF');
+insert into cs312t40 values('ZABCDEF','ZABCDEF');
+insert into cs312t40 values('abcdefghi','abcdefghi');
+insert into cs312t40 values('Zabcdefghi','Zabcdefghi');
+select * from cs312t40 order by 1;
+select * from cs312t40 where i1 = _utf8'Z' || CHAR(97) order by 1;
+select * from cs312t40 where i1 = _utf8'Z' || TRANSLATE( CHAR(97) USING UTF8toISO88591) order by 1;
+select * from cs312t40 where i1 = _utf8'Z' || 'a'  order by 1;
+select * from cs312t40 where i1 = _utf8'Z' || CAST('a' as VARCHAR(1)) order by 1;
+select * from cs312t40 where i1 = CASE when 1=1 then _iso88591'abc' else _utf8'def' end order by 1;
+select * from cs312t40 where i1 = CASE when 1=1 then _utf8'abc' else _iso88591'def' end order by 1;
+select * from cs312t40 where i1 = CASE when 1=1 then _utf8'abc' else _utf8'def' end order by 1;
+select * from cs312t40 where u1 = CASE when 1=1 then _iso88591'abc' else _iso88591'def' end order by 1;
+select * from cs312t40 where u1 = CASE when 1=1 then _iso88591'abc' else _utf8'def' end order by 1;
+select * from cs312t40 where u1 = CASE when 1=1 then _utf8'abc' else _iso88591'def' end order by 1;
+--
+select * from cs312t40 where i1 = COALESCE(_utf8'abc') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc') order by 1;
+--
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_iso88591'def',_utf8'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_utf8'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_utf8'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi') order by 1;
+--
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_iso88591'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where i1 = COALESCE(_utf8'abc',_utf8'def',_utf8'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_iso88591'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_utf8'def',_utf8'ghi',_iso88591'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_utf8'def',_iso88591'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_utf8'abc',_iso88591'def',_utf8'ghi',_utf8'jkl') order by 1;
+select * from cs312t40 where u1 = COALESCE(_iso88591'abc',_utf8'def',_utf8'ghi',_utf8'jkl') order by 1;
+--
+select * from cs312t40 where i1 = CONCAT(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where i1 = CONCAT(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = CONCAT(_utf8'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = CONCAT(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = CONCAT(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = CONCAT(_utf8'abc',_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = _iso88591'abc' || _utf8'def' order by 1;
+select * from cs312t40 where i1 = _utf8'abc' || _iso88591'def' order by 1;
+select * from cs312t40 where i1 = _utf8'abc' || _utf8'def' order by 1;
+select * from cs312t40 where u1 = _iso88591'abc' || _iso88591'def' order by 1;
+select * from cs312t40 where u1 = _iso88591'abc' || _utf8'def' order by 1;
+select * from cs312t40 where u1 = _utf8'abc' || _iso88591'def' order by 1;
+--
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_iso88591'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_utf8'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_utf8'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_iso88591'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_iso88591'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_utf8'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_utf8'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_iso88591'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_utf8'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_utf8'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_iso88591'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_iso88591'abc',_utf8'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where i1 = DECODE(_utf8'abc',_utf8'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_utf8'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_iso88591'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_utf8'def',_iso88591'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_iso88591'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_iso88591'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_utf8'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_utf8'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_iso88591'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_utf8'def',_utf8'EQ',_iso88591'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_utf8'def',_iso88591'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_utf8'abc',_iso88591'def',_utf8'EQ',_utf8'NE') order by 1;
+select * from cs312t40 where u1 = DECODE(_iso88591'abc',_utf8'def',_utf8'EQ',_utf8'NE') order by 1;
+--
+select * from cs312t40 where i1 = INSERT(_iso88591'abcghi',4,0,_utf8'def') order by 1;
+select * from cs312t40 where i1 = INSERT(_utf8'abcghi',4,0,_iso88591'def') order by 1;
+select * from cs312t40 where i1 = INSERT(_utf8'abcghi',4,0,_utf8'def') order by 1;
+select * from cs312t40 where u1 = INSERT(_iso88591'abcghi',4,0,_iso88591'def') order by 1;
+select * from cs312t40 where u1 = INSERT(_iso88591'abcghi',4,0,_utf8'def') order by 1;
+select * from cs312t40 where u1 = INSERT(_utf8'abcghi',4,0,_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = ISNULL(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where i1 = ISNULL(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = ISNULL(_utf8'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = ISNULL(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = ISNULL(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = ISNULL(_utf8'abc',_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = LPAD(_iso88591'def',6,_utf8'abc') order by 1;
+select * from cs312t40 where i1 = LPAD(_utf8'def',6,_iso88591'abc') order by 1;
+select * from cs312t40 where i1 = LPAD(_utf8'def',6,_utf8'abc') order by 1;
+select * from cs312t40 where u1 = LPAD(_iso88591'def',6,_iso88591'abc') order by 1;
+select * from cs312t40 where u1 = LPAD(_iso88591'def',6,_utf8'abc') order by 1;
+select * from cs312t40 where u1 = LPAD(_utf8'def',6,_iso88591'abc') order by 1;
+--
+select * from cs312t40 where i1 = NULLIF(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where i1 = NULLIF(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = NULLIF(_utf8'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = NULLIF(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = NULLIF(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = NULLIF(_utf8'abc',_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = NVL(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where i1 = NVL(_utf8'abc',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = NVL(_utf8'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = NVL(_iso88591'abc',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = NVL(_iso88591'abc',_utf8'def') order by 1;
+select * from cs312t40 where u1 = NVL(_utf8'abc',_iso88591'def') order by 1;
+--
+select * from cs312t40 where i1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_utf8'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_utf8'abcxyzghi',_utf8'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_utf8'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_utf8'def') order by 1;
+select * from cs312t40 where i1 = REPLACE(_utf8'abcxyzghi',_utf8'xyz',_utf8'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_iso88591'abcxyzghi',_iso88591'xyz',_utf8'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_utf8'abcxyzghi',_utf8'xyz',_iso88591'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_utf8'abcxyzghi',_iso88591'xyz',_utf8'def') order by 1;
+select * from cs312t40 where u1 = REPLACE(_iso88591'abcxyzghi',_utf8'xyz',_utf8'def') order by 1;
+--
+select * from cs312t40 where i1 = RPAD(_iso88591'abc',6,_utf8'def') order by 1;
+select * from cs312t40 where i1 = RPAD(_utf8'abc',6,_iso88591'def') order by 1;
+select * from cs312t40 where i1 = RPAD(_utf8'abc',6,_utf8'def') order by 1;
+select * from cs312t40 where u1 = RPAD(_iso88591'abc',6,_iso88591'def') order by 1;
+select * from cs312t40 where u1 = RPAD(_iso88591'abc',6,_utf8'def') order by 1;
+select * from cs312t40 where u1 = RPAD(_utf8'abc',6,_iso88591'def') order by 1;
+--
+-- Tests for TRANSLATE
+--
+create table cs312t50 (i1 char(8) character set iso88591, u1 char(32  BYTES) character set utf8 ) no partition;
+insert into cs312t50 values('abc','abc');
+insert into cs312t50 values('abc','def');
+select * from cs312t50 order by 1,2;
+
+--Following should work without errors
+select * from cs312t50 where i1 = u1 order by 1,2;
+select * from cs312t50 where u1 = i1 order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(u1 using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(i1 using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(i1 using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(u1 using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(_utf8'abc' using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(_iso88591'abc' using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(TRANSLATE(u1 using UTF8toISO88591) using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(TRANSLATE(i1 using ISO88591toUTF8) using UTF8toISO88591) order by 1,2;
+select TRANSLATE(u1 using UTF8toISO88591) from cs312t50 order by 1;
+select TRANSLATE(i1 using ISO88591toUTF8) from cs312t50 order by 1;
+select TRANSLATE(TRANSLATE(u1 using UTF8toISO88591) using ISO88591toUTF8) from cs312t50 order by 1;
+select TRANSLATE(TRANSLATE(i1 using ISO88591toUTF8) using UTF8toISO88591) from cs312t50 order by 1;
+--
+--The following should work without errors ... because of Implicit Casting of literals
+select * from cs312t50 where i1 = TRANSLATE('abc' using ISO88591toUTF8) order by 1,2;
+select TRANSLATE('abc' using ISO88591toUTF8) from cs312t50 order by 1;
+--
+--The following should work without errors ... because of Implicit Casting of literals
+--HOWEVER, it is possible we should make these give errors.
+select * from cs312t50 where u1 = TRANSLATE(_iso88591'abc' using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(_utf8'abc' using ISO88591toUTF8) order by 1,2;
+select TRANSLATE(_iso88591'abc' using UTF8toISO88591) from cs312t50 order by 1;
+select TRANSLATE(_utf8'abc' using ISO88591toUTF8) from cs312t50 order by 1;
+--
+--The following should work without errors ... but only because the return value from the
+--inner Function Invocation gets the Implicit Casting/Translation feature applied to it.
+select * from cs312t50 where i1 = TRANSLATE(TRANSLATE(u1 using UTF8toISO88591) using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(TRANSLATE(i1 using ISO88591toUTF8) using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(TRIM(i1) using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(TRIM(u1) using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where i1 = TRANSLATE(TRIM(_iso88591'abc') using UTF8toISO88591) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(TRIM(_utf8'abc') using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(TRIM('abc') using ISO88591toUTF8) order by 1,2;
+--
+--
+--Following should get errors
+select * from cs312t50 where i1 = TRANSLATE(u1 using ISO88591toUTF8) order by 1,2;
+select * from cs312t50 where u1 = TRANSLATE(i1 using UTF8toISO88591) order by 1,2;
+select TRANSLATE(u1 using ISO88591toUTF8) from cs312t50  order by 1;
+--
+--Following should work without error because i1 is ISO88591 which is subset of UTF8
+select TRANSLATE(i1 using UTF8toISO88591) from cs312t50  order by 1;
+--
+-- Tests for CAST
+--
+create table cs312t60 (i1 char(8) character set iso88591, u1 char(32 BYTES) character set utf8 ) no partition;
+insert into cs312t60 values('abc','abc');
+insert into cs312t60 values('abc','def');
+select * from cs312t60 order by 1,2;
+
+select * from cs312t60 where i1 = CAST('abc' as varchar(4)) order by 1,2;
+select * from cs312t60 where u1 = CAST('abc' as varchar(4)) order by 1,2;
+select * from cs312t60 where i1 = CAST(_utf8'abc' as varchar(4)) order by 1,2;
+select * from cs312t60 where u1 = CAST(_iso88591'abc' as varchar(4)) order by 1,2;
+--
+select * from cs312t60 where i1 = CAST(i1 as varchar(4)) order by 1,2;
+select * from cs312t60 where u1 = CAST(u1 as varchar(4)) order by 1,2;
+select * from cs312t60 where i1 = CAST(u1 as varchar(4)) order by 1,2;
+select * from cs312t60 where u1 = CAST(i1 as varchar(4)) order by 1,2;
+--
+select * from cs312t60 where i1 = CAST('abc' as varchar(4) character set utf8) order by 1,2;
+select * from cs312t60 where i1 = CAST(_iso88591'abc' as varchar(4) character set utf8) order by 1,2;
+select * from cs312t60 where u1 = CAST(_utf8'abc' as varchar(4) character set iso88591) order by 1,2;
+--
+select * from cs312t60 where i1 = CAST(i1 as varchar(4) character set utf8) order by 1,2;
+select * from cs312t60 where i1 = CAST(u1 as varchar(4) character set utf8) order by 1,2;
+select * from cs312t60 where u1 = CAST(i1 as varchar(4) character set iso88591) order by 1,2;
+--
+-- Tests for UNIONs
+--
+create table cs312t70 (i1 char(8) character set iso88591, u1 char(32 BYTES) character set utf8 ) no partition;
+insert into cs312t70 values('abc','abc');
+insert into cs312t70 values('abc','def');
+--
+create table cs312t71 (i1 char(32 BYTES) character set utf8, u1 char(8) character set iso88591 ) no partition;
+insert into cs312t71 values('abc','abc');
+insert into cs312t71 values('abc','def');
+--
+select * from cs312t70 order by 1,2;
+select * from cs312t71 order by 1,2;
+select * from cs312t70 union (select * from cs312t71) order by 1,2;
+select * from cs312t70 union all (select * from cs312t71) order by 1,2;
+--
+select * from cs312t70, cs312t71 order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.i1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 = cs312t71.i1 order by 1,2,3,4;
+--
+select * from cs312t70, cs312t71 where cs312t70.i1 = cs312t71.i1 order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 = cs312t71.u1 order by 1,2,3,4;
+--
+select * from cs312t70 union (select * from cs312t70 union (select * from cs312t71)) order by 1,2;
+select * from cs312t70 union (select * from cs312t71 union (select * from cs312t70)) order by 1,2;
+--
+select * from cs312t70 natural join cs312t71 order by 1,2;
+select * from cs312t70 cross join cs312t71  order by 1,2,3,4;
+select * from cs312t71 cross join cs312t70  order by 1,2,3,4;
+--
+select * from cs312t70 inner join cs312t71 on cs312t70.i1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 inner join cs312t71 on cs312t70.u1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 inner join cs312t71 on cs312t70.u1 = cs312t71.i1 order by 1,2,3,4;
+select * from cs312t70 inner join cs312t71 on cs312t70.i1 = cs312t71.i1 order by 1,2,3,4;
+--
+select * from cs312t70 left outer join cs312t71 on cs312t70.u1 = cs312t71.i1 order by 1,2,3,4;
+select * from cs312t70 left outer join cs312t71 on cs312t70.i1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 left outer join cs312t71 on cs312t70.u1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 left outer join cs312t71 on cs312t70.i1 = cs312t71.i1 order by 1,2,3,4;
+--
+select * from cs312t70 right outer join cs312t71 on cs312t70.u1 = cs312t71.i1 order by 1,2,3,4;
+select * from cs312t70 right outer join cs312t71 on cs312t70.i1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 right outer join cs312t71 on cs312t70.u1 = cs312t71.u1 order by 1,2,3,4;
+select * from cs312t70 right outer join cs312t71 on cs312t70.i1 = cs312t71.i1 order by 1,2,3,4;
+--
+select * from cs312t70, cs312t71 where cs312t70.u1 = (select cs312t71.u1 from cs312t71 where cs312t71.i1 = 'def') order by 1,2,3,4;
+--
+select * from cs312t70, cs312t71 where cs312t70.u1 > any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'def') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 < any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'def') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 <= any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'def') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 >= any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'def') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 > any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'abc') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 < any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'abc') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 <= any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'abc') order by 1,2,3,4;
+select * from cs312t70, cs312t71 where cs312t70.u1 >= any (select cs312t71.i1 from cs312t71 where cs312t71.u1 = 'abc') order by 1,2,3,4;
+--
+-- Tests for subqueries
+--
+create table cs312t80 (i1 char(8) character set iso88591) no partition;
+insert into cs312t80 values('a1a1');
+insert into cs312t80 values('u1u1');
+select * from cs312t80 order by 1;
+create table cs312t81 (u1 char(32 BYTES) character set utf8) no partition;
+insert into cs312t81 values('a1a1');
+insert into cs312t81 values('u1u1');
+select * from cs312t81 order by 1;
+
+select * from cs312t80, cs312t81 order by 1,2;
+select * from cs312t80, cs312t81 where i1 = case when i1 > 'a1a' then u1 else 'a100' end order by 1,2;
+select * from cs312t80, cs312t81 where i1 = case when (select min(i1) from cs312t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+select * from cs312t80, cs312t81 where u1 = case when (select min(i1) from cs312t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+--
+select * from cs312t80, cs312t81 where (select min(i1) from cs312t80) = case when (select min(i1) from cs312t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+select * from cs312t80, cs312t81 where (select min(u1) from cs312t81) = case when (select min(i1) from cs312t80) > 'a1a' then u1 else 'a100' end order by 1,2;
+--
+select * from cs312t80, cs312t81 where i1 = case when i1 > 'a1a' then (select min(u1) from cs312t81) else 'a100' end order by 1,2;
+select * from cs312t80, cs312t81 where u1 = case when i1 > 'a1a' then (select min(u1) from cs312t81) else 'a100' end order by 1,2;
+--
+select * from cs312t80, cs312t81 where i1 = case when (select min(i1) from cs312t80) > 'a1a' then (select min(u1) from cs312t81) else 'a100' end order by 1,2;
+select * from cs312t80, cs312t81 where u1 = case when (select min(i1) from cs312t80) > 'a1a' then (select min(u1) from cs312t81) else 'a100' end order by 1,2;
+--
+select * from cs312t80, cs312t81 where i1 = (select min(case when i1 > 'a1a' then u1 else 'a100' end) from cs312t80, cs312t81) order by 1,2;
+select * from cs312t80, cs312t81 where u1 = (select min(case when i1 > 'a1a' then u1 else 'a100' end) from cs312t80, cs312t81) order by 1,2;
+--
+select * from cs312t80, cs312t81 where (select min(i1) from cs312t80) = (select min(case when i1 > 'a1a' then u1 else 'a100' end) from cs312t80, cs312t81) order by 1,2;
+select * from cs312t80, cs312t81 where (select min(u1) from cs312t81) = (select min(case when i1 > 'a1a' then u1 else 'a100' end) from cs312t80, cs312t81) order by 1,2;
+--
+-- Tests for TRIGGERS
+--
+create table cs312t90 (
+   UTF8_col1  varchar(36 BYTES)  character set UTF8  no default not null,
+   UTF8_col2  varchar(36 BYTES)  character set UTF8  no default not null,
+   ISO_col1   varchar(36)  character set ISO88591,
+   ISO_col2   varchar(36)  character set ISO88591
+   )no partitions;
+--
+create TRIGGER TRG1_cs312t90   before UPDATE on cs312t90   REFERENCING NEW as TRG  FOR EACH ROW
+       set TRG.UTF8_col2 = _ISO88591'abc' ;
+--
+insert into cs312t90 values('Test1','Test1','Test1','Test1'), ('test111','test1111','test111','test1111');
+UPDATE cs312t90 set ISO_col2 = _ISO88591'Iso1' where UTF8_col1 = _iso88591'Test1';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set ISO_col2 = _ISO88591'Iso1' where UTF8_col1 = _iso88591'Test1';
+select * from cs312t90 order by 1,2,3,4;
+--
+insert into cs312t90 values('Test2','Test2','Test2','Test2'), ('test222','test2222','test222','test2222');
+UPDATE cs312t90 set ISO_col2 = _utf8'UTF8' where UTF8_col1 = _iso88591'Test2';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set ISO_col2 = _utf8'UTF8' where UTF8_col1 = _iso88591'Test2';
+select * from cs312t90 order by 1,2,3,4;
+--
+insert into cs312t90 values('Test3','Test3','Test3','Test3'), ('test333','test3333','test333','test3333');
+UPDATE cs312t90 set UTF8_col1 = _ISO88591'Iso3' where ISO_col2 = _utf8'Test3';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set UTF8_col1 = _ISO88591'Iso3' where ISO_col2 = _utf8'Test3';
+select * from cs312t90 order by 1,2,3,4;
+--
+DROP TRIGGER TRG1_cs312t90;
+create TRIGGER TRG1_cs312t90   before UPDATE on cs312t90   REFERENCING NEW as TRG  FOR EACH ROW
+       set TRG.ISO_col2 = _utf8'abc' ;
+--
+insert into cs312t90 values('Test4','Test4','Test4','Test4'), ('test444','test4444','test444','test4444');
+UPDATE cs312t90 set ISO_col1 = _ISO88591'Iso4' where UTF8_col1 = _iso88591'Test4';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set ISO_col1 = _ISO88591'Iso4' where UTF8_col1 = _iso88591'Test4';
+select * from cs312t90 order by 1,2,3,4;
+--
+insert into cs312t90 values('Test5','Test5','Test5','Test5'), ('test555','test5555','test555','test5555');
+UPDATE cs312t90 set ISO_col1 = _utf8'UCS5' where UTF8_col1 = _iso88591'Test5';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set ISO_col1 = _utf8'UCS5' where UTF8_col1 = _iso88591'Test5';
+select * from cs312t90 order by 1,2,3,4;
+--
+insert into cs312t90 values('Test6','Test6','Test6','Test6'), ('test666','test6666','test666','test6666');
+UPDATE cs312t90 set UTF8_col1 = _ISO88591'Iso6' where UTF8_col2 = _utf8'Test6';
+select * from cs312t90 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t90 set UTF8_col1 = _ISO88591'Iso6' where UTF8_col2 = _utf8'Test6';
+select * from cs312t90 order by 1,2,3,4;
+--
+-- Tests for TRIGGERS on tables with primary key.
+-- NOTE: Tables with a primary key column can take different paths through optimizer.
+--
+create table cs312t91 (
+   PRKY       int no default not null,
+   UTF8_col1  varchar(36 BYTES)  character set UTF8  no default not null,
+   UTF8_col2  varchar(36 BYTES)  character set UTF8  no default not null,
+   ISO_col1   varchar(36)  character set ISO88591,
+   ISO_col2   varchar(36)  character set ISO88591,
+   PRIMARY KEY (PRKY) ) STORE BY primary key;
+--
+create TRIGGER TRG1_cs312t91   before UPDATE on cs312t91   REFERENCING NEW as TRG  FOR EACH ROW
+       set TRG.UTF8_col2 = _ISO88591'abc' ;
+--
+insert into cs312t91 values(1,'Test1','Test1','Test1','Test1'), (2,'test111','test1111','test111','test1111');
+UPDATE cs312t91 set ISO_col2 = _ISO88591'Iso1' where UTF8_col1 = _iso88591'Test1';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set ISO_col2 = _ISO88591'Iso1' where UTF8_col1 = _iso88591'Test1';
+select * from cs312t91 order by 1,2,3,4;
+--
+insert into cs312t91 values(3,'Test2','Test2','Test2','Test2'), (4,'test222','test2222','test222','test2222');
+UPDATE cs312t91 set ISO_col2 = _utf8'UTF8' where UTF8_col1 = _iso88591'Test2';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set ISO_col2 = _utf8'UTF8' where UTF8_col1 = _iso88591'Test2';
+select * from cs312t91 order by 1,2,3,4;
+--
+insert into cs312t91 values(5,'Test3','Test3','Test3','Test3'), (6,'test333','test3333','test333','test3333');
+UPDATE cs312t91 set UTF8_col1 = _ISO88591'Iso3' where ISO_col2 = _utf8'Test3';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set UTF8_col1 = _ISO88591'Iso3' where ISO_col2 = _utf8'Test3';
+select * from cs312t91 order by 1,2,3,4;
+--
+DROP TRIGGER TRG1_cs312t91;
+create TRIGGER TRG1_cs312t91   before UPDATE on cs312t91   REFERENCING NEW as TRG  FOR EACH ROW
+       set TRG.ISO_col2 = _utf8'abc' ;
+--
+insert into cs312t91 values(7,'Test4','Test4','Test4','Test4'), (8,'test444','test4444','test444','test4444');
+UPDATE cs312t91 set ISO_col1 = _ISO88591'Iso4' where UTF8_col1 = _iso88591'Test4';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set ISO_col1 = _ISO88591'Iso4' where UTF8_col1 = _iso88591'Test4';
+select * from cs312t91 order by 1,2,3,4;
+--
+insert into cs312t91 values(9,'Test5','Test5','Test5','Test5'), (10,'test555','test5555','test555','test5555');
+UPDATE cs312t91 set ISO_col1 = _utf8'UCS5' where UTF8_col1 = _iso88591'Test5';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set ISO_col1 = _utf8'UCS5' where UTF8_col1 = _iso88591'Test5';
+select * from cs312t91 order by 1,2,3,4;
+--
+insert into cs312t91 values(11,'Test6','Test6','Test6','Test6'), (12,'test666','test6666','test666','test6666');
+UPDATE cs312t91 set UTF8_col1 = _ISO88591'Iso6' where UTF8_col2 = _utf8'Test6';
+select * from cs312t91 order by 1,2,3,4;
+-- Do same thing again.
+UPDATE cs312t91 set UTF8_col1 = _ISO88591'Iso6' where UTF8_col2 = _utf8'Test6';
+select * from cs312t91 order by 1,2,3,4;
+--
+-- Tests for multi-row VALUES
+--
+create table cs312t92 (
+  bname CHAR(66) CHARACTER SET UTF8 NO DEFAULT NOT NULL
+  )no partitions;
+insert into cs312t92 VALUES(_iso88591'abcdefghi'), ('xyz');
+insert into cs312t92 VALUES(converttohex('abcdefghi')), (converttohex('xyz'));
+insert into cs312t92 VALUES(_utf8 x'C3B6c3baC3BB' || 'xyz'), (_utf8 x'E0A0A0E0A0A1' || 'xyz');
+insert into cs312t92 VALUES(_utf8 x'E0A0A0' || 'xyz'), ('xyz' || _utf8 x'E0A0A0E0A0A1');
+--
+-- Tests for RPAD and LPAD
+--
+select * from cs312t92 order by 1;
+insert into cs312t92 select RPAD(_utf8 x'c3b6c3bac3bb' || '456789ABCDEFG',10) from  (values(1)) x(a);
+insert into cs312t92 select LPAD(_UCS2 x'00F6 00FA 00FB' || '456',10) from  (values(1)) x(a);
+
+select left(bname,40) from cs312t92 order by 1;
+--
+-- More tests for REPLACE
+--
+create table cs312t93 (a1 char(8) character set utf8);
+insert into cs312t93 values('abc' || _UTF8 X'E0A0A0');
+insert into cs312t93 values('abc' || _UTF8 X'E0A0A0' || 'de');
+select replace( a1, 'c', _UTF8 X'E0A0A0' ) from cs312t93;
+select replace( a1, 'abc', _UTF8 X'E0A0A0' ) from cs312t93;
+select converttohex(replace( a1, 'abc', _UTF8 X'E0A0A0' ) ) from cs312t93;
+select converttohex(replace( a1, 'abc', a1 ) ) from cs312t93;
+select converttohex(replace( a1, 'abc', 'defgh')) from cs312t93;
+select converttohex(replace( a1, 'abc', 'z')) from cs312t93;
+select converttohex(replace( a1, 'abc', 'zw')) from cs312t93;
+--
+insert into cs312t93 values(_UTF8 X'E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0E0A0A0');
+select converttohex(replace( a1, _UTF8 X'E0A0A0', 'xyzwq')) from cs312t93;
+select converttohex(replace( a1, _UTF8 X'E0A0A0', 'z')) from cs312t93;
+--
+insert into cs312t93 values('ZZZZZZZZ');
+select converttohex(replace( a1, 'Z', _UTF8 X'E0A0A0')) from cs312t93;
+
+?section clnup
+
+drop schema cs312s cascade;
+

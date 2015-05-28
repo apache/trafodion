@@ -1,0 +1,233 @@
+>>
+>>create table t053t1 (a date not null, b timestamp not null);
+
+--- SQL operation complete.
+>>create table t053t2 (a int, b double precision);
+
+--- SQL operation complete.
+>>
+>>insert into t053t1 values (date '1998-02-04', timestamp '1997-06-03:10:10:10.00000');
+
+--- 1 row(s) inserted.
+>>
+>>insert into t053t2 values (45, 45);
+
+--- 1 row(s) inserted.
+>>
+>>?section dml
+>>select dayname(a), dayname(b) from t053t1;
+
+(EXPR)     (EXPR)   
+---------  ---------
+
+Wednesday  Tuesday  
+
+--- 1 row(s) selected.
+>>select monthname(a) from t053t1 where monthname(b) = 'June';
+
+(EXPR)   
+---------
+
+February 
+
+--- 1 row(s) selected.
+>>
+>>select dayofyear(a), dayofyear(b) from t053t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  35                   154
+
+--- 1 row(s) selected.
+>>
+>>select week(a), week(b) from t053t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   6                    23
+
+--- 1 row(s) selected.
+>>
+>>select quarter(a), quarter(b) from t053t1;
+
+(EXPR)  (EXPR)
+------  ------
+
+     1       2
+
+--- 1 row(s) selected.
+>>
+>>-- more date-time function tests
+>>insert into t053t1 values (date '1901-10-10', 
++>                           timestamp '1901-10-10 23:15:00.300000');
+
+--- 1 row(s) inserted.
+>>insert into t053t1 values (date '1999-12-31', 
++>                           timestamp '1999-12-31 23:59:59.999999');
+
+--- 1 row(s) inserted.
+>>insert into t053t1 values (date '2000-01-01', 
++>                           timestamp '2000-01-01 23:59:59.999999');
+
+--- 1 row(s) inserted.
+>>insert into t053t1 values (date '1998-02-04', -- a duplicate row
++>			   timestamp '1997-06-03:10:10:10.00000');
+
+--- 1 row(s) inserted.
+>>
+>>-- check that a special rounding mode does not affect date-time calculations
+>>control query default ROUNDING_MODE '2';
+
+--- SQL operation complete.
+>>
+>>select a,b,DATEDIFF(DAY,a,b) as DIFF,WEEK(b) as WEEK,
++>       DATE_TRUNC('SECOND', b) as TRUNC_SECOND,
++>       DATE_TRUNC('MINUTE', b) as TRUNC_MINUTE,
++>       DATE_TRUNC('HOUR', b) as TRUNC_HOUR,
++>       DATE_TRUNC('DAY', b) as TRUNC_DAY,
++>       DATE_TRUNC('DECADE', b) as TRUNC_DECADE
++> from t053t1
++>   group by a,b
++>   having DATE_PART('YEAR',b) in (1901,1997,1999,2000);
+
+A           B                           DIFF         WEEK                  TRUNC_SECOND                TRUNC_MINUTE                TRUNC_HOUR                  TRUNC_DAY                   TRUNC_DECADE
+----------  --------------------------  -----------  --------------------  --------------------------  --------------------------  --------------------------  --------------------------  --------------------------
+
+1998-02-04  1997-06-03 10:10:10.000000         -246                    23  1997-06-03 10:10:10.000000  1997-06-03 10:10:00.000000  1997-06-03 10:00:00.000000  1997-06-03 00:00:00.000000  1990-01-01 00:00:00.000000
+1901-10-10  1901-10-10 23:15:00.300000            0                    41  1901-10-10 23:15:00.000000  1901-10-10 23:15:00.000000  1901-10-10 23:00:00.000000  1901-10-10 00:00:00.000000  1900-01-01 00:00:00.000000
+1999-12-31  1999-12-31 23:59:59.999999            0                    53  1999-12-31 23:59:59.000000  1999-12-31 23:59:00.000000  1999-12-31 23:00:00.000000  1999-12-31 00:00:00.000000  1990-01-01 00:00:00.000000
+2000-01-01  2000-01-01 23:59:59.999999            0                     1  2000-01-01 23:59:59.000000  2000-01-01 23:59:00.000000  2000-01-01 23:00:00.000000  2000-01-01 00:00:00.000000  2000-01-01 00:00:00.000000
+
+--- 4 row(s) selected.
+>>
+>>-- should return one row
+>>SELECT b, WEEK(b) from t053t1 where week(b) = 41;
+
+B                           (EXPR)              
+--------------------------  --------------------
+
+1901-10-10 23:15:00.300000                    41
+
+--- 1 row(s) selected.
+>>
+>>-- should return two rows
+>>SELECT b, DATEDIFF(WEEK, b, timestamp '2000-12-31 23:59:59.999999') 
++>  from t053t1 where
++>  DATEDIFF(WEEK, b, timestamp '2000-12-31 23:59:59.999999') = 53;
+
+B                           (EXPR)     
+--------------------------  -----------
+
+1999-12-31 23:59:59.999999           53
+2000-01-01 23:59:59.999999           53
+
+--- 2 row(s) selected.
+>>
+>>-- division in an argument within WEEK(...) should follow the rounding mode
+>>control query default ROUNDING_MODE '1';
+
+--- SQL operation complete.
+>>select WEEK(b+175499),WEEK(b+CAST(350999/2 as int)) from t053t1 
++>	where a = date '1901-10-10';
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                  41                    42
+
+--- 1 row(s) selected.
+>>
+>>-- Math functions
+>>select ACOS(a), ASIN(a), ATAN(a), COS(a), COSH(a), SIN(a), SINH(a), TAN(a), TANH(a) from t053t2;
+
+*** ERROR[8428] The argument to function ACOS is not valid.
+
+--- 0 row(s) selected.
+>>
+>>
+>>-- Subtraction between two datetime columns containing a null value
+>>-- no longer returns error.
+>>-- Case: 10-980825-1690
+>>create table t053d (a date, b date);
+
+--- SQL operation complete.
+>>insert into t053d values (date '1998-09-04', null);
+
+--- 1 row(s) inserted.
+>>select a - b from t053d;
+
+(EXPR)       
+-------------
+
+?            
+
+--- 1 row(s) selected.
+>>select (a - b) day from t053d;
+
+(EXPR)
+------
+
+?     
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Parser now supportes the syntax DAY(<value-expression>)
+>>-- Case: 10-980901-0398
+>>select day(date '1998-09-04') from (values(1)) x(a);
+
+(EXPR)
+------
+
+     4
+
+--- 1 row(s) selected.
+>>
+>>-- An error is no longer returned if the start position in a SUBSTRING
+>>-- function exceeds the max length.
+>>-- Case: 10-980901-0431
+>>select substring('aaa' from 30 for 2) from (values(1)) x(a);
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- The CHAR function no longer returns error on certain valid values.
+>>-- Case: 10-980902-1131
+>>select ascii(char(254)) from (values(1)) x(a);
+
+(EXPR)    
+----------
+
+       254
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- The REPEAT function was not type propagating its operand. It does
+>>--  so now.
+>>--  Case: 10-980902-1225
+>>
+>>
+>>-- should return error.
+>>select replace('ab', 'ab', current_date) from (values(1)) x(a);
+
+*** ERROR[4064] The operands of function REPLACE must be compatible character data types (that is, of the same character set).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- test fix to genesis case 10-030220-1214. This used to cause an NSK cpu halt.
+>>insert into t053t2(b) values(
++>162769514214177976464774676766466427976779777977979777789879764347467647767649
++>);
+
+--- 1 row(s) inserted.
+>>
+>>log;

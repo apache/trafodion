@@ -1,0 +1,28 @@
+467,482c467,476
+< >>?section Genesis_10_000222_6892_p1
+< >>SELECT 1 FROM T002T3 T1
+< +>GROUP BY T1.A
+< +>HAVING T1.A >ANY
+< +> ( SELECT 2 FROM T002T1 T2
+< +> WHERE T2.C >SOME
+< +> ( SELECT AVG (T1.A) FROM T002T1 T3 )
+< +> );
+< 
+< (EXPR)
+< ----------
+< 
+<  1
+<  1
+< 
+< --- 2 row(s) selected.
+---
+> >>-- This test disabled since it is non -deterministic.
+> >>-- It will be enabled after further investigation.
+> >>-- ?section Genesis_10_000222_6892_p1
+> >>-- SELECT 1 FROM T002T3 T1
+> >>-- GROUP BY T1.A
+> >>-- HAVING T1.A >ANY
+> >>-- ( SELECT 2 FROM T002T1 T2
+> >>-- WHERE T2.C >SOME
+> >>-- ( SELECT AVG (T1.A) FROM T002T1 T3 )
+> >>-- );

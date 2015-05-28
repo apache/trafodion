@@ -1,0 +1,449 @@
+>>
+>>obey TEST061(mxonly);
+>>
+>>-- test genesis case 10-980520-2421 and genesis case 10-980527-5980
+>>create table t2421
++>(a pic 9v, b picture v9, c pic s99(09)v9(08), d pic s9v9, e pic sv9, f pic s9v,
++> h pic 99v9);
+
+--- SQL operation complete.
+>>invoke t2421;
+
+-- Definition of Trafodion table TRAFODION.SCH.T2421
+-- Definition current  Sun Aug 17 13:04:04 2014
+
+  (
+    A                                DECIMAL(1, 0) UNSIGNED DEFAULT NULL
+  , B                                DECIMAL(1, 1) UNSIGNED DEFAULT NULL
+  , C                                DECIMAL(18, 8) DEFAULT NULL
+  , D                                DECIMAL(2, 1) DEFAULT NULL
+  , E                                DECIMAL(1, 1) DEFAULT NULL
+  , F                                DECIMAL(1, 0) DEFAULT NULL
+  , H                                DECIMAL(3, 1) UNSIGNED DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t2421 values(0,0.1,2,3,0.4,5,1.23);
+
+--- 1 row(s) inserted.
+>>select * from t2421;
+
+A  B   C                     D     E    F   H   
+-  --  --------------------  ----  ---  --  ----
+
+0  .1            2.00000000   3.0   .4   5   1.2
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- picture variant (from Ken Luu's catman/test101)
+>>create table  t101t2 ( c01 picture XX
++>                     , c02 picture X(2)
++>                     , c12 pic XXXXXXXXXXXXXXXXXXXXX
++>                     , c13 pic X(21)
++>                     );
+
+--- SQL operation complete.
+>>invoke        t101t2;
+
+-- Definition of Trafodion table TRAFODION.SCH.T101T2
+-- Definition current  Sun Aug 17 13:04:07 2014
+
+  (
+    C01                              CHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C02                              CHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C12                              CHAR(21) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C13                              CHAR(21) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl       t101t2;
+
+CREATE TABLE TRAFODION.SCH.T101T2
+  (
+    C01                              CHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C02                              CHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C12                              CHAR(21) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C13                              CHAR(21) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>insert into   t101t2 values ('ab',  '4', 'abcdefghijklmnopqrstu', '1'),
++>                            ('21',  'A', '123456789012345678901', 'B');
+
+--- 2 row(s) inserted.
+>>select * from t101t2;
+
+C01  C02  C12                    C13                  
+---  ---  ---------------------  ---------------------
+
+ab   4    abcdefghijklmnopqrstu  1                    
+21   A    123456789012345678901  B                    
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- the following (taken from catman/test104) broke as we were trying to fix
+>>-- the NCHAR default value bug; reproduced here to avoid breaking it again.
+>>create table  t104t2 (c char(15) not null, d int not null,
++>                      primary key (c, d))
++>  range partition (add first key ('Mickey''s', 2) location $$partition$$,
++>                   add first key ('sad"story', 10) location $$partition2$$);
+
+--- SQL operation complete.
+>>invoke t104t2;
+
+-- Definition of Trafodion table TRAFODION.SCH.T104T2
+-- Definition current  Sun Aug 17 13:04:09 2014
+
+  (
+    C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>showddl t104t2;
+
+CREATE TABLE TRAFODION.SCH.T104T2
+  (
+    C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (C ASC, D ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>
+>>#ifNT
+>>-- test genesis case: 10-980515-9563
+>>-- It tests the result of natural joins 
+>>
+>>create table BTlocal5
++>(char2_2             NChar(2)               not null,
++> varchar3_4          NChar Varying(8)            not null,
++> sbinneg15_nuniq     Largeint);
+
+--- SQL operation complete.
+>>
+>>create table BTlocal5c
++>(char2_2             NChar(2)               not null,
++> varchar3_4          NChar Varying(8)            not null,
++> sbinneg15_nuniq     Largeint);
+
+--- SQL operation complete.
+>>
+>>Insert Into BTlocal5 Values ( N'AA',  N'BA',  -4344);
+
+--- 1 row(s) inserted.
+>>Insert Into BTlocal5 Values ( N'AA', N'BAA',  -4344);
+
+--- 1 row(s) inserted.
+>>Insert Into BTlocal5 Values ( N'BA', N'AA',   -3552);
+
+--- 1 row(s) inserted.
+>>Insert Into BTlocal5 Values ( N'BA', N'CA',   -2389);
+
+--- 1 row(s) inserted.
+>>Insert Into BTlocal5 Values ( N'DA', N'CA',   -2789);
+
+--- 1 row(s) inserted.
+>>Insert Into BTlocal5 Values ( N'EA', N'DA',   -1950);
+
+--- 1 row(s) inserted.
+>>
+>>Insert Into BTlocal5c select * from BTlocal5;
+
+--- 6 row(s) inserted.
+>>
+>>create view  VNlocal5 ( n1, c2, c4 ) as
++>select max(BTlocal5.sbinneg15_nuniq) , min(BTlocal5.char2_2)
++>     , max(BTlocal5c.varchar3_4)
++>from BTlocal5
++>left  join BTlocal5c
++>on BTlocal5.char2_2   = BTlocal5c.varchar3_4
++>group by BTlocal5.sbinneg15_nuniq, BTlocal5.char2_2, BTlocal5c.varchar3_4;
+
+--- SQL operation complete.
+>>
+>>select * from VNlocal5 order by 1,2,3;
+
+N1                    C2    C4              
+--------------------  ----  ----------------
+
+               -4344  AA    AA              
+               -3552  BA    BA              
+               -2789  DA    DA              
+               -2389  BA    BA              
+               -1950  EA    ?               
+
+--- 5 row(s) selected.
+>>
+>>select n1,c2,c4 from VNlocal5 natural join VNlocal5 t order by n1,c2;
+
+N1                    C2    C4              
+--------------------  ----  ----------------
+
+               -4344  AA    AA              
+               -3552  BA    BA              
+               -2789  DA    DA              
+               -2389  BA    BA              
+
+--- 4 row(s) selected.
+>>--end
+>>
+>>
+>>-- test genesis cases: 10-980508-4495, 10-980901-0430 and 10-980512-6420
+>>
+>>create table t4495 (a int, b nchar varying(15));
+
+--- SQL operation complete.
+>>insert into t4495 values (100, N'abcdefgh');
+
+--- 1 row(s) inserted.
+>>insert into t4495 values (200, N'defgh');
+
+--- 1 row(s) inserted.
+>>insert into t4495 values (300, N'abc');
+
+--- 1 row(s) inserted.
+>>
+>>create view vut4495 (inta, varchar20)
++>   as select * from t4495 where a > 200
++>   union select * from t4495 where a< 150;
+
+--- SQL operation complete.
+>>
+>>-- These give an error 1127 - The specified table is not a base table.
+>>
+>>create index  t061i1 on vut4495(a);
+
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+
+--- SQL operation failed with errors.
+>>
+>>create table t061t33(t061t3_c int references vut4495);
+
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+
+*** ERROR[1029] Object TRAFODION.SCH.T061T33 could not be created.
+
+--- SQL operation failed with errors.
+>>create table t061t4(t061t4_c int references vut4495(a));
+
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+
+*** ERROR[1029] Object TRAFODION.SCH.T061T4 could not be created.
+
+--- SQL operation failed with errors.
+>>create table t061t5(t061t5_c int, foreign key(t061t5_c) references vut4495);
+
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+
+*** ERROR[1029] Object TRAFODION.SCH.T061T5 could not be created.
+
+--- SQL operation failed with errors.
+>>create table t061t6(t061t6_c int, foreign key(t061t6_c) references vut4495(a));
+
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+
+*** ERROR[1029] Object TRAFODION.SCH.T061T6 could not be created.
+
+--- SQL operation failed with errors.
+>>
+>>select * from vut4495;
+
+INTA         VARCHAR20                     
+-----------  ------------------------------
+
+        100  abcdefgh                      
+        300  abc                           
+
+--- 2 row(s) selected.
+>>
+>>-- used to get an error: "operands of the LIKE predicate must be character"
+>>
+>>select varchar20 from vut4495 where varchar20 like N'%a%';
+
+VARCHAR20                     
+------------------------------
+
+abcdefgh                      
+abc                           
+
+--- 2 row(s) selected.
+>>
+>>-- test genesis case: 10-980508-4452
+>>-- comment out because view text can not contain ucs2 string literals.
+>>--create view vut4495b as select * from t4495 where b < N'bbb';
+>>--select * from vut4495b;
+>>--showddl vut4495b;
+>>
+>>set param ?p_param _ucs2' bcDEFg8i ';
+>>select substring((b || ?p_param ) from 2) as From2 from t4495;
+
+FROM2
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bcdefgh bcDEFg8i                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+efgh bcDEFg8i                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+bc bcDEFg8i                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+--- 3 row(s) selected.
+>>
+>>-- the original bug was an assertion failure here
+>>
+>>-- this is OK
+>>
+>>select substring((b || N' bcDEFg8i ') from 2) as From2 from t4495;
+
+FROM2                                           
+------------------------------------------------
+
+bcdefgh bcDEFg8i                                
+efgh bcDEFg8i                                   
+bc bcDEFg8i                                     
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- not OK: opds with different char sets are illegal
+>>         select substring((b || ' bcDEFg8i ') from 2) as From2 from t4495;
+
+FROM2                                           
+------------------------------------------------
+
+bcdefgh bcDEFg8i                                
+efgh bcDEFg8i                                   
+bc bcDEFg8i                                     
+
+--- 3 row(s) selected.
+>>
+>>-- set param is a sqlci command and it does not know about N'strings'
+>>set param ?DoYouKnowTheWayToSanJose N'otAchance';
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?DoYouKnowTheWayToSanJose N'otAchance';
+                                    ^ (37 characters from start of SQL statement)
+
+>>
+>>#ifNT
+>>
+>>-- test genesis case: 10-980603-2116
+>>-- It is used to test to select data from a view created with 
+>>-- sum(distinct...) function
+>>
+>>CREATE TABLE t2116t1 (
++>  pic_x_7                PIC X(7)          not null
++>, binary_signed          numeric (4, 0) signed not null
++>, binary_64_s            numeric (18,3) SIGNED not null
++>, PRIMARY KEY (binary_signed) );
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE t2116t3 (
++>  pic_x_7        PIC X(7)            not null
++>, binary_64_s    numeric (18,2) SIGNED      not null );
+
+--- SQL operation complete.
+>>
+>>CREATE VIEW t2116v1 (col_1)
++>AS SELECT sum (distinct t2116t1.binary_signed)
++>   FROM t2116t1, t2116t3
++>   WHERE t2116t1.binary_64_s > t2116t3.binary_64_s AND
++>       ( t2116t1.pic_x_7 <> t2116t3.pic_x_7 );
+
+--- SQL operation complete.
+>>
+>>insert into t2116t1 values ('walter',50,200);
+
+--- 1 row(s) inserted.
+>>insert into t2116t1 values ('9',8000,2000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t1 values ('michael',-5000,2000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t1 values ('jimmy',3000,2000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('A',200);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('7',1200);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('5',1000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('michael',1500);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('7',2000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('B',3000);
+
+--- 1 row(s) inserted.
+>>insert into t2116t3 values ('michael',4000);
+
+--- 1 row(s) inserted.
+>>
+>>select * from t2116v1;
+
+COL_1               
+--------------------
+
+                6000
+
+--- 1 row(s) selected.
+>>
+>>
+>>obey TEST061(clnupmxonly);
+>>drop table t2421;
+
+--- SQL operation complete.
+>>drop table t101t2;
+
+--- SQL operation complete.
+>>drop table t104t2;
+
+--- SQL operation complete.
+>>drop view  VNlocal5;
+
+--- SQL operation complete.
+>>drop table BTlocal5;
+
+--- SQL operation complete.
+>>drop table BTlocal5c;
+
+--- SQL operation complete.
+>>drop view vut4495;
+
+--- SQL operation complete.
+>>--drop view vut4495b;
+>>drop table t4495;
+
+--- SQL operation complete.
+>>drop view t2116v1;
+
+--- SQL operation complete.
+>>drop table t2116t3;
+
+--- SQL operation complete.
+>>drop table t2116t1;
+
+--- SQL operation complete.
+>>
+>>log;

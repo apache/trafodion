@@ -1,0 +1,377 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+#ifndef EX_HASH_GRBY_H
+#define EX_HASH_GRBY_H
+
+/* -*-C++-*-
+******************************************************************************
+*
+* File:         ex_hash_grby.h
+* Description:  Class declarations for ex_hash_grby_tcb and ex_hash_grby_tdb
+*               Hash groupby (full and partial hash groupby)
+*               
+* Created:      
+* Language:     C++
+*
+*
+*
+*
+******************************************************************************
+*/
+
+#include "hash_table.h"
+#include "cluster.h"
+
+// External forward declarations
+//
+class ExSimpleSQLBuffer;
+class ExTrieTable;
+class ExBitMapTable;
+class ExHashGroupByStats;
+class ExBMOStats;
+
+//
+// Task Definition Block
+//
+
+#include "ComTdbHashGrby.h"
+
+// -----------------------------------------------------------------------
+// Classes defined in this file
+// -----------------------------------------------------------------------
+class ex_hash_grby_tdb;
+
+// -----------------------------------------------------------------------
+// Classes referenced in this file
+// -----------------------------------------------------------------------
+class ex_tcb;
+#ifndef __EID
+class memoryMonitor;
+#endif
+
+// -----------------------------------------------------------------------
+// ex_hash_grby_tdb
+// -----------------------------------------------------------------------
+class ex_hash_grby_tdb : public ComTdbHashGrby
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ex_hash_grby_tdb()
+  {}
+
+  NA_EIDPROC virtual ~ex_hash_grby_tdb()
+  {}    // LCOV_EXCL_LINE
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDBs
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbHashGrby instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  // 
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+
+/////////////////////////////
+// Task control block
+/////////////////////////////
+class ex_hash_grby_tcb : public ex_tcb {
+  friend class   ex_hash_grby_tdb;
+  friend class   ex_hash_grby_private_state;
+  
+  enum HashGrbyState {
+    HASH_GRBY_EMPTY,
+    HASH_GRBY_READ_CHILD,
+    HASH_GRBY_READ_OF_ROW,
+    HASH_GRBY_SPILL,
+    HASH_GRBY_READ_BUFFER,
+    HASH_GRBY_EVALUATE,
+    HASH_GRBY_RETURN_ROWS,
+    HASH_GRBY_RETURN_BITMUX_ROWS,
+    HASH_GRBY_RETURN_PARTIAL_GROUPS,
+    HASH_GRBY_DONE,
+    HASH_GRBY_ERROR,
+    HASH_GRBY_CANCELED
+  };
+
+  Space * space_;
+  CollHeap * heap_;
+#ifndef __EID
+  MemoryMonitor * memMonitor_;
+#endif
+
+  const ex_tcb    * childTcb_;
+  ex_queue_pair     parentQueue_;
+  ex_queue_pair     childQueue_;
+   
+  // the expressions; copied here for convenience
+  ex_expr      * hashExpr_;
+  ex_expr      * bitMuxExpr_;
+  ex_expr      * bitMuxAggrExpr_;
+  ex_expr      * hbMoveInExpr_;
+  ex_expr      * ofMoveInExpr_;
+  ex_expr      * resMoveInExpr_;
+  ex_expr      * hbAggrExpr_;
+  ex_expr      * ofAggrExpr_;
+  ex_expr      * resAggrExpr_;
+  ex_expr      * havingExpr_;
+  ex_expr      * moveOutExpr_;
+  ex_expr      * hbSearchExpr_;
+  ex_expr      * ofSearchExpr_;
+
+  // the atp indexes; copied here for convenience
+  short          hbRowAtpIndex_;
+  short          ofRowAtpIndex_;
+  short          hashValueAtpIndex_;
+  short          bitMuxAtpIndex_;
+  short          bitMuxCountOffset_;
+  short          resultRowAtpIndex_;
+  short          returnedAtpIndex_;
+
+  // the following members could also end up in the private state
+  Int64             matchCount_;
+  HashGrbyState     state_;
+  HashGrbyState     oldState_;
+  NABoolean         readingChild_;  // in middle of reading child rows
+  queue_index       index_;         // index into down queue
+  ULng32     bucketCount_;
+  Bucket          * buckets_;
+  Cluster         * rCluster_;      // the cluster for which we return all
+				    // matching rows
+  Cluster         * ofClusterList_; // list of spilled clusters
+  Cluster         * lastOfCluster_; // last entry in list
+  ClusterDB       * clusterDb_;
+  sql_buffer_pool * resultPool_;
+  NABoolean         hasFreeTupp_;   // for partial group by; indicates wether
+                                    // there is an allocated tupp in the
+                                    // result buffer or not.
+
+  atp_struct      * workAtp_;
+  atp_struct      * tempUpAtp_;
+  tupp_descriptor   hashValueTupp_;
+  SimpleHashValue   hashValue_;
+  HashTableCursor   cursor_;
+
+  ExeErrorCode      rc_;
+
+  // This counter is used to find out how many consecutive misses
+  // happen for finding a group during partial groupby.
+  // Once a certain threshold is reached(partialGroupbyMissCounter_== 10), 
+  // then the rows in the partial groupby bucket is sent to the parent and
+  // new set of groups is created.
+  Int64             partialGroupbyMissCounter_;
+
+  // Members for implementing the bitMux grouping
+  //
+  // An ExTrieTable for keeping track of the groups
+  //
+  //ExTrieTable * bitMuxTable_;
+
+  // An ExBitMapTable for keeping track of the bitMux groups
+  //
+  ExBitMapTable * bitMuxTable_;
+
+  // A tupp descriptor used to point to the temporary buffer for the extracted
+  // grouping data.
+  //
+  tupp_descriptor bitMuxTupp_;
+
+  // A temporary buffer for the extracted grouping data.
+  //
+  char * bitMuxBuffer_;
+
+  // The hash buffer aggregate expression to apply to rows that are
+  // in the BitMux table. Since the BitMux table computes some aggragates
+  // itself, the aggregate expression for rows in the BitMux table do not
+  // need to recompute the same aggregates.
+  //
+  //exp_expr * bitMuxAggrExpr_; -- declared above
+
+  // The offset in the BitMux buffer at which to store the row count.
+  //
+  //int bitMuxCountOffset_; -- declared above
+
+  ExSubtask *ioEventHandler_;
+
+  IOTimer ioTimer_;
+
+  Int32 numIOChecks_;
+
+  NABoolean haveSpilled_;
+  ExBMOStats *bmoStats_;
+  ExHashGroupByStats *hashGroupByStats_;
+
+  //CIF buffer defragmentation
+  tupp_descriptor * defragTd_;
+
+NA_EIDPROC
+  void workInitialize();
+
+NA_EIDPROC
+  void workReadChild();
+
+NA_EIDPROC
+  Int32 workReadChildBitMux();
+
+NA_EIDPROC
+  void workReadOverFlowRow();
+
+NA_EIDPROC
+  void workSpill();
+
+NA_EIDPROC
+  void workReadBuffer();
+
+NA_EIDPROC
+  void workEvaluate();
+
+NA_EIDPROC
+  ULng32 workReturnRows(NABoolean tryToDefrag);
+
+NA_EIDPROC
+  void workDone();
+
+NA_EIDPROC
+  void workHandleError(atp_struct* atp = NULL);
+
+NA_EIDPROC
+  inline void setState(HashGrbyState state) {
+    oldState_ = state_;
+    state_ = state;
+};
+
+NA_EIDPROC
+  inline NABoolean isReadingFromChild() const { return readingChild_; }
+
+NA_EIDPROC
+  inline void inReadingFromChild() { readingChild_ = TRUE; }
+
+NA_EIDPROC
+  inline void doneReadingFromChild() { readingChild_ = FALSE; }
+
+NA_EIDPROC
+  void returnResultCurrentRow(HashRow * dataPointer = NULL);
+
+NA_EIDPROC
+void resetClusterAndReadFromChild(); // Tmobile.
+
+public:
+
+NA_EIDPROC
+  ex_hash_grby_tcb(const ex_hash_grby_tdb & hash_grby_tdb,    
+		   const ex_tcb &    childTcb,
+		   ex_globals * glob); 
+  
+NA_EIDPROC
+  ~ex_hash_grby_tcb();  
+
+NA_EIDPROC
+  void freeResources();  // free resources
+
+NA_EIDPROC
+  void registerSubtasks();
+  
+NA_EIDPROC
+  short work();  // when scheduled to do work
+
+NA_EIDPROC
+  inline ex_hash_grby_tdb & hashGrbyTdb() const;
+
+NA_EIDPROC
+  ex_queue_pair getParentQueue() const { return parentQueue_; }
+
+NA_EIDPROC
+  virtual const ex_tcb* getChild(Int32 pos) const;
+
+NA_EIDPROC
+  virtual Int32 numChildren() const { return 1; }
+NA_EIDPROC
+  virtual NABoolean needStatsEntry();
+NA_EIDPROC
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+                                                       ComTdb *tdb);
+
+};
+
+
+/*****************************************************************************
+  Description : Return ex_tcb* depending on the position argument.
+                  Position 0 means the left most child.
+  Comments    :
+  History     : Yeogirl Yun                                      8/14/95
+                 Initial Revision.
+*****************************************************************************/
+NA_EIDPROC
+inline const ex_tcb* ex_hash_grby_tcb::getChild(Int32 pos) const {
+  ex_assert((pos >= 0), ""); // LCOV_EXCL_START
+  if (pos == 0)
+    return childTcb_;
+  else
+    return NULL; 
+}  // LCOV_EXCL_STOP
+
+///////////////////////////////////////////////////////////////////////////
+//
+//  Inline procedures
+//
+///////////////////////////////////////////////////////////////////////////
+
+NA_EIDPROC
+inline ex_hash_grby_tdb & ex_hash_grby_tcb::hashGrbyTdb() const {
+  return (ex_hash_grby_tdb &) tdb;
+};
+
+//////////////////////////////////////////////////////////////////////////
+// The hash groupby operator does not need private state per queue entry
+//////////////////////////////////////////////////////////////////////////
+
+#endif
+
+
+

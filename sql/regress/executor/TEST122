@@ -1,0 +1,433 @@
+-- ============================================================================
+-- Test: TEST0122 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Query Invalidation (QI) following DDL
+-- Expected files: EXPECTED122
+-- Table created:
+-- Limitations:
+-- To do:
+-- Revision history:
+-- ============================================================================
+
+obey TEST122(clnup);
+
+log LOG122 clear;
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+obey TEST122(test_drop_tab);
+
+obey TEST122(test_alter_tab);
+
+obey TEST122(test_drop_view);
+
+obey TEST122(test_drop_index);
+
+obey TEST122(clnup);
+
+exit;
+
+?section test_drop_tab
+
+set schema $$TEST_SCHEMA$$;
+
+create table t122t1 ( a int not null );
+
+prepare s1 from insert into t122t1 values
+  (0)
+, (5)
+, (1)
+;
+
+update statistics for table t122t1 on every column;
+
+obey TEST122(uid_in_plan);
+
+execute s1;
+
+prepare s1 from select * from t122t1;
+
+obey TEST122(uid_in_plan);
+
+execute s1;
+
+invoke t122t1;
+
+select count(*) from t122t1;
+
+update t122t1 set a = 55 where a = 5;
+
+delete from t122t1 where a = 55;
+    
+prepare s2 from insert into t122t1 values (8);
+
+prepare s3 from invoke t122t1;
+
+prepare s4 from select count(*) from t122t1;
+
+prepare s5 from update t122t1 set a = 55 where a = 5;
+
+prepare s6 from delete from t122t1 where a = 55;
+
+execute s2;
+
+execute s3;
+
+execute s4;
+
+execute s5;
+
+execute s6;
+
+sh sqlci -i"TEST122(drop_tab)";
+
+select * from t122t1;
+
+invoke t122t1;
+
+insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+select count(*) from t122t1;
+
+update t122t1 set a = 'ix' where a = 'ii';
+
+delete from t122t1 where a = 'i';
+
+execute s2;
+
+execute s3;
+
+execute s4;
+
+execute s5;
+
+execute s6;
+
+?section test_alter_tab
+
+set schema $$TEST_SCHEMA$$;
+
+create table t122t3 (c1 int not null primary key, c2 int);
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3;
+
+create table t122t3_col (c1 int not null primary key, c2 int);
+insert into t122t3_col values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_col;
+
+create table t122t3_ck (c1 int not null primary key, c2 int);
+insert into t122t3_ck values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_ck;
+
+create table t122t3_unique (c1 int not null primary key, c2 int);
+insert into t122t3_unique values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_unique;
+
+create table t122t3_ri (c1 int not null primary key, c2 int);
+insert into t122t3_ri values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_ri;
+
+create table t122t4 (c1 int, c2 int);
+insert into t122t4 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4;
+
+create table t122t4_pk (c1 int, c2 int);
+insert into t122t4_pk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4_pk;
+
+create table t122t4_fk (c1 int, c2 int);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4_fk;
+
+
+sh sqlci -i "TEST122(alter_tbl_add)";
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+-- see new column in t122t3_col;
+select * from t122t3_col;
+
+-- see new constraint in t122t3_ck
+insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+-- see new unique constraint in t122t3_unique 
+explain options 'f' 
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+-- see new pk in t122t4_pk 
+explain options 'f' 
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+-- see new ri in t122t4_fk
+explain options 'f'
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+-- see new index in t122t3
+explain options 'f'
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+sh sqlci -i "TEST122(alter_tbl_drop)";
+
+set schema $$TEST_SCHEMA$$;
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+-- see only 2 columns in t122t3_col;
+select * from t122t3_col;
+
+-- no more check constraint in t122t3_ck
+insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+-- no more unique constraint in t122t3_unique 
+explain options 'f' 
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+-- no more pk in t122t4_pk 
+explain options 'f' 
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+-- no ri contraint in t122t4_fk
+explain options 'f'
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+-- no more index in t122t3
+explain options 'f'
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+
+?section test_drop_view
+
+set schema $$TEST_SCHEMA$$;
+
+-- makes sure referenced tables are invalidated
+-- structure:
+--     tables: t122t5_a, t122t5_b, t122t5_c, t122t5_d, t122t5_e
+--     t122_v1: selects from t122t5_a
+--     t122_v2: selects from t122t5_b
+--     t122_v3: selects from t122_v1 & t122_v2
+--     t122_v4: selects from t122t5_b & t122t5_c
+--     t122_v5: selects from t122_v4 
+--     t122_v6: selects from t122_v5 &t122_v3 & t122t5_d
+--     t122_v7: selects from t122_v6 & t122t5_e
+
+create table t122t5_a (a_c1 int not null primary key, a_c2 int);
+insert into t122t5_a values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_a;
+
+create view t122_v1 as select a_c1, a_c2 from t122t5_a;
+select * from t122_v1;
+
+create table t122t5_b (b_c1 int not null primary key, b_c2 int);
+insert into t122t5_b values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_b;
+
+create view t122_v2 as select b_c1, b_c2 from t122t5_b;
+select * from t122_v2;
+
+create view t122_v3 as select v1.a_c1 as v3_c1, v2.b_c2 as v3_c2 from t122_v1 v1, t122_v2 v2
+    where v1.a_c1 = v2.b_c1 + 1;
+select * from t122_v3;
+
+create table t122t5_c (c_c1 int not null primary key, c_c2 int);
+insert into t122t5_c values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_c;
+
+create view t122_v4 as select b.b_c1, c.c_c1 from t122t5_b b, t122t5_c c
+   where b.b_c1 = c.c_c2;
+select * from t122_v4;
+
+create view t122_v5 as select * from t122_v4;
+select * from t122_v5;
+
+create table t122t5_d (d_c1 int not null primary key, d_c2 int);
+insert into t122t5_d values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_d;
+
+create view t122_v6 as select v5.b_c1 v5_c1, v3.v3_c2 v5_c2, d.d_c2 v5_c3 
+  from t122_v5 v5, t122_v3 v3, t122t5_d d
+  where v5.b_c1 = v3.v3_c1 and v3.v3_c1 = d.d_c1;
+select * from t122_v6;
+
+create table t122t5_e (e_c1 int not null primary key, e_c2 int);
+insert into t122t5_e values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_e;
+
+create view t122_v7 as select v6.v5_c1, v6.v5_c2, e.e_c1, e.e_c2
+  from t122_v6 v6, t122t5_e e
+  where v6.v5_c1 = e.e_c1;
+select * from t122_v7;
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+select * from t122_v1;
+select * from t122_v2;
+select * from t122_v3;
+select * from t122_v4;
+select * from t122_v5;
+select * from t122_v6;
+select * from t122_v7;
+
+sh sqlci -i "TEST122(drop_view)";
+
+select * from t122_v1;
+select * from t122_v2;
+select * from t122_v3;
+select * from t122_v4;
+select * from t122_v5;
+select * from t122_v6;
+select * from t122_v7;
+
+select * from t122t5_a;
+select * from t122t5_b;
+select * from t122t5_c;
+select * from t122t5_d;
+select * from t122t5_e;
+
+?section test_drop_index
+-- makes sure compiler process(es) caches are cleaned up
+-- between drops in the same session
+
+set schema $$TEST_SCHEMA$$;
+
+create table t122t6
+(
+  Int_1 INT SIGNED not null not droppable,
+  Large_2 LARGEINT not null,
+  primary key(Int_1)
+);
+
+create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+showddl t122t6;
+
+insert into t122t6 values (1, 1804250150),(2, 939828307);
+
+drop table t122t6 cascade;
+
+create table t122t6
+(
+  Int_1 INT SIGNED not null not droppable,
+  Large_2 LARGEINT,
+  primary key(Int_1)
+);
+
+create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+create index t122t6_idx2 on t122t6 (Int_1, Large_2);
+insert into t122t6 values (3, -2115140520),(4, 2104744432);
+
+prepare XX from select min(Large_2) from t122t6;
+explain options 'f' XX;
+execute XX;
+
+prepare XX from select max(Large_2) from t122t6;
+explain options 'f' XX;
+execute XX;
+
+?section clnup
+
+drop table if exists t122t1 cascade;
+drop table if exists t122t3 cascade;
+drop table if exists t122t3_col cascade;
+drop table if exists t122t3_ck cascade;
+drop table if exists t122t3_unique cascade;
+drop table if exists t122t3_ri cascade;
+drop table if exists t122t4 cascade;
+drop table if exists t122t4_pk cascade;
+drop table if exists t122t4_fk cascade;
+drop table if exists t122t5_a cascade;
+drop table if exists t122t5_b cascade;
+drop table if exists t122t5_c cascade;
+drop table if exists t122t5_d cascade;
+drop table if exists t122t5_e cascade;
+drop table if exists t122t6 cascade;
+
+?section uid_in_plan
+log;
+log PLAN122 clear;
+explain s1;
+log;
+sh echo "look for one uid only" >> LOG122; 
+sh grep "^  ObjectUIDs .* [1-9][0-9]*$" PLAN122 | cut -c 1-20 >> LOG122; 
+sh echo "look for more than one uid" >> LOG122; 
+sh grep "^  ObjectUIDs .* [1-9][0-9]*," PLAN122;
+log LOG122;
+-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+log;
+log PLAN122 clear;
+explain select * from SB_HISTOGRAMS;
+explain select * from SB_HISTOGRAM_INTERVALS;
+explain select * from "_MD_".OBJECTS;
+log;
+sh grep "^  ObjectUIDs .* [1-9][0-9]*" PLAN122 | cut -c 1-20  >> LOG122;
+log LOG122;
+
+?section drop_tab
+
+set schema $$TEST_SCHEMA$$;
+
+log LOG122;
+
+drop table t122t1;
+
+create table t122t1 ( a char(4) not null );
+
+insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+?section alter_tbl_add
+set schema $$TEST_SCHEMA$$;
+
+log LOG122;
+-- add columns, constraints, and indexes
+alter table t122t3_col add column c3 int default 0;
+alter table t122t3_ck add constraint t122_ck check (c2 > 0);
+alter table t122t3_unique add constraint t122_uq unique (c2);
+alter table t122t4_pk add constraint t122_pk primary key (c1);
+alter table t122t4_fk add constraint t122_fk foreign key (c2) references t122t3_ri;
+create index t122t3_index on t122t3(c2);
+
+?section alter_tbl_drop
+set schema $$TEST_SCHEMA$$;
+log LOG122;
+-- drop columns, constraints, and indexes
+alter table t122t3_col drop column c3;
+alter table t122t3_ck drop constraint t122_ck;
+alter table t122t3_unique drop constraint t122_uq;
+alter table t122t4_pk drop constraint t122_pk;
+alter table t122t4_fk drop constraint t122_fk;
+drop index t122t3_index;
+
+?section drop_view
+set schema $$TEST_SCHEMA$$;
+log LOG122;
+
+drop view t122_v7;
+drop view t122_v6;
+drop view t122_v5;
+drop view t122_v4;
+drop view t122_v3;
+drop view t122_v2;
+drop view t122_v1;
+
+

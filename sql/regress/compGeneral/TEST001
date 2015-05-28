@@ -1,0 +1,442 @@
+-- Test: TEST001 (CompGeneral)
+-- Functionality: It tests the push group by below join feature. 
+-- Table created: t01emp, t01dept
+-- Expected files: EXPECTED001 
+-- Limitations:
+-- Revision history:
+--     (10/30/02) - Created  from TEST013 of fullstack.
+--                  added showshape for some queries to ensure that 
+--                  the group by is being pushed down
+--     (05/13/06) - Changed call to display_explain to just
+--                  explain and removed the '(s)' from the output which
+--                  has been supressed.
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+?section ddl
+drop table t01emp;
+drop table t01dept;
+#ifMX
+drop table t01sample;
+drop table t02sample;
+#ifMX
+
+?section crdb
+log LOG001 clear;
+
+-- test aggregate-join transformations
+create table t01emp(eno int not null ,
+                 ename char(20),
+                 dno int,
+                 salary numeric(8,2),
+                 primary key(eno) );
+create table t01dept(dno int not null ,
+                  dname char(20) not null,
+                  dregion int not null,
+                  primary key (dno) );
+
+#ifMX
+create table t01sample (l_partkey int not null not droppable,
+l_suppkey int not null not droppable,
+l_orderkey int not null not droppable
+ )
+store by  (l_partkey, l_suppkey)
+#ifndef SEABASE_REGRESS
+location $$partition$$
+range partition by (l_partkey,l_suppkey) 
+(
+add first key ( 200) location $$partition1$$,
+add first key (400) location $$partition2$$)
+#endif
+;
+
+create table t02sample (l_partkey int not null not droppable,
+l_suppkey int not null not droppable,
+l_orderkey int not null not droppable
+ )
+store by  (l_partkey desc, l_suppkey)
+#ifndef SEABASE_REGRESS
+location $$partition$$
+range partition by (l_partkey,l_suppkey)
+(
+add first key ( 1200) location $$partition1$$,
+add first key (400) location $$partition2$$)
+#endif
+;
+#ifMX
+
+--create unique index deptux on dept(dregion,dname);
+
+?section dml
+insert into t01emp values (1, 'Smith',  33, 2000);
+insert into t01emp values (2, 'Jones',  33, 3000);
+insert into t01emp values (3, 'Gray',   44, 4000);
+insert into t01emp values (4, 'Miller', 55, 1000);
+
+insert into t01dept values (33, 'Sales',      1),
+                        (44, 'Marketing',  1),
+                        (55, 'Production', 2);
+
+-- simulate a full outer join
+select * from t01emp natural left  join t01dept
+ union
+select * from t01emp natural right join t01dept;
+
+-- groupby can be pushed down
+-- add showshape statement to ensure that the group by is
+-- actually pushed down
+
+-- set showshape on;
+
+select dno,dname,sum(salary)
+from t01emp natural join t01dept
+group by dno,dname;
+
+-- modify the statistics such that the pushed down groupby wins
+select dno,dname,sum(salary)
+from t01emp rows10000 natural join t01dept rows1000
+group by dno,dname for browse access;
+
+-- set showshape off;
+
+-- exchange join and groupby and add count(*) > 0 clause to the groupby
+select distinct t01dept.* from t01emp,t01dept for browse access;
+
+-- won't push down, aggregate function references both tables
+-- (later, add a rewrite rule for groupby that eliminates max(region))
+
+-- set showshape on;
+
+select dno,dname,sum(salary), max(dregion)
+from t01emp rows10000 natural join t01dept rows1000
+group by dno,dname for browse access;
+
+
+-- can't push down, groupby column "eno + dregion" references both tables
+-- add showshape to ensure that the group by is not pushed down
+
+select "eno + dregion",dno,dname,sum(salary) as sal
+from (select eno + dregion, dno, dname, salary
+      from t01emp rows10000 natural join t01dept rows1000)
+			 as t("eno + dregion",dno,dname,salary)
+group by "eno + dregion",dno,dname for browse access;
+
+-- can't push down, groupby columns don't cover t01dept.key
+
+select dname,sum(salary), max(dregion)
+from t01emp rows10000 natural join t01dept rows1000
+group by dname for browse access;
+
+-- set showshape off;
+
+-- can't push down, but test a query with a high number of internally
+-- produced rows and test a 10-way cross product in the optimizer
+-- TBF: ex_sort_grby_tcb::work() Invalid state returned by child
+?ignore
+select count(*) from t01emp t1, t01emp t2, t01emp t3, t01emp t4, t01emp t5, t01emp t6,
+                      t01emp t7, t01emp t8, t01emp t9, t01emp t10;
+?ignore
+-- 4**10 = 1048576
+
+-- push grby down 5 times
+-- Use force statement to ensure that the optimizer chooses to push
+-- the group down as far as it can go
+control query shape hj(hj(hj(hj(hj(hash_groupby(cut),cut),cut),cut),cut),cut);
+select t1.ename,avg(t1.salary)
+from t01emp t1, t01emp t2, t01emp t3, t01emp t4, t01emp t5, t01emp t6
+group by t1.ename,t2.eno,t3.eno,t4.eno,t5.eno,t6.eno;
+control query shape cut;
+
+-- push groupby down multiple times
+-- set showshape on;
+
+select max(t1.ename), rows12e4.eno, rows13e4.eno,
+       rows14e4.eno, rows15e4.eno, rows16e4.eno
+from t01emp t1 join t01emp rows12e4 on t1.eno <> rows12e4.eno
+            join t01emp rows13e4 on rows12e4.eno = rows13e4.eno
+            join t01emp rows14e4 on rows13e4.eno = rows14e4.eno
+            join t01emp rows15e4 on rows14e4.eno = rows15e4.eno
+            join t01emp rows16e4 on rows15e4.eno = rows16e4.eno
+group by rows12e4.eno,rows13e4.eno,rows14e4.eno,rows15e4.eno,rows16e4.eno
+for browse access;
+
+-- set showshape off;
+
+-- can push down, join col "dummy" is covered by the grouping columns
+-- TBF: Normalizer: VEGPredicate is generated on T01EMP scan which is
+-- not covered by the scan and therefore fails in file scan impl. rule.
+control query shape join(hash_groupby(cut),cut);
+select dno,dname,sum(salary)
+from (select 1,salary from t01emp rows10000) as e(dummy,salary),t01dept rows1000
+where e.dummy = rows1000.dno
+group by dno,dname,dummy;
+control query shape cut;
+
+#ifMX
+control query default ATTEMPT_ASYNCHRONOUS_ACCESS 'OFF';
+control query default ATTEMPT_REVERSE_SYNCHRONOUS_ORDER 'ON'; 
+--control query default detailed_statistics 'all';
+control query shape without enforcers shortcut_groupby(scan);
+
+#ifdef SEABASE_REGRESS
+prepare xxy from select min(l_partkey) from t01sample;
+#else
+prepare xxy from select max(l_partkey) from t01sample;
+#endif
+
+
+explain options 'f' xxy;
+
+--- should fail
+prepare xxz from
+select max(l_suppkey) from t01sample;
+
+control query shape cut;
+insert into t01sample values (100,5,230), (200,5, 24), (400, 10, 45);
+
+-- should return 400
+execute xxy;
+
+---select VAL1_TXT, VAL1, VAL2_TXT, VAL2,VAL3_TXT, VAL3 from
+---table(statistics(NULL,'XXY')) where TDB_NAME = 'EX_DP2_SUBS_OPER';
+
+delete from t01sample where l_suppkey=10;
+
+-- should return 200
+execute xxy;
+
+insert into t02sample values (100,5,230), (200,5, 24), (400, 10, 45), (1300,23, 67),(999, 34, 12);
+
+#ifdef SEABASE_REGRESS
+control query shape shortcut_groupby(scan);
+#else
+control query shape shortcut_groupby(partition_access(scan));
+#endif
+
+set param ?a 5;
+
+select min(l_partkey) from t02sample where l_suppkey=?a or l_suppkey > 12;
+select min(l_partkey) from t02sample where l_orderkey < 100;
+
+-- verify fix to genesis case 10-090520-0144 soln 10-090520-1731
+control query shape cut;
+-- min(x) or max(x) where x is 1st cluster key should get
+-- shortcut groupby plan out-of-the-box
+explain options 'f' select max(l_partkey) from t01sample;
+explain options 'f' select min(l_partkey) from t01sample;
+explain options 'f' select * from t02sample where l_partkey >=
+  (select max(l_partkey) from t01sample);
+explain options 'f' select * from t02sample where l_partkey <=
+  (select min(l_partkey) from t01sample);
+
+-- The wave fix should continue to hold
+explain options 'f' select count(*) from t01sample;
+
+#ifndef SEABASE_REGRESS
+-- let's force a nested join and verify that a
+-- nested_join(cut, shortcutgroupby) plan is very expensive relative to
+-- the out-of-the-box plan
+control query shape nested_join(cut,shortcut_groupby(cut));
+prepare x1 from select * from t02sample where l_partkey >=
+  (select max(l_partkey) from t01sample);
+
+control query shape cut;
+prepare xoob from select * from t02sample where l_partkey >=
+  (select max(l_partkey) from t01sample);
+
+select 
+--s.total_cost nj_scgb_cost, o.total_cost oob_cost, s.total_cost/o.total_cost,
+case when s.total_cost/o.total_cost > 1 then 'PASS' else 'FAIL' end
+from table(explain(null, 'X1')) s, 
+     table(explain(null, 'XOOB')) o
+where s.operator = 'ROOT' 
+  and o.operator = 'ROOT' ;
+#endif
+
+-- do it again for min
+control query shape nested_join(cut,shortcut_groupby(cut));
+prepare n1 from select * from t02sample where l_partkey <=
+  (select min(l_partkey) from t01sample);
+
+control query shape cut;
+prepare noob from select * from t02sample where l_partkey <=
+  (select min(l_partkey) from t01sample);
+
+select 
+--s.total_cost nj_scgb_cost, o.total_cost oob_cost, s.total_cost/o.total_cost,
+case when s.total_cost/o.total_cost > 1 then 'PASS' else 'FAIL' end
+from table(explain(null, 'N1')) s, 
+     table(explain(null, 'NOOB')) o
+where s.operator = 'ROOT' 
+  and o.operator = 'ROOT' ;
+
+-- add explain plans to make nested_join(c,scgb) tests easier to understand
+-- but if these plans start causing false negatives, nuke them from test001
+#ifndef SEABASE_REGRESS
+explain options 'f' x1;
+explain options 'f' xoob;
+#endif
+explain options 'f' n1;
+explain options 'f' noob;
+
+-- forcing shortcut groupby plan that can produce wrong result should fail
+control query shape shortcut_groupby(cut);
+explain options 'f' select max(l_suppkey) from t01sample;
+explain options 'f' select min(l_suppkey) from t01sample;
+control query shape cut;
+
+
+-- 
+-- Code Coverage additional tests
+-- 
+-- test comp_int_74 used in TSJFlowRule::topMatch() in TransRule.cpp
+--
+
+log off;
+
+drop table t01;
+drop table s01;
+
+log LOG001;
+
+create table t01(a int not null, b int, c int);
+create table s01(a int not null, b int, c int);
+
+cqd comp_int_74 '1';
+
+-- Test the condition where child(0) of TSJ is a scan.
+prepare x from delete from t01 where t01.a = 1;
+
+-- Test the condition where child(0) of TSJ is a join (used to cause an 
+-- exception because child(0) is assumed to be a scan. 
+prepare x from delete from t01 where t01.a in (select a from s01);
+
+drop table t01 cascade;
+drop table s01 cascade;
+
+--
+-- test FileScanRule::nextSubstitute() on condition
+--
+-- else if(	OptDefaults::indexEliminationLevel() != OptDefaults::MINIMUM AND
+--  	NOT isStream AND
+-- 	bef->selectionPred().isEmpty() AND viableIndexes.entries() >1)
+
+create table t01(a int not null, b int, c int, primary key(a));
+create index i1t01 on t01(a, b);
+create index i2t01 on t01(b);
+
+create table s01(a int not null, b int, c int, primary key(a));
+
+prepare x from select s.a from s01 s, (select t.b from t01 t group by t.b) x(u);
+
+--
+-- test NAClusterInfo::setUseAggregationNodesOnly only
+--
+cqd ESP_ON_AGGREGATION_NODES_ONLY 'on';
+
+prepare x from select s.a from s01 s <<+ cardinality 10e7>>, t01 t <<+ cardinality 10e5>> where s.a = t.b;
+
+cqd ESP_ON_AGGREGATION_NODES_ONLY reset;
+
+--
+-- test CQD OPTIMIZER_HEURISTIC_3 'on'
+--
+
+cqd OPTIMIZER_HEURISTIC_3 'on';
+cqd query_cache '0';
+prepare x from delete  from t01 where t01.a in (select a from s01);
+cqd OPTIMIZER_HEURISTIC_3 reset;
+
+--
+-- test function OPHuseEnforcerPlanPromotion().
+--
+cqd query_cache '0';
+cqd COMP_BOOL_160 'ON';
+cqd MEMORY_USAGE_SAFETY_NET '1';
+cqd OPH_USE_ENFORCER_PLAN_PROMOTION 'on';
+
+prepare x from select * from
+t01 t  <<+ cardinality 10e14 >> ,
+t01 t1 <<+ cardinality 10e15 >> ,
+t01 t2 <<+ cardinality 10e14 >> ,
+t01 t3 <<+ cardinality 10e15 >> ,
+t01 t4 <<+ cardinality 10e14 >> ,
+t01 t5 <<+ cardinality 10e15 >>
+where
+t.a  = t1.b and
+t1.a = t2.b and
+t2.a = t3.b and
+t3.a = t4.b and
+t4.a = t5.b;
+
+cqd COMP_BOOL_160 reset;
+cqd MEMORY_USAGE_SAFETY_NET reset;
+cqd OPH_USE_ENFORCER_PLAN_PROMOTION reset;
+
+--
+-- test PartitioningFunction::useNodeMapFromReqOrChild()
+--
+
+cqd comp_bool_82 'on';
+
+prepare x from select * from
+t01 t  <<+ cardinality 10e14 >> ,
+t01 t1 <<+ cardinality 10e15 >> ,
+t01 t2 <<+ cardinality 10e14 >> ,
+t01 t3 <<+ cardinality 10e15 >> ,
+t01 t4 <<+ cardinality 10e14 >> ,
+t01 t5 <<+ cardinality 10e15 >>
+where
+t.a  = t1.b and
+t1.a = t2.b and
+t2.a = t3.b and
+t3.a = t4.b and
+t4.a = t5.b;
+
+cqd comp_bool_87 'on';
+
+prepare x from select * from
+t01 t  <<+ cardinality 10e14 >> ,
+t01 t1 <<+ cardinality 10e15 >> ,
+t01 t2 <<+ cardinality 10e14 >> ,
+t01 t3 <<+ cardinality 10e15 >> ,
+t01 t4 <<+ cardinality 10e14 >> ,
+t01 t5 <<+ cardinality 10e15 >>
+where
+t.a  = t1.b and
+t1.a = t2.b and
+t2.a = t3.b and
+t3.a = t4.b and
+t4.a = t5.b;
+
+cqd comp_bool_82 reset;
+cqd comp_bool_87 reset;
+
+
+
+#ifMX
+
+?section clnup
+drop table t01emp;
+drop table t01dept;
+#ifMX
+drop table t01sample;
+drop table t02sample;
+#ifMX
+log;

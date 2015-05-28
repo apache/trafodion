@@ -1,0 +1,204 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#  Runs a specific set of regression tests KNOWN TO PASS on Linux
+#
+#  As test are proven to run, they should be added to this script
+#
+#  General flow is:
+#      Define the tests that are known to pass
+#      Source the environment setup
+#      Run the tests
+#
+#  Assumes that the tests are run from a build tree -- the environment
+#  setup relies on things being in particular places ...
+#
+
+#
+# Set up the test list
+#
+
+export SQLMX_REGRESS=1
+
+export SEABASE_REGRESS=2
+
+TEST_SUBDIRS="core compGeneral executor seabase fullstack2 charsets qat catman1 udr hive" 
+
+#
+# Make sure we're running from the regress subdir
+#
+
+pwd=`echo $PWD`
+expr index JUNKJUNK `echo $pwd | sed 's/regress$/JUNKJUNK/'` > /dev/null
+if [ $? -ne 0 ]; then
+  echo "You must be in your regress directory to run this."
+  exit 0
+fi
+
+diffOnly=0
+
+OK=-1
+while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
+
+  if [ $OK -gt 0 ]; then
+    shift $OK
+  fi
+  OK=0
+
+  if [ "$1" = "-diff" ]; then
+    diffOnly=1
+    OK=1
+    export SEABASE_REGRESS_DIFFS=1
+  fi
+
+done
+
+test ! -d $MY_SQROOT/sql/regress && ln -s $MY_SQROOT/../sql/regress $MY_SQROOT/sql/regress
+test ! -d $MY_SQROOT/sql/sqludr && ln -s $MY_SQROOT/../sql/sqludr $MY_SQROOT/sql/sqludr
+
+pushd tools
+. ./setuplnxenv
+popd
+
+T=`echo $* `
+if [ "$T" != "" ]; then
+  TEST_SUBDIRS="$T"
+fi
+
+diffStr=
+if [ $diffOnly -ne 0 ]; then
+  echo "Running diffs for $TEST_SUBDIRS"
+  diffStr="-diff "
+else
+  echo "Running regressions from $TEST_SUBDIRS"
+fi
+
+#
+# Now that we have our SQF environment, let's make sure it's running
+#
+
+# Check if resource is a cluster
+SQCONFIG=$MY_SQROOT/sql/scripts/sqconfig
+CONN_NODE=$(grep -v '^#' $SQCONFIG | grep -m 1 connection | sed -e "s@node-name=\(n[0-9]*\);.*@\1@" | cut -d ';' -f2)
+
+# if CONN_NODE is empty then resource is a workstation otherwise resource is a cluster
+if [ -z $CONN_NODE ]
+then
+    sqcheck
+else
+    ssh $CONN_NODE $MY_SQROOT/sql/scripts/sqcheck
+fi
+
+if [[ $? -ne 0 ]]; then
+   echo ""
+   echo "ERROR:  The SQF environment must be started and SQL must"
+   echo "        be initialized before running regression tests."
+   echo ""
+   exit 1
+fi
+
+#
+# Make sure we have the rundir setup correctly for the tests and run 'em!
+#
+
+for dir in $TEST_SUBDIRS; do
+   if [[ ! -d $rundir/$dir ]]; then
+      echo "Making $rundir/$dir - continuing with tests"
+      mkdir -p $rundir/$dir
+   else
+      echo "Found $rundir/$dir - continuing with tests"
+   fi
+
+   case $dir in
+      core)
+         pushd core
+         ./runregr -sb $diffStr
+         popd
+         ;;
+      compGeneral)
+         pushd compGeneral
+         ./runregr -sb $diffStr
+         popd
+         ;;
+      fullstack2)
+         pushd fullstack2
+         ./runregr -sb $diffStr
+         popd
+         ;;
+      charsets)
+         pushd charsets
+         ./runregr -sb $diffStr
+         popd
+         ;;
+      executor)
+         pushd executor
+         ./runregr -sb $diffStr
+         popd
+         ;;
+      qat)
+         pushd qat
+         ./runregr -sb $diffStr
+         popd
+         ;;
+     udr)
+         pushd udr
+         ./runregr -sb $diffStr
+         popd
+         ;;
+     hive)
+         pushd hive
+         ./runregr -sb $diffStr
+         popd
+         ;;
+     seabase)
+         pushd seabase
+         ./runregr -sb $diffStr
+         popd
+         ;;
+     catman1)
+         pushd catman1
+         ./runregr -sb $diffStr
+         popd
+         ;;
+
+        *)
+         echo "UNKNOWN TEST_SUBDIR $TEST_SUBDIR ... Exiting"
+         exit 2
+         ;;
+   esac
+   
+done
+
+cd $rundir
+for dir in $TEST_SUBDIRS; do
+ echo
+ echo "------------------------------------------------------------------"
+ echo "-- Showing result for $dir"
+ echo "------------------------------------------------------------------"
+ cat $dir/runregr-sb.log
+done
+
+echo ""
+echo "*****************************************************************"
+echo "*"
+echo "*  Regression tests complete"
+echo "*"
+echo "*****************************************************************"
+
+exit

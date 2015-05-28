@@ -1,0 +1,6 @@
+1456c1456,1458
+< --- SQL operation complete.
+---
+> *** ERROR[9207] The specified SAMPLE option generated an empty sample set. Modify the SAMPLE option and resubmit.
+> 
+> --- SQL operation failed with errors.

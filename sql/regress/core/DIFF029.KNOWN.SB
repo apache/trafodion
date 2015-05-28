@@ -1,0 +1,39 @@
+512,513d511
+< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
+< 
+518,519d515
+< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
+< 
+524,525d519
+< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
+< 
+530c524
+< --- 2 row(s) updated.
+---
+> --- 0 row(s) updated.
+534,535d527
+< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
+< 
+547,548d538
+< *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+< 
+553,554d542
+< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
+< 
+559,560d546
+< *** ERROR[8101] The operation is prevented by check constraint #CAT.#SCH." T29x" on table #CAT.#SCH.T29X.
+< 
+565,571c551
+< S R D
+< ----------
+< 
+<  13 2 3
+<  20 9 3
+< 
+< --- 2 row(s) selected.
+---
+> --- 0 row(s) selected.
+575c555
+< --- 2 row(s) deleted.
+---
+> --- 0 row(s) deleted.

@@ -1,0 +1,1273 @@
+-- TEST015
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests for:
+--	ANSI 7.9 SR 3a + 3b + 4	Semantics of select list "*" and "corr.*".
+--
+--	ANSI 6.3 SR 6		Same <colname> shall not be specified more than
+--				once in a derived column list.
+--
+--	ANSI 6.4 SR 3aii	Behavior when a column reference has more than
+--				one possible qualifier with most local scope.
+--
+--  add test to exercise fix to:
+--    genesis case 10-080109-3296, soln 10-080109-9737
+
+-- The following CQD is for the short term while we fix the transaction 
+-- propagation (to ESP) issue
+cqd ATTEMPT_ESP_PARALLELISM 'OFF';
+
+?section createMyHcube
+drop schema $$TEST_CATALOG$$.myhcube cascade;
+create schema $$TEST_CATALOG$$.myhcube;
+set schema $$TEST_CATALOG$$.myhcube;
+
+create table t0 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t1 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t2 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t3 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t4 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t5 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t6 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t7 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t8 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t9 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+create table t10 (a int not null not droppable, b int, c int, d char(10),
+primary key (a))no partition;
+
+create table t0abc 
+(a int not null not droppable, b int not null not droppable, 
+ c int not null not droppable, d char(10)) no partition store by(a,b,c);
+
+create table t0abcg
+(a int not null not droppable, b int not null not droppable,
+ c int not null not droppable, d int, e int, g char(10) not null not droppable, 
+ primary key(a,b,c,g))
+ no partition store by(a,b,c,g);
+
+create table t1abc
+(a int not null not droppable, b int not null not droppable, 
+ c int not null not droppable, d int, e int, f int, 
+ primary key(a,b,c) ) no partition store by(a,b,c);
+
+create table t9abc 
+(a int not null not droppable, b int not null not droppable, 
+ c int not null not droppable, d char(10)) no partition store by(a,b,c);
+create table t11
+           (a int not null, b int not null, c int not null,
+            PRIMARY KEY (a,b) not droppable)
+            location $$partition$$ NAME p0
+              HASH2 PARTITION(add location $$partition1$$ name p1,
+                              add location $$partition2$$ name p2,
+                              add location $$partition3$$ name p3);
+
+
+create table cube2
+(a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int, e int, f int, txt char(100),
+primary key (a,b,c)
+);
+
+
+-- insert 10 rows into t0
+insert into t0 values (0,0,0,'zero');
+insert into t0 values (1,1,1,'one');
+insert into t0 values (2,2,2,'two');
+insert into t0 values (3,3,3,'three');
+insert into t0 values (4,4,4,'four');
+insert into t0 values (5,5,5,'five');
+insert into t0 values (6,6,6,'six');
+insert into t0 values (7,7,7,'seven');
+insert into t0 values (8,8,8,'eight');
+insert into t0 values (9,9,9,'nine');
+
+-- t1,t2,t3,t4,t5 are 10 rows similar to t0
+insert into t1 select * from t0;
+insert into t2 select * from t0;
+insert into t3 select * from t0;
+insert into t4 select * from t0;
+insert into t5 select * from t0;
+
+-- t6, t7 are 100 rows
+insert into t6 select t1.a+10*t2.a,t1.a,t2.a,t1.d from t1,t2;
+insert into t7 select t1.a+10*t2.a,t1.a,t2.a,t1.d from t1,t2;
+
+-- t8 is 1000 rows
+insert into t8 select t6.a+100*t1.a,t6.a,t1.a,t6.d from t1,t6;
+
+-- t9 is 10000 rows
+insert into t9 select t8.a+1000*t1.a,t8.a,t1.a,t1.d from t1,t8;
+
+-- t10 is 100000 rows
+#ifdef SEABASE_REGRESS
+upsert using load into
+#else
+insert into
+#endif
+t10 select t8.a+1000*t6.a,t8.a,t6.a,t6.d from t6,t8;
+
+-- t0abc is 10 rows
+insert into t0abc select * from t0;
+
+-- t9abc is 10000 rows
+insert into t9abc select * from t9;
+
+-- t11 is 10000 rows
+insert into t11 select t9.a, t9.b, t9.c from t9;
+
+
+-- cube2 is 100000 row
+#ifdef SEABASE_REGRESS
+upsert using load into
+#else
+insert into
+#endif
+cube2 select t1.a, t6.a, t8.a, t1.a, t6.a, t8.a, 'some text'
+from t1, t6, t8 where t8.a < 100;
+
+
+?section stats
+-- CREATE stat
+update statistics for table t0 on every column;
+update statistics for table t1 on every column;
+update statistics for table t2 on every column;
+update statistics for table t3 on every column;
+update statistics for table t4 on every column;
+update statistics for table t5 on every column;
+update statistics for table t6 on every column;
+update statistics for table t7 on every column;
+update statistics for table t8 on every column;
+update statistics for table t9 on every column;
+update statistics for table t10 on every column;
+update statistics for table t11 on every column;
+
+update statistics for table t0abc on every column;
+update statistics for table t9abc on every column;
+
+update statistics for table t0abc on every column;
+update statistics for table t9abc on every column;
+update statistics for table cube2 on every column;
+
+?section monkeyDoodleDR
+drop table t15d1;
+drop table t15d2;
+
+?section monkeyDoodleCR
+CONTROL QUERY DEFAULT POS 'MULTI_NODE';
+        CONTROL QUERY DEFAULT POS_TABLE_SIZE '4';
+        CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
+        
+        CREATE                       TABLE t15d1 (
+                    i3 Char (11)  NOT NULL NOT DROPPABLE 
+                  , i1 VarChar (10)  NOT NULL NOT DROPPABLE 
+                  , s1Time TIME (2) DEFAULT TIME '01:58:20.0'  NOT NULL 
+                  , s2Time TIME (1) DEFAULT TIME '00:29:03.0'  NOT NULL 
+                  , s0Integer NUMERIC (7,0) DEFAULT 60 NOT NULL NOT DROPPABLE 
+                  , i2 Char (4)  DEFAULT _ISO88591'*èJC' NO HEADING  
+                  , primary key (i1, i3 ASC) NOT DROPPABLE
+                  )  ; 
+        
+        
+        CONTROL QUERY DEFAULT POS 'LOCAL_NODE';
+        
+        CREATE                       TABLE t15d2 (
+                    i2 Char (12)  
+                  , i3 Char (6)  DEFAULT _ISO88591'892BP3' NOT NULL NOT DROPPABLE 
+                  , s2Time TIME (6) DEFAULT TIME '11:34:42.0'  NOT NULL 
+                  , s0Integer INTEGER DEFAULT 64 NOT NULL NOT DROPPABLE 
+                  , i1 VarChar (7)  NOT NULL 
+                  , s1Time TIME (1) DEFAULT TIME '05:29:36.0 AM'  NOT NULL 
+                  , CONSTRAINT t15d2C71 primary key (i3 DESC) NOT DROPPABLE
+                  )  ; 
+        
+CONTROL QUERY DEFAULT POS reset;
+CONTROL QUERY DEFAULT POS_TABLE_SIZE reset;
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT reset;
+        
+        
+        INSERT INTO t15d1 VALUES (       _ISO88591 X'3E 20 4D DC 55 E1 EE 55 2D F9', 
+                    _ISO88591 X'20 B8 7E 2A 2F DC AB 58 CE', TIME '09:24:13.61', TIME
+        '02:40:38.8',       809302, 
+                 _ISO88591 X'A8 E8 4A 43') ; 
+        
+        INSERT INTO t15d1 VALUES (          _ISO88591 X'20 27 DC 55 E1 EE 55 2D F9', 
+                    _ISO88591 X'20 5E 7E 2A 2F DC AB 58 CE', TIME '00:12:24.94', TIME
+        '05:43:28.6 AM',       809303, 
+                 _ISO88591 X'A8 E8 4A 43') ; 
+        
+        INSERT INTO t15d1 VALUES (          _ISO88591 X'20 31 DC 55 E1 EE 55 2D F9', 
+                    _ISO88591 X'20 27 7E 2A 2F DC AB 58 CE', TIME '03:02:43.59', TIME
+        '09:11:43.8',       809296, 
+                 _ISO88591 X'A8 E8 4A 43') ; 
+        
+        INSERT INTO t15d1 (i3, i1, s1Time, s2Time, s0Integer, i2)  VALUES ( 
+                       _ISO88591 X'20 3D DC 55 E1 EE 55 2D F9', 
+                    _ISO88591 X'20 3A 7E 2A 2F DC AB 58 CE', TIME '10.06.18.72', TIME
+        '06:57:55.0 AM',       809302, 
+                 _ISO88591 X'56 E8 4A 43') ; 
+        
+        INSERT INTO t15d2 VALUES (                             _ISO88591'=VI BI126HCE',
+         
+                 _ISO88591 X'4B 39 32 42 50 33', TIME '04:20:30.419888',         1012,
+         
+                          _ISO88591 X'FB E8 4A 43', TIME '03.12.25.1') ; 
+        
+        
+        
+        
+        
+        UPDATE STATISTICS FOR TABLE t15d1 ON EVERY COLUMN  GENERATE 141 INTERVALS ;
+        
+        
+        UPDATE STATISTICS FOR TABLE t15d1 ON i1, i2, i3  GENERATE 64 INTERVALS ;
+        
+        
+        UPDATE STATISTICS FOR TABLE t15d2 ON EVERY COLUMN ;
+
+
+?section 3651dr
+drop table t15t1;
+drop table t15t2;
+
+?section 3651cr
+create table t15t1 (a int not null, b int not null, primary key(a,b));
+create table t15t2 (a int not null, b int not null, primary key(a,b));
+
+?section ddl
+set schema $$TEST_CATALOG$$.sch;
+drop table T015TA;
+drop table T015TX;
+
+?section check2
+#ifNSK
+create volatile table distinctCPUs(howMany int);
+
+--count replicate broadcast ESP's distinct cpus
+prepare countESPdistinctCPUs from
+insert into distinctCPUs(howMany)
+select count(distinct d.nodemap) as cpuCount
+ from
+  (select cast(substring(e.description 
+               from position('bottom_node_map' in e.description)
+               for  position('merged_order' in e.description)-
+                    position('bottom_node_map' in e.description))
+               as char(70)) as nodemap
+   from table(explain(null, 'XX')) e
+   where e.operator = 'ESP_EXCHANGE'
+     and e.description like '% merged_order: %'
+     and e.description like '%: broadcast % times %'
+  ) as d
+;
+
+--to avoid false alarms, we declare a failure iff 
+--all replicate broadcast ESPs use 1 cpu
+prepare checkPASSorFAIL from
+select case when cpuCount > compileCount then 'PASS' else 'FAIL' end
+from 
+(select count(*), sum(howMany)
+ from distinctCPUs
+) as d (compileCount, cpuCount);
+#ifNSK
+
+?section crdb
+log LOG015 clear;
+
+create table T015TA
+  (
+      A VARCHAR(4) NOT NULL
+     ,B VARCHAR(3) NOT NULL
+     ,C INT
+  );
+
+create table T015TX
+  (
+      AAA VARCHAR(4) NOT NULL
+     ,BBB VARCHAR(3) NOT NULL
+     ,CCC INT
+  );
+
+
+?section dml
+-- 4 rows
+insert into T015TA values('a', 'b', 3);
+insert into T015TA values('m', 'z', 1);
+insert into T015TA values('r', 'q', 15);
+insert into T015TA values('z', 'y', 25);
+
+-- 4 rows plus 4 more
+insert into T015TX values('a', 'b', 3);
+insert into T015TX values('a', 'B', 33);
+insert into T015TX values('m', 'z', 1);
+insert into T015TX values('M', 'Z', 1);
+insert into T015TX values('r', 'q', 15);
+insert into T015TX values('R', 'Q', 15);
+insert into T015TX values('z', 'y', 25);
+insert into T015TX values('z', 'Y', 225);
+
+?section test
+
+-- 16 rows
+select x.a from t015ta x join t015ta y on 1=1 order by 1;
+
+-- Ambiguous col ref A
+select a from t015ta x join t015ta y on 1=1;
+
+-- 16 rows
+select * from t015ta x join t015ta y on 1=1
+order by 1,2,3,4,5,6;
+
+-- 12 rows
+select count(*) from (  select * from t015ta join t015tx on c=ccc union all
+			select * from t015ta join t015tx on c=ccc) x;
+
+-- 4 rows
+select * from 
+  t015ta aa natural join t015ta bb
+order by 1,2,3;
+
+-- 4 rows
+select a from 
+  t015ta aa natural join t015ta bb
+order by 1;
+
+-- 16 rows
+select * from 
+  (t015ta aa natural join t015ta bb)
+  join
+  (t015ta cc natural join t015ta dd)
+  on 1=1
+order by 1,2,3,4,5,6;
+
+-- ambig col ref A
+select a from 
+  (t015ta aa natural join t015ta bb)
+  join
+  (t015ta cc natural join t015ta dd)
+  on 1=1;
+
+-- 4 rows
+select * from 
+  (t015ta aa natural join t015ta bb)
+  natural join
+  (t015ta cc natural join t015ta dd)
+order by 1,2,3 ;
+
+-- 4 rows
+select a from 
+  (t015ta aa natural join t015ta bb)
+  natural join
+  (t015ta cc natural join t015ta dd)
+order by 1 ;
+
+-- 4 rows
+select * from
+  (select * from t015ta a natural join t015ta b) as x
+  join 
+  (select * from t015ta a natural join t015ta b) as y
+  on x.a=y.a
+order by 1,2,3,4,5,6 ;
+
+-- parse error expected
+select * from (
+  (select * from t015ta a natural join t015ta b) as x
+  join 
+  (select * from t015ta a natural join t015ta b) as y
+  on x.a=y.a) q
+  ;
+
+-- these next 3 queries should all return the same 4 rows
+select * from t015ta where exists(select 1 from (select a,a from t015ta) x)
+order by 1,2,3;
+select * from t015ta where exists(select * from (select a,a from t015ta) x)
+order by 1,2,3;
+select * from t015ta where exists(select * from (select a,a from t015ta) x
+group by b)
+order by 1,2,3;
+
+-- ambig col ref A
+select * from t015ta where exists(select * from (select a,a from t015ta) x group by a);
+
+-- col X not found
+select * from t015ta where exists(select * from (select a,a from t015ta) x group by x);
+
+-- col B not found
+select * from (select a,a from t015ta) x group by b;
+
+-- ambig col ref A
+select * from (select a,a from t015ta) x group by a;
+
+-- ambig star colref
+select * from (select a,a from t015ta) x;
+
+-- ambig col ref A
+select * from t015ta where exists(select a from (select a,a from t015ta) x group by b);
+
+-- ambig star colref
+select x.* from (select a,a from t015ta) x;
+
+-- select list contains a non-grouping column
+select * from (select a,b from t015ta) x group by a;
+
+?section test_9737
+prepare xx from
+  update t015ta set c =
+    (select seq
+     from (select runningsum(1) as seq, a
+           from t015ta i
+           sequence by i.b
+          ) u
+     where u.a = t015ta.a
+    );
+-- should compile cleanly (it used to get "optimizer pass two assertion failure
+-- ((partReqForChild != NULL) AND (reqdOrderForChild != NULL)) in file ...
+-- OptPhysRelExpr.cpp at line 4805. Attempting to recover and produce a plan.")
+
+#ifNSK
+?section verify_10_080701_4240
+--verify that single replicate broadcast ESPs float
+set schema $$TEST_CATALOG$$.myhcube;
+
+-- seed random number generator
+control query default float_esp_random_num_seed '7';
+
+-- first test has a 6.25% probability of raising a false alarm
+prepare xx from select * from t10 a, t9, t8, t10 b
+where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+execute countESPdistinctCPUs; -- remember result of 1st test
+
+-- repeat test 3 times
+control query default query_template_cache 'OFF';
+prepare xx from select * from t10 a, t9, t8, t10 b
+where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+execute countESPdistinctCPUs; -- remember result of 2nd test
+
+prepare xx from select * from t10 a, t9, t8, t10 b
+where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+execute countESPdistinctCPUs; -- remember result of 3rd test
+
+prepare xx from select * from t10 a, t9, t8, t10 b
+where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+execute countESPdistinctCPUs; -- remember result of 4th test
+control query default query_template_cache reset;
+
+-- probablity of all 4 tests raising false alarm is 0.0015%
+execute checkPASSorFAIL;
+#ifNSK
+
+?section maxCardEst_setup
+prepare showMaxCardEst from
+select distinct operator, tab_name, cardinality, max_cardinality
+  from (select
+         substring(cast(SEQ_NUM+100 as char(3)),2,2),
+         substring(operator,1,16) operator,        
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+          10),        
+         cast(cardinality as char(11)),        
+         cast(substring(description from 
+             position('max_card_est' in description)+14
+             for position('fragment_id' in description)
+                -position('max_card_est' in description)) as char(12)) 
+        from table (explain(NULL,'XX'))
+       ) as t(s, operator, tab_name, cardinality, max_cardinality)
+  where operator not in ('ESP_EXCHANGE','PARTITION_ACCESS','SPLIT_TOP')
+  order by 1,2,3,4 desc;
+
+?section maxCard_tests1
+-- test max cardinality for single table scans
+control query default dynamic_histogram_compression 'off';
+set schema $$TEST_CATALOG$$.myhcube;
+prepare xx from
+SELECT * FROM t0;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t6;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t8;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t9;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d like 'one%';
+execute showMaxCardESt;
+select count(*) from (SELECT * FROM t10 WHERE d like 'one%') as t;
+
+prepare xx from
+SELECT * FROM t10 WHERE d not like 'one%';
+execute showMaxCardESt;
+select count(*) from (SELECT * FROM t10 WHERE d not like 'one%') as t;
+
+-- keyColumn = constant
+prepare xx from
+SELECT * FROM t10 WHERE a = 1;
+execute showMaxCardESt;
+select count(*) from (SELECT * FROM t10 WHERE a = 1) as t;
+
+-- keyColumn = ?
+prepare xx from
+SELECT * FROM t10 WHERE a = ?;
+execute showMaxCardESt;
+
+-- nonKeyColumn = constant
+prepare xx from
+SELECT * FROM t10 WHERE d = 'one';
+execute showMaxCardESt;
+select count(*) from (SELECT * FROM t10 WHERE d = 'one') as t;
+
+-- nonKeyColumn = ?
+prepare xx from
+SELECT * FROM t10 WHERE d = ?;
+execute showMaxCardESt;
+
+-- keyColumn non-equality predicates
+prepare xx from
+SELECT * FROM t10 WHERE a > 1;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a >= 1;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a < 1;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <= 1;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <> 1;
+execute showMaxCardESt;
+
+-- nonKeyColumn non-equality predicates
+prepare xx from
+SELECT * FROM t10 WHERE d > 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d >= 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d < 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d <= 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d <> 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a > ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a >= ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a < ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <= ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <> ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d > ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d >= ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d < ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d <= ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d <> ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a is null;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a is not null;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d is null;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d is not null;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a = b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a > b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a >= b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a < b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <= b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a <> b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a BETWEEN 1 and 2;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE d BETWEEN 'one' and 'two';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a = 1 and d = 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a = ? and d = ?;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a = 1 or d = 'one';
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t10 WHERE a = ? or d = ?;
+execute showMaxCardESt;
+
+prepare xx from SELECT * FROM t10 WHERE a = ? and d like 'one%';
+execute showMaxCardESt; -- min(1e5, 1) should = 1
+
+prepare xx from SELECT * FROM t10 WHERE d = ? and d like 'one%';
+execute showMaxCardESt; -- min(1e5, 1e4) should = 1e4
+
+prepare xx from SELECT * FROM t10 WHERE a = 1 and d like 'one%';
+execute showMaxCardESt; -- min(1e5, 1) should = 1
+
+prepare xx from SELECT * FROM t10 WHERE d = 'one' and d not like 'one%';
+execute showMaxCardESt; -- min(1e4, 1e5) should = 1e4
+
+-- we want to test an in list but sqlparseraux.cpp's processINlist
+-- transforms "col IN (list)" into:
+--   1) an OR predicate if |list| < 100 elements, or
+--   2) a VALUES subquery if |list| > 100 elements
+prepare xx from SELECT * FROM t10 WHERE b in (1,2);
+execute showMaxCardESt; 
+-- maxSel("b in (1,2)") is min(maxSel("b=1")+maxSel("b=2"),1.)
+
+prepare xx from SELECT * FROM t10 WHERE b in (1,2) and a between 1 and 2;
+execute showMaxCardESt; -- maxSel(p1 and p2) is min(maxSel(p1), maxSel(p2))
+
+prepare xx from SELECT * FROM t10 WHERE b in (1,2) or a between 1 and 2;
+execute showMaxCardESt; -- maxSel(p1 or p2) is min(maxSel(p1)+maxSel(p2),1)
+
+?section maxCard_tests2
+-- test max cardinality for equi-joins
+prepare xx from
+SELECT * FROM t1, t10 WHERE t1.a = t10.a;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t1, t10 WHERE t1.a = t10.b;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t1, t10 WHERE t10.a = t1.b;
+execute showMaxCardESt;
+
+-- test max cardinality for equi-joins where one side is complex
+prepare xx from
+SELECT * FROM t8, t10 WHERE t8.a+1 = t10.a;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t9, t10 WHERE t9.a = t10.b-1;
+execute showMaxCardESt;
+
+prepare xx from
+SELECT * FROM t9, t10 WHERE t10.a+t10.b = t9.b;
+execute showMaxCardESt;
+
+?section maxCard_tests3
+-- test max cardinality for group by
+update statistics for table t10 on (a,b,c,d),(b,c,d),(c,d),(b,c);
+prepare xx from
+SELECT a,b,c,d FROM t10 GROUP BY a,b,c,d;
+execute showMaxCardESt;
+select count(*) from (SELECT a,b,c,d FROM t10 GROUP BY a,b,c,d) as t;
+
+prepare xx from
+SELECT b,c,d FROM t10 GROUP BY b,c,d;
+execute showMaxCardESt;
+select count(*) from (SELECT b,c,d FROM t10 GROUP BY b,c,d) as t;
+
+prepare xx from
+SELECT c,d FROM t10 GROUP BY c,d;
+execute showMaxCardESt;
+select count(*) from (SELECT c,d FROM t10 GROUP BY c,d) as t;
+
+prepare xx from
+SELECT d FROM t10 GROUP BY d;
+execute showMaxCardESt;
+select count(*) from (SELECT d FROM t10 GROUP BY d) as t;
+
+-- verify fix to genesis cases 10-080530-0291, 10-080530-0305
+-- previously maxcardinality(a=1 and b=1) was incorrectly computed as
+--            maxcardinality(a=b and b=1)
+prepare xx from SELECT count(*) FROM t10 where b = 1;
+execute showMaxCardESt;
+prepare xx from SELECT count(*) FROM t10 where c = 1;
+execute showMaxCardESt;
+prepare xx from SELECT count(*) FROM t10 where b = 1 and c = 1;
+execute showMaxCardESt;
+
+?section fixes
+-- fix for soln 10-080908-5708
+prepare xx from select count(*) from t10 where c > 999;
+execute showMaxCardESt;
+execute xx;
+
+prepare xx from select count(*) from t10 where c < 0;
+execute showMaxCardESt;
+execute xx;
+
+-- Fix for bugzilla case 3529
+CREATE TABLE NPJOB028D
+  (
+    C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , C3                               VARCHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C4                               INT DEFAULT NULL
+  , C5                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C6                               INT DEFAULT NULL
+  , C7                               CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CONSTRAINT NPJOB028D_117387252_7433 PRIMARY KEY (C1 ASC,
+      C3 ASC) NOT DROPPABLE
+  , CONSTRAINT NPJOB028D_896387252_7433 CHECK
+      (NPJOB028D.C1 IS NOT NULL AND
+      NPJOB028D.C3 IS NOT NULL) NOT DROPPABLE
+  )
+  HASH PARTITION
+  STORE BY (C1 ASC, C3 ASC)
+  ;
+
+prepare st1 from UPDATE NPJOB028D SET ("C2","C3","C4","C5","C6","C7") = (?[10],?[10],?[10],?[10],?[10],?[10]) 
+WHERE "C1" = ?[10];
+
+drop table NPJOB028D;
+
+?section joinMaxCard
+-- verify fix for soln 10-090129-8763
+prepare xx from select count(*) from t10, t9 where t10.a = t9.a;
+execute showMaxCardESt;
+execute xx;
+
+?section monkeydoodletest
+-- if any of the tests in this & the following section fail, please check
+-- the code in optimizer/OptItemExpr.cpp ItemExpr::isAnEquiJoinPredicate
+-- to make sure it still returns true for equi-join predicates else false.
+-- make sure the cmpassert that was reported in genesis case 10-090107-9003
+-- solution 10-090107-8259 does not recur
+control query default query_template_cache 'OFF';
+control query default COMP_BOOL_113 'ON';
+PREPARE xx FROM 
+        SELECT T0.i3 , t0.i3 FROM T15D2 T0 CROSS JOIN T15D1 t1 
+        WHERE EXISTS ( 
+            SELECT T0.i2 FROM t15d1 AS t2 
+            WHERE ( 'cC' IN ( T2.I2 ) )
+              OR ( T2.I2 < SOME ( 
+         SELECT t3.i2 FROM t15d2 T3, t15d1 AS T4 
+         WHERE t1.i1 IN ( T4.I1 ) ) 
+            )  
+        ) ;
+
+control query default COMP_BOOL_113 'OFF';
+PREPARE xx FROM 
+        SELECT T0.i3 , t0.i3 FROM T15D2 T0 CROSS JOIN T15D1 t1 
+        WHERE EXISTS ( 
+            SELECT T0.i2 FROM t15d1 AS t2 
+            WHERE ( 'cC' IN ( T2.I2 ) )
+              OR ( T2.I2 < SOME ( 
+         SELECT t3.i2 FROM t15d2 T3, t15d1 AS T4 
+         WHERE t1.i1 IN ( T4.I1 ) ) 
+            )  
+        ) ;
+control query default COMP_BOOL_113 reset;
+
+
+?section 3651_mod_equi_join_pred
+-- make sure the query reported in genesis solution 10-080604-3651
+-- continue to get an inner-join (and not a cross producct)
+control query default COMP_BOOL_113 'ON';
+prepare xx from select * from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+prepare xx from select count(*) from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+prepare xx from select * from t15t1, t15t2 where t15t1.a + ? = t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+control query default COMP_BOOL_113 'OFF';
+prepare xx from select * from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+prepare xx from select count(*) from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+prepare xx from select * from t15t1, t15t2 where t15t1.a + ? = t15t2.a;
+select substring(description from position('join_type:' in description) for 17)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+control query default COMP_BOOL_113 reset;
+control query default query_template_cache reset;
+
+
+?section moreEquiJoinsThatShouldNotBeCrossProducts
+-- test genesis solution 10-090305-9790
+control query default COMP_BOOL_113 'ON';
+prepare xx from select * from $$TEST_CATALOG$$.myhcube.t10 t10
+left join $$TEST_CATALOG$$.myhcube.t9 t9 
+on t9.d = lpad(trim(cast(t10.d as char(5))),10,'0');
+-- used to get a cross product
+select substring(description from position('join_method:' in description) for 33)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+control query default COMP_BOOL_113 'OFF';
+prepare xx from select * from $$TEST_CATALOG$$.myhcube.t10 t10
+left join $$TEST_CATALOG$$.myhcube.t9 t9 
+on t9.d = lpad(trim(cast(t10.d as char(5))),10,'0');
+-- used to get a cross product
+select substring(description from position('join_method:' in description) for 33)
+from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+control query default COMP_BOOL_113 reset;
+
+
+?section RQPcqdtests
+control query default showcontrol_show_all 'ON';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'minimum';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'system';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'maximum';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization reset;
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'MINIMUM';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'HIGH';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'MAXIMUM';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization 'SYSTEM';
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+control query default robust_query_optimization reset;
+obey test015(showRQPcqds); -- show RQP cqd settings
+
+?section keylessNJtest_setup
+prepare showSimplePlan from
+  select [first 2] operator
+  from (select
+         substring(cast(SEQ_NUM+100 as char(3)),2,2),
+         substring(operator,1,16) operator
+         from table (explain(NULL,'XX'))
+         where trim(operator) <> 'ESP_EXCHANGE'
+       ) as t(s, operator)
+  order by s desc;
+
+?section keylessNJtests
+set schema $$TEST_CATALOG$$.myhcube;
+
+control query default merge_joins 'OFF';
+control query default query_cache '0';
+control query default risk_premium_serial '1.0';
+
+-- force keyless NJ
+control query shape implicit exchange nested_join(cut,cut);
+
+prepare xx from select * from t10 f, t0 d where f.b=d.b;
+execute showSimplePlan;
+
+prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+execute showSimplePlan;
+
+-- keyless NJ must fail
+control query default comp_int_71 '1'; 
+
+prepare xx from select * from t10 f, t0 d where f.b=d.b;
+prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+
+-- must not get a NJ
+control query default comp_int_71 '0'; 
+control query shape cut;
+
+prepare xx from select * from t10 f, t0 d where f.b=d.b;
+execute showSimplePlan;
+
+prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+execute showSimplePlan;
+
+-- keyed NJ must be allowed
+prepare xx from select * from t10 f, t0 d where f.a=d.b;
+execute showSimplePlan;
+
+prepare xx from select * from t9abc f, t0 d where f.a=d.b;
+execute showSimplePlan;
+
+-- shutdown HJ iff outer has 1 row
+prepare xx from select * from t10 f where f.b=(select max(b) from t0);
+execute showSimplePlan;
+
+prepare xx from select * from t10 f where f.b=some(select b from t0);
+execute showSimplePlan;
+
+-- constant key predicate does not favor NJ over HJ
+prepare xx from select * from t9abc f, t6 d where f.a=d.b and d.b=1;
+execute showSimplePlan;
+
+prepare xx from select * from t9abc f, t6 d where f.a=d.b and d.b=1
+and f.b=d.c and d.c=2;
+execute showSimplePlan;
+
+-- must allow keyed NJ that have constant prefix key predicates
+control query default comp_int_71 '1'; 
+control query shape implicit exchange nested_join(cut,cut);
+
+prepare xx from select * from t9abc f, t0abc d where f.a=d.b and f.a=9 
+and f.b=d.c;
+execute showSimplePlan;
+
+prepare xx from select * from t9abc f, t0abc d where f.a=d.b and f.a=9 
+and f.b=d.c and f.b=8 and f.c=d.a;
+execute showSimplePlan;
+
+?section insSel_test
+control query shape cut ;
+
+prepare showSort from
+select substring(operator,1,16) operator
+from table (explain(NULL,'XX')) t
+where operator = 'SORT' ;
+
+-- fix for bugzilla 2439, left child of tuple_flow should be sorted.
+prepare XX from
+insert with no rollback into t0abcg
+select t0.a, t1.a, t2.a, t0.a, t1.a, 
+       cast(t0.a*t1.a*t2.a as char(10)) 
+from t0, t1, t2;
+
+execute showSort;
+
+-- fix for HPIT case 10-090826-1194. 
+-- left child of tuple_flow should be sorted.
+prepare XX from
+insert with no rollback
+into t1abc(d,    a,    e,    c,     f,        b)
+select     t2.a, t0.a, t1.b, t1.a,  t9abc.a,  t2.a
+from t0, t1, t2, t9abc
+where t2.a = t1.b;
+
+execute showSort;
+
+?section INList_test
+control query shape cut ;
+
+prepare explainIt from
+select substring(operator,1,16) operator
+from table (explain(NULL,'XX')) t
+where operator LIKE '%TUPLE%' ;
+
+set schema $$TEST_CATALOG$$.myhcube;
+
+-- semijoin trans in Normalizer will kick in for in list longer than 1 entry
+control query default or_pred_to_semijoin '1' ;
+control query default or_pred_to_jumptable '0';
+
+-- expect join plan with TupleList
+-- rangespec interferes with this
+cqd rangespec_transformation 'off';
+prepare XX from select b from t1 where b in (1,2,3,11) ;
+cqd rangespec_transformation reset;
+execute explainIt ;
+execute XX;
+
+-- OR is handled the same as IN List
+-- rangespec interferes with this
+cqd rangespec_transformation 'off';
+prepare XX from select b from t1 where b = 1 or b =2 or b = 3 or b = 11;
+cqd rangespec_transformation reset;
+execute explainIt ;
+execute XX;
+
+
+-- prameters are handled the same as literals
+prepare XX from select b from t1 where b in (?p1, ?p2, ?p3, ?p4) ;
+execute explainIt ;
+set param ?p1 1 ;
+set param ?p2 2 ;
+set param ?p3 3 ;
+set param ?p4 11;
+execute XX;
+
+-- should not be transformed, two columns in OR
+prepare XX from select * from t1 where a in (1,2,3) or b = 1;
+execute explainIt ;
+
+-- should be transformed
+prepare XX from select a from t1 where a in (1,2,3,11) and b = 1;
+execute explainIt;
+execute XX;
+
+-- two in lists on different columns related by and
+-- rangespec interferes with this
+cqd rangespec_transformation 'off';
+prepare XX from select a,b from t1 where a in (1,2,3,11) and b in (1,2,3,11);
+cqd rangespec_transformation reset;
+execute explainIt;
+execute XX;
+
+-- two in lists on different columns related by OR
+prepare XX from select a,b from t1 where a in (1,2,3) or b in (1,2,3);
+execute explainIt;
+
+-- expression outside the IN list
+prepare XX from select a from t1 where a+3 in (1,2,4, 11);
+execute explainIt;
+execute XX;
+
+-- expression involving two columns outside the IN List
+prepare XX from select a,b from t1 where a+b in (1,2,4);
+execute explainIt;
+execute XX;
+
+-- The R2.4 AMB merge changed some defaults to fix a customer
+-- issue. In order to keep the behavior of the following tests 
+-- consistent, the following CQD is being set to its old default for now.
+-- This can be removed when the default changes back to its old value in 
+-- R2.5 and the subsequent merge into Seaquest.
+--control query default or_pred_to_semijoin reset ;
+control query default or_pred_to_semijoin '25' ;
+
+control query default or_pred_to_jumptable reset ;
+
+-- missing pred on part col b, should not get transformed.
+prepare XX from select * from t11 where a in (1,2) ;
+execute explainIt;
+
+-- should get transformed
+prepare XX from select * from t11 where a in (1,2) and b = 1;
+execute explainIt;
+
+-- range pred on part col b, should not get transformed.
+prepare XX from select * from  t11 where a in (1,2) and b > 1;
+execute explainIt;
+
+control query default or_pred_to_semijoin_table_min_size '100' ;
+
+-- should transform
+prepare XX from select * from t11 
+where a in (1,2,3,4,5) and b = 1 order by a;
+execute explainIt;
+execute XX;
+
+-- should transform
+prepare XX from select * from t11
+where a in (1,2,3,4,5)  order by a;
+execute explainIt;
+execute XX;
+
+-- should transform
+prepare XX from select * from t11
+where b in (1,2,3,4,5) and a = 1;
+execute explainIt;
+execute XX;
+
+-- no transform
+prepare XX from select * from t11
+where b in (1,2,3,4,5) and a > 1;
+execute explainIt;
+
+?section mdam_under_nj_test
+
+prepare mdam_reporter from
+select cast(tname as char(30)) tname,
+substring(description from position('mdam_disjunct' in description) + 15 for 30) mdam_disjunct
+from table(explain(NULL, 'XX'))
+where operator in ('FILE_SCAN') and position('mdam_disjunct' in description) > 0
+;
+
+prepare plan_reporter from
+select operator from table(explain(NULL, 'XX'))
+where position('JOIN' in operator) > 0;
+
+
+cqd query_cache '0';
+
+cqd MDAM_SCAN_METHOD 'ON';
+obey TEST015(mdam_under_nj_real_tests);
+
+-- set the cqd to 0 should turn off the feature
+cqd MDAM_UNDER_NJ_PROBES_THRESHOLD '0';
+obey TEST015(mdam_under_nj_real_tests);
+
+cqd MDAM_SCAN_METHOD reset;
+cqd MDAM_UNDER_NJ_PROBES_THRESHOLD reset;
+
+?section mdam_under_nj_real_tests
+
+-- positve tests
+
+-- count(*) is one value = one probe
+prepare xx from select c2.f from (select count(*) from t0) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+-- max(a) is one value = one probe
+prepare xx from select c2.f from (select max(a) from t0) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+-- max(b) is one value = one probe
+prepare xx from select c2.f from (select sum(b) from t0) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+-- a is a PK column. should send one probe to cube2.
+prepare xx from select c2.f from (select a from t0 where a = 2) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+-- negative
+
+-- t0 could contain more than one row. Should not get mdam plan
+prepare xx from select c2.f from (select a from t0) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+--t0.b is not a PK column. should not get mdam plan
+prepare xx from select c2.f from (select b from t0 where b = 2) as x(a), cube2 c2
+where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+execute mdam_reporter;
+execute plan_reporter;
+
+
+
+?section done 
+log;
+control query shape cut;
+control query default comp_int_71 '0'; 
+
+?section showRQPcqds
+showcontrol default robust_query_optimization, match full, no header;
+showcontrol default risk_premium_nj, match full, no header;
+showcontrol default risk_premium_serial, match full, no header;
+showcontrol default partitioning_scheme_sharing, match full, no header;
+showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+showcontrol default robust_sortgroupby, match full, no header;
+showcontrol default risk_premium_mj, match full, no header;
+
+?section clnup
+set schema $$TEST_CATALOG$$.sch;
+drop table T015TA;
+drop table T015TX;
+drop schema $$TEST_CATALOG$$.myhcube cascade;

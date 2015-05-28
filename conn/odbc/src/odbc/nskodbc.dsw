@@ -1,0 +1,375 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "Cfgdll"=.\Cfgdll\Cfgdll.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    Cfgdll
+    .\Cfgdll
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "CmdCfgDll"=.\CmdCfgDll\CmdCfgDll.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    CmdCfgDll
+    .\CmdCfgDll
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "EventMsgs"=.\EventMsgs\EventMsgs.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    EventMsgs
+    .\EventMsgs
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Krypton"=.\Krypton\Krypton.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    Krypton
+    .\Krypton
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskASSvc"=.\NskASSvc\NskASSvc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskASSvc
+    .\nskassvc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskCfgSvc"=.\NskCfgSvc\NskCfgSvc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskCfgSvc
+    .\nskcfgsvc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskClips"=.\NskClips\NskClips.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskClips
+    .\NskClips
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskClpsSrvr"=.\NskClpsSrvr\NskClpsSrvr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskClpsSrvr
+    .\NskClpsSrvr
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskCom"=.\NskCom\NskCom.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskCom
+    .\NskCom
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskComDll"=.\NskComDll\NskComDll.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskComDll
+    .\NskComDll
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskODBC"=.\NskODBC\NskODBC.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskODBC
+    .\nskodbc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name Krypton
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SrvrMsg
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name NskSrvrCore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name NskSrvr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name NskASSvc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name NskCfgSvc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "NskOffender"=.\NskOffender\NskOffender.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskOffender
+    .\NskOffender
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskQrySvc"=.\NskQrySvc\NskQrySvc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskQrySvc
+    .\NskQrySvc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskQrySvcGUI"=.\NskQrySvcGUI\NskQrySvcGUI.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskQrySvcGUI
+    .\NskQrySvcGUI
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskRule"=.\NskRule\NskRule.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskRule
+    .\NskRule
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskSrvr"=.\NskSrvr\NskSrvr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskSrvr
+    .\nsksrvr
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskSrvrCore"=.\NskSrvrCore\NskSrvrCore.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskSrvrCore
+    .\nsksrvrcore
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskStats"=.\NskStats\NskStats.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskStats
+    .\NskStats
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "NskSync"=.\NskSync\NskSync.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    NskSync
+    .\NskSync
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "OssCfgCl"=.\OssCfgCl\OssCfgCl.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    OssCfgCl
+    .
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SrvrMsg"=.\SrvrMsg\SrvrMsg.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    SrvrMsg
+    .\SrvrMsg
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+    begin source code control
+    ODBC
+    .
+    end source code control
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

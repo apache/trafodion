@@ -1,0 +1,210 @@
+>>obey TEST020(setup);
+>>--------------------------------------------------------------------------
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '20' ;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>cqd traf_enable_orc_format 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST020(tests);
+>>--------------------------------------------------------------------------
+>>-- ORC file metadata info
+>>invoke hive.hive.store_orc;
+
+-- Definition of hive table STORE_ORC
+-- Definition current  Sun Nov  9 22:00:42 2014
+
+  (
+    S_STORE_SK                       INT
+  , S_STORE_ID                       VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_REC_START_DATE                 TIMESTAMP(6)
+  , S_REC_END_DATE                   TIMESTAMP(6)
+  , S_CLOSED_DATE_SK                 INT
+  , S_STORE_NAME                     VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_NUMBER_EMPLOYEES               INT
+  , S_FLOOR_SPACE                    INT
+  , S_HOURS                          VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MANAGER                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_ID                      INT
+  , S_GEOGRAPHY_CLASS                VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_DESC                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_MARKET_MANAGER                 VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_DIVISION_ID                    INT
+  , S_DIVISION_NAME                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COMPANY_ID                     INT
+  , S_COMPANY_NAME                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_NUMBER                  VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_NAME                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STREET_TYPE                    VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_SUITE_NUMBER                   VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_CITY                           VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COUNTY                         VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_STATE                          VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_ZIP                            VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_COUNTRY                        VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT
+  , S_GMT_OFFSET                     REAL
+  , S_TAX_PRECENTAGE                 REAL
+  )
+   /* stored as orc */
+
+--- SQL operation complete.
+>>
+>>-- select one row from ORC table
+>>select [first 1] * from hive.hive.store_orc;
+
+S_STORE_SK   S_STORE_ID            S_REC_START_DATE            S_REC_END_DATE              S_CLOSED_DATE_SK  S_STORE_NAME          S_NUMBER_EMPLOYEES  S_FLOOR_SPACE  S_HOURS               S_MANAGER             S_MARKET_ID  S_GEOGRAPHY_CLASS     S_MARKET_DESC         S_MARKET_MANAGER      S_DIVISION_ID  S_DIVISION_NAME       S_COMPANY_ID  S_COMPANY_NAME        S_STREET_NUMBER       S_STREET_NAME         S_STREET_TYPE         S_SUITE_NUMBER        S_CITY                S_COUNTY              S_STATE               S_ZIP                 S_COUNTRY             S_GMT_OFFSET     S_TAX_PRECENTAGE
+-----------  --------------------  --------------------------  --------------------------  ----------------  --------------------  ------------------  -------------  --------------------  --------------------  -----------  --------------------  --------------------  --------------------  -------------  --------------------  ------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  ---------------  ----------------
+
+          1  AAAAAAAABAAAAAAA      ?                           ?                                    2451189  ought                                245        5250760  8AM-4PM               William Ward                    2  Unknown               Enough high areas st  Charles Bartley                   1  Unknown                          1  Unknown               767                   Spring                Wy                    Suite 250             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+
+--- 1 row(s) selected.
+>>
+>>-- select all rows from ORC table
+>>select * from hive.hive.store_orc;
+
+S_STORE_SK   S_STORE_ID            S_REC_START_DATE            S_REC_END_DATE              S_CLOSED_DATE_SK  S_STORE_NAME          S_NUMBER_EMPLOYEES  S_FLOOR_SPACE  S_HOURS               S_MANAGER             S_MARKET_ID  S_GEOGRAPHY_CLASS     S_MARKET_DESC         S_MARKET_MANAGER      S_DIVISION_ID  S_DIVISION_NAME       S_COMPANY_ID  S_COMPANY_NAME        S_STREET_NUMBER       S_STREET_NAME         S_STREET_TYPE         S_SUITE_NUMBER        S_CITY                S_COUNTY              S_STATE               S_ZIP                 S_COUNTRY             S_GMT_OFFSET     S_TAX_PRECENTAGE
+-----------  --------------------  --------------------------  --------------------------  ----------------  --------------------  ------------------  -------------  --------------------  --------------------  -----------  --------------------  --------------------  --------------------  -------------  --------------------  ------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  ---------------  ----------------
+
+          1  AAAAAAAABAAAAAAA      ?                           ?                                    2451189  ought                                245        5250760  8AM-4PM               William Ward                    2  Unknown               Enough high areas st  Charles Bartley                   1  Unknown                          1  Unknown               767                   Spring                Wy                    Suite 250             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          2  AAAAAAAACAAAAAAA      ?                           ?                                          ?  able                                 236        5285950  8AM-4PM               Scott Smith                     8  Unknown               Parliamentary candid  David Lamontagne                  1  Unknown                          1  Unknown               255                   Sycamore              Dr.                   Suite 410             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          3  AAAAAAAACAAAAAAA      ?                           ?                                          ?  able                                 236        7557959  8AM-4PM               Scott Smith                     7  Unknown               Impossible, true arm  David Lamontagne                  1  Unknown                          1  Unknown               877                   Park Laurel           Road                  Suite T               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          4  AAAAAAAAEAAAAAAA      ?                           ?                                    2451044  ese                                  218        9341467  8AM-4PM               Edwin Adams                     4  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               27                    Lake                  Ln                    Suite 260             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          5  AAAAAAAAEAAAAAAA      ?                           ?                                    2450910  anti                                 288        9078805  8AM-4PM               Edwin Adams                     8  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               27                    Lee 6th               Court                 Suite 80              Fairview              Williamson County     TN                    35709                 United States         -5.0000000E+000    2.9999999E-002
+          6  AAAAAAAAEAAAAAAA      ?                           ?                                          ?  cally                                229        9026222  8AM-4PM               Edwin Adams                    10  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               220                   6th                   Lane                  Suite 140             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          7  AAAAAAAAHAAAAAAA      ?                           ?                                          ?  ation                                297        8954883  8AM-4PM               David Thomas                    9  Unknown               Architects coul       Thomas Benton                     1  Unknown                          1  Unknown               811                   Lee                   Circle                Suite T               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    9.9999997E-003
+          8  AAAAAAAAIAAAAAAA      ?                           ?                                          ?  eing                                 278        6995995  8AM-4PM               Brett Yates                     2  Unknown               Various bars make mo  Dean Morrison                     1  Unknown                          1  Unknown               226                   12th                  Lane                  Suite D               Fairview              Williamson County     TN                    35709                 United States         -5.0000000E+000    7.9999998E-002
+          9  AAAAAAAAIAAAAAAA      ?                           ?                                          ?  eing                                 271        6995995  8AM-4PM               Brett Yates                     2  Unknown               Formal, psychologica  Dean Morrison                     1  Unknown                          1  Unknown               226                   Hill                  Boulevard             Suite 190             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    7.9999998E-002
+         10  AAAAAAAAKAAAAAAA      ?                           ?                                          ?  bar                                  294        9294113  8AM-4PM               Raymond Jacobs                  8  Unknown               Little expectations   Michael Wilson                    1  Unknown                          1  Unknown               175                   4th                   Court                 Suite C               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    5.9999998E-002
+         11  AAAAAAAAKAAAAAAA      ?                           ?                                          ?  ought                                294        9294113  8AM-4PM               Raymond Jacobs                  6  Unknown               Mysterious employe    Michael Wilson                    1  Unknown                          1  Unknown               175                   Park Green            Court                 Suite 160             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    1.0999999E-002
+         12  AAAAAAAAKAAAAAAA      ?                           ?                                          ?  ought                                294        5219562  8AM-12AM              Robert Thompson                 6  Unknown               Events develop i      Dustin Kelly                      1  Unknown                          1  Unknown               337                   College               Boulevard             Suite 100             Fairview              Williamson County     TN                    31904                 United States         -5.0000000E+000    9.9999997E-003
+
+--- 12 row(s) selected.
+>>
+>>-- select of few columns with WHERE predicate
+>>select s_store_sk, left(s_store_id, 20) from hive.hive.store_orc where s_store_sk < 7;
+
+S_STORE_SK   (EXPR)              
+-----------  --------------------
+
+          1  AAAAAAAABAAAAAAA    
+          2  AAAAAAAACAAAAAAA    
+          3  AAAAAAAACAAAAAAA    
+          4  AAAAAAAAEAAAAAAA    
+          5  AAAAAAAAEAAAAAAA    
+          6  AAAAAAAAEAAAAAAA    
+
+--- 6 row(s) selected.
+>>
+>>-- select count of rows 
+>>select count(*) from hive.hive.store_orc;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>
+>>-- explain of join between 2 ORC tables
+>>explain options 'f' select x.s_suite_number, y.s_street_name
++> from hive.hive.store_orc x, hive.hive.store_orc y
++>  where x.s_store_sk = y.s_store_sk;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  4.09E+001
+2    1    3    hybrid_hash_join                                      4.09E+001
+.    .    2    hive_scan                       STORE_ORC             9.00E+000
+.    .    1    hive_scan                       STORE_ORC             9.00E+000
+
+--- SQL operation complete.
+>>
+>>-- execute of join between 2 ORC tables
+>>select x.s_suite_number, y.s_street_name
++> from hive.hive.store_orc x, hive.hive.store_orc y
++>  where x.s_store_sk = y.s_store_sk;
+
+S_SUITE_NUMBER        S_STREET_NAME       
+--------------------  --------------------
+
+Suite 250             Spring              
+Suite 410             Sycamore            
+Suite T               Park Laurel         
+Suite 260             Lake                
+Suite 80              Lee 6th             
+Suite 140             6th                 
+Suite T               Lee                 
+Suite D               12th                
+Suite 190             Hill                
+Suite C               4th                 
+Suite 160             Park Green          
+Suite 100             College             
+
+--- 12 row(s) selected.
+>>
+>>-- explain of join between hive(hdfs) and ORC tables
+>>explain options 'f' select x.s_suite_number, y.s_street_name
++> from hive.hive.store x, hive.hive.store_orc y
++>  where x.s_store_sk = y.s_store_sk;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  5.00E+001
+2    1    3    hybrid_hash_join                                      5.00E+001
+.    .    2    hive_scan                       STORE                 1.10E+001
+.    .    1    hive_scan                       STORE_ORC             9.00E+000
+
+--- SQL operation complete.
+>>
+>>-- execute of join between hive(hdfs) and ORC tables
+>>select x.s_suite_number, y.s_street_name
++> from hive.hive.store x, hive.hive.store_orc y
++>  where x.s_store_sk = y.s_store_sk;
+
+S_SUITE_NUMBER        S_STREET_NAME       
+--------------------  --------------------
+
+Suite 250             Spring              
+Suite 410             Sycamore            
+Suite T               Park Laurel         
+Suite 260             Lake                
+Suite 80              Lee 6th             
+Suite 140             6th                 
+Suite T               Lee                 
+Suite D               12th                
+Suite 190             Hill                
+Suite C               4th                 
+Suite 160             Park Green          
+Suite 100             College             
+
+--- 12 row(s) selected.
+>>
+>>log;

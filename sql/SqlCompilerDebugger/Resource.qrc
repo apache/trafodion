@@ -1,0 +1,70 @@
+<RCC>
+  <qresource prefix="/file">
+    <file alias="R_SQLNODE">Resource/Main/Sqlnode.png</file>
+    <file alias="R_DUMMY">Resource/Main/dummy.png</file>
+    <file>Resource/Main/SQ_Logo.png</file>
+    <file>Resource/Main/Context_green.bmp</file>
+    <file>Resource/Main/Addngrp.bmp</file>
+    <file>Resource/Main/CandPlan.bmp</file>
+    <file>Resource/Main/Context.bmp</file>
+    <file>Resource/Main/dftnodes.bmp</file>
+    <file>Resource/Main/Empty.bmp</file>
+    <file>Resource/Main/Exprlist.bmp</file>
+    <file>Resource/Main/Ienodes.bmp</file>
+    <file>Resource/Main/Initgrp.bmp</file>
+    <file>Resource/Main/Leaf.bmp</file>
+    <file>Resource/Main/Logexp.bmp</file>
+    <file>Resource/Main/LogexpW.bmp</file>
+    <file>Resource/Main/LogexpWC.bmp</file>
+    <file>Resource/Main/memo.bmp</file>
+    <file>Resource/Main/Merggrp.bmp</file>
+    <file>Resource/Main/Minus.bmp</file>
+    <file>Resource/Main/Newgrp.bmp</file>
+    <file>Resource/Main/nocheckb.bmp</file>
+    <file>Resource/Main/Phyexp.bmp</file>
+    <file>Resource/Main/Plan.bmp</file>
+    <file>Resource/Main/Plus.bmp</file>
+    <file>Resource/Main/Properties.bmp</file>
+    <file>Resource/Main/root.bmp</file>
+    <file>Resource/Main/SelLogExp.bmp</file>
+    <file>Resource/Main/SelPhyExp.bmp</file>
+    <file>Resource/Main/SelPlan.bmp</file>
+    <file>Resource/Main/Solution.bmp</file>
+    <file>Resource/Main/Taskdetails.bmp</file>
+    <file>Resource/Main/Tdbnodes.bmp</file>
+    <file>Resource/Main/I.bmp</file>
+    <file>Resource/Main/O.bmp</file>
+    <file>Resource/Main/X.bmp</file>
+    <file>Resource/Main/C.bmp</file>
+    <file>Resource/Main/L.bmp</file>
+    <file>Resource/Main/P.bmp</file>
+    <file>Resource/Main/N.bmp</file>
+    <file>Resource/Main/A.bmp</file>
+    <file>Resource/Main/G.bmp</file>
+    <file>Resource/Main/T.bmp</file>
+    <file>Resource/Main/J.bmp</file>
+    <file>Resource/Main/W.bmp</file>
+    <file>Resource/Main/Q.bmp</file>
+    <file alias="R_HISTOGRAM">Resource/Toolbar/Histogram.png</file>
+    <file alias="R_ABOUT">Resource/Toolbar/About.png</file>
+    <file alias="R_BREAKPOINT">Resource/Toolbar/Breakpoint.png</file>
+    <file alias="R_CONTINUE">Resource/Toolbar/Continue.png</file>
+    <file alias="R_FINISH">Resource/Toolbar/Finish.png</file>
+    <file alias="R_FINISHPASH">Resource/Toolbar/FinishPass.png</file>
+    <file alias="R_HELP">Resource/Toolbar/Help.png</file>
+    <file alias="R_ITEMEXPR">Resource/Toolbar/ItemExpression.png</file>
+    <file alias="R_MEMO">Resource/Toolbar/Memo.png</file>
+    <file alias="R_NEW">Resource/Toolbar/New.png</file>
+    <file alias="R_OPEN">Resource/Toolbar/Open.png</file>
+    <file alias="R_PRINT">Resource/Toolbar/Print.png</file>
+    <file alias="R_PROPERTY">Resource/Toolbar/Property.png</file>
+    <file alias="R_QUERYANALYSIS">Resource/Toolbar/QueryAnalysis.png</file>
+    <file alias="R_RULE">Resource/Toolbar/Rule.png</file>
+    <file alias="R_SAVE">Resource/Toolbar/Save.png</file>
+    <file alias="R_STEP">Resource/Toolbar/Step.png</file>
+    <file alias="R_STEPEXPR">Resource/Toolbar/StepExpression.png</file>
+    <file alias="R_STEPGROUP">Resource/Toolbar/StepGroup.png</file>
+    <file alias="R_STEPTASK">Resource/Toolbar/StepTask.png</file>
+    <file alias="R_STEPTASKNUM">Resource/Toolbar/StepTaskNumber.png</file>
+  </qresource>
+</RCC>

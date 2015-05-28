@@ -1,0 +1,31 @@
+! Test SeaPilot ProXy w/ process death - Logical Nodes
+! Note: Only one SPX process per physical node
+!        6 in a virtual cluster
+!        3 in a real cluster
+!
+exec {type spx,nowait,nid 5,out SPX02.lst}testspx
+exec {type spx,nowait,name $SPX01, nid 3,out SPX01.lst}testspx
+exec {type spx,nowait,nid 1,out SPX00.lst}testspx
+delay 3
+! The following 3 execs must fail in a real cluster
+exec {type spx,nowait,name $SPX4,nid 4,out SPX4.lst}testspx
+exec {type spx,nowait,name $SPX2,nid 2,out SPX2.lst}testspx
+exec {type spx,nowait,name $SPX0,nid 0,out SPX0.lst}testspx
+delay 3
+
+! 3 (cluster) or 6 (virtual) SPX processes should be started
+ps {SPX}
+
+! Start Test1 - Dead SPX process test
+event {SPX} 1
+delay 5
+! 2 (cluster) or 5 (virtual) SPX processes should remain running
+ps {SPX}
+
+! Start Test3 - End test - all SPX processes exit
+event {SPX} 10
+delay 5
+! All SPX processes should have exited
+ps {SPX}
+
+exit !

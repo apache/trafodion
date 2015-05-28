@@ -1,0 +1,6 @@
+209c209,211
+< --- SQL operation complete.
+---
+> *** ERROR[1034] Unable to obtain privileges
+> 
+> --- SQL operation failed with errors.

@@ -1,0 +1,3 @@
+/lib/
+target/
+*.jar.mf

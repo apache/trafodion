@@ -1,0 +1,860 @@
+>>---------------------------------------------------------------------
+>>-- Component: NonStop SQL Regression Test Suite
+>>-- Description: create multiple-data-type database:CREATE BASE TABLES.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>----------- MAT DDL: Definition of data needed for testing ----------
+>>------------------ Empty tables for general testing -----------------
+>>---------------------------------------------------------------------
+>>--           organ-
+>>--  table   ization         key            audited indexed columns
+>>-- -------  ----- ------------------------ ------- ------- -------
+>>-- btempkey  key  user key (1 col, char)     yes      no      1
+>>-- btemprel  rel  user key (1 col, char)     no       yes     1
+>>-- btempent entry user key (1 col, char)     yes      no      1
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Empty Table, organized as key-sequenced.s
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>  CREATE TABLE btempkey ( some_data PIC 9(3) not null   )
++>#ifMX
++>     attributes 
++>#ifMX
++>     NO AUDIT 
++>;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>-- Empty Table, organized as relative.
+>>  CREATE TABLE btemprel ( some_data PIC 9(3) not null  )
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>
++>#ifMX
++>     attributes 
++>#ifMX
++>     NO AUDIT 
++>;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>  CREATE INDEX btempre0 ON
++>    btemprel ( some_data )
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>-- Empty Table, organized as entry-sequenced.
+>>  CREATE TABLE btempent ( some_data PIC 9(3) not null  )
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>--           organ-                                      alt
+>>--  table   ization         key               audited  indexed  columns
+>>-- -------   -----  ------------------------  -------  -------  -------
+>>-- btsel01    key   user key (1 col, binary)    yes      yes      all
+>>--                                                               types
+>>-- btsel02   entry    SYSKEY                    yes      no     only 1
+>>-- btsel03    rel     SYSKEY                    yes      no    defaults
+>>-- btsel04    rel     SYSKEY                    yes      yes    varchar
+>>--                                                              index
+>>-- btsel05   entry    SYSKEY                    no       yes  Character
+>>--                                                             synonyms
+>>-- btsel06    key   user key (3 cols, contig)   yes      no    Numeric
+>>--                                                             synonyms
+>>-- btsel07    key   user key (3 cols,           yes      yes
+>>--                      noncontig, start with
+>>--                      last field)
+>>-- btsel08    key   user key (1 col, DESC)      yes      yes
+>>--                                                   UNIQUE, max
+>>--                                                   (253 bytes)
+>>-- btsel09    key   user key (noncontig,DESC)   yes      yes
+>>-- btsel10    key   user key (contig,ASC/DESC)  yes      yes
+>>-- btsel11    key   user key (noncontig,        yes      yes
+>>--                      ASC/DESC)
+>>--
+>>-- btsel12    key   user key                    yes      yes
+>>-- btsel13    key   user key                    yes       no
+>>-- btsel14    key   user key                    yes       no
+>>-- btsel15    key   user key                    yes       no
+>>-- btsel16    key   user key                    yes      yes
+>>-- btsel17   entry    SYSKEY                    yes      yes
+>>-- btsel18    rel     SYSKEY                    yes      yes
+>>-- btsel19    key   user key                    yes       no
+>>-- btsel20    key   user key                    yes       no
+>>-- btsel21    key   user key                    yes      yes
+>>-- btsel22    key   user key                    yes       no
+>>-- btsel23    key   user key                    yes      yes
+>>-- btsel24    key   user key                    yes       no
+>>--
+>>-- btsel25    key     SYSKEY                    yes       no
+>>-- btsel26    key     SYSKEY                    yes      yes   large
+>>--                                                           numerics
+>>-- btsel27    key     SYSKEY                    yes       no
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel01
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel01 (
++>-- Fixed length character string
++>        char_1                 CHAR(1)                        not null 
++>      , char_10                CHAR(10)                       not null 
++>      , pic_x_1                PIC X(1)                       not null 
++>      , pic_x_7                PIC X(7)                       not null 
++>      , pic_x_long             PIC X(200)         not null 
++>-- Varying length character string.
++>      , var_char               VARCHAR(253)                   not null 
++>-- Binary
++>      , binary_signed          numeric (4, 0) signed             not null 
++>      , binary_32_u            numeric (9,2) UNSIGNED         not null 
++>      , binary_64_s            numeric (18,3) SIGNED          not null 
++>      , pic_comp_1             numeric(10,0) signed                not null 
++>      , pic_comp_2             numeric(2,2) signed               not null 
++>      , pic_comp_3             numeric(8,5) signed         not null 
++>      , small_int              SMALLINT                       not null 
++>      , medium_int             INTEGER UNSIGNED               not null 
++>      , large_int              LARGEINT                not null 
++>-- Fixed length character string
++>      , decimal_1              DECIMAL (1, 0)                    not null 
++>      , decimal_2_signed       DECIMAL (2,2) SIGNED           not null 
++>      , decimal_3_unsigned     DECIMAL (3,0) UNSIGNED         not null 
++>      , pic_decimal_1          decimal(2,1) not null 
++>      , pic_decimal_2          DECIMAL(3,3) signed not null 
++>      , pic_decimal_3          DECIMAL(1,0) signed      not null 
++>      , PRIMARY KEY (binary_signed) 
++>-- End of columns
++>        )
++>-- Physical specs
++>--     blocksize 2048
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>-- Index the table with simple, 1-column indexes:
+>>  CREATE INDEX btsel01a
++>     ON btsel01 ( pic_x_1 )
++>
++>     ;
+
+--- SQL operation complete.
+>>  CREATE INDEX btsel01b
++>     ON btsel01 ( decimal_2_signed )
++>
++>     ;
+
+--- SQL operation complete.
+>>  CREATE INDEX btsel01c
++>     ON btsel01 ( pic_comp_3 )
++>
++>     ;
+
+--- SQL operation complete.
+>>  CREATE INDEX btsel01d
++>     ON btsel01 ( pic_x_long )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>-- Assertion comparing one field to a constant
+>>--  CREATE CONSTRAINT assert_1 ON btsel01
+>>--     CHECK pic_decimal_3 < 1000 ;
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel02
+>>---------------------------------------------------------------------
+>>-- Single field to allow us to make the minimal protection view on a
+>>--    minimal table.
+>>  CREATE TABLE btsel02 (
++>        pic_x_1                PIC X(1)            not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel03
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel03 (
++>        pic_x_7        PIC X(7)            not null 
++>      , binary_32_u    numeric (9,2) UNSIGNED  not null 
++>-- Check on default for strings.
++>      , pic_x4_a       PIC X(4)                 not null 
++>      , pic_9_7        PIC 9(7)                    not null 
++>      , binary_64_s    numeric (18,2) SIGNED      not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel04
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel04 (
++>        var_char               VARCHAR(251)           not null 
++>      , medium_int             INTEGER SIGNED         not null 
++>      , pic_x_7                PIC X(7)               not null 
++>      , pic_comp_1             numeric (10,0) signed        not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>
+>>-- Index the table with simple, 1-column indexes:
+>>  CREATE INDEX btsel04a
++>     ON btsel04 ( pic_x_7 )
++>     ;
+
+--- SQL operation complete.
+>>
+>>-- Limit of 251 byte on UNIQUE VARCHAR for alternate index.
+>>   CREATE UNIQUE INDEX btsel04b
++>--     CREATE INDEX btsel04b
++>     ON btsel04 ( var_char )
++>
++>      ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel05; the later fields are character synonyms,
+>>-- in that their data descriptions differ, but their storage is the same
+>>-- with the exception of VARCHAR).
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel05 (
++>        pic_x_a                PIC X(3)           not null 
++>      , pic_x_b                PIC     X(1)             not null 
++>      , pic_x_c                PIC     X(2)           not null 
++>      , col_1                  CHAR     (5)           not null 
++>      , col_2                  CHAR     (5)           not null 
++>      , col_3                  PIC     X(5)           not null 
++>      , col_4                  PIC     X(5)           not null 
++>      , col_5                  PIC     X(5)          not null 
++>      , col_6                  PIC     X(5)          not null 
++>      , col_7                  PIC     X(5)          not null 
++>      , col_8                  PIC     X(5)       not null 
++>      , col_9                  VARCHAR  (5)           not null 
++>      , col_10                 VARCHAR  (5)           not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>--     attributes NO AUDIT
++>     ;
+
+--- SQL operation complete.
+>>-- Index the table with 3_column index, reversing order of columns:
+>>
+>>  CREATE INDEX btsel05a
++>     ON btsel05 ( pic_x_c , pic_x_b , pic_x_a )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel06; the later fields are character
+>>-- synonyms, in that their data descriptions differ, but their
+>>-- storage is the same.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel06 (
++>        pic_x_a                PIC X(3)           not null 
++>      , pic_x_b                PIC     X(1)             not null 
++>      , pic_x_c                PIC     X(2)           not null 
++>-- Stored in 1 word
++>      , col_1                  numeric (4, 0) UNSIGNED   not null 
++>      , col_2                  numeric (4, 0) UNSIGNED   not null 
++>      , col_3                  PIC     9(4) COMP      not null 
++>      , col_4                  PIC     9(4) COMP      not null 
++>      , col_5                  SMALLINT    UNSIGNED   not null 
++>      , col_6                  SMALLINT    UNSIGNED   not null 
++>      , col_7                  DECIMAL (4,0) UNSIGNED   not null 
++>      , col_8                  DECIMAL (4, 0) UNSIGNED   not null 
++>      , col_9                  PIC    9(4)            not null 
++>      , col_10                 PIC    9(4)            not null 
++>-- Stored in 2 words (Double word).
++>      , col_21                 numeric (9, 0) SIGNED     not null 
++>      , col_22                 numeric (9, 0) SIGNED     not null 
++>      , col_23                 numeric(9,0)     not null 
++>      , col_24                 numeric(9,0)     not null 
++>      , col_25                 INTEGER     SIGNED     not null 
++>      , col_26                 INTEGER     SIGNED     not null 
++>      , col_27                 DECIMAL (9, 0) SIGNED     not null 
++>      , col_28                 DECIMAL (9, 0) SIGNED     not null 
++>      , col_29                   decimal(9,0)         not null 
++>      , col_30                 decimal(9,0)          not null 
++>-- Stored in 2 words (Double word, involving scale).
++>      , col_41                 numeric (9, 2) UNSIGNED not null 
++>      , col_42                 numeric (9, 2) UNSIGNED not null 
++>      , col_43                 numeric(9,2) unsigned   not null 
++>      , col_44                 numeric(9,2) unsigned  not null 
++>      , col_45                 DECIMAL (9,2) UNSIGNED not null 
++>      , col_46                 DECIMAL (9,2) UNSIGNED not null 
++>      , col_47                 decimal(9,2) unsigned      not null 
++>      , col_48                 decimal(9,2) unsigned       not null 
++>-- Stored in 4 words (Quad word).
++>      , col_61                 numeric (18, 0)   SIGNED  not null 
++>      , col_62                 numeric (18, 0)   SIGNED  not null 
++>      , col_63                 numeric(18,0)     not null 
++>      , col_64                 numeric(18,0)     not null 
++>      , col_65                 LARGEINT      SIGNED   not null 
++>      , col_66                 LARGEINT      SIGNED   not null 
++>      , col_67                 DECIMAL (18,0)  SIGNED   not null 
++>      , col_68                 DECIMAL (18,0)  SIGNED   not null 
++>      , col_69                 decimal(18,0)          not null 
++>      , col_70                 decimal(18,0)         not null 
++>      , PRIMARY KEY ( pic_x_a, pic_x_b, pic_x_c ) 
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel07
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel07 (
++>        pic_x_a                PIC X(3)           not null 
++>      , pic_x_b                PIC     X(1)              not null 
++>      , pic_x_c                PIC     X(2)           not null 
++>      , PRIMARY KEY ( pic_x_c, pic_x_b, pic_x_a ) 
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel07a
++>     ON btsel07 ( pic_x_a )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel08
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel08 (
++>        large_int              LARGEINT    not null 
++>      , pic_252                PIC X(252)     not null 
++>      , pic_1                  PIC X          not null 
++>      , PRIMARY KEY ( large_int DESC ) 
++>-- , PRIMARY KEY ( large_int )
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>-- Index the table with fields adding up to maximum:
+>>--  CREATE UNIQUE INDEX btsel08a
+>>
+>>  CREATE UNIQUE INDEX btsel08a
++>     ON btsel08 ( pic_252 , pic_1 )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel09
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel09 (
++>        pic_x_a                PIC X(3)       not null 
++>      , pic_x_2                PIC X(4)                    not null 
++>      , pic_x_3                PIC X(1)                        not null 
++>      , pic_x_4                PIC X(5)                   not null 
++>      , pic_x_5                PIC 9(1)                       not null 
++>      , pic_x_6                PIC 9(2)                       not null 
++>      , pic_x_7                PIC 9(3)                      not null 
++>      , PRIMARY KEY ( pic_x_a DESC, pic_x_6 DESC ) 
++>--     , PRIMARY KEY ( pic_x_a, pic_x_6)
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>--  CREATE UNIQUE INDEX btsel09a
+>>
+>>  CREATE INDEX btsel09a
++>     ON btsel09 ( pic_x_a )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel10
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel10 (
++>        pic_x_a                PIC X(3)           not null 
++>      , pic_x_7                PIC X(7)               not null 
++>      , pic_9_7                PIC 9(7)               not null 
++>      , char_10                CHAR(10)               not null 
++>      , decimal_10             DECIMAL (10, 0)           not null 
++>      , binary_unsigned        numeric (4, 0) unsigned   not null 
++>      , binary_32_signed       numeric (9, 0) SIGNED     not null 
++>      , PRIMARY KEY ( pic_9_7 ASC, pic_x_7 DESC, pic_x_a ASC) 
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>--  CREATE UNIQUE INDEX btsel10a
+>>
+>>  CREATE INDEX btsel10a
++>     ON btsel10 ( pic_x_a )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel11
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel11 (
++>        pic_x_a                PIC X(3)           not null 
++>      , pic_x_7                PIC X(7)               not null 
++>      , pic_9_7                PIC 9(7)               not null 
++>      , char_10                CHAR(10)               not null 
++>      , decimal_10             DECIMAL (10, 0)           not null 
++>      , binary_unsigned        numeric (4, 0) unsigned   not null 
++>      , binary_32_signed       numeric (9, 0) SIGNED     not null 
++>      , PRIMARY KEY ( decimal_10 DESC, pic_x_a ASC, pic_9_7 DESC) 
++>        )
++>
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Tables btsel12 to 24 are defined in the set below.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Tables btsel25, etc continue thereafter.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Tables for 12-table join, plus a 13th table that can be used in
+>>-- an attempt to join 13 tables.
+>>--
+>>-- btsel12 -->key of btsel13
+>>--         |
+>>--         -->key of btsel14
+>>--         |
+>>--         -->key of btsel15 -->key of btsel16
+>>--                           |
+>>--                           -->key of btsel17
+>>--                           |
+>>--                           -->key of btsel18 -->key of btsel19
+>>--                                             |
+>>--                                             -->key of btsel20
+>>--                                             |
+>>--                                             -->key of btsel21
+>>--                                                |
+>>--                                key of btsel22<--
+>>--                                                |
+>>--                                key of btsel23<--
+>>--                                                |
+>>--                                key of btsel24<--
+>>--
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel12, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel12 (
++>        data_x3                PIC X(3)               not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY ( data_x3 ) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>
+>>  CREATE INDEX btsel12a
++>     ON btsel12 ( data_93 )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel13, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel13 (
++>        data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY ( data_93 ) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel14, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel14 (
++>        data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY ( data_93 ) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel15, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel15 (
++>        small_int              SMALLINT               not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY ( data_93 ) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel16, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel16 (
++>        small_int              SMALLINT               not null 
++>      , data_93                PIC 9(3)               not null 
++>        )
++>
++>-- Defaults to SYSKEY
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel16a
++>     ON btsel16 ( small_int )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel17, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel17 (
++>        small_int              SMALLINT               not null 
++>      , data_93                PIC 9(3)               not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel17a
++>     ON btsel17 ( small_int )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel18, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel18 (
++>        binary_signed          numeric (4, 0) signed     not null 
++>      , small_int              SMALLINT               not null 
++>      , data_93                PIC 9(3)               not null 
++>        )
++>
++>#ifMX
++>#ifMX
++>#ifMP
++>#ifMP
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel18a
++>     ON btsel18 ( small_int )
++>
++>  ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel19, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel19 (
++>        binary_signed          numeric (4, 0) signed     not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY (binary_signed) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel20, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel20 (
++>        binary_signed          numeric (4, 0) signed     not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY (binary_signed) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel21, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel21 (
++>        pic_comp_2             numeric(2,2)       not null 
++>      , binary_signed          numeric (4, 0) signed     not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY (pic_comp_2) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel21a
++>     ON btsel21 ( binary_signed )
++>
++>  ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel22, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel22 (
++>        pic_comp_2             numeric(2,2)       not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY (pic_comp_2) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel23, for 12-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel23 (
++>        pic_comp_2             numeric(2,2)     not null 
++>      , data_93                PIC 9(3)               not null 
++>      , PRIMARY KEY (data_93) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel23a
++>     ON btsel23 ( pic_comp_2 )
++>
++>  ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel24, for 13-table join.
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel24 (
++>        pic_comp_2             numeric(2,2)      not null 
++>      , data_x3                PIC X(3)               not null 
++>      , PRIMARY KEY (pic_comp_2) 
++>        )
++>
++>     -- AUDIT
++>  ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel25, etc are independent.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel25
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel25 (
++>--       column pic_x_1 can be linked with btsel01, btsel05.
++>        pic_x_1                PIC X(1)            not null 
++>--       column pic_x_3 can be linked with same in btsel05/7 and 9/11.
++>      , pic_x_3                PIC X(3)           not null 
++>        )
++>
++>-- Defaults to SYSKEY
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel26
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel26 (
++>        selector                  char(1)                  not null 
++>      , large_bin_1               largeint          not null 
++>      , large_bin_2               numeric (18, 0) signed      not null 
++>      , large_dec_1               decimal (18, 0) signed      not null 
++>      , large_dec_2               decimal(18,0)              not null 
++>      , small_bin_1               numeric(18,18)       not null 
++>      , small_bin_2               numeric (18,18) signed   not null 
++>      , small_dec_1               decimal (18,18)          not null 
++>      , small_dec_2               decimal(18,18)             not null 
++>      , semi_large_bin_1          numeric(17,0)         not null 
++>      , semi_large_bin_2          numeric(17,0)       not null 
++>      , eight_one_bin             numeric(9,1)     not null 
++>      , one_nine_bin              numeric(10,9)    not null 
++>      , nine_one_bin              numeric (10,1)   not null 
++>      , one_eight_bin             numeric(9,8)      not null 
++>      , nine_zero_bin_u           numeric(9,0) unsigned         not null 
++>      , zero_nine_bin_u           numeric(9,9) unsigned         not null 
++>      , nine_zero_dec_u           decimal (9, 0) unsigned     not null 
++>      , zero_nine_dec_u           decimal(9,9)   unsigned         not null 
++>      , zero_one_bin              numeric(1,1)              not null 
++>        )
++>
++>-- Defaults to SYSKEY
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>-- Simple index:
+>>
+>>  CREATE INDEX btsel26a
++>     ON btsel26 ( large_dec_1 )
++>
++>     ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table btsel27
+>>---------------------------------------------------------------------
+>>  CREATE TABLE btsel27 (
++>        selector                  char(1)                not null 
++>      , two_four_bin              numeric(6,4) not null 
++>      , one_one_bin               numeric(2,1)   not null 
++>        )
++>
++>-- Defaults to SYSKEY
++>     -- AUDIT
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>LOG;

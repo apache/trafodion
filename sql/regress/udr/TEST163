@@ -1,0 +1,474 @@
+----------------------------------------------------------------------
+-- TEST163
+-- Testing of UDF/Subqueries in aggregate and group by expressions
+----------------------------------------------------------------------
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- To avoid platform differences in the log certain steps are logged
+-- to a secondary log file. These steps include building a DLL. The
+-- secondary log is not used when comparing expected output to actual
+-- output.  When troubleshooting problems be sure to consider failures
+-- logged to the secondary log file.
+
+----------------------------------------------------------------------
+-- TO CREATE METADATA OUTSIDE THE RUNNING OF THIS TEST:
+----------------------------------------------------------------------
+-- Commands are in section "standalone_setup". You should be able
+-- to do the setup with these commands:
+-- 
+--   Windows:  cd w:/regress/udr
+--             sqlci -i 'TEST163(standalone_setup)'
+-- 
+--     Linux:  . /<your-path>/regress/tools/setuplnxenv
+--             cd $rundir/udr
+--             $mxcidir/mxci -i 'TEST163(standalone_setup)'
+--
+--       NSK:  . /<your-path>/regress/tools/setupnskenv
+--             cd $rundir/udr
+--             $mxcidir/mxci -i 'TEST163(standalone_setup)'
+--
+
+----------------------------------------------------------------------
+-- TO BUILD THE UDF DLL OUTSIDE THE RUNNING OF THIS TEST:
+----------------------------------------------------------------------
+--
+-- Linux:
+--  cd $rundir/udr
+--  $scriptsdir/tools/dll-compile.ksh TEST163.cpp
+--
+
+control query default ALLOW_UDF 'ON';
+set pattern $$QUOTE$$ '''';
+set pattern $$DLL$$ TEST163.dll;
+
+create catalog neo;
+
+--------------------------------------------------------------------------
+-- Main test driver section
+--------------------------------------------------------------------------
+set pattern $$REG_CAT$$ NEO; -- The catalog where UDFs are registered. 
+                             -- Needed for 'clean_up'
+obey TEST163(clean_up);
+obey TEST163(copy_files);
+log LOG163 clear;
+sh rm -f LOG163-SECONDARY;
+sh rm -f LOG163-UDFMETADATA;
+obey TEST163(compile_libs);
+obey TEST163(create_tables);
+obey TEST163(register_functions);
+obey TEST163(tests);
+log;
+obey TEST163(clean_up);
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table t1;
+drop table t2;
+drop table t3;
+drop table t4;
+drop table t5;
+drop function ADD2;
+drop function SWAP2;
+drop function SWAP2CHAR;
+drop library TEST163;
+
+?section copy_files
+--------------------------------------------------------------------------
+#ifNT
+sh cp ../../sqludr/*.java .;
+sh cp ../../sqludr/Install*Metadata .;
+#ifNT
+#ifLINUX
+sh cp -f $MY_SQROOT/sql/sqludr/*.java $REGRTSTDIR;
+sh cp -f $MY_SQROOT/sql/sqludr/Install*Metadata $REGRTSTDIR;
+#ifLINUX
+
+?section compile_libs
+--------------------------------------------------------------------------
+log;
+sh rm -f ./TEST163.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST163.cpp
+  2>&1 | tee LOG163-SECONDARY;
+log LOG163;
+
+?section create_tables
+--------------------------------------------------------------------------
+create table t1 (a int not null, b int, c int, primary key (a));
+insert into t1 values
+ (1,1,-10), (2,1,null), (3,1,-20), (4,1,null), (5,1,-30),
+ (6,1,null), (7,1,-40), (8,1,null), (9,1,-50), (10,1,null);
+
+create table t2 (a int not null, b int, c int, primary key (a));
+insert into t2 values
+ (10,10,-100), (20,10,null), (30,10,-200), (40,10,null), (50,10,-300),
+ (60,10,null), (70,10,-400), (80,10,null), (90,10,-500), (100,10,null);
+
+create table t3 AS select * from t1 T;
+
+create table t5 (a int not null, b char(32), c char, primary key(a));
+insert into t5 values
+ (25, 'Neo', ' ');
+
+
+?section register_functions
+--------------------------------------------------------------------------
+create library TEST163 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+-- Adds two given integer values
+create function ADD2( INVAL1 int, INVAL2 int) returns OUTVAL int
+ language c parameter style sql external name 'add2'
+ library TEST163
+ deterministic no sql final call allow any parallelism state area size 1024 ;
+
+create function SWAP2( INVAL1 int, INVAL2 int) returns (OUTVAL1 int,OUTVAL2 int)
+ language c parameter style sql external name 'swap2'
+ library TEST163
+ deterministic no sql final call allow any parallelism state area size 1024 ;
+
+create function SWAP2CHAR( INVAL1 char(32), INVAL2 char(32)) returns (OUTVAL1 char(32),OUTVAL2 char(32))
+ language c parameter style sql external name 'swap2char'
+ library TEST163
+ deterministic no sql final call allow any parallelism state area size 1024 ;
+
+?section tests
+--------------------------------------------------------------------------
+-- UDF in GroupBy:
+
+select a  from t1 group by t1.a,add2(t1.a,t1.b)  order by a;
+
+select add2(a,b)  from t1 group by 1 order by 1;
+
+-- should succeed
+select a,add2(a,b) from t1 group by a,2;
+
+-- should fail
+select a,add2(a,b) from t1 group by a;
+
+-- should fail
+select a,add2(a,b) from t1 group by b;
+
+-- should fail
+select a,add2(a,b) from t1 group by 2;
+
+-- Subquery in GroupBy
+
+select a  from t1 group by t1.a,(select max(t2.a) from t2) order by a;
+
+select a,(select max(t2.a) from t2)  from t1 group by t1.a,2 order by a;
+
+-- UDF in Aggregate
+
+select max(add2(a,b)) from t1;
+
+-- Subquery in Aggregate
+
+select max((select count(*) from t2 where t1.a=t2.b)) from t1;
+
+-- UDFs in order by
+-- Should fail, we don't support function calls in order by clause, 
+-- only ordinals.
+select a from t1 order by add2(t1.a,t1.b);
+
+select add2(a,b) from t1 order by 1;
+
+-- Subqueries in order by
+
+-- select a from t1 order by (select t2.a from t2);
+
+select (select count(t2.a) from t2)  from t1 order by 1;
+
+
+-- UDFs and subqueries with First N
+
+select [First 2] a, add2(a,b) from t1 order by a;
+
+select [First 2] a, (select max(t2.a) from t2 where t2.a=t1.b) from t1 order by a;
+
+-- MVF UDF in GroupBy:
+
+-- Should group by a,b,a
+select a  from t1 group by t1.a,swap2(t1.a,t1.b) ;
+
+-- Should fail
+select swap2(a,b)  from t1 group by 1,2;
+
+-- Should group by (output1, output2) or (b,a)
+select swap2(a,b)  from t1 group by 1;
+
+-- Subquery of degree > 1 in GroupBy
+-- should group by a, max(t2.a), max(t2.b)
+select a  from t1 group by t1.a,(select max(t2.a),max(t2.b) from t2) ;
+
+-- should work, grouping by t1.a, max(t2.a),max(t2.b)
+select a,(select max(t2.a),max(t2.b) from t2)  from t1 group by t1.a,2 ;
+
+-- should group by a, max(t2.a), max(t2.b)
+select a,(select max(t2.a),max(t2.b) from t2)  from t1 group by t1.a,2 ;
+
+-- MVF UDF in Aggregate
+
+select max(swap2(a,b)) from t1;
+
+-- Subquery of degree > 1 in Aggregate
+
+select stddev((select max(t2.a),max(t2.b) from t2 where t1.a=t2.b)) from t1;
+
+-- MVF UDFs in order by
+
+select swap2(a,b) from t1 order by 1,2;
+
+-- Subqueries of degree > 1 in order by
+
+-- we don't support subqueries or udfs in order by clause as syntax
+-- select a from t1 order by (select t2.a,t2.b from t2);
+
+select (select count(t2.a), min(t2.b) from t2)  from t1 order by 1,2;
+
+-- UDFs and subqueries with First N
+
+select [First 2] a, swap2(a,b) from t1 order by a,2,3;
+
+select [First 2] a, (select max(t2.a),max(t2.b) from t2 where t2.a=t1.b) from t1 order by a,2,3;
+
+-- UDFs in updates
+
+update t1 set (b,c) = (add2(a,b),add2(b,c));
+
+-- Subqueries in updates
+
+update t1 set (b,c) = ((select max(t2.a) from t2 where t2.b = t1.a),(select max(t2.b) from t2 where t2.a = t1.a));
+
+update t1 set (b,c) = (select t2.a,t2.b from t2 where t2.a = t1.a);
+
+-- MVFs UDFs in updates
+
+update t1 set (b,c) = (swap2(a,b));
+
+-- Subqueries of degree > 1 in updates
+
+update t1 set (b,c) = (select max(t2.a),max(t2.b) from t2 where t2.b = t1.a);
+
+update t1 set (b,c) = (select t2.a,t2.b from t2 where t2.a = t1.a);
+
+-- create/select
+
+select * from t3;
+
+select a, swap2(b,c) from t3;
+
+create table t4 AS select a, swap2(b,c) from t3 T;
+
+select * from t4;
+
+
+-- detect expansion of inputs to builtin functions
+-- we should not expand the i for the ABS(i). since the rename already
+-- ensured the correct degree. This query should work.
+select i, abs(i) from
+   (select swap2(c1,c2) from (values(1,2)) as X(c1,c2)) as T(i,x);
+
+-- Character functions
+-- Should fail, parser passes in the ' ' when only one parameter given
+select trim((select c,b from t5)) from t1;
+
+-- Should fail
+select trim((select c,b,a from t5)) from t1;
+
+-- Should fail, parser passed in ' ' as the first param.
+select trim(swap2char(c,b))  from t5;
+
+-- Should fail
+select trim(' ' from swap2char(c,b))  from t5;
+
+-- lpad/rpad takes optional parameters, thus the parser will not prevent
+-- us from putting a subquery or MVF with degree > 1 as an input, so we have
+-- to check again at bind time that we have the correct number of params.
+-- LPAD takes a char-expr, count, [char] as params
+-- Unfortunately when we use subqueries or MVFs as inputs, the lpad code
+-- is unable to guess at the size of the pads, and uses 32K, which seems to
+-- force everything else to be big too.
+-- It also appears that the repeat functionality of lpad/rpad is
+-- broken when the length is not known at compile time...
+
+-- should work
+select cast(lpad('hello  ',(select a,b from t5)) as char(40)) from t1;
+
+-- should not work
+select cast(lpad('hello  ',(select a,b,c from t5)) as char(40)) from t1;
+
+-- should work
+select cast(rpad('hello  ',(select a,b from t5)) as char(40)) from t1;
+
+-- should not work
+select cast(rpad('hello  ',(select a,b,c from t5)) as char(40)) from t1;
+
+-- Math functions
+-- Should fail
+select power((select a,b from t1), 2) from t1;
+
+-- Should fail
+select power(swap2(a,b), 2)  from t1;
+
+-- Should fail
+select power(2,(select a,b from t1)) from t1;
+
+-- Should fail
+select power(2,swap2(a,b))  from t1;
+
+-- Should fail
+select stddev((select a,b from t1), 2) from t1;
+
+-- Should fail
+select stddev(swap2(a,b), 2)  from t1;
+
+-- Should fail
+select stddev(2,(select a,b from t1)) from t1;
+
+-- Should fail
+select stddev(2,swap2(a,b))  from t1;
+
+-- Moving functions
+
+-- Should fail
+-- we have a 3 argument movingmin that was passed 4 arguments.
+select movingmin(a,(select a,b from t1), 2) from t1 sequence by b;
+
+-- Should fail
+-- we have a 3 argument movingmin that was passed 4 arguments.
+select movingmin(a,swap2(a,b), 2)  from t1 sequence by b;
+
+-- Should succeed, but it will fail since the parser used a different
+-- constructor that sets the arity to 2, so we will not be able to expand.
+-- we have a 2 argument movingmin that was passed 3 arguments.
+select movingmin(a,(select a,b from t1)) from t1 sequence by b;
+
+-- Should succeed
+-- we have a 2 argument movingmin that was passed 3 arguments.
+select movingmin(a,swap2(a,b))  from t1 sequence by b;
+
+-- Should succeed, but fails since we are not allowing UDFs in sequence funcs.
+select offset (a,swap2(a,b)) from t1 sequence by b;
+
+-- Should fail
+select offset (a,3,swap2(a,b)) from t1 sequence by b;
+
+-- Should fail
+select offset (a,swap2(a,b),3) from t1 sequence by b;
+
+-- Should succeed 
+select offset (a,(select a,b from t1)) from t1 sequence by b;
+
+-- Should fail
+select offset (a,3,(select a,b from t1)) from t1 sequence by b;
+
+-- Should fail
+select rows since (a<b, swap2(a,b)) from t1 sequence by b;
+
+-- Should succeed, but fails since we are not allowing UDFs in sequence funcs.
+select rows since (a<b, add2(a,b)) from t1 sequence by b;
+
+-- Should succeed
+select rows since (a<b, (select a from t1)) from t1 sequence by b;
+
+-- Should fail
+select rows since (a<b, (select a,b from t1)) from t1 sequence by b;
+
+-- Query Caching test
+-- Compile a query with a UDF
+-- Flush the cache
+cqd query_cache '0';
+cqd query_cache '4096';
+
+prepare s1 from select swap2(a,b) from t1;
+
+-- Should show an entry in the cache for the above query, with no hits.
+select phase, num_hits, cast(text as char(55))
+  from table(querycacheentries('user', 'local'))
+  order by plan_id, phase;
+
+-- This should be found in the cache
+prepare s1 from select swap2(a,b) from t1;
+
+
+-- Should see a hit in the output
+select phase, num_hits, cast(text as char(55))
+from table(querycacheentries('user', 'local'))
+order by plan_id, phase;
+
+-- Flush the cache
+cqd query_cache '0';
+cqd query_cache '4096';
+values (add2(1,3));
+
+-- Should see an entry in the cache
+select phase, num_hits, cast(text as char(55))
+from table(querycacheentries('user', 'local'))
+order by plan_id, phase;
+
+-- should get a plan cache hit
+values (add2(3,3));
+
+-- Should the use counter for the cache entry go up.
+select phase, num_hits, cast(text as char(55))
+from table(querycacheentries('user', 'local'))
+order by plan_id, phase;
+
+-- Nested subqueries
+select (select a, (select (select b,c from t1) from t2) from t1) from t2 ;
+select * from t1 where (a,b,c) = (select a, (select (select b,c from t1) from t2) from t1) ;
+
+select (select a, (select (select swap2(b,c) from t1) from t2) from t1) from t2 ;
+select * from t1 where (a,b,c) = (select a, (select (select swap2(b,c) from t1) from t2) from t1) ;
+
+select a from t1 group by a,(select a,b from t2 group by a,b,(select b ,c from t1));
+
+select a from t1 group by a,(select a,b from t2 group by a,b,swap2(b,c));
+
+
+?section standalone_setup
+--------------------------------------------------------------------------
+control query default ALLOW_UDF 'ON';
+set envvar SQLMX_REGRESS 1;      -- To enable #ifNT and #ifNSK
+set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
+#ifNT
+set envvar rundir w:/regress;
+set envvar scriptsdir w:/regress;
+set pattern $$DLL$$ TEST163.dll;
+#ifNT
+#ifNSK
+set pattern $$DLL$$ TEST163.so;
+#ifNSK
+set envvar REGRTSTDIR $$scriptsdir$$/udr;
+set envvar REGRRUNDIR $$rundir$$/udr;
+cd $$rundir$$/udr;
+
+-- COPY FILES
+obey TEST163(copy_files);
+
+-- CREATE METADATA
+--create catalog neo;
+obey TEST163(compile_libs);
+obey TEST163(register_functions);
+
+-- SIMPLE TESTS
+set schema cat.sch;
+obey TEST163(create_tables);
+values(add2(1,2));
+select add2(a,b) from t1;

@@ -1,0 +1,61 @@
+!
+! NonStop Process pair testing.
+!
+! - 1 NonStop Server, 1 client test driver
+!
+! Test B
+!   Client sends 2 requests to server
+!      1st request start server pair pingpong suicide test 
+!          request fails due to primary's death
+!      continues to retry send request to server until successful reply
+!      
+!
+!   Server primary
+!      waits for 1st request, replies and then aborts
+!      backup takes over as primary, creates a new backup and aborts
+!          on each creation of new backup a count arg is passed and
+!          when arg > <TakeoverCountMax> the primary stops aborting and waits for
+!          2nd client request and waits to be killed by test shell
+!
+! Server <TakeoverCountMax> <CurrentTakeoverCount>
+!  Primary
+!    - starts backup <-(backup take over processing starts here)
+!    - mounts device
+!    - on takeover count < TakeoverCountMax
+!         o accepts connection from client
+!         o receives message from client
+!         o aborts
+!    - on takeover count == TakeoverCountMax
+!         o accepts connection from client
+!         o receives message from client
+!         o waits to be killed
+!
+!  Backup
+!    - opens primary
+!    - on a process death notice
+!         o takes over as primary
+!         o closes primary
+!         o startup Primary processing as above
+!
+! Client
+!    - opens Server
+!    - loops
+!         o sends 1 message to server
+!             o expects failures to sends until server pair returns reply
+!               which causes loop to terminate
+!    - closes server
+!    - exits
+!
+exec {nowait,name $SERV0,nid 0, OUT SERV0.T2.log}nsserver 3 0
+ps
+delay 2
+ps
+exec {nowait,name $CLI,nid 0}nsclient 2
+ps
+wait $CLI
+ps
+kill $SERV0
+delay 5
+ps
+!shutdown
+exit

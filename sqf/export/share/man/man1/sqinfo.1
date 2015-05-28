@@ -1,0 +1,47 @@
+.TH SQINFO 1 "05 October 2012" "SQ bin" "SQ-BIN Reference Pages"
+.SH NAME
+sqinfo \- Collects SQ information
+.LP
+.SH SYNOPSIS
+.B sqinfo
+[
+.B -d
+]
+.SH DESCRIPTION
+.LP
+.B sqinfo
+will collect SQ information.
+By default, a 'brief' collection is used.
+.SH USAGE
+.TP 7
+.BI -d
+will display detailed SQ information.
+.SH SEE ALSO
+.I env.
+.I hostname.
+.I ifconfig.
+.I mpirun.
+.I nm.
+.I pdsh.
+.I sqid.
+.I sqvers.
+.I uname.
+.I which.
+.SH FILES
+/etc/hosts
+.br
+/etc/*release
+.br
+/etc/security/limits.conf
+.br
+/proc/meminfo
+.br
+/proc/net/dev
+.br
+$MY_SQROOT/etc/ms.env
+.br
+$MY_SQROOT/sql/scripts/mon.env
+.br
+$MY_SQROOT/sql/scripts/shell.env
+.br
+$MY_SQROOT/sql/scripts/sqconfig

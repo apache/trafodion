@@ -1,0 +1,5 @@
+473,476d472
+< 
+< *** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII) Source Value:UPPLOW to Target Type:CHAR(REC_BYTE_F_ASCII).
+< 
+< --- 0 row(s) updated.

@@ -1,0 +1,2242 @@
+-- Test: TEST037 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Makes sure that non-reserved words are really non-reserved,
+-- and reserved words are really reserved.
+-- Expected files: EXPECTED037
+-- Tables created: table_name, system_name
+-- This test is run against MX tables only.
+-- Limitations:
+-- To do: 
+-- Revision history:
+-- (10/05/02) Move test to core from fullstack2, without any change.    
+-- (11/22/02) Merged in R1.8 changes: AFTER no longer raises error 3128
+--                                    use envvar SQLPARSER_FLAGS
+-- (11/25/02) Restored the way of SQLPARSER_FLAGS settings
+-- (11/25/02) Restored the test back to its 10/05/02 version
+
+set schema $$TEST_SCHEMA$$;
+
+drop table table_name;
+drop table system_name;
+
+log LOG037 clear;
+
+?ifMX
+
+create table table_name
+( ABSOLUTE int not null 
+, ACCESS int not null 
+, ANSIVARCHAR int not null 
+, ASCENDING int not null 
+, ATTRIBUTE int not null 
+, ATTRIBUTES int not null 
+, AUDIT int not null 
+, AUTOCOMMIT int not null 
+, AUDITCOMPRESS int not null 
+, BIGINT int not null 
+, BLOCKSIZE int not null 
+, BUFFERED int not null 
+, BYTES int not null 
+, CATALOG_NAME int not null 
+, CHARACTER_SET int not null 
+, CHARACTER_SET_CATALOG int not null 
+, CHARACTER_SET_NAME int not null 
+, CHARACTER_SET_SCHEMA int not null 
+, CLASS_ORIGIN int not null 
+, CLEARONPURGE int not null 
+, COLLATION_CATALOG int not null 
+, COLLATION_NAME int not null 
+, COLLATION_SCHEMA int not null 
+, COLUMN_NAME int not null 
+, COLUMN_NUMBER int not null 
+, COMMAND_FUNCTION int not null 
+, COMMITTED int not null 
+, COMP  int not null 
+, CONDITION_NUMBER int not null 
+, CONFIG int not null 
+, CONNECTION_NAME int not null 
+, CONSTRAINT_CATALOG int not null 
+, CONSTRAINT_NAME int not null 
+, CONSTRAINT_SCHEMA int not null 
+, CONTROL int not null 
+, CURSOR_NAME int not null 
+, DATA int not null 
+--,DATETIME int not null 
+, DATETIME_CODE int not null 
+, DCOMPRESS int not null 
+, DEFINITION int not null 
+, DESCENDING int not null 
+, DISPLAY int not null 
+, DROPPABLE int not null 
+, DSLACK int not null 
+, DYNAMIC_FUNCTION int not null 
+, ENTRY  int not null 
+, EUROPEAN int not null 
+, EXCLUSIVE int not null 
+, EXIT int not null 
+, EXPLAIN  int not null 
+, FN int not null 
+--,FRACTION int not null 
+, GBYTES int not null 
+, HASH int not null 
+, HEADING  int not null 
+, HEADINGS int not null 
+, HIGH_VALUE int not null 
+, HISTOGRAM int not null 
+, INDEX_TABLE int not null 
+, INDICATOR_DATA int not null 
+, INDICATOR_POINTER int not null 
+, INDICATOR_TYPE int not null 
+, INITIALIZE int not null 
+, INTERNALSP int not null 
+, ISLACK int not null 
+, KBYTES int not null 
+);
+invoke table_name;
+create table system_name
+( LARGEINT int not null 
+, LEADING_PRECISION int not null 
+, LENGTH int not null 
+, LINE_NUMBER int not null 
+, LOAD_TABLE int not null 
+, LOCATION int not null 
+, LOCK int not null 
+, LOCKLENGTH int not null 
+, LONG int not null 
+, LOW_VALUE int not null 
+, MAXSIZE int not null 
+, MBYTES int not null 
+, MESSAGE_LEN int not null 
+, MESSAGE_OCTET_LEN int not null 
+, MESSAGE_TEXT int not null 
+, MODE int not null 
+, MORE int not null 
+, MOVE int not null 
+, MOVEMENT  int not null 
+, NAME int not null 
+, NATIVE int not null 
+, NONDROPPABLE  int not null 
+, NULLABLE int not null 
+, NUMBER int not null 
+, PARTITION int not null 
+, PARTITION_TABLE int not null 
+, QUERY int not null 
+, RANGE int not null 
+, REINITIALIZE int not null 
+, RENAME int not null 
+, REPEATABLE int not null 
+, RESOURCE_FORK int not null 
+, RETURNED_LENGTH int not null 
+, RETURNED_OCTET_LENGTH int not null 
+, RETURNED_SQLSTATE int not null 
+, ROW_COUNT int not null 
+, ROW_NUMBER int not null 
+, SCALE int not null 
+, SCHEMA_NAME int not null 
+, SEPARATE int not null 
+, SEQUENCE int not null 
+, SERIALIZABLE int not null 
+, SERIALWRITES int not null 
+, SERVER_NAME int not null 
+, SHAPE int not null 
+, SHARE int not null 
+, SIDEINSERTS int not null 
+, SIGNED int not null 
+, SOURCE_FILE int not null 
+, SQL_WARNING int not null 
+, SQLMP int not null 
+, STATEMENT int not null 
+, STATIC int not null 
+, STATISTICS int not null 
+, STORE int not null 
+, SUBCLASS_ORIGIN int not null 
+, SUBSYSTEM_ID int not null 
+, system_name int not null 
+, TABLE_NAME int not null 
+, TYPE int not null 
+, UNBOUNDED int not null 
+, UNCOMMITTED int not null 
+, UNLOCK int not null 
+, UNNAMED int not null 
+, UNSIGNED int not null 
+, USA int not null 
+, VARIABLE_DATA int not null 
+, VARIABLE_POINTER int not null 
+, VSBB int not null 
+, WAITED int not null 
+);
+invoke system_name;
+
+--
+-- Checks a few reserved words
+--
+create view abs  as select usa from table_name;
+create view avg  as select usa from table_name;
+create view converttimestamp  as select usa from table_name;
+create view dateformat as select usa from table_name;
+create view dayofweek  as select usa from table_name;
+create view encode_key as select usa from table_name;
+create view invoke  as select usa from table_name;
+create view juliantimestamp  as select usa from table_name;
+create view sqlerror  as select usa from table_name;
+create view sqlstate  as select usa from table_name;
+create view stddev  as select usa from table_name;
+create view table  as select usa from table_name;
+create view upshift  as select usa from table_name;
+create view variance  as select usa from table_name;
+
+drop table table_name;
+drop table system_name;
+?ifMX
+
+-- Check reserved and non-reserved words as identifiers.
+
+-- Expect error [3128]
+prepare s1 from SELECT AFTER AFTER from (values(0)) AFTER(AFTER);
+
+-- Expect error [3128]
+prepare s1 from SELECT ASYNC ASYNC from (values(0)) ASYNC(ASYNC);
+
+-- Expect error [3128]
+prepare s1 from SELECT AT AT from (values(0)) AT(AT);
+
+-- Expect error [3128]
+prepare s1 from SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
+
+-- Expect error [3128]
+prepare s1 from SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
+
+-- Expect error [3128]
+prepare s1 from SELECT BREADTH BREADTH from (values(0)) BREADTH(BREADTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
+
+-- Expect error [3128]
+prepare s1 from SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
+
+-- Expect error [3128]
+prepare s1 from SELECT CYCLE CYCLE from (values(0)) CYCLE(CYCLE);
+
+-- Expect error [3128]
+prepare s1 from SELECT DEFERRABLE DEFERRABLE from (values(0)) DEFERRABLE(DEFERRABLE);
+
+-- Expect error [3128]
+prepare s1 from SELECT DEFERRED DEFERRED from (values(0)) DEFERRED(DEFERRED);
+
+-- Expect error [3128]
+prepare s1 from SELECT DEPTH DEPTH from (values(0)) DEPTH(DEPTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT DICTIONARY DICTIONARY from (values(0)) DICTIONARY(DICTIONARY);
+
+-- Expect error [3128]
+prepare s1 from SELECT DISCONNECT DISCONNECT from (values(0)) DISCONNECT(DISCONNECT);
+
+-- Expect error [3128]
+prepare s1 from SELECT DOMAIN DOMAIN from (values(0)) DOMAIN(DOMAIN);
+
+-- Expect error [3128]
+prepare s1 from SELECT EACH EACH from (values(0)) EACH(EACH);
+
+-- Expect error [3128]
+prepare s1 from SELECT EQUALS EQUALS from (values(0)) EQUALS(EQUALS);
+
+-- Expect error [3128]
+prepare s1 from SELECT EXEC EXEC from (values(0)) EXEC(EXEC);
+
+-- Expect error [3128]
+prepare s1 from SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
+
+-- Expect SYNTAX error now that we use IDENTITY as a token
+prepare s1 from SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
+
+-- Expect error [3128]
+prepare s1 from SELECT INITIALLY INITIALLY from (values(0)) INITIALLY(INITIALLY);
+
+-- Expect error [3128]
+prepare s1 from SELECT INSENSITIVE INSENSITIVE from (values(0)) INSENSITIVE(INSENSITIVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT LEAVE LEAVE from (values(0)) LEAVE(LEAVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT LESS LESS from (values(0)) LESS(LESS);
+
+-- Expect syntax error, LIMIT must be double quoted.
+prepare s1 from SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
+
+-- Expect error [3128]
+prepare s1 from SELECT LOOP LOOP from (values(0)) LOOP(LOOP);
+
+-- Expect error [3128]
+prepare s1 from SELECT MODIFY MODIFY from (values(0)) MODIFY(MODIFY);
+
+-- Expect error [3128]
+prepare s1 from SELECT NEW NEW from (values(0)) NEW(NEW);
+
+-- Expect error [3128]
+prepare s1 from SELECT NEXT NEXT from (values(0)) NEXT(NEXT);
+
+-- Expect error [15001]
+prepare s1 from SELECT NONE NONE from (values(0)) NONE(NONE);
+
+-- Expect error [3128]
+prepare s1 from SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
+
+-- Expect error [3128]
+prepare s1 from SELECT OID OID from (values(0)) OID(OID);
+
+-- Expect error [3128]
+prepare s1 from SELECT OLD OLD from (values(0)) OLD(OLD);
+
+-- Expect error [3128]
+prepare s1 from SELECT OPERATORS OPERATORS from (values(0)) OPERATORS(OPERATORS);
+
+-- Expect error [3128]
+prepare s1 from SELECT OTHERS OTHERS from (values(0)) OTHERS(OTHERS);
+
+-- Expect error [3128]
+prepare s1 from SELECT PAD PAD from (values(0)) PAD(PAD);
+
+-- Expect error [3128]
+prepare s1 from SELECT PARAMETERS PARAMETERS from (values(0)) PARAMETERS(PARAMETERS);
+
+-- Expect error [3128]
+prepare s1 from SELECT PENDANT PENDANT from (values(0)) PENDANT(PENDANT);
+
+-- Expect error [3128]
+prepare s1 from SELECT PREORDER PREORDER from (values(0)) PREORDER(PREORDER);
+
+-- Expect error [3128]
+prepare s1 from SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
+
+-- Expect error [3128]
+prepare s1 from SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
+
+-- Expect error [15001]
+prepare s1 from SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
+
+-- Expect error [3128]
+prepare s1 from SELECT RECURSIVE RECURSIVE from (values(0)) RECURSIVE(RECURSIVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT REF REF from (values(0)) REF(REF);
+
+-- Expect error [3128]
+prepare s1 from SELECT REFERENCING REFERENCING from (values(0)) REFERENCING(REFERENCING);
+
+-- Expect error [3128]
+prepare s1 from SELECT RELATIVE RELATIVE from (values(0)) RELATIVE(RELATIVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT RESIGNAL RESIGNAL from (values(0)) RESIGNAL(RESIGNAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
+
+-- Expect error [3128]
+prepare s1 from SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
+
+-- Expect error [3128]
+prepare s1 from SELECT ROW ROW from (values(0)) ROW(ROW);
+
+-- Expect error [3128]
+prepare s1 from SELECT SAVEPOINT SAVEPOINT from (values(0)) SAVEPOINT(SAVEPOINT);
+
+-- Expect error [3128]
+prepare s1 from SELECT SCROLL SCROLL from (values(0)) SCROLL(SCROLL);
+
+-- Expect error [3128]
+prepare s1 from SELECT SEARCH SEARCH from (values(0)) SEARCH(SEARCH);
+
+-- Expect error [3128]
+prepare s1 from SELECT SENSITIVE SENSITIVE from (values(0)) SENSITIVE(SENSITIVE);
+
+-- Expect error [3128]
+prepare s1 from SELECT SIGNAL SIGNAL from (values(0)) SIGNAL(SIGNAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT SIMILAR SIMILAR from (values(0)) SIMILAR(SIMILAR);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQLEXCEPTION SQLEXCEPTION from (values(0)) SQLEXCEPTION(SQLEXCEPTION);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQLSTATE SQLSTATE from (values(0)) SQLSTATE(SQLSTATE);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQLWARNING SQLWARNING from (values(0)) SQLWARNING(SQLWARNING);
+
+-- Expect error [3128]
+prepare s1 from SELECT STRUCTURE STRUCTURE from (values(0)) STRUCTURE(STRUCTURE);
+
+-- Expect error [3128]
+prepare s1 from SELECT SYSTEM_USER SYSTEM_USER from (values(0)) SYSTEM_USER(SYSTEM_USER);
+
+-- Expect error [3128]
+prepare s1 from SELECT TEMPORARY TEMPORARY from (values(0)) TEMPORARY(TEMPORARY);
+
+-- Expect error [3128]
+prepare s1 from SELECT TEST TEST from (values(0)) TEST(TEST);
+
+-- Expect error [3128]
+prepare s1 from SELECT THERE THERE from (values(0)) THERE(THERE);
+
+-- Expect error [3128]
+prepare s1 from SELECT TIMEZONE_HOUR TIMEZONE_HOUR from (values(0)) TIMEZONE_HOUR(TIMEZONE_HOUR);
+
+-- Expect error [3128]
+prepare s1 from SELECT TIMEZONE_MINUTE TIMEZONE_MINUTE from (values(0)) TIMEZONE_MINUTE(TIMEZONE_MINUTE);
+
+-- Expect error [3128]
+prepare s1 from SELECT TRANSLATION TRANSLATION from (values(0)) TRANSLATION(TRANSLATION);
+
+-- Expect error [3128]
+prepare s1 from SELECT TRIGGER TRIGGER from (values(0)) TRIGGER(TRIGGER);
+
+-- Expect error [3128]
+prepare s1 from SELECT UNDER UNDER from (values(0)) UNDER(UNDER);
+
+-- Expect error [3128]
+prepare s1 from SELECT USAGE USAGE from (values(0)) USAGE(USAGE);
+
+-- Expect error [3128]
+prepare s1 from SELECT VARIABLE VARIABLE from (values(0)) VARIABLE(VARIABLE);
+
+-- Expect error [3128]
+prepare s1 from SELECT VIRTUAL VIRTUAL from (values(0)) VIRTUAL(VIRTUAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT VISIBLE VISIBLE from (values(0)) VISIBLE(VISIBLE);
+
+-- Expect error [3128]
+prepare s1 from SELECT WAIT WAIT from (values(0)) WAIT(WAIT);
+
+-- Expect error [3128]
+prepare s1 from SELECT WHILE WHILE from (values(0)) WHILE(WHILE);
+
+-- Expect error [3128]
+prepare s1 from SELECT ZONE ZONE from (values(0)) ZONE(ZONE);
+
+-- Expect error [3128]
+prepare s1 from SELECT CAST CAST from (values(0)) CAST(CAST);
+
+-- Expect error [3128]
+prepare s1 from SELECT CHARACTER_LENGTH CHARACTER_LENGTH from (values(0)) CHARACTER_LENGTH(CHARACTER_LENGTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT CHAR_LENGTH CHAR_LENGTH from (values(0)) CHAR_LENGTH(CHAR_LENGTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT DOUBLE DOUBLE from (values(0)) DOUBLE(DOUBLE);
+
+-- Expect error [3128]
+prepare s1 from SELECT ELSE ELSE from (values(0)) ELSE(ELSE);
+
+-- Expect error [3128]
+prepare s1 from SELECT END END from (values(0)) END(END);
+
+-- Expect error [3128]
+prepare s1 from SELECT FLOAT FLOAT from (values(0)) FLOAT(FLOAT);
+
+-- Expect error [3128]
+prepare s1 from SELECT LOWER LOWER from (values(0)) LOWER(LOWER);
+
+-- Expect error [3128]
+prepare s1 from SELECT MIN MIN from (values(0)) MIN(MIN);
+
+-- Expect error [3128]
+prepare s1 from SELECT NATIONAL NATIONAL from (values(0)) NATIONAL(NATIONAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT NCHAR NCHAR from (values(0)) NCHAR(NCHAR);
+
+-- Expect error [3128]
+prepare s1 from SELECT OCTET_LENGTH OCTET_LENGTH from (values(0)) OCTET_LENGTH(OCTET_LENGTH);
+
+-- Expect error [3128]
+prepare s1 from SELECT POSITION POSITION from (values(0)) POSITION(POSITION);
+
+-- Expect error [3128]
+prepare s1 from SELECT PRECISION PRECISION from (values(0)) PRECISION(PRECISION);
+
+-- Expect error [3128]
+prepare s1 from SELECT REAL REAL from (values(0)) REAL(REAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT SUBSTRING SUBSTRING from (values(0)) SUBSTRING(SUBSTRING);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQL_FLOAT SQL_FLOAT from (values(0)) SQL_FLOAT(SQL_FLOAT);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQL_REAL SQL_REAL from (values(0)) SQL_REAL(SQL_REAL);
+
+-- Expect error [3128]
+prepare s1 from SELECT SQL_VARCHAR SQL_VARCHAR from (values(0)) SQL_VARCHAR(SQL_VARCHAR);
+
+-- Expect error [3128]
+prepare s1 from SELECT TRIM TRIM from (values(0)) TRIM(TRIM);
+
+-- Expect error [3128]
+prepare s1 from SELECT UPPER UPPER from (values(0)) UPPER(UPPER);
+
+-- Expect error [3128]
+prepare s1 from SELECT UPSHIFT UPSHIFT from (values(0)) UPSHIFT(UPSHIFT);
+
+-- Expect error [3128]
+prepare s1 from SELECT VARCHAR VARCHAR from (values(0)) VARCHAR(VARCHAR);
+
+-- Expect error [3128]
+prepare s1 from SELECT VARYING VARYING from (values(0)) VARYING(VARYING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COLLATE COLLATE from (values(0)) COLLATE(COLLATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DATE DATE from (values(0)) DATE(DATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DAY DAY from (values(0)) DAY(DAY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DEFAULT DEFAULT from (values(0)) DEFAULT(DEFAULT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT HOUR HOUR from (values(0)) HOUR(HOUR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INTERVAL INTERVAL from (values(0)) INTERVAL(INTERVAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT MINUTE MINUTE from (values(0)) MINUTE(MINUTE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT MONTH MONTH from (values(0)) MONTH(MONTH);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT RIGHT RIGHT from (values(0)) RIGHT(RIGHT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SECOND SECOND from (values(0)) SECOND(SECOND);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT THEN THEN from (values(0)) THEN(THEN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TIME TIME from (values(0)) TIME(TIME);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TIMESTAMP TIMESTAMP from (values(0)) TIMESTAMP(TIMESTAMP);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT UNION UNION from (values(0)) UNION(UNION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT YEAR YEAR from (values(0)) YEAR(YEAR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ACTION ACTION from (values(0)) ACTION(ACTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ADD ADD from (values(0)) ADD(ADD);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ALIAS ALIAS from (values(0)) ALIAS(ALIAS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ALLOCATE ALLOCATE from (values(0)) ALLOCATE(ALLOCATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ALTER ALTER from (values(0)) ALTER(ALTER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ARE ARE from (values(0)) ARE(ARE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ASSERTION ASSERTION from (values(0)) ASSERTION(ASSERTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT AUTHORIZATION AUTHORIZATION from (values(0)) AUTHORIZATION(AUTHORIZATION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT BIT BIT from (values(0)) BIT(BIT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CALL CALL from (values(0)) CALL(CALL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CASCADE CASCADE from (values(0)) CASCADE(CASCADE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CASCADED CASCADED from (values(0)) CASCADED(CASCADED);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COALESCE COALESCE from (values(0)) COALESCE(COALESCE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COLLATION COLLATION from (values(0)) COLLATION(COLLATION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COLUMN COLUMN from (values(0)) COLUMN(COLUMN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CONSTRAINT CONSTRAINT from (values(0)) CONSTRAINT(CONSTRAINT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CONSTRAINTS CONSTRAINTS from (values(0)) CONSTRAINTS(CONSTRAINTS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CONTINUE CONTINUE from (values(0)) CONTINUE(CONTINUE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CONVERT CONVERT from (values(0)) CONVERT(CONVERT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CORRESPONDING CORRESPONDING from (values(0)) CORRESPONDING(CORRESPONDING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CREATE CREATE from (values(0)) CREATE(CREATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CROSS CROSS from (values(0)) CROSS(CROSS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DEALLOCATE DEALLOCATE from (values(0)) DEALLOCATE(DEALLOCATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DESCRIBE DESCRIBE from (values(0)) DESCRIBE(DESCRIBE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DESCRIPTOR DESCRIPTOR from (values(0)) DESCRIPTOR(DESCRIPTOR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DIAGNOSTICS DIAGNOSTICS from (values(0)) DIAGNOSTICS(DIAGNOSTICS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DROP DROP from (values(0)) DROP(DROP);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ELSEIF ELSEIF from (values(0)) ELSEIF(ELSEIF);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXCEPT EXCEPT from (values(0)) EXCEPT(EXCEPT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXCEPTION EXCEPTION from (values(0)) EXCEPTION(EXCEPTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXECUTE EXECUTE from (values(0)) EXECUTE(EXECUTE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXTERNAL EXTERNAL from (values(0)) EXTERNAL(EXTERNAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXTRACT EXTRACT from (values(0)) EXTRACT(EXTRACT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FALSE FALSE from (values(0)) FALSE(FALSE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FIRST FIRST from (values(0)) FIRST(FIRST);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FOREIGN FOREIGN from (values(0)) FOREIGN(FOREIGN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FOUND FOUND from (values(0)) FOUND(FOUND);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FULL FULL from (values(0)) FULL(FULL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GET GET from (values(0)) GET(GET);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GLOBAL GLOBAL from (values(0)) GLOBAL(GLOBAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GO GO from (values(0)) GO(GO);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GOTO GOTO from (values(0)) GOTO(GOTO);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GRANT GRANT from (values(0)) GRANT(GRANT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT IF IF from (values(0)) IF(IF);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT IGNORE IGNORE from (values(0)) IGNORE(IGNORE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT IMMEDIATE IMMEDIATE from (values(0)) IMMEDIATE(IMMEDIATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INDICATOR INDICATOR from (values(0)) INDICATOR(INDICATOR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INTERSECT INTERSECT from (values(0)) INTERSECT(INTERSECT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ISOLATION ISOLATION from (values(0)) ISOLATION(ISOLATION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LAST LAST from (values(0)) LAST(LAST);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LEVEL LEVEL from (values(0)) LEVEL(LEVEL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LOCAL LOCAL from (values(0)) LOCAL(LOCAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT MATCH MATCH from (values(0)) MATCH(MATCH);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT MODULE MODULE from (values(0)) MODULE(MODULE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NAMES NAMES from (values(0)) NAMES(NAMES);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NATURAL NATURAL from (values(0)) NATURAL(NATURAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NO NO from (values(0)) NO(NO);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NULLIF NULLIF from (values(0)) NULLIF(NULLIF);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OFF OFF from (values(0)) OFF(OFF);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ONLY ONLY from (values(0)) ONLY(ONLY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OUTER OUTER from (values(0)) OUTER(OUTER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OUTPUT OUTPUT from (values(0)) OUTPUT(OUTPUT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OVERLAPS OVERLAPS from (values(0)) OVERLAPS(OVERLAPS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PARTIAL PARTIAL from (values(0)) PARTIAL(PARTIAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PREPARE PREPARE from (values(0)) PREPARE(PREPARE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PRIMARY PRIMARY from (values(0)) PRIMARY(PRIMARY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PRIVILEGES PRIVILEGES from (values(0)) PRIVILEGES(PRIVILEGES);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PROCEDURE PROCEDURE from (values(0)) PROCEDURE(PROCEDURE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PROTOTYPE PROTOTYPE from (values(0)) PROTOTYPE(PROTOTYPE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT PUBLIC PUBLIC from (values(0)) PUBLIC(PUBLIC);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT READ READ from (values(0)) READ(READ);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT REFERENCES REFERENCES from (values(0)) REFERENCES(REFERENCES);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT REPLACE REPLACE from (values(0)) REPLACE(REPLACE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT RESTRICT RESTRICT from (values(0)) RESTRICT(RESTRICT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT RETURN RETURN from (values(0)) RETURN(RETURN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT REVOKE REVOKE from (values(0)) REVOKE(REVOKE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ROWS ROWS from (values(0)) ROWS(ROWS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SCHEMA SCHEMA from (values(0)) SCHEMA(SCHEMA);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SECTION SECTION from (values(0)) SECTION(SECTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SESSION SESSION from (values(0)) SESSION(SESSION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SESSION_USER SESSION_USER from (values(0)) SESSION_USER(SESSION_USER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SIZE SIZE from (values(0)) SIZE(SIZE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SPACE SPACE from (values(0)) SPACE(SPACE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL SQL from (values(0)) SQL(SQL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQLCODE SQLCODE from (values(0)) SQLCODE(SQLCODE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQLERROR SQLERROR from (values(0)) SQLERROR(SQLERROR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_CHAR SQL_CHAR from (values(0)) SQL_CHAR(SQL_CHAR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_DATE SQL_DATE from (values(0)) SQL_DATE(SQL_DATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_DECIMAL SQL_DECIMAL from (values(0)) SQL_DECIMAL(SQL_DECIMAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_DOUBLE SQL_DOUBLE from (values(0)) SQL_DOUBLE(SQL_DOUBLE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_INT SQL_INT from (values(0)) SQL_INT(SQL_INT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_INTEGER SQL_INTEGER from (values(0)) SQL_INTEGER(SQL_INTEGER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_SMALLINT SQL_SMALLINT from (values(0)) SQL_SMALLINT(SQL_SMALLINT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_TIME SQL_TIME from (values(0)) SQL_TIME(SQL_TIME);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SQL_TIMESTAMP SQL_TIMESTAMP from (values(0)) SQL_TIMESTAMP(SQL_TIMESTAMP);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TRANSACTION TRANSACTION from (values(0)) TRANSACTION(TRANSACTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TRANSLATE TRANSLATE from (values(0)) TRANSLATE(TRANSLATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TRANSPOSE TRANSPOSE from (values(0)) TRANSPOSE(TRANSPOSE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TRUE TRUE from (values(0)) TRUE(TRUE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT UNKNOWN UNKNOWN from (values(0)) UNKNOWN(UNKNOWN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT USER USER from (values(0)) USER(USER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT USING USING from (values(0)) USING(USING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT VALUE VALUE from (values(0)) VALUE(VALUE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WHENEVER WHENEVER from (values(0)) WHENEVER(WHENEVER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WITHOUT WITHOUT from (values(0)) WITHOUT(WITHOUT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WRITE WRITE from (values(0)) WRITE(WRITE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ALL ALL from (values(0)) ALL(ALL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT AND AND from (values(0)) AND(AND);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ANY ANY from (values(0)) ANY(ANY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT AS AS from (values(0)) AS(AS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ASC ASC from (values(0)) ASC(ASC);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT AVG AVG from (values(0)) AVG(AVG);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT BEGIN BEGIN from (values(0)) BEGIN(BEGIN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT BETWEEN BETWEEN from (values(0)) BETWEEN(BETWEEN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT BOTH BOTH from (values(0)) BOTH(BOTH);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT BY BY from (values(0)) BY(BY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CASE CASE from (values(0)) CASE(CASE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CATALOG CATALOG from (values(0)) CATALOG(CATALOG);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CHAR CHAR from (values(0)) CHAR(CHAR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CHARACTER CHARACTER from (values(0)) CHARACTER(CHARACTER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CHECK CHECK from (values(0)) CHECK(CHECK);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CLOSE CLOSE from (values(0)) CLOSE(CLOSE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COMMIT COMMIT from (values(0)) COMMIT(COMMIT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT COUNT COUNT from (values(0)) COUNT(COUNT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURRENT CURRENT from (values(0)) CURRENT(CURRENT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURRENT_DATE CURRENT_DATE from (values(0)) CURRENT_DATE(CURRENT_DATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURRENT_TIME CURRENT_TIME from (values(0)) CURRENT_TIME(CURRENT_TIME);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURRENT_TIMESTAMP CURRENT_TIMESTAMP from (values(0)) CURRENT_TIMESTAMP(CURRENT_TIMESTAMP);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURRENT_USER CURRENT_USER from (values(0)) CURRENT_USER(CURRENT_USER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT CURSOR CURSOR from (values(0)) CURSOR(CURSOR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DATETIME DATETIME from (values(0)) DATETIME(DATETIME);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DEC DEC from (values(0)) DEC(DEC);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DECIMAL DECIMAL from (values(0)) DECIMAL(DECIMAL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DECLARE DECLARE from (values(0)) DECLARE(DECLARE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DELETE DELETE from (values(0)) DELETE(DELETE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DESC DESC from (values(0)) DESC(DESC);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT DISTINCT DISTINCT from (values(0)) DISTINCT(DISTINCT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ESCAPE ESCAPE from (values(0)) ESCAPE(ESCAPE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT EXISTS EXISTS from (values(0)) EXISTS(EXISTS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FETCH FETCH from (values(0)) FETCH(FETCH);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FOR FOR from (values(0)) FOR(FOR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FRACTION FRACTION from (values(0)) FRACTION(FRACTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT FROM FROM from (values(0)) FROM(FROM);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT GROUP GROUP from (values(0)) GROUP(GROUP);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT HAVING HAVING from (values(0)) HAVING(HAVING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT IN IN from (values(0)) IN(IN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INNER INNER from (values(0)) INNER(INNER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INPUT INPUT from (values(0)) INPUT(INPUT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INSERT INSERT from (values(0)) INSERT(INSERT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INT INT from (values(0)) INT(INT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INTEGER INTEGER from (values(0)) INTEGER(INTEGER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT INTO INTO from (values(0)) INTO(INTO);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT IS IS from (values(0)) IS(IS);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT JOIN JOIN from (values(0)) JOIN(JOIN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT KEY KEY from (values(0)) KEY(KEY);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LEADING LEADING from (values(0)) LEADING(LEADING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LEFT LEFT from (values(0)) LEFT(LEFT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT LIKE LIKE from (values(0)) LIKE(LIKE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT MAX MAX from (values(0)) MAX(MAX);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NOT NOT from (values(0)) NOT(NOT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NULL NULL from (values(0)) NULL(NULL);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT NUMERIC NUMERIC from (values(0)) NUMERIC(NUMERIC);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OF OF from (values(0)) OF(OF);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ON ON from (values(0)) ON(ON);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OPEN OPEN from (values(0)) OPEN(OPEN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OPTION OPTION from (values(0)) OPTION(OPTION);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT OR OR from (values(0)) OR(OR);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ORDER ORDER from (values(0)) ORDER(ORDER);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT ROLLBACK ROLLBACK from (values(0)) ROLLBACK(ROLLBACK);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SELECT SELECT from (values(0)) SELECT(SELECT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SET SET from (values(0)) SET(SET);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SMALLINT SMALLINT from (values(0)) SMALLINT(SMALLINT);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SOME SOME from (values(0)) SOME(SOME);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT SUM SUM from (values(0)) SUM(SUM);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TABLE TABLE from (values(0)) TABLE(TABLE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TO TO from (values(0)) TO(TO);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT TRAILING TRAILING from (values(0)) TRAILING(TRAILING);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT UNIQUE UNIQUE from (values(0)) UNIQUE(UNIQUE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT UPDATE UPDATE from (values(0)) UPDATE(UPDATE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT VALUES VALUES from (values(0)) VALUES(VALUES);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT VIEW VIEW from (values(0)) VIEW(VIEW);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WHEN WHEN from (values(0)) WHEN(WHEN);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WHERE WHERE from (values(0)) WHERE(WHERE);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WITH WITH from (values(0)) WITH(WITH);
+
+-- Expect SYNTAX error
+prepare s1 from SELECT WORK WORK from (values(0)) WORK(WORK);
+
+-- Expect success
+prepare s1 from SELECT ABS ABS from (values(0)) ABS(ABS);
+
+-- Expect success
+prepare s1 from SELECT ACCESS ACCESS from (values(0)) ACCESS(ACCESS);
+
+-- Expect success
+prepare s1 from SELECT ACOS ACOS from (values(0)) ACOS(ACOS);
+
+-- Expect success
+prepare s1 from SELECT ANSIVARCHAR ANSIVARCHAR from (values(0)) ANSIVARCHAR(ANSIVARCHAR);
+
+-- Expect success
+prepare s1 from SELECT ASCENDING ASCENDING from (values(0)) ASCENDING(ASCENDING);
+
+-- Expect success
+prepare s1 from SELECT ASCII ASCII from (values(0)) ASCII(ASCII);
+
+-- Expect success
+prepare s1 from SELECT ASIN ASIN from (values(0)) ASIN(ASIN);
+
+-- Expect success
+prepare s1 from SELECT ATAN ATAN from (values(0)) ATAN(ATAN);
+
+-- Expect success
+prepare s1 from SELECT ATAN2 ATAN2 from (values(0)) ATAN2(ATAN2);
+
+-- Expect success
+prepare s1 from SELECT ATOMIC ATOMIC from (values(0)) ATOMIC(ATOMIC);
+
+-- Expect success
+prepare s1 from SELECT ATTRIBUTE ATTRIBUTE from (values(0)) ATTRIBUTE(ATTRIBUTE);
+
+-- Expect success
+prepare s1 from SELECT ATTRIBUTES ATTRIBUTES from (values(0)) ATTRIBUTES(ATTRIBUTES);
+
+-- Expect success
+prepare s1 from SELECT AUDIT AUDIT from (values(0)) AUDIT(AUDIT);
+
+-- Expect success
+prepare s1 from SELECT AUDITCOMPRESS AUDITCOMPRESS from (values(0)) AUDITCOMPRESS(AUDITCOMPRESS);
+
+-- Expect success
+prepare s1 from SELECT AUTOCOMMIT AUTOCOMMIT from (values(0)) AUTOCOMMIT(AUTOCOMMIT);
+
+-- Expect success
+prepare s1 from SELECT AVERAGE_STREAM_WAIT AVERAGE_STREAM_WAIT from (values(0)) AVERAGE_STREAM_WAIT(AVERAGE_STREAM_WAIT);
+
+-- Expect success
+prepare s1 from SELECT BALANCE BALANCE from (values(0)) BALANCE(BALANCE);
+
+-- Expect success
+prepare s1 from SELECT BIGINT BIGINT from (values(0)) BIGINT(BIGINT);
+
+-- Expect success
+prepare s1 from SELECT BLOCKS BLOCKS from (values(0)) BLOCKS(BLOCKS);
+
+-- Expect success
+prepare s1 from SELECT BLOCKSIZE BLOCKSIZE from (values(0)) BLOCKSIZE(BLOCKSIZE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE BROWSE from (values(0)) BROWSE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BUFFERED BUFFERED from (values(0)) BUFFERED(BUFFERED);
+
+-- Expect success
+prepare s1 from SELECT BYTE BYTE from (values(0)) BYTE(BYTE);
+
+-- Expect success
+prepare s1 from SELECT BYTEINT BYTEINT from (values(0)) BYTEINT(BYTEINT);
+
+-- Expect success
+prepare s1 from SELECT BYTES BYTES from (values(0)) BYTES(BYTES);
+
+-- Expect success
+prepare s1 from SELECT CASESPECIFIC CASESPECIFIC from (values(0)) CASESPECIFIC(CASESPECIFIC);
+
+-- Expect success
+prepare s1 from SELECT CATALOG_NAME CATALOG_NAME from (values(0)) CATALOG_NAME(CATALOG_NAME);
+
+-- Expect success
+prepare s1 from SELECT CEILING CEILING from (values(0)) CEILING(CEILING);
+
+-- Expect success
+prepare s1 from SELECT CHARACTER_SET_CATALOG CHARACTER_SET_CATALOG from (values(0)) CHARACTER_SET_CATALOG(CHARACTER_SET_CATALOG);
+
+-- Expect success
+prepare s1 from SELECT CHARACTER_SET_NAME CHARACTER_SET_NAME from (values(0)) CHARACTER_SET_NAME(CHARACTER_SET_NAME);
+
+-- Expect success
+prepare s1 from SELECT CHARACTER_SET_SCHEMA CHARACTER_SET_SCHEMA from (values(0)) CHARACTER_SET_SCHEMA(CHARACTER_SET_SCHEMA);
+
+-- Expect success
+prepare s1 from SELECT CHECKSUM CHECKSUM from (values(0)) CHECKSUM(CHECKSUM);
+
+-- Expect success
+prepare s1 from SELECT CLASS_ORIGIN CLASS_ORIGIN from (values(0)) CLASS_ORIGIN(CLASS_ORIGIN);
+
+-- Expect success
+prepare s1 from SELECT CLEAR CLEAR from (values(0)) CLEAR(CLEAR);
+
+-- Expect success
+prepare s1 from SELECT CLEARONPURGE CLEARONPURGE from (values(0)) CLEARONPURGE(CLEARONPURGE);
+
+-- Expect success
+prepare s1 from SELECT CLUSTERS CLUSTERS from (values(0)) CLUSTERS(CLUSTERS);
+
+-- Expect success
+prepare s1 from SELECT CMP CMP from (values(0)) CMP(CMP);
+
+-- Expect success
+prepare s1 from SELECT COLLATION_CATALOG COLLATION_CATALOG from (values(0)) COLLATION_CATALOG(COLLATION_CATALOG);
+
+-- Expect success
+prepare s1 from SELECT COLLATION_NAME COLLATION_NAME from (values(0)) COLLATION_NAME(COLLATION_NAME);
+
+-- Expect success
+prepare s1 from SELECT COLLATION_SCHEMA COLLATION_SCHEMA from (values(0)) COLLATION_SCHEMA(COLLATION_SCHEMA);
+
+-- Expect success
+prepare s1 from SELECT COLUMN_NAME COLUMN_NAME from (values(0)) COLUMN_NAME(COLUMN_NAME);
+
+-- Expect success
+prepare s1 from SELECT COLUMN_NUMBER COLUMN_NUMBER from (values(0)) COLUMN_NUMBER(COLUMN_NUMBER);
+
+-- Expect success
+prepare s1 from SELECT COMMAND_FUNCTION COMMAND_FUNCTION from (values(0)) COMMAND_FUNCTION(COMMAND_FUNCTION);
+
+-- Expect success
+prepare s1 from SELECT COMMITTED COMMITTED from (values(0)) COMMITTED(COMMITTED);
+
+-- Expect success
+prepare s1 from SELECT COMP COMP from (values(0)) COMP(COMP);
+
+-- Expect success
+prepare s1 from SELECT COMPRESS COMPRESS from (values(0)) COMPRESS(COMPRESS);
+
+-- Expect success
+prepare s1 from SELECT CONCAT CONCAT from (values(0)) CONCAT(CONCAT);
+
+-- Expect success
+prepare s1 from SELECT CONDITION_NUMBER CONDITION_NUMBER from (values(0)) CONDITION_NUMBER(CONDITION_NUMBER);
+
+-- Expect success
+prepare s1 from SELECT CONFIG CONFIG from (values(0)) CONFIG(CONFIG);
+
+-- Expect success
+prepare s1 from SELECT CONFLICT CONFLICT from (values(0)) CONFLICT(CONFLICT);
+
+-- Expect success
+prepare s1 from SELECT CONNECTION_NAME CONNECTION_NAME from (values(0)) CONNECTION_NAME(CONNECTION_NAME);
+
+-- Expect success
+prepare s1 from SELECT CONSTRAINT_CATALOG CONSTRAINT_CATALOG from (values(0)) CONSTRAINT_CATALOG(CONSTRAINT_CATALOG);
+
+-- Expect success
+prepare s1 from SELECT CONSTRAINT_NAME CONSTRAINT_NAME from (values(0)) CONSTRAINT_NAME(CONSTRAINT_NAME);
+
+-- Expect success
+prepare s1 from SELECT CONSTRAINT_SCHEMA CONSTRAINT_SCHEMA from (values(0)) CONSTRAINT_SCHEMA(CONSTRAINT_SCHEMA);
+
+-- Expect success
+prepare s1 from SELECT CONTROL CONTROL from (values(0)) CONTROL(CONTROL);
+
+-- Expect success
+prepare s1 from SELECT CONVERTFROMHEX CONVERTFROMHEX from (values(0)) CONVERTFROMHEX(CONVERTFROMHEX);
+
+-- Expect success
+prepare s1 from SELECT CONVERTTIMESTAMP CONVERTTIMESTAMP from (values(0)) CONVERTTIMESTAMP(CONVERTTIMESTAMP);
+
+-- Expect success
+prepare s1 from SELECT CONVERTTOHEX CONVERTTOHEX from (values(0)) CONVERTTOHEX(CONVERTTOHEX);
+
+-- Expect success
+prepare s1 from SELECT COS COS from (values(0)) COS(COS);
+
+-- Expect success
+prepare s1 from SELECT COSH COSH from (values(0)) COSH(COSH);
+
+-- Expect success
+prepare s1 from SELECT COST COST from (values(0)) COST(COST);
+
+-- Expect success
+prepare s1 from SELECT CURDATE CURDATE from (values(0)) CURDATE(CURDATE);
+
+-- Expect success
+prepare s1 from SELECT CURSOR_NAME CURSOR_NAME from (values(0)) CURSOR_NAME(CURSOR_NAME);
+
+-- Expect success
+prepare s1 from SELECT CURTIME CURTIME from (values(0)) CURTIME(CURTIME);
+
+-- Expect success
+prepare s1 from SELECT D D from (values(0)) D(D);
+
+-- Expect success
+prepare s1 from SELECT DATA DATA from (values(0)) DATA(DATA);
+
+-- Expect success
+prepare s1 from SELECT DATEFORMAT DATEFORMAT from (values(0)) DATEFORMAT(DATEFORMAT);
+
+-- Expect success
+prepare s1 from SELECT DATETIME_CODE DATETIME_CODE from (values(0)) DATETIME_CODE(DATETIME_CODE);
+
+-- Expect success
+prepare s1 from SELECT DAYNAME DAYNAME from (values(0)) DAYNAME(DAYNAME);
+
+-- Expect success
+prepare s1 from SELECT DAYOFMONTH DAYOFMONTH from (values(0)) DAYOFMONTH(DAYOFMONTH);
+
+-- Expect success
+prepare s1 from SELECT DAYOFWEEK DAYOFWEEK from (values(0)) DAYOFWEEK(DAYOFWEEK);
+
+-- Expect success
+prepare s1 from SELECT DAYOFYEAR DAYOFYEAR from (values(0)) DAYOFYEAR(DAYOFYEAR);
+
+-- Expect success
+prepare s1 from SELECT DCOMPRESS DCOMPRESS from (values(0)) DCOMPRESS(DCOMPRESS);
+
+-- Expect success
+prepare s1 from SELECT DEFAULTS DEFAULTS from (values(0)) DEFAULTS(DEFAULTS);
+
+-- Expect success
+prepare s1 from SELECT DEFINITION DEFINITION from (values(0)) DEFINITION(DEFINITION);
+
+-- Expect success
+prepare s1 from SELECT DEGREES DEGREES from (values(0)) DEGREES(DEGREES);
+
+-- Expect success
+prepare s1 from SELECT DESCENDING DESCENDING from (values(0)) DESCENDING(DESCENDING);
+
+-- Expect success
+prepare s1 from SELECT DETAIL DETAIL from (values(0)) DETAIL(DETAIL);
+
+-- Expect success
+prepare s1 from SELECT DIFF1 DIFF1 from (values(0)) DIFF1(DIFF1);
+
+-- Expect success
+prepare s1 from SELECT DIFF2 DIFF2 from (values(0)) DIFF2(DIFF2);
+
+-- Expect success
+prepare s1 from SELECT DISPLAY DISPLAY from (values(0)) DISPLAY(DISPLAY);
+
+-- Expect success
+prepare s1 from SELECT DO DO from (values(0)) DO(DO);
+
+-- Expect success
+prepare s1 from SELECT DROPPABLE DROPPABLE from (values(0)) DROPPABLE(DROPPABLE);
+
+-- Expect success
+prepare s1 from SELECT DSLACK DSLACK from (values(0)) DSLACK(DSLACK);
+
+-- Expect success
+prepare s1 from SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
+
+-- Expect success
+prepare s1 from SELECT DYNAMIC_FUNCTION DYNAMIC_FUNCTION from (values(0)) DYNAMIC_FUNCTION(DYNAMIC_FUNCTION);
+
+-- Expect success
+prepare s1 from SELECT ENCODE_KEY ENCODE_KEY from (values(0)) ENCODE_KEY(ENCODE_KEY);
+
+-- Expect success
+prepare s1 from SELECT ENTRY ENTRY from (values(0)) ENTRY(ENTRY);
+
+-- Expect success
+prepare s1 from SELECT EUROPEAN EUROPEAN from (values(0)) EUROPEAN(EUROPEAN);
+
+-- Expect success
+prepare s1 from SELECT EVERY EVERY from (values(0)) EVERY(EVERY);
+
+-- Expect success
+prepare s1 from SELECT EXCLUSIVE EXCLUSIVE from (values(0)) EXCLUSIVE(EXCLUSIVE);
+
+-- Expect success
+prepare s1 from SELECT EXECUTION EXECUTION from (values(0)) EXECUTION(EXECUTION);
+
+-- Expect success
+prepare s1 from SELECT EXIT EXIT from (values(0)) EXIT(EXIT);
+
+-- Expect success
+prepare s1 from SELECT EXP EXP from (values(0)) EXP(EXP);
+
+-- Expect success
+prepare s1 from SELECT EXPLAIN EXPLAIN from (values(0)) EXPLAIN(EXPLAIN);
+
+-- Expect success
+prepare s1 from SELECT FALLBACK FALLBACK from (values(0)) FALLBACK(FALLBACK);
+
+-- Expect success
+prepare s1 from SELECT FIRSTDAYOFYEAR FIRSTDAYOFYEAR from (values(0)) FIRSTDAYOFYEAR(FIRSTDAYOFYEAR);
+
+-- Expect success
+prepare s1 from SELECT FIRST_FSCODE FIRST_FSCODE from (values(0)) FIRST_FSCODE(FIRST_FSCODE);
+
+-- Expect success
+prepare s1 from SELECT FLOOR FLOOR from (values(0)) FLOOR(FLOOR);
+
+-- Expect success
+prepare s1 from SELECT FN FN from (values(0)) FN(FN);
+
+-- Expect success
+prepare s1 from SELECT FORMAT FORMAT from (values(0)) FORMAT(FORMAT);
+
+-- Expect success
+prepare s1 from SELECT FREESPACE FREESPACE from (values(0)) FREESPACE(FREESPACE);
+
+-- Expect success
+prepare s1 from SELECT G G from (values(0)) G(G);
+
+-- Expect success
+prepare s1 from SELECT GENERATE GENERATE from (values(0)) GENERATE(GENERATE);
+
+-- Expect success
+prepare s1 from SELECT HASH HASH from (values(0)) HASH(HASH);
+
+-- Expect success
+prepare s1 from SELECT HASHPARTFUNC HASHPARTFUNC from (values(0)) HASHPARTFUNC(HASHPARTFUNC);
+
+-- Expect success
+prepare s1 from SELECT HEADING HEADING from (values(0)) HEADING(HEADING);
+
+-- Expect success
+prepare s1 from SELECT HEADINGS HEADINGS from (values(0)) HEADINGS(HEADINGS);
+
+-- Expect success
+prepare s1 from SELECT HIGH_VALUE HIGH_VALUE from (values(0)) HIGH_VALUE(HIGH_VALUE);
+
+-- Expect success
+prepare s1 from SELECT HOLD HOLD from (values(0)) HOLD(HOLD);
+
+-- Expect success
+prepare s1 from SELECT HORIZONTAL HORIZONTAL from (values(0)) HORIZONTAL(HORIZONTAL);
+
+-- Expect success
+prepare s1 from SELECT ICOMPRESS ICOMPRESS from (values(0)) ICOMPRESS(ICOMPRESS);
+
+-- Expect success
+prepare s1 from SELECT INCLUSIVE INCLUSIVE from (values(0)) INCLUSIVE(INCLUSIVE);
+
+-- Expect success
+prepare s1 from SELECT INDEX INDEX from (values(0)) INDEX(INDEX);
+
+-- Expect success
+prepare s1 from SELECT INDEX_TABLE INDEX_TABLE from (values(0)) INDEX_TABLE(INDEX_TABLE);
+
+-- Expect success
+prepare s1 from SELECT INDICATOR_DATA INDICATOR_DATA from (values(0)) INDICATOR_DATA(INDICATOR_DATA);
+
+-- Expect success
+prepare s1 from SELECT INDICATOR_POINTER INDICATOR_POINTER from (values(0)) INDICATOR_POINTER(INDICATOR_POINTER);
+
+-- Expect success
+prepare s1 from SELECT INDICATOR_TYPE INDICATOR_TYPE from (values(0)) INDICATOR_TYPE(INDICATOR_TYPE);
+
+-- Expect success
+prepare s1 from SELECT INITIALIZE INITIALIZE from (values(0)) INITIALIZE(INITIALIZE);
+
+-- Expect success
+prepare s1 from SELECT INTERVALS INTERVALS from (values(0)) INTERVALS(INTERVALS);
+
+-- Expect success
+prepare s1 from SELECT INVOKE INVOKE from (values(0)) INVOKE(INVOKE);
+
+-- Expect success
+prepare s1 from SELECT ISLACK ISLACK from (values(0)) ISLACK(ISLACK);
+
+-- Expect success
+prepare s1 from SELECT JOURNAL JOURNAL from (values(0)) JOURNAL(JOURNAL);
+
+-- Expect success
+prepare s1 from SELECT JULIANTIMESTAMP JULIANTIMESTAMP from (values(0)) JULIANTIMESTAMP(JULIANTIMESTAMP);
+
+-- Expect success
+prepare s1 from SELECT K K from (values(0)) K(K);
+
+-- Expect success
+prepare s1 from SELECT LARGEINT LARGEINT from (values(0)) LARGEINT(LARGEINT);
+
+-- Expect success
+prepare s1 from SELECT LASTNOTNULL LASTNOTNULL from (values(0)) LASTNOTNULL(LASTNOTNULL);
+
+-- Expect success
+prepare s1 from SELECT LAST_FSCODE LAST_FSCODE from (values(0)) LAST_FSCODE(LAST_FSCODE);
+
+-- Expect success
+prepare s1 from SELECT LAST_SYSKEY LAST_SYSKEY from (values(0)) LAST_SYSKEY(LAST_SYSKEY);
+
+-- Expect success
+prepare s1 from SELECT LCASE LCASE from (values(0)) LCASE(LCASE);
+
+-- Expect success
+prepare s1 from SELECT LEADING_PRECISION LEADING_PRECISION from (values(0)) LEADING_PRECISION(LEADING_PRECISION);
+
+-- Expect success
+prepare s1 from SELECT LENGTH LENGTH from (values(0)) LENGTH(LENGTH);
+
+-- Expect success
+prepare s1 from SELECT LINE_NUMBER LINE_NUMBER from (values(0)) LINE_NUMBER(LINE_NUMBER);
+
+-- Expect success
+prepare s1 from SELECT LOCATE LOCATE from (values(0)) LOCATE(LOCATE);
+
+-- Expect success
+prepare s1 from SELECT LOCATION LOCATION from (values(0)) LOCATION(LOCATION);
+
+-- Expect success
+prepare s1 from SELECT LOCK LOCK from (values(0)) LOCK(LOCK);
+
+-- Expect success
+prepare s1 from SELECT LOCKING LOCKING from (values(0)) LOCKING(LOCKING);
+
+-- Expect success
+prepare s1 from SELECT LOCKLENGTH LOCKLENGTH from (values(0)) LOCKLENGTH(LOCKLENGTH);
+
+-- Expect success
+prepare s1 from SELECT LOG LOG from (values(0)) LOG(LOG);
+
+-- Expect success
+prepare s1 from SELECT LOG10 LOG10 from (values(0)) LOG10(LOG10);
+
+-- Expect success
+prepare s1 from SELECT LONG LONG from (values(0)) LONG(LONG);
+
+-- Expect success
+prepare s1 from SELECT LOW_VALUE LOW_VALUE from (values(0)) LOW_VALUE(LOW_VALUE);
+
+-- Expect success
+prepare s1 from SELECT LPAD LPAD from (values(0)) LPAD(LPAD);
+
+-- Expect success
+prepare s1 from SELECT LSDEC LSDEC from (values(0)) LSDEC(LSDEC);
+
+-- Expect success
+prepare s1 from SELECT LSDECIMAL LSDECIMAL from (values(0)) LSDECIMAL(LSDECIMAL);
+
+-- Expect success
+prepare s1 from SELECT LTRIM LTRIM from (values(0)) LTRIM(LTRIM);
+
+-- Expect success
+prepare s1 from SELECT M M from (values(0)) M(M);
+
+-- Expect success
+prepare s1 from SELECT MAXSIZE MAXSIZE from (values(0)) MAXSIZE(MAXSIZE);
+
+-- Expect success
+prepare s1 from SELECT MESSAGE_LENGTH MESSAGE_LENGTH from (values(0)) MESSAGE_LENGTH(MESSAGE_LENGTH);
+
+-- Expect success
+prepare s1 from SELECT MESSAGE_OCTET_LENGTH MESSAGE_OCTET_LENGTH from (values(0)) MESSAGE_OCTET_LENGTH(MESSAGE_OCTET_LENGTH);
+
+-- Expect success
+prepare s1 from SELECT MESSAGE_TEXT MESSAGE_TEXT from (values(0)) MESSAGE_TEXT(MESSAGE_TEXT);
+
+-- Expect success
+prepare s1 from SELECT MOD MOD from (values(0)) MOD(MOD);
+
+-- Expect success
+prepare s1 from SELECT MODE MODE from (values(0)) MODE(MODE);
+
+-- Expect success
+prepare s1 from SELECT MONTHNAME MONTHNAME from (values(0)) MONTHNAME(MONTHNAME);
+
+-- Expect success
+prepare s1 from SELECT MORE MORE from (values(0)) MORE(MORE);
+
+-- Expect success
+prepare s1 from SELECT MOVE MOVE from (values(0)) MOVE(MOVE);
+
+-- Expect success
+prepare s1 from SELECT MOVEMENT MOVEMENT from (values(0)) MOVEMENT(MOVEMENT);
+
+-- Expect success
+prepare s1 from SELECT MOVINGAVG MOVINGAVG from (values(0)) MOVINGAVG(MOVINGAVG);
+
+-- Expect success
+prepare s1 from SELECT MOVINGCOUNT MOVINGCOUNT from (values(0)) MOVINGCOUNT(MOVINGCOUNT);
+
+-- Expect success
+prepare s1 from SELECT MOVINGMAX MOVINGMAX from (values(0)) MOVINGMAX(MOVINGMAX);
+
+-- Expect success
+prepare s1 from SELECT MOVINGMIN MOVINGMIN from (values(0)) MOVINGMIN(MOVINGMIN);
+
+-- Expect success
+prepare s1 from SELECT MOVINGSTDDEV MOVINGSTDDEV from (values(0)) MOVINGSTDDEV(MOVINGSTDDEV);
+
+-- Expect success
+prepare s1 from SELECT MOVINGSUM MOVINGSUM from (values(0)) MOVINGSUM(MOVINGSUM);
+
+-- Expect success
+prepare s1 from SELECT MOVINGVARIANCE MOVINGVARIANCE from (values(0)) MOVINGVARIANCE(MOVINGVARIANCE);
+
+-- Expect success
+prepare s1 from SELECT MPLOC MPLOC from (values(0)) MPLOC(MPLOC);
+
+-- Expect success
+prepare s1 from SELECT MULTISET MULTISET from (values(0)) MULTISET(MULTISET);
+
+-- Expect success
+prepare s1 from SELECT NAME NAME from (values(0)) NAME(NAME);
+
+-- Expect success
+prepare s1 from SELECT NAMETYPE NAMETYPE from (values(0)) NAMETYPE(NAMETYPE);
+
+-- Expect success
+prepare s1 from SELECT NATIVE NATIVE from (values(0)) NATIVE(NATIVE);
+
+-- Expect success
+prepare s1 from SELECT NOW NOW from (values(0)) NOW(NOW);
+
+-- Expect success
+prepare s1 from SELECT NULLABLE NULLABLE from (values(0)) NULLABLE(NULLABLE);
+
+-- Expect success
+prepare s1 from SELECT NUMBER NUMBER from (values(0)) NUMBER(NUMBER);
+
+-- Expect success
+prepare s1 from SELECT OFFSET OFFSET from (values(0)) OFFSET(OFFSET);
+
+-- Expect success
+prepare s1 from SELECT OJ OJ from (values(0)) OJ(OJ);
+
+-- Expect success
+prepare s1 from SELECT OS_USERID OS_USERID from (values(0)) OS_USERID(OS_USERID);
+
+-- Expect success
+prepare s1 from SELECT PARALLEL PARALLEL from (values(0)) PARALLEL(PARALLEL);
+
+-- Expect success
+prepare s1 from SELECT PARTITION PARTITION from (values(0)) PARTITION(PARTITION);
+
+-- Expect success
+prepare s1 from SELECT PARTITIONS PARTITIONS from (values(0)) PARTITIONS(PARTITIONS);
+
+-- Expect success
+prepare s1 from SELECT PERCENT PERCENT from (values(0)) PERCENT(PERCENT);
+
+-- Expect success
+prepare s1 from SELECT PERFORM PERFORM from (values(0)) PERFORM(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERIODIC PERIODIC from (values(0)) PERIODIC(PERIODIC);
+
+-- Expect success
+prepare s1 from SELECT PI PI from (values(0)) PI(PI);
+
+-- Expect success
+prepare s1 from SELECT PIC PIC from (values(0)) PIC(PIC);
+
+-- Expect success
+prepare s1 from SELECT PICTURE PICTURE from (values(0)) PICTURE(PICTURE);
+
+-- Expect success
+prepare s1 from SELECT POPULATE POPULATE from (values(0)) POPULATE(POPULATE);
+
+-- Expect success
+prepare s1 from SELECT POWER POWER from (values(0)) POWER(POWER);
+
+-- Expect success
+prepare s1 from SELECT PROMPT PROMPT from (values(0)) PROMPT(PROMPT);
+
+-- Expect success
+prepare s1 from SELECT PROTECTION PROTECTION from (values(0)) PROTECTION(PROTECTION);
+
+-- Expect success
+prepare s1 from SELECT QUARTER QUARTER from (values(0)) QUARTER(QUARTER);
+
+-- Expect success
+prepare s1 from SELECT QUERY QUERY from (values(0)) QUERY(QUERY);
+
+-- Expect success
+prepare s1 from SELECT RADIANS RADIANS from (values(0)) RADIANS(RADIANS);
+
+-- Expect success
+prepare s1 from SELECT RAND RAND from (values(0)) RAND(RAND);
+
+-- Expect success
+prepare s1 from SELECT RANDOM RANDOM from (values(0)) RANDOM(RANDOM);
+
+-- Expect success
+prepare s1 from SELECT RANGE RANGE from (values(0)) RANGE(RANGE);
+
+-- Expect success
+prepare s1 from SELECT RANGE_N RANGE_N from (values(0)) RANGE_N(RANGE_N);
+
+-- Expect success
+prepare s1 from SELECT REINITIALIZE REINITIALIZE from (values(0)) REINITIALIZE(REINITIALIZE);
+
+-- Expect success
+prepare s1 from SELECT RENAME RENAME from (values(0)) RENAME(RENAME);
+
+-- Expect success
+prepare s1 from SELECT REPEAT REPEAT from (values(0)) REPEAT(REPEAT);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE REPEATABLE from (values(0)) REPEATABLE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT RESET RESET from (values(0)) RESET(RESET);
+
+-- Expect success
+prepare s1 from SELECT RESOURCE_FORK RESOURCE_FORK from (values(0)) RESOURCE_FORK(RESOURCE_FORK);
+
+-- Expect success
+prepare s1 from SELECT RETURNED_LENGTH RETURNED_LENGTH from (values(0)) RETURNED_LENGTH(RETURNED_LENGTH);
+
+-- Expect success
+prepare s1 from SELECT RETURNED_OCTET_LENGTH RETURNED_OCTET_LENGTH from (values(0)) RETURNED_OCTET_LENGTH(RETURNED_OCTET_LENGTH);
+
+-- Expect success
+prepare s1 from SELECT RETURNED_SQLSTATE RETURNED_SQLSTATE from (values(0)) RETURNED_SQLSTATE(RETURNED_SQLSTATE);
+
+-- Expect success
+prepare s1 from SELECT ROLE ROLE from (values(0)) ROLE(ROLE);
+
+-- Expect success
+prepare s1 from SELECT ROUND ROUND from (values(0)) ROUND(ROUND);
+
+-- Expect success
+prepare s1 from SELECT ROUNDROBINPARTFUNC ROUNDROBINPARTFUNC from (values(0)) ROUNDROBINPARTFUNC(ROUNDROBINPARTFUNC);
+
+-- Expect success
+prepare s1 from SELECT ROWSET ROWSET from (values(0)) ROWSET(ROWSET);
+
+-- Expect success
+prepare s1 from SELECT ROW_COUNT ROW_COUNT from (values(0)) ROW_COUNT(ROW_COUNT);
+
+-- Expect success
+prepare s1 from SELECT ROW_NUMBER ROW_NUMBER from (values(0)) ROW_NUMBER(ROW_NUMBER);
+
+-- Expect success
+prepare s1 from SELECT RPAD RPAD from (values(0)) RPAD(RPAD);
+
+-- Expect success
+prepare s1 from SELECT RTRIM RTRIM from (values(0)) RTRIM(RTRIM);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGAVG RUNNINGAVG from (values(0)) RUNNINGAVG(RUNNINGAVG);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGCOUNT RUNNINGCOUNT from (values(0)) RUNNINGCOUNT(RUNNINGCOUNT);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGMAX RUNNINGMAX from (values(0)) RUNNINGMAX(RUNNINGMAX);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGMIN RUNNINGMIN from (values(0)) RUNNINGMIN(RUNNINGMIN);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGSTDDEV RUNNINGSTDDEV from (values(0)) RUNNINGSTDDEV(RUNNINGSTDDEV);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGSUM RUNNINGSUM from (values(0)) RUNNINGSUM(RUNNINGSUM);
+
+-- Expect success
+prepare s1 from SELECT RUNNINGVARIANCE RUNNINGVARIANCE from (values(0)) RUNNINGVARIANCE(RUNNINGVARIANCE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE SAMPLE from (values(0)) SAMPLE(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SCALE SCALE from (values(0)) SCALE(SCALE);
+
+-- Expect success
+prepare s1 from SELECT SCHEMA_NAME SCHEMA_NAME from (values(0)) SCHEMA_NAME(SCHEMA_NAME);
+
+-- Expect success
+prepare s1 from SELECT SEPARATE SEPARATE from (values(0)) SEPARATE(SEPARATE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE SEQUENCE from (values(0)) SEQUENCE(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE SERIALIZABLE from (values(0)) SERIALIZABLE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALWRITES SERIALWRITES from (values(0)) SERIALWRITES(SERIALWRITES);
+
+-- Expect success
+prepare s1 from SELECT SERVER_NAME SERVER_NAME from (values(0)) SERVER_NAME(SERVER_NAME);
+
+-- Expect success
+prepare s1 from SELECT SHAPE SHAPE from (values(0)) SHAPE(SHAPE);
+
+-- Expect success
+prepare s1 from SELECT SHARE SHARE from (values(0)) SHARE(SHARE);
+
+-- Expect success
+prepare s1 from SELECT SHOWCONTROL SHOWCONTROL from (values(0)) SHOWCONTROL(SHOWCONTROL);
+
+-- Expect success
+prepare s1 from SELECT SHOWDDL SHOWDDL from (values(0)) SHOWDDL(SHOWDDL);
+
+-- Expect success
+prepare s1 from SELECT SHOWLABEL SHOWLABEL from (values(0)) SHOWLABEL(SHOWLABEL);
+
+-- Expect success
+prepare s1 from SELECT SHOWLEAKS SHOWLEAKS from (values(0)) SHOWLEAKS(SHOWLEAKS);
+
+-- Expect success
+prepare s1 from SELECT SHOWPLAN SHOWPLAN from (values(0)) SHOWPLAN(SHOWPLAN);
+
+-- Expect success
+prepare s1 from SELECT SHOWSHAPE SHOWSHAPE from (values(0)) SHOWSHAPE(SHOWSHAPE);
+
+-- Expect success
+prepare s1 from SELECT SIDEINSERTS SIDEINSERTS from (values(0)) SIDEINSERTS(SIDEINSERTS);
+
+-- Expect success
+prepare s1 from SELECT SIGN SIGN from (values(0)) SIGN(SIGN);
+
+-- Expect success
+prepare s1 from SELECT SIGNED SIGNED from (values(0)) SIGNED(SIGNED);
+
+-- Expect success
+prepare s1 from SELECT SIN SIN from (values(0)) SIN(SIN);
+
+-- Expect success
+prepare s1 from SELECT SINCE SINCE from (values(0)) SINCE(SINCE);
+
+-- Expect success
+prepare s1 from SELECT SINH SINH from (values(0)) SINH(SINH);
+
+-- Expect success
+prepare s1 from SELECT SKIP SKIP from (values(0)) SKIP(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SORT SORT from (values(0)) SORT(SORT);
+
+-- Expect success
+prepare s1 from SELECT SOURCE_FILE SOURCE_FILE from (values(0)) SOURCE_FILE(SOURCE_FILE);
+
+-- Expect success
+prepare s1 from SELECT SQLMP SQLMP from (values(0)) SQLMP(SQLMP);
+
+-- Expect success
+prepare s1 from SELECT SQL_BIGINT SQL_BIGINT from (values(0)) SQL_BIGINT(SQL_BIGINT);
+
+-- Expect success
+prepare s1 from SELECT SQL_WARNING SQL_WARNING from (values(0)) SQL_WARNING(SQL_WARNING);
+
+-- Expect success
+prepare s1 from SELECT SQRT SQRT from (values(0)) SQRT(SQRT);
+
+-- Expect success
+prepare s1 from SELECT STABLE STABLE from (values(0)) STABLE(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STATEMENT STATEMENT from (values(0)) STATEMENT(STATEMENT);
+
+-- Expect success
+prepare s1 from SELECT STATIC STATIC from (values(0)) STATIC(STATIC);
+
+-- Expect success
+prepare s1 from SELECT STATISTICS STATISTICS from (values(0)) STATISTICS(STATISTICS);
+
+-- Expect success
+prepare s1 from SELECT STDDEV STDDEV from (values(0)) STDDEV(STDDEV);
+
+-- Expect success
+prepare s1 from SELECT STORE STORE from (values(0)) STORE(STORE);
+
+-- Expect success
+prepare s1 from SELECT STREAM STREAM from (values(0)) STREAM(STREAM);
+
+-- Expect success
+prepare s1 from SELECT SUBCLASS_ORIGIN SUBCLASS_ORIGIN from (values(0)) SUBCLASS_ORIGIN(SUBCLASS_ORIGIN);
+
+-- Expect success
+prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+-- Expect success
+prepare s1 from SELECT T T from (values(0)) T(T);
+
+-- Expect success
+prepare s1 from SELECT TABLE_NAME TABLE_NAME from (values(0)) TABLE_NAME(TABLE_NAME);
+
+-- Expect success
+prepare s1 from SELECT TAN TAN from (values(0)) TAN(TAN);
+
+-- Expect success
+prepare s1 from SELECT TANH TANH from (values(0)) TANH(TANH);
+
+-- Expect success
+prepare s1 from SELECT TDMISP TDMISP from (values(0)) TDMISP(TDMISP);
+
+-- Expect success
+prepare s1 from SELECT THIS THIS from (values(0)) THIS(THIS);
+
+-- Expect success
+prepare s1 from SELECT TRUNCATE TRUNCATE from (values(0)) TRUNCATE(TRUNCATE);
+
+-- Expect success
+prepare s1 from SELECT TS TS from (values(0)) TS(TS);
+
+-- Expect success
+prepare s1 from SELECT TYPE TYPE from (values(0)) TYPE(TYPE);
+
+-- Expect success
+prepare s1 from SELECT TYPE_ANSI TYPE_ANSI from (values(0)) TYPE_ANSI(TYPE_ANSI);
+
+-- Expect success
+prepare s1 from SELECT TYPE_FS TYPE_FS from (values(0)) TYPE_FS(TYPE_FS);
+
+-- Expect success
+prepare s1 from SELECT UCASE UCASE from (values(0)) UCASE(UCASE);
+
+-- Expect success
+prepare s1 from SELECT UNBOUNDED UNBOUNDED from (values(0)) UNBOUNDED(UNBOUNDED);
+
+-- Expect success
+prepare s1 from SELECT UNCOMMITTED UNCOMMITTED from (values(0)) UNCOMMITTED(UNCOMMITTED);
+
+-- Expect success
+prepare s1 from SELECT UNICODE_CHAR UNICODE_CHAR from (values(0)) UNICODE_CHAR(UNICODE_CHAR);
+
+-- Expect success
+prepare s1 from SELECT UNICODE_VALUE UNICODE_VALUE from (values(0)) UNICODE_VALUE(UNICODE_VALUE);
+
+-- Expect success
+prepare s1 from SELECT UNLOCK UNLOCK from (values(0)) UNLOCK(UNLOCK);
+
+-- Expect success
+prepare s1 from SELECT UNNAMED UNNAMED from (values(0)) UNNAMED(UNNAMED);
+
+-- Expect success
+prepare s1 from SELECT UNSIGNED UNSIGNED from (values(0)) UNSIGNED(UNSIGNED);
+
+-- Expect success
+prepare s1 from SELECT UPPERCASE UPPERCASE from (values(0)) UPPERCASE(UPPERCASE);
+
+-- Expect success
+prepare s1 from SELECT USA USA from (values(0)) USA(USA);
+
+-- Expect success
+prepare s1 from SELECT VARIABLE_DATA VARIABLE_DATA from (values(0)) VARIABLE_DATA(VARIABLE_DATA);
+
+-- Expect success
+prepare s1 from SELECT VARIABLE_POINTER VARIABLE_POINTER from (values(0)) VARIABLE_POINTER(VARIABLE_POINTER);
+
+-- Expect success
+prepare s1 from SELECT VARIANCE VARIANCE from (values(0)) VARIANCE(VARIANCE);
+
+-- Expect success
+prepare s1 from SELECT VARNCHAR VARNCHAR from (values(0)) VARNCHAR(VARNCHAR);
+
+-- Expect success
+prepare s1 from SELECT VERTICAL VERTICAL from (values(0)) VERTICAL(VERTICAL);
+
+-- Expect success
+prepare s1 from SELECT VSBB VSBB from (values(0)) VSBB(VSBB);
+
+-- Expect success
+prepare s1 from SELECT WAITED WAITED from (values(0)) WAITED(WAITED);
+
+-- Expect success
+prepare s1 from SELECT WEEK WEEK from (values(0)) WEEK(WEEK);
+
+-- Expect success
+prepare s1 from SELECT ABSOLUTE ABSOLUTE from (values(0)) ABSOLUTE(ABSOLUTE);
+
+-- Expect success
+prepare s1 from SELECT OPERATION OPERATION from (values(0)) OPERATION(OPERATION);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT BROWSE ACCESS from (values(0)) ACCESS(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE BROWSE from (values(0)) BROWSE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE CONFLICT from (values(0)) CONFLICT(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE DROPPABLE from (values(0)) DROPPABLE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE PERIODIC from (values(0)) PERIODIC(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE RANDOM from (values(0)) RANDOM(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE REPEATABLE from (values(0)) REPEATABLE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE SERIALIZABLE from (values(0)) SERIALIZABLE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE SKIP from (values(0)) SKIP(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT BROWSE STABLE from (values(0)) STABLE(BROWSE);
+
+-- Expect success
+prepare s1 from SELECT PERFORM ACCESS from (values(0)) ACCESS(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM BROWSE from (values(0)) BROWSE(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM CONFLICT from (values(0)) CONFLICT(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM DROPPABLE from (values(0)) DROPPABLE(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM PERIODIC from (values(0)) PERIODIC(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM RANDOM from (values(0)) RANDOM(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM REPEATABLE from (values(0)) REPEATABLE(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM SERIALIZABLE from (values(0)) SERIALIZABLE(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM SKIP from (values(0)) SKIP(PERFORM);
+
+-- Expect success
+prepare s1 from SELECT PERFORM STABLE from (values(0)) STABLE(PERFORM);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT REPEATABLE ACCESS from (values(0)) ACCESS(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE BROWSE from (values(0)) BROWSE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE CONFLICT from (values(0)) CONFLICT(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE DROPPABLE from (values(0)) DROPPABLE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE PERIODIC from (values(0)) PERIODIC(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE RANDOM from (values(0)) RANDOM(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE REPEATABLE from (values(0)) REPEATABLE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE SERIALIZABLE from (values(0)) SERIALIZABLE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE SKIP from (values(0)) SKIP(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT REPEATABLE STABLE from (values(0)) STABLE(REPEATABLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE ACCESS from (values(0)) ACCESS(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE BROWSE from (values(0)) BROWSE(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE CONFLICT from (values(0)) CONFLICT(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE DROPPABLE from (values(0)) DROPPABLE(SAMPLE);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT SAMPLE PERIODIC from (values(0)) PERIODIC(SAMPLE);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT SAMPLE RANDOM from (values(0)) RANDOM(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE REPEATABLE from (values(0)) REPEATABLE(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE SERIALIZABLE from (values(0)) SERIALIZABLE(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE SKIP from (values(0)) SKIP(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SAMPLE STABLE from (values(0)) STABLE(SAMPLE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE ACCESS from (values(0)) ACCESS(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE BROWSE from (values(0)) BROWSE(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE CONFLICT from (values(0)) CONFLICT(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE DROPPABLE from (values(0)) DROPPABLE(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE PERIODIC from (values(0)) PERIODIC(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE RANDOM from (values(0)) RANDOM(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE REPEATABLE from (values(0)) REPEATABLE(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE SERIALIZABLE from (values(0)) SERIALIZABLE(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE SKIP from (values(0)) SKIP(SEQUENCE);
+
+-- Expect success
+prepare s1 from SELECT SEQUENCE STABLE from (values(0)) STABLE(SEQUENCE);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT SERIALIZABLE ACCESS from (values(0)) ACCESS(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE BROWSE from (values(0)) BROWSE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE CONFLICT from (values(0)) CONFLICT(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE DROPPABLE from (values(0)) DROPPABLE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE PERIODIC from (values(0)) PERIODIC(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE RANDOM from (values(0)) RANDOM(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE REPEATABLE from (values(0)) REPEATABLE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE SERIALIZABLE from (values(0)) SERIALIZABLE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE SKIP from (values(0)) SKIP(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SERIALIZABLE STABLE from (values(0)) STABLE(SERIALIZABLE);
+
+-- Expect success
+prepare s1 from SELECT SKIP ACCESS from (values(0)) ACCESS(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP BROWSE from (values(0)) BROWSE(SKIP);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT SKIP CONFLICT from (values(0)) CONFLICT(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP DROPPABLE from (values(0)) DROPPABLE(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP PERIODIC from (values(0)) PERIODIC(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP RANDOM from (values(0)) RANDOM(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP REPEATABLE from (values(0)) REPEATABLE(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP SERIALIZABLE from (values(0)) SERIALIZABLE(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP SKIP from (values(0)) SKIP(SKIP);
+
+-- Expect success
+prepare s1 from SELECT SKIP STABLE from (values(0)) STABLE(SKIP);
+
+-- Expect SYNTAX error - A matching pair
+prepare s1 from SELECT STABLE ACCESS from (values(0)) ACCESS(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE BROWSE from (values(0)) BROWSE(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE CONFLICT from (values(0)) CONFLICT(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE DROPPABLE from (values(0)) DROPPABLE(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE PERIODIC from (values(0)) PERIODIC(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE RANDOM from (values(0)) RANDOM(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE REPEATABLE from (values(0)) REPEATABLE(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE SERIALIZABLE from (values(0)) SERIALIZABLE(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE SKIP from (values(0)) SKIP(STABLE);
+
+-- Expect success
+prepare s1 from SELECT STABLE STABLE from (values(0)) STABLE(STABLE);
+
+-- Check various flavors of string literals.
+--
+-- Expect success
+prepare s1 from SELECT 'abcd', 'a"cd', 'ab''d',
+                       _ISO88591'abcd', _ISO88591'a"cd', _ISO88591'ab''d',
+                       N'abcd', N'a"cd', N'ab''d'
+                FROM (VALUES(0)) T;
+
+-- Check in the context of special parser flags.
+--
+-- Set PARSER FLAG ALLOW_OLD_AND_NEW_KEYWORD
+set parserflags 16;
+
+-- Expect success
+prepare s1 from SELECT OLD OLD from (values(0)) OLD(OLD);
+
+-- Expect success
+prepare s1 from SELECT NEW NEW from (values(0)) NEW(NEW);
+

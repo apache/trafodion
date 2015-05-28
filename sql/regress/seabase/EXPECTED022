@@ -1,0 +1,578 @@
+>>
+>>cqd hbase_native_iud 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_filter_preds 'ON';
+
+--- SQL operation complete.
+>>
+>>drop hbase table T022HBT1;
+
+--- SQL operation complete.
+>>create hbase table T022HBT1 (column family 'cf');
+
+--- SQL operation complete.
+>>
+>>drop hbase table T022HBT2;
+
+--- SQL operation complete.
+>>create hbase table T022HBT2 (column family 'cf');
+
+--- SQL operation complete.
+>>
+>>drop table if exists t022t1;
+
+--- SQL operation complete.
+>>create table if not exists t022t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>
+>>insert into hbase."_CELL_".t022hbt1 values ('1', 'cf', '1a', -1, '101');
+
+--- 1 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbt1 values ('2', column_create('cf:2b', '201')),
++>                              ('1', column_create('cf:1b', '102'));
+
+--- 2 row(s) inserted.
+>>prepare s from insert into hbase."_ROW_".t022hbt1 values 
++>         (?, column_create((?, ?), ('cf:3b', '302')));
+
+--- SQL command prepared.
+>>execute s using '3', 'cf:3a', '301';
+
+--- 1 row(s) inserted.
+>>
+>>select left(row_id, 10) row_id, column_display(column_details, 40) column_details
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      COLUMN_DETAILS                          
+----------  ----------------------------------------
+
+1           cf:1a => 101, cf:1b => 102              
+2           cf:2b => 201                            
+3           cf:3a => 301, cf:3b => 302              
+
+--- 3 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+1           cf:1a => 101, cf:1b => 102              
+2           cf:2b => 201                            
+3           cf:3a => 301, cf:3b => 302              
+
+--- 3 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details, ('cf:2b', 'cf:1b')), 40) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+1           cf:1b => 102                            
+2           cf:2b => 201                            
+
+--- 2 row(s) selected.
+>>
+>>-- no rows updated. where pred fails.
+>>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
++>          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
++>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '3021';
+
+--- 0 row(s) updated.
+>>
+>>-- no rows updated. column not found in set clause.
+>>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
++>          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
++>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+--- 0 row(s) updated.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>-- one row updated
+>>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
++>          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
++>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+--- 1 row(s) updated.
+>>
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                            
+----------  --------------------------------------------------
+
+1           cf:1a => 101, cf:1b => 102                        
+2           cf:2b => 201                                      
+3           cf:3a => 3010103, cf:3a => 301, cf:3b => 302      
+
+--- 3 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                            
+----------  --------------------------------------------------
+
+1           cf:1a => 101, cf:1b => 102                        
+2           cf:2b => 201                                      
+3           cf:3a => 301, cf:3b => 302                        
+
+--- 3 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>-- one row updated
+>>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
++>          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
++>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+--- 1 row(s) updated.
+>>
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                            
+----------  --------------------------------------------------
+
+1           cf:1a => 101, cf:1b => 102                        
+2           cf:2b => 201                                      
+3           cf:3a => 3010103, cf:3a => 301, cf:3b => 302      
+
+--- 3 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                            
+----------  --------------------------------------------------
+
+1           cf:1a => 101, cf:1b => 102                        
+2           cf:2b => 201                                      
+3           cf:3a => 3010103, cf:3b => 302                    
+
+--- 3 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbt1 values 
++>       ('4', column_create(('cf:4a', '301'), ('cf:4b', '302')));
+
+--- 1 row(s) inserted.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt1 where row_id = '4';
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+4           cf:4a => 301, cf:4b => 302              
+
+--- 1 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>
+>>select col_family, col_name, left(col_value, 20) from hbase."_CELL_".t022hbt1;
+
+COL_FAMILY                                                                                            COL_NAME                                                                                              (EXPR)
+----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------
+
+cf                                                                                                    1a                                                                                                    101                 
+cf                                                                                                    1b                                                                                                    102                 
+cf                                                                                                    2b                                                                                                    201                 
+cf                                                                                                    3a                                                                                                    3010103             
+cf                                                                                                    3b                                                                                                    302                 
+
+--- 5 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt1 where row_id = '4';
+
+--- 0 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:1a'), 20) from hbase."_ROW_".t022hbt1;
+
+(EXPR)              
+--------------------
+
+101                 
+
+--- 1 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
++>  where column_lookup (column_details, 'cf:3b') = '302';
+
+(EXPR)              
+--------------------
+
+3010103             
+
+--- 1 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
++>  where column_lookup (column_details, 'cf:3a') = '301' 
++>     and column_lookup (column_details, 'cf:3b') = '302';
+
+--- 0 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
++>  where column_lookup (column_details, 'cf:3a') = '3010103' 
++>     and column_lookup (column_details, 'cf:3b') = '302';
+
+(EXPR)              
+--------------------
+
+3010103             
+
+--- 1 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
++>  where column_lookup (column_details, 'cf:3b') = '3020';
+
+--- 0 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
++>  where column_lookup (column_details, 'cf:3b') = '302';
+
+(EXPR)              
+--------------------
+
+?                   
+
+--- 1 row(s) selected.
+>>
+>>select column_lookup (column_details, 'cf:3a', cast as int),
++>       column_lookup (column_details, 'cf:3a', cast as int) + 1 
++>  from hbase."_ROW_".t022hbt1;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+    3010103               3010104
+
+--- 1 row(s) selected.
+>>
+>>select column_lookup (column_details, 'cf:3a', cast as int),
++>       column_lookup (column_details, 'cf:3a', cast as int) + 1 
++>  from hbase."_ROW_".t022hbt1
++>   where 
++>       column_lookup (column_details, 'cf:3b', cast as int) = 302;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+    3010103               3010104
+
+--- 1 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>delete from hbase."_ROW_".t022hbt1 where row_id = '3';
+
+--- 1 row(s) deleted.
+>>select left(row_id, 10) from hbase."_ROW_".t022hbt1;
+
+(EXPR)    
+----------
+
+1         
+2         
+
+--- 2 row(s) selected.
+>>commit work;
+
+--- SQL operation complete.
+>>select left(row_id, 10) from hbase."_ROW_".t022hbt1;
+
+(EXPR)    
+----------
+
+1         
+2         
+
+--- 2 row(s) selected.
+>>
+>>delete columns ('cf:1a') from hbase."_ROW_".t022hbt1  where row_id  = '1';
+
+--- 1 row(s) deleted.
+>>select left(row_id, 10) row_id, column_display(column_details, 40) column_details
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      COLUMN_DETAILS                          
+----------  ----------------------------------------
+
+1           cf:1b => 102                            
+2           cf:2b => 201                            
+
+--- 2 row(s) selected.
+>>
+>>delete from hbase."_ROW_".t022hbt1;
+
+--- 2 row(s) deleted.
+>>select count(*) from hbase."_ROW_".t022hbt1;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>-- operations between trafodion and hbase tables
+>>begin work;
+
+--- SQL operation complete.
+>>insert into t022t1 values (1, 100);
+
+--- 1 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbt1 values ('1', column_create('cf:a', '100'));
+
+--- 1 row(s) inserted.
+>>select count(*) from t022t1;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>select count(*) from hbase."_ROW_".t022hbt1;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>rollback work;
+
+--- SQL operation complete.
+>>select count(*) from t022t1;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>select count(*) from hbase."_ROW_".t022hbt1;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>insert into hbase."_ROW_".t022hbt1 values 
++>       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+
+--- 1 row(s) inserted.
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
++>  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 3011;
+
+--- 0 row(s) updated.
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
++>  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 301;
+
+--- 1 row(s) updated.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt1;
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+3           cf:3a => 301, cf:3b => 3022             
+
+--- 1 row(s) selected.
+>>
+>>-- negative tests
+>>delete from hbase."_CELL_".t022hbt1;
+
+*** ERROR[1425] This operation could not be performed on HBASE."_CELL_".T022HBT1. Reason: Cannot delete from an hbase table in CELL format. Use ROW format for this operation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
+
+*** ERROR[1426] An invalid hbase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+
+--- 0 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbt1 values ('2', '100');
+
+*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hbase."_ROW_".t022hbt1 select * from hbase."_ROW_".t022hbt2;
+
+*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- tests with large rows
+>>invoke hbase."_CELL_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_CELL_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>invoke hbase."_ROW_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_ROW_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>cqd hbase_max_column_val_length '100000';
+
+--- SQL operation complete.
+>>cqd hbase_max_column_info_length '100000';
+
+--- SQL operation complete.
+>>invoke hbase."_CELL_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_CELL_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(100000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>invoke hbase."_ROW_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_ROW_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(100000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>insert into hbase."_CELL_".t022hbt2 values ('1', 'cf', 'a', -1, repeat('a', 100000));
+
+--- 1 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbt2 values 
++>                              ('2', column_create(
++>                                       ('cf:1a', repeat('a', 40000)),
++>                                       ('cf:1b', repeat('z', 40000))));
+
+--- 1 row(s) inserted.
+>>select count(*) from hbase."_CELL_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100000
+     40000
+     40000
+
+--- 3 row(s) selected.
+>>select count(*) from hbase."_CELL_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100000
+     40000
+     40000
+
+--- 3 row(s) selected.
+>>select count(*) from hbase."_ROW_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select char_length(column_details) from hbase."_ROW_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100010
+     80022
+
+--- 2 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt2;
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+1           cf:a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+2           cf:1a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+--- 2 row(s) selected.
+>>
+>>?section cleanup
+>>drop hbase table t022hbt1;
+
+--- SQL operation complete.
+>>drop hbase table t022hbt2;
+
+--- SQL operation complete.
+>>drop table t022t1;
+
+--- SQL operation complete.
+>>
+>>log;

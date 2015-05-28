@@ -1,0 +1,1368 @@
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST122(test_drop_tab);
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>create table t122t1 ( a int not null );
+
+--- SQL operation complete.
+>>
+>>prepare s1 from insert into t122t1 values
++>  (0)
++>, (5)
++>, (1)
++>;
+
+--- SQL command prepared.
+>>
+>>update statistics for table t122t1 on every column;
+
+--- SQL operation complete.
+>>
+>>obey TEST122(uid_in_plan);
+>>log;
+look for one uid only
+  ObjectUIDs .......
+look for more than one uid
+>>-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+>>log;
+>>
+>>
+>>execute s1;
+
+--- 3 row(s) inserted.
+>>
+>>prepare s1 from select * from t122t1;
+
+--- SQL command prepared.
+>>
+>>obey TEST122(uid_in_plan);
+>>log;
+look for one uid only
+  ObjectUIDs .......
+look for more than one uid
+>>-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+>>log;
+>>
+>>
+>>execute s1;
+
+A          
+-----------
+
+          0
+          5
+          1
+
+--- 3 row(s) selected.
+>>
+>>invoke t122t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Apr 22 14:46:39 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>select count(*) from t122t1;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>update t122t1 set a = 55 where a = 5;
+
+--- 1 row(s) updated.
+>>
+>>delete from t122t1 where a = 55;
+
+--- 1 row(s) deleted.
+>>
+>>prepare s2 from insert into t122t1 values (8);
+
+--- SQL command prepared.
+>>
+>>prepare s3 from invoke t122t1;
+
+--- SQL command prepared.
+>>
+>>prepare s4 from select count(*) from t122t1;
+
+--- SQL command prepared.
+>>
+>>prepare s5 from update t122t1 set a = 55 where a = 5;
+
+--- SQL command prepared.
+>>
+>>prepare s6 from delete from t122t1 where a = 55;
+
+--- SQL command prepared.
+>>
+>>execute s2;
+
+--- 1 row(s) inserted.
+>>
+>>execute s3;
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Apr 22 14:46:39 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>execute s4;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>execute s5;
+
+--- 0 row(s) updated.
+>>
+>>execute s6;
+
+--- 0 row(s) deleted.
+>>
+>>sh sqlci -i"TEST122(drop_tab)";
+>>
+>>drop table t122t1;
+
+--- SQL operation complete.
+>>
+>>create table t122t1 ( a char(4) not null );
+
+--- SQL operation complete.
+>>
+>>insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+--- 4 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select * from t122t1;
+
+A   
+----
+
+i   
+ii  
+iii 
+iv  
+
+--- 4 row(s) selected.
+>>
+>>invoke t122t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Apr 22 14:46:59 2015
+
+  (
+    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+--- 4 row(s) inserted.
+>>
+>>select count(*) from t122t1;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>
+>>update t122t1 set a = 'ix' where a = 'ii';
+
+--- 2 row(s) updated.
+>>
+>>delete from t122t1 where a = 'i';
+
+--- 2 row(s) deleted.
+>>
+>>execute s2;
+
+*** ERROR[4039] Column A is of type CHAR(4), incompatible with the value's type, NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) inserted.
+>>
+>>execute s3;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Apr 22 14:47:01 2015
+
+  (
+    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation completed with warnings.
+>>
+>>execute s4;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>
+>>execute s5;
+
+*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) updated.
+>>
+>>execute s6;
+
+*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(2).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) deleted.
+>>
+>>
+>>obey TEST122(test_alter_tab);
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>create table t122t3 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t3;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t3_col (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t3_col values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t3_col;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t3_ck (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t3_ck values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t3_ck;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t3_unique (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t3_unique values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t3_unique;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t3_ri (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t3_ri values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t3_ri;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t4 (c1 int, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t4 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t4;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t4_pk (c1 int, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t4_pk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t4_pk;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t4_fk (c1 int, c2 int);
+
+--- SQL operation complete.
+>>insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t4_fk;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>
+>>sh sqlci -i "TEST122(alter_tbl_add)";
+>>-- add columns, constraints, and indexes
+>>alter table t122t3_col add column c3 int default 0;
+
+--- SQL operation complete.
+>>alter table t122t3_ck add constraint t122_ck check (c2 > 0);
+
+--- SQL operation complete.
+>>alter table t122t3_unique add constraint t122_uq unique (c2);
+
+--- SQL operation complete.
+>>alter table t122t4_pk add constraint t122_pk primary key (c1);
+
+--- SQL operation complete.
+>>alter table t122t4_fk add constraint t122_fk foreign key (c2) references t122t3_ri;
+
+--- SQL operation complete.
+>>create index t122t3_index on t122t3(c2);
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>-- see new column in t122t3_col;
+>>select * from t122t3_col;
+
+C1           C2           C3         
+-----------  -----------  -----------
+
+          1            1            0
+          2            2            0
+          3            3            0
+          4            4            0
+          5            5            0
+          6            6            0
+          7            7            0
+
+--- 7 row(s) selected.
+>>
+>>-- see new constraint in t122t3_ck
+>>insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.T122_CK on table TRAFODION.SCH.T122T3_CK.
+
+--- 0 row(s) inserted.
+>>
+>>-- see new unique constraint in t122t3_unique 
+>>explain options 'f' 
++>insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                            x                     7.00E+000
+3    4    5    nested_join                                           7.00E+000
+.    .    4    trafodion_insert                T122_UQ               1.00E+000
+1    2    3    nested_join                                           7.00E+000
+.    .    2    trafodion_insert                T122T3_UNIQUE         1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>
+>>-- see new pk in t122t4_pk 
+>>explain options 'f' 
++>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                            x                     7.00E+000
+3    4    5    nested_join                                           7.00E+000
+.    .    4    trafodion_insert                T122_PK               1.00E+000
+1    2    3    nested_join                                           7.00E+000
+.    .    2    trafodion_insert                T122T4_PK             1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>
+>>-- see new ri in t122t4_fk
+>>explain options 'f'
++>insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                            x                     1.39E+001
+3    7    8    nested_join                                           1.39E+001
+4    6    7    merge_union                                           2.00E+000
+5    .    6    sort_scalar_aggr                                      1.00E+000
+.    .    5    trafodion_scan                  T122T3_RI             1.00E+002
+.    .    4    trafodion_insert                T122_FK               1.00E+000
+1    2    3    nested_join                                           7.00E+000
+.    .    2    trafodion_insert                T122T4_FK             1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.SCH.T122_FK on table TRAFODION.SCH.T122T4_FK.
+
+--- 0 row(s) inserted.
+>>
+>>-- see new index in t122t3
+>>explain options 'f'
++>insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                            x                     7.00E+000
+3    4    5    nested_join                                           7.00E+000
+.    .    4    trafodion_insert                T122T3_INDEX          1.00E+000
+1    2    3    nested_join                                           7.00E+000
+.    .    2    trafodion_insert                T122T3                1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>
+>>sh sqlci -i "TEST122(alter_tbl_drop)";
+>>-- drop columns, constraints, and indexes
+>>alter table t122t3_col drop column c3;
+
+--- SQL operation complete.
+>>alter table t122t3_ck drop constraint t122_ck;
+
+--- SQL operation complete.
+>>alter table t122t3_unique drop constraint t122_uq;
+
+--- SQL operation complete.
+>>alter table t122t4_pk drop constraint t122_pk;
+
+--- SQL operation complete.
+>>alter table t122t4_fk drop constraint t122_fk;
+
+--- SQL operation complete.
+>>drop index t122t3_index;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>-- see only 2 columns in t122t3_col;
+>>select * from t122t3_col;
+
+C1           C2         
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>-- no more check constraint in t122t3_ck
+>>insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+--- 7 row(s) inserted.
+>>
+>>-- no more unique constraint in t122t3_unique 
+>>explain options 'f' 
++>insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     7.00E+000
+1    2    3    tuple_flow                                            7.00E+000
+.    .    2    trafodion_insert                T122T3_UNIQUE         1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+--- 7 row(s) inserted.
+>>
+>>-- no more pk in t122t4_pk 
+>>explain options 'f' 
++>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     7.00E+000
+1    2    3    tuple_flow                                            7.00E+000
+.    .    2    trafodion_insert                T122T4_PK             1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+--- 7 row(s) inserted.
+>>
+>>-- no ri contraint in t122t4_fk
+>>explain options 'f'
++>insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     7.00E+000
+1    2    3    tuple_flow                                            7.00E+000
+.    .    2    trafodion_insert                T122T4_FK             1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+--- 7 row(s) inserted.
+>>
+>>-- no more index in t122t3
+>>explain options 'f'
++>insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     7.00E+000
+1    2    3    tuple_flow                                            7.00E+000
+.    .    2    trafodion_insert                T122T3                1.00E+000
+.    .    1    tuplelist                                             7.00E+000
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>obey TEST122(test_drop_view);
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>-- makes sure referenced tables are invalidated
+>>-- structure:
+>>--     tables: t122t5_a, t122t5_b, t122t5_c, t122t5_d, t122t5_e
+>>--     t122_v1: selects from t122t5_a
+>>--     t122_v2: selects from t122t5_b
+>>--     t122_v3: selects from t122_v1 & t122_v2
+>>--     t122_v4: selects from t122t5_b & t122t5_c
+>>--     t122_v5: selects from t122_v4 
+>>--     t122_v6: selects from t122_v5 &t122_v3 & t122t5_d
+>>--     t122_v7: selects from t122_v6 & t122t5_e
+>>
+>>create table t122t5_a (a_c1 int not null primary key, a_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_a values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_a;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v1 as select a_c1, a_c2 from t122t5_a;
+
+--- SQL operation complete.
+>>select * from t122_v1;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t5_b (b_c1 int not null primary key, b_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_b values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_b;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v2 as select b_c1, b_c2 from t122t5_b;
+
+--- SQL operation complete.
+>>select * from t122_v2;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v3 as select v1.a_c1 as v3_c1, v2.b_c2 as v3_c2 from t122_v1 v1, t122_v2 v2
++>    where v1.a_c1 = v2.b_c1 + 1;
+
+--- SQL operation complete.
+>>select * from t122_v3;
+
+V3_C1        V3_C2      
+-----------  -----------
+
+          2            1
+          3            2
+          4            3
+          5            4
+          6            5
+          7            6
+
+--- 6 row(s) selected.
+>>
+>>create table t122t5_c (c_c1 int not null primary key, c_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_c values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_c;
+
+C_C1         C_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v4 as select b.b_c1, c.c_c1 from t122t5_b b, t122t5_c c
++>   where b.b_c1 = c.c_c2;
+
+--- SQL operation complete.
+>>select * from t122_v4;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v5 as select * from t122_v4;
+
+--- SQL operation complete.
+>>select * from t122_v5;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t5_d (d_c1 int not null primary key, d_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_d values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_d;
+
+D_C1         D_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v6 as select v5.b_c1 v5_c1, v3.v3_c2 v5_c2, d.d_c2 v5_c3 
++>  from t122_v5 v5, t122_v3 v3, t122t5_d d
++>  where v5.b_c1 = v3.v3_c1 and v3.v3_c1 = d.d_c1;
+
+--- SQL operation complete.
+>>select * from t122_v6;
+
+V5_C1        V5_C2        V5_C3      
+-----------  -----------  -----------
+
+          2            1            2
+          3            2            3
+          4            3            4
+          5            4            5
+          6            5            6
+          7            6            7
+
+--- 6 row(s) selected.
+>>
+>>create table t122t5_e (e_c1 int not null primary key, e_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_e values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_e;
+
+E_C1         E_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v7 as select v6.v5_c1, v6.v5_c2, e.e_c1, e.e_c2
++>  from t122_v6 v6, t122t5_e e
++>  where v6.v5_c1 = e.e_c1;
+
+--- SQL operation complete.
+>>select * from t122_v7;
+
+V5_C1        V5_C2        E_C1         E_C2       
+-----------  -----------  -----------  -----------
+
+          2            1            2            2
+          3            2            3            3
+          4            3            4            4
+          5            4            5            5
+          6            5            6            6
+          7            6            7            7
+
+--- 6 row(s) selected.
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>select * from t122_v1;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v2;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v3;
+
+V3_C1        V3_C2      
+-----------  -----------
+
+          2            1
+          3            2
+          4            3
+          5            4
+          6            5
+          7            6
+
+--- 6 row(s) selected.
+>>select * from t122_v4;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v5;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v6;
+
+V5_C1        V5_C2        V5_C3      
+-----------  -----------  -----------
+
+          2            1            2
+          3            2            3
+          4            3            4
+          5            4            5
+          6            5            6
+          7            6            7
+
+--- 6 row(s) selected.
+>>select * from t122_v7;
+
+V5_C1        V5_C2        E_C1         E_C2       
+-----------  -----------  -----------  -----------
+
+          2            1            2            2
+          3            2            3            3
+          4            3            4            4
+          5            4            5            5
+          6            5            6            6
+          7            6            7            7
+
+--- 6 row(s) selected.
+>>
+>>sh sqlci -i "TEST122(drop_view)";
+>>
+>>drop view t122_v7;
+
+--- SQL operation complete.
+>>drop view t122_v6;
+
+--- SQL operation complete.
+>>drop view t122_v5;
+
+--- SQL operation complete.
+>>drop view t122_v4;
+
+--- SQL operation complete.
+>>drop view t122_v3;
+
+--- SQL operation complete.
+>>drop view t122_v2;
+
+--- SQL operation complete.
+>>drop view t122_v1;
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select * from t122_v1;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V1 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v2;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V2 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v3;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V3 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v4;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V4 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v5;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V5 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v6;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V6 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v7;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V7 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from t122t5_a;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_b;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_c;
+
+C_C1         C_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_d;
+
+D_C1         D_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_e;
+
+E_C1         E_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>
+>>obey TEST122(test_drop_index);
+>>-- makes sure compiler process(es) caches are cleaned up
+>>-- between drops in the same session
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>create table t122t6
++>(
++>  Int_1 INT SIGNED not null not droppable,
++>  Large_2 LARGEINT not null,
++>  primary key(Int_1)
++>);
+
+--- SQL operation complete.
+>>
+>>create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+
+--- SQL operation complete.
+>>showddl t122t6;
+
+CREATE TABLE TRAFODION.SCH.T122T6
+  (
+    INT_1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LARGE_2                          LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (INT_1 ASC)
+  )
+;
+
+CREATE INDEX T122T6_IDX1 ON TRAFODION.SCH.T122T6
+  (
+    LARGE_2 DESC
+  , INT_1 ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>insert into t122t6 values (1, 1804250150),(2, 939828307);
+
+--- 2 row(s) inserted.
+>>
+>>drop table t122t6 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t122t6
++>(
++>  Int_1 INT SIGNED not null not droppable,
++>  Large_2 LARGEINT,
++>  primary key(Int_1)
++>);
+
+--- SQL operation complete.
+>>
+>>create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+
+--- SQL operation complete.
+>>create index t122t6_idx2 on t122t6 (Int_1, Large_2);
+
+--- SQL operation complete.
+>>insert into t122t6 values (3, -2115140520),(4, 2104744432);
+
+--- 2 row(s) inserted.
+>>
+>>prepare XX from select min(Large_2) from t122t6;
+
+--- SQL command prepared.
+>>explain options 'f' XX;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+000
+1    .    2    sort_scalar_aggr                                      1.00E+000
+.    .    1    trafodion_index_scan            T122T6_IDX1           1.00E+002
+
+--- SQL operation complete.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+         -2115140520
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from select max(Large_2) from t122t6;
+
+--- SQL command prepared.
+>>explain options 'f' XX;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+000
+2    .    3    shortcut_scalar_aggr                                  1.00E+000
+1    .    2    firstn                                                1.00E+000
+.    .    1    trafodion_index_scan            T122T6_IDX1           9.89E+001
+
+--- SQL operation complete.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+          2104744432
+
+--- 1 row(s) selected.
+>>
+>>
+>>obey TEST122(clnup);
+>>
+>>drop table if exists t122t1 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t3 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t3_col cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t3_ck cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t3_unique cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t3_ri cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t4 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t4_pk cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t4_fk cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_a cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_b cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_c cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_d cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_e cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t6 cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+

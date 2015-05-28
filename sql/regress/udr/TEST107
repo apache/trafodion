@@ -1,0 +1,537 @@
+----------------------------------------------------------------------
+-- TEST107
+-- Basic coverage for scalar UDFs
+----------------------------------------------------------------------
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- To avoid platform differences in the log certain steps are logged
+-- to a secondary log file. These steps include building a DLL. The
+-- secondary log is not used when comparing expected output to actual
+-- output.  When troubleshooting problems be sure to consider failures
+-- logged to the secondary log file.
+
+----------------------------------------------------------------------
+-- TO CREATE UDFS OUTSIDE THE RUNNING OF THIS TEST:
+----------------------------------------------------------------------
+-- Commands are in section "standalone_setup". You should be able
+-- to do the setup with these commands:
+-- 
+--   Windows:  cd w:/regress/udr
+--             sqlci -i 'TEST107(standalone_setup)'
+-- 
+--     Linux:  . /<your-path>/regress/tools/setuplnxenv
+--             cd $rundir/udr
+--             $mxcidir/mxci -i 'TEST107(standalone_setup)'
+--
+--       NSK:  . /<your-path>/regress/tools/setupnskenv
+--             cd $rundir/udr
+--             $mxcidir/mxci -i 'TEST107(standalone_setup)'
+--
+
+----------------------------------------------------------------------
+-- TO BUILD THE UDF DLL OUTSIDE THE RUNNING OF THIS TEST:
+----------------------------------------------------------------------
+--
+-- Linux:
+--  cd $rundir/udr
+--  $scriptsdir/tools/dll-compile.ksh TEST107.c 
+--
+
+set pattern $$QUOTE$$ '''';
+--create catalog neo;
+--create schema neo.udf;
+
+--------------------------------------------------------------------------
+-- Main test driver section
+--------------------------------------------------------------------------
+obey TEST107(clean_up);
+obey TEST107(copy_files);
+log LOG107 clear;
+sh rm -f LOG107-SECONDARY;
+obey TEST107(compile_libs);
+obey TEST107(create_tables);
+obey TEST107(register_functions);
+obey TEST107(tests);
+log;
+obey TEST107(clean_up);
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table t10;
+
+drop function GETMXV;
+drop function ADD2;
+drop function ADDDAYS2DATE;
+drop function GETCOLLATION;
+drop function SESSION_USER_NAME;
+drop function VALIDATE_SESSION_USER_NAME;
+drop function CURRENT_USER_NAME;
+drop function VALIDATE_CURRENT_USER_NAME;
+drop function CURRENT_ROLE_NAME;
+drop function VALIDATE_CURRENT_ROLE_NAME;
+drop function ERRORWARN;
+
+drop function echoLARGE;
+drop function echoCHAR;
+drop function echoVC;
+drop function echoCHAR2;
+drop function echoVC2;
+drop function echoDATE;
+drop function echoTIME0;
+drop function echoTIME6;
+drop function echoTS0;
+drop function echoTS6;
+drop function echoNUM4;
+drop function echoNUM8;
+drop function echoNUM12;
+drop function echoNUM0;
+drop function echoUNUM4;
+drop function echoUNUM8;
+drop function echoUNUM0;
+drop function echoBNUM32;
+drop function echoBNUM0;
+drop function echoDEC;
+drop function echoUDEC;
+drop function echoDEC0;
+drop function echoINT;
+drop function echoUINT;
+drop function echoSMALL;
+drop function echoUSMALL;
+drop library TEST107;
+
+?section copy_files
+--------------------------------------------------------------------------
+#ifNT
+sh cp ../../sqludr/*.java .;
+sh cp ../../sqludr/Install*Metadata .;
+#ifNT
+#ifLINUX
+sh cp -f $MY_SQROOT/sql/sqludr/*.java $REGRTSTDIR;
+sh cp -f $MY_SQROOT/sql/sqludr/Install*Metadata $REGRTSTDIR;
+#ifLINUX
+
+?section compile_libs
+--------------------------------------------------------------------------
+log;
+sh rm -f ./TEST107.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST107.cpp
+  2>&1 | tee -a LOG107-SECONDARY;
+set pattern $$DLL$$ TEST107.dll;
+log LOG107;
+
+?section create_tables
+--------------------------------------------------------------------------
+create table t10 (a int not null, b int, c int, primary key (a));
+insert into t10 values
+ (1,1,-10), (2,1,null), (3,1,-20), (4,1,null), (5,1,-30),
+ (6,1,null), (7,1,-40), (8,1,null), (9,1,-50), (10,1,null);
+
+?section register_functions
+--------------------------------------------------------------------------
+create library TEST107 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+-- GETMXV
+create function GETMXV() returns (MXV smallint)
+language c parameter style sql external name 'getMXV'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- ADD2: Adds two integers
+create function ADD2(int,int) returns (ADD2 int)
+language c parameter style sql external name 'add2'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- ADDDAYS2DATE: Adds days to a date
+create function ADDDAYS2DATE(date,int) returns (NEWDATE date)
+language c parameter style sql external name 'addDaysToDate'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- GETCOLLATION
+create function GETCOLLATION(char(32) collate default) returns char(32)
+language c parameter style sql external name 'getCollation'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- Register the ECHO functions
+
+-- The value of $$ECHONAME$$ will become the function name and is also
+-- the DLL entry point name. Input type and return type are both
+-- $$ECHOTYPE$$. The function body returns a copy of the input value.
+
+-- INTEGER
+set pattern $$ECHONAME$$ echoINT;
+set pattern $$ECHOTYPE$$ 'INT';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoUINT;
+set pattern $$ECHOTYPE$$ 'INT UNSIGNED';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoSMALL;
+set pattern $$ECHOTYPE$$ 'SMALLINT';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoUSMALL;
+set pattern $$ECHOTYPE$$ 'SMALLINT UNSIGNED';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoLARGE;
+set pattern $$ECHOTYPE$$ 'LARGEINT';
+obey TEST107(register_echo);
+
+-- CHARACTER
+set pattern $$ECHONAME$$ echoCHAR;
+set pattern $$ECHOTYPE$$ 'CHAR(32)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoVC;
+set pattern $$ECHOTYPE$$ 'VARCHAR(32)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoCHAR2;
+set pattern $$ECHOTYPE$$ 'CHAR(32) CHARACTER SET UCS2';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoVC2;
+set pattern $$ECHOTYPE$$ 'VARCHAR(32) CHARACTER SET UCS2';
+obey TEST107(register_echo);
+
+-- DATETIME
+set pattern $$ECHONAME$$ echoDATE;
+set pattern $$ECHOTYPE$$ 'DATE';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoTIME0;
+set pattern $$ECHOTYPE$$ 'TIME(0)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoTIME6;
+set pattern $$ECHOTYPE$$ 'TIME(6)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoTS0;
+set pattern $$ECHOTYPE$$ 'TIMESTAMP(0)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoTS6;
+set pattern $$ECHOTYPE$$ 'TIMESTAMP(6)';
+obey TEST107(register_echo);
+
+-- NUMERIC SIGNED
+set pattern $$ECHONAME$$ echoNUM4;
+set pattern $$ECHOTYPE$$ 'NUMERIC(4,2)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoNUM8;
+set pattern $$ECHOTYPE$$ 'NUMERIC(8,4)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoNUM12;
+set pattern $$ECHOTYPE$$ 'NUMERIC(12,4)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoNUM0;
+set pattern $$ECHOTYPE$$ 'NUMERIC(8,0)';
+obey TEST107(register_echo);
+
+-- NUMERIC UNSIGNED
+set pattern $$ECHONAME$$ echoUNUM4;
+set pattern $$ECHOTYPE$$ 'NUMERIC(4,2) UNSIGNED';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoUNUM8;
+set pattern $$ECHOTYPE$$ 'NUMERIC(8,4) UNSIGNED';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoUNUM0;
+set pattern $$ECHOTYPE$$ 'NUMERIC(8,0) UNSIGNED';
+obey TEST107(register_echo);
+
+-- BIGNUM
+set pattern $$ECHONAME$$ echoBNUM32;
+set pattern $$ECHOTYPE$$ 'NUMERIC(32,4)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoBNUM0;
+set pattern $$ECHOTYPE$$ 'NUMERIC(24,0)';
+obey TEST107(register_echo);
+
+-- DECIMAL SIGNED and UNSIGNED
+set pattern $$ECHONAME$$ echoDEC;
+set pattern $$ECHOTYPE$$ 'DECIMAL(8,2)';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoUDEC;
+set pattern $$ECHOTYPE$$ 'DECIMAL(8,2) UNSIGNED';
+obey TEST107(register_echo);
+
+set pattern $$ECHONAME$$ echoDEC0;
+set pattern $$ECHOTYPE$$ 'DECIMAL(8,0) UNSIGNED';
+obey TEST107(register_echo);
+
+-- SESSION_USER_NAME
+create function SESSION_USER_NAME() returns (SESSION_USER_NAME char(128))
+language c parameter style sql external name 'session_user_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- VALIDATE_SESSION_USER_NAME
+create function VALIDATE_SESSION_USER_NAME(char(128)) returns (STATUS char(32))
+language c parameter style sql external name 'validate_session_user_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- CURRENT_USER_NAME
+create function CURRENT_USER_NAME()
+  returns (CURRENT_USER_NAME char(128))
+language c parameter style sql external name 'current_user_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- VALIDATE_CURRENT_USER_NAME
+create function VALIDATE_CURRENT_USER_NAME(char(128))
+  returns (STATUS char(32))
+language c parameter style sql external name 'validate_current_user_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- CURRENT_ROLE_NAME
+create function CURRENT_ROLE_NAME()
+  returns (CURRENT_ROLE_NAME char(128))
+language c parameter style sql external name 'current_role_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- VALIDATE_CURRENT_ROLE_NAME
+create function VALIDATE_CURRENT_ROLE_NAME(char(128))
+  returns (STATUS char(32))
+language c parameter style sql external name 'validate_current_role_name'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+-- ERRORWARN: The function can return a warning or an error.
+-- Returns an error when the input value is a multiple of 10.
+-- Returns a warning when the input value is odd.
+-- Otherwise returns the input value.
+create function ERRORWARN(int) returns (ERRORWARN int)
+language c parameter style sql external name 'errOrWarn'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+get functions for library TEST107;
+
+showddl function errorwarn ;
+
+?section tests
+--------------------------------------------------------------------------
+prepare S from values(add2(1,2));
+select tname, substr(description, (position('routine_name:' in description)))
+from table(explain(null, 'S'))
+where operator = 'ISOLATED_SCALAR_UDF';
+
+execute S;
+
+select add2(a,b) from t10;
+select add2(a,c) from t10;
+
+values(adddays2date(date'2000-01-01',2));
+select adddays2date(date'2000-01-01', a) from t10;
+
+values(getMXV());
+
+-----------------------------------------------------------------------------
+-- Invoke the ECHO functions
+-----------------------------------------------------------------------------
+
+-- INTEGER
+values(echoINT(1));
+values(echoUINT(1));
+values(echoSMALL(1));
+values(echoUSMALL(1));
+values(echoLARGE(1));
+
+-- CHARACTER
+values(echoCHAR('abc') || 'x');
+values(echoVC('abc') || 'x');
+values(echoCHAR2(_ucs2'abc') || _ucs2'x');
+values(echoVC2(_ucs2'abc') || _ucs2'x');
+
+-- DATETIME
+values(echoDATE(date'2009-01-01'));
+values(echoTIME0(time'01:01:01'));
+values(echoTIME6(time'02:03:04.5'));
+values(echoTS0(timestamp'2009-01-01 01:01:01'));
+values(echoTS6(timestamp'2009-02-02 02:02:02.123'));
+
+-- NUMERIC SIGNED
+values(echoNUM4(12.34));
+values(echoNUM4(-56.78));
+values(echoNUM8(1234.5678));
+values(echoNUM8(-1111.2222));
+values(echoNUM12(12341234.5678));
+values(echoNUM12(-11112222.3333));
+values(echoNUM0(12345));
+values(echoNUM0(-54321));
+
+-- NUMERIC UNSIGNED
+values(echoUNUM4(12.34));
+values(echoUNUM8(1234.5678));
+values(echoUNUM0(12345));
+
+-- BIGNUM
+values(echoBNUM32(1234567890.1234));
+values(echoBNUM0(1234567890));
+values(echoBNUM0(-123456789012345678901234));
+
+-- DECIMAL SIGNED
+values(echoDEC(-9));
+values(echoDEC(-123456.78));
+values(echoUDEC(123));
+values(echoUDEC(123456.78));
+values(echoDEC0(123));
+values(echoDEC0(12345678));
+
+select num_lookups, num_cache_hits, num_entries, max_cache_size from table(naroutinecache('user','local')) ;
+
+-----------------------------------------------------------------------------
+-- COLLATION
+-----------------------------------------------------------------------------
+control query default COMP_BOOL_215 'ON';
+control query default ROUTINE_CACHE_SIZE '0';
+control query default QUERY_CACHE '0';
+
+-- DEFAULT collation
+drop function GETCOLLATION;
+create function GETCOLLATION(char(32) collate default) returns char(32)
+language c parameter style sql external name 'getCollation'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+values(getCollation('abc'));
+
+-- CZECH collation
+drop function GETCOLLATION;
+create function GETCOLLATION(char(32) collate czech) returns char(32)
+language c parameter style sql external name 'getCollation'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+values(getCollation('def'));
+
+-- CZECH_CI collation
+drop function GETCOLLATION;
+create function GETCOLLATION(char(32) collate czech_ci) returns char(32)
+language c parameter style sql external name 'getCollation'
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+values(getCollation('ghi'));
+
+cqd query_cache 'reset';
+control query default COMP_BOOL_215 reset;
+control query default ROUTINE_CACHE_SIZE reset;
+control query default QUERY_CACHE reset;
+
+-----------------------------------------------------------------------------
+-- UDRINFO fields SESSION_USER, CURRENT_USER, CURRENT_ROLE
+-----------------------------------------------------------------------------
+-- adding another number at the end of values() to prevent 
+-- logsort from stripping trailing spaces
+values(session_user_name(), 1);
+values (validate_session_user_name(session_user));
+values (validate_session_user_name('xxxxxxxxxx'));
+
+-- adding another number at the end of values() to prevent 
+-- logsort from stripping trailing spaces
+values(current_user_name(),1);
+values (validate_current_user_name(current_user));
+values (validate_current_user_name('xxxxxxxxxx'));
+
+?section dont_execute
+--------------------------------------------------------------------------
+-- Test to verify the SQLSTATE from UDF
+--------------------------------------------------------------------------
+log;
+#ifNSK
+sh test $scriptsdir != $rundir && cp -pf $scriptsdir/udr/MXStatement.sql .;
+#ifNSK
+
+sh sh $$scriptsdir$$/tools/makefileall.ksh UdfSqlState "$mxcmpdir" "$mxcidir";
+
+sh ./UdfSqlState.exe $$TEST_SCHEMA$$
+ "select ERRORWARN(a) from t10 where a in (2,3) order by a"
+ "select ERRORWARN(a) from t10 where a = 10"
+ 2>&1 | tee -a LOG107;
+
+#ifNSK
+sh test $scriptsdir != $rundir && rm -f MXStatement.sql;
+#ifNSK
+
+log LOG107;
+
+-- Returns success
+values(errorwarn(2));
+
+-- Returns success with a warning
+values(errorwarn(3));
+
+-- Returns error
+values(errorwarn(100));
+
+?section register_echo
+--------------------------------------------------------------------------
+create function $$ECHONAME$$ ( $$ECHOTYPE$$ ) returns $$ECHOTYPE$$
+language c parameter style sql external name $$QUOTE$$ $$ECHONAME$$ $$QUOTE$$
+library TEST107
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+?section standalone_setup
+--------------------------------------------------------------------------
+set pattern $$QUOTE$$ '''';
+create catalog neo;
+create schema neo.udf;
+
+set envvar SQLMX_REGRESS 1;      -- To enable #ifNT and #ifNSK
+#ifNT
+set envvar rundir w:/regress;
+set envvar scriptsdir w:/regress;
+#ifNT
+set envvar REGRTSTDIR $$scriptsdir$$/udr;
+set envvar REGRRUNDIR $$rundir$$/udr;
+cd $$rundir$$/udr;
+
+-- CLEAN UP
+obey TEST107(clean_up);
+
+-- COMPILE LIBRARIES
+obey TEST107(compile_libs);
+
+-- REGISTER FUNCTIONS
+obey TEST107(register_functions);
+
+-- SIMPLE TESTS
+--set schema cat.sch;
+obey TEST107(create_tables);
+values(getMXV());
+values(current_user_name());
+values(add2(1,2));
+select add2(a,b) from t10;
+select add2(a,c) from t10;

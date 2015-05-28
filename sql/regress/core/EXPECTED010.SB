@@ -1,0 +1,1510 @@
+>>
+>>create table t010ta (a varchar(4) not null, b varchar(3) not null, c int);
+
+--- SQL operation complete.
+>>create table t010tx (aaa varchar(4) not null, bbb varchar(3) not null, ccc int);
+
+--- SQL operation complete.
+>>create table t010t1 (a int not null, b int, c char(7) not null, d char(8), ee varchar(9));
+
+--- SQL operation complete.
+>>create table t010tmp1 (a int not null, b int, c char(7) not null, d char(8), ee varchar(9));
+
+--- SQL operation complete.
+>>
+>>create view  t010va (va, vb, vc) as select a,b,c from t010ta;
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>create table t010uta (a char varying (4) character set ucs2 not null, b char varying (3) character set ucs2 not null, c int);
+
+--- SQL operation complete.
+>>
+>>create table t010utx (aaa national char varying (4) not null, bbb char varying (3) character set ucs2 not null, ccc int);
+
+--- SQL operation complete.
+>>create table t010ut1 (a int not null, b int, c char(7) character set ucs2 not null, d char(8) character set ucs2, ee char varying (9) character set ucs2);
+
+--- SQL operation complete.
+>>
+>>create view  t010uva (va, vb, vc) as select a,b,c from t010uta;
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>?section dml
+>>insert into t010ta values 	('a','b',3),
++>			('m','z',1),
++>			('r','q',15),
++>			('z','y',25);
+
+--- 4 row(s) inserted.
+>>
+>>-- Test for VSBB insert via statisitcs SP
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>prepare IS from
++>insert into t010tx select * from t010ta order by b;
+
+--- SQL command prepared.
+>>execute IS;
+
+--- 4 row(s) inserted.
+>>select seq_num, tdb_name from table (statistics (NULL, 'IS')) order by 1,2;
+
+SEQ_NUM     TDB_NAME                
+----------  ------------------------
+
+         1  EX_TRAF_SELECT         
+         2  EX_SORT                 
+         3  EX_TRAF_INSERT         
+         4  EX_TUPLE_FLOW           
+         5  EX_ROOT                 
+
+--- 5 row(s) selected.
+>>
+>>-- Back to default value
+>>control query default detailed_statistics 'OPERATOR';
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>insert into t010uta values 	(N'a',N'b',3),
++>			(N'm',N'z',1),
++>			(N'r',N'q',15),
++>			(N'z',N'y',25);
+
+--- 4 row(s) inserted.
+>>
+>>-- Another VSBB insert
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>prepare ISU from
++>insert into t010utx select * from t010uta order by c;
+
+--- SQL command prepared.
+>>
+>>execute ISU;
+
+--- 4 row(s) inserted.
+>>select seq_num, tdb_name from table (statistics (NULL, 'ISU')) order by 1,2;
+
+SEQ_NUM     TDB_NAME                
+----------  ------------------------
+
+         1  EX_TRAF_SELECT         
+         2  EX_SORT                 
+         3  EX_TRAF_INSERT         
+         4  EX_TUPLE_FLOW           
+         5  EX_ROOT                 
+
+--- 5 row(s) selected.
+>>#ifMX
+>>
+>>-- Back to default value
+>>control query default detailed_statistics 'OPERATOR';
+
+--- SQL operation complete.
+>>
+>>
+>>?section general_tests
+>>
+>>-- empty table
+>>select * from t010t1 order by a;
+
+--- 0 row(s) selected.
+>>
+>>insert into t010t1 values (10,10, 'q','q','q');
+
+--- 1 row(s) inserted.
+>>insert into t010t1 values (10,5, 'q','q','q');
+
+--- 1 row(s) inserted.
+>>insert into t010t1 values (10,10, 'a', 'a', 'a');
+
+--- 1 row(s) inserted.
+>>
+>>insert into t010t1 values (5,5,'d','d','d');
+
+--- 1 row(s) inserted.
+>>insert into t010t1 values (20,null,'b','e','f');
+
+--- 1 row(s) inserted.
+>>insert into t010t1 values (20,null,'b','e','f');
+
+--- 1 row(s) inserted.
+>>insert into t010t1 values (25, null, 'w', null, 'w');
+
+--- 1 row(s) inserted.
+>>
+>>select * from t010t1;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         10           10  q        q         q        
+         10            5  q        q         q        
+         10           10  a        a         a        
+          5            5  d        d         d        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>
+>>#ifMX
+>>insert into t010ut1 values (10,10, N'q',N'q',N'q');
+
+--- 1 row(s) inserted.
+>>insert into t010ut1 values (10,5, N'q',N'q',N'q');
+
+--- 1 row(s) inserted.
+>>insert into t010ut1 values (10,10, N'a', N'a', N'a');
+
+--- 1 row(s) inserted.
+>>
+>>insert into t010ut1 values (5,5,N'd',N'd',N'd');
+
+--- 1 row(s) inserted.
+>>insert into t010ut1 values (20,null,N'b',N'e',N'f');
+
+--- 1 row(s) inserted.
+>>insert into t010ut1 values (20,null,N'b',N'e',N'f');
+
+--- 1 row(s) inserted.
+>>insert into t010ut1 values (25, null, N'w', null, N'w');
+
+--- 1 row(s) inserted.
+>>
+>>select * from t010ut1;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         10           10  a               a                 a                 
+          5            5  d               d                 d                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>#ifMX
+>>
+>>-- Ascending ordering
+>>select * from t010t1 order by a,b,c;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+          5            5  d        d         d        
+         10            5  q        q         q        
+         10           10  a        a         a        
+         10           10  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by b,a,c;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+          5            5  d        d         d        
+         10            5  q        q         q        
+         10           10  a        a         a        
+         10           10  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by c,b;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         10           10  a        a         a        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+          5            5  d        d         d        
+         10            5  q        q         q        
+         10           10  q        q         q        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by d,b;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         10           10  a        a         a        
+          5            5  d        d         d        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10            5  q        q         q        
+         10           10  q        q         q        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by ee,b;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         10           10  a        a         a        
+          5            5  d        d         d        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10            5  q        q         q        
+         10           10  q        q         q        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>
+>>select * from t010t1 order by a,c;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+          5            5  d        d         d        
+         10           10  a        a         a        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by a,b,c,d,ee;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+          5            5  d        d         d        
+         10            5  q        q         q        
+         10           10  a        a         a        
+         10           10  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by ee,d,c,b,a;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         10           10  a        a         a        
+          5            5  d        d         d        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10            5  q        q         q        
+         10           10  q        q         q        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>
+>>#ifMX
+>>select * from t010ut1 order by c,b;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         10           10  a               a                 a                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+          5            5  d               d                 d                 
+         10            5  q               q                 q                 
+         10           10  q               q                 q                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by d,b;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         10           10  a               a                 a                 
+          5            5  d               d                 d                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10            5  q               q                 q                 
+         10           10  q               q                 q                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by ee,b;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         10           10  a               a                 a                 
+          5            5  d               d                 d                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10            5  q               q                 q                 
+         10           10  q               q                 q                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>
+>>select * from t010ut1 order by a,c;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+          5            5  d               d                 d                 
+         10           10  a               a                 a                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by a,b,c,d,ee;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+          5            5  d               d                 d                 
+         10            5  q               q                 q                 
+         10           10  a               a                 a                 
+         10           10  q               q                 q                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by ee,d,c,b,a;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         10           10  a               a                 a                 
+          5            5  d               d                 d                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10            5  q               q                 q                 
+         10           10  q               q                 q                 
+         25            ?  w               ?                 w                 
+
+--- 7 row(s) selected.
+>>#ifMX
+>>
+>>-- Descending ordering
+>>select * from t010t1 order by a desc,b desc,c desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10           10  q        q         q        
+         10           10  a        a         a        
+         10            5  q        q         q        
+          5            5  d        d         d        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by b desc,ee desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10           10  q        q         q        
+         10           10  a        a         a        
+         10            5  q        q         q        
+          5            5  d        d         d        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by c desc,b desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         10           10  q        q         q        
+         10            5  q        q         q        
+          5            5  d        d         d        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10           10  a        a         a        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by d desc,b desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+          5            5  d        d         d        
+         10           10  a        a         a        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by ee desc,b desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+          5            5  d        d         d        
+         10           10  a        a         a        
+
+--- 7 row(s) selected.
+>>
+>>select * from t010t1 order by a desc,c desc,b desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         10           10  a        a         a        
+          5            5  d        d         d        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by a desc,b desc,c desc,d desc,ee desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10           10  q        q         q        
+         10           10  a        a         a        
+         10            5  q        q         q        
+          5            5  d        d         d        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by ee desc,d desc,c desc,b desc,a desc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+          5            5  d        d         d        
+         10           10  a        a         a        
+
+--- 7 row(s) selected.
+>>
+>>#ifMX
+>>select * from t010ut1 order by c desc,b desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+          5            5  d               d                 d                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10           10  a               a                 a                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by d desc,b desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+          5            5  d               d                 d                 
+         10           10  a               a                 a                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by ee desc,b desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+          5            5  d               d                 d                 
+         10           10  a               a                 a                 
+
+--- 7 row(s) selected.
+>>
+>>select * from t010ut1 order by a desc,c desc,b desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         10           10  a               a                 a                 
+          5            5  d               d                 d                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by a desc,b desc,c desc,d desc,ee desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+         10           10  q               q                 q                 
+         10           10  a               a                 a                 
+         10            5  q               q                 q                 
+          5            5  d               d                 d                 
+
+--- 7 row(s) selected.
+>>select * from t010ut1 order by ee desc,d desc,c desc,b desc,a desc;
+
+A            B            C               D                 EE
+-----------  -----------  --------------  ----------------  ------------------
+
+         25            ?  w               ?                 w                 
+         10           10  q               q                 q                 
+         10            5  q               q                 q                 
+         20            ?  b               e                 f                 
+         20            ?  b               e                 f                 
+          5            5  d               d                 d                 
+         10           10  a               a                 a                 
+
+--- 7 row(s) selected.
+>>#ifMX
+>>
+>>-- mix of ascending and descending ordering
+>>select * from t010t1 order by a, b desc, c asc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+          5            5  d        d         d        
+         10           10  a        a         a        
+         10           10  q        q         q        
+         10            5  q        q         q        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         25            ?  w        ?         w        
+
+--- 7 row(s) selected.
+>>select * from t010t1 order by a desc, b asc, c asc;
+
+A            B            C        D         EE       
+-----------  -----------  -------  --------  ---------
+
+         25            ?  w        ?         w        
+         20            ?  b        e         f        
+         20            ?  b        e         f        
+         10            5  q        q         q        
+         10           10  a        a         a        
+         10           10  q        q         q        
+          5            5  d        d         d        
+
+--- 7 row(s) selected.
+>>
+>>-- expression in select list
+>>select a+1 from t010t1 order by a;
+
+(EXPR)              
+--------------------
+
+                   6
+                  11
+                  11
+                  11
+                  21
+                  21
+                  26
+
+--- 7 row(s) selected.
+>>
+>>#ifMX
+>>select a+1 from t010ut1 order by a;
+
+(EXPR)              
+--------------------
+
+                   6
+                  11
+                  11
+                  11
+                  21
+                  21
+                  26
+
+--- 7 row(s) selected.
+>>#ifMX
+>>
+>>-- select list contains a columns not in the order by list.
+>>select a from t010t1 order by b,c;
+
+A          
+-----------
+
+          5
+         10
+         10
+         10
+         20
+         20
+         25
+
+--- 7 row(s) selected.
+>>
+>>#ifMX
+>>select a from t010ut1 order by c;
+
+A          
+-----------
+
+         10
+         20
+         20
+          5
+         10
+         10
+         25
+
+--- 7 row(s) selected.
+>>#ifMX
+>>
+>>-- GROUP BY and ORDER BY
+>>-- gives syntax error
+>>-- select a from t010t1 order by a group by a;
+>>
+>>-- INSERT...SELECT with ORDER BY
+>>-- gives syntax error
+>>insert into t010tmp1 select * from t010t1 order by a;
+
+--- 7 row(s) inserted.
+>>
+>>?section negative_tests
+>>
+>>-- nonex. column
+>>select tl.b from t010ta tl, t010ta tr order by tl.x;
+
+*** ERROR[4003] Column TL.X is not a column in table TL, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- nonex. column
+>>select tl.b from t010ta tl, t010ta tr order by tr.x;
+
+*** ERROR[4003] Column TR.X is not a column in table TR, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- nonex. column
+>>select tl.b from t010ta tl, t010ta tr order by x;
+
+*** ERROR[4001] Column X is not found.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- nonex. table
+>>select tl.b from t010ta tl, t010ta tr order by tt.x;
+
+*** ERROR[4002] Column TT.X is not found.  Table TT not exposed.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- illeg. syntax
+>>select tl.b from t010ta tl, t010ta tr order by *;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select tl.b from t010ta tl, t010ta tr order by *;
+                                               ^ (48 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- list index out of range
+>>select tl.b from t010ta tl, t010ta tr order by 0;
+
+*** ERROR[4007] The select list index 0 is out of range.  It must be between 1 and the number of select expressions, which in this case is 1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- list index out of range
+>>select tl.b from t010ta tl, t010ta tr order by 2;
+
+*** ERROR[4007] The select list index 2 is out of range.  It must be between 1 and the number of select expressions, which in this case is 1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig. column
+>>select b, b from t010ta order by b;
+
+*** ERROR[4004] Column name B is ambiguous.  Tables in scope: SEABASE.SCH.T010TA.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig. column
+>>select tl.b from t010ta tl, t010ta tr order by a;
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- ambig. column
+>>select tl.b from t010ta tl, t010ta tr order by c;
+
+*** ERROR[4004] Column name C is ambiguous.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- ambig. column
+>>select * from t010ta tl, t010ta tr order by b;
+
+*** ERROR[4004] Column name B is ambiguous.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- ambig. column
+>>select tl.b,* from t010ta tl, t010ta tr order by b;
+
+*** ERROR[4004] Column name B is ambiguous.  Tables in scope: TL, TR.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- ambig. column
+>>select * from (select a,b as a from t010ta) as aa order by aa.a;
+
+*** ERROR[4011] Reference made to column AA.A via star (*) is ambiguous.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>?section positive_tests
+>>
+>>-- b q y z
+>>select b from t010ta order by b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+
+--- 4 row(s) selected.
+>>
+>>-- b z q y
+>>select tl.b from t010ta tl, t010ta tr;
+
+B  
+---
+
+b  
+b  
+b  
+b  
+z  
+z  
+z  
+z  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010ta tl, t010ta tr order by tl.b;
+
+B  
+---
+
+b  
+b  
+b  
+b  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+z  
+z  
+z  
+z  
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010ta tl, t010ta tr order by tr.b, tl.b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010ta tl, t010ta tr order by b;
+
+B  
+---
+
+b  
+b  
+b  
+b  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+z  
+z  
+z  
+z  
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010ta tl, t010ta tr order by 1;
+
+B  
+---
+
+b  
+b  
+b  
+b  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+z  
+z  
+z  
+z  
+
+--- 16 row(s) selected.
+>>-- b z q y
+>>select tl.b from t010ta tl, t010ta tr order by tl.a, tl.b;
+
+B  
+---
+
+b  
+b  
+b  
+b  
+z  
+z  
+z  
+z  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010ta tl, t010ta tr order by tr.a, tl.b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+
+--- 16 row(s) selected.
+>>-- z b q y
+>>select tl.b from t010ta tl, t010ta tr order by tl.c, tl.b;
+
+B  
+---
+
+z  
+z  
+z  
+z  
+b  
+b  
+b  
+b  
+q  
+q  
+q  
+q  
+y  
+y  
+y  
+y  
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010ta tl, t010ta tr order by tr.c, tl.b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+
+--- 16 row(s) selected.
+>>
+>>-- (bzqy)*4
+>>select tl.b xx,* from t010ta tl, t010ta tr order by tr.c, xx;
+
+XX   A     B    C            A     B    C          
+---  ----  ---  -----------  ----  ---  -----------
+
+b    a     b              3  m     z              1
+q    r     q             15  m     z              1
+y    z     y             25  m     z              1
+z    m     z              1  m     z              1
+b    a     b              3  a     b              3
+q    r     q             15  a     b              3
+y    z     y             25  a     b              3
+z    m     z              1  a     b              3
+b    a     b              3  r     q             15
+q    r     q             15  r     q             15
+y    z     y             25  r     q             15
+z    m     z              1  r     q             15
+b    a     b              3  z     y             25
+q    r     q             15  z     y             25
+y    z     y             25  z     y             25
+z    m     z              1  z     y             25
+
+--- 16 row(s) selected.
+>>
+>>-- (bzqy)*4
+>>select b from t010ta, t010tx order by ccc, b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+
+--- 16 row(s) selected.
+>>
+>>-- (bqyz)*4
+>>select b from t010ta, t010tx order by ccc desc, b;
+
+B  
+---
+
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+b  
+q  
+y  
+z  
+
+--- 16 row(s) selected.
+>>
+>>
+>>-- 3 1 15 25 (original bug from JoanZ)
+>>select tr.vc from t010va tl, t010va tr order by tr.va, tr.vc;
+
+VC         
+-----------
+
+          3
+          3
+          3
+          3
+          1
+          1
+          1
+          1
+         15
+         15
+         15
+         15
+         25
+         25
+         25
+         25
+
+--- 16 row(s) selected.
+>>
+>>
+>>-- b q y z
+>>#ifMX
+>>select b from t010uta order by b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+
+--- 4 row(s) selected.
+>>
+>>-- b z q y
+>>select tl.b from t010uta tl, t010uta tr;
+
+B     
+------
+
+b     
+b     
+b     
+b     
+z     
+z     
+z     
+z     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010uta tl, t010uta tr order by tl.b;
+
+B     
+------
+
+b     
+b     
+b     
+b     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+z     
+z     
+z     
+z     
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010uta tl, t010uta tr order by tr.b, tl.b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010uta tl, t010uta tr order by b;
+
+B     
+------
+
+b     
+b     
+b     
+b     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+z     
+z     
+z     
+z     
+
+--- 16 row(s) selected.
+>>-- b q y z
+>>select tl.b from t010uta tl, t010uta tr order by 1;
+
+B     
+------
+
+b     
+b     
+b     
+b     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+z     
+z     
+z     
+z     
+
+--- 16 row(s) selected.
+>>-- b z q y
+>>select tl.b from t010uta tl, t010uta tr order by tl.a, tl.b;
+
+B     
+------
+
+b     
+b     
+b     
+b     
+z     
+z     
+z     
+z     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010uta tl, t010uta tr order by tr.a, tl.b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+
+--- 16 row(s) selected.
+>>-- z b q y
+>>select tl.b from t010uta tl, t010uta tr order by tl.c, tl.b;
+
+B     
+------
+
+z     
+z     
+z     
+z     
+b     
+b     
+b     
+b     
+q     
+q     
+q     
+q     
+y     
+y     
+y     
+y     
+
+--- 16 row(s) selected.
+>>-- (bzqy)*4
+>>select tl.b from t010uta tl, t010uta tr order by tr.c, tl.b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+
+--- 16 row(s) selected.
+>>
+>>-- (bzqy)*4
+>>select tl.b as D,* from t010uta tl, t010uta tr order by tr.c, D;
+
+D       A         B       C            A         B       C          
+------  --------  ------  -----------  --------  ------  -----------
+
+b       a         b                 3  m         z                 1
+q       r         q                15  m         z                 1
+y       z         y                25  m         z                 1
+z       m         z                 1  m         z                 1
+b       a         b                 3  a         b                 3
+q       r         q                15  a         b                 3
+y       z         y                25  a         b                 3
+z       m         z                 1  a         b                 3
+b       a         b                 3  r         q                15
+q       r         q                15  r         q                15
+y       z         y                25  r         q                15
+z       m         z                 1  r         q                15
+b       a         b                 3  z         y                25
+q       r         q                15  z         y                25
+y       z         y                25  z         y                25
+z       m         z                 1  z         y                25
+
+--- 16 row(s) selected.
+>>
+>>-- (bzqy)*4
+>>select b from t010uta, t010utx order by ccc, b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+
+--- 16 row(s) selected.
+>>
+>>-- (bqyz)*4
+>>select b from t010uta, t010utx order by ccc desc, b;
+
+B     
+------
+
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+b     
+q     
+y     
+z     
+
+--- 16 row(s) selected.
+>>
+>>
+>>-- 3 1 15 25 (original bug from JoanZ)
+>>select tr.vc from t010uva tl, t010uva tr order by tr.va, tr.vc;
+
+VC         
+-----------
+
+          3
+          3
+          3
+          3
+          1
+          1
+          1
+          1
+         15
+         15
+         15
+         15
+         25
+         25
+         25
+         25
+
+--- 16 row(s) selected.
+>>#ifMX
+>>
+>>?section clnup
+>>
+>>drop view t010va;
+
+--- SQL operation complete.
+>>drop table t010ta;
+
+--- SQL operation complete.
+>>drop table t010tx;
+
+--- SQL operation complete.
+>>drop table t010t1;
+
+--- SQL operation complete.
+>>drop table t010tmp1;
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>drop view t010uva;
+
+--- SQL operation complete.
+>>drop table t010uta;
+
+--- SQL operation complete.
+>>drop table t010utx;
+
+--- SQL operation complete.
+>>drop table t010ut1;
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>log;

@@ -1,0 +1,302 @@
+-- Test: TEST041 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Multi-Value predicates
+-- Expected files: EXPECTED041, EXPECTED041.MP
+-- Table created: t041a, t041t
+-- To do: - Should change expected error number 3145 to 3147.
+-- Limitations:
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST041
+--     (5/16/02) - Expected error number 3145 changed to 3147.
+
+--
+-- Multi-Value Predicates, aka row-value-constructors in preds
+--
+-- Ideally, these tests should run the same row-subqueries on three stages
+-- of the underlying table such that subq returns a) zero, b) one, c) >1 row.
+-- Case (c) is run-time error 8401.
+
+obey TEST041(ddb);
+log  LOG041 clear;
+obey TEST041(cdb);
+obey TEST041(tests);
+log;
+obey TEST041(ddb);
+exit;
+
+
+?section ddb
+drop table T041a;
+drop table T041t;
+
+?section cdb
+#ifMX
+create table T041t
+  (a int not null , b int not null droppable, c int);
+#ifMX
+#ifMP
+create table T041t
+  (a int not null , b int, c int);
+create constraint t041tnnc1 on t041t check (b is not null);
+#ifMP
+insert into T041t values(1,10,100),(2,20,200);
+insert into T041t(a,b) values(1,2),(9,90),(8,80);
+
+
+?section tests
+
+--?section OK
+create table T041a(
+  dx3 pic x(3) default '' not null,
+  d93 pic 9(3) default 0 not null,
+  primary key (dx3));
+
+#ifMX
+alter table T041a add constraint T041a_c0 check (dx3,d93 < 'y',940);
+alter table T041a add constraint T041a_c1 check ((dx3,d93) between
+						 ('a',50) and
+						 ('z',990));
+#ifMX
+#ifMP
+create constraint T041a_c0 on T041a check (dx3,d93 < 'y',940);
+create constraint T041a_c1 on T041a check ((dx3,d93) between
+						 ('a',50) and
+						 ('z',990));
+#ifMP
+
+insert into T041a values('zaz',999);	-- C0 vio
+insert into T041a values('z',910);	-- C0 vio
+insert into T041a values('a',10);	-- C1 vio
+insert into T041a values('a',50);
+insert into T041a values('b',10);
+table T041a;
+
+select * from T041t where (a,b)=(1,10);
+select * from T041t where  a,b = 1,10;
+select * from T041t where (a,b) is not null;
+select * from T041t where  a,b  is not null;
+select a from T041t where b,(select b,c from T041t where a<=1)=2,1,2;
+select * from T041t where (select * from T041t) +  1,2,3 is not null;	--4020
+select * from T041t where (select * from T041t) + (select * from T041t) is not null;--4020
+
+--?section GenMapTable
+select * from T041t where (select * from T041t where a=1) is not null;  --maptable.
+select * from T041t where (select * from (values(1,2))x) <= (a,b);
+select * from T041t where (select * from T041t)=(1,2,3);
+select * from T041t where (select * from T041t)= 1,2,3;
+select * from T041t where (a,b) < (select * from (values(1,2))x);
+select * from T041t where (1,2,3)=(select * from T041t);
+select * from T041t where 1,2,3=(select * from T041t);
+
+--?section SynErr					
+select * from T041t where a,b=(1,10);				--15001
+select * from T041t where (1,10)=a,b;				--15001
+select * from T041t where (select * from T041t) + (1,2,3) is not null;--15001
+select * from T041t where (1,2,3)+(select * from T041t) is not null;	--15001
+select * from T041t where  a,b  >=  values(1,2);			--15001
+select * from T041t where (a,b) >= (values(1,2));			--normitemexpr.
+
+--?section Subq
+select * from T041t where (select 1,2 from T041t) = (T041t.a,b);	--maptable.
+select * from T041t where (T041t.a,b) = (select 1,2 from T041t);	--maptable.
+select * from T041t where  T041t.a,b  = (select 1,2 from T041t);	--maptable.
+
+select * from T041t where (T041t.a,b) >any (select b,c from T041t);
+select * from T041t where  T041t.a,b  >any (select b,c from T041t);
+select * from T041t where  T041t.a       >any (select   c from T041t);
+select * from T041t where (select b from T041t) >any (select a from T041t);--8401
+select * from T041t where (select b,c from T041t) >any (select a,b from T041t);--8401.
+select * from T041t where (T041t.a,b) in (select b,c from T041t);
+select * from T041t where  T041t.a,b  in (select b,c from T041t);
+select * from T041t where (a) = (select b from T041t where c=100);
+select * from T041t where  a  = (select b from T041t where c=100);
+
+select * from T041t where (select b,c from T041t) in (T041t.a,b);  	--3147
+select * from T041t where (values(1,2)) in (1,2);			--3147
+select * from T041t where (a,b) in (1,2);				--3147
+select * from T041t where (a,b) in (select b/10,a*10 from T041t);	--legal!
+select * from T041t where (select b from T041t) in (T041t.a,b);  	--8401
+select * from T041t where (values(1)) in (1,2);			--normitemexpr.
+select * from T041t where (a) in (1,2,11);		
+select * from T041t where  (select b,c from T041t) in T041t.a,b;	--15001
+select * from T041t where (select b from T041t where c=100) = (a);
+select * from T041t where (select b from T041t where c=100) = a;
+
+-- (scalar subq),(ss),(ss) = 1,2,3;
+select * from T041t where  (select b from T041t where c=100),
+			(select b from T041t where c=200),c = 10,20,200;
+select * from T041t where ((select b from T041t where c=100),
+			(select b from T041t where c=200),c) = (10,20,200);
+select * from T041t where  (select b from T041t ),c = 10,200;		--8401.
+select * from T041t where ((select b from T041t ),c) = (10,200);	--8401.
+select a from T041t where -(select b from T041t where c>100),1 = -20,1;
+select a from T041t where(-(select b from T041t where c>100),1)=(-20,1);
+
+select * from T041t where (values(9)),b = 9,10;
+select * from T041t where ((values(9)),b) = (9,10);
+select * from T041t where ((values(9,2)),b) = (9,2,10);		--8401.
+select * from T041t where (a,b) in (values(1,10),(7,70));	--normitemexpr.
+select * from T041t where (a,b) <all (values(1,10),(7,70));	--normitemexpr.
+
+-- between ...
+select * from T041t where (a,b) between (1,10) and (2,20);
+select * from T041t where ((select a from T041t where b=10),b) between(1,10)and(2,20);
+select * from T041t where (select a from T041t where b=10) between (1) and (2);
+select * from T041t where (select a from T041t where b=10) between 1 and 2;
+select * from T041t where (select a from T041t where b=10) between (1) and 2;
+select * from T041t where (select a from T041t where b=10) between 1 and (2);
+
+select * from T041t where ((select a from T041t where b=10),b) between (1,2)and(2,10);
+select * from T041t where (select a from T041t where b=10),b between 1,2 and 2,10;
+
+select * from T041t where (select a from T041t where b=10) between 1 and 20;
+select * from T041t where ((select a from T041t where b=10)) between 1 and 20;
+select * from T041t where 1 between (select a from T041t where b=10) and 20;
+select * from T041t where 1 between ((select a from T041t where b=10)) and 20;
+select * from T041t where 1 between 0 and (select a from T041t where b=10);
+select * from T041t where 1 between 0 and ((select a from T041t where b=10));
+select * from T041t where 1 not between 0 and ((select a from T041t where b=10));
+
+select * from T041t where (select a,b from T041t where b=10) between 1,2 and 2,10;
+select * from T041t where (select a,b from T041t where b=10) between (1,2)and(2,10);
+select * from T041t where ((select a,b from T041t where b=10)) between (1,2)and(2,10);
+select * from T041t where(((select a,b from T041t where b=10)))between (1,2)and(2,10);
+
+select * from T041t where 1,2 between (select a,b from T041t where b=10) and 2,10;
+select * from T041t where(1,2)between (select a,b from T041t where b=10)and(2,10);
+select * from T041t where(1,2)between ((select a,b from T041t where b=10))and(2,10);
+select * from T041t where(1,2)between (((select a,b from T041t where b=10)))and(2,10);
+
+select * from T041t where 1,2 between 2,10 and (select a,b from T041t where b=10);
+select * from T041t where(1,2)between(2,10)and (select a,b from T041t where b=10);
+select * from T041t where(1,2)between(2,10)and ((select a,b from T041t where b=10));
+select * from T041t where(1,2)between(2,10)and (((select a,b from T041t where b=10)));
+
+select * from T041t where(1,2)between(select a,b from T041t where b=10)and (select a,b from T041t where b=10);
+select * from T041t where(select a,b from T041t where b=10)between(select a,b from T041t where b=10)and (2,10);
+select * from T041t where(select a,b from T041t where b=10)between(1,2)and (select a,b from T041t where b=10);
+
+select * from T041t where(select a,b from T041t where b=10)between(select a,b from T041t where b=10)and (select a,b from T041t where b=10);
+
+-- between, 15001:
+select * from T041t where ((select a from T041t where b=10),b) between (1,2)and 2,10;
+select * from T041t where ((select a from T041t where b=10),b) between  1,2 and(2,10);
+select * from T041t where (select a from T041t where b=10),b between 1,2 and (2,10);
+select * from T041t where (select a from T041t where b=10),b between (1,2) and 2,10;
+
+select * from T041t where (select a,b from T041t where b=10) between (1,2)and 2,10;
+select * from T041t where ((select a,b from T041t where b=10)) between (1,2)and 2,10;
+select * from T041t where(1,2)between (select a,b from T041t where b=10)and 2,10;
+select * from T041t where(1,2)between 2,10 and (select a,b from T041t where b=10);
+
+select * from T041t where (select a,b from T041t where b=10) between 1,2 and (2,10);
+select * from T041t where ((select a,b from T041t where b=10)) between 1,2 and (2,10);
+select * from T041t where 1,2 between (select a,b from T041t where b=10)and (2,10);
+select * from T041t where 1,2 between (2,10) and (select a,b from T041t where b=10);
+
+--?section orvc2
+select * from T041t where (select b from T041t where a=1 and c is not null) in (1,10);
+select * from T041t x where a in (select c from T041t s);
+
+select * from T041t where (select b from T041t) in (10);		-- 8401
+select * from T041t where ((select b from T041t ),c) = (10,200);	-- 8401 !
+
+select * from T041t where (select b from T041t)=10 and c=200;		-- 8401
+
+select * from T041t where ((select b from T041t ),c) is null;		-- 8401
+
+select a,max(b) from T041t group by a having ((select b from T041t ),20)=(1,2);-- 8401
+select * from T041t join T041t x on ((select b from T041t ),20)=(1,2);
+select * from T041t where ((select b from T041t ),2+18) = (10,200);
+select * from T041t join T041t x on ((select b from T041t ),x.a)=(1,T041t.a);-- 8401
+select * from T041t where ((select b from T041t ),c) = (10,200) is unknown;-- 8401
+select * from T041t where not ((select b from T041t ),c) = (10,200);	-- 8401
+select * from T041t where ((select b from T041t ),c) = (10,200) or
+		       (a,(select b from T041t )) = (2,20);		-- 8401
+
+select * from T041t x where((select b from T041t ),x.a)in(select b,c from T041t s);--8401
+
+-- Expecting 8401 here, but getting predicatesOnParent.isEmpty()
+
+-- Expecting 8401 here, but getting 7000 GenMapTable:
+-- Running this query twice once with the default shape and second time
+-- with the old shape. With new shape the query goes ahead and inserts
+-- the row from subquery, while with the old shape it gets an error
+-- This seems to be a bug in the code. We have created a solution to
+-- track the problem. Sol: 10-091102-5937
+
+-- The query does not give 8401
+select * from T041t x where ((select b,c from T041t ),x.a)=((select b,a from T041t y),c);
+
+-- With the old shape you get error 8401
+
+control query shape hybrid_hash_join(hybrid_hash_join(partition_access(
+scan(TABLE 'X', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off)),partition_access(sort_groupby(scan(path 'CAT.SCH.T041T',
+forward, blocks_per_access 1 , mdam off)))),partition_access(sort_groupby(
+scan(TABLE 'Y', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off))));
+
+select * from T041t x where ((select b,c from T041t ),x.a)=((select b,a from T041t y),c);
+
+control query shape cut;
+
+select * from T041t x where (select a,b,c from T041t r) = (select b,c,a from T041t s);
+select * from T041t x where ((select b,c from T041t ),x.a)in(select b,c,a from T041t s);
+
+-- Expecting 8401 here, but getting VEGTable (found) assertion
+select * from T041t where ((select b from T041t ),c)=(select a,c from T041t where c=200);
+select * from T041t x where ((select b,c from T041t ),x.a)= (select b,c,a from T041t s);
+select * from T041t x where ((select b,c from T041t ),x.a)=(c,(select b,a from T041t y));
+
+-- 8401 gets output twice
+
+select * from T041t x where 
+  ((select b,c from T041t one where 
+    ((select a,b from T041t two where
+      ((select c,b from T041t thr),a)=(c,(select b,a from T041t fou))
+    ),c)=(c,(select b,a from T041t fiv))
+  ),a)=(c,(select b,a from T041t six));
+
+-- same query compiled with a different shape emits out 8401 once
+-- This seems to be a bug. Use the above query with the new shape to
+-- reproduce the bug
+
+ control query shape hybrid_hash_join(hybrid_hash_join(partition_access(
+scan(TABLE 'X', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off)),partition_access(sort_groupby(
+scan(TABLE 'SIX', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off)))),sort_groupby(hybrid_hash_join(hybrid_hash_join(
+partition_access(scan(TABLE 'ONE', path 'CAT.SCH.T041T', forward
+, blocks_per_access 1 , mdam off)),partition_access(sort_groupby(
+scan(TABLE 'FIV', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off)))),sort_groupby(hybrid_hash_join(hybrid_hash_join(
+partition_access(scan(TABLE 'TWO', path 'CAT.SCH.T041T', forward
+, blocks_per_access 1 , mdam off)),partition_access(sort_groupby(
+scan(TABLE 'FOU', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off)))),partition_access(sort_groupby(
+scan(TABLE 'THR', path 'CAT.SCH.T041T', forward, blocks_per_access 1
+, mdam off))))))));
+
+
+control query shape cut;
+-- test fix to genesis case 10-981208-4203
+select a, b from t041t group by a, b having a < (select d93 - 2 from t041a);
+select a, b from t041t where a < (select d93 / 2 from t041a);

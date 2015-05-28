@@ -1,0 +1,2891 @@
+-- Test: TEST063 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Sequencing functions, including running count, sum,
+--                average, min, max, standard deviation, diffs, etc,
+--                on small int, int, large int, date, and char datatypes.
+-- Expected files: EXPECTED063 - Windows expected files
+--                 EXPECTED063.MX - MX tables expected files, floating number
+--                                  precision differences
+--                 EXPECTED063.MP - MP tables expected files, view related
+--                                  tests excluded.
+-- Known diff files: DIFF063.KNOWN - Precision difference, cause unknown
+-- Table created: t063t1, t063t2, t063t3
+-- View created: v063v1
+-- Limitations:
+-- To do: Eliminate EXPECTED063.MX file when IEEE float number is supported.
+-- Revision history:
+--     (3/28/02) - Copied from fullstack/TEST063
+--     (11/22/02) - Merged from R1.8: testing on moving windows and PCODE
+--                  level changes
+
+--
+-- Need to add CONTROL QUERY test
+--
+
+-- some rank() tests yield different results when robust_query_optimization 
+-- is set to system. Specifically, 
+--select rank() over (partition by sex order by paygrade,num) r from olap_empo;
+-- returns unordered results because of a parallel plan. Until we can resolve
+-- this issue, let's run test063 using robust_query_optimization minimum
+control query default robust_query_optimization 'minimum';
+
+?section cleanup
+#ifMX
+drop view t063v1;
+#ifMX
+drop table t063t1;
+drop table t063t2;
+drop table t063t3;
+control query default risk_premium_serial '1.0';
+log LOG063 clear;
+?section crtab
+CREATE TABLE t063t1 
+(a smallint, b int, c int, d date, e char(8), g char(2));
+
+insert into t063t1 values
+( 1,10,110, DATE '1980-11-03','A STRING','G1'),
+( 2,18,112, DATE '1980-12-03','B STRING','G2'),
+( 3,27,116, DATE '1981-01-03','C STRING','G3'),
+( 4,35,122, DATE '1981-02-03','D STRING','G4'),
+( 5,45,130, DATE '1981-03-03','E STRING','G5'),
+( 6,30,140, DATE '1981-04-03','F STRING','G1'),
+( 7,35,152, DATE '1981-05-03','G STRING','G2'),
+( 8,40,166, DATE '1981-06-03','H STRING','G3'),
+( 9,45,182, DATE '1981-07-03','I STRING','G4'),
+(10,22,110, DATE '1981-08-03','J STRING','G5'),
+(11,26,112, DATE '1981-09-03','K STRING','G1'),
+(12,30,116, DATE '1981-10-03','L STRING','G2'),
+(13,35,122, DATE '1981-11-03','M STRING','G3'),
+(14,38,130, DATE '1981-12-03','N STRING','G4'),
+(15,45,140, DATE '1982-01-03','O STRING','G5'),
+(16,23,152, DATE '1982-02-03','P STRING','G1'),
+(17,25,166, DATE '1982-03-03','Q STRING','G2'),
+(18,27,182, DATE '1982-04-03','R STRING','G3'),
+(19,29,200, DATE '1982-05-03','S STRING','G4'),
+(20,22,112, DATE '1982-06-03','T STRING','G5'),
+(21,24,116, DATE '1982-07-03','U STRING','G1'),
+(22,26,122, DATE '1982-08-03','V STRING','G2'),
+(23,28,130, DATE '1982-09-03','W STRING','G3'),
+(24,30,140, DATE '1982-10-03','X STRING','G4'),
+(25,32,152, DATE '1982-11-03','Y STRING','G5');
+
+
+?section seltab
+SELECT RUNNINGCOUNT(*) FROM t063t1 SEQUENCE BY A;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGCOUNT(*), (SELECT COUNT(*) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGCOUNT(D) FROM t063t1 SEQUENCE BY A;
+ 
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGCOUNT(D), (SELECT COUNT(D) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGMAX(D) FROM t063t1 SEQUENCE BY A;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGMAX(D), (SELECT MAX(D) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGMIN(D) FROM t063t1 SEQUENCE BY A;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGMIN(D), (SELECT MIN(D) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGSUM(C) FROM t063t1 SEQUENCE BY A;
+
+--- Is semantically equivalent to:
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGSUM(C), (SELECT SUM(C) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGAVG(C) FROM t063t1 SEQUENCE BY A;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGAVG(C), (SELECT AVG(C) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGVARIANCE(C) FROM t063t1 SEQUENCE BY A;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGVARIANCE(C), (SELECT VARIANCE(C) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+ 
+SELECT RUNNINGSTDDEV(C) FROM t063t1 SEQUENCE BY A;
+ 
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGSTDDEV(C), (SELECT STDDEV(C) FROM t063t1 WHERE a <= T1.a)
+FROM t063t1 T1
+SEQUENCE BY A) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT RUNNINGRANK(C) FROM t063t1 SEQUENCE BY C;
+ 
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT RUNNINGRANK(C), (SELECT case when sum(cnt) is null 
+                                     then 0
+                                     else sum(cnt) end + 1 
+                         FROM (select c, cast(count(*) as integer) cnt
+                               from t063t1 WHERE c < T1.c group by c) G) 
+FROM t063t1 T1
+SEQUENCE BY C) T2(v,ev)) T3(status)
+GROUP BY status;
+
+SELECT C, ROWS SINCE CHANGED (C) FROM t063t1 SEQUENCE BY C;
+SELECT C, D, ROWS SINCE CHANGED (C,D) FROM t063t1 SEQUENCE BY C,D;
+
+SELECT status, count(*)
+FROM
+(SELECT CASE WHEN v = ev THEN 'PASS' ELSE 'FAIL' END
+FROM
+(SELECT ROWS SINCE CHANGED(C), 
+        ROWS SINCE INCLUSIVE ((C <> offset(C,1)) OR (offset(C,1) is NULL)) + 1
+FROM t063t1 T1
+SEQUENCE BY C) T2(v,ev)) T3(status)
+GROUP BY status;
+
+-- Correlated Subquery 
+
+SELECT a, RUNNINGMAX(b), (SELECT MAX(B) from t063t1 where (a <= S.a)) from t063t1 S SEQUENCE BY A;
+
+SELECT a, (SELECT SUM(B) from t063t1 where (a <= S.a)), y  
+FROM t063t1 S, (SELECT a, RUNNINGSUM(B) from t063t1 sequence by a) AS T(x, y) 
+where a = x;
+
+-- MOVINGMIN/MOVINGMAX
+
+SELECT a, MOVINGMIN(b, 5), (SELECT MIN(B) from t063t1 where (a between S.a-4 and S.a)) from  t063t1 S SEQUENCE BY A;
+SELECT a, MOVINGMAX(c, 5), (SELECT MAX(C) from t063t1 where (a between S.a-4 and S.a)) from  t063t1 S SEQUENCE BY A;
+
+-- Test semantic equivalences and DIFFs of Date-Time values
+
+SELECT DIFF1(B), B-OFFSET(B, 1)  FROM t063t1 SEQUENCE BY A;
+SELECT DIFF2(B), DIFF1(B)-OFFSET(DIFF1(B), 1)  FROM t063t1 SEQUENCE BY A;
+SELECT DIFF1(B,D) FROM t063t1 SEQUENCE BY A;
+SELECT DIFF1(B,D), DIFF1(B)/CAST(DIFF1(D) AS LARGEINT) FROM t063t1 SEQUENCE BY A;
+SELECT DIFF2(B,D), DIFF2(B)/CAST(DIFF1(D) AS LARGEINT) FROM t063t1 SEQUENCE BY A;
+
+?section negtests
+-- Negative Tests
+-- should return error 4108
+SELECT a, c, runningavg(c), rows since (this (c) > runningavg(this(c))) from t063t1 sequence by a ;
+
+-- should return error 4109
+SELECT a, b, RUNNINGAVG(c) from t063t1 WHERE a > 5 and RUNNINGAVG(c) > 130 sequence by a;
+
+-- should return 4110
+SELECT a, b, RUNNINGAVG(c) from t063t1 WHERE a > 5;
+
+-- should return 4111
+select a, b, c from t063t1 sequence by a;
+
+--
+-- Invalid arguments:
+--
+-- first argument invalid
+select runningsum(d) from t063t1 sequence by a;
+select runningavg(d) from t063t1 sequence by a;
+select movingsum(d, 5) from t063t1 sequence by a;
+select movingavg(d, 5) from t063t1 sequence by a;
+select runningsum(e) from t063t1 sequence by a;
+select runningavg(e) from t063t1 sequence by a;
+select movingsum(e, 5) from t063t1 sequence by a;
+select movingavg(e, 5) from t063t1 sequence by a;
+
+-- second argument invalid
+select movingsum(5, d) from t063t1 sequence by a;
+select movingavg(5, d) from t063t1 sequence by a;
+
+select movingsum(5, e) from t063t1 sequence by a;
+select movingavg(5, e) from t063t1 sequence by a;
+
+-- first argument invalid
+select diff1(e) from t063t1 sequence by a;
+select diff2(e) from t063t1 sequence by a;
+select diff1(e,c) from t063t1 sequence by a;
+select diff2(e,c) from t063t1 sequence by a;
+
+--second argument invalid
+select diff1(c, e) from t063t1 sequence by a;
+select diff2(c, e) from t063t1 sequence by a;
+
+?section derived
+-- Derived tables
+
+-- should get right answer
+SELECT aa, bb, cc 
+FROM (SELECT a, b, RUNNINGAVG(c) from t063t1 WHERE a > 5 sequence by a) AS T(aa,bb,cc)
+WHERE cc > 130;
+
+SELECT g, AVG(c) FROM t063t1 GROUP BY g;
+
+SELECT gg, MOVINGSUM (avgC,2) as MSUM 
+FROM (SELECT g, AVG(c) FROM t063t1 GROUP BY g) AS T2 (gg, avgC) 
+SEQUENCE BY gg;
+
+?section scalar_agg
+-- 
+-- The following all return NO rows from the sequence node
+--
+SELECT MAX(MMM)
+FROM
+(SELECT MOVINGSUM (avgC,2) as MSUM 
+FROM (SELECT g, AVG(c) FROM t063t1 GROUP BY g) AS T2 (gg, avgC) 
+SEQUENCE BY gg) as T3 (MMM);
+
+SELECT COUNT(MMM)
+FROM
+(SELECT MOVINGSUM (avgC,2) as MSUM 
+FROM (SELECT g, AVG(c) FROM t063t1 GROUP BY g) AS T2 (gg, avgC) 
+SEQUENCE BY gg) as T3 (MMM);
+
+SELECT COUNT(*)
+FROM
+(SELECT MOVINGSUM (avgC,2) as MSUM 
+FROM (SELECT g, AVG(c) FROM t063t1 GROUP BY g) AS T2 (gg, avgC) 
+SEQUENCE BY gg) as T3 (MMM);
+
+SELECT COUNT(*)
+FROM (SELECT g, AVG(c) FROM t063t1 GROUP BY g) AS T;
+
+SELECT COUNT(MMM)
+FROM
+(SELECT MOVINGSUM (c,2) as MSUM FROM t063t1 sequence by a) as T (MMM);
+
+SELECT AVG(MOVINGSUM (c,2)) ASUM FROM t063t1 sequence by a;
+
+-- 
+-- Derived Table
+--
+SELECT aa,  cast(bb as numeric(7,2)), cast (cc as numeric (7,2)) FROM 
+(SELECT a, RUNNINGSUM(B), MOVINGAVG(C,5) FROM t063t1 sequence by a) AS T (aa,bb,cc);
+
+-- CREATE VIEW
+#ifMX
+CREATE VIEW t063v1 (x, y, z) as 
+SELECT a, CAST (RUNNINGSUM(B) AS NUMERIC(7,2)), CAST (MOVINGAVG(C,5) AS NUMERIC(7,2)) FROM t063t1 sequence by a;
+
+SELECT * from t063v1;
+
+--
+-- Correctly avoids pushing predicate down 
+--
+SELECT * from t063v1 where x = 10;
+
+--
+--
+SELECT aa,  x, cast(bb as numeric(7,2)), cast (cc as numeric (7,2)) FROM 
+(SELECT a, RUNNINGSUM(B), MOVINGAVG(C,5) FROM t063t1 sequence by a) AS T (aa,bb,cc), t063v1 where aa = x;
+
+--
+--
+SELECT aa,  x, cast(bb as numeric(7,2)), y, cast (cc as numeric (7,2)) FROM 
+(SELECT a, RUNNINGSUM(B), MOVINGAVG(C,5) FROM t063t1 sequence by a) AS T (aa,bb,cc), t063v1 where aa = x;
+
+
+SELECT aa,  x, cast(bb as numeric(7,2)), cast (cc as numeric (7,2)), z FROM 
+(SELECT a, RUNNINGSUM(B), MOVINGAVG(C,5) FROM t063t1 sequence by a) AS T (aa,bb,cc), t063v1 where aa = x;
+#ifMX
+
+-- 
+?section rows_since
+-- ROWS SINCE
+
+SELECT a, c, runningavg(c), rows since (this (c) > runningavg(c)) FROM t063t1 sequence by a;
+SELECT a, c, runningavg(c), rows since inclusive(this (c) > runningavg(c)) FROM t063t1 sequence by a;
+
+select a, b, ROWS SINCE (a > b),  ROWS SINCE INCLUSIVE (a > b) FROM
+(select aa, bb from (values(1)) as T(a) transpose 
+(2 , 3),
+(4 , 5),
+(1 , 6),
+(8 , 12),
+(10, 12),
+(12, 15) as (aa,bb)) as T (a, b) sequence by a;
+
+select a, b, ROWS SINCE (a < b),  ROWS SINCE INCLUSIVE (a < b) FROM
+(select aa, bb from (values(1)) as T(a) transpose 
+(2 , 3),
+(4 , 5),
+(1 , 6),
+(8 , 12),
+(10, 12),
+(12, 15) as (aa,bb)) as T (a, b) sequence by a;
+
+-- LAST NOT NULL
+
+select a, b, RUNNINGCOUNT(b) as RCOUNT, RUNNINGAVG (b) as RAVG, LASTNOTNULL(b) as LASTNN, RANK(a) RANK FROM
+(select aa, bb from (values(1)) as T(a) transpose 
+(1, 3),
+(2, 5),
+(3, 6),
+(4, NULL),
+(5, NULL),
+(6, 14),
+(7, NULL),
+(8, NULL),
+(9, 15)
+as (aa,bb)) as T (a, b) sequence by a;
+
+select b, MOVINGCOUNT(*,3) as MCOUNTSTAR, MOVINGCOUNT(b,3) as MCOUNT, MOVINGAVG (b,3) as MAVG FROM
+(select aa, bb from (values(1)) as T(a) transpose 
+(1, 3),
+(2, 5),
+(3, 6),
+(4, NULL),
+(5, NULL),
+(6, 14),
+(7, NULL),
+(8, NULL),
+(9, 15)
+as (aa,bb)) as T (a, b) sequence by a;
+
+--
+--
+--  Test for correct scoping of GROUP BY and SEQUENCE BY in same query
+--
+
+--
+--
+-- Should return 3 rows
+--
+select a, avg(b), avg (runningsum(a)) 
+from 
+(values
+(1234,         23.000,      11),
+(1234,         24.000,      17),
+(1234,         25.000,      14),
+(1234,         26.000,      10),
+(1234,         27.000,      19),
+(1234,         28.000,      14),
+(1234,         29.000,      18),
+(1234,         30.000,      18),
+(1234,         31.000,      12),
+(2345,         23.000,      14),
+(2345,         24.000,      15),
+(2345,         25.000,      15),
+(2345,         26.000,      11),
+(2345,         27.000,      17),
+(2345,         28.000,      11),
+(2345,         29.000,      11),
+(2345,         30.000,      15),
+(2345,         31.000,      12),
+(3456,         23.000,      17),
+(3456,         24.000,      16),
+(3456,         25.000,      11),
+(3456,         26.000,      17),
+(3456,         27.000,      14),
+(3456,         28.000,      10),
+(3456,         29.000,      19),
+(3456,         30.000,      14),
+(3456,         31.000,      18))
+as T(a, b, c) 
+sequence by a, b
+group by a;
+
+--
+-- Error 4109: Sequence function placed incorrectly
+-- Genesis case 10-990823-0045 
+--
+select a, avg(b), runningsum(a) 
+from 
+(values
+(1234,         23,      11),
+(1234,         24,      17),
+(1234,         25,      14),
+(1234,         26,      10),
+(1234,         27,      19),
+(1234,         28,      14),
+(1234,         29,      18),
+(1234,         30,      18),
+(1234,         31,      12),
+(2345,         23,      14),
+(2345,         24,      15),
+(2345,         25,      15),
+(2345,         26,      11),
+(2345,         27,      17),
+(2345,         28,      11),
+(2345,         29,      11),
+(2345,         30,      15),
+(2345,         31,      12),
+(3456,         23,      17),
+(3456,         24,      16),
+(3456,         25,      11),
+(3456,         26,      17),
+(3456,         27,      14),
+(3456,         28,      10),
+(3456,         29,      19),
+(3456,         30,      14),
+(3456,         31,      18))
+as T(a, b, c) 
+sequence by a, b
+group by a;
+
+--
+--  Tests valid ROWS SINCE nesting
+--  Genesis case 10-990301-0576 
+--
+select a, b, c, movingavg(c, 3, rows since (this (a) <> a))
+from 
+(values
+(1234,         23,      11.000),
+(1234,         24,      17.000),
+(2345,         23,      14.000),
+(2345,         24,      15.000),
+(2345,         25,      15.000),
+(2345,         26,      11.000))
+as T(a, b, c) 
+sequence by a, b;
+
+
+--
+-- Tests correct trapping for divide by zero
+--
+-- Genesis case 10-990219-0316
+--
+
+select a, diff1(b, c)
+from
+(values
+(1234,         23,      11),
+(1234,         24,      12),
+(1234,         25,      13),
+(2345,         23,      14),
+(2345,         24,      14),
+(2345,         25,      15),
+(2345,         26,      15),
+(2345,         27,      16),
+(2345,         27,      16),
+(3452,         23,      17),
+(3452,         24,      17),
+(3452,         25,      17),
+(3452,         26,      18),
+(3452,         27,      18),
+(3452,         28,      18),
+(3452,         29,      19),
+(3452,         30,      19),
+(3452,         31,      19))
+as T(a, b, c)
+sequence by a, b;
+
+--
+--
+-- Test for non-Pcode Evaluation
+--
+-- Genesis case 10-990729-3914
+--
+create table t063t2  (a int, b int, c smallint, d largeint);
+ 
+insert into t063t2 values
+     (2, 74, 27648, 498921136),
+     (80, 24011, 22223, 859834),
+     (89, 28238, 28519, 285854226),
+     (51, 15294, 18450, 100322507),
+     (33, 9031, 32354, 1130723134),
+     (53, 15474, 5573, 476322978),
+     (50, 15250, 24665, 196331131),
+     (71, null, 27138, 37182688),
+     (76, 23010, 6585, 666815330),
+     (47, 13457, 32039, 186130057);
+ 
+control query default PCODE_OPT_LEVEL 'OFF';
+ 
+ select a, b,
+        runningcount(*) as rcount_star,
+        runningsum(b) as rsum_b,
+        rank(a) as rank
+     from t063t2
+       sequence by a;
+ 
+ select b, runningsum(b), runningcount(*), rank(a)
+     from t063t2
+       sequence by a;
+
+control query default PCODE_OPT_LEVEL '2';
+--
+-- Test for nested sequence functions within derived tables
+--
+-- Genesis Case Number: 10-990301-0569
+
+create table t063t3 (
+    account_num int,
+    wk int,
+    wkly_ad_clicks int
+    );
+
+insert into t063t3 values
+    (1234,         23,      11),
+    (1234,         24,      17),
+    (2345,         23,      14),
+    (2345,         24,      15),
+    (2345,         25,      15),
+    (2345,         26,      11);
+
+select account_num, wk, diff1 (ad_clicks_mov_avg)
+  from (
+    select account_num, wk,
+           movingavg (wkly_ad_clicks, 3,
+           rows since (account_num <> OFFSET (account_num,1)))
+        from t063t3
+        sequence by account_num, wk
+       ) as T1 ( account_num, wk, ad_clicks_mov_avg)
+  sequence by account_num, wk;
+
+-- Tests for protective sequence function transformations to avoid
+-- short-circuiting. The generator define GEN_DISABLE_SF_PROTECT disables the
+-- protective sequence function transformation. At this point, all of 
+-- these tests should fail if the generator define GEN_DISABLE_SF_PROTECT
+-- is set.
+--
+-- Test the ITM_SCALAR_MIN transformation.
+--
+-- The second and third arguments of offset are combined using the scalar
+-- min function. If short-circuiting is allowed, the rows since is not
+-- computed on each rows and the offset returns the incorrect value.
+--
+?section SCBUG_Q1
+select b,c,offset (c, (rows since inclusive (b = 30)), 99) 
+from t063t1 sequence by a order by a;
+
+-- Test the ITM_CASE transformation.
+--
+?section SCBUG_Q2
+select offset(runningsum(a),1),
+	offset(case when a < 10 then runningsum(a) else runningsum(a) end, 1)
+from t063t1 sequence by a order by a;
+
+
+-- Test the ITM_OR transformation. 
+--
+-- Each of the rows since expressions in the following query should
+-- return the same result. However, when short-circuiting is allowed, the
+-- second rows since gives incorrect results because the sum on the right
+-- side of the OR is skipped for the first rows because the left side is
+-- TRUE.
+-- 
+?section SCBUG_Q3
+select rows since inclusive (runningsum(b) < 300), 
+	rows since inclusive (runningsum(b) < 300 OR runningsum(b) < 300)
+from t063t1 sequence by a order by a;
+
+-- Test the ITM_AND transformation. 
+--
+-- Both of the rows since expressions in the following query should
+-- return the same result. However, when short-circuiting is allowed, the
+-- second rows since gives incorrect results because the sum on the right
+-- side of the AND is skipped for the first rows because the left side is
+-- FALSE.
+-- 
+?section SCBUG_Q4
+select rows since inclusive (runningsum(b) > 300), 
+	rows since inclusive (runningsum(b) > 300 AND runningsum(b) > 300)
+from t063t1 sequence by a order by a;
+
+-- Test nested case
+--
+?section SCBUG_Q5
+select offset(runningsum(a),1),
+	offset(case when a < 10 then 
+		case when a < 5 then runningsum(a) else runningsum(a) end
+		else runningsum(a) end, 1)
+from t063t1 sequence by a order by a;
+
+-- Test nested sequence functions
+--
+?section SCBUG_Q6
+select offset(runningsum(a),1),
+	offset(case when a < 10 then runningsum(a) else runningsum(a) end, 1)
+from 
+	(select offset(runningsum(a),1),
+	offset(case when a < 10 then runningsum(a) else runningsum(a) end, 1)
+	from t063t1 sequence by a) T(a,b)
+sequence by a order by a;
+
+--
+--
+-- Test for movingsum with all nulls in moving window
+--
+-- Genesis Case Number: 10-020725-5529
+
+-- The following shows an example of MOVINGSUM with a moving window size of 3 where all 
+-- values (b) are NULL. The second expression shows the correct equivalent MOVINGSUM semantics:
+
+select a, b, MOVINGSUM(b,3) as MSUM1, CASE MOVINGCOUNT(b,3) WHEN 0 THEN NULL ELSE MOVINGSUM(b,3) END as MSUM2 FROM
+(values
+(8, 1),
+(9, NULL),
+(11, NULL),
+(17, NULL),
+(33, 6),
+(34, NULL),
+(35, NULL),
+(36, NULL),
+(37, 7))
+as T(a,b) sequence by a;
+
+--
+-- The following shows an example of MOVINGAVG with a moving window size of 3 where all 
+-- values (b) are NULL. The second expression shows the correct equivalent MOVINGAVG semantics:
+
+select a, b, MOVINGAVG(b,3) as MAVG1, CASE MOVINGCOUNT(b,3) WHEN 0 THEN NULL ELSE MOVINGSUM(b,3)/MOVINGCOUNT(b,3) END as MAVG2 FROM
+(values
+(8, 1),
+(9, NULL),
+(11, NULL),
+(17, NULL),
+(33, 6),
+(34, NULL),
+(35, NULL),
+(36, NULL),
+(37, 7))
+as T(a,b) sequence by a;
+
+--
+--
+-- Test for movingsum with window size of 0
+--
+-- The following show examples of MOVINGSUM and MOVINGAVG with a moving window size of 0
+-- 
+
+select a, b, MOVINGSUM(b,0) as MSUM, MOVINGAVG(b,0) as MAVG FROM
+(values
+(8, 1),
+(9, 2),
+(11, NULL),
+(33, 6),
+(37, 7))
+as T(a,b) sequence by a;
+
+select a, b, c, MOVINGSUM(c,b) as MSUM, MOVINGAVG(c,b) as MAVG FROM
+(values
+(1,1, 1),
+(2,0, 2),
+(3,2, NULL),
+(4,0, 6),
+(5,3, 7))
+as T(a,b,c) sequence by a;
+
+--
+-- Test for Case-10-021213-4041: MOVINGMIN/MAX do not treat negative window
+-- sizes properly.
+--
+
+select a, b, 
+movingmax(b,a,2000) as MMAX_ORG, 
+CASE WHEN (a < 0 OR a IS NULL) THEN runningmax(b) ELSE movingmax(b,a) END AS MMAX_CORRECT
+from (values 
+(2,    1, 1),
+(2,    2, 2),
+(2,    3, 3),
+(2,   16, 4),
+(-2,   1, 5),
+(2,    2, 6),
+(-2,   3, 7),
+(2,    5, 8),
+(NULL, 1, 9),
+(2,    2, 10),
+(NULL, 3, 11),
+(2,    2, 12),
+(2,    3, 13),
+(2,   26, 14),
+(-2,   1, 15),
+(2,    2, 16),
+(-2,   3, 17),
+(2,    5, 18),
+(NULL, 1, 19),
+(2,    2, 20),
+(NULL, 3, 21),
+(2,    2, 22),
+(2,    3, 23),
+(2,   36, 24),
+(-2,   1, 25),
+(2,    2, 26),
+(-2,   3, 27),
+(2,    5, 28),
+(NULL, 1, 29),
+(2,    2, 30),
+(NULL, 3, 31),
+(2,    2, 32),
+(2,    3, 33),
+(2,   46, 34),
+(-2,   1, 35),
+(2,    2, 36),
+(-2,   3, 37),
+(2,    5, 38),
+(NULL, 1, 39),
+(2,    2, 40),
+(NULL, 3, 41),
+(2,    2, 42),
+(2,    3, 43),
+(2,   56, 44),
+(-2,   1, 45),
+(2,    2, 46),
+(-2,   3, 47),
+(2,    5, 48),
+(NULL, 1, 49),
+(2,    2, 50),
+(NULL, 3, 51),
+(2,    2, 52),
+(2,    3, 53),
+(2,    6, 54),
+(-2,   1, 55),
+(2,    2, 56),
+(-2,   3, 57),
+(2,    5, 58),
+(NULL, 1, 59),
+(2,    2, 60),
+(NULL, 3, 61),
+(2,    2, 62),
+(2,    3, 63),
+(2,    6, 64),
+(-2,   1, 65),
+(2,    2, 66),
+(-2,   3, 67),
+(2,    5, 68),
+(NULL, 1, 69),
+(2,    4, 120)) 
+as T(a,b,c) SEQUENCE BY c;
+
+log;
+
+drop table olap_emp;
+
+log LOG063 ;
+
+
+?section olapcrtab
+
+create table olap_emp
+ (
+   Num           integer unsigned no default  not null not droppable ,
+   LastName      char(24)         no default  not null not droppable ,
+   FirstName     char(14)         no default  not null not droppable ,
+   MiddleInitial char             no default  not null not droppable ,
+   Sex           char             no default  not null not droppable ,
+   WorkGroupNum  integer unsigned no default  not null not droppable ,
+   PayGrade      integer unsigned no default  not null not droppable ,
+   AnnualSalary  integer unsigned no default  not null not droppable ,
+   DateOfBirth   date             no default  not null not droppable ,
+   primary key ( Num ) not droppable
+ )
+ store by primary key ;
+
+-- ----------------------------------------------------
+
+
+
+insert into olap_emp values 
+(1,'Anderson','Alvin','A','M',1,1,21,DATE '12/07/1941'),
+(2,'Anderson','Anna ','A','F',1,2,22,DATE '12/07/1941'),
+(3,'Anderson','Aloysius','A','M',1,3,23,DATE '12/07/1941'),
+(4, 'Anderson','Abby ','A','F',1,4,24 ,DATE '12/07/1941'),
+(5,'Anderson','Alan ','A','M',1,5,25, DATE '12/07/1941'),
+(6,'Anderson','Anne ','A','F',1,6,26,DATE '12/07/1941'),
+(7,'Anderson','Abelard','A','M',1,7,27,DATE '12/07/1941'),
+(8,'Anderson','Alice','A','F',1,8,28,DATE '12/07/1941'),
+(9,'Anderson','Anton','A','M',1,9,29,DATE '12/07/1941'),
+(10,'Anderson','Alicia ','A','F',1,10,30,DATE '12/07/1941'),
+(11,'Anderson','Abe','A','M',2,1,21,DATE '12/07/1941'),
+(12,'Anderson','Amanda ','A','F',2,2,22,DATE '12/07/1941'),
+(13,'Anderson','Andrew ','A','M',2,3,23,DATE '12/07/1941'),
+(14,'Anderson','Annette','A','F',2,4,24,DATE '12/07/1941'),
+(15,'Anderson','Akihiro','A','M',2,5,25,DATE '12/07/1941'),
+(16,'Anderson','Andrea ','A','F',2,6,26,DATE '12/07/1941'),
+(17,'Anderson','Arthur ','A','M',2,7,27,DATE '12/07/1941'),
+(18,'Anderson','Amy  ','A','F',2,8,28,DATE '12/07/1941'),
+(19,'Anderson','Arnold ','A','M',2,9,29,DATE '12/07/1941'),
+(20,'Anderson','Adriana','A','F',2,10,30,DATE '12/07/1941'),
+(21,'Anderson','Arturo ','A','M',3,1,21,DATE '12/07/1941'),
+(22,'Anderson','Annabelle','A','F',3,2,22,DATE '12/07/1941'),
+(23,'Anderson','Andreas','A','M',3,3,23,DATE '12/07/1941'),
+(24,'Anderson','Becky','A','F',3,4,24,DATE '12/07/1941'),
+(25,'Anderson','Bill ','A','M',3,5,25,DATE '12/07/1941'),
+(26,'Anderson','Betsy','A','F',3,6,26,DATE '12/07/1941'),
+(27,'Anderson','Bob  ','A','M',3,7,27,DATE '12/07/1941'),
+(28,'Anderson','Belinda','A','F',3,8,28,DATE '12/07/1941'),
+(29,'Anderson','Bruce','A','M',3,9,29,DATE '12/07/1941'),
+(30,'Anderson','Bridget','A','F',3,10,30,DATE '12/07/1941');
+
+
+
+
+?section olaptest
+--***********************************************************************************
+--**************************************TESTING**************************************
+--***********************************************************************************
+--***********************************************************************************
+
+--set schema olapcat.olapsch;
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '1024';
+
+--**************************************ALL OLAP FUNCTIONS/ROWS UNBOUNDED PRECEDING *****************************
+SELECT
+    num, workgroupnum ,
+    RANK()        OVER ( PARTITION BY workgroupnum ORDER BY num    ) ,
+    DENSE_RANK(  )    OVER ( PARTITION BY workgroupnum ORDER BY num   ),
+    ROW_NUMBER()    OVER ( PARTITION BY workgroupnum ORDER BY num  ) 
+FROM olap_emp ;
+
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    MIN(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    MAX(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    VARIANCE(AnnualSalary  )  OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    STDDEV(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    COUNT(*)          OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+
+--**************************************ALL OLAP FUNCTIONS/ROWS N PRECEDING *****************************
+
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    MIN(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    MAX(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    VARIANCE(AnnualSalary  )  OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    STDDEV(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) ,
+    COUNT(*)          OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 5 PRECEDING  ) 
+FROM olap_emp ;
+
+--**************************************ALL OLAP FUNCTIONS/ROWS CURRENT ROW *****************************
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    MIN(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    MAX(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    VARIANCE(AnnualSalary  )  OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    STDDEV(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) ,
+    COUNT(*)          OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) 
+FROM olap_emp ;
+
+
+
+
+
+--**************************************Support for ASC / DESC****************************
+
+---PARTITION BY/ORDER BY 
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum  ORDER BY num  ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp;
+
+---PARTITION BY/ORDER BY ASC
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum  ORDER BY num ASC ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp;
+
+---PARTITION BY/ORDER BY DESC
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum  ORDER BY num desc ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp;
+
+--*****************************olap with group by*************************************************
+
+SELECT  paygrade,workgroupnum,
+    SUM(annualsalary) ,
+    SUM( paygrade) OVER (ORDER BY workgroupnum, num rows UNBOUNDED PRECEDING)
+from olap_emp
+group by paygrade,workgroupnum, num
+order by 1,2,3,4;
+
+
+SELECT  paygrade,workgroupnum, 
+    SUM(annualsalary) ,
+    SUM( paygrade) OVER (PARTITION BY workgroupnum ORDER BY SUM(annualsalary)  ROWS UNBOUNDED PRECEDING)
+from olap_emp
+group by paygrade,workgroupnum;
+SELECT  paygrade,workgroupnum, 
+    SUM(annualsalary) ,
+    SUM( paygrade) OVER (PARTITION BY workgroupnum ORDER BY sum_sal  ROWS UNBOUNDED PRECEDING)
+from 
+ (select paygrade,workgroupnum,annualsalary, sum(annualsalary) sum_sal from olap_emp group by paygrade,workgroupnum, annualsalary) T group by paygrade,workgroupnum,sum_sal;
+
+
+---supported
+SELECT  paygrade,workgroupnum, 
+    SUM(annualsalary) ,
+    AVG( SUM(annualsalary) ) OVER (PARTITION BY paygrade ORDER BY workgroupnum   ROWS UNBOUNDED PRECEDING)
+from olap_emp
+group by paygrade,workgroupnum
+order by 1,2,3,4;
+
+SELECT  paygrade,workgroupnum, 
+    SUM(annualsalary) ,
+    SUM( AVG(annualsalary) ) OVER (PARTITION BY paygrade ORDER BY workgroupnum   ROWS UNBOUNDED PRECEDING)
+from olap_emp
+group by paygrade,workgroupnum
+order by 1,2,3,4;
+
+
+--********************************** Multiple (PARTITION BY /ORDER BY) support*****************************
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num           ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum    ORDER BY num           ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num      DESC     ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num     DESC     ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num     DESC    ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum                ROWS UNBOUNDED PRECEDING  ) as olapsum,
+    AVG(AnnualSalary  ) OVER ( PARTITION BY workgroupnum                ROWS UNBOUNDED PRECEDING  ) as olapavg
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+
+SELECT  num, workgroupnum, annualsalary,     
+    SUM(AnnualSalary  ) OVER (                 ORDER BY num           ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (                 ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+-- ORDER BY desc / ORDER BY
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (                ORDER BY num    DESC    ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (                 ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (                 ORDER BY num     DESC    ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (                 ORDER BY num     DESC    ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+---<> ORDER BY's
+
+SELECT  num, workgroupnum, paygrade, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num           ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER ( PARTITION BY workgroupnum, 
+                        paygrade     ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+---
+SELECT  num, workgroupnum, paygrade, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ORDER BY num           ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (                 ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+---
+SELECT  num, workgroupnum, paygrade, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum                   ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (                 ORDER BY num           ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+---
+SELECT  num, workgroupnum, paygrade, annualsalary, 
+    SUM(AnnualSalary  ) OVER (               ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  ) OVER (      ORDER BY num      ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+
+---**************************************Olap distinct support****************************
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(distinct AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(all AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+
+---************************************** PARAMs************************************************
+set PARAM ?empnum 20;
+
+SELECT  ?empnum,num, workgroupnum, annualsalary, 
+    SUM(all AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp 
+where num < ?empnum;
+
+prepare s1 from SELECT  ?, workgroupnum, annualsalary --, 
+    ---SUM(all AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(all AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp 
+where num < 20
+order by 1, 2, 3, 4;
+
+
+--************************************olap and Sequence functions in SELECT list *****************************
+-- no SEQUENCE BY
+
+SELECT RUNNINGCOUNT(AnnualSalary  ) 
+FROM olap_emp ;
+
+
+SELECT RUNNINGSUM(AnnualSalary  ) 
+FROM olap_emp 
+SEQUENCE BY num;
+
+--- olap and sequence functions together 
+SELECT num, SUM(AnnualSalary  ) OVER (  ORDER BY num  ROWS UNBOUNDED PRECEDING  ),
+RUNNINGSUM(AnnualSalary  )
+FROM olap_emp ;
+
+---olap and sequence functions together
+SELECT num, RUNNINGSUM(AnnualSalary  ), SUM(AnnualSalary  ) OVER (  ORDER BY num  ROWS UNBOUNDED PRECEDING  )
+FROM olap_emp ;
+
+--- olap and sequence functions together
+SELECT num, runningSUM(AnnualSalary  ), SUM(AnnualSalary  ) OVER (  ORDER BY num  ROWS UNBOUNDED PRECEDING  )
+FROM olap_emp 
+sequence by num;
+
+--- olap and sequence functions together
+SELECT num, SUM(AnnualSalary  ) OVER (  ORDER BY num  ROWS UNBOUNDED PRECEDING  ), runningSUM(AnnualSalary  )
+FROM olap_emp 
+sequence by num;
+
+--************************************olap / qequence in where clause*****************************
+
+SELECT num, SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum  ORDER BY num  ROWS UNBOUNDED PRECEDING  )
+FROM olap_emp 
+where SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum  ORDER BY num  ROWS UNBOUNDED PRECEDING  ) > 100;
+
+SELECT num, runningSUM(AnnualSalary  )
+FROM olap_emp 
+where runningSUM(paygrade  ) > 100
+sequence by num;
+
+
+---************************************** WINDOW FRAME SUPPORT************************************************
+---PARTITIN BY & ORDER BY
+----------ROWS UNBOUNDED PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS <n> PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+    --SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+  --  SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> >= <m>) ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 PRECEDING AND 3 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> < <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 3 PRECEDING AND 6 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 3 PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN CURRENT ROW AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN CURRENT ROW AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+FROM olap_emp ;
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 FOLLOWING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 3 FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> <= <m>) ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 3 FOLLOWING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> > <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND 3 FOLLOWING  ) 
+FROM olap_emp ;
+
+
+
+
+---PARTITIN BY & NO ORDER BY
+----------ROWS UNBOUNDED PRECEDING ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS UNBOUNDED PRECEDING  )  as olapsum
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS <n> PRECEDING ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS 6 PRECEDING  ) as olapsum
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS CURRENT ROW ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS CURRENT ROW  ) AS olapsum
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> PRECEDING ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED PRECEDING AND 6 PRECEDING  ) AS olapsum
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  )  AS olapsum
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> >= <m>) ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 PRECEDING AND 3 PRECEDING   )  AS olapsum
+FROM olap_emp  ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> < <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 3 PRECEDING AND 6 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND CURRENT ROW ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 3 PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN CURRENT ROW AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND CURRENT ROW ===> Supported
+SELECT workgroupnum, count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN CURRENT ROW AND CURRENT ROW  ) 
+FROM olap_emp ) T
+GROUP BY workgroupnum;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+FROM olap_emp ;
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 FOLLOWING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 3 FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> <= <m>) ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 3 FOLLOWING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> > <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum     ROWS BETWEEN 6 FOLLOWING AND 3 FOLLOWING  ) 
+FROM olap_emp ;
+
+---NO PARTITIN BY & ORDER BY
+----------ROWS UNBOUNDED PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS <n> PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> PRECEDING ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> >= <m>) ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 PRECEDING AND 3 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> < <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 3 PRECEDING AND 6 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 3 PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN CURRENT ROW AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND CURRENT ROW ===> Supported
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN CURRENT ROW AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+FROM olap_emp ;
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 FOLLOWING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 3 FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> <= <m>) ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 3 FOLLOWING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> > <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (  ORDER BY num       ROWS BETWEEN 6 FOLLOWING AND 3 FOLLOWING  ) 
+FROM olap_emp ;
+
+--=============
+
+---NO PARTITIN BY & NO ORDER BY
+----------ROWS UNBOUNDED PRECEDING ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS UNBOUNDED PRECEDING  )  as olapsum
+FROM olap_emp ) T;
+
+----------ROWS <n> PRECEDING ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS 6 PRECEDING  ) as olapsum
+FROM olap_emp ) T;
+
+----------ROWS CURRENT ROW ===> Supported
+SELECT  count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS CURRENT ROW  ) AS olapsum
+FROM olap_emp ) T;
+
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> PRECEDING ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED PRECEDING AND 6 PRECEDING  ) AS olapsum
+FROM olap_emp ) T;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW  )  AS olapsum
+FROM olap_emp ) T;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED PRECEDING AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 PRECEDING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> >= <m>) ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 PRECEDING AND 3 PRECEDING   )  AS olapsum
+FROM olap_emp  ) T;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> PRECEDING (<n> < <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 3 PRECEDING AND 6 PRECEDING   ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND CURRENT ROW ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ) T;
+
+----------ROWS BETWEEN <n> PRECEDING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 PRECEDING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> PRECEDING AND <m> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 3 PRECEDING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN CURRENT ROW AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN CURRENT ROW AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND CURRENT ROW ===> Supported
+SELECT count(*)
+FROM (
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN CURRENT ROW AND CURRENT ROW  ) 
+FROM olap_emp ) T;
+
+----------ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN CURRENT ROW AND <n> FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+FROM olap_emp ;
+----------ROWS BETWEEN UNBOUNDED FOLLOWING AND <n> FOLLOWING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN UNBOUNDED FOLLOWING AND 6 FOLLOWING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> PRECEDING ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 3 FOLLOWING AND 6 PRECEDING  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND CURRENT ROW ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 FOLLOWING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND UNBOUNDED FOLLOWING ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> <= <m>) ===> Unsupported
+--SELECT  num, workgroupnum, annualsalary, 
+--    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 3 FOLLOWING AND 6 FOLLOWING  ) 
+--FROM olap_emp ;
+
+----------ROWS BETWEEN <n> FOLLOWING AND <m> FOLLOWING (<n> > <m>) ===> Illegal
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER (      ROWS BETWEEN 6 FOLLOWING AND 3 FOLLOWING  ) 
+FROM olap_emp ;
+
+---************************************** History buffer************************************************
+
+
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '10';
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS 9 PRECEDING  ) 
+FROM olap_emp ;
+
+
+
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '10';
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 9 PRECEDING  ) 
+FROM olap_emp ;
+
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '7';
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 9 PRECEDING AND 8 PRECEDING  ) 
+FROM olap_emp ;
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '7';
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN 9 PRECEDING AND CURRENT ROW  ) 
+FROM olap_emp ;
+
+---************************************** Window Size > smallint************************************************
+
+--CONTROL QUERY DEFAULT DEF_MAX_HISTORY_ROWS '1024';
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  ) OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS BETWEEN UNBOUNDED PRECEDING AND 65535 PRECEDING  ) 
+FROM olap_emp ;
+
+
+
+--**************************************olap functions in diffrent scopes*****************************
+SELECT *
+FROM ( SELECT num, SUM(AnnualSalary) OVER ( PARTITION BY workgroupnum ORDER BY num ROWS UNBOUNDED PRECEDING  ) sumA FROM olap_emp) A,
+     ( SELECT num, AVG(AnnualSalary) OVER ( PARTITION BY workgroupnum ORDER BY num ROWS UNBOUNDED PRECEDING  ) avgB FROM olap_emp) B
+WHERE A.num=b.num
+order by 1,2,3,4;     
+
+
+SELECT *
+FROM ( SELECT num, SUM(AnnualSalary) OVER ( PARTITION BY workgroupnum ORDER BY num ROWS UNBOUNDED PRECEDING  ) sumA FROM olap_emp) A,
+     ( SELECT num, AVG(AnnualSalary) OVER ( PARTITION BY workgroupnum ORDER BY paygrade,num ROWS UNBOUNDED PRECEDING  ) avgB FROM olap_emp) B
+WHERE A.num=b.num
+order by 1,2,3,4;     
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) 
+
+FROM olap_emp ;
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY paygrade,num      ROWS UNBOUNDED PRECEDING  ) 
+FROM olap_emp ;
+
+SELECT  num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY num       ROWS UNBOUNDED PRECEDING  ) ,
+    AVG(AnnualSalary  )      OVER ( PARTITION BY workgroupnum ORDER BY paygrade,num       ROWS UNBOUNDED PRECEDING  ) 
+
+FROM olap_emp ;
+
+
+--**************************************cancel rank*****************************
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r > 10;
+
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r >=10;
+
+
+
+
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r < 10;
+
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r <=10;
+
+
+
+
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r <= 10 or r>= 20;
+
+
+
+
+SELECT * FROM 
+(select rank() over (order by num) r from olap_emp) T
+WHERE r <= 10 or r<= 5;
+
+
+
+SELECT * FROM 
+(select num,rank() over (order by num) r from olap_emp) T
+WHERE r <= 10 or num >20;
+
+
+
+SELECT * FROM 
+(select num,rank() over (order by num) r from olap_emp) T
+WHERE r not in (select rank() over (order by num) r from olap_emp where num >12);
+
+--**************************************rank over 2 or more solumns**************************
+
+select rank() over (order by paygrade,num) from olap_emp;
+
+select rank() over (order by paygrade,workgroupnum,num) from olap_emp;
+
+select paygrade,workgroupnum,num,rank() over (order by paygrade,workgroupnum,num) from olap_emp;
+
+--**************************************rank with delete/update*****************************
+delete from olap_emp where rank() over (order by paygrade,num) =1;
+
+update emp set paygrade = rank() over (order by paygrade,num);
+
+-- *****************************test moving rank transformation*****************************
+-- rank() over (partition by a order by b) ==> (rows since changed (a) - rows since changed (a,b)
+
+SELECT workgroupnum,paygrade, sum_annualsalary,Rank() over (partition by workgroupnum order by sum_annualsalary) TD_RANK 
+FROM  (SELECT workgroupnum,paygrade, SUM(annualsalary) sum_annualsalary FROM olap_emp GROUP BY workgroupnum,paygrade)  T
+ORDER BY 2 DESC, 1;
+
+--control query default DEF_MAX_HISTORY_ROWS '5';
+
+select sex,paygrade, rank() over (partition by sex order by paygrade) r from olap_emp;
+
+select rank() over (partition by sex,lastname order by paygrade) r from olap_emp;
+
+select rank() over (partition by sex order by paygrade,num) r from olap_emp;
+
+select rank() over (partition by sex,lastname order by paygrade,num) r from olap_emp;
+
+select rank() over (partition by sex order by lastname,paygrade,num) r from olap_emp;
+
+select rank() over (partition by dateofbirth,sex order by lastname,paygrade,num) r from olap_emp;
+
+
+select rank() over (partition by sex,lastname,left(firstname,2),middleinitial order by paygrade) r from olap_emp;
+
+
+select rank() over (partition by sex,lastname,middleinitial order by paygrade,num) r from olap_emp;
+
+
+select rank() over (partition by sex,lastname,left(firstname,2),middleinitial order by paygrade,workgroupnum,num) r from olap_emp;
+
+--control query default DEF_MAX_HISTORY_ROWS reset;
+
+--***************************** test partition by /order by with rank/dense_rank*****************************
+
+select  rank() over (partition by sex ) from olap_emp;
+
+select  dense_rank() over (partition by sex ) from olap_emp;
+
+
+select  rank() over ( order by sex ) from olap_emp;
+
+select  dense_rank() over (  order by sex ) from olap_emp;
+
+
+select  rank() over (  ) from olap_emp;
+
+select  dense_rank() over (   ) from olap_emp;
+
+--***************************** test expressions in order by *****************************
+prepare stat1 from
+select case when workgroupnum=1 then 'x' when workgroupnum=2 then 'y' else 'z' end trans_count_expr, sex,
+ rank() over (order by case when workgroupnum=1 then 'x' when workgroupnum=2 then 'y' else 'z' end, sex)  olap_rank  
+from olap_emp;
+-- result should match previous statement result
+prepare stat2 from
+select case when workgroupnum=1 then 'x' when workgroupnum=2 then 'y' else 'z' end trans_count_expr, sex,
+ rank() over (order by trans_count_expr, sex)  olap_rank  
+from (select workgroupnum,sex,case when workgroupnum=1 then 'x' when workgroupnum=2 then 'y' else 'z' end trans_count_expr from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select -1 * annualsalary neg_total, rank() over (order by -1 * annualsalary) olap_rank  from olap_emp;
+prepare stat2 from
+select -1 * annualsalary neg_total, rank() over (order by neg_total2) olap_rank  from 
+(select annualsalary, -1 * annualsalary neg_total2 from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select annualsalary/paygrade as A, rank() over(order by annualsalary/paygrade) olap_rank from olap_emp;
+prepare stat2 from
+select annualsalary/paygrade as A, rank() over(order by B) olap_rank from 
+(select annualsalary,paygrade, annualsalary/paygrade B from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select annualsalary/cast(paygrade as DECIMAL(9,2)) as A,  rank() over (order by annualsalary/cast(paygrade as DECIMAL(9,2))) olap_rank from olap_emp;
+prepare stat2 from
+select annualsalary/cast(paygrade as DECIMAL(9,2)) as A,  rank() over (order by B) olap_rank from
+(select annualsalary, paygrade, annualsalary/cast(paygrade as DECIMAL(9,2)) B from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select paygrade,  rank() over (order by paygrade +10) olap_rank from olap_emp;
+prepare stat2 from
+select paygrade,  rank() over (order by pay_total) olap_rank from 
+(select paygrade, paygrade+10 pay_total from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select paygrade,  rank() over (order by paygrade -10) olap_rank from olap_emp;
+prepare stat2 from
+select paygrade,  rank() over (order by pay_total) olap_rank from 
+(select paygrade, paygrade-10 pay_total from olap_emp) T;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+-- aggregates in order by
+prepare stat1 from
+select num, rank() over (order by sum(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by sum_a) olap_rank from
+ (select num,sum(annualsalary) sum_a from olap_emp group by num) T order by num;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select num, rank() over (order by avg(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by avg_a) olap_rank from
+ (select num,avg(annualsalary) avg_a from olap_emp group by num) T order by num;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+     
+prepare stat1 from
+select num, rank() over (order by min(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by min_a) olap_rank from
+ (select num,min(annualsalary) min_a from olap_emp group by num) T order by num;     
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select num, rank() over (order by max(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by max_a) olap_rank from
+ (select num,max(annualsalary) max_a from olap_emp group by num) T order by num;  
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+   
+prepare stat1 from
+select num, rank() over (order by variance(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by variance_a) olap_rank from
+ (select num,variance(annualsalary) variance_a from olap_emp group by num) T order by num;   
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+        
+prepare stat1 from
+select num, rank() over (order by stddev(annualsalary)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by stddev_a) olap_rank from
+ (select num,stddev(annualsalary) stddev_a from olap_emp group by num) T order by num;   
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+     
+prepare stat1 from
+select num, rank() over (order by count(*)) olap_rank from olap_emp group by num order by num;
+prepare stat2 from
+select num, rank() over (order by cnt) olap_rank from
+ (select num,count(*) cnt from olap_emp group by num) T order by num; 
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+ 
+--***************************** multiple olap functions w/ same expression in order by ***************************** 
+prepare stat1 from
+select num, workgroupnum,
+       rank() over (order by sum(annualsalary)*num) olap_rank,  
+       dense_rank() over (order by sum(annualsalary)*num) olap_drank,
+       row_number() over (order by sum(annualsalary)*num) olap_rnum
+from olap_emp 
+group by num, workgroupnum, annualsalary 
+order by num, workgroupnum;
+
+prepare stat2 from
+select num, workgroupnum,
+       rank() over (order by suma_num) olap_rank, 
+       dense_rank() over (order by suma_num) olap_drank,
+       row_number() over (order by suma_num) olap_rnum       
+from
+ (select num,workgroupnum, annualsalary,
+         sum(annualsalary)*num suma_num 
+  from olap_emp 
+  group by num, workgroupnum, annualsalary) T 
+  order by num, workgroupnum;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+prepare stat1 from
+select num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary)      OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    AVG(AnnualSalary)      OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    MIN(AnnualSalary)      OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    MAX(AnnualSalary)      OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    VARIANCE(AnnualSalary)  OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    STDDEV(AnnualSalary)      OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) ,
+    COUNT(*)          OVER (order by sum(annualsalary)*num ROWS UNBOUNDED PRECEDING ) 
+from olap_emp 
+group by num, workgroupnum, annualsalary 
+order by num, workgroupnum; 
+
+prepare stat2 from
+select num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary)      OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    AVG(AnnualSalary)      OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    MIN(AnnualSalary)      OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    MAX(AnnualSalary)      OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    VARIANCE(AnnualSalary)  OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    STDDEV(AnnualSalary)      OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) ,
+    COUNT(*)          OVER (order by suma_num ROWS UNBOUNDED PRECEDING ) 
+from 
+ (select num, workgroupnum, annualsalary, 
+         sum(annualsalary)*num suma_num
+  from olap_emp 
+  group by num,workgroupnum,annualsalary) T 
+  order by num, workgroupnum; 
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+--************************** multiple olap functions w/ different expression in order by **************************
+select num, workgroupnum,
+       rank() over (order by sum(annualsalary)) olap_rank,  
+       dense_rank() over (order by avg(annualsalary)) olap_drank,
+       row_number() over (order by sum(annualsalary)) olap_rnum
+from olap_emp group by num, workgroupnum, annualsalary;
+
+select num, workgroupnum,
+       rank() over (order by sum_a) olap_rank, 
+       dense_rank() over (order by avg_a) olap_drank,
+       row_number() over (order by sum_a) olap_rnum       
+from
+ (select num,workgroupnum, annualsalary,
+         sum(annualsalary) sum_a, 
+         avg(annualsalary) avg_a 
+  from olap_emp 
+  group by num, workgroupnum, annualsalary) T ;
+
+select num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary)      OVER (order by sum(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    AVG(AnnualSalary)      OVER (order by avg(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    MIN(AnnualSalary)      OVER (order by min(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    MAX(AnnualSalary)      OVER (order by max(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    VARIANCE(AnnualSalary)  OVER (order by variance(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    STDDEV(AnnualSalary)      OVER (order by stddev(annualsalary) ROWS UNBOUNDED PRECEDING ) ,
+    COUNT(*)          OVER (order by count(*) ROWS UNBOUNDED PRECEDING ) 
+from olap_emp group by num, workgroupnum, annualsalary; 
+
+select num, workgroupnum, annualsalary, 
+    SUM(AnnualSalary)      OVER (order by sum_a ROWS UNBOUNDED PRECEDING ) ,
+    AVG(AnnualSalary)      OVER (order by avg_a ROWS UNBOUNDED PRECEDING ) ,
+    MIN(AnnualSalary)      OVER (order by min_a ROWS UNBOUNDED PRECEDING ) ,
+    MAX(AnnualSalary)      OVER (order by max_a ROWS UNBOUNDED PRECEDING ) ,
+    VARIANCE(AnnualSalary)  OVER (order by var_a ROWS UNBOUNDED PRECEDING ) ,
+    STDDEV(AnnualSalary)      OVER (order by stddev_a ROWS UNBOUNDED PRECEDING ) ,
+    COUNT(*)          OVER (order by cnt ROWS UNBOUNDED PRECEDING ) 
+from 
+(select num,workgroupnum, annualsalary,
+        sum(annualsalary) sum_a, 
+        avg(annualsalary) avg_a,
+        min(annualsalary) min_a,
+        max(annualsalary) max_a,
+        variance(annualsalary) var_a,
+        stddev(annualsalary) stddev_a,
+        count(*) cnt from olap_emp group by num, workgroupnum, annualsalary) T ;
+ 
+--***************************** strings in order by *****************************
+prepare stat1 from
+select substring(firstname, 1 ,4) sub_firstname, rank() over (order by substring(firstname, 1 ,4)) as olap_rank 
+from olap_emp;        
+prepare stat2 from
+select substring(firstname, 1 ,4) sub_firstname, rank() over (order by sub_firstname2) as olap_rank 
+from 
+ (select firstname,substring(firstname,1,4) sub_firstname2 from olap_emp) T;        
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOG063;
+log LOG063;
+
+--***************************** olap with qualify (not allowed) *****************************
+select workgroupnum, sex,rank() over(order by workgroupnum, sex) olap_rank
+  from olap_emp qualify workgroupnum> 1 and rank() over(order by workgroupnum, sex)<200;
+
+log;
+
+?section olapdroptable
+DROP TABLE olap_emp;
+
+--TD RANK
+DROP TABLE TDemp_rank;
+DROP TABLE TDemployee;
+DROP TABLE nulltest ;
+----------------------------------
+log LOG063;
+
+
+
+create table TDemployee
+ (
+   Num           integer unsigned no default  not null not droppable ,
+   LastName      char(24)         no default  not null not droppable ,
+   FirstName     char(14)         no default  not null not droppable ,
+   MiddleInitial char             no default  not null not droppable ,
+   Sex           char             no default  not null not droppable ,
+   WorkGroupNum  integer unsigned no default  not null not droppable ,
+   PayGrade      integer unsigned no default  not null not droppable ,
+   AnnualSalary  integer unsigned no default  not null not droppable ,
+   DateOfBirth   date             no default  not null not droppable ,
+   primary key ( Num ) not droppable
+ )
+ store by primary key;
+
+insert into TDemployee values  
+(1,'Anderson','Alvin','A','M',1,1,21000,DATE '01/07/1941'),
+(2,'Anderson','Anna ','A','F',1,2,22000,DATE '02/07/1941'),
+(3,'Anderson','Aloysius','A','M',1,3,23000,DATE '03/07/1941'),
+(4, 'Anderson','Abby ','A','F',1,4,24000 ,DATE '04/07/1941'),
+(5,'Anderson','Alan ','A','M',1,5,25000, DATE '05/07/1941'),
+(6,'Anderson','Anne ','A','F',1,6,26000,DATE '06/07/1941'),
+(7,'Anderson','Abelard','A','M',1,7,27000,DATE '07/07/1941'),
+(8,'Anderson','Alice','A','F',1,8,28000,DATE '08/07/1941'),
+(9,'Anderson','Anton','A','M',1,9,29000,DATE '09/07/1941'),
+(10,'Anderson','Alicia ','A','F',1,10,30000,DATE '10/07/1941'),
+(11,'Anderson','Abe','A','M',2,1,21000,DATE '11/07/1941'),
+(12,'Anderson','Amanda ','A','F',2,2,22000,DATE '12/07/1941'),
+(13,'Anderson','Andrew ','A','M',2,3,23000,DATE '01/07/1941'),
+(14,'Anderson','Annette','A','F',2,4,24000,DATE '02/07/1941'),
+(15,'Anderson','Akihiro','A','M',2,5,25000,DATE '03/07/1941'),
+(16,'Anderson','Andrea ','A','F',2,6,26000,DATE '04/07/1941'),
+(17,'Anderson','Arthur ','A','M',2,7,27000,DATE '05/07/1941'),
+(18,'Anderson','Amy  ','A','F',2,8,28000,DATE '06/07/1941'),
+(19,'Anderson','Arnold ','A','M',2,9,29000,DATE '07/07/1941'),
+(20,'Anderson','Adriana','A','F',2,10,30000,DATE '08/07/1941'),
+(21,'Anderson','Arturo ','A','M',3,1,21000,DATE '09/07/1941'),
+(22,'Anderson','Annabelle','A','F',3,2,22000,DATE '10/07/1941'),
+(23,'Anderson','Andreas','A','M',3,3,23000,DATE '11/07/1941'),
+(24,'Anderson','Becky','A','F',3,4,24000,DATE '12/07/1941'),
+(25,'Anderson','Bill ','A','M',3,5,25000,DATE '01/08/1941'),
+(26,'Anderson','Betsy','A','F',3,6,26000,DATE '02/08/1941'),
+(27,'Anderson','Bob  ','A','M',3,7,27000,DATE '03/08/1941'),
+(28,'Anderson','Belinda','A','F',3,8,28000,DATE '04/08/1941'),
+(29,'Anderson','Bruce','A','M',3,9,29000,DATE '12/08/1941'),
+(30,'Anderson','Bridget','A','F',3,10,30000,DATE '06/08/1941');
+
+
+
+
+CONTROL QUERY DEFAULT COMP_BOOL_200 'ON';
+
+
+
+-- SEQUENCE FUNCTIONS -- 
+
+SELECT num ,
+ annualsalary,
+ RUNNINGSUM(annualsalary),
+ RUNNINGAVG(annualsalary), 
+ RUNNINGMIN(annualsalary),
+ RUNNINGMAX(annualsalary),
+ RUNNINGSTDDEV(annualsalary),
+ RUNNINGVARIANCE(annualsalary)
+FROM
+ TDemployee
+SEQUENCE BY
+  num;
+
+SELECT  num ,
+ annualsalary,
+ MOVINGSUM(annualsalary,3),
+ MOVINGAVG(annualsalary,3),
+ MOVINGMIN(annualsalary,3),
+ MOVINGMAX(annualsalary,3),
+ MOVINGSTDDEV(annualsalary,3),
+ MOVINGVARIANCE(annualsalary,3)
+FROM
+ TDemployee
+SEQUENCE BY
+  num;
+
+SELECT 
+ annualsalary,
+ RUNNINGCOUNT(1),
+ ROWS SINCE CHANGED (paygrade) ,
+ RUNNINGCOUNT(1)-ROWS SINCE CHANGED (paygrade) + 1,
+ RANK(paygrade)
+FROM
+ TDemployee
+SEQUENCE BY 
+ paygrade;
+
+
+
+SELECT RANK(paygrade)  FROM TDemployee SEQUENCE BY paygrade;
+
+SELECT negpaygrade,RANK(negpaygrade) FROM (SELECT -1 * paygrade as negpaygrade from TDemployee) t SEQUENCE BY negpaygrade;
+
+
+--SF RANK WITH asc/desC 
+
+SELECT RANK(workgroupnum ASC )  FROM TDemployee SEQUENCE BY workgroupnum;
+
+SELECT RANK(workgroupnum DESC )  FROM TDemployee SEQUENCE BY workgroupnum;
+
+SELECT RANK(workgroupnum ASC , sex DESC )  FROM TDemployee SEQUENCE BY workgroupnum, sex;
+
+SELECT RANK(workgroupnum DESC , sex DESC)  FROM TDemployee SEQUENCE BY workgroupnum, sex;
+
+SELECT RANK(workgroupnum ASC , sex ASC)  FROM TDemployee SEQUENCE BY workgroupnum, sex;
+
+
+---------------------------------
+
+--QUALIFY & SEQUENCE FUNCTIONS
+SELECT workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK   FROM TDemployee sequence by workgroupnum, sex qualify workgroupnum> 1 and rank(workgroupnum, sex)<200;
+
+
+-- NO TD GROUP BY
+-- TERADATA TYPE RANK (TD RANK)
+
+SELECT DateOfBirth ,RANK(DateOfBirth) TD_RANK  FROM TDemployee;
+
+SELECT firstname,RANK(firstname) TD_RANK  FROM TDemployee;
+
+SELECT sex,RANK(sex) TD_RANK  FROM TDemployee;
+
+SELECT annualsalary,RANK(annualsalary)  TD_RANK FROM TDemployee;
+
+SELECT annualsalary,RANK(annualsalary)  TD_RANK FROM TDemployee WHERE paygrade >1;
+
+SELECT workgroupnum, sex,RANK(workgroupnum, sex)  TD_RANK  FROM TDemployee;
+
+SELECT sex,RANK(sex) TD_RANK  FROM TDemployee;
+
+SELECT negpaygrade,RANK(negpaygrade)  TD_RANK FROM (SELECT -1 * paygrade as negpaygrade from TDemployee ) t;
+
+--Expressions with TD rank
+
+SELECT CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END, sex)  TD_RANK  
+FROM TDemployee;
+
+select -1 * annualsalary neg_total, rank(-1 * annualsalary)  TD_RANK  from TDemployee;
+
+SELECT case when workgroupnum =1 then 'A' else 'B' end workgroupnum_expr, sex, 
+RANK(case when workgroupnum =1 then 'A' else 'B' end, sex)   TD_RANK 
+FROM TDemployee qualify RANK(case when workgroupnum =1 then 'A' else 'B' end, sex) > 1;
+
+--Derived table
+SELECT workgroupnum,paygrade, sum_annualsalary,Rank(sum_annualsalary)  TD_RANK 
+FROM  (SELECT workgroupnum,paygrade, SUM(annualsalary) sum_annualsalary FROM TDemployee GROUP BY workgroupnum,paygrade)  T
+ORDER BY 2 DESC, 1;
+
+SELECT workgroupnum, sum_annualsalary,Rank(sum_annualsalary)  TD_RANK 
+FROM  (SELECT workgroupnum, SUM(annualsalary) sum_annualsalary FROM TDemployee GROUP BY workgroupnum)  T
+ORDER BY 2 DESC, 1;
+
+
+
+--TD and ASC / DESC / default order (desc)
+
+SELECT workgroupnum,RANK(workgroupnum ASC )  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,RANK(workgroupnum DESC )  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum ASC , sex DESC )  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum DESC , sex DESC)  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum ASC , sex ASC)  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum ASC , sex)  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum , sex ASC)  TD_RANK  FROM TDemployee;
+
+SELECT workgroupnum,sex,RANK(workgroupnum, sex)  TD_RANK  FROM TDemployee;
+
+SELECT CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee;
+
+SELECT workgroupnum,RANK(workgroupnum ASC )  TD_RANK  FROM TDemployee qualify  RANK(workgroupnum ASC ) >1;
+
+-----QUALIFY
+
+SELECT workgroupnum, sex,RANK(workgroupnum, sex) TD_RANK   FROM TDemployee qualify workgroupnum> 1 and rank(workgroupnum, sex)<200;
+
+
+SELECT workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK   FROM TDemployee qualify paygrade> 1;
+
+
+SELECT workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK   FROM TDemployee qualify  rank(workgroupnum, sex)<200 and paygrade >1;
+
+--TD rank in qualify clause but no TD Rank in select list
+
+SELECT paygrade, sex  FROM TDemployee qualify RANK(paygrade)> 1;
+
+--TD RANK neither in qualify nor in select list
+
+SELECT paygrade, sex  FROM TDemployee qualify paygrade> 1;
+
+--qualify and devived table
+
+SELECT workgroupnum,paygrade, sum_annualsalary,Rank(sum_annualsalary) TD_RANK 
+FROM  (SELECT workgroupnum,paygrade, SUM(annualsalary) sum_annualsalary,SUM(paygrade) as sum_paygrade FROM TDemployee GROUP BY workgroupnum,paygrade)  T
+QUALIFY Rank(sum_annualsalary) >5
+ORDER BY 3 desc ,1,2;
+
+
+SELECT workgroupnum, sum_paygrade
+FROM  (SELECT workgroupnum, SUM(annualsalary) sum_annualsalary,SUM(paygrade) as sum_paygrade FROM TDemployee GROUP BY workgroupnum)  T
+QUALIFY Rank(sum_paygrade) >2
+ORDER BY 2 DESC, 1;
+
+SELECT CASE paygrade WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE paygrade WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee
+QUALIFY RANK(CASE paygrade WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex) >1;
+
+---TD RANK , QUALIFY & WHERE
+SELECT CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee where num <> 1
+QUALIFY RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex) >1;
+
+SELECT CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee 
+QUALIFY RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex) >1 and workgroupnum<>1;
+
+SELECT CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee
+QUALIFY RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END , sex) >1;
+
+-- Multiple TD Ranks & equivalent expressions
+
+SELECT paygrade,  RANK(annualsalary) TD_RANK2 FROM TDemployee qualify rank(paygrade)>  1;
+
+SELECT paygrade,  RANK(paygrade) TD_RANK2 FROM TDemployee qualify rank(paygrade)>  1;
+
+SELECT annualsalary/paygrade as A,  RANK(annualsalary/paygrade) TD_RANK2 FROM TDemployee qualify rank(annualsalary/paygrade)>  1;
+
+SELECT annualsalary/cast(paygrade as DECIMAL(9,2)) as A,  RANK(annualsalary/cast(paygrade as DECIMAL(9,2))) TD_RANK2 FROM TDemployee qualify rank(annualsalary/cast(paygrade as DECIMAL(9,2)))>  1;
+
+SELECT paygrade,  RANK(paygrade +10 ) TD_RANK2 FROM TDemployee qualify rank(paygrade +10)>  1;
+
+SELECT paygrade,  RANK(paygrade +10 ) TD_RANK2 FROM TDemployee qualify rank(paygrade +11)>  1;
+
+SELECT paygrade, sex,RANK(paygrade, sex) TD_RANK1   FROM TDemployee qualify rank(paygrade, sex)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex) TD_RANK1  ,RANK(paygrade) TD_RANK2 FROM TDemployee qualify paygrade> 1 and rank(paygrade, sex)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex)  TD_RANK  FROM TDemployee qualify paygrade> 1 and rank(paygrade, sex asc)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex)  TD_RANK  FROM TDemployee qualify paygrade> 1 and rank(paygrade)<200;
+
+--TD rank & STRINGs 
+SELECT substring(firstname, 1 ,4) sub_firstname, rank(substring(firstname, 1 ,4)) as TD_RANK 
+FROM TDemployee 
+QUALIFY rank(substring(firstname, 1 ,4)) >1;
+
+SELECT substring(firstname, 1 ,4) sub_firstname, rank(substring(firstname, 1 ,4)) as TD_RANK 
+FROM TDemployee 
+QUALIFY rank(substring(firstname, 1 ,2)) >1;
+
+SELECT UPPER(substring(firstname, 1 ,4)) up_sub_firstname , rank(UPPER(substring(firstname, 1 ,4))) as TD_RANK 
+FROM TDemployee 
+QUALIFY rank(UPPER(substring(firstname, 1 ,4))) >1;
+
+-----TD RANK and aggregate functions 
+SELECT num, Rank(sum(annualsalary))  TD_RANK 
+FROM TDemployee
+GROUP BY num;
+
+SELECT num, Rank(annualsalary)  TD_RANK ,sum(annualsalary)
+FROM TDemployee
+GROUP BY num;
+
+
+SELECT paygrade,rank(annualsalary) r
+FROM TDemployee
+GROUP BY paygrade
+having paygrade>1;
+
+SELECT paygrade,rank(annualsalary) r
+FROM TDemployee
+GROUP BY paygrade
+having paygrade>1;
+
+
+
+---TD and SF -- 
+SELECT num, runningsum(annualsalary) , rank(annualsalary) from TDemployee;
+
+SELECT num, runningsum(annualsalary) , rank(annualsalary) from TDemployee SEQUENCE BY num;
+
+--RANK in WEHERE clause -- not supported
+SELECT num,rank(paygrade) FROM TDemployee where RANK(paygrade) < 2;
+
+-- TD RANK and diffrent scopes
+
+SELECT * FROM (SELECT num, paygrade,RANK(paygrade) r_paygrade  FROM TDemployee) t1 join (SELECT num, workgroupnum, RANK(workgroupnum) r_workgroupnum FROM TDemployee) t2 on t1.num=t2.num order by t1.num;
+
+
+SELECT paygrade,r,RANK(r) 
+FROM 
+(SELECT PAYGRADE,RANK(ANNUALSALARY) r FROM TDEMPLOYEE sequence by num ) t;
+
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+
+--TD GROUP BY
+
+SELECT workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK FROM TDemployee sequence by workgroupnum, sex GROUP BY sex qualify workgroupnum> 1 and rank(workgroupnum, sex)<200;
+
+-- TERADATA TYPE RANK (TD RANK)
+
+SELECT DateOfBirth ,RANK(DateOfBirth) TD_RANK  FROM TDemployee GROUP BY sex,workgroupnum;
+
+SELECT firstname,RANK(firstname) TD_RANK  FROM TDemployee GROUP BY sex;
+
+SELECT workgroupnum,sex,RANK(sex) TD_RANK  FROM TDemployee GROUP BY workgroupnum;
+
+SELECT sex,workgroupnum,annualsalary,RANK(annualsalary)  TD_RANK FROM TDemployee GROUP BY sex,workgroupnum;
+
+SELECT sex,annualsalary,RANK(annualsalary)  TD_RANK FROM TDemployee WHERE paygrade >1 GROUP BY sex;
+
+SELECT workgroupnum, paygrade, sex,RANK(workgroupnum, sex)  TD_RANK  FROM TDemployee GROUP BY paygrade,sex;
+
+SELECT workgroupnum,sex,RANK(sex) TD_RANK  FROM TDemployee GROUP BY workgroupnum,sex;
+
+SELECT negpaygrade,RANK(negpaygrade)  TD_RANK FROM (SELECT workgroupnum, -1 * paygrade as negpaygrade from TDemployee ) t  GROUP BY workgroupnum;
+
+SELECT case when workgroupnum =1 then 'A' else 'B' end expr, paygrade,RANK(paygrade)  TD_RANK FROM TDemployee GROUP BY case when workgroupnum =1 then 'A' else 'B' end;
+
+--Expressions with TD rank
+
+SELECT sex,CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END, sex)  TD_RANK  
+FROM TDemployee
+GROUP BY sex;
+
+select -1 * annualsalary neg_total, rank(-1 * annualsalary)  TD_RANK  from TDemployee GROUP BY dateofbirth;
+
+SELECT case when workgroupnum =1 then 'A' else 'B' end workgroupnum_expr, sex, 
+RANK(case when workgroupnum =1 then 'A' else 'B' end, sex)   TD_RANK 
+FROM TDemployee 
+GROUP BY paygrade
+qualify RANK(case when workgroupnum =1 then 'A' else 'B' end, sex) > 1;
+
+--Derived table
+SELECT workgroupnum,paygrade, sum_annualsalary,Rank(sum_annualsalary)  TD_RANK 
+FROM  (SELECT workgroupnum,paygrade, SUM(annualsalary) sum_annualsalary FROM TDemployee GROUP BY workgroupnum,paygrade)  T
+GROUP BY workgroupnum
+ORDER BY 2 DESC, 1;
+
+
+
+--TD and ASC / DESC / default order (desc)
+
+SELECT sex,workgroupnum,RANK(workgroupnum ASC )  TD_RANK  FROM TDemployee GROUP BY sex;
+
+SELECT workgroupnum,RANK(workgroupnum DESC )  TD_RANK  FROM TDemployee GROUP BY sex;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum ASC , sex DESC )  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum DESC , sex DESC)  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum ASC , sex ASC)  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum ASC , sex)  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum , sex ASC)  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT paygrade,workgroupnum,sex,RANK(workgroupnum, sex)  TD_RANK  FROM TDemployee GROUP BY paygrade;
+
+SELECT CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE WHEN workgroupnum=1 THEN 'x' WHEN workgroupnum=2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee
+GROUP BY sex;
+
+SELECT paygrade, workgroupnum,RANK(workgroupnum ASC )  TD_RANK  FROM TDemployee GROUP BY paygrade qualify  RANK(workgroupnum ASC ) >1;
+
+-----QUALIFY
+
+SELECT workgroupnum, sex,RANK(workgroupnum, sex) TD_RANK   FROM TDemployee GROUP BY paygrade qualify workgroupnum> 1 and rank(workgroupnum, sex)<200;
+
+
+SELECT paygrade ,workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK   FROM TDemployee  GROUP BY paygrade qualify paygrade> 1;
+
+
+SELECT workgroupnum, sex, RANK(workgroupnum, sex) TD_RANK   FROM TDemployee  GROUP BY paygrade qualify  rank(workgroupnum, sex)<200 and paygrade >1;
+
+--TD rank in qualify clause but no TD Rank in select list
+
+SELECT paygrade, sex  FROM TDemployee GROUP BY sex qualify RANK(paygrade)> 1;
+
+--TD RANK neither in qualify clause nor in select list
+
+SELECT paygrade, sex  FROM TDemployee GROUP BY sex qualify paygrade> 1;
+
+--qualify and devived table
+
+SELECT workgroupnum,paygrade, sum_annualsalary,Rank(sum_annualsalary) TD_RANK 
+FROM  (SELECT workgroupnum,paygrade, SUM(annualsalary) sum_annualsalary,SUM(paygrade) as sum_paygrade FROM TDemployee GROUP BY workgroupnum,paygrade)  T
+GROUP BY  workgroupnum
+QUALIFY Rank(sum_annualsalary) >5
+ORDER BY 3 desc ,1,2;
+
+
+SELECT workgroupnum, sum_paygrade
+FROM  (SELECT workgroupnum, SUM(annualsalary) sum_annualsalary,SUM(paygrade) as sum_paygrade FROM TDemployee GROUP BY workgroupnum)  T
+GROUP BY  workgroupnum
+QUALIFY Rank(sum_paygrade) >2
+ORDER BY 2 DESC, 1;
+
+
+---TD RANK , QUALIFY & WHERE
+SELECT sex, CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee where num <> 1
+GROUP BY sex
+QUALIFY RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex) >1;
+
+-- Multiple TD Ranks & equivalent expressions
+SELECT sex, CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END trans_count_expr, sex,
+ RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END ASC, sex)  TD_RANK  
+FROM TDemployee
+GROUP BY sex
+QUALIFY RANK(CASE workgroupnum WHEN 1 THEN 'x' WHEN 2 THEN 'y' ELSE 'z' END , sex) >1;
+
+SELECT paygrade,  RANK(annualsalary) TD_RANK2 FROM TDemployee GROUP BY sex qualify rank(paygrade)>  1;
+
+SELECT sex, paygrade,  RANK(paygrade) TD_RANK2 FROM TDemployee GROUP BY sex qualify rank(paygrade)>  1;
+
+SELECT sex,annualsalary/paygrade as A,  RANK(annualsalary/paygrade) TD_RANK2 FROM TDemployee  GROUP BY sex qualify rank(annualsalary/paygrade)>  1;
+
+SELECT sex,annualsalary/cast(paygrade as DECIMAL(9,2)) as A,  RANK(annualsalary/cast(paygrade as DECIMAL(9,2))) TD_RANK2 FROM TDemployee  GROUP BY sex qualify rank(annualsalary/cast(paygrade as DECIMAL(9,2)))>  1;
+
+SELECT paygrade,  RANK(paygrade +10 ) TD_RANK2 FROM TDemployee  GROUP BY sex qualify rank(paygrade +10)>  1;
+
+SELECT paygrade,  RANK(paygrade +10 ) TD_RANK2 FROM TDemployee  GROUP BY sex qualify rank(paygrade +11)>  1;
+
+SELECT paygrade, sex,RANK(paygrade, sex) TD_RANK1   FROM TDemployee GROUP BY workgroupnum qualify rank(paygrade, sex)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex) TD_RANK1  ,RANK(paygrade) TD_RANK2 FROM TDemployee  GROUP BY workgroupnum qualify paygrade> 1 and rank(paygrade, sex)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex)  TD_RANK  FROM TDemployee  GROUP BY workgroupnum qualify paygrade> 1 and rank(paygrade, sex asc)<200;
+
+SELECT paygrade, sex,RANK(paygrade, sex)  TD_RANK  FROM TDemployee  GROUP BY sex,paygrade,workgroupnum qualify paygrade> 1 and rank(paygrade)<200;
+
+--TD rank & STRING Manipulation
+SELECT substring(firstname, 1 ,4) sub_firstname, rank(substring(firstname, 1 ,4)) as TD_RANK 
+FROM TDemployee 
+GROUP BY dateofbirth
+QUALIFY rank(substring(firstname, 1 ,4)) >1;
+
+SELECT substring(firstname, 1 ,4) sub_firstname, rank(substring(firstname, 1 ,4)) as TD_RANK 
+FROM TDemployee 
+GROUP BY sex
+QUALIFY rank(substring(firstname, 1 ,2)) >1;
+
+SELECT UPPER(substring(firstname, 1 ,4)) up_sub_firstname , rank(UPPER(substring(firstname, 1 ,4))) as TD_RANK 
+FROM TDemployee 
+GROUP BY sex,paygrade
+QUALIFY rank(UPPER(substring(firstname, 1 ,4))) >1;
+
+-----TD and GROUP BY  -- TD rank and aggregate functions are not-- need to add an error message
+
+
+SELECT * FROM (SELECT num, paygrade,RANK(paygrade) r_paygrade  FROM TDemployee GROUP BY sex) t1 join (SELECT num, workgroupnum, RANK(workgroupnum) r_workgroupnum FROM TDemployee GROUP BY sex) t2 on t1.num=t2.num order by t1.num;
+
+-------------------------------------------
+--NESTING TD rank functions
+
+SELECT RANK(1-RANK(paygrade))  FROM TDemployee ;
+
+SELECT RANK(1-RANK(paygrade))  FROM TDemployee GROUP BY sex;
+
+SELECT RANK(1-RANK(paygrade))  FROM TDemployee QUALIFY RANK(1-RANK(paygrade)) >1;
+
+SELECT RANK(1-RANK(paygrade))  FROM TDemployee GROUP BY sex QUALIFY RANK(1-RANK(paygrade)) >1;
+
+SELECT paygrade  FROM TDemployee QUALIFY RANK(1-RANK(paygrade)) >1;
+
+SELECT paygrade  FROM TDemployee  GROUP BY sex  QUALIFY RANK(1-RANK(paygrade)) >1;
+-------------------------------------------
+--testing rank with update/delete
+
+
+create table TDemp_rank
+ (
+   Num           integer unsigned no default  not null not droppable ,
+   PayGrade      integer unsigned no default  not null not droppable ,
+   AnnualSalary  integer unsigned no default  not null not droppable ,
+   arank   largeint          no default  not null not droppable ,
+   primary key ( Num ) not droppable
+ )
+ store by primary key;
+
+INSERT INTO TDemp_rank SELECT Num, paygrade, AnnualSalary,rank(annualsalary)  FROM TDemployee ;
+
+
+UPDATE TDemp_rank SET arank = rank(annualsalary);
+
+DELETE FROM  TDemp_rank WHERE rank(annualsalary)=1;
+
+------------------Qualify clause with exists and in predicates --- semi join
+
+select annualsalary,rank(annualsalary) from tdemployee 
+qualify exists (select num from tdemployee where num =1 ) and rank(annualsalary) in (1,7,10);
+
+select sex, annualsalary,rank(annualsalary) from tdemployee 
+group by sex
+qualify exists (select num from tdemployee where num =1 ) and rank(annualsalary) in (1,7,10);
+
+----------------------outer references and parameters
+set param ?p 2;
+select rank(annualsalary + ?p) from tdemployee;
+
+
+select num,( select rank(o.num) from tdemployee i where i.num=1)
+from tdemployee o;
+
+-------------------NULL ORDERING
+
+
+CREATE TABLE nulltest 
+     ( vch7 varchar(7)
+          , nint integer not null
+        , nint2 integer
+          , ch3 char(3)
+          , nnum9 numeric(9,2)
+          , ch4 char(4)
+          , nnum5 numeric(5,1)
+          , vch5 varchar(5)
+          , nsint smallint 
+        ) store by (nint);
+
+
+INSERT INTO nulltest VALUES     ('a',           1,     NULL,     'c' ,     0.9,             NULL ,          NULL  ,          NULL,     0);
+INSERT INTO nulltest VALUES     ('a',           1,     2,     'c' ,     0.9,            ''  ,          NULL  ,          NULL,     0);
+INSERT INTO nulltest VALUES     ('cc'     ,     2,     5,     'cc',     2.00,           'cc',          2.0   ,          'cc',     2);
+INSERT INTO nulltest VALUES     ('abcdefg',     3,     NULL,     'cc',     0.09,         'alph',          2     ,          'cc',     1);
+INSERT INTO nulltest VALUES     ('b',           4,     10,     'c' ,     1234567.89,     'e' ,          1234.5,          'c' ,     12345);
+INSERT INTO nulltest VALUES     ('abcdefg',     5,     15,     'cc',     0.09,           'cc',          2     ,          'cc',     2);
+INSERT INTO nulltest VALUES     (NULL,          5,     NULL,     'cc',     0.09,           'cc',          2     ,          'cc',     2);
+INSERT INTO nulltest VALUES     (NULL,          7,     NULL,     'cd',     0.10,           'cd',          2     ,          'cc',     2);
+
+
+SELECT vch7, nint, nint2, rank (vch7, nint, nint2) r from nulltest;
+
+SELECT vch7, nint, nint2, rank (vch7 ASC, nint ASC, nint2 ASC) r from nulltest;
+
+SELECT nnum9, vch5, nsint, rank (nnum9, vch5, nsint) r from nulltest;
+
+SELECT nnum9, vch5, nsint, rank (nnum9 ASC, vch5 ASC, nsint ASC) r from nulltest;
+
+SELECT rank (vch7, nint, nint2) r from nulltest;
+
+SELECT rank (nnum9 ) r from nulltest;
+
+SELECT rank (nnum5 ) r from nulltest;
+
+SELECT rank ( vch5) r from nulltest;
+
+SELECT rank ( vch5) r from nulltest QUALIFY rank ( vch5) >1;
+
+SELECT rank (vch7, nint, nint2) r from nulltest QUALIFY rank (vch7, nint, nint2) <10;
+
+
+SELECT 
+CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END A, 
+RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END) r
+FROM nulltest;
+
+
+SELECT 
+CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END A, 
+RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END ASC) r
+FROM nulltest;
+
+
+SELECT nint+ nint2 a ,RANK(nint + nint2) r FROM nulltest;
+
+SELECT RANK(SUBSTRING(VCH7, 1,2)) r FROM nulltest;
+
+
+--- nullordering with group by
+
+SELECT vch5,vch7, nint, nint2, rank (vch7 ASC, nint ASC, nint2 ASC) r from nulltest GROUP BY vch5;
+
+SELECT vch7,nnum9, vch5, nsint, rank (nnum9, vch5, nsint) r from nulltest group by nint2,vch7;
+
+SELECT vch7,nnum9, vch5, nsint, rank (nnum9 ASC, vch5 ASC, nsint ASC) r from nulltest group by vch7;
+
+SELECT nnum5,rank (vch7, nint, nint2) r from nulltest group by nnum5;
+
+SELECT nnum5,rank (nnum9 ) r from nulltest group by nnum5;
+
+SELECT vch7,rank (nnum5 ) r from nulltest group by vch7;
+
+SELECT vch7,rank ( vch5) r from nulltest group by vch7;
+
+SELECT vch7,rank ( vch5) r from nulltest  group by vch7 QUALIFY rank ( vch5) >1;
+
+SELECT vch5,rank (vch7, nint, nint2) r from nulltest  group by vch5 QUALIFY rank (vch7, nint, nint2) <10;
+
+
+SELECT vch5,
+CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END A, 
+RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END) r
+FROM nulltest
+group by vch5
+QUALIFY RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END)<10;
+
+
+SELECT vch5,
+CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END A, 
+RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END ASC) r
+FROM nulltest
+group by vch5
+QUALIFY RANK(CASE WHEN nint=1 THEN nint2 WHEN nnum9 >= 1 THEN NULL WHEN VCH5 IS NULL THEN nsint ELSE NULL END ASC)<10;
+
+
+SELECT vch7,nint+ nint2 a ,RANK(nint + nint2) r FROM nulltest GROUP BY vch7;
+
+SELECT vch5,RANK(SUBSTRING(VCH7, 1,2)) r FROM nulltest GROUP BY vch5;
+
+--more than 2 items in group by list / group by with ordinals
+
+SELECT workgroupnum,sex,paygrade,annualsalary,RANK(workgroupnum,sex,paygrade,annualsalary) TD_RANK1
+FROM TDemployee
+GROUP BY middleinitial,lastname,firstname;
+
+
+
+SELECT  middleinitial,lastname,sex,workgroupnum,RANK(annualsalary) TD_RANK1
+FROM TDemployee
+GROUP BY middleinitial,lastname,sex,workgroupnum;
+
+
+SELECT RANK(annualsalary) TD_RANK1
+FROM TDemployee
+GROUP BY 1,lastname,sex,workgroupnum;
+
+
+
+SELECT middleinitial,lastname,sex,workgroupnum,RANK(annualsalary) TD_RANK1
+FROM TDemployee
+GROUP BY 1,2,sex,workgroupnum;
+
+
+SELECT middleinitial,lastname,sex,workgroupnum,RANK(annualsalary) TD_RANK1
+FROM TDemployee
+GROUP BY 8,2,sex,workgroupnum;
+
+CONTROL QUERY DEFAULT COMP_BOOL_200 'OFF';
+
+log ;
+
+
+DROP TABLE TDemployee;
+DROP TABLE TDemp_rank;
+DROP TABLE nulltest ;

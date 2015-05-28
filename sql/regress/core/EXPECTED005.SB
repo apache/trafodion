@@ -1,0 +1,1575 @@
+>>
+>>--
+>>-- create tables and update statistics
+>>--
+>>create table t005t1(a int not null,
++>b int not null,
++>c int,
++>d int,
++>primary key (a,b) );
+
+--- SQL operation complete.
+>>
+>>create table t005t2(a int,
++>b int not null,
++>c char(10) not null,
++>d int,
++>primary key (c) );
+
+--- SQL operation complete.
+>>
+>>create table t005t3(a int, b decimal(1), c char(3), d varchar(4),
++>	            e real, f date,
++>                    g time, h interval year to month);
+
+--- SQL operation complete.
+>>
+>>create table t005t4 (item_nbr  integer signed not null not droppable,
++>                     order_dept_nbr  smallint signed,
++>                     acct_dept_nbr  smallint signed,
++>                     primary_desc  char(20),
++>                     type_code  char(2),
++>                     subclass_code  char(2),
++>                     fineline  char(4),
++>                     upc  char(13),
++>                     vendor_nbr  char(6) not null not droppable,
++>                     activity_cd  char(1) not null not droppable,
++>                     primary key (item_nbr asc) not droppable );
+
+--- SQL operation complete.
+>>
+>>create index t005t3a on t005t3(a);
+
+--- SQL operation complete.
+>>create index t005t3b on t005t3(b);
+
+--- SQL operation complete.
+>>create index t005t3c on t005t3(c);
+
+--- SQL operation complete.
+>>create index t005t3d on t005t3(d);
+
+--- SQL operation complete.
+>>create index t005t3e on t005t3(e);
+
+--- SQL operation complete.
+>>create index t005t3f on t005t3(f);
+
+--- SQL operation complete.
+>>create index t005t3g on t005t3(g);
+
+--- SQL operation complete.
+>>create index t005t3h on t005t3(h);
+
+--- SQL operation complete.
+>>create index t005t4x1 on t005t4 (acct_dept_nbr,
++>                                 type_code,
++>                                 upc,
++>                                 primary_desc,
++>                                 activity_cd);
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>create table t005ut2(a int,
++>b int not null,
++>c nchar(10) not null,
++>d int,
++>primary key (c) );
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>?section explain
+>>
+>>prepare explainIt from
++>  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
++>         substring(operator,1,20) operator,        
++>         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,        
++>         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,        
++>         substring
++>         (substring(tname from (1+locate('.',tname))),
++>         (1+locate('.',substring(tname from (1+locate('.',tname))))),
++>         10
++>        ) tab_name        
++>         from table (explain(NULL,'XX'))
++>         order by 1 desc;
+
+--- SQL command prepared.
+>>
+>>?section dml
+>>
+>>-- populate tables
+>>--
+>>-- for now create index after the inserts
+>>--create index t005x1b on t005t1(b);
+>>--create index t005x1c on t005t1(c);
+>>--create index t005x1d on t005t1(d);
+>>--create index t005x2a on t005t2(a);
+>>--create index t005x2b on t005t2(b);
+>>
+>>insert into t005t1 values (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>insert into t005t1 values (1,22,33,44);
+
+--- 1 row(s) inserted.
+>>insert into t005t1 values (11,12,13,14);
+
+--- 1 row(s) inserted.
+>>select * from t005t1;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          1           22           33           44
+         11           12           13           14
+
+--- 3 row(s) selected.
+>>-- 3 result rows
+>>insert into t005t2 values (1,   1,'1-1-1',1);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (2,   1,'2-1-2',2);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (3,   3,'3-3-3',3);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (3,   3,'3-3-4',4);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (4,   4,'4-4-5',5);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (5,   5,'5-5-6',6);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (5,   6,'5-6-7',7);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (5,   7,'5-7-8',8);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (6,   7,'6-7-9',9);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (NULL,7,'?-7-?',NULL);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (NULL,8,'?-8-6',6);
+
+--- 1 row(s) inserted.
+>>insert into t005t2 values (NULL,9,'?-9-?',NULL);
+
+--- 1 row(s) inserted.
+>>select * from t005t2;
+
+A            B            C           D          
+-----------  -----------  ----------  -----------
+
+          1            1  1-1-1                 1
+          2            1  2-1-2                 2
+          3            3  3-3-3                 3
+          3            3  3-3-4                 4
+          4            4  4-4-5                 5
+          5            5  5-5-6                 6
+          5            6  5-6-7                 7
+          5            7  5-7-8                 8
+          6            7  6-7-9                 9
+          ?            7  ?-7-?                 ?
+          ?            8  ?-8-6                 6
+          ?            9  ?-9-?                 ?
+
+--- 12 row(s) selected.
+>>-- 12 result rows
+>>
+>>insert into t005t3 values (1, 1, 'a', 'a', 1, date '1998-08-04',
++>                           time '13:09:45', interval '98-08' year to month);
+
+--- 1 row(s) inserted.
+>>insert into t005t3 default values;
+
+--- 1 row(s) inserted.
+>>select * from t005t3;
+
+A            B   C    D     E                F           G         H
+-----------  --  ---  ----  ---------------  ----------  --------  ------
+
+          1   1  a    a      1.0000000E+000  1998-08-04  13:09:45   98-08
+          ?   ?  ?    ?                   ?  ?           ?         ?     
+
+--- 2 row(s) selected.
+>>-- 2 result rows
+>>
+>>
+>>-- populate indexes
+>>create index t005x1b on t005t1(b);
+
+--- SQL operation complete.
+>>create index t005x1c on t005t1(c);
+
+--- SQL operation complete.
+>>create index t005x1d on t005t1(d);
+
+--- SQL operation complete.
+>>create index t005x2a on t005t2(a);
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>-- This create should fail.
+>>-- To be enabled in seabase wjhen tx support is available
+>>create unique index t005x2b on t005t2(b);
+>>#endif
+>>
+>>-- This create should succeed
+>>create index t005x2b on t005t2(b);
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>insert into t005ut2 values (1,   1,N'1-1-1',1);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (2,   1,N'2-1-2',2);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (3,   3,N'3-3-3',3);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (3,   3,N'3-3-4',4);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (4,   4,N'4-4-5',5);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (5,   5,N'5-5-6',6);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (5,   6,N'5-6-7',7);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (5,   7,N'5-7-8',8);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (6,   7,N'6-7-9',9);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (NULL,7,N'?-7-?',NULL);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (NULL,8,N'?-8-6',6);
+
+--- 1 row(s) inserted.
+>>insert into t005ut2 values (NULL,9,N'?-9-?',NULL);
+
+--- 1 row(s) inserted.
+>>select * from t005ut2;
+
+A            B            C                     D          
+-----------  -----------  --------------------  -----------
+
+          1            1  1-1-1                           1
+          2            1  2-1-2                           2
+          3            3  3-3-3                           3
+          3            3  3-3-4                           4
+          4            4  4-4-5                           5
+          5            5  5-5-6                           6
+          5            6  5-6-7                           7
+          5            7  5-7-8                           8
+          6            7  6-7-9                           9
+          ?            7  ?-7-?                           ?
+          ?            8  ?-8-6                           6
+          ?            9  ?-9-?                           ?
+
+--- 12 row(s) selected.
+>>-- 12 result rows
+>>#ifMX
+>>
+>>--
+>>-- test indexonly access
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t1','t005x1b');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t1','t005x1b'));
+>>#endif
+>>select b from t005t1;
+
+B          
+-----------
+
+          2
+         12
+         22
+
+--- 3 row(s) selected.
+>>-- (2), (12), (22) in this order
+>>-- 
+>>select 1 from t005t1;
+
+(EXPR)
+------
+
+     1
+     1
+     1
+
+--- 3 row(s) selected.
+>>-- 3 result rows
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t1','t005x1c');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t1','t005x1c'));
+>>#endif
+>>select c+3 from t005t1;
+
+(EXPR)              
+--------------------
+
+                   6
+                  16
+                  36
+
+--- 3 row(s) selected.
+>>-- (6), (16), (36) in this order
+>>select c/c from t005t1 where c = c;
+
+(EXPR)               
+---------------------
+
+           1.00000000
+           1.00000000
+           1.00000000
+
+--- 3 row(s) selected.
+>>-- 3 rows with 1.0000...
+>>select a,c from t005t1;
+
+A            C          
+-----------  -----------
+
+          1            3
+         11           13
+          1           33
+
+--- 3 row(s) selected.
+>>-- (1,3), (11,13), (1,33) ordered by c
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t1');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t1'));
+>>#endif
+>>select a-b from t005t1;
+
+(EXPR)              
+--------------------
+
+                  -1
+                  -1
+                 -21
+
+--- 3 row(s) selected.
+>>-- (-1),(-1),(-21)
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t2','t005x2a');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t2','t005x2a'));
+>>#endif
+>>select a from t005t2;
+
+A          
+-----------
+
+          1
+          2
+          3
+          3
+          4
+          5
+          5
+          5
+          6
+          ?
+          ?
+          ?
+
+--- 12 row(s) selected.
+>>-- 12 rows, 3 NULL values
+>>--
+>>-- join of two indexes
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape join(cut,cut);
+
+--- SQL operation complete.
+>>#else
+>>control query shape join(pa(cut),pa(cut));
+>>#endif
+>>select c,d from t005t1;
+
+C            D          
+-----------  -----------
+
+          3            4
+         13           14
+         33           44
+
+--- 3 row(s) selected.
+>>-- (3,4), (13,14), (33,44)
+>>-- 3 result rows
+>>select c+d from t005t1;
+
+(EXPR)              
+--------------------
+
+                   7
+                  27
+                  77
+
+--- 3 row(s) selected.
+>>-- (7), (77), (27)
+>>select c+3, d*4-a from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   6                    15
+                  16                    45
+                  36                   175
+
+--- 3 row(s) selected.
+>>-- (6,15), (36,175), (16,45)
+>>select c from t005t1 order by d;
+
+C          
+-----------
+
+          3
+         13
+         33
+
+--- 3 row(s) selected.
+>>-- (3), (13), (33)
+>>select d from t005t1 where c > 3;
+
+D          
+-----------
+
+         14
+         44
+
+--- 2 row(s) selected.
+>>-- (14), (44)
+>>select a,b from t005t2;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            1
+          3            3
+          3            3
+          4            4
+          5            5
+          5            6
+          5            7
+          6            7
+          ?            7
+          ?            8
+          ?            9
+
+--- 12 row(s) selected.
+>>-- 12 rows
+>>select a,b from t005t2 where b = 7;
+
+A            B          
+-----------  -----------
+
+          5            7
+          6            7
+          ?            7
+
+--- 3 row(s) selected.
+>>-- (5,7), (6,7), (?,7)
+>>--
+>>-- use of index for groupby
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape sort_groupby(tsj(scan,scan));
+
+--- SQL operation complete.
+>>#else
+>>control query shape sort_groupby(tsj(pa(scan),pa(scan)));
+>>#endif
+>>select c,max(d) from t005t1 group by c;
+
+C            (EXPR)     
+-----------  -----------
+
+          3            4
+         13           14
+         33           44
+
+--- 3 row(s) selected.
+>>-- 3 result rows (3,4),(13,14),(33,44)
+>>-- indexonly access with groupby
+>>#ifdef SEABASE_REGRESS
+>>control query shape sort_groupby(scan);
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(sort_groupby(scan));
+>>#endif
+>>select c,count(*) from t005t1 group by c;
+
+C            (EXPR)              
+-----------  --------------------
+
+          3                     1
+         13                     1
+         33                     1
+
+--- 3 row(s) selected.
+>>-- 3 result rows (3,1),(13,1),(33,1)
+>>select a,count(*) from t005t1 group by a;
+
+A            (EXPR)              
+-----------  --------------------
+
+          1                     2
+         11                     1
+
+--- 2 row(s) selected.
+>>-- 2 rows (1,2),(11,1)
+>>--
+>>-- use of index for join
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape join(scan('x','t005x1b'),scan('y'));
+
+--- SQL operation complete.
+>>#else
+>>control query shape join(pa(scan('x','t005x1b')),pa(scan('y')));
+>>#endif
+>>select x.b, y.c from t005t1 x join t005t1 y on x.a=y.a;
+
+B            C          
+-----------  -----------
+
+          2            3
+          2           33
+         12           13
+         22            3
+         22           33
+
+--- 5 row(s) selected.
+>>-- 5 rows (2,3),(2,33),(12,13),(22,3),(22,33)
+>>#ifdef SEABASE_REGRESS
+>>control query shape join(scan('x','t005x1b'),scan('y','t005x1c'));
+
+--- SQL operation complete.
+>>#else
+>>control query shape join(pa(scan('x','t005x1b')),
++>                         pa(scan('y','t005x1c')));
+>>#endif
+>>select x.b, y.c from t005t1 x join t005t1 y on x.b=y.b;
+
+B            C          
+-----------  -----------
+
+          2            3
+         12           13
+         22           33
+
+--- 3 row(s) selected.
+>>-- 3 rows (2,3),(22,33),(12,13)
+>>#ifdef SEABASE_REGRESS
+>>control query shape join(scan('t005t1','t005x1c'),scan('t005t2'));
+
+--- SQL operation complete.
+>>#else
+>>control query shape join(pa(scan('t005t1','t005x1c')),
++>                         pa(scan('t005t2')));
+>>#endif
+>>select t005t1.c,t005t2.*
++>from t005t1 join t005t2 on t005t1.a=t005t2.a and t005t1.c > t005t2.d;
+
+C            A            B            C           D          
+-----------  -----------  -----------  ----------  -----------
+
+          3            1            1  1-1-1                 1
+         33            1            1  1-1-1                 1
+
+--- 2 row(s) selected.
+>>-- 2 rows (3,1,1,'1-1-1',1), (33,1,1,'1-1-1',1)
+>>#ifdef SEABASE_REGRESS
+>>control query shape groupby(join(scan('t005t1','t005x1c'),
++>                                 scan('t005t2')));
+
+--- SQL operation complete.
+>>#else
+>>control query shape groupby(join(pa(scan('t005t1','t005x1c')),
++>                                 pa(scan('t005t2'))));
+>>#endif
+>>
+>>select distinct t005t2.*
++>from t005t1 join t005t2 on t005t1.a=t005t2.a and t005t1.c > t005t2.d;
+
+A            B            C           D          
+-----------  -----------  ----------  -----------
+
+          1            1  1-1-1                 1
+
+--- 1 row(s) selected.
+>>-- 1 row (1,1,'1-1-1',1)
+>>--
+>>-- union all, union, ordered union
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape union(scan('t005t1','t005x1b'),
++>                          scan('t005t1','t005x1d'));
+
+--- SQL operation complete.
+>>#else
+>>control query shape union(pa(scan('t005t1','t005x1b')),
++>                          pa(scan('t005t1','t005x1d')));
+>>#endif
+>>select b from t005t1 union all select d from t005t1;
+
+B          
+-----------
+
+          4
+          2
+         14
+         12
+         44
+         22
+
+--- 6 row(s) selected.
+>>-- 6 rows (2),(12),(22),(4),(44),(14)
+>>#ifdef SEABASE_REGRESS
+>>control query shape groupby(union(scan('t005t1','t005x1c'),
++>                                  scan('t005t1','t005x1c')));
+
+--- SQL operation complete.
+>>#else
+>>control query shape groupby(union(pa(scan('t005t1','t005x1c')),
++>                                  pa(scan('t005t1','t005x1c'))));
+>>#endif
+>>
+>>select c from t005t1 union select a from t005t1;
+
+C          
+-----------
+
+          1
+          3
+         11
+         13
+         33
+
+--- 5 row(s) selected.
+>>-- 5 rows (3),(33),(13),(1),(11)
+>>-- no sort should be needed for the following
+>>control query shape union(cut,cut);
+
+--- SQL operation complete.
+>>select * from (select c from t005t1 union all select a from t005t1) as t(y)
++>where y > 1 order by y;
+
+Y          
+-----------
+
+          3
+         11
+         13
+         33
+
+--- 4 row(s) selected.
+>>-- 4 rows (3),(11),(13),(33) in this order
+>>control query shape groupby(union(cut,cut));
+
+--- SQL operation complete.
+>>select * from (select b+1 from t005t1 union select c from t005t1) as t(y)
++>where y between 3 and 13 order by y;
+
+Y                   
+--------------------
+
+                   3
+                  13
+
+--- 2 row(s) selected.
+>>-- 2 rows (3),(13) in this order
+>>
+>>control query shape sort_groupby(union(cut,cut));
+
+--- SQL operation complete.
+>>select y,sum(z)
++>from (select b+1,b from t005t1 union all select c, a+1 from t005t1) as t(y,z)
++>group by y having count(*) > 1 order by y;
+
+Y                     (EXPR)              
+--------------------  --------------------
+
+                   3                     4
+                  13                    24
+
+--- 2 row(s) selected.
+>>-- 2 rows (3,4),(13,24) in this order
+>>--
+>>-- distinct aggregates
+>>--
+>>control query shape cut;
+
+--- SQL operation complete.
+>>select count(distinct a) from t005t2;
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>-- 6
+>>select max(distinct c) from t005t2;
+
+(EXPR)    
+----------
+
+?-9-?     
+
+--- 1 row(s) selected.
+>>-- '?-9-?'
+>>select min(distinct d) + max(distinct a-b+5) * sum(d-a) from t005t2;
+
+(EXPR)              
+--------------------
+
+                  67
+
+--- 1 row(s) selected.
+>>-- 67 (calculated from 1 + 6 * 11)
+>>select count(distinct a) from t005t2 group by b;
+
+(EXPR)              
+--------------------
+
+                   1
+                   1
+                   0
+                   0
+                   1
+                   2
+                   2
+                   1
+
+--- 8 row(s) selected.
+>>-- 8 rows: (2),(1),(1),(1),(1),(2),(0),(0)
+>>select count(distinct b) from t005t2 group by a;
+
+(EXPR)              
+--------------------
+
+                   1
+                   1
+                   1
+                   3
+                   1
+                   1
+                   3
+
+--- 7 row(s) selected.
+>>-- 7 rows: (1),(1),(1),(1),(3),(1),(3)
+>>select a+3,count(distinct b),max(distinct d) from t005t2 group by a;
+
+(EXPR)                (EXPR)                (EXPR)     
+--------------------  --------------------  -----------
+
+                   5                     1            2
+                   9                     1            9
+                   6                     1            4
+                   8                     3            8
+                   4                     1            1
+                   ?                     3            6
+                   7                     1            5
+
+--- 7 row(s) selected.
+>>-- 7 rows: (4,1,1),(5,1,2),(6,1,4),(7,1,5),(8,3,8),(9,1,9),(?,3,6)
+>>select count(distinct b),sum(distinct b),sum(distinct b)/count(distinct b)
++>from t005t2 group by a;
+
+(EXPR)                (EXPR)                (EXPR)              
+--------------------  --------------------  --------------------
+
+                   1                     1                     1
+                   1                     7                     7
+                   1                     3                     3
+                   3                    18                     6
+                   1                     1                     1
+                   1                     4                     4
+                   3                    24                     8
+
+--- 7 row(s) selected.
+>>-- 7 rows: (1,1,1),(1,1,1),(1,3,3),(1,4,4),(3,18,6),(1,7,7),(3,24,8)
+>>
+>>#ifMX
+>>select max(distinct c) from t005ut2;
+
+(EXPR)              
+--------------------
+
+?-9-?               
+
+--- 1 row(s) selected.
+>>-- '?-9-?'
+>>#ifMX
+>>
+>>-- negative test, multiple distincts aren't implemented yet
+>>select sum(distinct a), count(distinct b) from t005t2 group by d;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   2                     1
+                   5                     2
+                   3                     1
+                   5                     1
+                   6                     1
+                   4                     1
+                   5                     1
+                   1                     1
+                   3                     1
+                   ?                     2
+
+--- 10 row(s) selected.
+>>-- this will work after common item subexpressions are implemented
+>>select sum(distinct a+b), count(distinct a+b), max(c) from t005t2 group by d;
+
+(EXPR)                (EXPR)                (EXPR)    
+--------------------  --------------------  ----------
+
+                   3                     1  2-1-2     
+                  10                     1  ?-8-6     
+                  13                     1  6-7-9     
+                  12                     1  5-7-8     
+                   6                     1  3-3-3     
+                  11                     1  5-6-7     
+                   8                     1  4-4-5     
+                   2                     1  1-1-1     
+                   ?                     0  ?-9-?     
+                   6                     1  3-3-4     
+
+--- 10 row(s) selected.
+>>
+>>select distinct sum(distinct a) from t005t2 group by b;
+
+(EXPR)              
+--------------------
+
+                   5
+                   3
+                   ?
+                  11
+                   4
+
+--- 5 row(s) selected.
+>>-- 5 rows: (3),(4),(5),(11),(?)
+>>
+>>-- TBF: binder support for count(distinct *)
+>>-- select count(distinct *), sum(t005t1.a * t005t2.a)  from t005t1 cross join t005t2;
+>>-- ??
+>>--
+>>-- testing elimination of unnecessary groupbys
+>>--
+>>#ifdef SEABASE_REGRESS
+>>control query shape mvi(scan);
+
+--- SQL operation complete.
+>>#else
+>>control query shape mvi(pa(scan));
+>>#endif
+>>
+>>-- TBF: uniqueness constraints are not always recognized correctly
+>>--      (several of the queries below fail)
+>>
+>>select distinct a,b from t005t1;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 3 rows: (1,2),(11,12),(1,22)
+>>select count(distinct c) from t005t2;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 12
+>>select a,b,c,sum(d) from t005t1 group by a,b,c;
+
+A            B            C            (EXPR)              
+-----------  -----------  -----------  --------------------
+
+          1            2            3                     4
+          1           22           33                    44
+         11           12           13                    14
+
+--- 3 row(s) selected.
+>>
+>>select a,sum(distinct b),max(distinct b),count(b) from t005t2 group by a;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 7 rows: (1,1,1,1), (2,1,1,1),(3,3,3,2),(4,4,4,1),
+>>--         (5,18,7,3),(6,7,7,1),(?,24,9,3)
+>>
+>>#ifMX
+>>select count(distinct c) from t005ut2;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 12
+>>#ifMX
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape mvi(join(scan,scan));
+
+--- SQL operation complete.
+>>#else
+>>control query shape mvi(join(pa(scan),pa(scan)));
+>>#endif
+>>
+>>select xa,yb,count(*)
++>from (select * from t005t1 x cross join t005t1 y) as j(xa,xb,xc,xd,ya,yb,yc,yd)
++>group by xa,xb,ya,yb;
+
+XA           YB           (EXPR)              
+-----------  -----------  --------------------
+
+          1            2                     1
+          1           12                     1
+          1           22                     1
+         11            2                     1
+         11           12                     1
+         11           22                     1
+          1            2                     1
+          1           12                     1
+          1           22                     1
+
+--- 9 row(s) selected.
+>>-- 9 rows, counts are all 1
+>>
+>>select a1,c2,count(*)
++>from (select * from t005t1,t005t2) as t(a1,b1,c1,d1,a2,b2,c2,d2)
++>where a1 > 1 and b2 < 5
++>group by a1,b1,c2;
+
+A1           C2          (EXPR)              
+-----------  ----------  --------------------
+
+         11  1-1-1                          1
+         11  2-1-2                          1
+         11  3-3-3                          1
+         11  3-3-4                          1
+         11  4-4-5                          1
+
+--- 5 row(s) selected.
+>>-- 5 rows (11,'1-1-1',1),(11,'2-1-2',1),(11,'3-3-3',1),
+>>--        (11,'3-3-4',1),(11,'4-4-5',1)
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape mvi(scan);
+
+--- SQL operation complete.
+>>#else
+>>control query shape mvi(pa(scan));
+>>#endif
+>>select a,min(c),avg(d+4) from t005t1 group by a,b;
+
+A            (EXPR)       (EXPR)              
+-----------  -----------  --------------------
+
+          1            3                     8
+          1           33                    48
+         11           13                    18
+
+--- 3 row(s) selected.
+>>-- 3 rows (1,3,8), (1,33,48), (11,13,18)
+>>
+>>
+>>-- queries to test IS NULL predicate on nullable keys.
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3a');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3a'));
+>>#endif
+>>
+>>select a from t005t3 where a is null;
+
+A          
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3b');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3b'));
+>>#endif
+>>select b from t005t3 where b is null;
+
+B 
+--
+
+ ?
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3c');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3c'));
+>>#endif
+>>select c from t005t3 where c is null;
+
+C  
+---
+
+?  
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3d');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3d'));
+>>#endif
+>>select d from t005t3 where d is null;
+
+D   
+----
+
+?   
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3e');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3e'));
+>>#endif
+>>select e from t005t3 where e is null;
+
+E              
+---------------
+
+              ?
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3f');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3f'));
+>>#endif
+>>select f from t005t3 where f is null;
+
+F         
+----------
+
+?         
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3g');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3g'));
+>>#endif
+>>select g from t005t3 where g is null;
+
+G       
+--------
+
+?       
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t005t3', 't005t3h');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan('t005t3', 't005t3h'));
+>>#endif
+>>select h from t005t3 where h is null;
+
+H     
+------
+
+?     
+
+--- 1 row(s) selected.
+>>
+>>#ifMX
+>>----- test for OR optimization
+>>control query shape without enforcers union(scan, scan);
+
+--- SQL operation complete.
+>>select * from t005t3 where a=5 or b=2;
+
+--- 0 row(s) selected.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>----- test for key access into the basetable
+>>----- should be a filescan unique into the basetable
+>>control query shape nested_join(cut,cut);
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select
++>  'D482AC77WMH6002',
++>  item_nbr ,
++>  4
++>from
++>  t005t4
++>where
++>  vendor_nbr in ('074690','100305')
++>  and
++>  not (
++>    (
++>      (order_dept_nbr = 82 and subclass_code = '00')
++>      and
++>      fineline in ('0160') 
++>    )
++>    or (
++>      (order_dept_nbr = 82 and subclass_code = '00')
++>      and
++>      fineline in ('0170')
++>    )
++>    or (
++>      (order_dept_nbr = 90 and subclass_code = '00')
++>      and
++>      fineline in ('1342')
++>    )
++>    or (
++>      (order_dept_nbr = 90 and subclass_code = '00')
++>      and
++>      fineline in ('1344') 
++>    )
++>    or (
++>      (order_dept_nbr = 90 and subclass_code = '00')
++>      and
++>      fineline in ('1351')
++>    )
++>    or (
++>      (order_dept_nbr = 92 and subclass_code = '00')
++>      and
++>      fineline in ('3751')
++>    )
++>  )
++>  and
++>  substr (upc, 4, 5) in ('00000','00001','00082','00091','00092','0699','12114','12919','13130','18715','19000','19582','21000','24000','28400','29000','40001','41000','41129','43000','44000','44700','46800','49900','50049','54400','59283','62111','70221','70346','71040','71159','71537','71871','71921','73510','74653','85844','87684','93649','94522')
++>  and
++>  vendor_nbr in ('490102','339457')
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainit;
+
+S   OPERATOR              LC  RC  TAB_NAME  
+--  --------------------  --  --  ----------
+
+05  ROOT                  4   ?             
+04  NESTED_JOIN           1   3             
+03  PROBE_CACHE           2   ?             
+02  TRAFODION_VSBB_SCAN   ?   ?   T005T4    
+01  TRAFODION_INDEX_SCAN  ?   ?   T005T4    
+
+--- 5 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- verify fix to genesis case 10-070628-2258 solution 10-070610-5412
+>>delete from t005t1;
+
+--- 3 row(s) deleted.
+>>-- ffg used to get error 8421 null cannot be assigned to a not null column.
+>>select count(distinct c), count(*) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   0                     0
+
+--- 1 row(s) selected.
+>> -- should return 0 0
+>>select avg(distinct c), count(*) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>select sum(distinct c), count(*) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>select count(distinct c), count(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   0                     0
+
+--- 1 row(s) selected.
+>> -- should return 0 0
+>>select avg(distinct c), count(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>select sum(distinct c), count(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>
+>>select count(distinct c), sum(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   0                     ?
+
+--- 1 row(s) selected.
+>> -- should return 0 ?
+>>select avg(distinct c), sum(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     ?
+
+--- 1 row(s) selected.
+>> -- should return ? ?
+>>select sum(distinct c), sum(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   ?                     ?
+
+--- 1 row(s) selected.
+>> -- should return ? ?
+>>select max(distinct c), sum(d) from t005t1;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          ?                     ?
+
+--- 1 row(s) selected.
+>> -- should return ? ?
+>>select min(distinct c), sum(d) from t005t1;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          ?                     ?
+
+--- 1 row(s) selected.
+>> -- should return ? ?
+>>select max(distinct c), count(*) from t005t1;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>select min(distinct c), count(*) from t005t1;
+
+(EXPR)       (EXPR)              
+-----------  --------------------
+
+          ?                     0
+
+--- 1 row(s) selected.
+>> -- should return ? 0
+>>
+>>select sum(a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select avg(a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select max(a) from t005t1;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select min(a) from t005t1;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select count(a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- should return 0
+>>
+>>select sum(distinct a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select avg(distinct a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select max(distinct a) from t005t1;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select min(distinct a) from t005t1;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>> -- should return ?
+>>select count(distinct a) from t005t1;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- should return 0
+>>
+>>-- verify fix for case 10-081203-5622, soln 10-081203-7701
+>>
+>>-- update stats so that the single partitioned table can be stasts-split
+>>update statistics for table t005t1 on every column;
+
+--- SQL operation complete.
+>>control query shape groupby(esp_exchange(groupby(cut)));
+
+--- SQL operation complete.
+>> -- force parallel plan
+>>
+>>-- make sure at least we can get 2 partitions
+>>cqd hbase_min_bytes_per_esp_partition '10';
+
+--- SQL operation complete.
+>>
+>>-- used to get error 8421 NULL cannot be assigned to a NOT NULL column.
+>>select count(distinct c), count(d) from t005t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   0                     0
+
+--- 1 row(s) selected.
+>>-- should now get 0 0
+>>
+>>cqd hbase_min_bytes_per_esp_partition reset;
+
+--- SQL operation complete.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>?section clnup
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+
+NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
+-----------  --------------  -----------  --------------
+
+        165             135           16        20971520
+
+--- 1 row(s) selected.
+>>
+>>obey TEST005(ddl);
+>>
+>>drop index t005x1b;
+
+--- SQL operation complete.
+>>drop index t005x1c;
+
+--- SQL operation complete.
+>>drop index t005x1d;
+
+--- SQL operation complete.
+>>drop index t005x2a;
+
+--- SQL operation complete.
+>>drop index t005x2b;
+
+--- SQL operation complete.
+>>drop table t005t1;
+
+--- SQL operation complete.
+>>drop table t005t2;
+
+--- SQL operation complete.
+>>
+>>drop index t005t3a;
+
+--- SQL operation complete.
+>>drop index t005t3b;
+
+--- SQL operation complete.
+>>drop index t005t3c;
+
+--- SQL operation complete.
+>>drop index t005t3d;
+
+--- SQL operation complete.
+>>drop index t005t3e;
+
+--- SQL operation complete.
+>>drop index t005t3f;
+
+--- SQL operation complete.
+>>drop index t005t3g;
+
+--- SQL operation complete.
+>>drop index t005t3h;
+
+--- SQL operation complete.
+>>drop table t005t3;
+
+--- SQL operation complete.
+>>
+>>drop index t005t4x1;
+
+--- SQL operation complete.
+>>drop table t005t4;
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>drop table t005ut2;
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>
+>>select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+
+NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
+-----------  --------------  -----------  --------------
+
+        170             136            0        20971520
+
+--- 1 row(s) selected.
+>>
+>>log;

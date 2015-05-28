@@ -1,0 +1,35 @@
+!
+! Persistent process test10a
+!
+! Test sequence:
+!   Client $CLT 
+!    - connects to server $ABC and reconnects on every send failure
+!    - 20 sends to server $ABC with a 1 second delay between sends
+!    - 5th and 15th tell server to abort and 20th to exit
+!    - between 6th and 15th node down is executed
+!   Server $ABC
+!    - responds to client server as per above
+!    - on 5th abort restarts on node 2
+!    - on down node restarts on node 4
+!    - on 15th abort restarts on node 4
+!    - on 20th exits and will not be restarted
+
+set {process $ABC} PERSIST_ZONES=2,4
+set {process $ABC} PERSIST_RETRIES=2,30
+exec {name $ABC,nid 2,nowait} server
+delay 4
+! process $ABC should start on node 2
+exec {pri 10,name $CLT,nid 0,in #default, out #default,nowait} client2
+ps
+
+delay 15
+down 2
+delay 1
+node info
+! process $ABC should be restarted on node 4
+ps
+
+wait $CLT
+ps
+
+exit

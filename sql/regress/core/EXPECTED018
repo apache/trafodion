@@ -1,0 +1,116 @@
+>>
+>>create table T018orig (a int NOT NULL, b int, c int, primary key (a))
++>#ifMX
++>no partition
++>#ifMX
++>;
+
+--- SQL operation complete.
+>>create index T018 on T018orig(b);
+
+--- SQL operation complete.
+>>
+>>-- insertion
+>>--
+>>insert into T018orig values (1,2,3),(2,3,4),(3,4,5);
+
+--- 3 row(s) inserted.
+>>select * from T018orig;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            3
+          2            3            4
+          3            4            5
+
+--- 3 row(s) selected.
+>>
+>>-- updating
+>>--
+>>update T018orig set b = b + 10 where a = 1;
+
+--- 1 row(s) updated.
+>>update T018orig set b = b + 100 where b = 3;
+
+--- 1 row(s) updated.
+>>update T018orig set b = b + 1000 where c = 5;
+
+--- 1 row(s) updated.
+>>update T018orig set b = b + 10000;
+
+--- 3 row(s) updated.
+>>select * from T018orig;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1        10012            3
+          2        10103            4
+          3        11004            5
+
+--- 3 row(s) selected.
+>>
+>>update T018orig set c = c + 10 where a = 1;
+
+--- 1 row(s) updated.
+>>update T018orig set c = c + 100 where b = 10103;
+
+--- 1 row(s) updated.
+>>update T018orig set c = c + 1000 where c = 5;
+
+--- 1 row(s) updated.
+>>update T018orig set c = c + 10000;
+
+--- 3 row(s) updated.
+>>select * from T018orig;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1        10012        10013
+          2        10103        10104
+          3        11004        11005
+
+--- 3 row(s) selected.
+>>
+>>-- deletion
+>>--
+>>delete from T018orig where a = 1;
+
+--- 1 row(s) deleted.
+>>delete from T018orig where b = 10103;
+
+--- 1 row(s) deleted.
+>>delete from T018orig where c = 11005;
+
+--- 1 row(s) deleted.
+>>select * from T018orig;
+
+--- 0 row(s) selected.
+>>
+>>-- verify fix to solution 10-110216-6174: "a null operand is not allowed in
+>>-- function NVL"
+>>select isnull(null, 123) from (values(1)) as t;
+
+(EXPR)               
+---------------------
+
+           123.000000
+
+--- 1 row(s) selected.
+>>select ISNULL(B, null) FROM (values(1),(null)) as t(b);
+
+(EXPR)
+------
+
+     1
+     ?
+
+--- 2 row(s) selected.
+>>
+>>drop table T018orig;
+
+--- SQL operation complete.
+>>
+>>log;

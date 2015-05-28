@@ -1,0 +1,98 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# Functions: ---------------------------------------------------------
+checkForErrs()
+{
+  errsOutput=$1
+  errnum=0
+  errtext=""
+  if [[ "$errsOutput" != "" ]]; then # Errors
+    # Get errors.
+    errnum=$(echo "$errsOutput" | cut -d" " -f2)  # Get rid of text
+    errnum=${errnum#"ERROR["}     # Get rid of surrounding word and brackets.
+    errnum=${errnum%"]"}
+    errtext=${errsOutput#"*** ERROR[$errnum]"}
+    return 0
+  fi
+  return 1
+}
+
+reorgNeeded()
+{
+  for file in $(echo "showddl $1,internal;" | sqlci | grep LOCATION |\
+                awk -F\. '   {echo $2"."$3"."$4} '); do
+    if [[ $(fcheck -reorg -all -file $file | grep "Reorg recommended") != "" ]];
+    then echo "TRUE"; exit
+    fi
+  done
+  echo "FALSE"
+}
+
+MXCI="$MY_SQROOT/export/bin$SQ_MBTYPE/sqlci"
+cat="MANAGEABILITY"
+log="RALog"
+
+echo "Performing update statistics for tables in $cat catalog." > $log
+query1="set catalog $cat;"
+query2="select 'Table: '|| c.cat_name ||' '|| 
+                          s.schema_name || ' '|| o.object_name
+   from hp_system_catalog.system_schema.catsys c, 
+        hp_system_catalog.system_schema.schemata s, 
+        hp_definition_schema.objects o 
+   where c.cat_uid=s.cat_uid and 
+         s.schema_uid=o.schema_uid and 
+         o.object_type='BT' and 
+         o.object_name_space='TA' and 
+         o.object_name not like 'MVS_%' and
+         o.object_name not like 'HISTOGRAM%' and
+         s.schema_name<>'HP_DEFINITION_SCHEMA' and
+         s.schema_name<>'PUBLIC_ACCESS_SCHEMA';"
+
+echo "$query1 $query2" | $MXCI >/tmp/RAsqlout
+errs=$(cat /tmp/RAsqlout | grep "\*\*\* ERROR" | sed -n '1p')
+# Create list of tables.
+if checkForErrs "$errs"; then
+  echo "Error getting table names: $errnum, $errtext" >> $log 
+else # No errors getting table names
+  cat /tmp/RAsqlout | grep "Table:" | grep -v "SELECT" |\
+             tr -s ' ' ' ' | cut -d" " -f2- > /tmp/RATablelist
+
+  # Perform update statistics on every column for every table in list.
+  while read cat sch tbl; do
+    table="\"$cat\".\"$sch\".\"$tbl\"";
+    query1="CQD USTAT_AUTOMATION_INTERVAL '0';"
+    if [[ $(reorgNeeded $table) = "TRUE" ]]; then
+      query2="MAINTAIN TABLE $table, reorg ',RATE 10';"
+      logtext="/reorg"
+    else 
+      query2=""
+      logtext=" (reorg unneeded)"; 
+    fi
+    query3="MAINTAIN TABLE $table, UPDATE STATISTICS 'ON NECESSARY COLUMNS';"
+    errs=$(echo "$query1 $query2 $query3" | $MXCI | grep "\*\*\* ERROR" | sed -n '1p')
+    if checkForErrs "$errs"; then 
+         echo "Update statistics${logtext} for $table failed: $errnum, $errtext" >> $log
+         echo "$query2 $query3" >> $log
+    else 
+      echo "Update statistics${logtext} for $table successful." >> $log
+    fi
+  done < /tmp/RATablelist
+
+fi # No errors getting table names.

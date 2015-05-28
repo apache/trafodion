@@ -1,0 +1,72 @@
+-- Tests for ORC file accedss
+-- Added Nov 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+log LOG020 clear;
+obey TEST020(setup);
+obey TEST020(tests);
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+
+set schema hive.hive;
+cqd HIVE_MAX_STRING_LENGTH '20' ;
+cqd mode_seahive 'ON';
+cqd traf_enable_orc_format 'ON';
+
+?section tests
+--------------------------------------------------------------------------
+-- ORC file metadata info
+invoke hive.hive.store_orc;
+
+-- select one row from ORC table
+select [first 1] * from hive.hive.store_orc;
+
+-- select all rows from ORC table
+select * from hive.hive.store_orc;
+
+-- select of few columns with WHERE predicate
+select s_store_sk, left(s_store_id, 20) from hive.hive.store_orc where s_store_sk < 7;
+
+-- select count of rows 
+select count(*) from hive.hive.store_orc;
+
+-- explain of join between 2 ORC tables
+explain options 'f' select x.s_suite_number, y.s_street_name
+ from hive.hive.store_orc x, hive.hive.store_orc y
+  where x.s_store_sk = y.s_store_sk;
+
+-- execute of join between 2 ORC tables
+select x.s_suite_number, y.s_street_name
+ from hive.hive.store_orc x, hive.hive.store_orc y
+  where x.s_store_sk = y.s_store_sk;
+
+-- explain of join between hive(hdfs) and ORC tables
+explain options 'f' select x.s_suite_number, y.s_street_name
+ from hive.hive.store x, hive.hive.store_orc y
+  where x.s_store_sk = y.s_store_sk;
+
+-- execute of join between hive(hdfs) and ORC tables
+select x.s_suite_number, y.s_street_name
+ from hive.hive.store x, hive.hive.store_orc y
+  where x.s_store_sk = y.s_store_sk;
+

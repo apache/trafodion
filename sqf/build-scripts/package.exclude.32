@@ -1,0 +1,6 @@
+export/bin32d/*
+export/bin64/*
+export/bin64d/*
+export/lib32d/*
+export/lib64/*
+export/lib64d/*

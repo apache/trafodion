@@ -1,0 +1,1169 @@
+>>obey TEST029(tests);
+>>#ifMX
+>>obey TEST029(database_create);
+>>--
+>>-- Database creation
+>>create table T29x(a int default 10 not null, b int, c char(4) default 'c',
++>                   d int default 1, e int default 0,
++>                   constraint " T29x " check (a <> b));
+
+--- SQL operation complete.
+>>
+>>showddl T29x;
+
+CREATE TABLE CAT.SCH.T29X
+  (
+    A                                INT DEFAULT 10 NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT _ISO88591'c'
+  , D                                INT DEFAULT 1
+  , E                                INT DEFAULT 0
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.T29X ADD CONSTRAINT TRAFODION.SCH." T29x" CHECK
+  (TRAFODION.SCH.T29X.A <> TRAFODION.SCH.T29X.B)
+
+--- SQL operation complete.
+>>
+>>create view T29xv0(a,b,c,d) as select a,b,c,d from T29x -- view on a basetable
++>                                where a > -99
++>                                with check option;
+
+--- SQL operation complete.
+>>showddl T29xv0;
+
+CREATE VIEW TRAFODION.SCH.T29XV0 (A, B, C, D) AS
+  SELECT TRAFODION.SCH.T29X.A, TRAFODION.SCH.T29X.B, TRAFODION.SCH.T29X.C,
+    TRAFODION.SCH.T29X.D FROM TRAFODION.SCH.T29X WHERE TRAFODION.SCH.T29X.A >
+    -99 WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>>
+>>create view T29xv1(c,b,z,d) as select c,b,a,d from T29xv0 -- on a view
++>                                where c >= 'c' and a > 0;
+
+--- SQL operation complete.
+>>showddl T29xv1;
+
+CREATE VIEW TRAFODION.SCH.T29XV1 (C, B, Z, D) AS
+  SELECT TRAFODION.SCH.T29XV0.C, TRAFODION.SCH.T29XV0.B,
+    TRAFODION.SCH.T29XV0.A, TRAFODION.SCH.T29XV0.D FROM TRAFODION.SCH.T29XV0
+    WHERE TRAFODION.SCH.T29XV0.C >= 'c' AND TRAFODION.SCH.T29XV0.A > 0 ;
+
+--- SQL operation complete.
+>>
+>>create view T29xv2(h,i,j,d) as select T29xv1.z,b,c,d from T29xv1 -- on a view
++>                                where z < 99 and z <= T29xv1.b
++>                                with check option;
+
+--- SQL operation complete.
+>>
+>>showddl T29xv2;
+
+CREATE VIEW TRAFODION.SCH.T29XV2 (H, I, J, D) AS
+  SELECT TRAFODION.SCH.T29XV1.Z, TRAFODION.SCH.T29XV1.B,
+    TRAFODION.SCH.T29XV1.C, TRAFODION.SCH.T29XV1.D FROM TRAFODION.SCH.T29XV1
+    WHERE TRAFODION.SCH.T29XV1.Z < 99 AND TRAFODION.SCH.T29XV1.Z <=
+    TRAFODION.SCH.T29XV1.B WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>>
+>>create view T29xv3(s,r,d) as select x.i,h,d from T29xv2 x -- on a view, cubed
++>                                where h < 10 and x.j < 'j'
++>                         with check option;
+
+--- SQL operation complete.
+>>
+>>showddl T29xv3;
+
+CREATE VIEW TRAFODION.SCH.T29XV3 (S, R, D) AS
+  SELECT X.I, X.H, X.D FROM TRAFODION.SCH.T29XV2 X WHERE X.H < 10 AND X.J <
+    'j' WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>>
+>>create view T29xv4 as select * from T29xv3 x where r > 5;
+
+--- SQL operation complete.
+>>
+>>showddl T29xv4;
+
+CREATE VIEW SEABASE.SCH.T29XV4 AS
+  SELECT X.S, X.R, X.D FROM SEABASE.SCH.T29XV3 X WHERE X.R > 5 ;
+
+--- SQL operation complete.
+>>
+>>obey TEST029(uv_wco_tests);
+>>  --
+>>  -- basecol:	T29x.A		T29x.B		T29x.C
+>>  -- default:	10		null		'c'
+>>  --
+>>  -- T29x:			a<>b
+>>  -- v0 wco:	a>-99
+>>  -- v1:	a>0				c>='c'
+>>  -- v2 wco:	z<99		z<=b
+>>  -- v3 wco:	h<10				j<'j' [col not in v3]
+>>  -- v4:	r>5
+>>  --
+>>  -- We insert rows setting column D to be the highest numbered view (v 1,2,3)
+>>  -- in which the row should be visible.
+>>
+>>insert into T29x(a,b,c,d) values (8,8,'d',-1);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) inserted.
+>>	-- violates T29X constraint (a<>b)
+>>insert into T29x(a,b,c,d) values (-1,0,'d',0), (1,2,'a',0), 
++>				  (1,0,'f',1),  (99,100,'f',1), 
++>				  (1,2,'j',2),  (10,11,'f',2),
++>				  (1,3,'f',3);
+
+--- 7 row(s) inserted.
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+          1            3  f               3            0
+
+--- 7 row(s) selected.
+>>	-- 7 rows
+>>select * from T29xv1;
+
+C     B            Z            D          
+----  -----------  -----------  -----------
+
+f               0            1            1
+f             100           99            1
+j               2            1            2
+f              11           10            2
+f               3            1            3
+
+--- 5 row(s) selected.
+>>	-- 5 rows
+>>select * from T29xv2;
+
+H            I            J     D          
+-----------  -----------  ----  -----------
+
+          1            2  j               2
+         10           11  f               2
+          1            3  f               3
+
+--- 3 row(s) selected.
+>>	-- 3 rows
+>>select * from T29xv3;
+
+S            R            D          
+-----------  -----------  -----------
+
+          3            1            3
+
+--- 1 row(s) selected.
+>>	-- 1 row
+>>
+>>insert into T29xv3 default values;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- null value in B violates v2 WCO
+>>insert into T29xv3(r,s,d) values(10,11,-1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v3 WCO
+>>insert into T29xv3(r,s,d) values(1,0,-1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v2 WCO
+>>insert into T29xv3(r,s,d) values(-1,0,0);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v1 cascaded WCO
+>>insert into T29xv3(r,s,d) values(1,1,-1);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) inserted.
+>>	-- violates T29X constraint
+>>insert into T29xv3(r,s,d) values(null,1,-1);
+
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- violates notnull constraint
+>>insert into T29xv3(r,s,d) values((select cast(null as int) from MT),1,-1);
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) inserted.
+>>	-- violates notnull constraint
+>>insert into T29xv3(r,s,d) values(9,10,3);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>select * from T29xv3;
+
+S            R            D          
+-----------  -----------  -----------
+
+          3            1            3
+         10            9            3
+
+--- 2 row(s) selected.
+>>	-- 1+1 rows (since (-1,0,0) "disappears" from v1 on up)
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+          1            3  f               3            0
+          9           10  c               3            0
+
+--- 8 row(s) selected.
+>>	-- 7+1 rows
+>>
+>>insert into T29xv4(r,s,d) values(10,11,-1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v3 WCO
+>>insert into T29xv4(r,s,d) values(1,0,-1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v2 WCO
+>>insert into T29xv4(r,s,d) values(-1,0,0);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) inserted.
+>>	-- violates v1 cascaded WCO
+>>insert into T29xv4(r,s,d) values(1,1,-1);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) inserted.
+>>	-- violates T29X constraint
+>>insert into T29xv4(r,s,d) values(null,1,-1);
+
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- violates notnull constraint
+>>insert into T29xv3(r,s,d) values((select cast(null as int) from MT),1,-1);
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) inserted.
+>>	-- violates notnull constraint
+>>delete from T29xv3 where (r,s,d) = (9,10,3);
+
+--- 1 row(s) deleted.
+>>	-- ok.
+>>insert into T29xv4(r,s,d) values(9,10,3);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>select * from T29xv4;
+
+S            R            D          
+-----------  -----------  -----------
+
+         10            9            3
+
+--- 1 row(s) selected.
+>>	-- 1+1 rows (since (-1,0,0) "disappears" from v1 on up)
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+          1            3  f               3            0
+          9           10  c               3            0
+
+--- 8 row(s) selected.
+>>	-- 7+1 rows
+>>insert into T29xv4(r,s,d) values(5,10,3);
+
+--- 1 row(s) inserted.
+>>	-- ok, disappears from v4
+>>delete from T29xv4 where (r,s,d) = (5,10,3);
+
+--- 0 row(s) deleted.
+>>	-- fails, since disappeared
+>>delete from T29xv3 where (r,s,d) = (5,10,3);
+
+--- 1 row(s) deleted.
+>>	-- ok.
+>>
+>>insert into T29xv2 default values;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+
+--- 0 row(s) inserted.
+>>		-- null value in B violates v2 WCO
+>>insert into T29xv2 values(99,0,'c',1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+
+--- 0 row(s) inserted.
+>>		-- violates v2 WCO
+>>insert into T29xv2 values(1,0,'c',1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+
+--- 0 row(s) inserted.
+>>		-- violates v2 WCO
+>>insert into T29xv2 values(1,1,'c',-1);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) inserted.
+>>		-- violates T29X
+>>insert into T29xv2 values(null,1,'c',-1);
+
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- violates notnull
+>>insert into T29xv2 values((select cast(null as int) from MT),1,'c',-1);
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) inserted.
+>>	-- violates notnull
+>>insert into T29xv2 values(19,20,'k',2);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xv2 values(19,20,'a',0);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV2.
+
+--- 0 row(s) inserted.
+>>	-- violates v1 cascaded WCO
+>>select * from T29xv2;
+
+H            I            J     D          
+-----------  -----------  ----  -----------
+
+          1            2  j               2
+         10           11  f               2
+          1            3  f               3
+          9           10  c               3
+         19           20  k               2
+
+--- 5 row(s) selected.
+>>	-- 3+1+1 rows (since 2 rows "disappear")
+>>select * from T29xv1;
+
+C     B            Z            D          
+----  -----------  -----------  -----------
+
+f               0            1            1
+f             100           99            1
+j               2            1            2
+f              11           10            2
+f               3            1            3
+c              10            9            3
+k              20           19            2
+
+--- 7 row(s) selected.
+>>	-- 5+1+1 rows (since 2 rows "disappear")
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+          1            3  f               3            0
+          9           10  c               3            0
+         19           20  k               2            0
+
+--- 9 row(s) selected.
+>>	-- 9 rows
+>>
+>>insert into T29xv1 default values;
+
+--- 1 row(s) inserted.
+>>		-- ok
+>>insert into T29xv1(z,b,c,d) values(0,1,'c',0);
+
+--- 1 row(s) inserted.
+>>	-- ok, disappears
+>>insert into T29xv1(z,b,c,d) values(1,0,'b',0);
+
+--- 1 row(s) inserted.
+>>	-- ok, disappears
+>>insert into T29xv1(z,b,c,d) values(1,0,'d',1);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xv1(z,b,c,d) values(-99,0,'d',1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV0.
+
+--- 0 row(s) inserted.
+>>    -- violates v0 constraint
+>>insert into T29xv1(z,b,c,d) values(1,1,'d',-1);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) inserted.
+>>     -- violates T29X constraint
+>>insert into T29xv1(z,b,c,d) values(null,1,'d',-1);
+
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- violates notnull
+>>insert into T29xv1(z,b,c,d) values((select cast(null as int) from MT),1,'d',-1);
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) inserted.
+>>  -- violates notnull
+>>select * from T29xv1;
+
+C     B            Z            D          
+----  -----------  -----------  -----------
+
+f               0            1            1
+f             100           99            1
+j               2            1            2
+f              11           10            2
+f               3            1            3
+c              10            9            3
+k              20           19            2
+c               ?           10            1
+d               0            1            1
+
+--- 9 row(s) selected.
+>>	-- 7+2 rows (since 2 rows "disappear")
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+          1            3  f               3            0
+          9           10  c               3            0
+         19           20  k               2            0
+         10            ?  c               1            0
+          0            1  c               0            0
+          1            0  b               0            0
+          1            0  d               1            0
+
+--- 13 row(s) selected.
+>>	-- 9+4 rows
+>>
+>>update T29xv3 set r=10;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v2
+>>update T29xv3 set r=10,s=11;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v3
+>>update T29xv3 set r=s+1;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v2
+>>update T29xv3 set r=0,d=0 where r=9;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v1 cascaded WCO
+>>update T29xv3 set r=s-1,s=s+10;
+
+--- 2 row(s) updated.
+>>	-- ok, result is rows (r=2,s=13),()
+>>update T29xv3 set r=s-1,s=s+10;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v3
+>>update T29xv3 set r=null;
+
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column CAT.SCH.T29X.A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- violates notnull
+>>update T29xv3 set r=(select cast(null as int) from MT);
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) updated.
+>>	-- violates notnull
+>>update T29xv3 set s=null;
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XV3.
+
+--- 0 row(s) updated.
+>>	-- violates v2 WCO
+>>update T29xv3 set s=2;
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH." T29x" on table CAT.SCH.T29X.
+
+--- 0 row(s) updated.
+>>		-- violates T29X
+>>select * from T29xv3;
+
+S            R            D          
+-----------  -----------  -----------
+
+         13            2            3
+         20            9            3
+
+--- 2 row(s) selected.
+>>	-- 2 rows
+>>delete from T29xv3;
+
+--- 2 row(s) deleted.
+>>	-- ok
+>>select * from T29xv3;
+
+--- 0 row(s) selected.
+>>	-- 0 rows
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+         19           20  k               2            0
+         10            ?  c               1            0
+          0            1  c               0            0
+          1            0  b               0            0
+          1            0  d               1            0
+
+--- 11 row(s) selected.
+>>	-- 13-2 rows
+>>
+>>insert into T29xv3(r,s,d) values(9,10,3);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>update T29xv2 set h=h*3,i=i*3,d=2 where d=3;
+
+--- 1 row(s) updated.
+>>	-- ok, removes v3's last rows
+>>select * from T29xv3;
+
+--- 0 row(s) selected.
+>>	-- 0 rows
+>>select * from T29xv2;
+
+H            I            J     D          
+-----------  -----------  ----  -----------
+
+          1            2  j               2
+         10           11  f               2
+         19           20  k               2
+         27           30  c               2
+
+--- 4 row(s) selected.
+>>	-- 5-1 rows now (1 row disappeared from v1)
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         10           11  f               2            0
+         19           20  k               2            0
+         10            ?  c               1            0
+          0            1  c               0            0
+          1            0  b               0            0
+          1            0  d               1            0
+         27           30  c               2            0
+
+--- 12 row(s) selected.
+>>	-- 11+1 rows
+>>delete from T29xv2 where c like 'f%';
+
+*** ERROR[4001] Column C is not found.  Tables in scope: CAT.SCH.T29XV2.  Default schema: CAT.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>		-- err 4001 expected
+>>delete from T29xv2 where j like 'f%';
+
+--- 1 row(s) deleted.
+>>		-- ok
+>>select * from T29xv2;
+
+H            I            J     D          
+-----------  -----------  ----  -----------
+
+          1            2  j               2
+         19           20  k               2
+         27           30  c               2
+
+--- 3 row(s) selected.
+>>	-- 4-1 rows now 
+>>select * from T29x;
+
+A            B            C     D            E          
+-----------  -----------  ----  -----------  -----------
+
+         -1            0  d               0            0
+          1            2  a               0            0
+          1            0  f               1            0
+         99          100  f               1            0
+          1            2  j               2            0
+         19           20  k               2            0
+         10            ?  c               1            0
+          0            1  c               0            0
+          1            0  b               0            0
+          1            0  d               1            0
+         27           30  c               2            0
+
+--- 11 row(s) selected.
+>>	-- 12-1 rows
+>>
+>>		-- DML on this table and views
+>>obey TEST029(uv_wco_rename_tests);
+>>
+>>create view T29xvRN1 as select a,b,e from
++>			  (select * from T29x where a > 1) ren
++>			  with check option;
+
+--- SQL operation complete.
+>>create view T29xvRN2 as select a,b,e from
++>			  (select * from T29x where a > 1) ren
++>			  where a < 10
++>			  with check option;
+
+--- SQL operation complete.
+>>create view T29xvRN3 as select a,b,e from
++>			  (select * from 
++>			    (select * from T29x where a > 1) i
++>			  where a < 10) o
++>			  where a <> b
++>			  with check option;
+
+--- SQL operation complete.
+>>create view T29xvRN4 as select a,b,e from
++>			  (select * from T29xvRN3 where e > 0) ren
++>			  where e < 5
++>			  with check option;
+
+--- SQL operation complete.
+>>
+>>showddl T29xvRN1;
+
+CREATE VIEW TRAFODION.SCH.T29XVRN1 AS
+  SELECT REN.A, REN.B, REN.E FROM (SELECT TRAFODION.SCH.T29X.A,
+    TRAFODION.SCH.T29X.B, TRAFODION.SCH.T29X.C, TRAFODION.SCH.T29X.D,
+    TRAFODION.SCH.T29X.E FROM TRAFODION.SCH.T29X WHERE TRAFODION.SCH.T29X.A >
+    1) REN WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>> showddl T29xvRN2;
+
+CREATE VIEW TRAFODION.SCH.T29XVRN2 AS
+  SELECT REN.A, REN.B, REN.E FROM (SELECT TRAFODION.SCH.T29X.A,
+    TRAFODION.SCH.T29X.B, TRAFODION.SCH.T29X.C, TRAFODION.SCH.T29X.D,
+    TRAFODION.SCH.T29X.E FROM TRAFODION.SCH.T29X WHERE TRAFODION.SCH.T29X.A >
+    1) REN WHERE REN.A < 10 WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>> showddl T29xvRN3;
+
+CREATE VIEW SEABASE.SCH.T29XVRN3 AS
+  SELECT O.A, O.B, O.E FROM (SELECT I.A, I.B, I.C, I.D, I.E FROM (SELECT
+    SEABASE.SCH.T29X.A, SEABASE.SCH.T29X.B, SEABASE.SCH.T29X.C,
+    SEABASE.SCH.T29X.D, SEABASE.SCH.T29X.E FROM SEABASE.SCH.T29X WHERE
+    SEABASE.SCH.T29X.A > 1) I WHERE I.A < 10) O WHERE O.A <> O.B WITH CHECK
+    OPTION ;
+
+--- SQL operation complete.
+>> showddl T29xvRN4;
+
+CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
+  SELECT REN.A, REN.B, REN.E FROM (SELECT TRAFODION.SCH.T29XVRN3.A,
+    TRAFODION.SCH.T29XVRN3.B, TRAFODION.SCH.T29XVRN3.E FROM
+    TRAFODION.SCH.T29XVRN3 WHERE TRAFODION.SCH.T29XVRN3.E > 0) REN WHERE
+    REN.E < 5 WITH CHECK OPTION ;
+
+--- SQL operation complete.
+>>
+>>delete from T29x;
+
+--- 11 row(s) deleted.
+>>alter table T29x drop constraint " T29x";
+
+--- SQL operation complete.
+>>
+>>insert into T29xvRN1(a,b)   values(1,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN1.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN1(a,b)   values(10,10);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xvRN2(a,b)   values(1,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN2.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN2(a,b)   values(11,11);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN2.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN2(a,b)   values(9,9);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xvRN3(a,b)   values(1,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN3(a,b)   values(11,11);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN3(a,b)   values(9,9);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN3.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN3(a,b)   values(8,9);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xvRN4(a,b)   values(8,9);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN4(a,b,e) values(1,1,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN4(a,b,e) values(11,11,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN4(a,b,e) values(9,9,1);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>insert into T29xvRN4(a,b,e) values(7,9,1);
+
+--- 1 row(s) inserted.
+>>	-- ok
+>>insert into T29xvRN4(a,b,e) values(7,9,5);
+
+*** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.T29XVRN4.
+
+--- 0 row(s) inserted.
+>>	-- fail
+>>
+>>table T29xvRN1;
+
+A            B            E          
+-----------  -----------  -----------
+
+         10           10            0
+          9            9            0
+          8            9            0
+          7            9            1
+
+--- 4 row(s) selected.
+>> table T29xvRN2;
+
+A            B            E          
+-----------  -----------  -----------
+
+          9            9            0
+          8            9            0
+          7            9            1
+
+--- 3 row(s) selected.
+>> table T29xvRN3;
+
+A            B            E          
+-----------  -----------  -----------
+
+          8            9            0
+          7            9            1
+
+--- 2 row(s) selected.
+>> table T29xvRN4;
+
+A            B            E          
+-----------  -----------  -----------
+
+          7            9            1
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Following section is from test027, test for Genesis 10-970828-6025, rv
+>>
+>>	-- more DML: Genesis 10-990518-8420
+>>#ifMX
+>>
+>>obey TEST029(view_query_test);
+>>create table T29VQA (a int);
+
+--- SQL operation complete.
+>>insert into  T29VQA values (1), (2), (3);
+
+--- 3 row(s) inserted.
+>>create view  V29VQA as select a from T29VQA;
+
+--- SQL operation complete.
+>>
+>>create table T29VQB (a int, b int);
+
+--- SQL operation complete.
+>>insert into  T29VQB values (2,2), (3,3), (4,4);
+
+--- 3 row(s) inserted.
+>>
+>>-- check the insertions
+>>select a from T29VQA;
+
+A          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>select a from V29VQA;
+
+A          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>select * from T29VQB;
+
+A            B          
+-----------  -----------
+
+          2            2
+          3            3
+          4            4
+
+--- 3 row(s) selected.
+>>
+>>-- both of these should return 1 row (with value of 3)
+>>select a from T29VQA where a > (select a from T29VQB where a = 2);
+
+A          
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>select a from V29VQA where a > (select a from T29VQB where a = 2);
+
+A          
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>
+>>          -- added from test027, section for
+>>                                        -- genesis 10-970828-6025.View query
+>>                                        -- fails with comparison operator &
+>>                                        -- subquery, rv 10/28/02
+>>
+>>obey TEST029(misc_bind_test);
+>>
+>>create table T29MISCA (a int);
+
+--- SQL operation complete.
+>>create table T29MISCB (a int);
+
+--- SQL operation complete.
+>>insert into  T29MISCA values (0),(1);
+
+--- 2 row(s) inserted.
+>>insert into  T29MISCB select -a from T29MISCA;
+
+--- 2 row(s) inserted.
+>>create view  V29MISC as select syskey,* from T29MISCA
++>?ifMP
++>for protection
++>?ifMP
++>;
+
+--- SQL operation complete.
+>>
+>>-- BindRelExpr fix
+>>select * from T29MISCA a, (select * from T29MISCB b where a.a=b.a) x;
+
+*** ERROR[4002] Column A.A is not found.  Table A not exposed.  Tables in scope: B.  Default schema: CAT.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4002 col A.A not found, tbl A not exposed
+>>select * from T29MISCA a, T29MISCB b where a.a=b.a;
+
+A            A          
+-----------  -----------
+
+          0            0
+
+--- 1 row(s) selected.
+>> -- 1 row (0)
+>>select * from T29MISCA a join T29MISCB b on a.a=b.a;
+
+A            A          
+-----------  -----------
+
+          0            0
+
+--- 1 row(s) selected.
+>>        -- 1 row (0)
+>>
+>>-- NormRelExpr fix
+>>insert into V29MISC values(99,99);
+
+*** ERROR[4013] Column SYSKEY is a system column and cannot be updated or inserted into.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4013
+>>insert into V29MISC(a) values(99);
+
+--- 1 row(s) inserted.
+>>                       -- 1 row inserted
+>>update V29MISC set syskey=88;
+
+*** ERROR[4013] Column SYSKEY is a system column and cannot be updated or inserted into.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4013
+>>update V29MISC set a=88 where a=99;
+
+--- 1 row(s) updated.
+>>                      -- 1 row updated
+>>select syskey/syskey sk, a from V29MISC;
+
+SK                    A          
+--------------------  -----------
+
+                   1            0
+                   1            1
+                   1           88
+
+--- 3 row(s) selected.
+>>         -- 3 rows
+>>
+>>-- TableNameMap fix
+>>select count(*) from T29MISCA, T29MISCA;
+
+*** ERROR[4056] Exposed name CAT.SCH.T29MISCA appears more than once.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4056
+>>select count(*) from T29MISCA T29MISCA, T29MISCA;
+
+*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table CAT.SCH.T29MISCA.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4057
+>>select count(*) from T29MISCA, T29MISCA T29MISCA;
+
+*** ERROR[4057] Correlation name T29MISCA conflicts with qualified identifier of table CAT.SCH.T29MISCA.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4057
+>>select count(*) from T29MISCA x, T29MISCA x;
+
+*** ERROR[4056] Exposed name X appears more than once.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- 4056
+>>select count(*) from T29MISCA x, T29MISCA y;
+
+(EXPR)              
+--------------------
+
+                   9
+
+--- 1 row(s) selected.
+>>                -- count is 9
+>>select count(*) from T29MISCA x, T29MISCA;
+
+(EXPR)              
+--------------------
+
+                   9
+
+--- 1 row(s) selected.
+>>          -- count is 9
+>>select count(*) from T29MISCA, T29MISCA x;
+
+(EXPR)              
+--------------------
+
+                   9
+
+--- 1 row(s) selected.
+>>          -- count is 9
+>>
+>>-- uptill here, rv
+>>           -- added from test027, section for
+>>                                        -- misc checkins Checkin1203, 
+>>                                        -- rv 10/28/02
+>>
+>>obey TEST029(ddbMXMP);
+>>-- The following drops are from test027 - rv
+>>drop view  V29VQA;
+
+--- SQL operation complete.
+>> -- these are from ddb6025 of test027
+>>drop table T29VQA;
+
+--- SQL operation complete.
+>>drop table T29VQB;
+
+--- SQL operation complete.
+>>
+>>drop view  V29MISC;
+
+--- SQL operation complete.
+>> -- These are from section ddb1203 of test027
+>>drop table T29MISCA;
+
+--- SQL operation complete.
+>>drop table T29MISCB;
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>obey TEST029(ddbMX);
+>>
+>>drop view  T29xvRN4;
+
+--- SQL operation complete.
+>>drop view  T29xvRN3;
+
+--- SQL operation complete.
+>>drop view  T29xvRN2;
+
+--- SQL operation complete.
+>>drop view  T29xvRN1;
+
+--- SQL operation complete.
+>>drop view  T29xv4;
+
+--- SQL operation complete.
+>>drop view  T29xv3;
+
+--- SQL operation complete.
+>>drop view  T29xv2;
+
+--- SQL operation complete.
+>>drop view  T29xv1;
+
+--- SQL operation complete.
+>>drop view  T29xv0;
+
+--- SQL operation complete.
+>>
+>>drop table T29x;
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>
+>>log;

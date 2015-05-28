@@ -1,0 +1,34 @@
+! Persistent process test
+set {process $ABC} PERSIST_ZONES=2,4
+set {process $ABC} PERSIST_RETRIES=1,10
+exec {name $ABC,nid 2,nowait} server waitforclose
+delay 5
+! process $ABC should start on node 2
+ps
+
+kill $ABC
+delay 4
+! process $ABC should be restarted on node 2
+ps
+
+kill $ABC
+delay 4
+! process $ABC should not be restarted
+ps
+
+exec {name $ABC,nid 2,nowait} server waitforclose
+delay 2
+down 2 !
+delay 6
+! process should be restarted on node 4
+ps
+
+kill $ABC
+delay 2
+! process $ABC should not be restarted
+ps
+
+! the environment should shutdown and all processes stop
+! when all the shell sessions exit
+shutdown
+exit

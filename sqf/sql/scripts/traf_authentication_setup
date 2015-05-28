@@ -1,0 +1,434 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#==============================================================================
+# script: traf_authentication_setup
+#
+# This script is run to setup authentication for Trafodion.
+# You can turn on authentication, turn off authentication, or get the status
+# It is off by default when the software is installed
+#
+# To turn on authentication, specify:
+#    --setup or --on
+#    --file <name> (OPTIONAL) 
+#        ==> specifies the name of the ldap configuration file that
+#            will be used to contact the identity store
+#            defaults to:  $MY_SQROOT/sql/script/.traf_authentication_config 
+#
+#   When specifying --setup or --on, the script:
+#      ==> verifies that the configuration file exists
+#      ==> calls ldapconfigcheck to verify the contents of the config file
+#      ==> calls ldapcheck to test a connection to LDAP
+#      ==> if all is good then:
+#         ==> sets the environment variable TRAFODION_ENABLE_AUTHENTICATION to
+#             YES in $MY_SQROOT/sqenvcom.sh
+#         ==> copies $MY_SQROOT/sqenvcom.sh to all nodes in cluster
+#         ==> propagates $MY_SQROOT/sql/script/.traf_authentication_config to
+#             all nodes in the cluster
+#
+#   When specifying --on 
+#     ==> brings up sqlci and performs "initialize authorization"
+#
+# To turn off authentication specify:
+#    --off
+#
+#   When specifying --off, the script:
+#      ==> sets the environment variable TRAFODION_ENABLE_AUTHENTICATION = YES
+#          in $MY_SQROOT/sqenvcom.sh
+#      ==> copies $MY_SQROOT/sqenvcom.sh to all nodes in cluster
+#
+# To know whether authentication is enable or not, specify:
+#    -- status
+#
+#  When specifying --status, the script returns the value of:
+#     TRAFODION_ENABLE_AUTHENTICATION
+#===============================================================================
+
+function print_usage {
+cat << EOF
+
+This script enables or disables security features for Trafodion
+
+Usage: $(basename $0) [options]
+
+Options:
+    --file <loc>  Optional location of OpenLDAP configuration file
+    --help        Prints this message
+    --off         Disables authentication and authorization                               
+    --on          Enables authentication and authorization                               
+    --setup       Enables authentication
+    --status      Returns status of authentication enablement
+
+EOF
+}
+
+# =============================================================================
+# function: change_sqenvcom
+#
+# This function adjusts the sqenvcom file by changing the envvar:
+#    TRAFODION_ENABLE_AUTHENTICATION to either YES (--on) or NO (--off)
+# =============================================================================
+function change_sqenvcom 
+{
+  echo "INFO: Modifying sqenvcom.sh to adjust the authentication default"
+  cp $MY_SQROOT/sqenvcom.sh sqenvcom.sh_temp
+  if [ $authOn -eq 1 ]; then
+    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
+    echo "INFO: Authentication has been enabled"
+  else
+    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=YES@TRAFODION_ENABLE_AUTHENTICATION=NO@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
+    echo "INFO: Authentication has been disabled"
+  fi
+  rm sqenvcom.sh_temp > /dev/null 2>&1
+
+  if [ $isCluster -eq 1 ]; then
+    #echo "pdcp -p -x $HOSTNAME $MY_NODES $MY_SQROOT/sqenvcom.sh $MY_SQROOT"
+    pdcp -p -x $HOSTNAME $MY_NODES $MY_SQROOT/sqenvcom.sh $MY_SQROOT
+  fi
+
+}
+
+# =============================================================================
+# function setup_config
+#
+# This function determines the configuration file name and makes sure the 
+# configuration file is valid
+# =============================================================================
+function setup_config 
+{
+  # Check to see if the passed in name is a directory, if so then
+  # attach the configuration file name to create a complete location
+  if [ -d $configFile ]; then
+    configFile=$configFile$defaultConfigFile
+  fi
+
+  # Does the configuration file exist?
+  if [ ! -s $configFile ]; then
+    echo
+    echo "ERROR: Configuration file $configFile does not exist."
+    echo
+    exit 1;
+  fi
+
+  echo "INFO: Using configuration file $configFile"
+  
+  # make sure the configuration file is valid
+  ldapconfigcheck -file $configFile > auth_configcheck
+  isValid=`/bin/cat auth_configcheck | grep -e "is valid" | wc -l`
+  if [ $isValid -ne 1 ]; then
+    echo
+    echo "***ERROR: Configuration file is invalid, check file params"
+    cat auth_configcheck
+    echo
+    exit 2
+  fi
+  rm auth_configcheck
+
+  echo "INFO: Configuration file is valid"
+}
+
+# =============================================================================
+# function copy_config
+#
+# This function makes sure the configuration file can be used to contact LDAP
+# then it copies the configuration file to all the nodes in the cluster
+# =============================================================================
+function copy_config
+{
+  if [ "$configFile" != "$defaultConfigFileDir$defaultConfigFile" ]; then
+    cp $configFile $defaultConfigFileDir$defaultConfigFile
+  fi
+
+  # before propagating the configuration file to nodes in the cluster, verify 
+  # that the current file can successfully contact the identity store
+  ldapcheck --username=micky.mouse > auth_configcheck
+  isValid=`cat auth_configcheck | grep "User micky.mouse not found" | wc -l`
+  if [ $isValid -ne 1 ]; then
+    echo
+    echo "***ERROR: Configuration file is invalid, error contacting LDAP server"
+    cat auth_configcheck
+    echo
+    exit 2
+  fi
+  rm auth_configcheck
+
+  # copy the configuration file to $MY_SQROOT/sql/scripts on
+  # all nodes in the cluster
+
+  if [ $isCluster -eq 1 ]; then
+    #echo "pdcp -p -x $HOSTNAME $MY_NODES $configFile $defaultConfigFileDir$defaultConfigFile"
+    pdcp -p -x $HOSTNAME $MY_NODES $configFile $defaultConfigFileDir$defaultConfigFile
+  fi
+  echo "INFO: Configuration file has been propagated to nodes in the cluster"
+}
+
+# =============================================================================
+# function enable_authorization
+#
+# this functions calls sqlci to enable authorization
+# =============================================================================
+function enable_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authEnable.log > /dev/null 2>&1
+  #gdb sqlci
+  sqlci >> "$logLoc/authEnable.log" 2>&1 <<eof
+   values (current_timestamp);
+   initialize authorization;
+   get tables in schema privmgr_md;
+   get users;
+   get roles;
+   get components;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authEnable.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "ERROR: Authorization setting have not changed, see $logLoc/authEnable.log"
+  else
+    echo "INFO: Authorization (grant/revoke support) has been enabled"
+  fi
+}
+
+# =============================================================================
+# function disable_authorization
+#
+# this functions calls sqlci to disable authorization
+# =============================================================================
+function disable_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authDisable.log > /dev/null 2>&1
+  sqlci >> "$logLoc/authDisable.log" 2>&1 <<eof
+   values (current_timestamp);
+   initialize authorization, drop;
+   get tables in schema privmgr_md;
+   get users;
+   get roles;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authDisable.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "ERROR: Authorization settings have not changed, see $logLoc/authDisable.log"
+  else
+    echo "INFO: Authorization (grant/revoke support) has been disabled"
+  fi
+}
+
+
+# =============================================================================
+# function status_authorization
+#
+# this functions calls sqlci to see if the schema containing authorization
+# data exists (PRIVMGR_MD)
+# =============================================================================
+function status_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authStatus.log > /dev/null 2>&1
+  sqlci >> "$logLoc/authStatus.log" 2>&1 <<eof
+   values (current_timestamp);
+   get schemas, no header;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authStatus.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "   Unable to determine authorization status, see $logLoc/authStatus.log"
+  else
+    privMgrSchema=`/bin/cat $logLoc/authStatus.log | /bin/grep "PRIVMGR_MD" | wc -l`
+    if [ $privMgrSchema -eq 0 ]; then
+      echo "   Authorization (grant/revoke) is NOT ENABLED"
+    else
+      echo "   Authorization (grant/revoke) is ENABLED"
+    fi
+  fi
+}
+
+
+# =============================================================================
+# main
+# =============================================================================
+
+defaultConfigFileDir="$MY_SQROOT/sql/scripts"
+defaultConfigFile="/.traf_authentication_config"
+configFileDir=$defaultConfigFileDir
+configFile=$defaultConfigFileDir$defaultConfigFile
+authOn=0
+authOnSpecified=0
+enableAuthorization=0
+authOff=0
+authOffSpecified=0
+fileSpecified=0
+doStatus=0
+statusSpecified=0
+
+# Make sure required env vars have been set first
+if [[ -z "$MY_SQROOT" ]]; then
+    echo
+    echo "***ERROR: Environment variable MY_SQROOT has no value."
+    echo
+    exit 1
+fi
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -f | --file)
+            if [[ -z "$2" ]]; then
+                echo
+                echo "***ERROR: No filename specified for param $1."
+                print_usage
+                exit 1
+            fi
+            if [ $fileSpecified -eq 1 ]; then
+              echo
+              echo "***ERROR: Option $1 specified more than once."
+              print_usage
+              exit 1
+            fi
+            fileSpecified=1 
+            configFile=$2
+            shift
+            ;;
+
+        -h | --help)
+            print_usage
+            exit 0
+            ;;
+        --off)
+            if [ $authOffSpecified -eq 1 ]; then
+                echo
+                echo "***ERROR: Option $1 specified more than once."
+                print_usage
+                exit 1
+            fi
+            authOff=1
+            authOffSpecified=1
+            ;;
+        --on)
+            if [ $authOnSpecified -eq 1 ]; then
+              echo
+              echo "***ERROR: Option $1 specified more than once."
+              print_usage
+              exit 1
+            fi
+            authOn=1
+            authOnSpecified=1
+            enableAuthorization=1
+            ;;
+        --setup)
+            if [ $authOnSpecified -eq 1 ]; then
+              echo
+              echo "***ERROR: Option $1 specified more than once."
+              print_usage
+              exit 1
+            fi
+            authOn=1
+            authOnSpecified=1
+            ;;
+        --status)
+            if [ $statusSpecified -eq 1 ]; then
+              echo
+              echo "***ERROR: Option $1 specified more than once."
+              print_usage
+              exit 1
+            fi
+            doStatus=1
+            statusSpecified=1
+            ;;
+        *)
+            print_usage
+            exit 1
+  esac
+  shift
+done
+
+if [ $doStatus -eq 0 ]; then
+  if [ $authOn -eq 0 -a $authOff -eq 0 ]; then
+    echo
+    echo "***ERROR: Please turn authentication on (--on/--setup) or off (--off)."
+    print_usage 
+    exit 1
+  fi
+
+  if [ $authOnSpecified -eq 1 -a $authOffSpecified -eq 1 ]; then
+    echo
+    echo "***ERROR: Cannot turn authentication both on and off, please choose one."
+    print_usage 
+    exit 1
+  fi
+fi
+
+# display introductory messages
+echo "INFO: Start of security (authentication and authorization) script $(date)."
+
+isCluster=1
+if [ "$MY_NODES" == "" ]; then
+  isCluster=0
+fi
+ 
+errorRows=0
+
+# if turning authentication on, make sure a valid config file was specified
+# and copy the configuration file to all nodes
+if [ $authOn -eq 1 ]; then
+  setup_config
+  copy_config
+fi
+
+# if requested, enable authorization
+if [ $enableAuthorization -eq 1 ]; then
+  enable_authorization
+fi
+
+if [ $authOff -eq 1 ]; then
+  disable_authorization
+fi
+
+if [ $errorRows -ne 0 ]; then
+  echo "Errors found, script terminated"
+  exit 3
+fi 
+
+# Adjust the TRAFODION_AUTHENTICATION_CONFIG environment variable
+if [ $authOn -eq 1 -o $authOff -eq 1 ]; then
+  change_sqenvcom
+  if [[ "$LDAP_SECURITY" != "Y" ]]; then
+    echo
+    echo "INFO **** IMPORTANT ***"
+    echo "INFO: Please start a new shell and bounce DCS in order for the authentication change to take affect"
+    echo
+  fi
+else
+  # report the status of authentication enablement
+  if [ $doStatus -eq 1 ]; then
+    echo
+    echo "INFO:  *** Trafodion security (authentication and authorization) status *** "
+    authEnabled=`echo $TRAFODION_ENABLE_AUTHENTICATION | grep "YES" | wc -l`
+    if [ $authEnabled -eq 0 ]; then
+      echo "   Authentication is NOT ENABLED"
+    else
+      echo "   Authentication is ENABLED"
+    fi
+    status_authorization
+    echo
+  fi
+fi
+echo "INFO: End of security (authorization and authentication) script $(date)."
+

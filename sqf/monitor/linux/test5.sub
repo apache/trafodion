@@ -1,0 +1,6 @@
+! Test getting TM seq. numbers with collistions
+!
+exec {nid 0,nowait} getseq
+exec {nid 1,nowait} getseq
+exec {nid 2,nowait} getseq
+

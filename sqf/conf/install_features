@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Install feature file ($MY_SQROOT/etc/install_features)
+#
+# This file allows specific Trafodion core builds to signal to
+# the installer the presence of a new feature that requires
+# configuration work during install time.
+#
+# This file allows a single installer to install many different
+# versions of Trafodion core as opposed to having many versions
+# of the installer.  This allows the installer to get additional
+# features in ahead of time before the Trafodion core code 
+# is available.
+#
+# The installer will source this file and perform additional
+# configuration work based upon the mutually agreed settings
+# of the various environment variables in this file.  
+#
+# It must be coordinated between the Trafodion core feature developer
+# and installer developers as to the specifics (i.e. name & value)
+# of the environment variable used.
+#
+# ===========================================================
+# Example:
+# A new feature requires installer to modify HBase settings in a 
+# different way that are not compatible with previous versions of
+# Trafodion core. The following is added to this file:
+#
+#         # support for setting blah-blah in HBase
+#         export NEW_HBASE_FEATURE="1"
+#
+# Logic is added to the installer to test for this env var and if
+# there then do the new HBase settings and if not, set the settings
+# to whatever they were previously.
+# ===========================================================
+#
+
+# Trafodion core only works with CDH 5.3 and HDP 2.2
+# This env var will signal that to the installer which will
+# verify the hadoop distro versions are correct as well as 
+# perform some additional support for this.
+export CDH_5_3_HDP_2_2_SUPPORT="Y"
+

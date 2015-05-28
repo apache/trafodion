@@ -1,0 +1,856 @@
+-- Test: TEST004 (CompGeneral)
+-- Functionality: verify fix to genesis cases 10-060807-4104, 10-060908-0255, 
+--   10-061116-8310, soln 10-060807-8199, solu 10-080403-2090 (delimited names in CQS)
+-- Revision history:
+--   (05/09/2007) - Created.
+--   (11/12/2007) - add test to verify fix to genesis case 10-070416-0218, 
+--                  soln 10-070416-4141
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+?section clean_up
+#ifndef SEABASE_REGRESS
+set schema $$TEST_CATALOG$$.sch;
+#else
+cqd call_embedded_arkcmp 'OFF';
+cqd seabase_volatile_tables 'ON';
+set schema $$TEST_CATALOG$$.sch;
+#endif
+
+-- soln 10-060807-8199
+drop view t4view1;
+drop table t4tab1;
+
+-- case 10-060807-4104
+           drop view t4view1a ;
+           drop view t4view2a ;
+           drop table t4tab1a ;
+           drop table t4tab2a ;
+           drop table t4tab3a ;
+           drop table t4tab4a ;
+
+ -- solution 10-080403-2090 
+drop view  t4view;
+drop view  t4view_x;
+drop view  "t4sch".t4view;
+drop table "t4sch"."t4tab";
+drop table "t4tab";
+drop table "SCH.T4TAB";
+drop table t4tab;
+drop table t4ttt cascade;
+drop schema "t4sch";
+
+drop table compgeneral.v_t1;
+drop table compgeneral.v_t2;
+
+-- solution 10-091016-5452
+create schema compgeneral;
+#ifndef SEABASE_REGRESS
+set schema compgeneral;
+#else
+set schema $$TEST_CATALOG$$.compgeneral;
+#endif
+drop view v_tsj_t_t;
+drop table D01;
+drop table D02;
+drop table F01;
+
+drop table faetest1;
+
+drop table query_sql_text1;
+
+?section sch_5452
+Create table D01
+        (
+          pk int not null not droppable primary key
+        , val01 int
+        , val02 int
+        )
+        ;
+        Create table D02
+        (
+          pk int not null not droppable primary key
+        , val01 int
+        , val02 int
+        )
+        ;
+        Create table F01
+        (
+          pk int not null not droppable primary key
+        , fk_d01 int not null -- foreign key references D01(pk)
+        , fk_d02 int not null -- foreign key references D02(pk)
+        , fk_d03 int not null -- foreign key references D03(pk)
+        , fk_d04 int not null -- foreign key references D04(pk)
+        , fk_d05 int not null -- foreign key references D05(pk)
+        , fk_d06 int not null -- foreign key references D06(pk)
+        , fk_d07 int not null -- foreign key references D07(pk)
+        , fk_d08 int not null -- foreign key references D08(pk)
+        , fk_d09 int not null -- foreign key references D09(pk)
+        , fk_d10 int not null -- foreign key references D10(pk)
+        , val01 int
+        , val02 int
+        , val01_d01 int
+        , val02_d01 int
+        , val01_d02 int
+        , val02_d02 int
+        , val01_d03 int
+        , val02_d03 int
+        )
+        ;
+        create view v_tsj_t_t as
+        select d01.*
+        from d01
+        where d01.val01 =
+        (
+          select max(d02.val01)
+          from d02
+          where d01.val02=d02.val02
+        )
+        ;
+        
+ CREATE TABLE QUERY_SQL_TEXT1
+  (
+    CLUSTER_ID                       INT UNSIGNED NO DEFAULT
+     NOT NULL NOT DROPPABLE PRIMARY KEY
+  , SQL_TEXT                         VARCHAR(1900) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  );
+        
+?section tests_begin
+log LOG004 clear;
+
+?section case_10_060807_4104
+control query default * reset; 
+
+#ifdef SEABASE_REGRESS
+cqd  mode_seabase 'ON';
+cqd seabase_volatile_tables 'ON';
+cqd mdam_scan_method 'OFF';
+set schema $$TEST_CATALOG$$.sch;
+#endif
+
+           create table t4tab1a (
+              vch7 varchar(7) , chu3 char(3) ) no partition;
+        
+           create table t4tab2a (
+              vch7 varchar(7) , chu3 char(3) ) no partition;
+        
+           create table t4tab3a (
+              vch7 varchar(7) , chu3 char(3) ) no partition;
+        
+           create table t4tab4a (
+              vch7 varchar(7) , chu3 char(3) ) no partition;
+        
+           insert into t4tab1a values 
+              (NULL, '1xu' )
+            , ('ab', '1xv' )
+            , ('ac', '1xw' )
+            , ('ad', '1xy' )
+            , ('abcd', '1xz' )
+              ;
+        
+           insert into t4tab2a values 
+              ('ab', '2xu' )
+            , ('ab', '2xv' )
+            , ('bc', '2xw' )
+            , ('bd', '2xy' )
+            , ('abcd', '1xz' )
+              ;
+        
+           insert into t4tab3a values 
+              (NULL, '3xu' )
+            , ('ac', '3xv' )
+            , ('bc', '3xw' )
+            , ('cd', '3xy' )
+            , ('abcd', '1xz' )
+              ;
+        
+           insert into t4tab4a values 
+              ('cd', '4xu' )
+            , ('ad', '4xv' )
+            , ('bd', '4xw' )
+            , ('cd', '4xy' )
+            , ('abcd', '1xz' )
+              ;
+        
+           create view t4view1a
+              ( c1, c2, c3, c4, c5, c6, c7, c8 ) as
+              select t1.vch7, t1.chu3, t2.vch7, t2.chu3
+                 , t3.vch7, t3.chu3, t4.vch7, t4.chu3
+              from t4tab1a t1
+              inner join t4tab2a t2 on t1.vch7 = t2.vch7
+              left join t4tab3a t3 on t2.vch7 = t3.vch7
+              left join t4tab4a t4 on t3.vch7 = t4.vch7
+           ;
+        
+           create view t4view2a
+              ( c1, c2, c3, c4, c5, c6, c7, c8 ) as
+              select t1.vch7, t1.chu3, t2.vch7, t2.chu3
+                 , t3.vch7, t3.chu3, t4.vch7, t4.chu3
+              from t4tab1a t1
+              left join t4tab2a t2 on t1.vch7 = t2.vch7
+              inner join t4tab3a t3 on t1.vch7 = t3.vch7
+              left join t4tab4a t4 on t1.vch7 = t4.vch7
+           ;
+        
+        --  NATURAL Join the views.
+-- used to get warning 2053 optimizer pass two asserstion failure
+-- (orderedMJPreds.entries() > 0) in file
+-- w:\nskomake\../optimizer\OptPhysRelExpr.cpp at line 6240
+        prepare s from
+           select * from t4view1a v1
+           NATURAL join t4view2a v2
+           order by 1, 5
+           ;
+        
+        -- expect 1 row returns, but got 6561 row(s) selected.
+        -- C1       C2   C3       C4   C5       C6   C7       C8
+        -- abcd     1xz  abcd     1xz  abcd     1xz  abcd     1xz
+        execute s;
+
+-- verify we get same result with merge joins
+control query default hash_joins 'off';
+control query default nested_joins 'off';
+        prepare sm from
+           select * from t4view1a v1
+           NATURAL join t4view2a v2
+           order by 1, 5
+           ;
+        execute sm;
+        select count(*) as number_of_merge_joins
+        from table(explain(null,'SM'))
+        where operator = 'MERGE_JOIN';
+
+
+?section soln_10_060807_8199
+
+control query default * reset;
+
+#ifdef SEABASE_REGRESS
+cqd  mode_seabase 'ON';
+cqd seabase_volatile_tables 'ON';
+cqd mdam_scan_method 'OFF';
+set schema $$TEST_CATALOG$$.sch;
+#endif
+
+create table t4tab1 (
+vch7 varchar(7) , chu3 char(3) ) no partition;
+
+insert into t4tab1 values 
+(NULL, '1xu' ), ('ab', '1xv' );
+
+create view t4view1
+( c1, c2, c3, c4) as
+select t1.vch7, t1.chu3, t2.vch7, t2.chu3
+from t4tab1 t1 inner join t4tab1 t2 on t1.vch7 = t2.vch7;
+
+-- used to get warning 2053 "optimizer passs two assertion failure
+-- (orderedMJPreds.entries() > 0) in file 
+-- w:\nskomake\../optimizer\OptPhysRelExpr.cpp at line 6240. Attempting
+-- to recover and produce a plan."
+prepare s from
+select * from t4view1 v1 natural join t4view1 v2 natural join t4view1 v3;
+execute s;
+
+-- verify mxcmp considers merge_join plans
+control query default hash_joins 'off';
+control query default nested_joins 'off';
+prepare s from
+select * from t4view1 v1 natural join t4view1 v2 natural join t4view1 v3;
+
+select count(*) as number_of_merge_joins
+from table(explain(null,'S'))
+where operator = 'MERGE_JOIN';
+
+execute s;
+
+?section soln_10-070416-4141
+
+control query default * reset;
+
+#ifdef SEABASE_REGRESS
+cqd  mode_seabase 'ON';
+cqd seabase_volatile_tables 'ON';
+cqd mdam_scan_method 'OFF';
+set schema $$TEST_CATALOG$$.sch;
+#endif
+
+create volatile table t4tab2 (
+  u1  smallint unsigned
+, u2  integer unsigned
+) store by (syskey) no partition;
+
+create volatile table t4tab2dest (
+  u1  smallint unsigned
+, u2  integer 
+) store by (syskey) no partition;
+
+        insert into t4tab2 values
+        (        10,  9        ),
+        (        10,  10       ),
+        (        10,  10       ),
+        (        10,  10       ),
+        (        10,  20        ),
+        (        10,  20        ),
+        (        10,  20        ),
+        (        10,  30        ),
+        (        10,  30        ),
+        (        10,  30        ),
+        (        20,  10        ),
+        (        20,  10        ),
+        (        20,  10        ),
+        (        20,  20        ),
+        (        20,  20        ),
+        (        20,  20        ),
+        (        20,  30        ),
+        (        20,  30        ),
+        (        20,  30        ),
+        (        30,  10        ),
+        (        30,  10        ),
+        (        30,  10        ),
+        (        30,  20        ),
+        (        30,  20        ),
+        (        30,  20        ),
+        (        30,  30        ),
+        (        30,  30        ),
+        (        30,  30        ),
+        (        10,  10        ),
+        (        10,  null      ),
+        (        10,  null        ),
+        (        null,10        ),
+        (        null,  10        ),
+        (        null,  10        ),
+        (        null,  null        ),
+        (        null,  null        );
+
+control query default query_cache '0';
+control query default rounding_mode '2';
+
+-- FORCE a sort_groupby plan
+control query default comp_int_77 '33554432';
+
+prepare xx from insert into t4tab2dest       
+select u1, u2/10
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+prepare xx from insert into t4tab2dest
+select u1, u2 * 1/10
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+prepare xx from insert into t4tab2dest
+select u1, 1/10 * u2
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+prepare xx from insert into t4tab2dest
+select u1, u2 / -10
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+prepare xx from insert into t4tab2dest
+select u1, u2 * 1 / -10
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+prepare xx from insert into t4tab2dest
+select u1, 1 / -10 * u2
+          from t4tab2
+          group by u1, u2
+         order by 2 desc;
+
+select count(*) as number_of_sort_groupbys
+from table(explain(null,'XX'))
+where operator = 'SORT_GROUPBY';
+
+execute xx; -- should insert 13 (not 14) rows
+
+delete from t4tab2dest;
+
+
+?section solu-10-080403-2090 
+
+#ifndef SEABASE_REGRESS
+set schema $$TEST_CATALOG$$.sch;
+#else
+set schema $$TEST_CATALOG$$.sch;
+#endif
+
+log off;
+-- creates
+create schema "t4sch";
+create table "t4sch"."t4tab" (a integer not null, b integer, primary key(a));
+create table "t4tab"          (a integer not null, b integer, primary key(a));
+create table "SCH.T4TAB"      (a integer not null, b integer, primary key(a));
+create table t4tab            (a integer not null, b integer, primary key(a));
+create index t4tabx on t4tab(b);
+create index "t4tabx" on "t4tab"(b);
+create view  t4view(a,b)          as select a,b from $$TEST_CATALOG$$.sch.t4tab;
+create view  t4view_x(a,b)        as select a,b from $$TEST_CATALOG$$.sch.t4tab x;
+create view  "t4sch".t4view(a,b) as select a,b from $$TEST_CATALOG$$."t4sch"."t4tab";
+
+create table t4ttt (a int not null, primary key (a));
+create index t4i1 on t4ttt(a);
+create index "t4ij1" on t4ttt(a);
+create index "t4Ij1" on t4ttt(a);
+
+log LOG004;
+
+-- setup
+control query default query_cache '0';
+
+-- tests
+
+-- fully specified exposed name
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'CAT.SCH.T4TAB');
+#else
+control query shape pa(scan(table 'CAT.SCH.T4TAB'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+prepare s from select * from sch.t4tab where a < 2 or a > 10;
+prepare s from select * from t4tab where a < 2 or a > 10;
+prepare s from select * from t4view where a < 2 or a > 10;
+
+-- expect error
+prepare s from select * from sch.t4tab x where a < 2 or a > 10;
+
+
+-- use only object name
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'T4TAB', mdam forced);
+#else
+control query shape pa(scan(table 'T4TAB', mdam forced));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+prepare s from select * from sch.t4tab where a < 2 or a > 10;
+prepare s from select * from t4tab where a < 2 or a > 10;
+prepare s from select * from sch.t4view x where a < 2 or a > 10;
+
+-- expect error
+prepare s from select * from t4tab x where a < 2 or a > 10;
+
+
+-- delimited identifier where unnecessary
+#ifdef SEABASE_REGRESS
+control query shape scan(table '"T4TAB"');
+#else
+control query shape pa(scan(table '"T4TAB"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+prepare s from select * from sch."t4tab" t4tab where a < 2 or a > 10;
+prepare s from select * from "t4tab" where a < 2 or a > 10;
+-- expect error
+prepare s from select * from t4tab x where a < 2 or a > 10;
+-- expect error
+
+-- correlation name
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'X');
+#else
+control query shape pa(scan(table 'X'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab x where a < 2 or a > 10;
+prepare s from select * from $$TEST_CATALOG$$.sch.t4view_x y where a < 2 or a > 10;
+
+-- delimited identifier
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'cat."t4sch"."t4tab"');
+#else
+control query shape pa(scan(table 'cat."t4sch"."t4tab"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'cat."t4sch"."t4tab"', 
+                            path  'cat."t4sch"."t4tab"');
+#else
+control query shape pa(scan(table 'cat."t4sch"."t4tab"', 
+                            path  'cat."t4sch"."t4tab"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table '"t4tab"', 
+                            path  '"t4tab"');
+#else
+control query shape pa(scan(table '"t4tab"', 
+                            path  '"t4tab"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table '"t4tab"', 
+                            path  'cat."t4sch"."t4tab"');
+#else
+control query shape pa(scan(table '"t4tab"', 
+                            path  'cat."t4sch"."t4tab"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+-- delimited identifier on single name
+#ifdef SEABASE_REGRESS
+control query shape scan(table '"t4tab"');
+#else
+control query shape pa(scan(table '"t4tab"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+prepare s from select * from $$TEST_CATALOG$$.sch."t4tab" where a < 2 or a > 10;
+prepare s from select * from "t4sch".t4view where a < 2 or a > 10;
+prepare s from select * from t4tab "t4tab" where a < 2 or a > 10;
+
+-- expect error
+prepare s from select * from t4tab where a < 2 or a > 10;
+
+
+-- delimited identifiers with embedded dots
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'cat.sch."SCH.T4TAB"');
+#else
+control query shape pa(scan(table 'cat.sch."SCH.T4TAB"'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch."SCH.T4TAB" where a < 2 or a > 10;
+
+-- Index names
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'T4TAB', path '$DISK.SUBVOL.IX');
+#else
+control query shape pa(scan(table 'T4TAB', path '$DISK.SUBVOL.IX'));
+#endif
+
+prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'T4TAB', path 'T4TAB');
+#else
+control query shape pa(scan(table 'T4TAB', path 'T4TAB'));
+#endif
+
+prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'T4TAB', path 't4tabx');
+#else
+control query shape pa(scan(table 'T4TAB', path 't4tabx'));
+#endif
+
+prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table '"t4tab"', path '"t4tabx"');
+#else
+control query shape pa(scan(table '"t4tab"', path '"t4tabx"'));
+#endif
+
+prepare s from select b from $$TEST_CATALOG$$.sch."t4tab" where b=5;
+
+
+-- Negative tests
+
+-- syntax errors
+control query shape pa(scan(table '123%'));
+control query shape pa(scan(table 'a.b.*'));
+control query shape pa(scan(table 'a', path '456'));
+
+-- exposed, and partially qualified pattern names are supported 
+-- (to be matched with the partially qualified table names).
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'SCH.T4TAB');
+#else
+control query shape pa(scan(table 'SCH.T4TAB'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+-- expect error
+prepare s from select * from sch.t4tab where a < 2 or a > 10;
+-- expect error
+prepare s from select * from t4tab where a < 2 or a > 10;
+-- expect error
+
+-- correlation name must be a single name
+#ifdef SEABASE_REGRESS
+control query shape scan(table 'SEABASE.SCH.X');
+#else
+control query shape pa(scan(table 'CAT.SCH.X'));
+#endif
+
+prepare s from select * from $$TEST_CATALOG$$.sch.t4tab x where a < 2 or a > 10;
+-- expect error
+
+
+-- more tests on index names
+#ifdef SEABASE_REGRESS
+control query shape scan(table 't4ttt', path '"t4ij1"');
+#else
+control query shape pa(scan(table 't4ttt', path '"t4ij1"'));
+#endif
+
+prepare xx from select * from t4ttt;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 't4ttt', path '"t4Ij1"');
+#else
+control query shape pa(scan(table 't4ttt', path '"t4Ij1"'));
+#endif
+prepare xx from select * from t4ttt;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 't4ttt', path 't4ij1');
+#else
+control query shape pa(scan(table 't4ttt', path 't4ij1'));
+#endif
+prepare xx from select * from t4ttt;
+
+#ifdef SEABASE_REGRESS
+control query shape scan(table 't4ttt', path '"t4iJ1"');
+#else
+control query shape pa(scan(table 't4ttt', path '"t4iJ1"'));
+#endif
+
+prepare xx from select * from t4ttt;
+control query shape cut;
+
+-- verify fix to solution 10-091016-5452
+-- this prepare used to crash mxcmp
+#ifndef SEABASE_REGRESS
+set schema compgeneral;
+#else
+set schema $$TEST_CATALOG$$.compgeneral;
+#endif
+prepare xx from 
+ select v_tsj_t_t.val01,v_tsj_t_t.val02 
+          from v_tsj_t_t 
+          where (v_tsj_t_t.val01,v_tsj_t_t.val02) in 
+          ( select F01.val01,D01.val02 
+            from F01 
+            left join D01 on F01.fk_d01=D01.val01 
+            where F01.val02>0 
+          )
+        ;
+
+?section verify_sap_update_fix
+control query shape cut;
+create table faetest1(faetest char(10) not null,
+                      sid     integer not null,
+                      intcol  integer not null,
+                      ccol    char(10) not null,
+                      primary key(faetest))
+#ifndef SEABASE_REGRESS
+  hash2 partition by (faetest)
+#endif
+;
+
+insert into faetest1
+select cast(num as char(10)), num, 0,' '
+from (select 100*hundreds+10*tens+ones as num
+      from (values (0)) seed(c)
+      transpose 0,1,2,3,4,5,6,7,8,9 as ones
+      transpose 0,1,2,3,4,5,6,7,8,9 as tens
+      transpose 0,1,2,3,4,5,6,7,8,9 as hundreds) T
+order by num;
+
+update statistics for table faetest1 on every column;
+
+prepare s120 from
+update faetest1 set intcol=9999
+where sid in (
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?
+);
+-- should be a tuple_flow(hash_join(pa,groupby(tuplelist)),cursor_update) plan
+--#ifNT
+--explain options 'f' s120;
+--#ifNT
+
+-- execute used to update only 1 row and the wrong row!
+execute s120 using
+003,023,043,063,083,093,094,095,096,099,
+103,123,143,163,183,193,194,195,196,199,
+203,223,243,263,283,293,294,295,296,299,
+303,323,343,363,383,393,394,395,396,399,
+403,423,443,463,483,493,494,495,496,499,
+503,523,543,563,583,593,594,595,596,599,
+603,623,643,663,683,693,694,695,696,699,
+703,723,743,763,783,793,794,795,796,799,
+803,823,843,863,883,893,894,895,896,899,
+903,923,943,963,983,993,994,995,996,999,
+004,024,044,064,084,086,014,034,054,074,
+005,025,045,065,085,087,015,035,055,075;
+-- should update 120 rows
+
+-- force a poor nested_join plan
+control query shape implicit exchange nested_join(sort(nested_join(cut,cut)),cut);
+prepare s120 from
+update faetest1 set intcol=9999
+where sid in (
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?
+);
+control query shape cut;
+--#ifNT
+--explain options 'f' s120;
+--#ifNT
+
+-- execute used to update only 1 row and the wrong row!
+execute s120 using
+003,023,043,063,083,093,094,095,096,099,
+103,123,143,163,183,193,194,195,196,199,
+203,223,243,263,283,293,294,295,296,299,
+303,323,343,363,383,393,394,395,396,399,
+403,423,443,463,483,493,494,495,496,499,
+503,523,543,563,583,593,594,595,596,599,
+603,623,643,663,683,693,694,695,696,699,
+703,723,743,763,783,793,794,795,796,799,
+803,823,843,863,883,893,894,895,896,899,
+903,923,943,963,983,993,994,995,996,999,
+004,024,044,064,084,086,014,034,054,074,
+005,025,045,065,085,087,015,035,055,075;
+-- should update 120 rows
+
+
+prepare s1 from
+INSERT INTO query_sql_text1
+(CLUSTER_ID,SQL_TEXT)VALUES
+(CAST(?[2] AS INTEGER UNSIGNED),
+TRANSLATE(CAST (?[2] AS
+VARCHAR(60000)) USING UTF8TOUCS2));
+
+-- do a showplan to make sure displayContents code gets covered.
+log;
+log LOG004.TMP clear;
+showplan
+INSERT INTO query_sql_text1
+(CLUSTER_ID,SQL_TEXT)VALUES
+(CAST(?[2] AS INTEGER UNSIGNED),
+TRANSLATE(CAST (?[2] AS
+VARCHAR(60000)) USING UTF8TOUCS2));
+log;
+sh cat LOG004.TMP | 
+grep -e '^Contents of EX_UNPACK' -e 'packingFactor' -e 'unPackColsExpr' |
+sed 's/\[[0-9]*\]//' >> LOG004;
+log LOG004;
+
+?section ALM_6748
+
+create table v_t1 (a int not null primary key, b date, b2 char(10));
+create table v_t2 (c int not null primary key, d date, d2 char(10));
+
+prepare st1 from
+SELECT
+  CASE
+     WHEN( v_t1.b=current_date)
+     THEN 'Expired' ELSE 'Active'
+  END "Col1"
+FROM v_t1 INNER JOIN v_t2 ON ( v_t1.b  =  v_t2.d ) ;
+
+prepare st1 from
+SELECT
+  v_t2.d2 ||
+  CASE
+     WHEN( v_t1.b=current_date)
+     THEN 'Expired' ELSE 'Active'
+  END "Col1"
+FROM v_t1 INNER JOIN v_t2 ON ( v_t1.b  =  v_t2.d ) ;
+
+?section LP_1324303
+
+-- cardinality changes for LP 1324303
+prepare st1 from select O.object_name from trafodion."_MD_".objects O, trafodion."_MD_".table_constraints T where O.object_uid = T.table_uid ;
+explain options 'f' st1;
+
+?section tests_end
+log;
+
+obey test004(clean_up);

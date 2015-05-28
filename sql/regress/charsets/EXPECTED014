@@ -1,0 +1,226 @@
+>>
+>>obey TEST014(ddl);
+>>
+>>create table taa(a char(10), b char(10) character set ucs2);
+
+--- SQL operation complete.
+>>
+>>create table intv1 (Column_IntervalYearToMonth interval year(3) to month default {interval
++> '100-10' year(3) to month}) ;
+
+--- SQL operation complete.
+>>
+>>
+>>create table t014A
++>(i smallint UNSIGNED  NO DEFAULT NOT NULL,
++> c CHAR(15)                      NOT NULL,
++> PRIMARY KEY (i
++>               ,c) NOT DROPPABLE
++>) 
++>#ifndef SEABASE_REGRESS
++>HASH2 PARTITION BY (c)
++>#endif
++>;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE t014B
++>       (
++>        i  SMALLINT UNSIGNED       NOT NULL
++>       ,c  CHAR(15)                NOT NULL
++>       ,PRIMARY KEY (i
++>                    ,c
++>                    ) NOT DROPPABLE
++>)
++>#ifndef SEABASE_REGRESS
++>HASH2 PARTITION BY (c)
++>#endif
++>;
+
+--- SQL operation complete.
+>>
+>>CREATE VIEW t014VA AS SELECT * FROM  t014A;
+
+--- SQL operation complete.
+>>CREATE VIEW t014VB AS SELECT * FROM  t014B;
+
+--- SQL operation complete.
+>>
+>>create table t014c (a char(10) not casespecific, b char(10)) no partition;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>obey TEST014(real_test);
+>>
+>>control query default INFER_CHARSET 'on';
+
+--- SQL operation complete.
+>>
+>>insert into taa values('long', 'river');
+
+--- 1 row(s) inserted.
+>>insert into taa values('mighty', 'mountain');
+
+--- 1 row(s) inserted.
+>>insert into taa values('socket', 'host');
+
+--- 1 row(s) inserted.
+>>
+>>
+>>select * from taa where B = 'mountain';
+
+A           B                   
+----------  --------------------
+
+mighty      mountain            
+
+--- 1 row(s) selected.
+>>select * from taa where char_length(trim(B)) = 4;
+
+A           B                   
+----------  --------------------
+
+socket      host                
+
+--- 1 row(s) selected.
+>>
+>>-- should infer '163-11' as _iso88591'163-11'
+>>insert into intv1(Column_IntervalYearToMonth) 
++>    values (cast ('163-11' as interval year(3) to month));
+
+--- 1 row(s) inserted.
+>>
+>>select * from intv1;
+
+COLUMN_INTERVALYEARTOMONTH
+--------------------------
+
+                    163-11
+
+--- 1 row(s) selected.
+>>
+>>-- testing for solution 10-060719-7821 
+>>-- (NEO ODBC/MX fails to compile query with a literal in the select-list )
+>>control query default odbc_process 'on';
+
+--- SQL operation complete.
+>>
+>>
+>>SELECT DISTINCT va.i, 'C007I021', 1 FROM t014va va
++>LEFT JOIN t014vb vb ON va.c = vb.c ;
+
+--- 0 row(s) selected.
+>>
+>>SELECT i, 'C007I021', 1 FROM t014a;
+
+--- 0 row(s) selected.
+>>SELECT i, 'C007I021', 'abc' || 'cde' FROM t014a;
+
+--- 0 row(s) selected.
+>>SELECT i, 'C007I021', _ucs2'abc' || 'cde' FROM t014a;
+
+--- 0 row(s) selected.
+>>
+>>-- end testing solution 
+>>
+>>control query default odbc_process 'off';
+
+--- SQL operation complete.
+>>control query default INFER_CHARSET 'off';
+
+--- SQL operation complete.
+>>
+>>insert into taa values('long', 'river');
+
+--- 1 row(s) inserted.
+>>
+>>-- teseting for solution 10-070329-3662 
+>>-- (R2.1:NE: SELECT behaves incorrectly when CQD Infer_CharSet is TRUE in MX)
+>>
+>>insert into t014c values ('a', 'a');
+
+--- 1 row(s) inserted.
+>>control query default infer_charset 'on';
+
+--- SQL operation complete.
+>>
+>>-- expect 0 rows
+>>select * from t014c where a = 'A';
+
+--- 0 row(s) selected.
+>>
+>>-- expect 1 rows
+>>select * from t014c where a = 'A' (not casespecific);
+
+A           B         
+----------  ----------
+
+A           a         
+
+--- 1 row(s) selected.
+>>
+>>-- expect 1 rows
+>>select * from t014c;
+
+A           B         
+----------  ----------
+
+a           a         
+
+--- 1 row(s) selected.
+>>
+>>control query default infer_charset 'off';
+
+--- SQL operation complete.
+>>
+>>-- expect 0 rows
+>>select * from t014c where a = 'A';
+
+--- 0 row(s) selected.
+>>
+>>-- expect 1 rows
+>>select * from t014c where a = 'A' (not casespecific);
+
+A           B         
+----------  ----------
+
+A           a         
+
+--- 1 row(s) selected.
+>>
+>>-- expect 1 rows
+>>select * from t014c;
+
+A           B         
+----------  ----------
+
+a           a         
+
+--- 1 row(s) selected.
+>>-- end testing solution 
+>>
+>>
+>>
+>>obey TEST014(clnup);
+>>drop table taa;
+
+--- SQL operation complete.
+>>drop table intv1;
+
+--- SQL operation complete.
+>>
+>>drop table t014A cascade;
+
+--- SQL operation complete.
+>>drop table t014B cascade;
+
+--- SQL operation complete.
+>>drop table t014c ;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>log;

@@ -1,0 +1,633 @@
+-- Test: TEST042 (CompGeneral)
+-- Functionality: It tests the hybrid query cache feature.
+-- Table created: t042_orderline
+-- Expected files: EXPECTED042
+-- Limitations:
+-- Revision history:
+--     (08/04/2014) - Created.
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+sh sqlci -i "TEST042(test_ddl)" ;
+obey TEST042(test_dml);
+exit;
+
+?section test_ddl
+create schema TRAFODION.ORDERENTRY;
+set schema TRAFODION.ORDERENTRY;
+drop table if exists t042_ORDERLINE;
+create table t042_ORDERLINE
+  (
+    OL_O_ID                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_D_ID                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_W_ID                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_NUMBER                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_I_ID                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_SUPPLY_W_ID                   INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OL_DELIVERY_D                    TIMESTAMP(6) DEFAULT NULL
+  , OL_QUANTITY                      NUMERIC(2, 0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , OL_AMOUNT                        NUMERIC(6, 2) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , OL_DIST_INFO                     CHAR(24) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (OL_W_ID ASC, OL_D_ID ASC, OL_O_ID ASC, OL_NUMBER ASC)
+  )
+  SALT USING 8 PARTITIONS
+       ON (OL_W_ID)
+;
+
+insert into t042_orderline
+values
+(1,10,3,1,38994,3,timestamp '2027-11-26 18:11:34.00',5,0,'chuwgjxIpnypxU[YfcxPhUBF'),
+(1,10,3,2,16909,3,timestamp '2026-12-18 01:12:15.00',5,0,'nkuftmCZosGnTOEDeeHniXPl'),
+(1,10,3,3,75288,3,timestamp '2001-06-20 01:06:58.00',5,0,'ejOFCzrytcrSqNOrOjZ{{yLH'),
+(1,10,3,4,17362,3,timestamp '2026-05-25 20:05:09.00',5,0,'Yr[mwMsXouLnDgQH{MIXdsyO'),
+(2,10,3,5,93745,3,timestamp '2009-02-03 15:02:17.00',5,0,'JqdrpThOBHRwqbMEJIVXGmKu'),
+(2,10,3,6,68201,3,timestamp '1973-12-24 12:12:02.00',5,0,'DoIQoqGSfRX{UDPwXhLRwkSw'),
+(2,10,3,1,57108,3,timestamp '2002-06-25 12:06:46.00',5,0,'MnEboHclGwXFSXp{pqeDLtbo'),
+(3,10,3,2,92861,3,timestamp '2032-08-09 05:08:58.00',5,0,'MC{juFoKVMnIYqecIEiMl[HH'),
+(3,10,3,3,44744,3,timestamp '2027-10-15 09:10:27.00',5,0,'{{rts[zOMuPPrWNmIQdy[eBh'),
+(9,10,3,4,44466,3,timestamp '1979-10-17 07:10:53.00',5,0,'LsDxFlXHBuSBTzPkLZTMjRVD');
+
+
+cqd HIST_LOW_UEC_THRESHOLD '1';
+
+update statistics for table t042_orderline on every column generate 1 intervals;
+
+-- DDL for LP Bug: 1408148
+drop table if exists t042_t1;
+create table t042_t1 (a char(10), b char(10));
+insert into t042_t1 values ('BOOK','row1'), ('book','row2');
+
+-- DDL for LP Bug: 1408485
+drop table if exists t042_BTA1P006;
+Create Table t042_BTA1P006
+(
+sbin0_4 Integer not null,
+varchar0_uniq VarChar(8) not null,
+sdec0_100 Numeric(9,0) not null,
+sdec1_20 Numeric(5,0) not null,
+udec1_nuniq Numeric(4,0) unsigned,
+
+char2_2 Char(2) not null,
+sbin2_nuniq Largeint ,
+sdec2_500 Numeric(9,0) signed not null,
+udec3_n100 Numeric(9,0) unsigned,
+ubin3_n2000 Numeric(4,0) unsigned,
+char3_4 Char(8) not null,
+
+sdec4_n20 Numeric(4,0) ,
+sbin4_n1000 Smallint ,
+char4_n10 Char(8) ,
+char5_n20 Char(8) ,
+sdec5_10 Numeric(9,0) signed not null,
+ubin5_n500 Numeric(9,0) unsigned ,
+
+sbin6_nuniq Largeint ,
+sdec6_4 Numeric(4,0) signed not null,
+char6_n100 Char(8) ,
+sbin7_n20 Smallint ,
+char7_500 Char(8) not null,
+udec7_n10 Numeric(4,0) unsigned,
+
+ubin8_10 Numeric(4,0) unsigned not null,
+char8_n1000 Char(8) ,
+sdec8_4 Numeric(9,0) unsigned not null,
+sdec9_uniq Numeric(18,0) signed not null,
+char9_100 Char(2) not null,
+
+char10_nuniq Char(8) ,
+udec10_uniq Numeric(9,0) unsigned not null,
+udec11_2000 Numeric(9,0) unsigned not null,
+sbin11_100 Integer not null,
+char11_uniq Char(8) not null,
+
+ubin12_2 Numeric(4,0) unsigned not null,
+sdec12_n1000 Numeric(18,0) signed ,
+char12_n2000 Char(8) ,
+udec13_500 Numeric(9,0) unsigned not null,
+
+char13_1000 Char(8) not null,
+
+sbin14_1000 Integer not null,
+udec14_100 Numeric(4,0) unsigned not null,
+char14_n500 Char(8) ,
+sbinneg15_nuniq Largeint ,
+sdecneg15_100 Numeric(9,0) signed not null,
+char15_100 VarChar(8) not null,
+
+ubin16_n10 Numeric(4,0) unsigned ,
+sdec16_uniq Numeric(18,0) signed not null,
+char16_n20 Char(5) ,
+sbin17_uniq Largeint not null,
+sdec17_nuniq Numeric(18,0) ,
+char17_2 VarChar(7) not null
+
+, primary key ( sdec9_uniq ASC
+, sdec0_100 DESC
+, sdec1_20 ASC )
+);
+
+Insert Into t042_BTA1P006
+Values (
+-0, 'CJAAAAAC', -81, -2, 1973,
+'AA', -702, -202, 81, 81, 'BAAAAAAA',
+-4, -724, NULL , 'BDAAAAAA', -3, 473, -- (5)
+-702, -2, 'CCAAAAAA', -1, 'ABAAEAAA', NULL ,
+4, 'GFAAFAAA', 0, -201, 'BX',
+'CJAAAAAC', 702, 81, -81, 'AAAAMAAB', -- (10)
+0, -724, 'GFAAFAAA', 473, 'GEAAKAAA',
+-702, 2, 'CGAAAAAA', -4081, -81, 'BGAAAAAA', -- (15)
+NULL , -4724, 'AEAA', -76757, -1973, 'BAAA'
+),(
+-1, 'AEAAJAAB', -44, -6, 60,
+'AA', -3766, -266, 44, 344, 'AAAAAAAA',
+-9, -509, NULL , 'AAAAAAAA', -0, 60, -- (5)
+-3766, -2, 'CQAAAAAA', -4, 'EAAAGAAA', NULL ,
+9, 'DBAAAAAA', 1, -200, 'AK',
+'AEAAJAAB', 3766, 344, -44, 'EKAACAAE', -- (10)
+1, -509, 'DBAAAAAB', 60, 'EFAAIAAA',
+-766, 66, 'AGAAEAAA', -4344, -44, 'ATAAAAA', -- (15)
+NULL , -2509, 'BE ', -37055, -60, 'AAAA'
+),(
+-2, 'CCAAFAAC', -52, -12, 2086,
+'AA', -772, -272, 52, 1552, 'AAAAAAAA',
+-18, -678, NULL , 'CBAAAAAA', -6, 86, -- (5)
+-772, -0, 'AWAAAAAA', -12, 'DAAAGAAA', NULL ,
+8, 'DEAAMAAA', 2, -101, 'CL',
+'CCAAFAAC', 772, 1552, -52, 'DKAADAAC', -- (10)
+0, -678, 'DEAAMAAA', 86, 'AHAAGAAA',
+-772, 72, 'CEAAHAAA', -3552, -52, 'ACAAAAAA', -- (15)
+NULL , -3678, 'AB', -49700, -2086, 'AAAAAA'
+),(
+-2, 'AIAALAAA', -89, -5, 812,
+'BA', -2065, -65, 89, 389, 'BAAAAAAA',
+-14, -594, NULL , 'ACAAAAAA', -2, 312, -- (5)
+-2065, -1, 'BPAAAAAA', -9, 'CFAAEAAA', NULL ,
+4, 'FKAAIAAA', 2, -100, 'AM',
+'AIAALAAA', 2065, 389, -89, 'CCAAKAAE', -- (10)
+0, -594, 'FKAAIAAA', 312, 'AJAAGAAA',
+-65, 65, 'ABAAEAAA', -2389, -89, 'BOAAAAA',
+NULL , -1594, 'AA', -15935, -812, 'AAAAAAA' -- (15)
+)
+;
+
+--DDL for LP bug 1421374
+drop table p9tab;
+create table p9tab (
+c1  float
+, c2  float(22)
+, c3  float(23)
+, c4  real
+, c5  double precision not null
+, primary key (c5)
+) no partition;
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (1.0e1,1.0e2,1.0e3,1.0e4,1.0e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (2.1e1,2.1e2,2.1e3,2.1e4,2.1e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (5.5e1,5.5e2,5.5e3,5.5e4,5.5e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (8.0e1,8.0e2,8.0e3,8.0e4,8.0e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (2,333.333,0.4E5,400E-3,100);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (101.0,1.02E2,103,1.4E1,1.5E1);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (61,52,43,4.1234567,5.12345678901);
+--
+insert into p9tab (c1,c2,c3,c4,c5)
+values (600,52,43,4.12345678,6.0932);
+--
+insert into p9tab (c5) values (0E0);
+
+
+?section test_dml
+set schema TRAFODION.ORDERENTRY;
+log LOG042 clear;
+showstats for table t042_orderline on ol_o_id detail;
+
+cqd HYBRID_QUERY_CACHE 'off';
+-- avoid caching the metadata queries
+prepare xx from select * from t042_t1;
+prepare xx from select * from t042_BTA1P006;
+prepare xx from select * from t042_orderline;
+
+sh rm hqc.log;
+cqd HQC_LOG 'on';
+cqd HQC_LOG_FILE 'hqc.log';
+cqd HYBRID_QUERY_CACHE 'on';
+cqd QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH 'ON';
+
+prepare xx from select * from t042_orderline where ol_o_id = 1 ;
+explain options 'f' xx;
+execute xx;
+
+prepare xx from select * from t042_orderline where ol_o_id = 2 ;
+explain options 'f' xx;
+execute xx;
+
+prepare xx from select * from t042_orderline where ol_o_id = 3 ;
+explain options 'f' xx;
+execute xx;
+
+prepare xx from select * from t042_orderline where ol_o_id = 162 ;
+explain options 'f' xx;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+---===== TEST BUILT-IN FUNCTION HQC Cacheability =====-------
+-- CURRENT_TIMESTAMP - HQC cacheable and NOT parameterized
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (2);
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (3);
+execute xx;
+prepare xx from select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 3;
+execute xx;
+prepare xx from select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 4;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CURRENT_TIMESTAMP_RUNNING - HQC cacheable - no params
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 3;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 5;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- dayofweek - HQC cacheable and parameterized
+prepare xx from select dayofweek(timestamp '1973-12-24 12:12:02.00') from t042_ORDERLINE;
+execute xx;
+prepare xx from select dayofweek(timestamp '1975-12-24 12:12:02.00') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- EXTRACT - HQC cacheable and parameterized
+prepare xx from select EXTRACT (YEAR FROM DATE '2017-09-28') from t042_ORDERLINE;
+execute xx;
+prepare xx from select EXTRACT (YEAR FROM DATE '1980-09-28') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- JULIANTIMESTAMP HQC cacheable and parameterized
+prepare xx from select JULIANTIMESTAMP(DATE'2017-09-28') from t042_ORDERLINE;
+execute xx;
+prepare xx from select JULIANTIMESTAMP(DATE'1990-09-28') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- LOWER - HQC cacheable and NOT parameterized
+prepare xx from select LOWER('TEXTA') from t042_ORDERLINE;
+execute xx;
+prepare xx from select LOWER('TEXTB') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- UPPER - HQC cacheable and NOT parameterized
+prepare xx from select UPPER('ol_o_id_1') from t042_ORDERLINE;
+execute xx;
+prepare xx from select UPPER('ol_o_id_2') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- TRIM - HQC cacheable and NOT parameterized
+prepare xx from select TRIM('L' FROM 'LO TE XTA') from t042_ORDERLINE;
+execute xx;
+prepare xx from select TRIM('A' FROM 'LO TE XTA') from t042_ORDERLINE;
+execute xx;
+prepare xx from select TRIM('  Robert1  ') from t042_ORDERLINE;
+execute xx;
+prepare xx from select TRIM('  Robert2  ') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- TRANSLATE - HQC cacheable and NOT parameterized
+Prepare xx from select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
+execute xx;
+Prepare xx from select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CODE_VALUE - HQC cacheable and parameterized
+prepare xx from select code_value ('aa'), * from t042_ORDERLINE;
+execute xx;
+prepare xx from select code_value ('bb'), * from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- BETWEEN - HQC cacheable but NOT parameterized
+prepare xx from select * from t042_ORDERLINE where OL_NUMBER between 2 and 6;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_NUMBER between 3 and 5;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- LIKE - HQC cacheable and only parameterize first arg
+prepare xx from select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';
+execute xx;
+prepare xx from select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQ%';
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- IN - HQC cacheable and NOT parameterized
+prepare xx from select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);
+execute xx;
+prepare xx from select * from t042_ORDERLINE  where OL_I_ID in (19500, 21000);
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CONCAT - HQC cacheable and NOT parameterized
+prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = concat(OL_DIST_INFO, 'abc');
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 'xyzq' = concat(OL_DIST_INFO, 'bc');
+execute xx;
+prepare xx from select concat('a', 'b') from t042_ORDERLINE;
+execute xx;
+prepare xx from select concat('c', 'd') from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CONVERTTOHEX - HQC cacheable and NOT parameterized
+prepare xx from select converttohex ('a'), * from t042_ORDERLINE;
+execute xx;
+prepare xx from select converttohex ('b'), * from t042_ORDERLINE;
+execute xx;
+
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CHAR_LENGTH - HQC cacheable and parameterized
+prepare xx from select char_length ('a'), * from t042_ORDERLINE;
+execute xx;
+prepare xx from select char_length ('b'), * from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- OCTET_LENGTH - HQC cacheable and parameterized
+prepare xx from select octet_length ('a'), * from t042_ORDERLINE;
+execute xx;
+prepare xx from select octet_length ('b'), * from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- POSITION - HQC cacheable and parameterized
+prepare xx from select position('oIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
+execute xx;
+prepare xx from select position('xyzoIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 2 = position('oIQo' in OL_DIST_INFO );
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 9 = position('xyzoIQo' in OL_DIST_INFO );
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- SUBSTRING - HQC cacheable ONLY first arg is parameterized
+prepare xx from select substring('aaaa'from 1 for 2) from t042_ORDERLINE;
+execute xx;
+prepare xx from select substring('abba'from 1 for 2) from t042_ORDERLINE;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 6);
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 5);
+execute xx;
+prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = substring('DoIQoqabc' from 1 for 5);
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CASE/IfThenElse - HQC cacheable and parameterized
+prepare xx from select case when OL_O_ID <> 5 THEN 1 else 0 end from t042_ORDERLINE;
+execute xx;
+prepare xx from select case when OL_O_ID <> 6 THEN 2 else 1 end from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CAST - HQC cacheable and parameterize
+prepare xx from select cast('aaa' as char(20)) from t042_ORDERLINE;
+execute xx;
+prepare xx from select cast('bbb' as char(30)) from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- bitOperator HQC cacheable and parameterized
+prepare xx from select (1 | 0 )& (1 ^ 0) from t042_ORDERLINE;
+execute xx;
+prepare xx from select (2 | 1 )& (3 ^ 1) from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- MOD - HQC cacheable and parameterized
+prepare xx from select mod(4,3) from t042_ORDERLINE;
+execute xx;
+prepare xx from select mod(8,5) from t042_ORDERLINE;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_O_ID = mod(4,3);
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_O_ID = mod(8,5);
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- MATH FUNC - HQC cacheable and parameterized
+prepare xx from select bitand(1,2), bitor(0,1), bitxor(0,0),bitnot(0), abs(-1) from t042_ORDERLINE;
+execute xx;
+prepare xx from select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t042_ORDERLINE;
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- CONVERTTIMESTAMP - HQC cacheable and parameterized
+prepare xx from select CONVERTTIMESTAMP(212664316335000000) from t042_ORDERLINE;
+execute xx;
+prepare xx from select CONVERTTIMESTAMP(212842400938000000) from t042_ORDERLINE;
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212664316335000000);
+execute xx;
+prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212842400938000000);
+execute xx;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- LaunchPad bug: 1408148
+select '0123456789' from t042_t1;
+select '' from t042_t1;
+-- Non-parameterized literals should be compared case sensitively.
+-- query 1: should return row1
+select b from t042_t1 where a like 'BOO_%';
+-- query 2: should return row2
+select b from t042_t1 where a like 'boo_%';
+-- query 3: should return row1
+select b from t042_t1 where a like 'BOO%';
+-- query 4: should return row2
+select b from t042_t1 where a like 'boo%';
+-- query 5: should return row2
+select * from t042_t1 where a = 'book' or b = 'ROW1';
+-- query 6: should return zero 
+select * from t042_t1 where a = 'Book' or b = 'ROW2';
+-- query 7: should return row1
+select * from t042_t1 where a = 'BOOK' or b = 'ROW2';
+
+-- LaunchPad bug: 1408485
+select t.varchar0_uniq as t_varchar0_uniq
+, t.char2_2 as t_char2_2
+, t.char3_4 as t_char3_4
+, u.varchar0_uniq as u_varchar0_uniq
+, u.char2_2 as u_char2_2
+from t042_BTA1P006 t, t042_BTA1P006 u
+where (t.char2_2, 'AA', t.char3_4 ,'CJAAAAAC')
+=('AA' ,u.char2_2 , 'AAAAAAAA' , u.varchar0_uniq)
+order by 1, 2
+;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+-- test compile time
+
+set statistics on;
+prepare xx from select * from t042_orderline where ol_o_id = 1 ;
+explain options 'f' xx;
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+
+
+prepare xx from select * from t042_orderline where ol_o_id = 2 ;
+explain options 'f' xx;
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
+set statistics off;
+
+--Stats in Query Cache
+select num_entries, text_entries, num_plans from table(querycache('user', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('meta', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+
+select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
+
+
+--Stats in Hybrid Query Cache
+select * from table(hybridquerycache('user', 'local'));
+select * from table(hybridquerycache('meta', 'local'));
+select * from table(hybridquerycache('ustats', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1, 2;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1, 2;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1, 2;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1, 2;
+
+
+-- virtual table ISP queries are not cacheable.
+-- hqc.log should be empty.
+sh cat hqc.log >> LOG042;
+cqd HQC_LOG 'off';
+sh rm hqc.log;
+
+-- clear all (hybrid)query cache entries
+delete all from table(querycache('all', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+-- LP 1409830
+insert into t042_t1 values ('trans1', 'xxx');
+SET TRANSACTION READ ONLY;
+insert into t values ('trans2', 'xxx');
+select * from t042_t1;
+
+-- LP 1409863 
+SELECT POSITION('April spring time' IN 'April rain') from t042_t1;
+SELECT POSITION('' IN 'April rain') from t042_t1;
+
+
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+-- clear all (hybrid)query cache entries
+cqd query_cache '0';
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+--LP 1421374
+select * from p9tab order by 1;
+select c4 from p9tab where c1 = 61E0;
+
+log off;
+

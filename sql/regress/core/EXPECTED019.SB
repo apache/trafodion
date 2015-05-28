@@ -1,0 +1,594 @@
+>>
+>>-- worst case scenario: force overflow (in the master only) on every request 
+>>control query default EXE_TEST_HASH_FORCE_OVERFLOW_EVERY '1';
+
+--- SQL operation complete.
+>>control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>control query default QUERY_CACHE '0';
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------------------
+>>--  hash joins with parameters, predicates and overflow handling
+>>--------------------------------------------------------------------
+>>
+>>-- shape of the following query
+>>control query shape hybrid_hash_join(cut,cut);
+
+--- SQL operation complete.
+>>
+>>-- hash join, with input param and before predicate
+>>prepare stmt from
++>  select cast (a2 as smallint), cast (b2 as char(30)),
++>         cast (a1 as smallint), cast (b1 as char(30)) from
++>       t019t2
++>         left join
++>       t019t1 on a1 = a2 
++>             and c1 + c2 < ? ;
+
+--- SQL command prepared.
+>>    -- before-join predicate
+>>
+>>-- before predicate should fail for some probes
+>>-- query should return 10 rows, where 7 are null extended
+>>execute stmt using 555;
+
+(EXPR)  (EXPR)                          (EXPR)  (EXPR)
+------  ------------------------------  ------  ------------------------------
+
+  3801  this is row 5 of table t019t2        ?  ?                             
+  6255  this is row 6 of table t019t2        ?  ?                             
+  1953  this is row 7 of table t019t2        ?  ?                             
+  4147  this is row 0 of table t019t2     4147  this is row 75 of table t019t1
+  7174  this is row 9 of table t019t2        ?  ?                             
+  1834  this is row 2 of table t019t2     1834  this is row 63 of table t019t1
+  3560  this is row 1 of table t019t2     3560  this is row 72 of table t019t1
+  7606  this is row 3 of table t019t2        ?  ?                             
+  7178  this is row 4 of table t019t2        ?  ?                             
+  1819  this is row 8 of table t019t2        ?  ?                             
+
+--- 10 row(s) selected.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)      -- VARIABLE_INFO 
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASHJ' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- shape of the following query
+>>control query shape hybrid_hash_join(cut,cut);
+
+--- SQL operation complete.
+>>
+>>-- hash join, with input param and after predicate
+>>prepare stmt from
++>  select cast (a2 as smallint), cast (b2 as char(30)),
++>         cast (a1 as smallint), cast (b1 as char(30)) from
++>     t019t2 tt1
++>        join 
++>     t019t1 tt2
++>     on isnull(a1,9999) = a2
++>     where isnull(a1,2) < ? or a2 + a1 > ?  -- after-join predicate
++>  ;
+
+--- SQL command prepared.
+>>
+>>-- the after predicate should fail for some probes
+>>-- should return 11 rows
+>>execute stmt using 4000, 14000;
+
+(EXPR)  (EXPR)                          (EXPR)  (EXPR)
+------  ------------------------------  ------  ------------------------------
+
+  3801  this is row 5 of table t019t2     3801  this is row 11 of table t019t1
+  7174  this is row 9 of table t019t2     7174  this is row 94 of table t019t1
+  7174  this is row 9 of table t019t2     7174  this is row 98 of table t019t1
+  7174  this is row 9 of table t019t2     7174  this is row 97 of table t019t1
+  1834  this is row 2 of table t019t2     1834  this is row 63 of table t019t1
+  3560  this is row 1 of table t019t2     3560  this is row 72 of table t019t1
+  7606  this is row 3 of table t019t2     7606  this is row 80 of table t019t1
+  7178  this is row 4 of table t019t2     7178  and this row should match     
+  7178  this is row 4 of table t019t2     7178  and again should match        
+  7178  this is row 4 of table t019t2     7178  and this row too should match 
+  1819  this is row 8 of table t019t2     1819  this is row 55 of table t019t1
+
+--- 11 row(s) selected.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)      -- VARIABLE_INFO 
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASHJ' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------------------------
+>>--  hash grouping with parameters, predicates, and overflow handling
+>>--------------------------------------------------------------------------
+>>#ifdef SEABASE_REGRESS
+>>control query shape hash_groupby(scan);
+
+--- SQL operation complete.
+>>#else
+>>control query shape hash_groupby(partition_access(scan));
+>>#endif
+>>control query default GEN_HGBY_BUFFER_SIZE '57344';
+
+--- SQL operation complete.
+>>control query default EXE_HGB_INITIAL_HT_SIZE  '57344';
+
+--- SQL operation complete.
+>>
+>>-- a hash-groupby with a having-predicate using a parameter
+>>prepare stmt from 
++>   select sum(a1), cast (b1 as char(30))
++>         from t019t1 group by b1 having sum(a1) >= ? ;
+
+--- SQL command prepared.
+>>
+>>execute stmt using 9999 ;
+
+(EXPR)                (EXPR)                        
+--------------------  ------------------------------
+
+                9999  this is row 4 of table t019t1 
+
+--- 1 row(s) selected.
+>> -- one row expected
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)      -- VARIABLE_INFO 
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASH_GRBY' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- try re-executing with a different input (9 rows expected)
+>>execute stmt using 9993 ;
+
+(EXPR)                (EXPR)                        
+--------------------  ------------------------------
+
+                9993  this is row 61 of table t019t1
+                9993  this is row 42 of table t019t1
+                9993  this is row 45 of table t019t1
+                9999  this is row 4 of table t019t1 
+                9993  this is row 30 of table t019t1
+                9993  this is row 14 of table t019t1
+                9993  this is row 50 of table t019t1
+                9993  this is row 57 of table t019t1
+                9993  this is row 93 of table t019t1
+
+--- 9 row(s) selected.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASH_GRBY' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-------------
+>>-- Test FOJ
+>>-------------
+>>-- with an empty outer and overflow
+>>insert into t019right values (1),(2),(3);
+
+--- 3 row(s) inserted.
+>>-- Should return 3 rows, null extended (see case 10-081201-3607)
+>>select * from t019left full join t019right on i = j ;
+
+I            J          
+-----------  -----------
+
+          ?            1
+          ?            2
+          ?            3
+
+--- 3 row(s) selected.
+>>
+>>-- with cluster split
+>>-- control query default EXE_HJ_FORCE_CLUSTER_SPLIT 'ON';
+>>insert into t019left values (1),(2),(3);
+
+--- 3 row(s) inserted.
+>>-- should return three rows, no null extensions (see case 10-081205-8182)
+>>select * from t019left full join t019right on i = j ;
+
+I            J          
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+
+--- 3 row(s) selected.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>-------------------
+>>-- now reset:
+>>-------------------
+>>--  No special overflow
+>>control query default EXE_TEST_HASH_FORCE_OVERFLOW_EVERY reset;
+
+--- SQL operation complete.
+>>-- control query default EXE_HJ_FORCE_CLUSTER_SPLIT 'OFF';
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------------------
+>>-- 
+>>--         Test Anti Semi Join Overflow
+>>--
+>>--------------------------------------------------------------------
+>>
+>>-- populate tables
+>>
+>>-- t019_a Cross Product with t019_b would give about 80 MB inner table 
+>>#ifdef SEABASE_REGRESS
+>>upsert using load into t019_a
++>#else
++>insert into t019_a
++>#endif
++>  select   
++>   0 + (100 * x100) + (10 * x10) + (1 * x1),   
++>   0 + (10 * x10) + (1 * x1),
++>   0 + (1 * x1),
++>   0
++>  from t019_starter  
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- 1000 row(s) inserted.
+>>
+>>#ifdef SEABASE_REGRESS
+>>upsert using load into t019_b
++>#else
++>insert into t019_b
++>#endif
++>  select   
++>   0 + (100 * x100) + (10 * x10) + (1 * x1),   
++>   'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from t019_starter  
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- 1000 row(s) inserted.
+>>
+>>-- t019_c is the left table for the Anti-Semi-Join
+>>#ifdef SEABASE_REGRESS
+>>upsert using load into t019_c
++>#else
++>insert into t019_c
++>#endif
++>  select   
++>   0 + (100 * x100) + (10 * x10) + (1 * x1),
++>   0 + (100 * x100) + (10 * x10) + (1 * x1),
++>   'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
++>   0 + (10 * x10) + (1 * x1),
++>   0 + (1 * x1),
++>   0
++>  from t019_starter  
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- 1000 row(s) inserted.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>-- use internal CQD to force an overflow after 30 MB
+>>control query default EXE_MEM_LIMIT_PER_BMO_IN_MB '30';
+
+--- SQL operation complete.
+>>
+>>-- Ensure 100 rows from t019_c have no match in ( t019_a X t019_b )
+>>update t019_c set c100 = c100 + 1 where c10 = 7 ;
+
+--- 100 row(s) updated.
+>>
+>>-- push HJ to the limits -- force both cluster splits and hash-loops !!
+>>control query default EXE_TEST_FORCE_CLUSTER_SPLIT_AFTER_MB '1';
+
+--- SQL operation complete.
+>>control query default EXE_TEST_FORCE_HASH_LOOP_AFTER_NUM_BUFFERS '10';
+
+--- SQL operation complete.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape nested_join(sort(hybrid_hash_join(scan,
++>hybrid_hash_join(scan,scan))),insert);
+
+--- SQL operation complete.
+>>#else
+>>control query shape nested_join(sort(hybrid_hash_join(partition_access(scan),
++>hybrid_hash_join(partition_access(scan),partition_access(
++>scan)))),partition_access(insert));
+>>#endif
+>>
+>>prepare stmt from
++>  insert into t019_d
++>    ( select * from t019_c
++>      where
++>        (uniq1, c100, c10, c1, uniq2, str1) NOT IN 
++>                       (select * from t019_a, t019_b) ) ;
+
+--- SQL command prepared.
+>>
+>>-- Use explain to check that indeed we got a hybrid_hash_anti_semi_join
+>>-- explain options 'f' stmt;
+>>
+>>-- 100 rows should be inserted -- anything less shows that ASJ overflow bug
+>>execute stmt;
+
+--- 100 row(s) inserted.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>-- The filter019 file checks for overflow, splits and hash loops by
+>>--   filtering VARIABLE_INFO for "TotWriteIOs" (also TotReadIOs or IOBytes
+>>--   are good) and "ClusterSplits" and "HashLoops"
+>>-- Query has two HJs -- the anti-semi overflows, the cross-product does not!
+>>select VARIABLE_INFO
++>   from table(statistics(NULL,'STMT')) 
++>       where TDB_NAME = 'EX_HASHJ' and VAL3 > 0 ;
+
+VARIABLE_INFO
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+statsRowType: 6 DOP: 0 OperCpuTime: 1209367 RetOK: 271 RetCallAgain: 2 Memory: 61865984 IOBytes: 233046016 ClusterSplits: 7 HashLoops: 56 NumClusters: 22 ResidentClusters: 5 TotNumBuckets: 32 TotHashTableSize: 96468992 TotWriteIOs: 215 TotReadIOs: 674 MinClusterRows: 39 MaxClusterRows: 200192 ClusterRowsVar: 3551966208 ClusterNo: 0 NumBuckets: 4 ActRows: 200192 NumChains: 146142 MaxChain: 7 VarChain: 0 ClusterNo: 1 NumBuckets: 4 ActRows: 200106 NumChains: 146243 MaxChain: 7 VarChain: 0 ClusterNo: 2 NumBuckets: 2 ActRows: 99908 NumChains: 11430 MaxChain: 3 VarChain: 0 ClusterNo: 3 NumBuckets: 2 ActRows: 96 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 4 NumBuckets: 2 ActRows: 100183 NumChains: 11488 MaxChain: 3 VarChain: 0 ClusterNo: 5 NumBuckets: 2 ActRows: 100 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 6 NumBuckets: 1 ActRows: 49869 NumChains: 2154 MaxChain: 2 VarChain: 0 ClusterNo: 7 NumBuckets: 1 ActRows: 60 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 8 NumBuckets: 1 ActRows: 50362 NumChains: 2312 MaxChain: 2 VarChain: 0 ClusterNo: 9 NumBuckets: 1 ActRows: 39 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 10 NumBuckets: 1 ActRows: 50148 NumChains: 2164 MaxChain: 2 VarChain: 0 ClusterNo: 11 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 12 NumBuckets: 1 ActRows: 49983 NumChains: 2188 MaxChain: 3 VarChain: 0 ClusterNo: 13 NumBuckets: 1 ActRows: 44 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 14 NumBuckets: 1 ActRows: 49798 NumChains: 3413 MaxChain: 3 VarChain: 0 ClusterNo: 15 NumBuckets: 1 ActRows: 47 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 16 NumBuckets: 1 ActRows: 49938 NumChains: 3487 MaxChain: 3 VarChain: 0 ClusterNo: 17 NumBuckets: 1 ActRows: 43 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 18 NumBuckets: 1 ActRows: 49815 NumChains: 3508 MaxChain: 3 VarChain: 0 ClusterNo: 19 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 20 NumBuckets: 1 ActRows: 49698 NumChains: 3334 MaxChain: 3 VarChain: 0 ClusterNo: 21 NumBuckets: 1 ActRows: 59 NumChains: 0 MaxChain: 0 VarChain: 0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+--- 1 row(s) selected.
+>>
+>>control query default EXE_TEST_FORCE_CLUSTER_SPLIT_AFTER_MB reset;
+
+--- SQL operation complete.
+>>control query default EXE_TEST_FORCE_HASH_LOOP_AFTER_NUM_BUFFERS reset;
+
+--- SQL operation complete.
+>>----------------------------------------------------------------------
+>>-- 
+>>-- Test Groupby Overflow
+>>--
+>>----------------------------------------------------------------------
+>>
+>>#ifdef SEABASE_REGRESS
+>>upsert using load into
++>#else
++>insert into
++>#endif
++>t019_e
++>  select   
++>    0 + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) + x1,   
++>    0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),   
++>    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from t019_starter  
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- 100000 row(s) inserted.
+>>
+>>-- use internal CQD to force an overflow after 3 MB
+>>control query default EXE_MEM_LIMIT_PER_BMO_IN_MB '3';
+
+--- SQL operation complete.
+>>
+>>-- start very small to force several HT resizes to take place
+>>control query default EXE_HGB_INITIAL_HT_SIZE '3584';
+
+--- SQL operation complete.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape nested_join(hash_groupby(scan), insert);
+
+--- SQL operation complete.
+>>#else
+>>control query shape nested_join(hash_groupby(partition_access(
++>scan )), partition_access(insert));
+>>#endif
+>>
+>>
+>>prepare stmt from
++>#ifdef SEABASE_REGRESS
++>upsert using load into
++>#else
++>insert into
++>#endif
++>t019_f
++>    ( select sum(c1) from t019_e group by uniqb,str1 );
+
+--- SQL command prepared.
+>>
+>>-- 100 K rows should be inserted
+>>execute stmt;
+
+--- 100000 row(s) inserted.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASH_GRBY' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape nested_join(hash_groupby(scan), insert);
+
+--- SQL operation complete.
+>>#else
+>>control query shape nested_join(hash_groupby(partition_access(
++>scan )), partition_access(insert));
+>>#endif
+>>
+>>-- Test DISTINCT (HGB with no aggregates; such an HGB returns output in a non
+>>-- blocking fashion until an overflow occurs)
+>>prepare stmt from
++>#ifdef SEABASE_REGRESS
++>upsert using load into
++>#else
++>insert into
++>#endif
++>t019_g
++>    ( select distinct uniqb,str1 from t019_e  );
+
+--- SQL command prepared.
+>>
+>>-- should insert 100000 rows
+>>execute stmt;
+
+--- 100000 row(s) inserted.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASH_GRBY' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Test solution 10-100831-2840: Extra duplicate rows returned by HGB Distinct
+>>
+>>-- Create 9998 duplicate rows (last two are getting new unique values)
+>>-- (These dups are evenly spread across the buffers to show that bug.) 
+>>update t019_e set uniqb = uniqb + 25 where mod(uniqb,10) = 0;
+
+--- 10000 row(s) updated.
+>>
+>>-- Repeat the above test, this time with duplicates
+>>delete from t019_g;
+
+--- 100000 row(s) deleted.
+>>#ifdef SEABASE_REGRESS
+>>control query shape nested_join(hash_groupby(scan), insert);
+
+--- SQL operation complete.
+>>#else
+>>control query shape nested_join(hash_groupby(partition_access(
++>scan )), partition_access(insert));
+>>#endif
+>>
+>>-- Test DISTINCT (HGB with no aggregates; such an HGB returns output in a non
+>>-- blocking fashion until an overflow occurs)
+>>prepare stmt from
++>#ifdef SEABASE_REGRESS
++>upsert using load into
++>#else
++>insert into
++>#endif
++>t019_g
++>    ( select distinct uniqb,str1 from t019_e  );
+
+--- SQL command prepared.
+>>
+>>-- now should insert 90002 rows; anything higher shows that bug
+>>execute stmt;
+
+--- 90002 row(s) inserted.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- Statistics hold a proof that overflow took place:
+>>--   VAL3 counts IOs , so after an overflow should return 1 below, else 0 !
+>>select  count(VAL3)
++>      from table(statistics(NULL,'STMT'))	
++>	  where TDB_NAME = 'EX_HASH_GRBY' and VAL3 > 0 ;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>log;

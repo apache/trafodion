@@ -1,0 +1,157 @@
+-- this script drops the QAT database.
+drop view svsel17;
+drop view svsel16;
+drop view svsel15;
+drop view svsel14;
+drop view svsel13;
+drop view svsel12;
+drop view svsel11;
+drop view svsel10;
+drop view svsel09;
+drop view svsel08;
+drop view svsel07;
+drop view svsel06;
+drop view svsel05;
+drop view svsel04;
+drop view svsel03;
+drop view svsel02;
+drop view svsel01;
+
+drop view pvsel04;
+drop view pvsel03;
+drop view pvsel02;
+drop view pvsel01;
+
+drop view fsdetail;
+drop view salecub;
+drop view salecust;
+drop view partsfor;
+drop view expfroms;
+drop view emppub;
+drop view empone;
+
+drop index order0;
+drop index order1;
+drop table orders;
+
+drop index custome0;
+drop table customer;
+
+drop table fromsup;
+drop table odetail;
+drop index parts0;
+drop table parts;
+
+drop index supplyr0;
+drop table supplier;
+
+drop index region0;
+drop table region;
+
+drop table branch;
+
+drop index employe0;
+drop index employe1;
+drop table employee;
+
+drop table btempkey;
+drop index btempre0;
+drop table btemprel;
+drop table btempent;
+
+drop index btsel01a;
+drop index btsel01b;
+drop index btsel01c;
+drop index btsel01d;
+drop table btsel01;
+
+drop table btsel02;
+drop table btsel03;
+
+drop index btsel04a;
+drop table btsel04;
+
+drop index btsel05a;
+drop table btsel05;
+drop table btsel06;
+
+drop index btsel07a;
+drop table btsel07;
+
+drop index btsel08a;
+drop table btsel08;
+
+drop index btsel09a;
+drop table btsel09;
+
+drop index btsel10a;
+drop table btsel10;
+
+drop table btsel11;
+
+drop index btsel12a;
+drop table btsel12;
+
+drop table btsel13;
+drop table btsel14;
+drop table btsel15;
+
+drop index btsel16a;
+drop table btsel16;
+
+drop index btsel17a;
+drop table btsel17;
+
+drop index btsel18a;
+drop table btsel18;
+
+drop table btsel19;
+drop table btsel20;
+
+drop index btsel21a;
+drop table btsel21;
+
+drop table btsel22;
+
+drop index btsel23a;
+drop table btsel23;
+
+drop table btsel24;
+drop table btsel25;
+
+drop index btsel26a;
+drop table btsel26;
+
+drop table btsel27;
+
+drop index btre201a;
+drop index btre201b;
+drop index btre201c;
+drop index btre201d;
+drop index btre201e;
+drop index btre201f;
+drop index btre201g;
+drop index btre201h;
+drop index btre201i;
+drop index btre201j;
+drop index btre201k;
+drop index btre201l;
+drop table btre201;
+
+drop table btre202;
+drop table btre203;
+drop table btre204;
+drop table btre205;
+
+drop index btre206i;
+drop table btre206;
+
+drop index btre207i;
+drop index btre207j;
+drop table btre207;
+
+drop table btre208;
+
+log aqatddl00 clear;
+
+log;
