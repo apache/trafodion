@@ -46,6 +46,26 @@ my @g_dbList;
 my $errors = 0;
 my $stmt;
 
+sub checkPrefix {
+    my ($prefix) =  @_;
+    if ($prefix ne $g_prefix) {
+        validatePrefix();
+    }
+    $g_prefix = $prefix;
+}
+
+# Display persist configuration statement if not already displayed.
+sub displayStmt
+{
+    $errors++;
+    if ($_[0] == 1)
+    {
+        print "For \"$stmt\":\n";
+        # Set flag that statement has been displayed
+        $_[0] = 0;
+    }
+}
+
 sub getKeyList {
     my $keyList = '';
     my $k;
@@ -77,7 +97,7 @@ sub parseEnd {
         return 1;
     } else {
         displayStmt($g_ok);
-        print "   Error: Expecting <eoln>, but saw $s\n";
+        print "   Error: Expecting <eoln>, but saw $s\n"; #T
         return 0;
     }
 }
@@ -165,10 +185,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /^([A-Z]+)(_PROCESS_NAME)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$k\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$k\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -193,10 +214,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PROCESS_TYPE)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -213,10 +235,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PROGRAM_NAME)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -233,10 +256,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_REQUIRES_DTM)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -253,10 +277,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_STDOUT)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -278,10 +303,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PERSIST_RETRIES)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -311,10 +337,11 @@ sub parseStatement {
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PERSIST_ZONES)\s*/) {
-        my $g_prefix = $1;
+        my $prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2\s*::;
-        if (validKey($g_prefix)) {
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
@@ -344,6 +371,7 @@ sub parseStatement {
 sub resetVars
 {
     $g_opts = 0;
+    $g_prefix = '';
     $g_processName = '';
     $g_processType = '';
     $g_programName = '';
@@ -351,62 +379,6 @@ sub resetVars
     $g_stdout = '';
     $g_persistRetries = '';
     $g_persistZones = '';
-}
-
-# Display persist configuration statement if not already displayed.
-sub displayStmt
-{
-    $errors++;
-    if ($_[0] == 1)
-    {
-        print "For \"$stmt\":\n";
-        # Set flag that statement has been displayed
-        $_[0] = 0;
-    }
-}
-
-sub validatePrefix
-{
-    if ($g_prefix ne '') {
-        # mark prefix seen
-        $g_prefixSeen{$g_prefix} = 1;
-        if (($g_opts & 0x1) == 0) {
-            displayStmt($g_ok);
-            my $str = "_PROCESS_NAME";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x2) == 0) {
-            displayStmt($g_ok);
-            my $str = "_PROCESS_TYPE";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x4) == 0) {
-            displayStmt($g_ok);
-            my $str = "_PROGRAM_NAME";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x8) == 0) {
-            displayStmt($g_ok);
-            my $str = "_REQUIRES_DTM";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x10) == 0) {
-            displayStmt($g_ok);
-            my $str = "_STDOUT";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x20) == 0) {
-            displayStmt($g_ok);
-            my $str = "_PERSIST_RETRIES";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        if (($g_opts & 0x40) == 0) {
-            displayStmt($g_ok);
-            my $str = "_PERSIST_ZONES";
-            print "   Error: missing $g_prefix$str\n";
-        }
-        resetVars();
-    }
 }
 
 sub validatePersist
@@ -437,6 +409,50 @@ sub validatePersist
     }
 
     return $errors;
+}
+
+sub validatePrefix
+{
+    if ($g_prefix ne '') {
+        # mark prefix seen
+        $g_prefixSeen{$g_prefix} = 1;
+        if (($g_opts & 0x1) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PROCESS_NAME";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x2) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PROCESS_TYPE";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x4) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PROGRAM_NAME";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x8) == 0) {
+            displayStmt($g_ok);
+            my $str = "_REQUIRES_DTM";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x10) == 0) {
+            displayStmt($g_ok);
+            my $str = "_STDOUT";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x20) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PERSIST_RETRIES";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x40) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PERSIST_ZONES";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        resetVars();
+    }
 }
 
 sub parseStmt
