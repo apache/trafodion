@@ -681,6 +681,8 @@ enum DefaultConstants
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*)
   USTAT_FORCE_TEMP,            // Force temporary table to be used
+  USTAT_HBASE_SAMPLE_RETURN_INTERVAL, // When sampling in HBase, adjust sampling rate to return once
+                                      //   on average once per this many rows
   USTAT_JIT_LOGGING,           // Use just-in-time logging when error occurs
   USTAT_LOCK_HIST_TABLES,      // Force lock of hist tables during FlushStatistics() to
                                //   avoid deadlock for concurrent Update Stats on same table
