@@ -1,0 +1,248 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <licenses>
+    <license>
+      <name>(C) Copyright 2013 Hewlett-Packard Development Company, L.P</name>
+      <comments>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at</comments>
+    </license>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</comments>
+    </license>
+  </licenses>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.hp.phoenix</groupId>
+  <artifactId>phoenix_test</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0</version>
+  <name>phoenix_test</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdbc_path>MYJDBC_PATH</jdbc_path>
+    <!-- START_FOR_T2_ONLY -->
+    <hadoop_distro>MY_HADOOP_DISTRO</hadoop_distro>
+    <hadoop_version>MY_HADOOP_VERSION</hadoop_version>
+    <hadoop_mvn_url>MY_MVN_URL</hadoop_mvn_url>
+    <hbase_version>MY_HBASE_VERSION</hbase_version>
+    <hive_version>MY_HIVE_VERSION</hive_version>
+    <zookeeper_version>MY_ZOOKEEPER_VERSION</zookeeper_version>
+    <traf_hbase_version>MY_TRAF_HBASE_VERSION</traf_hbase_version>
+    <!-- END_FOR_T2_ONLY -->
+  </properties>
+
+  <!-- START_FOR_T2_ONLY -->
+  <repositories>
+    <repository>
+      <id>${hadoop_distro}</id>
+      <url>${hadoop_mvn_url}</url>
+    </repository>
+  </repositories>
+  <!-- END_FOR_T2_ONLY -->
+
+  <dependencies>
+    <!-- START_FOR_T2_ONLY -->
+    <!-- Most of the test dependencies up til the Trafodion test dependencies must exclude all transitive dependencies.
+         Otherwise a CLASSPATH conflict will be encountered.  The following are excluded : 
+         org.apache.hadoop:hadoop-auth.jar 
+         commons-configuration:commons-configuration.jar -->
+    <!-- START_DISTRO_DEP -->
+    <dependency>
+      <groupId>org.cloudera.htrace</groupId>
+      <artifactId>htrace-core</artifactId>
+      <version>2.04</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.5.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.2</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <version>1.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.3</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>11.0.2</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty</artifactId>
+      <version>3.6.2.Final</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.5</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.5</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Trafodion specific test dependencies -->
+    <dependency>
+      <groupId>hbase-trx</groupId>
+      <artifactId>hbase-trx</artifactId>
+      <version>${traf_hbase_version}</version>
+      <scope>system</scope>
+      <systemPath>${env.MY_SQROOT}/export/lib/TRAF_HBASE_TRX_FILE</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.trafodion.sql</groupId>
+      <artifactId>HBaseAccess</artifactId>
+      <version>${traf_hbase_version}</version>
+      <scope>system</scope>
+      <systemPath>${env.MY_SQROOT}/export/lib/TRAF_HBASE_ACS_FILE</systemPath>
+    </dependency>
+    <!-- END_FOR_T2_ONLY -->
+    <dependency>
+      <groupId>MYJDBC_GROUP_ID</groupId>
+      <artifactId>MYJDBC_ART_ID</artifactId>
+      <version>1</version>
+      <scope>system</scope>
+      <systemPath>${jdbc_path}</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.collections</groupId>
+      <artifactId>google-collections</artifactId>
+      <version>1.0-rc2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.3</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.16</version>
+        <configuration>
+
+          <systemPropertyVariables>
+            <hpjdbc.properties>jdbcprop</hpjdbc.properties>
+            <user.timezone>UTC</user.timezone>
+            <buildDirectory>${project.build.directory}</buildDirectory>
+          </systemPropertyVariables>
+          <!-- START_FOR_T2_ONLY -->
+          <!-- <argLine>-Xcheck:jni -Dsurefire.useFile=false -Duser.timezone=GMT</argLine> -->
+          <additionalClasspathElements>
+            <additionalClasspathElement>${env.HADOOP_CNF_DIR}</additionalClasspathElement>
+            <additionalClasspathElement>${env.HBASE_CNF_DIR}</additionalClasspathElement>
+            <additionalClasspathElement>${env.HIVE_CNF_DIR}</additionalClasspathElement>
+          </additionalClasspathElements>
+          <argLine>-Xcheck:jni</argLine>
+          <!-- <useManifestOnlyJar>false</useManifestOnlyJar> -->
+          <!-- For T2 tests Maven should never fork the Java VM otherwise the environment variables
+               set below in the environmentVariables section are lost -->
+          <forkCount>0</forkCount>
+          <environmentVariables>
+            <LANG>${env.LANG}</LANG>
+            <HADOOP_CNF_DIR>${env.HADOOP_CNF_DIR}</HADOOP_CNF_DIR>
+            <HBASE_CNF_DIR>${env.HBASE_CNF_DIR}</HBASE_CNF_DIR>
+            <HIVE_CNF_DIR>${env.HIVE_CNF_DIR}</HIVE_CNF_DIR>
+            <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
+            <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
+            <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>
+            <LD_PRELOAD>${env.LD_PRELOAD}</LD_PRELOAD>
+            <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}</LD_LIBRARY_PATH>
+            <PATH>${env.PATH}</PATH>
+          </environmentVariables>
+          <!-- END_FOR_T2_ONLY -->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
