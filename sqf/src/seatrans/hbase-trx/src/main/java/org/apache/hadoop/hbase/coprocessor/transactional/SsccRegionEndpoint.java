@@ -1254,21 +1254,21 @@ CoprocessorService, Coprocessor {
                     Get statusGet = new Get(c.getRow()); //TODO: deprecated API
                     //statusGet.setTimeStamp(startId);
                     statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
-                    statusGet.setMaxVersions(DtmConst.MAX_VERSION);
+                    statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                     statusResult = m_Region.get(statusGet);
 
                     //get the colList
                     Get colGet = new Get(c.getRow()); //TODO: deprecated API
                     //colGet.setTimeStamp(startId);
                     colGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.COLUMNS_COL);
-                    colGet.setMaxVersions(DtmConst.MAX_VERSION);
+                    colGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                     colResult = m_Region.get(colGet);
 
                     //get the versionList
                     Get verGet = new Get(c.getRow());//TODO: deprecated API
                     //verGet.setTimeStamp(startId);
                     verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-                    verGet.setMaxVersions(DtmConst.MAX_VERSION);
+                    verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                     verResult = m_Region.get(verGet);   
                     firstCell = false;
                     }
@@ -1746,7 +1746,7 @@ CoprocessorService, Coprocessor {
     long min = scan.getTimeRange().getMin();
 
     scan.setTimeRange(0, startId + 1);  //only get data updated before me 
-    scan.setMaxVersions(DtmConst.MAX_VERSION);
+    scan.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
 
     Map<String , Cell> tempBuf = new TreeMap<String, Cell>();
 
@@ -1757,21 +1757,21 @@ CoprocessorService, Coprocessor {
       Get statusGet = new Get(get.getRow());//TODO: deprecated API
       //statusGet.setTimeStamp(startId);
       statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
-      statusGet.setMaxVersions(DtmConst.MAX_VERSION);
+      statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
       Result statusResult = m_Region.get(statusGet);
 
       //get the versionList
       Get verGet = new Get(get.getRow());//TODO: deprecated API
       //verGet.setTimeStamp(startId);
       verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-      verGet.setMaxVersions(DtmConst.MAX_VERSION);
+      verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
       Result verResult = m_Region.get(verGet);
 
       //get the colList
       Get colGet = new Get(get.getRow()); //TODO: deprecated API
       //colGet.setTimeStamp(startId);
       colGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.COLUMNS_COL);
-      colGet.setMaxVersions(DtmConst.MAX_VERSION);
+      colGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
       Result colResult = m_Region.get(colGet);
 
       /* go through all the versions and find out correct one */
@@ -1949,7 +1949,7 @@ CoprocessorService, Coprocessor {
     //statusGet.setTimeStamp(startId);
     statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
     //statusGet.setTimeRange(0, startId + 1);  //only get data updated before me
-    //statusGet.setMaxVersions(DtmConst.MAX_VERSION);
+    //statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
     statusGet.setMaxVersions();
 
     Result statusResult = m_Region.get(statusGet);
@@ -1964,7 +1964,7 @@ CoprocessorService, Coprocessor {
 
        //verGet.setTimeStamp(startId);
        verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-       verGet.setMaxVersions(DtmConst.MAX_VERSION);
+       verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
 
        Result verResult = m_Region.get(verGet);
        if(verResult != null )  vl = verResult.listCells();
@@ -3065,21 +3065,21 @@ CoprocessorService, Coprocessor {
                  if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: getSum first row:  " + c.getRow());
                  //statusGet.setTimeStamp(startId);
                  statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
-                 statusGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  statusResult = m_Region.get(statusGet);
 
                  //get the colList
                  Get colGet = new Get(c.getRow()); //TODO: deprecated API
                  //colGet.setTimeStamp(startId);
                  colGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.COLUMNS_COL);
-                 colGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 colGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  colResult = m_Region.get(colGet);
 
                  //get the versionList
                  Get verGet = new Get(c.getRow());//TODO: deprecated API
                  //verGet.setTimeStamp(startId);
                  verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-                 verGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  verResult = m_Region.get(verGet);
                  firstCell = false;
               }
@@ -3163,21 +3163,21 @@ CoprocessorService, Coprocessor {
                  if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: getRowNum first row:  " + c.getRow());
                  //statusGet.setTimeStamp(startId);
                  statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
-                 statusGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 statusGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  statusResult = m_Region.get(statusGet);
 
                  //get the colList
                  Get colGet = new Get(c.getRow()); //TODO: deprecated API
                  //colGet.setTimeStamp(startId);
                  colGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.COLUMNS_COL);
-                 colGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 colGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  colResult = m_Region.get(colGet);
 
                  //get the versionList
                  Get verGet = new Get(c.getRow());//TODO: deprecated API
                  //verGet.setTimeStamp(startId);
                  verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-                 verGet.setMaxVersions(DtmConst.MAX_VERSION);
+                 verGet.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                  verResult = m_Region.get(verGet);
                  firstCell = false;
               }

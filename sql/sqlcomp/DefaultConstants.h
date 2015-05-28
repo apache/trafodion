@@ -3650,6 +3650,8 @@ enum DefaultConstants
   TRAF_LOAD_ERROR_COUNT_TABLE,
   TRAF_LOAD_ERROR_LOGGING_LOCATION,
 
+  TRAF_TRANS_TYPE, 
+
  // max size in bytes of a char or varchar column in a trafodion table.
   TRAF_MAX_CHARACTER_COL_LENGTH,
 
@@ -3803,6 +3805,7 @@ enum DefaultToken {
  DF_MINIMUM,
  DF_MMAP,
  DF_MULTI_NODE,
+ DF_MVCC,
  DF_NONE,
  DF_NSK,
  DF_OFF,
@@ -3832,6 +3835,7 @@ enum DefaultToken {
  DF_SOFTWARE,
  DF_SOURCE,
  DF_SQLMP,
+ DF_SSCC,
  DF_SSD,
  DF_STOP,
  DF_SUFFIX,

@@ -221,19 +221,26 @@ public class HBaseClient {
        return true;
     }
 
-    public boolean create(String tblName, Object[]  colFamNameList) 
+    public boolean create(String tblName, Object[]  colFamNameList,
+                          boolean isMVCC) 
         throws IOException, MasterNotRunningException {
-            if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
-                colDesc.setMaxVersions(1);
+                if (isMVCC)
+                  colDesc.setMaxVersions(DtmConst.MVCC_MAX_VERSION);
+                else
+                  colDesc.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
                 desc.addFamily(colDesc);
             }
             HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            metaColDesc.setMaxVersions(DtmConst.MAX_VERSION * 2);
+            if (isMVCC)
+              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
+            else
+              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
@@ -243,7 +250,8 @@ public class HBaseClient {
    } 
 
    public boolean createk(String tblName, Object[] tableOptions,
-       Object[]  beginEndKeys, long transID, int numSplits, int keyLength)
+       Object[]  beginEndKeys, long transID, int numSplits, int keyLength,
+       boolean isMVCC)
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
@@ -259,9 +267,12 @@ public class HBaseClient {
 			 continue ;
                 switch (i) {
                 case HBASE_MAX_VERSIONS:
-                    if (tableOption.isEmpty())
-                        colDesc.setMaxVersions(1);
-                    else 
+                    if (tableOption.isEmpty()) {
+                      if (isMVCC)
+                        colDesc.setMaxVersions(DtmConst.MVCC_MAX_VERSION);
+                      else
+                        colDesc.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
+                    } else 
                         colDesc.setMaxVersions
                             (Integer.parseInt(tableOption));
                     break ;
@@ -408,7 +419,10 @@ public class HBaseClient {
             }
             desc.addFamily(colDesc);
             HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
-            metaColDesc.setMaxVersions(DtmConst.MAX_VERSION * 2);
+            if (isMVCC)
+              metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
+            else
+              metaColDesc.setMaxVersions(DtmConst.SSCC_MAX_DATA_VERSION);
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
@@ -1226,7 +1240,9 @@ public class HBaseClient {
     }
     HTableDescriptor desc = new HTableDescriptor(tn);
     HColumnDescriptor colDesc = new HColumnDescriptor(famName);
-    colDesc.setMaxVersions(1);
+    // A counter table is non-DTM-transactional.
+    // Use the default maximum versions for MVCC.
+    colDesc.setMaxVersions(DtmConst.MVCC_MAX_VERSION);
     desc.addFamily(colDesc);
     admin.createTable(desc);
     admin.close();

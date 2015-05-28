@@ -516,9 +516,9 @@ public:
   HBulkLoadClient_JNI* getHBulkLoadClient(NAHeap *heap);
   HBC_RetCode releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc);
   HBC_RetCode releaseHTableClient(HTableClient_JNI* htc);
-  HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
+  HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies, NABoolean isMVCC);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
-                     int numSplits, int keyLength, const char** splitValues, Int64 transID);
+                     int numSplits, int keyLength, const char** splitValues, Int64 transID, NABoolean isMVCC);
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
