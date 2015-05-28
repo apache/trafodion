@@ -1,4 +1,0 @@
-[gerrit]
-host=review.trafodion.org
-port=29418
-project=trafodion/phoenix_test.git
