@@ -1,0 +1,99 @@
+<%doc>
+(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+Copyright 2011 The Apache Software Foundation
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</%doc>
+<%args>
+DcsServer server;
+String filter = "general";
+String format = "html";
+</%args>
+<%import>
+java.util.*;
+org.trafodion.dcs.serverna.DcsServer;
+org.trafodion.dcs.util.DcsConfiguration;
+org.trafodion.dcs.Constants;
+org.trafodion.dcs.util.Bytes;
+</%import>
+
+<%java>
+  String metrics = server.getMetrics();
+  int masterInfoPort = server.getConfiguration().getInt("dcs.master.info.port", 40010);
+  int serverInfoPort = server.getConfiguration().getInt("dcs.server.info.port", 40030);
+  String trafodionHome = server.getTrafodionHome();
+  boolean trafodionLogs = server.getConfiguration().getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
+</%java>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
+     See tail of HBASE-2110 for explaination.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<title>Dcs Server: <% server.getServerName() %>:<% server.getInfoServer().getPort() %></title>
+<link rel="stylesheet" type="text/css" href="/static/dcs.css" />
+</head>
+
+<body>
+<h1 id="page_title">DcsServer: <% server.getServerName() %>:<% server.getInfoServer().getPort() %></h1>
+<p id="links_menu">
+  <a href="http://<% server.getMasterHostName() %>:<% masterInfoPort %>">Home</a>,
+  <a href="/logs/">Dcs local logs</a>
+  <%java>
+   if(! trafodionHome.isEmpty()) { 
+     if(trafodionLogs) { 
+  </%java>
+, <a href="/TrafodionLogs/">Trafodion local logs</a>
+  <%java>
+     } 
+   }
+  </%java> 
+</p>
+<hr id="head_rule" />
+
+<h2>Attributes</h2>
+<table id="attributes_table">
+<col style="width: 10%;"/>
+<col />
+<col style="width: 20%;"/>
+<tr><th>Attribute Name</th><th>Value</th><th>Description</th></tr>
+<tr><td>Version</td><td><% org.trafodion.dcs.util.VersionInfo.getVersion() %>, r<% org.trafodion.dcs.util.VersionInfo.getRevision() %></td><td>Version and revision</td></tr>
+<tr><td>Compiled</td><td><% org.trafodion.dcs.util.VersionInfo.getDate() %>, <% org.trafodion.dcs.util.VersionInfo.getUser() %></td><td>When version was compiled and by whom</td></tr>
+<tr><td>Metrics</td><td><% metrics.toString() %></td><td>Server Metrics; heap sizes are in megabytes</td></tr>
+<tr><td>Zookeeper Quorum</td><td><% server.getZKQuorumServersString() %></td><td>Addresses of all registered ZK servers</td></tr>
+<tr><td>Zookeeper Znode</td><td><% server.getZKParentZnode() %></td><td>Parent ZK znode of this cluster</td></tr>
+<tr><td>Start Time</td><td><% new Date(server.getStartTime()) %></td><td>Date/Time when this server was started</td></tr>
+</tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+[gerrit]
+host=review.trafodion.org
+port=29418
+project=trafodion/dcs.git
+defaultbranch=stable/1.0

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="trouble"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+<!-- 
+/**
+  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->         
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+  <title>Troubleshooting and Debugging</title>
+    <section xml:id="trouble.general">
+      <title>General Guidelines</title>
+    </section>
+    <section xml:id="trouble.log">
+      <title>Logs</title>
+      <para>
+      The key process logs are as follows...   (replace &lt;user&gt; with the user that started the service, &lt;instance&gt; for the server instance and &lt;hostname&gt; for the machine name)
+      </para>
+     <para>
+      DcsMaster:  <filename>$DCS_HOME/logs/dcs-&lt;user&gt;-&lt;instance&gt;-master-&lt;hostname&gt;.log</filename>
+      </para>
+      <para>
+      DcsServer:  <filename>$DCS_HOME/logs/dcs-&lt;user&gt;-&lt;instance&gt;-server-&lt;hostname&gt;.log</filename>
+      </para>
+      <para>
+      ZooKeeper:  <filename>$DCS_HOME/logs/dcs-&lt;user&gt;-&lt;instance&gt;-zookeeper-&lt;hostname&gt;.log</filename>
+      </para>
+    </section>
+    <section xml:id="trouble.resources">
+      <title>Resources</title>
+    </section>
+    <section xml:id="trouble.tools">
+      <title>Tools</title>
+         <section xml:id="trouble.tools.builtin">
+           <title>Builtin Tools</title>
+            <section xml:id="trouble.tools.builtin.webmaster">
+              <title>DcsMaster Web Interface</title>
+              <para>The DcsMaster starts a web-interface on port 40010 by default.
+              </para>
+              <para>The DcsMaster web UI lists created DcsServers (e.g., build info, zookeeper quorum, metrics, etc.).  Additionally, 
+              the available DcsServers in the cluster are listed along with selected high-level metrics (listenerRequests, listenerCompletedRequests,
+              totalAvailable/totalConnected/totalConnecting MXOSRVRs, totalHeap, usedHeap, maxHeap, etc).
+              The DcsMaster web UI allows navigation to each DcsServer's web UI.
+              </para>
+            </section>
+            <section xml:id="trouble.tools.builtin.webserver">
+              <title>DcsServer Web Interface</title>
+              <para>DcsServers starts a web-interface on port 40030 by default.
+              </para>
+              <para>The DcsServer web UI lists its server metrics (build info, zookeeper quorum, usedHeap, maxHeap, etc.).
+              </para>
+            </section>
+          <section xml:id="trouble.tools.builtin.zkcli">
+             <title>zkcli</title>
+              <para><code>zkcli</code> is a very useful tool for investigating ZooKeeper-related issues.  To invoke:
+<programlisting>
+./dcs zkcli -server host:port &lt;cmd&gt; &lt;args&gt;
+</programlisting>
+              The commands (and arguments) are:
+<programlisting>
+	connect host:port
+	get path [watch]
+	ls path [watch]
+	set path data [version]
+	delquota [-n|-b] path
+	quit 
+	printwatches on|off
+	create [-s] [-e] path data acl
+	stat path [watch]
+	close 
+	ls2 path [watch]
+	history 
+	listquota path
+	setAcl path acl
+	getAcl path
+	sync path
+	redo cmdno
+	addauth scheme auth
+	delete path [version]
+	setquota -n|-b val path
+</programlisting>
+            </para>
+        </section>
+       </section>
+       <section xml:id="trouble.tools.external">
+          <title>External Tools</title>
+      <section xml:id="trouble.tools.tail">
+        <title>tail</title>
+        <para>
+        <code>tail</code> is the command line tool that lets you look at the end of a file. Add the “-f” option and it will refresh when new data is available. It’s useful when you are wondering what’s happening, for example, when a cluster is taking a long time to shutdown or startup as you can just fire a new terminal and tail the master log (and maybe a few DcsServers).
+        </para>
+      </section>
+      <section xml:id="trouble.tools.top">
+        <title>top</title>
+        <para>         
+        <code>top</code> is probably one of the most important tool when first trying to see what’s running on a machine and how the resources are consumed. Here’s an example from production system:
+        <programlisting>
+top - 14:46:59 up 39 days, 11:55,  1 user,  load average: 3.75, 3.57, 3.84
+Tasks: 309 total,   1 running, 308 sleeping,   0 stopped,   0 zombie
+Cpu(s):  4.5%us,  1.6%sy,  0.0%ni, 91.7%id,  1.4%wa,  0.1%hi,  0.6%si,  0.0%st
+Mem:  24414432k total, 24296956k used,   117476k free,     7196k buffers
+Swap: 16008732k total,	14348k used, 15994384k free, 11106908k cached
+ 
+  PID USER  	PR  NI  VIRT  RES  SHR S %CPU %MEM	TIME+  COMMAND                                                                                                                                                                      
+15558 hadoop	18  -2 3292m 2.4g 3556 S   79 10.4   6523:52 java                                                                                                                                                                          
+13268 hadoop	18  -2 8967m 8.2g 4104 S   21 35.1   5170:30 java                                                                                                                                                                          
+ 8895 hadoop	18  -2 1581m 497m 3420 S   11  2.1   4002:32 java
+…
+        </programlisting>
+        </para>
+        <para>
+        Here we can see that the system load average during the last five minutes is 3.75, which very roughly means that on average 3.75 threads were waiting for CPU time during these 5 minutes.  In general, the “perfect” utilization equals to the number of cores, under that number the machine is under utilized and over that the machine is over utilized.  This is an important concept, see this article to understand it more: <link xlink:href="http://www.linuxjournal.com/article/9001" xlink:show="new">http://www.linuxjournal.com/article/9001</link>.
+        </para>
+        <para>
+        Apart from load, we can see that the system is using almost all its available RAM but most of it is used for the OS cache (which is good). The swap only has a few KBs in it and this is wanted, high numbers would indicate swapping activity which is the nemesis of performance of Java systems. Another way to detect swapping is when the load average goes through the roof (although this could also be caused by things like a dying disk, among others).
+        </para>
+        <para>
+        The list of processes isn’t super useful by default, all we know is that 3 java processes are using about 111% of the CPUs. To know which is which, simply type “c” and each line will be expanded. Typing “1” will give you the detail of how each CPU is used instead of the average for all of them like shown here.
+        </para>
+      </section>
+      <section xml:id="trouble.tools.jps">
+        <title>jps</title>
+        <para>
+        <code>jps</code> is shipped with every JDK and gives the java process ids for the current user (if root, then it gives the ids for all users). Example:
+       </para>
+       </section>
+     </section>
+    </section>
+       
+    <section xml:id="trouble.zookeeper">
+      <title>ZooKeeper</title>
+      <section xml:id="trouble.zookeeper.startup">
+        <title>Startup Errors</title>
+          <section xml:id="trouble.zookeeper.startup.address">
+             <title>Could not find my address: xyz in list of ZooKeeper quorum servers</title>
+             <para>A ZooKeeper server wasn't able to start, throws that error. xyz is the name of your server.</para>
+             <para>This is a name lookup problem. DCS tries to start a ZooKeeper server on some machine but that machine isn't able to find itself in the <varname>dcs.zookeeper.quorum</varname> configuration.  
+             </para>          
+             <para>Use the hostname presented in the error message instead of the value you used. If you have a DNS server, you can set <varname>dcs.zookeeper.dns.interface</varname> and <varname>dcs.zookeeper.dns.nameserver</varname> in <filename>dcs-site.xml</filename> to make sure it resolves to the correct FQDN.   
+             </para>          
+          </section>
+          
+      </section>    
+      <section xml:id="trouble.zookeeper.general">
+          <title>ZooKeeper, The Cluster Canary</title>
+          <para>ZooKeeper is the cluster's "canary in the mineshaft". It'll be the first to notice issues if any so making sure its happy is the short-cut to a humming cluster.
+          </para> 
+          <para>
+          See the <link xlink:href="http://wiki.apache.org/hadoop/ZooKeeper/Troubleshooting" xlink:show="new">ZooKeeper Operating Environment Troubleshooting</link> page. It has suggestions and tools for checking disk and networking performance; i.e. the operating environment your ZooKeeper and DCS are running in.
+          </para>
+         <para>Additionally, the utility <xref linkend="trouble.tools.builtin.zkcli"/> may help investigate ZooKeeper issues.
+         </para>
+      </section>  
+    </section>    
+ </chapter>
