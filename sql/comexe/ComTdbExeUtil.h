@@ -3244,8 +3244,8 @@ public:
   Int32 getMaxErrorRows() const  { return maxErrorRows_; }
 
   void setHasUniqueIndexes(NABoolean v)
-    {(v ? flags2_ |= HAS_UNIQUE_INDEXES : flags2_ &= ~HAS_UNIQUE_INDEXES); };
-  NABoolean getHasUniqueIndexes() { return (flags2_ & HAS_UNIQUE_INDEXES) != 0; };
+    {(v ? flags_ |= HAS_UNIQUE_INDEXES : flags_ &= ~HAS_UNIQUE_INDEXES); };
+  NABoolean getHasUniqueIndexes() { return (flags_ & HAS_UNIQUE_INDEXES) != 0; };
 
 
   // ---------------------------------------------------------------------
@@ -3271,12 +3271,8 @@ private:
     UPSERT_USING_LOAD= 0x1000,
     FORCE_CIF        = 0x2000,
     UPDATE_STATS     = 0x4000,
-    CONTINUE_ON_ERROR= 0x8000
-  };
-
-   enum
-  {
-    HAS_UNIQUE_INDEXES = 0x0001,
+    CONTINUE_ON_ERROR= 0x8000,
+    HAS_UNIQUE_INDEXES= 0x10000
   };
 
   // load stmt
@@ -3286,8 +3282,7 @@ private:
   Int32  maxErrorRows_;                              // 12-15
   NABasicPtr errCountTable_;                         // 16-23
   NABasicPtr loggingLocation_;                       // 24-31
-  UInt32 flags2_;                                    // 32-35
-  char fillersExeUtilHbaseLoad_[4];                  // 36-39
+  char fillersExeUtilHbaseLoad_[8];                  // 32-39
 };
 
 //******************************************************

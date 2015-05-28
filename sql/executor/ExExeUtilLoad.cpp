@@ -1706,6 +1706,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 short ExExeUtilHBaseBulkLoadTcb::setCQDs()
 {
   if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0) { return -1;}
+  // next cqd required to allow load into date/timestamp Traf columns from string Hive columns.
+  // This is a common use case. Cqd can be removed when Traf hive access supports more Hive types.
   if (holdAndSetCQD("ALLOW_INCOMPATIBLE_ASSIGNMENT", "ON") < 0) { return -1;}
   if (hblTdb().getForceCIF())
   {

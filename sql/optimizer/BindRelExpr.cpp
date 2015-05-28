@@ -9519,15 +9519,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
      if (bulkLoadIndex) {
        setRETDesc(child(0)->getRETDesc());
-       /*ValueIdList outputs;
-       getRETDesc()->getValueIdList(outputs, USER_AND_SYSTEM_COLUMNS);
-       ValueIdSet potentialOutputs;
-       getPotentialOutputValues(potentialOutputs);
-       potentialOutputs.insertList(outputs); 
-       setPotentialOutputValues(potentialOutputs);
-       // this flag is set to indicate optimizer not to pick the
-       // TupleFlow operator
-       setNoFlow(TRUE); */
       } 
 
     for (i = 0; i < tgtColList.entries() && i2 < newTgtColList.entries(); i++) {

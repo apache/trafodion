@@ -1821,35 +1821,19 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
       return;
     }
 
-  if (allUniquesOnly) {
-    str_sprintf(buf,
-                " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
-                " where object_uid in ( select i.index_uid from "       \
-                " %s.\"%s\".%s i "                                      \
-                " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
-                " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s' " \
-                " AND i.is_unique = 1 ) " \
+  str_sprintf(buf,
+              " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
+              " where object_uid in ( select i.index_uid from "         \
+              " %s.\"%s\".%s i "                                        \
+              " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
+              " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s' " \
+              " %s "                                                    \
                 " and object_type='IX' ; ",
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data()  //table name in this case
-                );
-  }
-  else {
-    str_sprintf(buf,
-                " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
-                " where object_uid in ( select i.index_uid from "       \
-                " %s.\"%s\".%s i "                                      \
-                " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
-                " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s') " \
-                " and object_type='IX' ; ",
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data()  //table name in this case
-                );
-  }
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data(),  //table name in this case
+              allUniquesOnly ? " AND is_unique = 1 )" : ")" );
 
   Queue * indexes = NULL;
   cliRC = cliInterface.fetchAllRows(indexes, buf, 0, FALSE, FALSE, TRUE);
