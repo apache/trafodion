@@ -1,0 +1,125 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#==========================================
+#  Install REST server on a Trafodion cluster
+#==========================================
+
+function print_usage {
+cat << EOF
+This script will install/configure the Trafodion REST server.
+While this script can be run manually, it is normally
+executed from the Trafodion installer.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                    Print this message and exit.
+    --rest_build <file>       Path to the REST build tar file.
+    --rest_install_path <dir> Path to the install directory. (defaults to $MY_SQROOT)
+EOF
+}
+
+# Default parameters
+typeset REST_BUILD_FILE=""
+typeset REST_INSTALL_PATH="$MY_SQROOT"
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --rest_build)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            REST_BUILD_FILE=$2
+            shift
+            ;;
+        --rest_install_path)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            REST_INSTALL_PATH=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            ;;
+        *)
+            print_usage
+            exit -1
+  esac
+  shift
+done
+
+echo "***INFO: Start of REST Server install"
+
+# Make sure required env vars have been set first
+if [[ -z "$MY_SQROOT" ]]; then
+    echo "***ERROR: environment variable MY_SQROOT has no value."
+    exit -1
+fi
+if [[ -z "$NODE_LIST" ]]; then
+    echo "***ERROR: environment variable NODE_LIST has no value."
+    exit -1
+fi
+
+# create install directory
+mkdir -p $REST_INSTALL_PATH
+cd $REST_INSTALL_PATH
+
+# untar REST build into install directory
+echo "***INFO: untarring build file $REST_BUILD_FILE"
+tar -xzf $REST_BUILD_FILE
+
+# get the REST install directory name which is imbedded in the tar file
+REST_DIR=$(tar -tf $REST_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@")
+REST_DIR=$REST_INSTALL_PATH/$REST_DIR
+
+# set env var in sqenvcom.sh for DCS install directory
+grep --invert-match "REST_INSTALL_DIR=" $MY_SQROOT/sqenvcom.sh > $MY_SQROOT/sqenvcom.temp
+echo "export REST_INSTALL_DIR=$REST_DIR" >> $MY_SQROOT/sqenvcom.temp
+mv $MY_SQROOT/sqenvcom.temp $MY_SQROOT/sqenvcom.sh
+
+cd $REST_DIR/conf
+
+echo "***INFO: modifying $REST_DIR/conf/rest-site.xml"
+# get zookeeper quorum
+
+if [ "$node_count" -ne "1" ]; then
+   lineNumber=$(grep -n "zookeeper\.quorum" /etc/hbase/conf/hbase-site.xml | sed 's/\:.*//')
+   lineNumber=$((lineNumber+1))
+
+   ZOOKEEPER_NODES=`sed "$lineNumber!d" /etc/hbase/conf/hbase-site.xml | sed 's/\/value.*//' | sed 's/.*>//' | sed 's/.$//'`
+else
+   ZOOKEEPER_NODES=$(hostname -s)   
+fi
+
+# add zookeeper quorum property to end of configuration
+rm rest-site.temp 2>/dev/null
+cat rest-site.xml | sed -e "s@</configuration>@  <property>\n    <name>rest.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n </configuration>@" > rest-site.temp
+cp rest-site.temp rest-site.xml
+rm rest-site.temp 2>/dev/null
+
+echo "***INFO: End of REST Server install."
+
