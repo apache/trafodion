@@ -2055,7 +2055,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 				// Send query end message
-				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+				if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			else { // non unique select error condition 
@@ -2075,7 +2075,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 				// Send query end message
-				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+				if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			/* *flag_21036 = false; */
@@ -2103,7 +2103,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
     	EXEC_OVERFLOW execOverflow = { 0 };
 		memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 		// Send query end message
-		if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+		if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 			SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 
 		/* *flag_21036 = false; */
