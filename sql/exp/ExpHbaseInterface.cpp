@@ -535,6 +535,29 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 }
 
 //----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
+				   NAText * hbaseCreateOptionsArray,
+                                   NABoolean noXn)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+  
+  Int64 transID = 0;
+  if (!noXn)
+    transID = getTransactionIDFromContext();
+ 
+  retCode_ = client_->alter(tblName.val, hbaseCreateOptionsArray, transID);
+
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_ALTER_ERROR;
+}
+
+//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn)
 {
   if (client_ == NULL)

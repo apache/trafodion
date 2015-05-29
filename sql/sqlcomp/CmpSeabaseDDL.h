@@ -432,6 +432,11 @@ class CmpSeabaseDDL
                                              const NAString &schName,
                                              const NAString &objName);
 
+  // note: this function expects hbaseCreateOptionsArray to have
+  // HBASE_MAX_OPTIONS elements
+  short generateHbaseOptionsArray(NAText * hbaseCreateOptionsArray,
+    NAList<HbaseCreateOption*> * hbaseCreateOptions);
+
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
 			 const char * cf1, const char * cf2, const char * cf3,
@@ -440,7 +445,11 @@ class CmpSeabaseDDL
                          const int keyLength = 0,
                          char **encodedKeysBuffer = NULL,
 			 NABoolean doRetry = TRUE);
-  
+
+  short alterHbaseTable(ExpHbaseInterface *ehi,
+                        HbaseStr *table,
+                        NAList<HbaseCreateOption*> * hbaseCreateOptions);
+
   short dropHbaseTable(ExpHbaseInterface *ehi, 
 		       HbaseStr *table, NABoolean asyncDrop = FALSE);
 
