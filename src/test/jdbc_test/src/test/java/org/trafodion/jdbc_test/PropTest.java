@@ -1,0 +1,51 @@
+/*
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+*/
+
+import java.sql.*;
+import java.util.*;
+import java.io.*;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+
+/*  The test case is added for bug #1452993;
+ *  T2 don't read the property file from System Properties but T4 do it.
+ *
+ *  The test need run with a property file, like t2prop.
+ *  java -Dprop=t2prop PropTes
+ */
+public class PropTest
+{
+    @Test
+    public void  testDefaultPropertiesConnection() throws SQLException {
+        Connection conn = null;
+        try {
+            // The option -Dproperties=propFile can be used to instead of System.setProperty()
+            System.setProperty("properties", System.getProperty("hpjdbc.properties"));
+
+            conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
+            System.out.println("Catalog : " + conn.getCatalog());
+            assertEquals("Catalog should be the same as the properties file defined",Utils.catalog, conn.getCatalog());
+            System.out.println("testDefaultPropertiesConnection : PASS");
+        }
+        catch (Exception e) {
+        }
+    }
+}
