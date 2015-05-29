@@ -1,0 +1,490 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------
+?section createAll
+    obey ./TPCD/CREATEMVS(MV1);
+    obey ./TPCD/CREATEMVS(MV3);
+    obey ./TPCD/CREATEMVS(MV5);
+    obey ./TPCD/CREATEMVS(MV6);
+    obey ./TPCD/CREATEMVS(MV7);
+    obey ./TPCD/CREATEMVS(MV9);
+    obey ./TPCD/CREATEMVS(MV10);
+    obey ./TPCD/CREATEMVS(MV11);
+    obey ./TPCD/CREATEMVS(MV12);
+    obey ./TPCD/CREATEMVS(MV15);
+    obey ./TPCD/CREATEMVS(MV17);	
+    obey ./TPCD/CREATEMVS(MV67);
+
+-------------------------
+?section mv1
+### Q1: Single table MAV.
+create mv mv4q1
+  refresh on request
+  initialized on refresh
+  as 
+     SELECT     l_returnflag,
+	        l_linestatus,
+	        sum(l_quantity) as sum_qty,
+	        sum(l_extendedprice) as sum_base_price,
+	        sum( l_extendedprice * (1-l_discount)) as sum_disc_price,
+	        sum(l_extendedprice * (1-l_discount) * (1 + l_tax) )as sum_charge,
+	        avg(l_quantity) as avg_qty,
+	        avg(l_extendedprice) as avg_price,
+	        avg(l_discount) as avg_disc,
+	        count(*) as count_order
+     FROM       lineitem
+     WHERE      l_shipdate <= date '1998-12-01' - interval '90' day
+     GROUP BY l_returnflag, l_linestatus;
+
+-------------------------
+?section mv3
+### Q3: 3-way MAJV. 
+create mv mv4q3
+  refresh on request
+  initialized on refresh
+    as
+       SELECT   l_orderkey, 
+                cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
+                o_orderdate, 
+                o_shippriority
+       FROM     customer,orders,lineitem
+       WHERE    c_mktsegment = 'BUILDING'
+	 AND    c_custkey = o_custkey
+	 AND    l_orderkey = o_orderkey
+	 AND    o_orderdate < date '1995-03-15'
+	 AND    l_shipdate >  date '1995-03-15'
+    GROUP BY    l_orderkey, 
+    		o_orderdate, 
+    		o_shippriority;
+    
+
+-------------------------
+?section mv5
+create mv mv4q5
+  refresh on request 
+  initialize on create
+  as
+  SELECT	n_name, 
+  		sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+  FROM		customer,
+  		orders,
+  		lineitem,
+  		supplier,
+  		nation, 
+  		region
+  WHERE		c_custkey = o_custkey
+    AND    o_orderkey = l_orderkey
+    AND    l_suppkey = s_suppkey
+    AND    c_nationkey= s_nationkey
+    AND    s_nationkey = n_nationkey
+    AND    n_regionkey = r_regionkey
+    AND    r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+    AND    o_orderdate >= date '1994-01-01'
+    AND    o_orderdate < date '1994-01-01' + interval '3' year
+  GROUP BY n_name;
+
+-------------------------
+?section mv6
+create mv mv4q6
+    refresh on request
+initialized on refresh
+    as
+    select
+       l_shipdate,
+       cast(sum(l_extendedprice*l_discount)as numeric(18,2)) as revenue
+    from lineitem
+    where 
+        l_shipdate >= date '1994-01-01'
+        and l_shipdate < date '1994-01-01' + interval '1' year
+        and l_discount between .06 - 0.01 and .06 + 0.01
+        and l_quantity < 24
+    group by l_shipdate;
+ALTER MV mv4q6 attribute all mvs allowed;
+
+-------------------------
+?section mv7
+create mv mv4q7
+    refresh on request
+initialized on refresh
+    as
+    select 
+        supp_nation, cust_nation, yr -- , sum(volume) as revenue
+    from
+        (select
+             n1.n_name as supp_nation,
+             n2.n_name as cust_nation,
+             extract (year from l_shipdate) as yr,
+             l_extendedprice*(1-l_discount) as volume
+         from supplier,lineitem,orders,customer, nation n1, nation n2
+         where 
+             s_suppkey = l_suppkey
+             and o_orderkey = l_orderkey
+             and c_custkey = o_custkey
+             and s_nationkey = n1.n_nationkey
+             and c_nationkey = n2.n_nationkey
+             and 
+             (n1.n_name  = 'FRANCE' and 
+             n2.n_name = 'GERMANY')
+--             or
+--             (n1.n_name = 'GERMANY'  and
+--             n2.n_name = 'FRANCE'))
+             and l_shipdate between 
+             date '1995-01-01' and date '1996-12-31'
+        ) as shipping
+    group by supp_nation, cust_nation, yr;
+ALTER MV mv4q7 attribute all mvs allowed;
+
+
+-------------------------
+?section mv9
+create mv mv4q9 
+    refresh on request 
+initialized on refresh
+    as
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr;
+ALTER MV mv4q9 attribute all mvs allowed;
+
+-------------------------
+?section mv10
+create mv mv4q10
+    refresh on request
+initialized on refresh
+    as
+    select 
+        c_custkey, c_name,
+        cast (sum(l_extendedprice*(1-l_discount)) 
+        as numeric(18,2)) as revenue,
+        c_acctbal,  n_name, c_address, c_phone, c_comment
+    from customer,orders,lineitem, nation
+    where 
+        c_custkey = o_custkey
+        and l_orderkey = o_orderkey
+        and o_orderdate >= date '1993-10-01'
+        and o_orderdate < date '1993-10-01' + interval '3' month
+        and l_returnflag = 'R'
+        and c_nationkey = n_nationkey
+    group by c_custkey, c_name, c_acctbal, c_phone, n_name,
+        c_address, c_comment;
+ALTER MV mv4q10 attribute all mvs allowed;
+    
+
+-------------------------
+?section mv11
+create mv mv4q11
+    refresh on request
+initialized on refresh
+    as
+    select
+        ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
+    from partsupp,supplier,nation
+    where ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'GERMANY'
+    group by ps_partkey;
+ALTER MV mv4q11 attribute all mvs allowed;
+    
+
+-------------------------
+?section mv12
+create mv mv4q12
+    refresh on request
+initialized on refresh
+    as
+    select
+        l_shipmode, 
+        sum (case when o_orderpriority ='1-URGENT'
+        or o_orderpriority ='2-HIGH'
+        then 1 else 0 end) as high_line_count,
+        sum (case when o_orderpriority <> '1-URGENT'
+        and o_orderpriority <> '2-HIGH'
+        then 1 else 0 end) as low_line_count
+    from orders,lineitem
+    where 
+        o_orderkey = l_orderkey
+        and l_shipmode in ('MAIL','SHIP')
+        and l_commitdate < l_receiptdate
+        and l_shipdate < l_commitdate
+        and l_receiptdate >= date '1994-01-01'
+        and l_receiptdate < date '1994-01-01' + interval '1' year
+    group by l_shipmode;
+ALTER MV mv4q12 attribute all mvs allowed;
+    
+
+-------------------------
+?section mv15
+create mv mv4q15
+    refresh on request
+initialized on refresh
+    as
+    select
+        l_suppkey , sum(l_extendedprice * (1-l_discount)) as total
+    from lineitem
+    where
+        l_shipdate >= date '1996-01-01'
+        and l_shipdate < date '1996-01-01' + interval '3' month
+    group by l_suppkey;
+ALTER MV mv4q15 attribute all mvs allowed;
+
+
+-------------------------
+?section mv17
+create mv mv4q17
+	refresh on request
+initialized on refresh
+ 	as
+	select  	orders.o_custkey , 
+			sum ( orders.o_totalprice) sum_price ,
+			sum ( lineitem.l_quantity) quantity ,
+			sum (lineitem.l_discount) discount,
+			min(orders.o_orderdate) orderdate,
+			count(*) cnt
+	from orders,lineitem
+	where orders.o_orderkey = lineitem.l_orderkey          
+	group by orders.o_custkey ;
+ALTER MV mv4q17 attribute all mvs allowed;
+
+	
+-------------------------
+?section mv67
+create mv mv4q67
+    refresh on request
+initialized on refresh
+    as
+    select
+    ps_suppkey,
+    sum(ps_supplycost*ps_availqty) as total
+    from cat3.details.partsupp,
+         cat3.details.supplier,
+         cat3.geography.nation
+    where 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'GERMANY'
+    group by ps_suppkey;
+ALTER MV mv4q67 attribute all mvs allowed;
+
+-------------------------
+
+
+?section dropAll
+drop mv cat3.testing.mv4q67;
+drop mv mv4q17;
+drop mv mv4q15;
+drop mv mv4q12;
+drop mv mv4q11;
+drop mv mv4q10;
+drop mv mv4q9;
+drop mv mv4q7;
+drop mv mv4q6;
+drop mv mv4q5;
+drop mv mv4q3;
+drop mv mv4q1;
+
+
+--------------------------
+?section not_incremental
+
+create mv mv4q8
+    refresh on request
+initialized on refresh
+    as
+    select 
+        yr, sum(case when nat = 'BRAZIL' then volume else 0 end)
+        /sum(volume) as mkt_share
+    from
+        (select
+             extract(year from o_orderdate) as yr,
+             l_extendedprice*(1-l_discount) as volume,
+             n2.n_name as nat
+         from part,supplier,lineitem,orders,customer,
+             nation n1, nation  n2, region
+         where 
+             p_partkey = l_partkey
+             and s_suppkey = l_suppkey
+             and l_orderkey = o_orderkey
+             and o_custkey = c_custkey
+             and c_nationkey = n1.n_nationkey
+             and n1.n_regionkey = r_regionkey
+             and r_name = 'AMERICA'
+             and s_nationkey = n2.n_nationkey
+             and o_orderdate between date '1995-01-01' and date '1996-12-31'
+             and p_type ='ECONOMY ANODIZED STEEL'
+        ) as all_nations
+    group by yr;
+ALTER MV mv4q8 attribute all mvs allowed;
+    
+    
+
+create mv mv4q14
+    refresh on request
+initialized on refresh
+    as
+    select l_shipdate,
+        100.00 * sum(
+        case when p_type like 'PROMO%'
+        then cast((l_extendedprice*(1-l_discount)) as numeric(18,3))
+        else 0 end)
+        / cast(sum((l_extendedprice*(1-l_discount))) as numeric(18,3))
+        as promo_revenue
+    from lineitem, part
+    where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-09-01'
+        and l_shipdate < date '1995-09-01' + interval '1' month
+    group by l_shipdate;
+ALTER MV mv4q14 attribute all mvs allowed;
+
+
+create mv mv4q19
+    refresh on request
+initialized on refresh
+    as
+    select 
+        sum(l_extendedprice* (1 - l_discount) )  as revenue
+    from lineitem, part
+    where 
+        (p_partkey = l_partkey
+        and p_brand = 'Brand#12'
+        and p_container in  ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+        and l_quantity >= 1 and l_quantity <= 1 + 10
+        and p_size between 1 and 5
+        and l_shipmode in ('AIR', 'AIR REG')
+        and l_shipinstruct = 'DELIVER IN PERSON' )
+        or   (p_partkey = l_partkey
+        and p_brand = 'Brand#23'
+        and p_container in  ('MED BAG', 'MED BOX', 'MED PKG', 'MED PAK')
+        and l_quantity >= 10 and l_quantity <= 10 + 10
+        and p_size between 1  and 10
+        and l_shipmode in ('AIR', 'AIR REG')
+        and l_shipinstruct = 'DELIVER IN PERSON')
+        or   (p_partkey = l_partkey
+        and p_brand = 'Brand#34'
+        and p_container in  ( 'LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+        and l_quantity >= 20 and l_quantity <= 20 + 10
+        and p_size between 1  and 15
+        and l_shipmode in ('AIR', 'AIR REG')
+        and l_shipinstruct = 'DELIVER IN PERSON')
+     group by p_partkey;
+ALTER MV mv4q19 attribute all mvs allowed;
+
+create mv mv4q19xp
+    refresh on request
+initialized on refresh
+    as
+    select sum(l_extendedprice* (1 - l_discount) )  as revenue
+      from lineitem, part
+      where
+       l_shipmode in ('AIR', 'AIR REG') and
+       l_shipinstruct = 'DELIVER IN PERSON' and
+       p_brand in ('Brand#12', 'Brand#23', 'Brand#34') and
+       p_size between 1 and 15 and
+       p_container in  ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG' ,
+               'MED BAG', 'MED BOX', 'MED PKG', 'MED PAK',
+               'LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+      and (
+        (p_partkey = l_partkey
+        and p_brand = 'Brand#12'
+        and p_container in  ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+        and l_quantity >= 1 and l_quantity <= 1 + 10
+        and p_size between 1 and 5
+        )
+      or   (p_partkey = l_partkey
+        and p_brand = 'Brand#23'
+        and p_container in  ('MED BAG', 'MED BOX', 'MED PKG', 'MED PAK')
+        and l_quantity >= 10 and l_quantity <= 10 + 10
+        and p_size between 1  and 10
+        )
+      or   (p_partkey = l_partkey
+        and p_brand = 'Brand#34'
+        and p_container in  ( 'LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+        and l_quantity >= 20 and l_quantity <= 20 + 10
+        and p_size between 1  and 15
+        )
+       )
+     group by p_container;
+ALTER MV mv4q19xp attribute all mvs allowed;
+
+create mv mv4q66
+    refresh on request
+initialized on refresh
+    as
+    SELECT MAX(total_revenue) as maximum
+    FROM supplier, (SELECT l_suppkey, sum(l_extendedprice * (1-l_discount))
+                    FROM lineitem
+                    WHERE l_shipdate >=  DATE '1996-01-01'
+                    AND l_shipdate <  DATE '1996-01-01' + INTERVAL '3' MONTH
+                    GROUP BY l_suppkey) revenue(supplier_no, total_revenue)
+    WHERE s_suppkey = supplier_no;
+ALTER MV mv4q66 attribute all mvs allowed;
+
+
+----------------------------------------------------
+
+?section not_supported_mvs
+showshape
+select
+    ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
+from partsupp,supplier,nation
+where ps_suppkey = s_suppkey
+    and s_nationkey = n_nationkey
+    and n_name = 'GERMANY'
+group by ps_partkey
+having sum(ps_supplycost*ps_availqty) >
+    (select
+        sum(ps_supplycost*ps_availqty) * 0.000001 -- should be .0001/SF.  
+                                      -- Now set for SF 100.
+     from partsupp,supplier,nation
+     where 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'GERMANY'
+    )
+order by pvalue desc;
+
+-- This one has a LOJ
+create mv mv4q13
+    refresh on request 
+initialized on refresh
+    as
+    select
+        c_count, count(*) as custdist 
+    from 
+        (select c_custkey,count(o_orderkey) 
+         from customer 
+         left outer join orders on 
+             c_custkey = o_custkey
+             and o_comment not like '%special%requests%'
+          group by c_custkey
+         ) as c_orders (c_custkey,c_count)
+    group by c_count;
+ALTER MV mv4q13 attribute all mvs allowed;

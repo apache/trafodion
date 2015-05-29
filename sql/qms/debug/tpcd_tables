@@ -1,0 +1,129 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+drop schema cat.tpcd cascade;
+create schema cat.tpcd;
+set schema CAT.TPCD;
+
+insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+  (attribute, attr_value) values ('MVQR_REWRITE_LEVEL', '1');
+insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+  (attribute, attr_value) values ('MVQR_REWRITE_ENABLED_OPTION', 'ON');
+insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+  (attribute, attr_value) values ('QUERY_TEXT_CACHE', 'OFF');
+
+-- ******************************************************************
+-- * Create the tables                                              *
+-- ******************************************************************
+control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT 'ON';
+
+Create table region  (
+   r_regionkey         int                not null not droppable, 
+   r_name              char(25)           not null not droppable, 
+   r_comment           varchar(152)       not null not droppable, 
+primary key (r_regionkey) not droppable) 
+store by primary key;
+
+Create table nation  (
+   n_nationkey         int                not null not droppable, 
+   n_regionkey         int                not null not droppable references region(r_regionkey),
+   n_name              char(25)           not null not droppable, 
+   n_comment           varchar(152)       not null not droppable, 
+primary key (n_nationkey) not droppable) 
+store by primary key;
+
+Create table customer  (
+   c_custkey           int                not null not droppable, 
+   c_nationkey         int                not null not droppable references nation(n_nationkey),
+   c_acctbal           numeric(12,2)      not null not droppable, 
+   c_phone             char(15)           not null not droppable, 
+   c_mktsegment        char(10)           not null not droppable, 
+   c_name              varchar(25)        not null not droppable, 
+   c_address           varchar(40)        not null not droppable, 
+   c_comment           varchar(117)       not null not droppable, 
+primary key (c_custkey) not droppable)
+store by primary key;
+
+Create table supplier  (
+   s_suppkey           int                not null not droppable, 
+   s_nationkey         int                not null not droppable references nation(n_nationkey),
+   s_acctbal           numeric(12,2)      not null not droppable, 
+   s_phone             char(15)           not null not droppable, 
+   s_name              char(25)           not null not droppable, 
+   s_address           varchar(40)        not null not droppable, 
+   s_comment           varchar(101)       not null not droppable, 
+primary key (s_suppkey) not droppable) 
+store by primary key;
+
+Create table orders  (
+   o_orderkey          int                not null not droppable, 
+   o_custkey           int                not null not droppable references customer(c_custkey),
+   o_shippriority      int                not null not droppable, 
+   o_totalprice        numeric(12,2)      not null not droppable, 
+   o_orderdate         date               not null not droppable, 
+   o_orderstatus       char(1)            not null not droppable, 
+   o_orderpriority     char(15)           not null not droppable, 
+   o_clerk             char(15)           not null not droppable, 
+   o_comment           varchar(79)        not null not droppable, 
+primary key (o_orderkey) not droppable) 
+store by primary key;
+
+Create table part  (
+   p_partkey           int                not null not droppable, 
+   p_size              int                not null not droppable, 
+   p_retailprice       numeric(12,2)      not null not droppable, 
+   p_mfgr              char(25)           not null not droppable, 
+   p_brand             char(10)           not null not droppable, 
+   p_container         char(10)           not null not droppable, 
+   p_name              varchar(55)        not null not droppable, 
+   p_type              varchar(25)        not null not droppable, 
+   p_comment           varchar(23)        not null not droppable, 
+primary key (p_partkey) not droppable) 
+store by primary key;
+
+Create table partsupp  (
+   ps_partkey          int                not null not droppable references part(p_partkey),
+   ps_suppkey          int                not null not droppable references supplier(s_suppkey),
+   ps_availqty         int                not null not droppable, 
+   ps_supplycost       numeric(12,2)      not null not droppable, 
+   ps_comment          varchar(199)       not null not droppable, 
+primary key (ps_partkey,ps_suppkey) not droppable) 
+store by primary key;
+
+Create table lineitem  (
+   l_orderkey          int                not null not droppable references orders(o_orderkey),
+   l_linenumber        int                not null not droppable,
+   l_partkey           int                not null not droppable, -- => partsupp 
+   l_suppkey           int                not null not droppable, -- => partsupp
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key;
+
+alter table lineitem
+  add foreign key (l_partkey, l_suppkey) references partsupp(ps_partkey, ps_suppkey);
+

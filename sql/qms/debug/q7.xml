@@ -1,0 +1,183 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<Query>
+  <Version>
+    1.0
+  </Version>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T6' TS='212080889792338178'>
+          CAT.TPCD.CUSTOMER
+        </Table>
+        <Table id='T4' TS='212080889792338178'>
+          CAT.TPCD.LINEITEM
+        </Table>
+        <Table id='T2' TS='212080889792338178'>
+          CAT.TPCD.NATION
+        </Table>
+        <Table id='T5' TS='212080889792338178'>
+          CAT.TPCD.ORDERS
+        </Table>
+        <Table id='T1' TS='212080889792338178'>
+          CAT.TPCD.REGION
+        </Table>
+        <Table id='T3' TS='212080889792338178'>
+          CAT.TPCD.SUPPLIER
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J1'>
+          <Column id='C1' tableId='T6' sqlType='INTEGER SIGNED NO NULLS'>
+            C_CUSTKEY
+          </Column>
+          <Column id='C35' tableId='T5' sqlType='INTEGER SIGNED NO NULLS'>
+            O_CUSTKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J2'>
+          <Column id='C2' tableId='T6' sqlType='INTEGER SIGNED NO NULLS'>
+            C_NATIONKEY
+          </Column>
+          <Column id='C167' tableId='T2' sqlType='INTEGER SIGNED NO NULLS'>
+            N_NATIONKEY
+          </Column>
+          <Column id='C139' tableId='T3' sqlType='INTEGER SIGNED NO NULLS'>
+            S_NATIONKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J34'>
+          <Column id='C71' tableId='T4' sqlType='INTEGER SIGNED NO NULLS'>
+            L_ORDERKEY
+          </Column>
+          <Column id='C34' tableId='T5' sqlType='INTEGER SIGNED NO NULLS'>
+            O_ORDERKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J74'>
+          <Column id='C74' tableId='T4' sqlType='INTEGER SIGNED NO NULLS'>
+            L_SUPPKEY
+          </Column>
+          <Column id='C138' tableId='T3' sqlType='INTEGER SIGNED NO NULLS'>
+            S_SUPPKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J168'>
+          <Column id='C168' tableId='T2' sqlType='INTEGER SIGNED NO NULLS'>
+            N_REGIONKEY
+          </Column>
+          <Column id='C184' tableId='T1' sqlType='INTEGER SIGNED NO NULLS'>
+            R_REGIONKEY
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <RangePredList>
+        <Range id='R185'>
+          <Column id='C185' tableId='T1' sqlType='CHAR(25) CHARACTER SET ISO88591 NO NULLS'>
+            R_NAME
+          </Column>
+          <OpEQ>
+            <StringVal>
+              AFRICA
+            </StringVal>
+            <StringVal>
+              AMERICA
+            </StringVal>
+            <StringVal>
+              ASIA
+            </StringVal>
+            <StringVal>
+              EUROPE
+            </StringVal>
+            <StringVal>
+              MIDDLE EAST
+            </StringVal>
+          </OpEQ>
+        </Range>
+      </RangePredList>
+      <ResidualPredList>
+        <Residual id='D216'>
+          <PredicateText>
+            <![CDATA[(@A1 >=  DATE '1994-01-01')]]>
+          </PredicateText>
+          <Column id='C38' tableId='T5' sqlType='DATE NO NULLS'>
+            O_ORDERDATE
+          </Column>
+        </Residual>
+        <Residual id='D219'>
+          <PredicateText>
+            <![CDATA[(@A1 <  DATE '1997-01-01')]]>
+          </PredicateText>
+          <Column ref='C38'>
+          </Column>
+        </Residual>
+      </ResidualPredList>
+      <GroupBy>
+        <Column id='C169' tableId='T2' sqlType='CHAR(25) CHARACTER SET ISO88591 NO NULLS'>
+          N_NAME
+        </Column>
+      </GroupBy>
+    </Hub>
+    <ExtraHub>
+      <GroupBy>
+      </GroupBy>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O223'>
+        <Expr id='X223'>
+          <![CDATA[sum((@A1 * (1 - @A2)))]]>
+          <UnhandledItem id='S223' op='sum'>
+            <BinaryOper id='S222' op='*'>
+              <Column ref='C76'>
+              </Column>
+              <BinaryOper id='S221' op='-'>
+                <NumericVal scale='0'>
+                  1
+                </NumericVal>
+                <Column ref='C77'>
+                </Column>
+              </BinaryOper>
+            </BinaryOper>
+          </UnhandledItem>
+          <Input>
+            <Column id='C76' tableId='T4' sqlType='NUMERIC(12,2) SIGNED NO NULLS'>
+              L_EXTENDEDPRICE
+            </Column>
+            <Column id='C77' tableId='T4' sqlType='NUMERIC(12,2) SIGNED NO NULLS'>
+              L_DISCOUNT
+            </Column>
+          </Input>
+        </Expr>
+      </Output>
+      <Output id='O225'>
+        <Expr id='X225'>
+          <![CDATA[count(1 )]]>
+          <UnhandledItem id='S225' op='count'>
+            <NumericVal scale='0'>
+              1
+            </NumericVal>
+          </UnhandledItem>
+        </Expr>
+      </Output>
+      <Output id='O362'>
+        <Column ref='C169'>
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</Query>

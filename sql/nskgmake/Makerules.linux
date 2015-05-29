@@ -8,7 +8,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -144,11 +144,11 @@ EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv mxlobsrvr sscp ssmp
 # These are built as archive libraries, such as liboptimizer.a
 
 # SS LIBS := anparse sqlcomp ustat sqlcat parser optimizer generator \
-	tdm_sqllangman arkcmplib qmscommon
+	tdm_sqllangman arkcmplib qmscommon qms
 
 # SS eliminating static libs
 #LIBS := optimizer generator sqlcomp arkcmplib parser ustat \
-	sqlcat tdm_sqllangman qmscommon \
+	sqlcat tdm_sqllangman qmscommon qms \
         LLVMScalarOpts LLVMInstCombine LLVMTransformUtils LLVMTableGen LLVMVectorize \
         LLVMipo LLVMipa LLVMInstrumentation LLVMBitWriter LLVMBitReader LLVMAsmParser \
         LLVMArchive LLVMX86CodeGen LLVMX86Utils LLVMCore LLVMX86Info LLVMX86Disassembler \
@@ -173,6 +173,8 @@ DLLS := comexe common executor sort sqlmsg \
 
 DLLS += sqlcomp ustat sqlcat parser optimizer generator \
 	tdm_sqllangman arkcmplib qmscommon
+#DLLS += sqlcomp ustat sqlcat parser optimizer generator \
+#	tdm_sqllangman arkcmplib qmscommon qms
 
 
 # SqlCompilerDebugger should be build after other components

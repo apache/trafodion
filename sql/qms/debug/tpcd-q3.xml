@@ -1,0 +1,105 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<!-- TPCD Query 3                                                                   -->
+<!-- (Default schema is NEO.TPCD)                                                   -->
+<!--                                                                                -->
+<!-- SELECT  l_orderkey,                                                            -->
+<!--         cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue, -->
+<!--         o_orderdate,                                                           -->
+<!--         o_shippriority                                                         -->
+<!-- FROM    customer,                                                              -->
+<!--         orders,                                                                -->
+<!--         lineitem                                                               -->
+<!-- WHERE   c_custkey = o_custkey                                                  -->
+<!--   AND   l_orderkey = o_orderkey                                                -->
+<!--   AND   c_mktsegment = 'BUILDING'                                              -->
+<!--   AND   o_orderdate < date '1995-03-15'                                        -->
+<!--   AND   l_shipdate >  date '1995-03-15'                                        -->
+<!-- GROUP BY  l_orderkey,                                                          -->
+<!--           o_orderdate,                                                         -->
+<!--           o_shippriority;                                                      -->
+<!--                                                                                -->
+<Query>
+    <Version>1.0</Version>
+    <JBB id='B1'>
+      <Hub>
+        <JBBCList>
+          <Table id='T1' TS='2007-09-22 10:30:45'>NEO.TPCD.CUSTOMER</Table>
+          <Table id='T3' TS='2007-09-22 10:30:45'>NEO.TPCD.LINEITEM</Table>
+          <Table id='T2' TS='2007-09-22 10:30:45'>NEO.TPCD.ORDERS</Table>
+        </JBBCList>
+        <JoinPredList>
+          <JoinPred id="J1">
+            <Column id="C1" tableId="T1">C_CUSTKEY</Column>
+            <Column id="C2" tableId="T2">O_CUSTKEY</Column>
+          </JoinPred>
+          <JoinPred id="J2">
+            <Column id="C3" tableId="T3">L_ORDERKEY</Column>
+            <Column id="C4" tableId="T2">O_ORDERKEY</Column>
+          </JoinPred>
+        </JoinPredList>
+        <RangePredList>
+          <Range id="R1">
+            <Column id="C12" tableId="T1">C_MKTSEGMENT</Column>
+            <OpEQ>
+              <StringVal>BUILDING</StringVal>
+            </OpEQ>
+          </Range>
+          <Range id="R2">
+            <Column id="C13" tableId="T2">O_ORDERDATE</Column>
+            <OpGT>
+              <StringVal>1995-03-15</StringVal>
+            </OpGT>            
+          </Range>
+          <Range id="R3">
+            <Column id="C14" tableId="T3">L_SHIPDATE</Column>
+            <OpLS>
+              <StringVal>1995-03-15</StringVal>
+            </OpLS>            
+          </Range>
+        </RangePredList>
+        <ResidualPredList/>
+        <GroupBy>
+            <Column id="C5" tableId="T3">L_ORDERKEY</Column>
+            <Column id="C6" tableId="T3">O_ORDERDATE</Column>
+            <Column id="C7" tableId="T3">O_SHIPPRIORITY</Column>
+        </GroupBy>
+      </Hub>
+      <ExtraHub/>
+      <OutputList>
+        <Output id="O1" name="L_ORDERKEY">
+          <Column id="C8" tableId="T3">L_ORDERKEY</Column>
+        </Output>
+        <Output id="O2" name="REVENUE">
+          <Expr ref="S13">
+            cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2))
+            <Input>
+              <Column id="C9" tableId="T3">L_DISCOUNT</Column>
+            </Input>
+          </Expr>
+        </Output>
+        <Output id="O3" name="O_ORDERDATE">
+          <Column id="C10" tableId="T2">O_ORDERDATE</Column>
+        </Output>
+        <Output id="O4" name="O_SHIPPRIORITY">
+          <Column id="C11" tableId="T2">O_SHIPPRIORITY</Column>
+        </Output>
+      </OutputList>
+    </JBB>
+</Query>
+

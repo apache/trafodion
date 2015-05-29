@@ -1,0 +1,127 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<!-- MV for TPCD Query 10                                                       -->
+<!-- (Default schema is NEO.TPCD)                                               -->
+<!--    select                                                                  -->
+<!--        c_custkey, c_name,                                                  -->
+<!--        cast (sum(l_extendedprice*(1-l_discount))                           -->
+<!--        as numeric(18,2)) as revenue,                                       -->
+<!--        c_acctbal,  n_name, c_address, c_phone, c_comment                   -->
+<!--    from customer,orders,lineitem, nation                                   -->
+<!--    where                                                                   -->
+<!--        c_custkey = o_custkey                                               -->
+<!--        and l_orderkey = o_orderkey                                         -->
+<!--        and o_orderdate >= date '1993-10-01'                                -->
+<!--        and o_orderdate < date '1993-10-01' + interval '3' month            -->
+<!--        and l_returnflag = 'R'                                              -->
+<!--        and c_nationkey = n_nationkey                                       -->
+<!--    group by c_custkey, c_name, c_acctbal, c_phone, n_name,                 -->
+<!--        c_address, c_comment;                                               -->
+<MV>
+    <Version>1.0</Version>
+    <Table>NEO.TPCD.Q10-MV</Table>
+    <JBB id="B1">
+      <Hub>
+        <JBBCList>
+          <Table id="T1" TS="2007-09-22 10:30:45">NEO.TPCD.CUSTOMER</Table>
+          <Table id="T3" TS="2007-09-22 10:30:45">NEO.TPCD.LINEITEM</Table>
+          <Table id="T4" TS="2007-09-22 10:30:45">NEO.TPCD.NATION</Table>
+          <Table id="T2" TS="2007-09-22 10:30:45">NEO.TPCD.ORDERS</Table>
+        </JBBCList>
+        <JoinPredList>
+          <JoinPred id="J1">
+            <Column id="C1" tableId="T1">C_CUSTKEY</Column>
+            <Column id="C2" tableId="T2">O_CUSTKEY</Column>
+          </JoinPred>
+          <JoinPred id="J2">
+            <Column id="C3" tableId="T3">L_ORDERKEY</Column>
+            <Column id="C4" tableId="T2">O_ORDERKEY</Column>
+          </JoinPred>
+          <JoinPred id="J3">
+            <Column id="C5" tableId="T1">C_NATIONKEY</Column>
+            <Column id="C6" tableId="T4">N_NATIONKEY</Column>
+          </JoinPred>
+        </JoinPredList>
+        <RangePredList>
+          <Range id="R1">
+            <Column id="C7" tableId="T2">O_ORDERDATE</Column>
+            <OpGE>
+              <NumericVal scale='0'>
+                 DATE '1993-10-01'
+              </NumericVal>
+            </OpGE>
+          </Range>
+          <Range id="R2">
+            <Column id="C7" tableId="T2">O_ORDERDATE</Column>
+            <OpLS>
+              <NumericVal scale='0'>
+                 DATE '1994-01-01'
+              </NumericVal>
+            </OpLS>
+          </Range>
+          <Range id="R3">
+            <Column id="C9" tableId="T3">L_RETURNFLAG</Column>
+            <OpEQ>
+              <StringVal>('R')</StringVal>
+            </OpEQ>            
+          </Range>
+        </RangePredList>
+        <ResidualPredList>
+        </ResidualPredList>
+        <GroupBy>
+            <Column id="C10" tableId="T1">C_CUSTKEY</Column>
+            <Column id="C11" tableId="T1">C_NAME</Column>
+            <Column id="C12" tableId="T1">C_ACCTBAL</Column>
+            <Column id="C13" tableId="T1">C_PHONE</Column>
+            <Column id="C14" tableId="T4">N_NAME</Column>
+            <Column id="C15" tableId="T1">C_ADDRESS</Column>
+            <Column id="C16" tableId="T1">C_COMMENT</Column>
+        </GroupBy>
+      </Hub>
+      <ExtraHub/>
+      <OutputList>
+        <Output id="O1" name="C_CUSTKEY">
+          <Column id="C17" tableId="T1">C_CUSTKEY</Column>
+        </Output>
+        <Output id="O2" name="REVENUE">
+          <Expr id="S1">
+            cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2))
+            <Input>
+              <Column id="C18" tableId="T3">L_EXTENDEDPRICE</Column>
+              <Column id="C19" tableId="T3">L_DISCOUNT</Column>
+            </Input>
+          </Expr>
+        </Output>
+        <Output id="O3" name="C_ACCTBAL">
+          <Column id="C20" tableId="T1">C_ACCTBAL</Column>
+        </Output>
+        <Output id="O4" name="N_NAME">
+          <Column id="C21" tableId="T4">N_NAME</Column>
+        </Output>
+        <Output id="O5" name="C_ADDRESS">
+          <Column id="C22" tableId="T1">C_ADDRESS</Column>
+        </Output>
+        <Output id="O6" name="C_PHONE">
+          <Column id="C23" tableId="T1">C_PHONE</Column>
+        </Output>
+        <Output id="O7" name="C_COMMENT">
+          <Column id="C24" tableId="T1">C_COMMENT</Column>
+        </Output>
+      </OutputList>
+    </JBB>
+</MV>
