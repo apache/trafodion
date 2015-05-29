@@ -40,170 +40,169 @@ import org.apache.commons.logging.LogFactory;
 
 import org.trafodion.wms.rest.model.RuleListModel;
 import org.trafodion.wms.rest.model.RuleModel;
-import org.trafodion.wms.thrift.generated.Rule;
-import org.trafodion.wms.thrift.generated.RuleResponse;
-import org.trafodion.wms.thrift.generated.WorkloadResponse;
 
 public class RuleResource extends ResourceBase {
-  private static final Log LOG = LogFactory.getLog(RuleResource.class);
-  
-  static CacheControl cacheControl;
-  static {
-    cacheControl = new CacheControl();
-    cacheControl.setNoCache(true);
-    cacheControl.setNoTransform(false);
-  }
-  /**
-   * Constructor
-   * @throws IOException
-   */
-  public RuleResource() throws IOException {
-    super();
-  }
+    private static final Log LOG = LogFactory.getLog(RuleResource.class);
 
-  @GET
-  @Produces({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
-  public Response get(final @Context UriInfo uriInfo) {
-	  if (LOG.isDebugEnabled()) {
-		  LOG.debug("GET " + uriInfo.getAbsolutePath()
-				  + " " + uriInfo.getQueryParameters());
-	  }
+    static CacheControl cacheControl;
+    static {
+        cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        cacheControl.setNoTransform(false);
+    }
 
-	  RuleListModel ruleListModel = new RuleListModel();
-	  RuleResponse ruleResponse = new RuleResponse();
-	  
-	  try {
-		  servlet.getAdmin().open();
-		  ruleResponse = servlet.getAdmin().rule();
-		  servlet.getAdmin().close();
-	  } catch (IOException e) {
-		  return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-		  .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-		  .build();
-	  }
-	  
-	  //To test:
-	  //curl -v -X GET -H "Accept: application/json" http://sqws123.houston.hp.com:50030/rule
-	  //
-	  //Should see something like this:
-	  //{"rules":[{"comment":"Added by Matt","name":"trafodion","text":"select * from table T1","timestamp":1398215824738}]}
-	  //
-	  if(ruleResponse.getRuleList() != null){
-		  for(Rule aRule: ruleResponse.getRuleList()){
-			  ruleListModel.add(new RuleModel(aRule.getName(),aRule.getValue(),aRule.getComment(),aRule.getTimestamp()));
-		  }
-	  }
-	  
-	  ResponseBuilder response;
-	  if(ruleResponse.getRuleList() == null){
-		  response = Response.ok("[]");
-	  } else {
-		  response = Response.ok(ruleListModel);
-	  }
-	  
-	  response.cacheControl(cacheControl);
-	  return response.build();
+    /**
+     * Constructor
+     * 
+     * @throws IOException
+     */
+    public RuleResource() throws IOException {
+        super();
+    }
 
-  }
-  
-  @PUT
-  @Consumes({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
-  public Response put(final RuleModel model,
-		  final @Context UriInfo uriInfo) {
-	  if (LOG.isDebugEnabled()) {
-		  LOG.debug("PUT " + uriInfo.getAbsolutePath()
-				  + " " + uriInfo.getQueryParameters());
-	  }
-	  
-	  if (servlet.isReadOnly()) {
-		  return Response.status(Response.Status.FORBIDDEN)
-		  .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF)
-		  .build();
-	  }
-	  //To test:
-	  
-	  //Vertica
-	  //curl -v -X PUT -H "Accept: application/json" -H "Content-type: application/json" -d '{"name":"vertica","text":"from vertica [ operation == 102 and duration >= 1000 ] insert into action \u0027CANCEL\u0027 as action","comment":"Added by Administrator"}' http://sqws123.houston.hp.com:50030/rule
-	  
-	  //Trafodion
-	  //curl -v -X PUT -H "Accept: application/json" -H "Content-type: application/json" -d '{"name":"trafodion","text":"from trafodion [ operation == 100 and beginTimestamp >= 123456 ] insert into action \u0027REJECT\u0027 as action","comment":"Added by Administrator"}' http://sqws123.houston.hp.com:50030/rule
-	  Rule rule = new Rule(model.getName(),model.getText(),model.getComment(),System.currentTimeMillis());
-	  try {
-		  servlet.getAdmin().open();
-		  servlet.getAdmin().alterRule(rule);
-		  servlet.getAdmin().close();
-	  } catch (IOException e) {
-		  return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-		  .type(MIMETYPE_TEXT).entity("Unavailable " + e.getMessage() + CRLF)
-		  .build();
-	  }
-	  ResponseBuilder response = Response.ok();
-	  return response.build();
-  }
-  
-  @POST
-  @Consumes({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
-  public Response post(final RuleModel model,
-		  final @Context UriInfo uriInfo) {
-	  if (LOG.isDebugEnabled()) {
-		  LOG.debug("POST " + uriInfo.getAbsolutePath()
-				  + " " + uriInfo.getQueryParameters());
-	  }
-	  
-	  if (servlet.isReadOnly()) {
-		  return Response.status(Response.Status.FORBIDDEN)
-		  .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF)
-		  .build();
-	  }
-	  
-	  //To test:
-	  
-	  //Vertica
-	  //curl -v -X POST -H "Accept: application/json" -H "Content-type: application/json" -d '{"name":"vertica","text":"from vertica [ operation == 102 and duration >= 1000 ] insert into action \u0027CANCEL\u0027 as action","comment":"Added by Administrator"}' http://sqws123.houston.hp.com:50030/rule
-	  
-	  //Trafodion
-	  //curl -v -X POST -H "Accept: application/json" -H "Content-type: application/json" -d '{"name":"trafodion","text":"from trafodion [ operation == 100 and beginTimestamp >= 123456 ] insert into action \u0027REJECT\u0027 as action","comment":"Added by Administrator"}' http://sqws123.houston.hp.com:50030/rule
-	  Rule rule = new Rule(model.getName(),model.getText(),model.getComment(),System.currentTimeMillis());
-	  try {
-		  servlet.getAdmin().open();
-		  servlet.getAdmin().addRule(rule);
-		  servlet.getAdmin().close();
-	  } catch (IOException e) {
-		  return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-		  .type(MIMETYPE_TEXT).entity("Unavailable " + e.getMessage() + CRLF)
-		  .build();
-	  }
-	  ResponseBuilder response = Response.ok();
-	  return response.build();
-  }
-  
-  @DELETE
-  public Response delete(final RuleModel model,
-		  final @Context UriInfo uriInfo) {
-	  if (LOG.isDebugEnabled()) {
-		  LOG.debug("DELETE " + uriInfo.getAbsolutePath()
-				  + " " + uriInfo.getQueryParameters());
-	  }
+    @GET
+    @Produces({ MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON })
+    public Response get(final @Context UriInfo uriInfo) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("GET " + uriInfo.getAbsolutePath() + " "
+                    + uriInfo.getQueryParameters());
+        }
+        /*
+         * RuleListModel ruleListModel = new RuleListModel(); RuleResponse
+         * ruleResponse = new RuleResponse();
+         * 
+         * try { servlet.getAdmin().open(); ruleResponse =
+         * servlet.getAdmin().rule(); servlet.getAdmin().close(); } catch
+         * (IOException e) { return
+         * Response.status(Response.Status.SERVICE_UNAVAILABLE)
+         * .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF).build(); }
+         * 
+         * // To test: // curl -v -X GET -H "Accept: application/json" //
+         * http://sqws123.houston.hp.com:50030/rule // // Should see something
+         * like this: //
+         * {"rules":[{"comment":"Added by Matt","name":"trafodion",
+         * "text":"select * from table T1","timestamp":1398215824738}]} // /* if
+         * (ruleResponse.getRuleList() != null) { for (Rule aRule :
+         * ruleResponse.getRuleList()) { ruleListModel.add(new
+         * RuleModel(aRule.getName(), aRule .getValue(), aRule.getComment(),
+         * aRule.getTimestamp())); } }
+         */
+        ResponseBuilder response = null;
+        /*
+         * if (ruleResponse.getRuleList() == null) { response =
+         * Response.ok("[]"); } else { response = Response.ok(ruleListModel); }
+         */
+        response.cacheControl(cacheControl);
+        return response.build();
 
-	  if (servlet.isReadOnly()) {
-		  return Response.status(Response.Status.FORBIDDEN)
-		  .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF)
-		  .build();
-	  }
+    }
 
-	  //To test:
-	  //curl -v -X DELETE -H "Accept: application/json" -H "Content-type: application/json" -d '{"name":"trafodion"}' http://sqws123.houston.hp.com:50030/rule
-	  LOG.debug("Delete rule " + model.toString());
-	  Rule rule = new Rule(model.getName(),model.getText(),model.getComment(),System.currentTimeMillis());
-	  try {
-		  servlet.getAdmin().open();
-		  servlet.getAdmin().deleteRule(rule);
-		  servlet.getAdmin().close();
-	  } catch (IOException e) {
-		  return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-		  .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-		  .build();
-	  }
-	  return Response.ok().build();
-  }
+    @PUT
+    @Consumes({ MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON })
+    public Response put(final RuleModel model, final @Context UriInfo uriInfo) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("PUT " + uriInfo.getAbsolutePath() + " "
+                    + uriInfo.getQueryParameters());
+        }
+
+        if (servlet.isReadOnly()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF).build();
+        }
+        // To test:
+
+        // Vertica
+        // curl -v -X PUT -H "Accept: application/json" -H
+        // "Content-type: application/json" -d '{"name":"vertica","text":"from
+        // vertica [ operation == 102 and duration >= 1000 ] insert into action
+        // \u0027CANCEL\u0027 as action","comment":"Added by Administrator"}'
+        // http://sqws123.houston.hp.com:50030/rule
+
+        // Trafodion
+        // curl -v -X PUT -H "Accept: application/json" -H
+        // "Content-type: application/json" -d '{"name":"trafodion","text":"from
+        // trafodion [ operation == 100 and beginTimestamp >= 123456 ] insert
+        // into action \u0027REJECT\u0027 as action","comment":"Added by
+        // Administrator"}' http://sqws123.houston.hp.com:50030/rule
+        /*
+         * Rule rule = new Rule(model.getName(), model.getText(),
+         * model.getComment(), System.currentTimeMillis()); try {
+         * servlet.getAdmin().open(); servlet.getAdmin().alterRule(rule);
+         * servlet.getAdmin().close(); } catch (IOException e) { return
+         * Response.status(Response.Status.SERVICE_UNAVAILABLE)
+         * .type(MIMETYPE_TEXT) .entity("Unavailable " + e.getMessage() +
+         * CRLF).build(); }
+         */
+        ResponseBuilder response = Response.ok();
+        return response.build();
+    }
+
+    @POST
+    @Consumes({ MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON })
+    public Response post(final RuleModel model, final @Context UriInfo uriInfo) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("POST " + uriInfo.getAbsolutePath() + " "
+                    + uriInfo.getQueryParameters());
+        }
+
+        if (servlet.isReadOnly()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF).build();
+        }
+
+        // To test:
+
+        // Vertica
+        // curl -v -X POST -H "Accept: application/json" -H
+        // "Content-type: application/json" -d '{"name":"vertica","text":"from
+        // vertica [ operation == 102 and duration >= 1000 ] insert into action
+        // \u0027CANCEL\u0027 as action","comment":"Added by Administrator"}'
+        // http://sqws123.houston.hp.com:50030/rule
+
+        // Trafodion
+        // curl -v -X POST -H "Accept: application/json" -H
+        // "Content-type: application/json" -d '{"name":"trafodion","text":"from
+        // trafodion [ operation == 100 and beginTimestamp >= 123456 ] insert
+        // into action \u0027REJECT\u0027 as action","comment":"Added by
+        // Administrator"}' http://sqws123.houston.hp.com:50030/rule
+        /*
+         * Rule rule = new Rule(model.getName(), model.getText(),
+         * model.getComment(), System.currentTimeMillis()); try {
+         * servlet.getAdmin().open(); servlet.getAdmin().addRule(rule);
+         * servlet.getAdmin().close(); } catch (IOException e) { return
+         * Response.status(Response.Status.SERVICE_UNAVAILABLE)
+         * .type(MIMETYPE_TEXT) .entity("Unavailable " + e.getMessage() +
+         * CRLF).build(); }
+         */
+        ResponseBuilder response = Response.ok();
+        return response.build();
+    }
+
+    @DELETE
+    public Response delete(final RuleModel model, final @Context UriInfo uriInfo) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("DELETE " + uriInfo.getAbsolutePath() + " "
+                    + uriInfo.getQueryParameters());
+        }
+
+        if (servlet.isReadOnly()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .type(MIMETYPE_TEXT).entity("Forbidden" + CRLF).build();
+        }
+
+        // To test:
+        // curl -v -X DELETE -H "Accept: application/json" -H
+        // "Content-type: application/json" -d '{"name":"trafodion"}'
+        // http://sqws123.houston.hp.com:50030/rule
+        /*
+         * LOG.debug("Delete rule " + model.toString()); Rule rule = new
+         * Rule(model.getName(), model.getText(), model.getComment(),
+         * System.currentTimeMillis()); try { servlet.getAdmin().open();
+         * servlet.getAdmin().deleteRule(rule); servlet.getAdmin().close(); }
+         * catch (IOException e) { return
+         * Response.status(Response.Status.SERVICE_UNAVAILABLE)
+         * .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF).build(); }
+         */
+        return Response.ok().build();
+    }
 }

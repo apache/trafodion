@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 <!-- 
 /**
-  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -79,10 +79,6 @@
     
   <repositories>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-    </repository>
-    <repository>
       <id>wso2-maven2-repository</id>
       <name>WSO2 Maven2 Repository</name>
       <url>http://dist.wso2.org/maven2</url>
@@ -97,8 +93,7 @@
           <include>wms-default.xml</include>
           <include>platform-stats.avsc</include>
           <include>trafodion-rms.avsc</include>
-          <include>workload.avsc</include>
-        </includes>
+         </includes>
       </resource>
       <resource>
         <directory>${project.build.directory}</directory>
@@ -156,7 +151,7 @@
               <includes>
                 <include>wms-default.xml</include>
               </includes>
-              <stylesheet>${basedir}/src/main/xslt/configuration_to_docbook_section.xsl</stylesheet>
+              <stylesheet>${basedir}/src/main/xslt/configuration_to_asciidoc_chapter.xsl</stylesheet>
               <outputDir>${basedir}/target/site/</outputDir>
             </transformationSet>
           </transformationSets>
@@ -176,31 +171,7 @@
                         <exec executable="sh">
                             <arg line="${basedir}/src/saveVersion.sh ${project.version} ${generated.sources}/java"/>
                         </exec>
-                        
-                        <!-- always use properties if available -->
-                        <mkdir dir="${project.build.directory}/generated-sources/thrift"/>
-                        <exec executable="${thrift.executable}" searchpath="yes" failonerror="yes">
-                            <arg value="-out"/>
-                            <arg value="${project.build.directory}/generated-sources/thrift"/>
-                            <arg value="-gen"/>
-                            <arg value="cpp"/>
-                            <arg value="src/main/thrift/WmsService.thrift"/>
-                        </exec>
-                        <copy todir="src/main/c/generated" overwrite="true">  
-                            <fileset dir="target/generated-sources/thrift" /> 
-                        </copy>
-                         
-                        <exec executable="${thrift.executable}" searchpath="yes" failonerror="yes">
-                            <arg value="-out"/>
-                            <arg value="${project.build.directory}/generated-sources/java"/>
-                            <arg value="-gen"/>
-                            <arg value="java"/>
-                            <arg value="src/main/thrift/WmsService.thrift"/>
-                        </exec>
-                            <!-- <copy todir="src/main/java" overwrite="true">
-                            <fileset dir="target/generated-sources/thrift" />
-                        </copy> -->
-                    </tasks>
+                   </tasks>
                 </configuration>
                 <goals>
                     <goal>run</goal>
@@ -296,62 +267,40 @@
           </execution>
         </executions>
      </plugin>
+<!-- 
      <plugin>
-        <groupId>com.agilejava.docbkx</groupId>
-        <artifactId>docbkx-maven-plugin</artifactId>
-        <version>2.0.13</version>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>xml-maven-plugin</artifactId>
+        <version>${xml.maven.plugin.version}</version>
+        <inherited>false</inherited>
         <executions>
           <execution>
-              <id>multipage</id>
-              <phase>pre-site</phase>
-        <configuration>
-          <xincludeSupported>true</xincludeSupported>
-          <navigShowtitles>true</navigShowtitles>
-          <chunkedOutput>true</chunkedOutput>
-          <useIdAsFilename>true</useIdAsFilename>
-          <sectionAutolabelMaxDepth>100</sectionAutolabelMaxDepth>
-          <sectionAutolabel>true</sectionAutolabel>
-          <sectionLabelIncludesComponentLabel>true</sectionLabelIncludesComponentLabel>
-          <targetDirectory>${basedir}/target/site/</targetDirectory>
-          <htmlStylesheet>../css/freebsd_docbook.css</htmlStylesheet>
-          <htmlCustomization>src/docbkx/customization.xsl</htmlCustomization>
-          <imgSrcPath>../images/</imgSrcPath>
-          <tocMaxDepth>2</tocMaxDepth>
-          <insertXrefPageNumber>yes</insertXrefPageNumber>
-        </configuration>
             <goals>
-              <goal>generate-html</goal>
+              <goal>transform</goal>
             </goals>
-          </execution>
-          <execution>
-              <id>onepage</id>
             <phase>pre-site</phase>
-        <configuration>
-          <xincludeSupported>true</xincludeSupported>
-          <useIdAsFilename>true</useIdAsFilename>
-          <sectionAutolabelMaxDepth>100</sectionAutolabelMaxDepth>
-          <sectionAutolabel>true</sectionAutolabel>
-          <sectionLabelIncludesComponentLabel>true</sectionLabelIncludesComponentLabel>
-          <targetDirectory>${basedir}/target/site/</targetDirectory>
-          <htmlStylesheet>css/freebsd_docbook.css</htmlStylesheet>
-          <imgSrcPath>images/</imgSrcPath>
-          <tocMaxDepth>2</tocMaxDepth>
-          <insertXrefPageNumber>yes</insertXrefPageNumber>
-        </configuration>
-            <goals>
-              <goal>generate-html</goal>
-            </goals>
           </execution>
         </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.docbook</groupId>
-            <artifactId>docbook-xml</artifactId>
-            <version>4.4</version>
-            <scope>runtime</scope>
-          </dependency>
-        </dependencies>
+        <configuration>
+          <transformationSets>
+            <transformationSet>
+              <dir>${basedir}/src/main/resources/</dir>
+              <includes>
+                <include>dcs-default.xml</include>
+              </includes>
+              <stylesheet>${basedir}/src/main/xslt/configuration_to_asciidoc_chapter.xsl</stylesheet>
+              <fileMappers>
+                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                  <pattern>^(.*)\.xml$</pattern>
+                  <replacement>$1.adoc</replacement>
+                </fileMapper>
+              </fileMappers>
+              <outputDir>${basedir}/target/asciidoc</outputDir>
+            </transformationSet>
+          </transformationSets>
+        </configuration>
       </plugin>
+-->
       <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
@@ -393,6 +342,33 @@
               </execution>
           </executions>
       </plugin>
+      <!-- For AsciiDoc docs building -->
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>${asciidoctor.maven.plugin.version}</version> 
+        <executions>
+          <execution>
+            <id>output-html</id> 
+            <goals>
+              <goal>process-asciidoc</goal> 
+            </goals>
+            <phase>site</phase>
+            <configuration>
+              <imagesDir>./images</imagesDir>
+              <doctype>book</doctype>
+              <attributes>
+                <stylesheet>wms.css</stylesheet>
+                <projectVersion>${project.version}</projectVersion>
+                <buildDate>${maven.build.timestamp}</buildDate>
+              </attributes>
+              <backend>html5</backend>
+              <sourceHighlighter>coderay</sourceHighlighter>
+              <outputDirectory>target/site</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>             
     </plugins>
   </build>
   
@@ -401,15 +377,28 @@
   	<buildDate>${maven.build.timestamp}</buildDate>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   	<compileSource>1.6</compileSource>
-    <hadoop-one.version>1.0.4</hadoop-one.version> 
-    <hadoop-two.version>2.0.0-cdh4.5.0</hadoop-two.version> 	
-    <thrift.executable>/opt/home/tools/thrift-0.9.0/bin/thrift</thrift.executable>
-    
+     
     <!-- also must update this when we bump version -->
   	<package.version>1.0.0</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
+  	  <!-- Plugin Dependencies -->
+    <maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
+    <maven.site.plugin.version>3.3</maven.site.plugin.version>
+    <maven.javadoc.plugin.version>2.9.1</maven.javadoc.plugin.version>
+    <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
+    <maven.jxr.plugin.version>2.3</maven.jxr.plugin.version>
+    <jamon.maven.plugin.version>2.3.4</jamon.maven.plugin.version>
+    <xml.maven.plugin.version>1.0</xml.maven.plugin.version>
+    <maven.surefire.report.plugin.version>2.7.2</maven.surefire.report.plugin.version>
+    <asciidoctor.maven.plugin.version>1.5.2</asciidoctor.maven.plugin.version>
+    <maven.project.info.reports.plugin.version>2.1.2</maven.project.info.reports.plugin.version>
+    <build.helper.maven.plugin.version>1.5</build.helper.maven.plugin.version>
+    <maven.assembly.plugin.version>2.5.3</maven.assembly.plugin.version>
+  	
+  	
   	<!-- Dependencies -->
+  	<hadoop.version>2.6.0</hadoop.version>   
   	<commons-cli.version>1.2</commons-cli.version>
   	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>
@@ -429,22 +418,13 @@
   	<slf4j.version>1.4.3</slf4j.version>
   	<log4j.version>1.2.16</log4j.version>
   	<zookeeper.version>3.4.5</zookeeper.version>
-  	<yarn.version>2.0.5-alpha</yarn.version>
-
-  	<!-- Dependencies -->
    	<avro.version>1.7.3</avro.version>
-    <thrift.version>0.9.0</thrift.version>
    	<jython-standalone.version>2.5.3</jython-standalone.version>
- 	<hive-common.version>0.11.0</hive-common.version>
-  	<hive-metastore.version>0.12.0</hive-metastore.version>
-  	<hive-exec.version>0.12.0</hive-exec.version>
-	<vertica.version>6.0.1-0</vertica.version> 
-	<siddhi.version>2.0.0-wso2v1</siddhi.version> 
-
-        <!-- default: run small tests -->
-        <surefire.version>2.17</surefire.version>
-        <surefire.skipFirstPart>false</surefire.skipFirstPart>
-        <surefire.skipSecondPart>true</surefire.skipSecondPart>
+ 
+    <!-- default: run small tests -->
+    <surefire.version>2.17</surefire.version>
+    <surefire.skipFirstPart>false</surefire.skipFirstPart>
+    <surefire.skipSecondPart>true</surefire.skipSecondPart>
 	<surefire.firstPartGroups>org.trafodion.wms.SmallTests</surefire.firstPartGroups>
 	<surefire.secondPartGroups>org.trafodion.wms.MediumTests, org.trafodion.wms.LargeTests</surefire.secondPartGroups>
   </properties>
@@ -457,7 +437,7 @@
       <scope>test</scope>
     </dependency>
 
-      <!-- General dependencies -->
+    <!-- General dependencies -->
   	<dependency>
       <groupId>com.yammer.metrics</groupId>
       <artifactId>metrics-core</artifactId>
@@ -508,87 +488,14 @@
       <artifactId>log4j</artifactId>
       <version>${log4j.version}</version>
     </dependency>
- <!-- Hadoop 1.x -->
-<!--    
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
-      <version>${hadoop-one.version}</version>
-      <optional>true</optional>
-      <exclusions>
-        <exclusion>
-          <groupId>hsqldb</groupId>
-          <artifactId>hsqldb</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.sf.kosmosfs</groupId>
-          <artifactId>kfs</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jdt</groupId>
-          <artifactId>core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jets3t</groupId>
-          <artifactId>jets3t</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>oro</groupId>
-          <artifactId>oro</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
- -->           
+ 
 <!-- Hadoop 2.x -->
    <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
-      <version>2.0.0-mr1-cdh4.5.0</version>
-   </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
-      <version>${hadoop-two.version}</version>
+      <version>${hadoop.version}</version>
    </dependency>
    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-      <version>${hadoop-two.version}</version>
-   </dependency> 
-   <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-app</artifactId>
-      <version>${hadoop-two.version}</version>
-   </dependency> 
-   <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-common</artifactId>
-      <version>${hadoop-two.version}</version>
-   </dependency> 
-   <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <version>${hadoop-two.version}</version>
-   </dependency>
-   <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-hs</artifactId>
-      <version>${hadoop-two.version}</version>
-    </dependency>    
-   <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-      <version>${hadoop-two.version}</version>
-   </dependency> 
-
-<!-- Yarn dependencies -->   
-    <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
-        <version>${hadoop-two.version}</version>
-    </dependency>
-         
-    <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
       <version>${avro.version}</version>
@@ -616,17 +523,6 @@
         <exclusion>
           <groupId>jline</groupId>
           <artifactId>jline</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>${thrift.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -765,52 +661,6 @@
         </exclusion>
       </exclusions>
     </dependency>
- 
-   <!-- Hive dependencies --> 
-	<dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-common</artifactId>
-      <version>${hive-common.version}</version>
-   	</dependency>
-   	<dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-metastore</artifactId>
-      <version>${hive-metastore.version}</version>
-   	</dependency>
-  	<dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>${hive-exec.version}</version>
-   	</dependency> 
- 
-   <!-- Vertica dependencies -->   	  
-  	<dependency>
-      <groupId>vertica</groupId>
-      <artifactId>vertica-jdk5</artifactId>
-      <version>${vertica.version}</version>
-  	</dependency> 
-  	
-    <!-- Siddhi CEP dependencies -->  
-    <dependency>
-      <groupId>org.wso2.siddhi</groupId>
-      <artifactId>siddhi-api</artifactId>
-      <version>${siddhi.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.wso2.siddhi</groupId>
-      <artifactId>siddhi-core</artifactId>
-      <version>${siddhi.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.wso2.siddhi</groupId>
-      <artifactId>siddhi-query</artifactId>
-      <version>${siddhi.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>2.3</version>
-    </dependency>
   </dependencies>
   
   <profiles>
@@ -874,12 +724,7 @@
             <reports>
               <report>project-team</report>
               <report>mailing-list</report>
-              <report>cim</report>
-              <report>issue-tracking</report>
-              <report>license</report>
-              <report>scm</report>
-              <report>index</report>
-            </reports>
+             </reports>
           </reportSet>
         </reportSets>
 
@@ -912,11 +757,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
         <version>2.1</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>0.8</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

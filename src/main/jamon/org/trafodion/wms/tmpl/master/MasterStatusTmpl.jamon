@@ -1,5 +1,5 @@
 <%doc>
-(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -37,9 +37,6 @@ String filter = "general";
 String format = "html";
 ArrayList<String> servers = null;
 ArrayList<String> clients = null;
-ArrayList<Stream> streams = null;
-ArrayList<Rule> rules = null;
-ArrayList<Request> workloads = null;
 </%args>
 <%import>
 java.io.*;
@@ -48,9 +45,6 @@ org.trafodion.wms.master.WmsMaster;
 org.trafodion.wms.util.WmsConfiguration;
 org.trafodion.wms.Constants;
 org.trafodion.wms.util.Bytes;
-org.trafodion.wms.thrift.generated.Request;
-org.trafodion.wms.thrift.generated.Stream;
-org.trafodion.wms.thrift.generated.Rule;
 </%import>
 
 <%java>
@@ -97,18 +91,6 @@ org.trafodion.wms.thrift.generated.Rule;
 <& WmsClients &>
 </%if>
 
-<%if (streams != null) %>
-<& WmsStreams &>
-</%if>
-
-<%if (rules != null) %>
-<& WmsRules &>
-</%if>
-
-<%if (workloads != null) %>
-<& WmsWorkloads &>
-</%if>
-
 </body>
 </html>
 
@@ -119,7 +101,6 @@ org.trafodion.wms.thrift.generated.Rule;
      int totalServers = 0;
      String hostName;
      String instance;
-     String thriftPort;
      String infoPort;
      long startTime;
 </%java>
@@ -143,7 +124,6 @@ org.trafodion.wms.thrift.generated.Rule;
         scn.useDelimiter(":");
         hostName = scn.next();
         instance = scn.next();
-        thriftPort = scn.next(); 
         infoPort = scn.next(); 
         startTime = Long.parseLong(scn.next());
         scn.close();
@@ -197,163 +177,5 @@ No servers found.
 </table>
 <%else>
 No clients found.
-</%if>
-</%def>
-
-<%def WmsStreams>
-<h2>CEP Streams</h2>
-<%if (streams != null && streams.size() > 0)%>
-<%java>
-     int totalStreams = 0;
-</%java>
-
-<table>
-<tr>
-<th rowspan="<% streams.size() + 1%>"></th>
-<th>Id</th>
-<th>Text</th>
-<th>Comment</th>
-<th>Last Updated</th>
-</tr>
-<%java>
-     for (Stream aStream: streams) {
-     String streamValue = aStream.getValue();
-     streamValue = streamValue.replaceAll(",",", ");
-</%java>
-<tr>
-<td><% aStream.getName() %></td>
-<td><% streamValue %></td>
-<td><% aStream.getComment() %></td>
-<td><% new Date(aStream.getTimestamp()) %></td>
-</tr>
-<%java>
-     }
-</%java>
-<tr><th>Total: </th><td>streams: <% streams.size() %></td></tr>
-</table>
-<%else>
-No streams found.
-</%if>
-</%def>
-
-<%def WmsRules>
-<h2>CEP Rules</h2>
-<%if (rules != null && rules.size() > 0)%>
-<%java>
-     int totalRules = 0;
-</%java>
-
-<table>
-<tr>
-<th rowspan="<% rules.size() + 1%>"></th>
-<th>Id</th>
-<th>Text</th>
-<th>Comment</th>
-<th>Last Updated</th>
-</tr>
-<%java>
-     for (Rule aRule: rules) {
-</%java>
-<tr>
-<td><% aRule.getName() %></td>
-<td><% aRule.getValue() %></td>
-<td><% aRule.getComment() %></td>
-<td><% new Date(aRule.getTimestamp()) %></td>
-</tr>
-<%java>
-     }
-</%java>
-<tr><th>Total: </th><td>rules: <% rules.size() %></td></tr>
-</table>
-<%else>
-No rules found.
-</%if>
-</%def>
-
-<%def WmsWorkloads>
-<h2>Workloads</h2>
-<%if (workloads != null && workloads.size() > 0)%>
-<%java>
-     int totalWorkloads = 0;
-</%java>
-
-<table>
-<tr>
-<th rowspan="<% workloads.size() + 1%>"></th>
-<th>Workload Id</th>
-<th>State</th>
-<th>Sub State</th>
-<th>Type</th>
-<th>Workload Text</th>
-<th>Workload Details</th>
-</tr>
-<%java>
-     StringBuilder sb = null;
-     for (Request aWorkload: workloads) {
-</%java>
-<tr>
-<td><% aWorkload.getData().getKeyValues().get(Constants.WORKLOAD_ID).getStringValue() %></td>
-<td><% aWorkload.getData().getKeyValues().get(Constants.STATE).getStringValue() %></td>
-<td><% aWorkload.getData().getKeyValues().get(Constants.SUBSTATE).getStringValue() %></td>
-<td><% aWorkload.getData().getKeyValues().get(Constants.TYPE).getStringValue() %></td>
-<%java>
-     String workloadText = null; 
-     if(aWorkload.getData().getKeyValues().get("request") != null)
-        workloadText = aWorkload.getData().getKeyValues().get("request").getStringValue();
-     else if (aWorkload.getData().getKeyValues().get("queryText") != null)
-        workloadText = aWorkload.getData().getKeyValues().get("queryText").getStringValue();     
-</%java>
-<td><% workloadText %></td>
-<%java>
-         sb = new StringBuilder();
-         if(aWorkload.getData().getKeyValues() != null){
-             boolean isFirst = true;
-             for (String key: aWorkload.getData().getKeyValues().keySet()) {
-                if(aWorkload.getData().getKeyValues().get(key).isSetByteValue()) {
-                     if(! isFirst) sb.append(", ");
-                     sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getByteValue());
-                } else if(aWorkload.getData().getKeyValues().get(key).isSetShortValue()) {
-                     if(! isFirst) sb.append(", ");
-                     sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getShortValue());
-                } else if(aWorkload.getData().getKeyValues().get(key).isSetIntValue()) {
-                     if(! isFirst) sb.append(", ");
-                     sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getIntValue());
-                } else if(aWorkload.getData().getKeyValues().get(key).isSetLongValue()) {
-                     if(! isFirst) sb.append(", ");
-                     if(key.equalsIgnoreCase("beginTimestamp"))
-                        sb.append(key + "=" + new Date(aWorkload.getData().getKeyValues().get(Constants.BEGIN_TIMESTAMP).getLongValue()));
-                     else if(key.equalsIgnoreCase("endTimestamp"))
-                        sb.append(key + "=" + new Date(aWorkload.getData().getKeyValues().get(Constants.END_TIMESTAMP).getLongValue()));
-                     else if(key.equalsIgnoreCase("lastUpdated")) 
-                        sb.append(key + "=" + new Date(aWorkload.getHeader().getServerLastUpdated()));
-                     else
-                        sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getLongValue());
-                } else if(aWorkload.getData().getKeyValues().get(key).isSetFloatValue()) {
-                     if(! isFirst) sb.append(", ");
-                     sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getFloatValue());
-                } else if(aWorkload.getData().getKeyValues().get(key).isSetStringValue()) {
-                     if(key.equalsIgnoreCase("queryText") || key.equalsIgnoreCase("request")
-                        || key.equalsIgnoreCase("state") || key.equalsIgnoreCase("subState")
-                        || key.equalsIgnoreCase("type") || key.equalsIgnoreCase("workloadId"))
-                        continue;
-                     else {
-                        if(! isFirst) sb.append(", ");
-                        sb.append(key + "=" + aWorkload.getData().getKeyValues().get(key).getStringValue());
-                     }
-                }
-
-                isFirst = false;
-             } 
-         }
-</%java>
-<td><% sb.toString() %></td>
-</tr>
-<%java>
-     }
-</%java>
-<tr><th>Total: </th><td>workloads: <% workloads.size() %></td></tr>
-</table>
-<%else>
-No workloads found.
 </%if>
 </%def>
