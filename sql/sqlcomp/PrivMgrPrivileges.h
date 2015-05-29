@@ -60,7 +60,15 @@ public:
 class PrivMgrPrivileges : public PrivMgr
 {
 public:
-
+   // Set default column privileges for a bitmap based on a table or view
+   static void setColumnPrivs(PrivColumnBitmap &bitmap)
+   {
+      bitmap.reset();
+      bitmap.set(SELECT_PRIV);
+      bitmap.set(INSERT_PRIV);
+      bitmap.set(UPDATE_PRIV);
+      bitmap.set(REFERENCES_PRIV);
+   }
  enum ChosenPrivs { ORIGINAL_PRIVS, CURRENT_PRIVS };
 
  //
@@ -97,6 +105,13 @@ public:
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
+   PrivStatus getColPrivsForUser(
+      const int32_t granteeID,
+      const std::vector<int32_t> & roleIDs,
+      PrivColList & colPrivsList,
+      PrivColList & colGrantableList,
+      std::vector <ComSecurityKey *>* secKeySet);
+       
    PrivStatus getGrantorDetailsForObject(
       const bool isGrantedBySpecified,
       const std::string grantedByName,
@@ -122,6 +137,8 @@ public:
       const int32_t userID,
       PrivObjectBitmap &userPrivs,
       PrivObjectBitmap &grantablePrivs,
+      PrivColList & colPrivsList,
+      PrivColList & colGrantableList,
       std::vector <ComSecurityKey *>* secKeySet);
 
    PrivStatus givePrivForObjects(

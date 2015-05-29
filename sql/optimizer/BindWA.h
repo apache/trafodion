@@ -1295,7 +1295,7 @@ public:
   void markAsReferencedColumn(const ColumnDesc *cd, NABoolean groupByRefForSingleIntHist = FALSE);
   void markAsReferencedColumn(const ItemExpr *ie, NABoolean groupByRefForSingleIntHist = FALSE)
     				  { markAsReferencedColumn(ie->getValueId(), groupByRefForSingleIntHist); }
-  void setColumRefsInStoi(const char* fileName, Lng32 colPosition);
+  void setColumnRefsInStoi(const char* fileName, Lng32 colPosition);
 
 
   // --------------------------------------------------------------------

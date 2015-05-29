@@ -6232,6 +6232,102 @@ ItemExpr * RelRoot::removeAssignmentStTree()
 }
 // LCOV_EXCL_STOP
 
+bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType)
+
+{
+
+  NATable* table = getTable();
+  NAString columns = "";
+
+  if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_OFF || !isColumnPrivType(privType))
+  {
+    *CmpCommon::diags() << DgSqlCode(-4481)
+                        << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str())
+                        << DgString1(table->getTableName().getQualifiedNameAsAnsiString())
+                        << DgString2(columns);
+    return false;  
+  }
+
+  bool hasPriv = true;
+
+  // initialize to something, gets set appropriately below
+  LIST (Lng32) * colList = NULL ;
+  switch (privType)
+  {
+    case INSERT_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getInsertColList());
+      break;
+    }
+    case UPDATE_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getUpdateColList());
+      break;
+    }
+    case SELECT_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getSelectColList());
+      break;
+    }
+    default:
+      CMPASSERT(FALSE); // delete has no column privileges.
+  }
+
+  bool collectColumnNames = false;
+  if (table->getPrivInfo()->hasAnyColPriv(privType))
+  {
+    collectColumnNames = true;
+    columns += "(columns:" ; 
+  }
+  bool firstColumn = true;
+  for(size_t i = 0; i < colList->entries(); i++)
+  {
+    size_t columnNumber = (*colList)[i];
+    if (!(table->getPrivInfo()->hasColPriv(privType,columnNumber)))
+    {
+      hasPriv = false;
+      if (firstColumn && collectColumnNames)
+      {
+        columns += " ";
+        firstColumn = false;
+      }
+      else 
+        if (collectColumnNames)
+          columns += ", ";
+
+      if (collectColumnNames)
+        columns += table->getNAColumnArray()[columnNumber]->getColName();
+    }
+  }
+
+  if (collectColumnNames)
+    columns += ")" ;
+
+  // (colList->entries() == 0) ==> we have a select count(*) type query or a
+  // select 1 from T type query. In other words the table needs to be accessed
+  // but no column has been explicitly referenced.
+  // For such queries if the user has privilege on any one column that is 
+  // sufficient. collectColumnNames indicates whether the user has privilege
+  // on at least one column. The following if statement applies only to selects
+  // For update and insert we do not expect colList to be empty.
+
+  if ((colList->entries() == 0)&& !collectColumnNames)
+  {
+    hasPriv = false;
+    columns = "";
+  }
+
+  if (!hasPriv)
+    *CmpCommon::diags() << DgSqlCode(-4481)
+                        << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str())
+                        << DgString1(table->getTableName().getQualifiedNameAsAnsiString())
+                        << DgString2(columns);
+
+  return hasPriv;
+  
+}
+
+
 NABoolean RelRoot::checkFirstNRowsNotAllowed(BindWA *bindWA)
 {
   // do not call this method on a true root.
@@ -6365,29 +6461,16 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
     // Check each primary DML privilege to see if the query requires it. If 
     // so, verify that the user has the privilege
-    NABoolean insertQIKeys = FALSE;
-    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
-      insertQIKeys = TRUE;
+    bool insertQIKeys = (QI_enabled && tab->getSecKeySet().entries() > 0);
     for (int_32 i = FIRST_DML_PRIV; i <= LAST_PRIMARY_DML_PRIV; i++)
     {
       if (stoi->getPrivAccess((PrivType)i))
       {
-        if (pPrivInfo->hasPriv((PrivType)i))
-        {
-          // do this only if QI is enabled and object has security keys defined
-          if ( insertQIKeys )
-            findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, (PrivType)(i));
-        }
-
-        // plan requires privilege but user has none, report an error
-        else
-        {
+        if (!pPrivInfo->hasPriv((PrivType)i) && !optStoi->checkColPriv((PrivType)i))
           RemoveNATableEntryFromCache = TRUE;
-          *CmpCommon::diags() 
-            << DgSqlCode( -4481 )
-            << DgString0( PrivMgrUserPrivs::convertPrivTypeToLiteral((PrivType)i).c_str() )
-            << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-        }
+        else
+          if (insertQIKeys)    
+            findKeyAndInsertInOutputList(tab->getSecKeySet(),userHashValue,(PrivType)(i));
       }
     }
 

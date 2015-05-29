@@ -1,21 +1,36 @@
--- TEST129  Gayle Schultz and Suresh Subbiah    Last updated: 12/13/2011
+-- @@@ START COPYRIGHT @@@
 --
--- Grant column level insert and select privilges
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Grant column-level insert and select privilges
 -- Check privilege for DML statements in compiler
 
 obey TEST129(clean_up);
-initialize authorization;
 
 sh sqlci -i "TEST129(setup)" -u sql_user4;
 sh sqlci -i "TEST129(step1)" -u sql_user1;
 sh sqlci -i "TEST129(step1)" -u sql_user1;
---sh sqlci -i "TEST129(step2)" -u sql_user2;
---sh sqlci -i "TEST129(step3)" -u sql_user3;
---sh sqlci -i "TEST129(step4)" -u sql_user3;
+sh sqlci -i "TEST129(step2)" -u sql_user2;
+sh sqlci -i "TEST129(step3)" -u sql_user3;
+sh sqlci -i "TEST129(step4)" -u sql_user3;
 sh sqlci -i "TEST129(step5)" -u sql_user4;
 sh sqlci -i "TEST129(step6)" -u sql_user4;
---sh sqlci -i "TEST129(step7)" -u sql_user4;
---sh sqlci -i "TEST129(invalidate)" -u sql_user1;
+sh sqlci -i "TEST129(step7)" -u sql_user4;
+sh sqlci -i "TEST129(invalidate)" -u sql_user1;
 
 exit;
 
@@ -24,7 +39,7 @@ drop schema us4 cascade;
 
 ?section setup
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
-
+cqd CAT_TEST_BOOL 'ON';
 log LOG129 clear;
 log LOG129;
 create schema us4;
@@ -44,8 +59,8 @@ grant select on t1 to sql_user2;
 grant update (col3) on t1 to sql_user2 ;
 grant update(col2) on t1 to sql_user2;
 
-grant update(col1) on t1 to $$SQLUSER3X$$;
-grant select(col1) on t1 to $$SQLUSER3X$$;
+grant update(col1) on t1 to sql_user3;
+grant select(col1) on t1 to sql_user3;
 showddl t1;
 
 create table t2( a int not null primary key, b int default null, c int default null) ;
@@ -103,6 +118,7 @@ insert into t3 values (1,2,3,4), (5,6,7,8);
 insert into t4 values (11,22,33,44), (55,66,77,88);
 
 ?section step1
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- As user1, should fail
 select * from us4.t1 ;
@@ -127,6 +143,7 @@ select * from table(natablecache()) ;
 log;
 
 ?section step2
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- As user2, should fail
 delete from us4.t1 ;
@@ -142,6 +159,7 @@ insert into us4.t2(a,b) values (1,1);
 log;
 
 ?section step3
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- as user3
 insert into us4.t2(a,b) values (2,2) ;
@@ -179,6 +197,7 @@ select * from us4.t1 ;
 log;
 
 ?section step4
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- Testing create view based on column-level SELECT
 -- as user3
@@ -229,6 +248,7 @@ create view v34bh as select b,h from t3,t4;
 log;
 
 ?section step5
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- Testing revoke for column-level SELECT
 -- as user4
@@ -253,6 +273,7 @@ revoke grant option for select (b) on t3 from sql_user3 cascade;
 showddl t3;
 
 ?section step6
+cqd CAT_TEST_BOOL 'ON';
 set schema us4;
 
 -- Testing other variations of column level
@@ -280,6 +301,7 @@ revoke select (a) on t1 from sql_user5 cascade;
 showddl t1;
 
 ?section invalidate
+cqd CAT_TEST_BOOL 'ON';
 log LOG129;
 -- as user1
 
@@ -288,7 +310,7 @@ cqd metadata_cache_size '0' ;
 
 select count(*) from us4.t129_a ;
 
-sh  sh runmxci.ksh -i "TEST129(revoke1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4; 
 -- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
 sh sleep 10;
 
@@ -305,7 +327,7 @@ prepare s1 from select * from us4.t129_a where c1 > 10;
 
 select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
 
-sh  sh runmxci.ksh -i "TEST129(grant1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4; 
 
 
 -- should succeed
@@ -318,7 +340,7 @@ select count(*) from us4.t129_a where c1 = 10 ;
 
 select num_entries from table(querycache());
 
-sh  sh runmxci.ksh -i "TEST129(revoke1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4; 
 -- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
 sh sleep 10;
 
@@ -332,18 +354,18 @@ select num_entries from table(querycache());
 cqd query_text_cache reset ;
 cqd auto_query_retry 'off' ;
 
-sh  sh runmxci.ksh -i "TEST129(grant1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4; 
 
 select count(*) from us4.t129_a where c1 = 100 ;
 
-sh  sh runmxci.ksh -i "TEST129(revoke1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4; 
 -- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
 sh sleep 10;
 
 -- fails
 select count(*) from us4.t129_a where c1 = 100 ;
 
-sh  sh runmxci.ksh -i "TEST129(grant1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4; 
 
 cqd auto_query_retry reset ;
 cqd auto_query_retry_warnings 'on' ;
@@ -351,7 +373,7 @@ cqd auto_query_retry_warnings 'on' ;
 
 select count(*) from us4.t129_a where c10 = 100 ;
 
-sh  sh runmxci.ksh -i "TEST129(grant2)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant2)" -u sql_user4; 
 
 
 select count(*) from us4.t129_a where c10 = 100 ;
@@ -359,14 +381,14 @@ select count(*) from us4.t129_a where c10 = 100 ;
 cqd auto_query_retry_warnings reset ;
 prepare s1 from select count(*) from us4.t129_a where c10 < 100 ;
 
-sh  sh runmxci.ksh -i "TEST129(revoke1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4; 
 -- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
 sh sleep 10;
 
 -- should error
 execute s1 ;
 
-sh  sh runmxci.ksh -i "TEST129(grant1)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4; 
 
 set envvar sqlci_cursor '1';
 cqd attempt_esp_parallelism 'off' ;
@@ -379,7 +401,7 @@ where filler = 'a' or a = 1 for read uncommitted access ;
 
 open c1 ;
 
-sh  sh runmxci.ksh -i "TEST129(grant3)" -u $$SQLUSER4X$$; 
+sh  sh runmxci.ksh -i "TEST129(grant3)" -u sql_user4; 
 
 fetch c1;
 fetch c1;
@@ -394,15 +416,23 @@ log ;
 exit ;
 
 ?section revoke1
+cqd CAT_TEST_BOOL 'ON';
+log LOG129;
 revoke select on us4.t129_a from sql_user1 ;
 
 ?section grant1
+cqd CAT_TEST_BOOL 'ON';
+log LOG129;
 grant select on us4.t129_a to sql_user1 ;
 
 ?section grant2
+cqd CAT_TEST_BOOL 'ON';
+log LOG129;
 grant select on us4.t129_a to sql_user2 ;
 
 ?section grant3
+cqd CAT_TEST_BOOL 'ON';
+log LOG129;
 grant select on us4.t129_a to sql_user3 ;
 
 

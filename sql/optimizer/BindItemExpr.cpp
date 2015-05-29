@@ -7286,7 +7286,7 @@ void BindWA::markAsReferencedColumn(const ColumnDesc *cd,
 { 
   if (cd->getViewFileName())
   {
-    setColumRefsInStoi(cd->getViewFileName(),cd->getViewColPosition());
+    setColumnRefsInStoi(cd->getViewFileName(),cd->getViewColPosition());
   }
 
   markAsReferencedColumn(cd->getValueId(), groupByRefForSingleIntHist); 
@@ -7354,7 +7354,7 @@ void BindWA::markAsReferencedColumn(const ValueId &vid,
                         getFileSetName().getQualifiedNameAsString(),
                     wHeap());
 
-    setColumRefsInStoi(fileName.data(),nacol->getPosition());
+    setColumnRefsInStoi(fileName.data(),nacol->getPosition());
   }
 
   if (inDDL()||context->inOrderBy()) return;
@@ -7459,7 +7459,7 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
                          getFileSetName().getQualifiedNameAsString(),
                          bindWA->wHeap());
       
-      bindWA->setColumRefsInStoi(fileName.data(),nacol->getPosition());
+      bindWA->setColumnRefsInStoi(fileName.data(),nacol->getPosition());
       
     }
   

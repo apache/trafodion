@@ -416,6 +416,8 @@ PrivStatus PrivMgrCommands::getPrivileges(
 {
   PrivMgrBitmap objPrivs;
   PrivMgrBitmap grantablePrivs;
+  PrivColList colPrivsList;
+  PrivColList colGrantableList;
 
   // If authorization is enabled, go get privilege bitmaps from metadata
   if (authorizationEnabled())
@@ -425,6 +427,8 @@ PrivStatus PrivMgrCommands::getPrivileges(
                                                              userID, 
                                                              objPrivs, 
                                                              grantablePrivs,
+                                                             colPrivsList,
+                                                             colGrantableList,
                                                              secKeySet);
     if (retcode != STATUS_GOOD)
       return retcode;
@@ -440,9 +444,9 @@ PrivStatus PrivMgrCommands::getPrivileges(
 
   userPrivs.setObjectBitmap(objPrivs);
   userPrivs.setGrantableBitmap(grantablePrivs);
+  userPrivs.setColPrivList(colPrivsList);
+  userPrivs.setColGrantableList(colGrantableList);
     
-  // TBD:  set column privileges
-     
   return STATUS_GOOD;
 }
 
