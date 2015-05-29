@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter version="5.0" xml:id="getting_started"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:svg="http://www.w3.org/2000/svg"
+         xmlns:m="http://www.w3.org/1998/Math/MathML"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:db="http://docbook.org/ns/docbook">
+<!-- 
+/**
+  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->         
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+  <title>Getting Started</title>
+
+  <section>
+    <title>Introduction</title>
+
+    <para><xref linkend="quickstart" /> will get you up and
+    running on a single-node instance of DCS. 
+    <xref linkend="configuration" /> describes setup
+    of DCS in a multi-node configuration.</para>
+  </section>
+
+  <section xml:id="quickstart">
+    <title>Quick Start</title>
+
+    <para>This guide describes setup of a single node DCS instance.
+    It leads you through creating a configuration, and then starting
+    up and shutting down your DCS instance. The below exercise
+    should take no more than ten minutes (not including download time).</para>
+
+    <section>
+      <title>Download and unpack the latest release.</title>
+
+      <para>Decompress and untar your download and then change into the
+      unpacked directory.</para>
+
+      <para><programlisting>$ tar xzf dcs-<?eval ${project.version}?>.tar.gz
+$ cd dcs-<?eval ${project.version}?>
+</programlisting></para>
+
+      <note>
+        <title>Is <application>java</application> installed?</title>
+
+        <para>The steps in the following sections presume a 1.6 version of Oracle
+        <application>java</application> is installed on your machine and
+        available on your path; i.e. when you type
+        <application>java</application>, you see output that describes the
+        options the java program takes (DCS requires java 6 or better). If this is not
+        the case, DCS will not start. Install java, edit
+        <filename>conf/dcs-env.sh</filename>, uncommenting the
+        <envar>JAVA_HOME</envar> line pointing it to your java install.
+      </para>
+      </note>
+      <note>
+        <title>Is <application>Trafodion</application> installed and running?</title>
+
+        <para>DCS presumes a <application>Trafodion</application> instance
+        is installed and running on your machine and available on your path; i.e. the
+        <envar>MY_SQROOT</envar> is set and when you type
+        <command>sqcheck</command>, you see output that confirms
+        <application>Trafodion</application> is running. If this is not
+        the case, DCS may start but you'll see many errors in the DcsServer logs 
+        related to user program startup. 
+        </para>
+      </note>
+      
+      <para>At this point, you are ready to start DCS.</para>
+    </section>
+
+    <section xml:id="start_dcs">
+      <title>Start DCS</title>
+      
+      <para>Now start DCS:<programlisting>$ bin/start-dcs.sh 
+localhost: starting zookeeper, logging to /logs/dcs-user-1-zookeeper-hostname.out
+localhost: running Zookeeper
+starting master, logging to /logs/dcs-user-1-master-hostname.out
+localhost: starting server, logging to /logs/dcs-user-1-server-hostname.out</programlisting></para>
+
+      <para>You should now have a running DCS instance. DCS logs can be found in the
+      <filename>logs</filename> subdirectory. Peruse them especially if
+      DCS had trouble starting.</para>
+    </section>
+
+    <section xml:id="stopping">
+      <title>Stopping DCS</title>
+
+      <para>Stop your DCS instance by running the stop script.</para>
+
+      <para><programlisting>$ ./bin/stop-dcs.sh
+localhost: stopping server.
+stopping master.
+localhost: stopping zookeeper.
+</programlisting></para>
+    </section>
+
+    <section>
+      <title>Where to go next</title>
+
+      <para>The above described setup is good for testing and
+          experiments only. Next move on to <xref linkend="configuration" /> where we'll go into
+      depth on the different requirements and critical
+      configurations needed setting up a distributed DCS deploy.</para>
+    </section>
+  </section>
+
+</chapter>
