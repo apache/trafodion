@@ -24,9 +24,6 @@
 * File:         RuRefreshTask.cpp
 * Description:  Implementation of class	CRURefreshTask
 *
-* Authors:      Edward Bortnikov
-*				Amir Bar-or
-*				
 *
 * Created:      12/29/1999
 * Language:     C++

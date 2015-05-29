@@ -16,7 +16,7 @@
 <!--                                                                         -->
 <!-- @@@ END COPYRIGHT @@@                                                   -->
 <!-- MV for TPCD Query 10                                                       -->
-<!-- (Default schema is NEO.TPCD)                                               -->
+<!-- (Default schema is TRAFODION.TPCD)                                               -->
 <!--    select                                                                  -->
 <!--        c_custkey, c_name,                                                  -->
 <!--        cast (sum(l_extendedprice*(1-l_discount))                           -->
@@ -34,14 +34,14 @@
 <!--        c_address, c_comment;                                               -->
 <MV>
     <Version>1.0</Version>
-    <Table>NEO.TPCD.Q10-MV</Table>
+    <Table>TRAFODION.TPCD.Q10-MV</Table>
     <JBB id="B1">
       <Hub>
         <JBBCList>
-          <Table id="T1" TS="2007-09-22 10:30:45">NEO.TPCD.CUSTOMER</Table>
-          <Table id="T3" TS="2007-09-22 10:30:45">NEO.TPCD.LINEITEM</Table>
-          <Table id="T4" TS="2007-09-22 10:30:45">NEO.TPCD.NATION</Table>
-          <Table id="T2" TS="2007-09-22 10:30:45">NEO.TPCD.ORDERS</Table>
+          <Table id="T1" TS="2007-09-22 10:30:45">TRAFODION.TPCD.CUSTOMER</Table>
+          <Table id="T3" TS="2007-09-22 10:30:45">TRAFODION.TPCD.LINEITEM</Table>
+          <Table id="T4" TS="2007-09-22 10:30:45">TRAFODION.TPCD.NATION</Table>
+          <Table id="T2" TS="2007-09-22 10:30:45">TRAFODION.TPCD.ORDERS</Table>
         </JBBCList>
         <JoinPredList>
           <JoinPred id="J1">

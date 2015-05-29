@@ -39,8 +39,6 @@ extern "C"
                        PROCESSHANDLE_GETMINE_,     \
                        PROCESS_GETINFO_)"
 }
-#elif defined (NA_WINNT)
-#include "cextdecs\cextdecs.h"
 #elif defined (NA_LINUX)
 #include "seabed/fs.h"
 #include "seabed/ms.h"
@@ -181,18 +179,6 @@ void QRCommandLineRequest::getNextParameter(NAString& param)
 QmsGuaReceiveControlConnection::QmsGuaReceiveControlConnection(IpcEnvironment* env)
   : GuaReceiveControlConnection(env)
 {
-//#ifndef NA_WINNT
-//@ZX -- doesn't work as documented; returns null for mom phandle
-//  // Get the mom's process handle, so we can tell when she closes by comparing 
-//  // it to the phandle accompanying a close system message.
-//  short errorDetail = 0;
-//  short retcode = PROCESS_GETINFO_(,,,,, momPHandle_.phandle_, ,,,,,,,,,,,,,,
-//                                   &errorDetail, ,);
-//  if (retcode != 0)
-//    debugMessage2("QMS: result of call to PROCESS_GETINFO_: retcode=%d, errorDetail=%d",
-//                  retcode, errorDetail);
-//#endif
-  
 #ifndef NA_LINUX
   // Get the name of this qms process.
   short myProcHandle[10];
@@ -217,16 +203,6 @@ QmsGuaReceiveControlConnection::QmsGuaReceiveControlConnection(IpcEnvironment* e
   char prefixValue[36];
   short prefixValueLen = 0;
   short retcode = 0;
-
-#ifdef NA_NSK
-  retcode = ComRtGetDefine("=_MX_QMS_PROCESS_PREFIX", prefixValue,
-                                 sizeof(prefixValue), prefixValueLen);
-
-  if (retcode == 0)
-
-
-
-    prefixValue[prefixValueLen] = '\0';
 
 #elif defined (NA_LINUX)
 

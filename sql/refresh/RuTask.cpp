@@ -24,7 +24,6 @@
 * File:         RuTask.cpp
 * Description:  Implementation of classes CRUTask and CRUTaskList
 *				
-*				Edward Bortnikov
 *
 * Created:      12/29/1999
 * Language:     C++

@@ -528,7 +528,7 @@ void CRUAuditRefreshTaskExecutor::ResetObjectsAvailable()
 void CRUAuditRefreshTaskExecutor::Recompute()
 {
 	// TEMPORARY: Commented out until the privilege-skipping lock 
-	// is implemented by SQL/MX
+	// is implemented 
 	
 	// LockMV();
 
@@ -537,7 +537,7 @@ void CRUAuditRefreshTaskExecutor::Recompute()
 		BeginTransaction(); 
 	}
 
-	// Yuval - Decouple prepare and execute to separate transactions.
+	// Decouple prepare and execute to separate transactions.
 	CDMPreparedStatement *pStat = PrepareRecomputeMV();
 	CommitTransaction();
 	BeginTransaction();

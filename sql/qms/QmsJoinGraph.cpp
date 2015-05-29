@@ -1141,10 +1141,10 @@ const QRJoinSubGraphMapPtr QRJoinSubGraph::getSubGraphMap(OperationType op)
   if (graphHashKey_ == "")
   {
     // Generate the MVMemo hash key. Example (from the doc):
-    //   [1=NEO.SCH.CUSTOMER]
-    //   [2=NEO.SCH.SALES]
-    //   [3=NEO.SCH.STATES]
-    //   [4=NEO.SCH.STORES]
+    //   [1=TRAFODION.SCH.CUSTOMER]
+    //   [2=TRAFODION.SCH.SALES]
+    //   [3=TRAFODION.SCH.STATES]
+    //   [4=TRAFODION.SCH.STORES]
     //   E1={1.CUSTOMER_ID,2.ORDERED_BY}
     //   E2={2.STORE_ID,4.ID}
     //   E3={3.ID,4.STATE}

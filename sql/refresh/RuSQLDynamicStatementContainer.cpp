@@ -305,7 +305,7 @@ void CRUSQLDynamicStatementContainer::DynamicStmt::PrepareStatement(BOOL DeleteU
 					  CDMConnection::eItemIsOwned
 				  );
              --- */
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
          Lng32 iso_cs = 0 ;
          SQLCHARSET_CODE mapCS = SQLCHARSETCODE_ISO88591;
 
@@ -328,14 +328,14 @@ void CRUSQLDynamicStatementContainer::DynamicStmt::PrepareStatement(BOOL DeleteU
 		     e.AddArgument(precision_str);
 	         throw e;
 		 }
-#endif // NA_NSK //Neoview
+#endif // NA_NSK 
 
 		   pPrepStmt = 
 				  pConnect->PrepareStmtWithCharSet(
 				  sqlForCompilation,
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
 				  mapCS,  // CLI Charset enum, defined in sqlcli.h
-#else // SeaQuest
+#else 
 				  SQLCHARSETCODE_UTF8,
 #endif
 				  NULL, // no statement name

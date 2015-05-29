@@ -19,11 +19,11 @@ drop schema cat.tpcd cascade;
 create schema cat.tpcd;
 set schema CAT.TPCD;
 
-insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+insert into "_MD_".defaults
   (attribute, attr_value) values ('MVQR_REWRITE_LEVEL', '1');
-insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+insert into "_MD_".defaults
   (attribute, attr_value) values ('MVQR_REWRITE_ENABLED_OPTION', 'ON');
-insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+insert into "_MD_".defaults
   (attribute, attr_value) values ('QUERY_TEXT_CACHE', 'OFF');
 
 -- ******************************************************************

@@ -24,7 +24,6 @@
 * File:         RuDependenceGraph.cpp
 * Description:  Implementation of class CRUDependenceGraph.
 *				
-*				Amir Bar-or
 * Created:      12/29/1999
 * Language:     C++
 * 

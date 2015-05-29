@@ -25,7 +25,6 @@
 * Description:  Implementation of class CRUExecController
 *				
 *
-*				Amir Bar-or
 * Created:      05/07/2000
 * Language:     C++
 * 
@@ -41,9 +40,6 @@
 #include "RuOptions.h"
 #include "uofsException.h"
 
-#ifdef NA_WINNT 
-const char * CRUExecController::taskServerName_ = "tdm_arkutp.exe";
-#endif
 #ifdef NA_LINUX
 const char * CRUExecController::taskServerName_ = "tdm_arkutp";
 #endif

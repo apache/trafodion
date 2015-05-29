@@ -16,7 +16,7 @@
 <!--                                                                         -->
 <!-- @@@ END COPYRIGHT @@@                                                   -->
 <!-- TPCD Query 7                                                               -->
-<!-- (Default schema is NEO.TPCD)                                               -->
+<!-- (Default schema is TRAFODION.TPCD)                                               -->
 <!--    select                                                                  -->
 <!--        supp_nation, cust_nation, yr                                        -->
 <!--    from                                                                    -->

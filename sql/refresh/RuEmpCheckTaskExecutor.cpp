@@ -25,7 +25,6 @@
 * Description:  Implementation of class CRUEmpCheckTaskExecutor.
 *				
 *
-*				Amir Bar-or
 * Created:      04/06/2000
 * Language:     C++
 * 

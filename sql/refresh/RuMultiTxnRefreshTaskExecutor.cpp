@@ -131,9 +131,9 @@ void CRUMultiTxnRefreshTaskExecutor::UpdateTargetEpoch(TInt32 epoch)
   // VO, metadata versioning: 
   // Figure out what the real schema version is, rather than using a hard-coded value
   CDSString QueryText = "SELECT VERSION FROM TABLE (VERSION_INFO ('SCHEMA',";
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
   QueryText += "'";
-#else // SeaQuest
+#else 
   QueryText += "_UTF8'";
 #endif
   QueryText += GetRootMVSchema().ConvertToQuotedString(FALSE) + "'))";
@@ -142,9 +142,9 @@ void CRUMultiTxnRefreshTaskExecutor::UpdateTargetEpoch(TInt32 epoch)
   CDMPreparedStatement *pPrepStmt;
   CDMResultSet *pResult;
 
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
   pPrepStmt = connection.PrepareStmtWithCharSet(QueryText, SQLCHARSETCODE_ISO_MAPPING);
-#else // SeaQuest
+#else 
   pPrepStmt = connection.PrepareStmtWithCharSet(QueryText, SQLCHARSETCODE_UTF8);
 #endif
   pResult = pPrepStmt->ExecuteQuery();
@@ -165,17 +165,17 @@ void CRUMultiTxnRefreshTaskExecutor::UpdateTargetEpoch(TInt32 epoch)
   CDMPreparedStatement *pStat =
   staticSqlContainer.GetPreparedStatement(UPDATE_CTX);
 
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
   pStat->SetString(1, GetRootMVSchema() + ".MVS_USED_UMD" );
-#else // SeaQuest
+#else 
   CDSString table1name(GetRootMVSchema() + ".MVS_USED_UMD");
   pStat->SetWString(1, CDSCharInfo::ConvStrFromInfCSToUTF16(table1name) );
 #endif
   pStat->SetInt(2, epoch);
   pStat->SetLargeInt(3, GetRootMVUID());
-#ifdef NA_NSK // Neoview
+#ifdef NA_NSK 
   pStat->SetString(4, GetRootMVCatalog() + ".HP_DEFINITION_SCHEMA.MVS_USED" );
-#else // SeaQuest
+#else 
   CDSString table4name(GetRootMVCatalog() + ".HP_DEFINITION_SCHEMA.MVS_USED");
   pStat->SetWString(4, CDSCharInfo::ConvStrFromInfCSToUTF16(table4name) );
 #endif
@@ -391,7 +391,7 @@ void CRUMultiTxnRefreshTaskExecutor::NoBounds()
 	CDMPreparedStatement *pStat
 				= CompileRefresh(NO_BOUNDS_REFRESH,beginEpoch_,endEpoch_);
 
-	// Yuval - Decouple the prepare and execute to separate transactions.
+	// Decouple the prepare and execute to separate transactions.
 	// Don't count the prepare transaction.
 	CommitTransaction(FALSE);
 	BeginTransaction();
@@ -474,7 +474,7 @@ void CRUMultiTxnRefreshTaskExecutor::UpperBound()
 				endEpoch_,
 				catchupEpoch_);
 
-	// Yuval - Decouple the prepare and execute to separate transactions.
+	// Decouple the prepare and execute to separate transactions.
 	// Don't count the prepare transaction.
 	CommitTransaction(FALSE);
 	BeginTransaction();
@@ -590,7 +590,7 @@ void CRUMultiTxnRefreshTaskExecutor::
 				beginEpoch_,
 				endEpoch_,
 				catchupEpoch_);
-	// Yuval - Decouple the prepare and execute to separate transactions.
+	// Decouple the prepare and execute to separate transactions.
 	// Don't count the prepare transaction.
 	CommitTransaction(FALSE);
 

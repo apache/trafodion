@@ -1174,9 +1174,9 @@ void WorkloadAnalysis::reportResults(ofstream& ofs, Int32 minQueriesPerMV)
   QRLogger::instance().log(CAT_QMS_MAIN, LL_INFO,
     "Workload analysis result:\n");
 
-  ofs << "CREATE SCHEMA  NEO.MVQR_WA;\n";
-  ofs << "SET CATALOG NEO;\n";
-  ofs << "SET SCHEMA  NEO.MVQR_WA;\n";
+  ofs << "CREATE SCHEMA  TRAFODION.MVQR_WA;\n";
+  ofs << "SET CATALOG TRAFODION;\n";
+  ofs << "SET SCHEMA  TRAFODION.MVQR_WA;\n";
   ofs << "CONTROL QUERY DEFAULT MVQR_REWRITE_LEVEL '4';\n\n";
 
   Int32 maxJoinSize = getMaxJoinSize();

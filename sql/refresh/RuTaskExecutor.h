@@ -27,7 +27,6 @@
 * File:         RuTaskExecutor.h
 * Description:  Definition of class CRUTaskExecutor.
 *
-*				Amir Bar-or
 * Created:      8/23/1999
 * Language:     C++
 *

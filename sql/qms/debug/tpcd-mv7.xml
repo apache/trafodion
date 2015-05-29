@@ -16,7 +16,7 @@
 <!--                                                                         -->
 <!-- @@@ END COPYRIGHT @@@                                                   -->
 <!-- TPCD Query 7                                                               -->
-<!-- (Default schema is NEO.TPCD)                                               -->
+<!-- (Default schema is TRAFODION.TPCD)                                               -->
 <!--    select                                                                  -->
 <!--        supp_nation, cust_nation, yr                                        -->
 <!--    from                                                                    -->
@@ -43,7 +43,7 @@
   <Version>
     1.0
   </Version>
-  <Table>NEO.TPCD.Q7-MV</Table>
+  <Table>TRAFODION.TPCD.Q7-MV</Table>
   <JBB>
     <Hub>
       <JBBCList>

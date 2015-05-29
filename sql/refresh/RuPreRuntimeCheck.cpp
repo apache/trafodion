@@ -12,7 +12,6 @@
 * File:         RuPreRuntimeCheck.cpp
 * Description:  Implementation of class CRUPreRuntimeCheck
 *
-*				Edward Bortnikov
 * Created:      10/10/2000
 * Language:     C++
 *
@@ -59,12 +58,10 @@ void CRUPreRuntimeCheck::PerformCheck()
 	// In order to populate the index, the user must have
 	// the SELECT and DELETE privileges for this MV.
 	
-//#ifndef NA_LINUX //while SeaQuest security is not implemented       
         if (FALSE == CheckPrivileges())
 	{
 		return;
 	}
-//#endif
 
 	// 3. Check that all the used objects are initialized
 	if (FALSE == CheckUsedObjectsInitialization())

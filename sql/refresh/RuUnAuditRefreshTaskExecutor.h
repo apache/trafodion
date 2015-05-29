@@ -28,7 +28,6 @@
 * File:         RuUnAuditRefreshTaskExecutor.h
 * Description:  Definition of class CRUUnAuditRefreshTaskExecutor.
 *
-*				Edward Bortnikov
 *
 * Created:      08/14/2000
 * Language:     C++

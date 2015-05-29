@@ -27,7 +27,6 @@
 * File:         RuDgIterator.h
 * Description:  Definition of class CRUDependenceGraphIterator.
 *
-*				Edward Bortnikov
 *
 * Created:      8/23/1999
 * Language:     C++

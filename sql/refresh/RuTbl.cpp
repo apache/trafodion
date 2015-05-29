@@ -169,7 +169,7 @@ BOOL CRUTbl::IsInsertLog()
 
 CDSString CRUTbl::GetLogShortName(const CDSString &nmsp)
 {
-//	Yuval - Suffix removed from all the logs.
+//	Suffix removed from all the logs.
 //	CDSString logNameSuffix("__" + nmsp);
 	CDSString logNameSuffix("");
 	CDSString name(this->GetName());

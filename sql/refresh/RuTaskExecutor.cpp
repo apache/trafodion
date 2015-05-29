@@ -24,7 +24,6 @@
 * File:         RuTaskExecutor.cpp
 * Description:  Implementation of class CRURefreshTaskExecutor.
 *
-*				Amir Bar-or
 * Created:      05/14/2000
 * Language:     C++
 *

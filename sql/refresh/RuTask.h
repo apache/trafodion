@@ -27,7 +27,6 @@
 * File:         RuTask.h
 * Description:  Definition of class CRUTask.
 *
-*				Amir Bar-Or
 * Created:      8/23/1999
 * Language:     C++
 *
