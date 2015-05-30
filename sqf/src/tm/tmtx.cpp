@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -886,6 +886,31 @@ int32 TM_TX_Info::schedule_abort()
 } //schedule_abort
 
 
+// --------------------------------------------------------------
+// req_ddloperation
+// Purpose - Txn Thread specific processing for ddl operations
+// --------------------------------------------------------------
+bool TM_TX_Info::req_ddloperation(CTmTxMessage *pp_msg)
+{
+   TMTrace (2, ("TM_TX_Info::req_ddloperation : ID (%d,%d) ENTRY.\n",
+      node(), seqnum()));
+
+   short lv_error = branches()->ddlOperation(this, 0, pp_msg);
+
+   lock();
+   if (pp_msg->replyPending())
+      pp_msg->reply(lv_error);
+   unlock();
+
+   reset_transactionBusy();
+
+   TMTrace (2, ("TM_TX_Info::req_ddloperation : EXIT error %d, Txn ID (%d,%d).\n",
+      lv_error, node(), seqnum()));
+
+   return true;
+}
+
+
 // -------------------------------------------------------------
 // schedule_eventQ
 // -------------------------------------------------------------
@@ -1001,6 +1026,9 @@ void TM_TX_Info::process_eventQ()
 /*	 if (! lp_msg->replyPending()) {
 	   delete lp_msg;
 	 } */
+         break;
+      case TM_MSG_TYPE_DDLREQUEST:
+         lv_exit = req_ddloperation(lp_msg);
          break;
       case TM_MSG_TYPE_JOINTRANSACTION:
          // These aren't queued, so we should never hit this

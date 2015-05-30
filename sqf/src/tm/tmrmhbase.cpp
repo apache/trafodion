@@ -387,7 +387,7 @@ int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
 // hb_ddl_operation
 // Purpose: Call hb_ddl_operation for this transaction
 // ------------------------------------------------------------------------------
-int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg, char *ddlbuffer)
+int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
 {
    int32 lv_err = FEOK;
    int64 lv_transid = pp_txn->legacyTransid();
@@ -401,6 +401,7 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
    int len_aligned;
    int buffer_size;
    int index;
+   char *ddlbuffer;
    char **buffer_keys;
 
    TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
@@ -414,30 +415,44 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
          pv_numsplits = pp_msg->request()->u.iv_ddl_request.crt_numsplits;
          pv_keylen = pp_msg->request()->u.iv_ddl_request.crt_keylen;
 
-         buffer_size = pv_numsplits*pv_keylen;
-         buffer_keys = new char *[pv_numsplits];
-
          pv_tbldesclen = pp_msg->request()->u.iv_ddl_request.ddlreq_len;
          memcpy(buffer_tbldesc, pp_msg->request()->u.iv_ddl_request.ddlreq, pv_tbldesclen);
 
-         index = len_aligned;
-         for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
-	     {
-           buffer_keys[i] = new char[pp_msg->request()->u.iv_ddl_request.crt_keylen];
-           memcpy(buffer_keys[i],(char*)(ddlbuffer)+index , pv_keylen);
-           index = index + pv_keylen;
-         }
+         ddlbuffer = pp_msg->getBuffer();
 
-         lv_err = gv_HbaseTM.createTable(lv_transid,
+         if(ddlbuffer == NULL) {
+            buffer_keys = NULL;
+            lv_err = gv_HbaseTM.createTable(lv_transid,
+                         buffer_tbldesc,
+                         pv_tbldesclen,
+                         NULL,
+                         0,
+                         0);
+         }
+         else {
+            buffer_size = pv_numsplits*pv_keylen;
+            buffer_keys = new char *[pv_numsplits];
+
+            index = len_aligned;
+            for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
+            {
+               buffer_keys[i] = new char[pp_msg->request()->u.iv_ddl_request.crt_keylen];
+               memcpy(buffer_keys[i],(char*)(ddlbuffer)+index , pv_keylen);
+               index = index + pv_keylen;
+             }
+             lv_err = gv_HbaseTM.createTable(lv_transid,
                          buffer_tbldesc,
                          pv_tbldesclen,
                          buffer_keys,
                          pv_numsplits,
                          pv_keylen);
+         }
 
-         for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
-            delete buffer_keys[i];
-         delete[] buffer_keys;
+         if(ddlbuffer!=NULL) {
+            for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
+               delete buffer_keys[i];
+            delete[] buffer_keys;
+         }
          break;
       case TM_DDL_DROP:
          lv_err = gv_HbaseTM.dropTable(lv_transid,

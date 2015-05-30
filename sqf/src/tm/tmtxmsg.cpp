@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@
 // Note that instantiating a CTmTxMessage object always allocates
 // space from the heap for the object.
 //----------------------------------------------------------------------------
-CTmTxMessage::CTmTxMessage(Tm_Req_Msg_Type * pp_req, int32 pv_msgid) 
+CTmTxMessage::CTmTxMessage(Tm_Req_Msg_Type * pp_req, int32 pv_msgid, char *pv_buffer)
       :CTmMessage(pp_req), iv_msgid(NULL_MSGID), 
-       ip_rsp(NULL), iv_rspSize(0)
+       ip_rsp(NULL), iv_rspSize(0), ip_buffer(pv_buffer)
 {
    TMTrace(2, ("CTmTxMessage::CTmTxMessage(req, msgid) : ENTRY, request(%d), msgid(%d).\n", 
                    pp_req->iv_msg_hdr.rr_type.request_type, pv_msgid));
@@ -62,7 +62,7 @@ CTmTxMessage::CTmTxMessage(Tm_Req_Msg_Type * pp_req, int32 pv_msgid)
 //----------------------------------------------------------------------------
 CTmTxMessage::CTmTxMessage(short pv_reqType) 
     :CTmMessage(pv_reqType),
-     ip_rsp(NULL), iv_rspSize(0)
+     ip_rsp(NULL), iv_rspSize(0), ip_buffer(NULL)
 {
    TMTrace(2, ("CTmTxMessage::CTmTxMessage(reqType) : ENTRY.\n"));
 
@@ -83,7 +83,8 @@ CTmTxMessage::CTmTxMessage(short pv_reqType)
 CTmTxMessage::CTmTxMessage(CTmTxMessage * pv_msg) 
     :CTmMessage((CTmMessage *) pv_msg),
      iv_msgid(pv_msg->msgid()),
-     iv_rspSize(pv_msg->responseSize())
+     iv_rspSize(pv_msg->responseSize()),
+     ip_buffer(NULL)
 {
    TMTrace(2, ("CTmTxMessage::CTmTxMessage(msg) : ENTRY, copy msg %p, msgid %d, reqType %d.\n", 
            (void *) pv_msg, pv_msg->msgid(), pv_msg->requestType()));
@@ -114,6 +115,12 @@ CTmTxMessage::~CTmTxMessage()
    else
       free(ip_rsp);
 
+   if(ip_buffer == NULL){
+   }
+   else {
+      delete ip_buffer;
+      ip_buffer = NULL;
+   }
    ip_rsp = NULL;
 } 
 
