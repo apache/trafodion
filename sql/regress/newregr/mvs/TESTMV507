@@ -1,0 +1,117 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--====================================================
+-- TestMV507
+--
+-- Test default for initialization of mvs
+--====================================================
+
+obey TESTMV507(CLEAN_UP);
+obey TESTMV507(SET_UP);
+log LOGMV507 clear;
+
+-- Run Tests
+  obey TESTMV507(TEST1);
+  obey TESTMV507(TEST2);
+  obey TESTMV507(TEST3);
+  obey TESTMV507(TEST4);
+
+-- Clean and Exit
+log;
+obey TESTMV507(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+exit;
+
+--------------------------------------
+?section SET_UP
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+set schema catmvs.mvschm;
+
+obey PREPARE_DDL_SELECTS;
+
+create table T_507_T1 ( a int, b int );
+ALTER TABLE T_507_T1 attribute all mvs allowed;
+
+------------------------------
+?section TEST1
+create mv T_507_MV1
+  refresh on request 
+initialized on refresh
+  as select b, count(a) as cnt_a from T_507_T1
+  group by b;
+ALTER MV T_507_MV1 attribute all mvs allowed;
+
+SET PARAM ?mv_name 'T_507_MV1';
+execute select_mvs_table;
+
+drop mv T_507_MV1;
+
+-----------------------------
+?section TEST2
+create mv T_507_MV1
+  refresh on statement 
+initialized on refresh
+  as select b, count(a) as cnt_a from T_507_T1
+  group by b;
+ALTER MV T_507_MV1 attribute all mvs allowed;
+
+SET PARAM ?mv_name 'T_507_MV1';
+execute select_mvs_table;
+
+drop mv T_507_MV1;
+
+-----------------------------
+?section TEST3
+create mv T_507_MV1
+  recompute 
+initialized on refresh
+  as select b, count(a) as cnt_a from T_507_T1
+  group by b;
+ALTER MV T_507_MV1 attribute all mvs allowed;
+
+SET PARAM ?mv_name 'T_507_MV1';
+execute select_mvs_table;
+
+drop mv T_507_MV1;
+
+-----------------------------
+?section TEST4
+
+alter table T_507_T1 attribute NO LOCKONREFRESH;
+
+-- warning 
+create mv T_507_MV1
+  refresh on request 
+initialized on refresh
+  as select b, count(a) as cnt_a from T_507_T1
+  group by b;
+ALTER MV T_507_MV1 attribute all mvs allowed;
+
+SET PARAM ?mv_name 'T_507_MV1';
+execute select_mvs_table;
+
+drop mv T_507_MV1;
+
+--------------------------------------------
+?section CLEAN_UP
+
+set schema catmvs.mvschm;
+drop mv T_507_MV1;
+drop table T_507_T1;
+
+

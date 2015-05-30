@@ -1,0 +1,849 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST002
+-- Unit Test to test the Lattice Index for grouping columns.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST002(clean_up);
+obey TEST002(clean_up_files);
+log LOG002 clear;
+obey TEST002(set_up);
+obey TEST002(create_mvs);
+obey TEST002(match1);
+obey TEST002(match2);
+obey TEST002(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema sumby cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm SUMBY* sumby*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default QUERY_CACHE '0';
+--control query default MVQR_PUBLISH_TO 'PRIVATE';
+--control query default MULTI_JOIN_THRESHOLD '2';
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+obey GetMvDesc;
+
+create schema sumby;
+set schema sumby;
+set pattern $$MVSchemaName$$ SUMBY;
+
+create table T002_FACT (
+	fday   int,  -- 1-31
+	fmonth int,  -- 1-12
+	fyear  int,  -- 4 digit year
+	fitem  int,
+	fdep   int,
+	fstore int,
+	fstate int,
+	fprice numeric (8,2),
+	dimkey int) no partition;
+
+create table T002_DIM (dkey int, dimdata int) no partition;
+
+insert into T002_FACT values
+ ( 4, 1,2010,4,4,3,4,83,8),
+ (23, 1,2010,2,5,5,4,67,3),
+ (11, 3,2010,1,1,5,4,39,6),
+ ( 8, 4,2010,4,3,4,2,56,5),
+ (16, 4,2010,3,1,5,2,67,9),
+ ( 4, 5,2010,2,4,2,4,40,2),
+ ( 6, 7,2010,3,2,4,1,63,6),
+ ( 8, 7,2010,5,3,2,4,90,3),
+ (19, 7,2010,3,3,4,2,50,8),
+ ( 1, 8,2010,3,1,4,3, 4,3),
+ ( 2, 9,2010,3,1,3,4, 8,1),
+ ( 4, 9,2010,2,3,1,5,62,8),
+ (15, 9,2010,5,2,4,3,45,4),
+ (31,10,2010,2,4,2,1,39,8),
+ (12,11,2010,4,3,5,5,27,9),
+ ( 1,12,2010,3,2,2,5,21,8),
+ (10,12,2010,3,2,4,5,31,1),
+ (22, 1,2011,5,5,3,4,12,2),
+ ( 7, 6,2011,1,4,1,4,73,5),
+ (10, 6,2011,5,5,3,2,61,1),
+ (16, 6,2011,1,5,5,4,76,4),
+ (31, 6,2011,3,4,3,2,66,7),
+ (22, 7,2011,4,5,2,1,15,3),
+ (25, 7,2011,5,4,3,5,75,7),
+ ( 5, 8,2011,1,4,1,4,87,3),
+ (10,10,2011,4,1,4,1,66,6),
+ (24,11,2011,4,1,3,3,88,8),
+ (13,12,2011,1,3,3,1,59,7),
+ (15,12,2011,3,3,4,3,95,5),
+ (25,12,2011,2,2,1,3,69,4),
+ ( 9, 1,2012,2,5,4,2,71,9),
+ ( 1, 2,2012,2,1,2,1,49,6),
+ ( 9, 2,2012,4,4,5,3,65,6),
+ ( 9, 2,2012,3,2,1,3,67,3),
+ (17, 2,2012,2,2,3,3,98,3),
+ ( 1, 3,2012,2,1,2,4,55,7),
+ (10, 3,2012,5,1,5,4,11,8),
+ (28, 3,2012,1,3,2,5, 7,5),
+ (21, 4,2012,1,2,1,3,32,8),
+ (23, 4,2012,4,2,2,1,25,4),
+ (27, 4,2012,4,5,4,2,61,5),
+ (28, 5,2012,5,5,5,1,44,8),
+ ( 2, 6,2012,4,3,2,3,31,2),
+ (21, 6,2012,4,3,5,3,70,5),
+ (29, 6,2012,5,2,5,1,51,5),
+ ( 9, 7,2012,1,4,5,5,14,4),
+ (29, 7,2012,2,1,5,3,53,5),
+ (21, 8,2012,3,4,4,1,58,1),
+ (18,12,2012,2,1,2,3,20,1),
+ (20,12,2012,5,1,2,1, 4,6); 
+
+insert into T002_DIM values
+ (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9);
+
+?section create_mvs
+--===========================================
+-- MJV
+--===========================================
+
+create mv sumby_none
+	refresh on request
+	initialized on create
+	as  select *
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey;
+
+set pattern $$MVName$$ SUMBY_NONE;
+obey TEST002(dump_MV);
+
+--===========================================
+-- Single dimention
+--===========================================
+
+create mv sumby_day
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear;
+
+set pattern $$MVName$$ SUMBY_DAY;
+obey TEST002(dump_MV);
+
+create mv sumby_month
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear;
+
+set pattern $$MVName$$ SUMBY_MONTH;
+obey TEST002(dump_MV);
+
+create mv sumby_year
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear;
+
+set pattern $$MVName$$ SUMBY_YEAR;
+obey TEST002(dump_MV);
+
+create mv sumby_item
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fitem oitem, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fitem, fdep;
+
+set pattern $$MVName$$ SUMBY_ITEM;
+obey TEST002(dump_MV);
+
+create mv sumby_dep
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fdep;
+
+set pattern $$MVName$$ SUMBY_DEP;
+obey TEST002(dump_MV);
+
+create mv sumby_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fstate;
+
+set pattern $$MVName$$ SUMBY_STATE;
+obey TEST002(dump_MV);
+
+--===========================================
+-- Two dimentions
+--===========================================
+
+create mv sumby_day_item
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fitem oitem, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fitem, fdep;
+
+set pattern $$MVName$$ SUMBY_DAY_ITEM;
+obey TEST002(dump_MV);
+
+create mv sumby_month_item
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fitem oitem, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, fitem, fdep;
+
+set pattern $$MVName$$ SUMBY_MONTH_ITEM;
+obey TEST002(dump_MV);
+
+create mv sumby_year_item
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fitem oitem, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, fitem, fdep;
+
+set pattern $$MVName$$ SUMBY_YEAR_ITEM;
+obey TEST002(dump_MV);
+
+create mv sumby_day_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_YEAR_STORE;
+obey TEST002(dump_MV);
+
+--===========================================
+
+create mv sumby_day_dep
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fdep;
+
+set pattern $$MVName$$ SUMBY_DAY_DEP;
+obey TEST002(dump_MV);
+
+create mv sumby_month_dep
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, fdep;
+
+set pattern $$MVName$$ SUMBY_MONTH_DEP;
+obey TEST002(dump_MV);
+
+create mv sumby_year_dep
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fdep odep
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, fdep;
+
+set pattern $$MVName$$ SUMBY_YEAR_DEP;
+obey TEST002(dump_MV);
+
+create mv sumby_day_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, fstate;
+
+set pattern $$MVName$$ SUMBY_YEAR_STATE;
+obey TEST002(dump_MV);
+
+--===========================================
+-- Three dimentions
+--===========================================
+
+create mv sumby_day_item_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fitem, fdep, 
+	             fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_ITEM_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_item_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear,
+	             fitem, fdep, 
+	             fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_ITEM_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_item_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, 
+	             fitem, fdep, 
+	             fstore, fstate;	    
+
+set pattern $$MVName$$ SUMBY_YEAR_ITEM_STORE;
+obey TEST002(dump_MV);
+
+--===========================================
+
+create mv sumby_day_item_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_ITEM_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_item_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_ITEM_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_item_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_YEAR_ITEM_STATE;
+obey TEST002(dump_MV);
+
+--===========================================
+
+create mv sumby_day_dep_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_DEP_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_dep_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_DEP_STORE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_dep_store
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+set pattern $$MVName$$ SUMBY_YEAR_DEP_STORE;
+obey TEST002(dump_MV);
+
+--===========================================
+
+create mv sumby_day_dep_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_DAY_DEP_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_month_dep_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_MONTH_DEP_STATE;
+obey TEST002(dump_MV);
+
+create mv sumby_year_dep_state
+	refresh on request
+	initialized on create
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from T002_FACT, T002_DIM
+	    where dimkey=dkey
+	    group by fyear, 
+	             fdep, 
+	             fstate;
+
+set pattern $$MVName$$ SUMBY_YEAR_DEP_STATE;
+obey TEST002(dump_MV);
+
+--===========================================
+--===========================================
+?section query1
+prepare QueryStmt from
+  select sum(fprice) total_price, 
+         sum(dimdata) sumdata,
+         fitem oitem, fdep odep
+  from T002_FACT, T002_DIM
+  where dimkey=dkey
+  group by fitem, fdep
+  order by fitem, fdep;
+
+?section match1
+--===========================================
+-- Query 1, matching SUMBY_ITEM
+--===========================================
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST002(query1);
+		
+set pattern $$QueryName$$ SUMBY_QUERY_ITEM;
+obey TEST002(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                                 >> sumby1.in;
+sh echo PUBLISH SUMBY_NONE.xml                     >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY.xml                      >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_DEP.xml                  >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_DEP_STATE.xml            >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_DEP_STORE.xml            >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_ITEM.xml                 >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_ITEM_STATE.xml           >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_ITEM_STORE.xml           >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_STATE.xml                >> sumby1.in;
+sh echo PUBLISH SUMBY_DAY_STORE.xml                >> sumby1.in;
+sh echo PUBLISH SUMBY_DEP.xml                      >> sumby1.in;
+sh echo PUBLISH SUMBY_ITEM.xml                     >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH.xml                    >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_DEP.xml                >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_DEP_STATE.xml          >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_DEP_STORE.xml          >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM.xml               >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM_STATE.xml         >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM_STORE.xml         >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_STATE.xml              >> sumby1.in;
+sh echo PUBLISH SUMBY_MONTH_STORE.xml              >> sumby1.in;
+sh echo PUBLISH SUMBY_STATE.xml                    >> sumby1.in;
+sh echo PUBLISH SUMBY_STORE.xml                    >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR.xml                     >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_DEP.xml                 >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_DEP_STATE.xml           >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_DEP_STORE.xml           >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM.xml                >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM_STATE.xml          >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM_STORE.xml          >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_STATE.xml               >> sumby1.in;
+sh echo PUBLISH SUMBY_YEAR_STORE.xml               >> sumby1.in;
+sh echo MATCH SUMBY_QUERY_ITEM.xml                 >> sumby1.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS sumby1.in sumby.out";
+
+log;
+sh cat sumby.out >> LOG002;
+log LOG002;
+
+control query default MVQR_REWRITE_CANDIDATES 'CAT.SUMBY.SUMBY_ITEM';
+-- Verify the MV is picked by the optimizer.
+set pattern $$QueryName$$ query1;
+obey TEST002(compare);
+
+--===========================================
+-- Section query1 is done.
+--===========================================
+?section query2
+prepare QueryStmt from
+  select sum(fprice) total_price, 
+         sum(dimdata) sumdata,
+         fmonth omonth, fyear oyear,
+         fdep odep, 
+         fstate ostate
+  from   T002_FACT, T002_DIM
+  where  dimkey=dkey
+  group by fmonth, fyear, fdep, fstate
+  order by fmonth, fyear, fdep, fstate;
+
+?section match2
+--===========================================
+-- Query 2, matching sumby_month_dep_state
+--===========================================
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST002(query2);
+
+set pattern $$QueryName$$ SUMBY_QUERY_MONTH_YEAR_DEP_STATE;
+obey TEST002(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                                 >> sumby2.in;
+sh echo PUBLISH SUMBY_NONE.xml                     >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY.xml                      >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_DEP.xml                  >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_DEP_STATE.xml            >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_DEP_STORE.xml            >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_ITEM.xml                 >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_ITEM_STATE.xml           >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_ITEM_STORE.xml           >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_STATE.xml                >> sumby2.in;
+sh echo PUBLISH SUMBY_DAY_STORE.xml                >> sumby2.in;
+sh echo PUBLISH SUMBY_DEP.xml                      >> sumby2.in;
+sh echo PUBLISH SUMBY_ITEM.xml                     >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH.xml                    >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_DEP.xml                >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_DEP_STATE.xml          >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_DEP_STORE.xml          >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM.xml               >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM_STATE.xml         >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_ITEM_STORE.xml         >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_STATE.xml              >> sumby2.in;
+sh echo PUBLISH SUMBY_MONTH_STORE.xml              >> sumby2.in;
+sh echo PUBLISH SUMBY_STATE.xml                    >> sumby2.in;
+sh echo PUBLISH SUMBY_STORE.xml                    >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR.xml                     >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_DEP.xml                 >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_DEP_STATE.xml           >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_DEP_STORE.xml           >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM.xml                >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM_STATE.xml          >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_ITEM_STORE.xml          >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_STATE.xml               >> sumby2.in;
+sh echo PUBLISH SUMBY_YEAR_STORE.xml               >> sumby2.in;
+sh echo MATCH SUMBY_QUERY_MONTH_YEAR_DEP_STATE.xml >> sumby2.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS sumby2.in sumby.out";
+
+log;
+sh cat sumby.out >> LOG002;
+log LOG002;
+
+-- Verify the MV is picked by the optimizer.
+set pattern $$QueryName$$ query2;
+obey TEST002(compare);
+
+--===========================================
+-- Section query1 is done.
+--===========================================
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG002;
+log LOG002;
+
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG002;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST002($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log;
+log SUMBY_C1.txt clear;
+execute QueryStmt;
+log;
+log LOG002;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST002($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log;
+log SUMBY_C2.txt clear;
+execute QueryStmt;
+log;
+log LOG002;
+
+-- Diff query results
+log;
+sh diff SUMBY_C1.txt SUMBY_C2.txt >> LOG002;
+log LOG002;
+-- Diff is done.
+

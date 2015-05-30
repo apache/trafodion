@@ -1,0 +1,92 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- DDL Test of "automatic drop and re-create" of trigger temporary tables 
+--
+-- Note: Requires DP volumes named $SYSTEM, $DATA, $DATA1, $DATA2.
+--  
+-- This test creates a table and a statement trigger (hence a temporary table
+-- is created and used.) Next the subject table is altered in order to see
+-- that the temporary table (TT) is dropped and re-generated. Some DML 
+-- statements are run (before and after the alteration) to make use of the TT,
+-- and "showddl" is used to see the TT.
+--
+
+obey TEST_2_3_2(clean_up);
+log LOG_2_3_2 clear;
+obey TEST_2_3_2(tests);
+log;
+obey TEST_2_3_2(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+set schema cat1.schm;
+
+drop trigger trg232;
+
+drop table t232B;
+
+drop table t232A;
+
+?section tests
+
+-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+set parserflags 1;
+
+set schema cat1.schm;
+
+create table t232A(
+	a int not null not droppable, b int not null, c int not null,
+	d int,
+	constraint t232bplus check (b > 0), constraint t232ubc unique(b,c),
+	primary key(a) not droppable)
+	location $$partition3$$
+	range partition(add first key  (100) location $$partition$$,
+		  add first key  (200) location $$partition1$$,
+		  add first key  (300) location $$partition2$$);
+
+create table t232B (x int, y int, z int);
+
+create trigger trg232 after update on t232A
+ referencing old as myold, new as mynew
+  for each statement
+    insert into t232B select a,b,c from mynew
+        where mynew.d > (select MAX(d) from myold);
+
+insert into t232A values (10,20,30,40),(110,120,130,140),(210,220,230,240),
+	(310,320,330,340);
+
+update t232A set d=d+1;
+
+update t232A set b=d+b;
+
+update t232A set d=d-1;
+
+showddl TABLE ( TEMP_TABLE t232A__TEMP);
+-- remember to remove the __TEMP suffix when the code is changed!!
+
+-- alter table in order to regenerate the temp table
+alter table t232A add column e int;
+
+update t232A set d=d+10;
+-- trigger should run fine on the modified table
+
+showddl TABLE ( TEMP_TABLE t232A__TEMP);
+-- remember to remove the __TEMP suffix when the code is changed!!

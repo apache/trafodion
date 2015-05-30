@@ -1,0 +1,759 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+set schema catmvs.mvschm;
+--obey PREPARE_DDL_SELECTS;
+
+--obey ENVIRON;
+-- Disable automatic creation of MVGroup objects
+control query default MVGROUP_AUTOMATIC_CREATION 'OFF';
+obey TESTMV286(CLEAN_UP);
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '1');
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+log LOGMV286 clear;
+
+obey TESTMV286(SETUP);
+
+-- Run Tests
+	obey TESTMV286(TEST1);
+	obey TESTMV286(TEST3);
+	obey TESTMV286(TEST6);
+	obey TESTMV286(TEST8); 
+	obey TESTMV286(TEST11);
+	obey TESTMV286(TEST13);
+	obey TESTMV286(TEST15); 
+	obey TESTMV286(TEST16);
+	obey TESTMV286(TEST21);
+	obey TESTMV286(TEST22);
+
+-- Check the drop statement on the way out
+obey TESTMV286(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+log;
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+exit;
+
+-----------------------------------------------------------------
+?section SETUP
+-----------------------------------------------------------------
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG286_cancel;
+
+create table T1_286 ( a int not null not droppable,
+			  b int not null not droppable, 
+			  c int not null not droppable, primary key (a))
+			  store by primary key number of partitions 4;
+ALTER TABLE T1_286 attribute all mvs allowed;
+
+insert into T1_286 values ( 1,1, 1),(2,1, 2),(3,4, 3),(5,4, 2);
+
+create table T2_286 ( a int ,b int);
+ALTER TABLE T2_286 attribute all mvs allowed;
+insert into T2_286 values ( 1,1),(2,1),(3,4),(5,4);
+
+
+PREPARE select_index FROM
+  select  RUNNINGCOUNT(*) num,valid_data
+    from HP_DEFINITION_SCHEMA.ACCESS_PATHS
+    where ACCESS_PATH_UID <> table_uid 
+    and table_uid =( select OBJECT_UID from
+        HP_DEFINITION_SCHEMA.OBJECTS
+	where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
+	for read uncommitted access)
+  SEQUENCE BY ACCESS_PATH_UID ;
+
+PREPARE select_audit_status FROM
+  select  AUDITED 
+    from HP_DEFINITION_SCHEMA.ACCESS_PATHS
+    where ACCESS_PATH_UID = table_uid 
+    and table_uid =( select OBJECT_UID from
+        HP_DEFINITION_SCHEMA.OBJECTS
+	where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
+	for read uncommitted access);
+
+PREPARE select_audited_index_status FROM
+  select  RUNNINGCOUNT(*) num,audited
+    from HP_DEFINITION_SCHEMA.access_paths a
+    where table_uid =( select OBJECT_UID from
+          HP_DEFINITION_SCHEMA.OBJECTS
+          where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
+          for read uncommitted access)
+      and access_path_uid <> table_uid
+  SEQUENCE BY ACCESS_PATH_UID ;
+
+
+
+create index another_index on T1_286 ( a );
+
+-----------------------------------------------------------------
+?section TEST1
+-----------------------------------------------------------------
+create mv T_286_MV1
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDIT
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV1 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV1;
+
+-- expected - 0 (no index)
+set param ?t_name 'T_286_MV1';
+execute select_index;
+
+-- expected : no purgedata, NoDelete
+refresh T_286_MV1 recompute debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+set param ?t_name 'T_286_MV1';
+-- expected - MV1 - no audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+prepare stat1 from
+	select b, sum(a) sa
+	from T1_286
+	group by b
+	order by b;
+prepare stat2 from 
+	select * from T_286_MV1
+	order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+create mv T_286_MV2
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV2 attribute all mvs allowed;
+ALTER mvgroup MVG286_cancel ADD T_286_MV2;
+
+-- expected - 0 (no index)
+set param ?t_name 'T_286_MV2';
+execute select_index;
+
+-- expected : no purgedata, NoDelete
+refresh T_286_MV2 debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+set param ?t_name 'T_286_MV2';
+-- expected - MV2 -audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+prepare stat1 from
+	select b, sum(a) sa
+	from T1_286
+	group by b
+	order by b;
+prepare stat2 from 
+	select * from T_286_MV2
+	order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-----------------------------------------------------------------
+?section TEST3
+-----------------------------------------------------------------
+set PARSERFLAGS 3;
+create mv T_286_MV5
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDIT
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV5 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV5;
+
+
+Refresh T_286_MV5 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected -  0 ( no index)
+set param ?t_name 'T_286_MV5';
+execute select_index;
+
+insert into T1_286 values (33,33, 33),(34,35,36),(36,35,34);
+
+-- Purgedata executed, NoDelete 
+Refresh T_286_MV5 recompute debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+set param ?t_name 'T_286_MV5';
+-- expected - MV5 - no audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+prepare stat1 from 
+select b, sum(a) sa
+from T1_286
+group by b
+order by b;
+prepare stat2 from 
+select * from T_286_MV5
+order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-----------------------------------------------------------------
+?section TEST6
+-----------------------------------------------------------------
+insert into T2_286 values (15,12),(16,12),(17,12),(21,33),(22,33);
+
+create mv T_286_MV8
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDIT
+as
+select b, min(a) min_a
+from T2_286
+group by b;
+ALTER MV T_286_MV8 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV8;
+
+refresh T_286_MV8 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+
+-- expected -  not 0 ( system_added index)
+set param ?t_name 'T_286_MV8';
+execute select_index;
+
+delete from T2_286 where a=15;
+
+-- recompute ,no Purgedata , NoDelete 
+Refresh T_286_MV8 debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+
+prepare stat1 from 
+select b, min(a) min_a
+from T2_286
+group by b
+order by b;
+prepare stat2 from 
+select * from T_286_MV8
+order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+set param ?t_name 'T_286_MV8';
+-- expected - MV8  no audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+
+
+-----------------------------------------------------------------
+?section TEST8
+-----------------------------------------------------------------
+create table T3_286 ( a int not null not droppable,
+			  b int not null not droppable, 
+			  c int , primary key (a))
+			  store by primary key number of partitions 4;
+ALTER TABLE T3_286 attribute all mvs allowed;
+
+insert into T3_286 values ( 1,1, 1),(2,1, 2),(3,4, 3),(5,4, 2);
+insert into T3_286 values (33,33, 33),(34,35,36),(36,35,34);
+
+create index another_index3 on T3_286 ( a );
+
+create mv T_286_MV10
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+location $$partition1$$
+range partition (ADD FIRST KEY (40) location $$partition2$$)
+as
+select b, c, sum(a) sa
+from T3_286
+group by b, c;
+ALTER MV T_286_MV10 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV10;
+
+refresh T_286_MV10 debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected -   not 0 ( system_added index)
+set param ?t_name 'T_286_MV8';
+execute select_index;
+
+insert into T3_286 values (121,123, 120),(122,111,110);
+
+-- Purgedata executed, NoDelete,populate indexes
+refresh T_286_MV10 recompute debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+prepare stat1 from
+select b, c, sum(a) sa
+from T3_286
+group by b, c
+order by b, c, sa;
+prepare stat2 from
+select * from T_286_MV10
+order by b, c, sa;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+set param ?t_name 'T_286_MV10';
+-- expected - MV10  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+insert into T3_286 values (126,123, 120),(127,111,110),(226,123, 120),(227,111,110);
+
+refresh T_286_MV10 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+prepare stat1 from
+select b, c, sum(a) sa
+from T3_286
+group by b, c
+order by b, c, sa;
+prepare stat2 from
+select * from T_286_MV10
+order by b, c, sa;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+set param ?t_name 'T_286_MV10';
+-- expected - MV10  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+prepare stat1 from 
+select a
+from T3_286
+order by a;
+prepare stat2 from 
+select a
+from table(index_table another_index3)
+order by a;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-----------------------------------------------------------------
+?section TEST11
+-----------------------------------------------------------------
+insert into T1_286 values (121,123, 120),(122,111,110);
+
+create  mv T_286_MV13
+refresh on request
+initialize on create
+as
+select a, sum(b) sb, avg(b) ab
+from T2_286
+group by a;
+ALTER mv T_286_MV13 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV13;
+
+create  mv T_286_MV14
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+as
+select ab , count(a) cnt
+from T_286_MV13
+group by ab;
+ALTER mv T_286_MV14 attribute all mvs allowed;
+
+ALTER mvgroup MVG286_cancel ADD T_286_MV14;
+
+refresh T_286_MV14 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected -   not 0 ( system_added index)
+set param ?t_name 'T_286_MV14';
+execute select_index;
+
+insert into T2_286 values (118,12),(118,13),(119,11),(119,12);
+
+refresh T_286_MV13 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+
+prepare stat1 from 
+select a, sum(b) sb, avg(b) ab
+from T2_286
+group by a
+order by a;
+prepare stat2 from
+select * from T_286_MV13
+order by a;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-- Purgedata,NoDelete ,Populate index
+refresh T_286_MV14 recompute debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+
+prepare stat1 from 
+select ab , count(a) CNT
+from T_286_MV13
+group by ab
+order by ab;
+prepare stat2 from
+select * from T_286_MV14
+order by ab;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+
+set param ?t_name 'T_286_MV14';
+-- expected - MV12  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+
+
+-----------------------------------------------------------------
+?section TEST13
+-----------------------------------------------------------------
+create mv T_286_MV15
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV15 attribute all mvs allowed;
+
+create index ind_on_mv15 on  T_286_MV15 (sa) no populate;
+
+-- refresh for initialization 
+refresh T_286_MV15 outfile REFRESH.LOG;
+
+
+insert into T1_286 values (1128,126, 231),(1129,124,234),(1130,148,534);
+
+-- purgedata,NoDelete,populate index
+Refresh T_286_MV15 recompute debug 51,65,66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected -  user created populated index  
+set param ?t_name 'T_286_MV15';
+execute select_index;
+
+set param ?t_name 'T_286_MV15';
+-- expected - MV15  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-----------------------------------------------------------------
+?section TEST15
+-----------------------------------------------------------------
+create mv T_286_MV17
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV17 attribute all mvs allowed;
+ALTER mvgroup MVG286_cancel ADD T_286_MV17;
+
+create index ind_on_mv17 on  T_286_MV17 (sa);
+
+-- expected -  user created index, not populated
+set param ?t_name 'T_286_MV17';
+execute select_index;
+
+-----------------------------------------------------------------
+?section TEST16
+-----------------------------------------------------------------
+create mv T_286_MV18
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV18 attribute all mvs allowed;
+ALTER mvgroup MVG286_cancel ADD T_286_MV18;
+
+refresh T_286_MV18 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+create index ind_on_mv18 on  T_286_MV18 (sa);
+
+-- expected -  user created index, populated
+set param ?t_name 'T_286_MV18';
+execute select_index;
+
+insert into T1_286 values (1172,162,234),(1173,12,54),(1175,12,65),(1176,162,765);
+
+refresh T_286_MV18 recompute debug 51,102;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+--expected failure - mv  unavailable
+select count(*) cnt from T_286_MV18;
+
+-- expected 1 ddl_locks
+select count(*) from HP_DEFINITION_SCHEMA.ddl_locks;
+
+-- fail
+refresh T_286_MV18 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected 1 ddl_locks
+select count(*) from HP_DEFINITION_SCHEMA.ddl_locks;
+
+
+refresh T_286_MV18 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+--expected success
+select count(*) cnt from T_286_MV18;
+
+prepare stat1 from 
+select b, sum(a) sa
+from T1_286
+group by b
+order by b;
+prepare stat2 from
+select * from T_286_MV18
+order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+set param ?t_name 'T_286_MV18';
+-- expected - MV18  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+
+
+-----------------------------------------------------------------
+?section TEST21
+-----------------------------------------------------------------
+create mv T_286_MV23
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV23 attribute all mvs allowed;
+ALTER mvgroup MVG286_cancel ADD T_286_MV23;
+
+refresh T_286_MV23 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+prepare stat_for_MV23 from
+select count(*) cnt from T_286_MV23;
+
+insert into T1_286 values (211,22,342),(212,23,376),(213,23,950),(215,22,345);
+
+refresh T_286_MV23 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+set param ?t_name 'T_286_MV23';
+-- expected - MV23  audit
+execute select_audit_status;
+execute select_audited_index_status;
+
+execute stat_for_MV23;
+
+prepare stat1 from
+select b, sum(a) sa
+from T1_286
+group by b
+order by b;
+prepare stat2 from 
+select * from T_286_MV23
+order by b;
+begin work;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV286 ;
+log LOGMV286;
+commit;
+
+-----------------------------------------------------------------
+?section TEST22
+-----------------------------------------------------------------
+create mv T_286_MV24
+refresh on request
+initialize on refresh
+--MVAttributes NO AUDITONREFRESH
+store by (b)
+as
+select b, sum(a) sa
+from T1_286
+group by b;
+ALTER MV T_286_MV24 attribute all mvs allowed;
+ALTER mvgroup MVG286_cancel ADD T_286_MV24;
+
+refresh T_286_MV24 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+create index ind_on_mv24 on  T_286_MV24 (sa) no populate;
+
+-- expected -  user created index, not populated
+set param ?t_name 'T_286_MV24';
+execute select_index;
+
+
+CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.T_286_MV24_LOCK> <CATMVS.MVSCHM.T_286_MV24> <0> <3> ;
+
+refresh T_286_MV24 recompute debug 66;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+-- expected -  user created index,remains not populated
+set param ?t_name 'T_286_MV24';
+execute select_index;
+
+
+CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.T_286_MV24_LOCK> ;
+
+-----------------------------------------------------------------
+?section CLEAN_UP
+-----------------------------------------------------------------
+
+refresh mvgroup MVG286_cancel cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV286;
+log LOGMV286;
+
+
+
+drop table T1_286 cascade;
+drop table T2_286 cascade;
+drop table T3_286 cascade;
+
+drop mvgroup MVG286_cancel;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table catmvs.mvschm.Num_Obj;

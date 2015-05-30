@@ -1,0 +1,789 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>?section setSCH
+>>-----------------------------------------
+>>-- Set fake schema for rest of script. --
+>>-----------------------------------------
+>>
+>>set schema TPCH100X.SCHHP8;
+
+--- SQL operation complete.
+>>
+>>
+>>?section customer
+>>---------------------------
+>>-- Create Customer Table --
+>>---------------------------
+>>
+>>Create table customer  (
++>   c_custkey           int                not null not droppable, 
++>   c_name              varchar(25)        not null not droppable, 
++>   c_address           varchar(40)        not null not droppable, 
++>   c_nationkey         int                not null not droppable, 
++>   c_phone             char(15)           not null not droppable, 
++>   c_acctbal           numeric(12,2)      not null not droppable, 
++>   c_mktsegment        char(10)           not null not droppable, 
++>   c_comment           varchar(117)       not null not droppable, 
++>primary key (c_custkey)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (c_custkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------
+>>-- Create indexes on customer table. --
+>>------------------------------------------------
+>>?section CustIndex1 
+>>
+>>create index CuIdx1 on customer (c_custkey)
++>location $$partition1$$
++>hash2 partition by (c_custkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section CustIndex2 
+>>
+>>create index CuIdx2 on customer (c_nationkey)
++>location $$partition1$$
++>hash2 partition by (c_nationkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section lineitem
+>>-----------------------------
+>>-- Create line item table. --
+>>-----------------------------
+>>
+>>Create table lineitem  (
++>   l_orderkey          int                not null not droppable, 
++>   l_partkey           int                not null not droppable, 
++>   l_suppkey           int                not null not droppable, 
++>   l_linenumber        int                not null not droppable, 
++>   l_quantity          numeric(12,2)      not null not droppable, 
++>   l_extendedprice     numeric(12,2)      not null not droppable, 
++>   l_discount          numeric(12,2)      not null not droppable, 
++>   l_tax               numeric(12,2)      not null not droppable, 
++>   l_returnflag        char(1)            not null not droppable, 
++>   l_linestatus        char(1)            not null not droppable, 
++>   l_shipdate          date               not null not droppable, 
++>   l_commitdate        date               not null not droppable, 
++>   l_receiptdate       date               not null not droppable, 
++>   l_shipinstruct      char(25)           not null not droppable, 
++>   l_shipmode          char(10)           not null not droppable, 
++>   l_comment           varchar(44)        not null not droppable, 
++>primary key (l_orderkey,l_linenumber)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (l_orderkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key 
++>;
+
+--- SQL operation complete.
+>>
+>>
+>>?section lineitemindex1 
+>>
+>>create index LiIdx1 on lineitem (l_orderkey)
++>location $$partition1$$
++>hash2 partition by (l_orderkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section lineitemindex2 
+>>
+>>create index LiIdx2 on lineitem (l_partkey)
++>location $$partition1$$
++>hash2 partition by (l_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section lineitemindex3 
+>>
+>>create index LiIdx3 on lineitem (l_suppkey)
++>location $$partition1$$
++>hash2 partition by (l_suppkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section lineitemindex4 
+>>
+>>create index LiIdx4 on lineitem (l_partkey,l_suppkey)
++>location $$partition1$$
++>hash2 partition by (l_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section lineitemindex5 
+>>
+>>create index LiIdx5 on lineitem (l_shipdate)
++>location $$partition1$$
++>hash2 partition by (l_shipdate)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section lineitemindex6 
+>>
+>>create index LiIdx6 on lineitem (l_receiptdate)
++>location $$partition1$$
++>hash2 partition by (l_receiptdate)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section nation
+>>--------------------------
+>>-- Create nation table. --
+>>--------------------------
+>>
+>>Create table nation  (
++>   n_nationkey         int                not null not droppable, 
++>   n_name              char(25)           not null not droppable, 
++>   n_regionkey         int                not null not droppable, 
++>   n_comment           varchar(152)       not null not droppable, 
++>primary key (n_nationkey)  not droppable) 
++>store by primary key
++>location $$partition1$$ 
++>;
+
+--- SQL operation complete.
+>>-- BUFFERED is not supported; AUDIT is the default
+>>-- attribute buffered, audit;
+>>
+>>--------------------------------------------------------------
+>>--  Since nation table is so small, insert its records now. --
+>>--------------------------------------------------------------
+>>prepare insertNation from
++>insert into NATION values(?a, ?b, ?c, ?d);
+
+--- SQL command prepared.
+>>
+>>BEGIN WORK;
+
+--- SQL operation complete.
+>>set param ?a 0;
+>>set param ?b 'ALGERIA';
+>>set param ?c 0;
+>>set param ?d '2Cxhl7 L1iwk6hMh300izngN32CPwCikyLk6khMzSRA';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 1;
+>>set param ?b 'ARGENTINA';
+>>set param ?c 1;
+>>set param ?d 'zQn3Okwz1wLn7PLS3OhCgn56kP5PyRikgi1B7lL';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 2;
+>>set param ?b 'BRAZIL';
+>>set param ?c 1;
+>>set param ?d 'gLmS0nACAmnBCj2klki7RCPNgPxnCOjNg4k OiAg57COSOm1NwCnOyLx40R SC y20gPPAkNk5hxRhR5OmgS1iPQQzNAxPL30n67OgyC l617Sh4LS';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 3;
+>>set param ?b 'CANADA';
+>>set param ?c 1;
+>>set param ?d ' 4yMO AhnQ5Lh wzQAM662Aw1ByCl7CxmzRwNR5nAlO4 x';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 4;
+>>set param ?b 'EGYPT';
+>>set param ?c 4;
+>>set param ?d 'l1im5126  Cxj NMQmLxOikni02j2m3Ah4yNR1QQiL507j2QSlyN';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 5;
+>>set param ?b 'ETHIOPIA';
+>>set param ?c 0;
+>>set param ?d 'NS7n LSOP Oz5n1AlB2S02nN0lMh4SBxP iRhBO 047R26 2BlM';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 6;
+>>set param ?b 'FRANCE';
+>>set param ?c 3;
+>>set param ?d '3mjmizl S 3L3k2hNNhNlP4w370xRxyN15wn';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 7;
+>>set param ?b 'GERMANY';
+>>set param ?c 3;
+>>set param ?d 'z nOP4RkwO CmzBB 516mAg lByw4OM3QyNPA';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 8;
+>>set param ?b 'INDIA';
+>>set param ?c 2;
+>>set param ?d 'MNlR5RCiRMj1l11wjN7Myn M1lylNlMmBQl7PL4C  kkxQkgPQ7i3w6B67R2QkOO40xl4Q2iw76jRL7ilhR5Q 0xC7RRm5iQ2NAx2LiBm3QiO27j';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 9;
+>>set param ?b 'INDONESIA';
+>>set param ?c 2;
+>>set param ?d 'SjPmQO71Lj 7ABj6MxlAQk3nLwi73BPxzCwjzMn4zlLzgg6nnz0j0w zxC66gP6ykRPMg';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 10;
+>>set param ?b 'IRAN';
+>>set param ?c 4;
+>>set param ?d 'h532g43BgShyO50OgSB2hO6jxQn3Q1w4NmPL4hg0mmPOC5SSLg6miR7m6B317 lz4jQMwPRyRn1jiRPmi mk0 yj0C5M5xi';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 11;
+>>set param ?b 'IRAQ';
+>>set param ?c 4;
+>>set param ?d '6N gw7Mg4xPiAwjQS6iROwPgjz7jkPll5RkRxgCClzQinjMkOx3PyxOyzyN6nL3BzlyNM0OwxOwxBLO0lkkRMyBO';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 12;
+>>set param ?b 'JAPAN';
+>>set param ?c 2;
+>>set param ?d 'y PiRn6O4Rny0P6Q0NhM5N26AhghiClRQlP QNQx205B3im7zPBOSSm5MAl3BjMLiM3P';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 13;
+>>set param ?b 'JORDAN';
+>>set param ?c 4;
+>>set param ?d 'P53ljBPS 2PM7g6MwwywM47mCji1QkB4RNghzxB56mC5QiwOn2QlM3ikz6wN5NlM4N7C7B';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 14;
+>>set param ?b 'KENYA';
+>>set param ?c 0;
+>>set param ?d 'yA0jNSxmS25NRiCy1B6yhSL4NLMROQ3kLyAPx43wil27kN1QmPLmPw7ywh2kyj2iSBwSjx26zClx';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 15;
+>>set param ?b 'MOROCCO';
+>>set param ?c 0;
+>>set param ?d '7mC2hnARnj21nwllAOhR2nwRmgz22AkP6xj3iQiPNB0PjxBMzS3g 4y0L4Alx1gNCAP2kjQMBR2xwiiSNLgCMQx74RmhMy4OONhPCNQQ 3y';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 16;
+>>set param ?b 'MOZAMBIQUE';
+>>set param ?c 0;
+>>set param ?d 'LB6SkSOmkznRLS4z5P2BOmC23RnA6h7mn0gPAAN7nkxy6jO0k3w3R32R6A1ASk0LMyngO36jCL1gl5wQw4AMPC';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 17;
+>>set param ?b 'PERU';
+>>set param ?c 1;
+>>set param ?d '35h63 yS7gjRh22iyBlhy5wjLMQnln74k0j5O ygx1miQgA66hyhP3740PQOgRkwhy1i3LSwzjB 3yjh0QnyMMN A7Qn 6NOC2jg65QRLAgS';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 18;
+>>set param ?b 'CHINA';
+>>set param ?c 2;
+>>set param ?d '2hg1nh2OCS1nzh2mmAkP w4hyPg2SLxlAO4g0mCCjxBhBnwMi52M575SPzO07ggjN32B5SyhNOR0Ah4C1Qz 3P';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 19;
+>>set param ?b 'ROMANIA';
+>>set param ?c 3;
+>>set param ?d 'n7l0B41Qw5 mmS0QmQ3wNRPL62kiQg0RmQ6C4QR67iyzw0Mz5yMBLwSlP0lP7x4S7OR637nj1jig  giN11wm265';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 20;
+>>set param ?b 'SAUDI ARABIA';
+>>set param ?c 4;
+>>set param ?d 'kC7 nNNz3ON73Az03O  S13CklRh47jlxw5 5k6LClx52LQCQS6P1B3k1xPgMnk3PmMy7 l1nlBBBwBk0x6MACxOiigLO5mm5mO7N';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 21;
+>>set param ?b 'VIETNAM';
+>>set param ?c 2;
+>>set param ?d 'wzw7lPgRmnCM5i2x7zy1hO0P75Pwk5z4Sl627l7LlN';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 22;
+>>set param ?b 'RUSSIA';
+>>set param ?c 3;
+>>set param ?d '63w6MRN 2yANOMC0hjAn4RC7Qy6jhln37 2RggAM3x5S3i1On57';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 23;
+>>set param ?b 'UNITED KINGDOM';
+>>set param ?c 3;
+>>set param ?d 'POnSl70NBLPgh2B04P3m4j3lO0R2525Q7BCSBgwAQ712w0RAPxhMkkjhQCORLQihjCBO3gSiN5gx4mjnLiCx6w2MzR jwgLwP7kRxw4';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>set param ?a 24;
+>>set param ?b 'UNITED STATES';
+>>set param ?c 1;
+>>set param ?d 'QQ41AxzBSQACRA1wCLyONCi5yzCyljQR144lnNLm2 Q7PRyk BRzP ';
+>>execute insertNation;
+
+--- 1 row(s) inserted.
+>>COMMIT WORK;
+
+--- SQL operation complete.
+>>
+>>?section orders
+>>--------------------------
+>>-- Create orders table. --
+>>--------------------------
+>>
+>>Create table orders  (
++>   o_orderkey          int                not null not droppable, 
++>   o_custkey           int                not null not droppable, 
++>   o_orderstatus       char(1)            not null not droppable, 
++>   o_totalprice        numeric(12,2)      not null not droppable, 
++>   o_orderdate         date               not null not droppable, 
++>   o_orderpriority     char(15)           not null not droppable, 
++>   o_clerk             char(15)           not null not droppable, 
++>   o_shippriority      int                not null not droppable, 
++>   o_comment           varchar(79)        not null not droppable, 
++>primary key (o_orderkey)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (o_orderkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------
+>>--  Create indexes on order table. --
+>>-----------------------------------------
+>>
+>>?section orderindex1 
+>>
+>>create index OrdIdx1 on orders (o_orderkey)
++>location $$partition1$$
++>hash2 partition by (o_orderkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section orderindex2 
+>>
+>>create index OrdIdx2 on orders (o_custkey)
++>location $$partition1$$
++>hash2 partition by (o_custkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section orderindex3 
+>>
+>>create index OrdIdx3 on orders (o_orderdate)
++>location $$partition1$$
++>hash2 partition by (o_orderdate)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section part
+>>------------------------
+>>-- Create part table. --
+>>------------------------
+>>
+>>Create table part  (
++>   p_partkey           int                not null not droppable, 
++>   p_name              varchar(55)        not null not droppable, 
++>   p_mfgr              char(25)           not null not droppable, 
++>   p_brand             char(10)           not null not droppable, 
++>   p_type              varchar(25)        not null not droppable, 
++>   p_size              int                not null not droppable, 
++>   p_container         char(10)           not null not droppable, 
++>   p_retailprice       numeric(12,2)      not null not droppable, 
++>   p_comment           varchar(23)        not null not droppable, 
++>primary key (p_partkey)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (p_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key ;
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------------------
+>>--  Create indexes on parts table. --
+>>---------------------------------------------
+>>
+>>?section PartIndex1 
+>>
+>>create index PaIdx1 on part (p_partkey)
++>location $$partition1$$
++>hash2 partition by (p_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section  partsupp
+>>-----------------------------
+>>--  Create partsupp table. --
+>>-----------------------------
+>>
+>>Create table partsupp  (
++>   ps_partkey          int                not null not droppable, 
++>   ps_suppkey          int                not null not droppable, 
++>   ps_availqty         int                not null not droppable, 
++>   ps_supplycost       numeric(12,2)      not null not droppable, 
++>   ps_comment          varchar(199)       not null not droppable, 
++>primary key (ps_partkey,ps_suppkey)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (ps_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key ;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------
+>>--  Create supplier key index on partsupp table. --
+>>---------------------------------------------------
+>>?section PartSuppIndex1 
+>>
+>>create index PSIdx1 on partsupp (ps_partkey)
++>location $$partition1$$
++>hash2 partition by (ps_partkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>?section PartSuppIndex2 
+>>create index PSIdx2 on partsupp (ps_suppkey)
++>location $$partition1$$
++>hash2 partition by (ps_suppkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section region
+>>---------------------------
+>>--  Create region table. --
+>>---------------------------
+>>
+>>Create table region  (
++>   r_regionkey         int                not null not droppable, 
++>   r_name              char(25)           not null not droppable, 
++>   r_comment           varchar(152)       not null not droppable, 
++>primary key (r_regionkey)  not droppable) 
++>store by primary key 
++>location $$partition1$$
++>;
+
+--- SQL operation complete.
+>>-- BUFFERED is not supported; AUDIT is the default
+>>-- attribute buffered, audit;
+>>
+>>--------------------------------------------------------------
+>>--  Since region table is so small, insert its records now. --
+>>--------------------------------------------------------------
+>>prepare insertRegion from
++>insert into REGION values(?a, ?b, ?c);
+
+--- SQL command prepared.
+>>
+>>BEGIN WORK;
+
+--- SQL operation complete.
+>>set param ?a 0;
+>>set param ?b 'AFRICA';
+>>set param ?c 'xSx31zz31Cl1z4OAnmm05AjiOxC3AMMNOgC0kACgwngg3glP7LLLywlQy7R';
+>>execute insertRegion;
+
+--- 1 row(s) inserted.
+>>set param ?a 1;
+>>set param ?b 'AMERICA';
+>>set param ?c 'kgyh3LSnC72k6zlAz0LP3k2L4QB1QL1O673OjO1SPj0ngQ7CO100SBgmgRQ4lgPCMk21A425iklyAR4yBRAwR4Cm5miNw4jl13mMnxw17B';
+>>execute insertRegion;
+
+--- 1 row(s) inserted.
+>>set param ?a 2;
+>>set param ?b 'ASIA';
+>>set param ?c 'NSg6xlMlA1lzm6mOR0Ajx nhRA77NgRxBwL1M6Py RjySB3RLwkyPkwMM2R1BQ xAzkOgkjmll0gAghinP5inmNmR76MlijMS3S2zxONR15';
+>>execute insertRegion;
+
+--- 1 row(s) inserted.
+>>set param ?a 3;
+>>set param ?b 'EUROPE';
+>>set param ?c 'zlSL7Qwg12hMBL5lhlz0M45QkjShwSyiO04MLOh7wn1ARLQPyPAyAiil576l1Li7AlnR1S RQ4SLny7B2Ryj5P66MLhn NxhwB4C3ig0SO';
+>>execute insertRegion;
+
+--- 1 row(s) inserted.
+>>set param ?a 4;
+>>set param ?b 'MIDDLE EAST';
+>>set param ?c 'RllxmhPLz3Cy2mNlg4QMBnNASM ACki MPki7Oi';
+>>execute insertRegion;
+
+--- 1 row(s) inserted.
+>>COMMIT WORK;
+
+--- SQL operation complete.
+>>
+>>?section supplier
+>>-----------------------------
+>>--  Create supplier table. --
+>>-----------------------------
+>>
+>>Create table supplier  (
++>   s_suppkey           int                not null not droppable, 
++>   s_name              char(25)           not null not droppable, 
++>   s_address           varchar(40)        not null not droppable, 
++>   s_nationkey         int                not null not droppable, 
++>   s_phone             char(15)           not null not droppable, 
++>   s_acctbal           numeric(12,2)      not null not droppable, 
++>   s_comment           varchar(101)       not null not droppable, 
++>primary key (s_suppkey)  not droppable) 
++>location $$partition1$$
++>hash2 partition by (s_suppkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>)
++>store by primary key ;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------------------------------
+>>--  Create indexes on supplier table. --
+>>-------------------------------------------------
+>>?section SuIdx1 
+>>
+>>create index SuIdx1 on supplier (s_suppkey)
++>location $$partition1$$
++>hash2 partition by (s_suppkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section SuppIndex2 
+>>
+>>create index SuIdx2 on supplier (s_nationkey)
++>location $$partition1$$
++>hash2 partition by (s_nationkey)
++>(
++>   add location  $$partition2$$ ,
++>   add location  $$partition3$$ ,
++>   add location  $$partition4$$ ,
++>   add location  $$partition5$$ ,
++>   add location  $$partition6$$ ,
++>   add location  $$partition7$$ ,
++>   add location  $$partition8$$ 
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>?section stopLog
+>>---------------------------
+>>--  Stop logging output. --
+>>---------------------------
+>>LOG;

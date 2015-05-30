@@ -1,0 +1,107 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--	This is the sqlci analogue of the shell-script "setupenv".
+
+set SCHEMA $$TEST_SCHEMA$$;
+
+-- Define a standard physical environment for the compiler:
+control query default TARGET_CODE 'DEBUG';
+control query default TARGET_CPU_FREQUENCY '199.';
+control query default TARGET_IO_SEEK_TIME '0.020147';
+control query default TARGET_IO_SEQ_READ_RATE '2.5';
+control query default TARGET_MSG_LOCAL_RATE '10.';
+control query default TARGET_MSG_LOCAL_TIME '0.000125';
+control query default TARGET_MSG_REMOTE_RATE '100.';
+control query default TARGET_MSG_REMOTE_TIME  '0.00125';
+control query default DEF_NUM_LOCAL_SMP_CPUS '2.';
+
+-- this is the datavol location of the second partition
+-- for partitioned tables.
+
+?ifMX
+
+-- table name patterns
+set pattern $$U00$$ UTAB00;
+set pattern $$P00$$ PTAB00;
+set pattern $$P01$$ PTAB01;
+set pattern $$P02$$ PTAB02;
+set pattern $$P03$$ PTAB03;
+set pattern $$P04$$ PTAB04;
+set pattern $$P05$$ PTAB05;
+set pattern $$P06$$ PTAB06;
+set pattern $$P07$$ PTAB07;
+set pattern $$P08$$ PTAB08;
+set pattern $$P09$$ PTAB09;
+set pattern $$P10$$ PTAB10;
+set pattern $$P11$$ PTAB11;
+set pattern $$P12$$ PTAB12;
+set pattern $$P13$$ PTAB13;
+set pattern $$P14$$ PTAB14;
+
+set pattern $$p0$$ PTABt0;
+set pattern $$p1$$ PTABt1;
+set pattern $$t2$$ PTABt2;
+set pattern $$t3$$ PTABt3;
+
+-- partition patterns
+set pattern $$part0$$ $data;
+set pattern $$part1$$ $data1;
+set pattern $$part2$$ $data2;
+set pattern $$part3$$ $data3;
+set pattern $$part4$$ $data;
+set pattern $$part5$$ $system;
+
+?ifMX
+
+?ifNSKRel1
+
+-- table name patterns
+set pattern $$U00$$ \squaw.$data04.parallel.UTAB00;
+set pattern $$P00$$ \squaw.$data05.parallel.PTAB00;
+set pattern $$P01$$ \squaw.$data05.parallel.PTAB01;
+set pattern $$P02$$ \squaw.$data08.parallel.PTAB02;
+set pattern $$P03$$ \squaw.$data04.parallel.PTAB03;
+set pattern $$P04$$ \squaw.$data07.parallel.PTAB04;
+set pattern $$P05$$ \squaw.$data04.parallel.PTAB05;
+set pattern $$P06$$ \squaw.$data04.parallel.PTAB06;
+set pattern $$P07$$ \squaw.$data04.parallel.PTAB07;
+set pattern $$P08$$ \squaw.$data04.parallel.PTAB08;
+set pattern $$P09$$ \squaw.$data04.parallel.PTAB09;
+set pattern $$P10$$ \squaw.$data05.parallel.PTAB10;
+set pattern $$P11$$ \squaw.$data05.parallel.PTAB11;
+set pattern $$P12$$ \squaw.$data04.parallel.PTAB12;
+set pattern $$P13$$ \squaw.$data07.parallel.PTAB13;
+set pattern $$P14$$ \squaw.$data05.parallel.PTAB14;
+
+set pattern $$p0$$ \squaw.$data04.parallel.PTABt0;
+set pattern $$p1$$ \squaw.$data04.parallel.PTABt1;
+set pattern $$t2$$ \squaw.$data04.parallel.PTABt2;
+set pattern $$t3$$ \squaw.$data04.parallel.PTABt3;
+
+
+-- partition patterns
+set pattern $$part0$$ \squaw.$data08.parallel;
+set pattern $$part1$$ \squaw.$data02.parallel;
+set pattern $$part2$$ \squaw.$data05.parallel;
+set pattern $$part3$$ \squaw.$data06.parallel;
+set pattern $$part4$$ \squaw.$data07.parallel;
+set pattern $$part5$$ \squaw.$data09.parallel;
+
+?ifNSKRel1
+
+-- eof

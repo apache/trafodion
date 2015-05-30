@@ -1,0 +1,89 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+ProcessEnv::dumpEnvs() 
+environ[0] ---- ALLUSERSPROFILE ---> C:\Documents and Settings\All Users
+environ[1] ---- APPDATA ---> C:\Documents and Settings\VRenu\Application Data
+environ[2] ---- BACKUP_INCLUDE ---> c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\include\
+environ[3] ---- CLEARCASE_PRIMARY_GROUP ---> AMERICAS\NEOVIEW
+environ[4] ---- CLIENTNAME ---> Console
+environ[5] ---- CommonProgramFiles ---> C:\Program Files\Common Files
+environ[6] ---- COMPUTERNAME ---> RVARSHNEYA5
+environ[7] ---- ComSpec ---> C:\WINDOWS\system32\cmd.exe
+environ[8] ---- DevEnvDir ---> C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\IDE
+environ[9] ---- DISPLAY ---> :0.0
+environ[10] ---- ENV ---> C:/Documents and Settings/VRenu/environ.ksh
+environ[11] ---- ENVIRON ---> C:/Documents and Settings/VRenu/environ.ksh
+environ[12] ---- envsdk_regkey ---> 7.1;7.0
+environ[13] ---- FP_NO_HOST_CHECK ---> NO
+environ[14] ---- FrameworkDir ---> C:\WINDOWS\Microsoft.NET\Framework
+environ[15] ---- FrameworkSDKDir ---> C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1
+environ[16] ---- FrameworkVersion ---> v1.1.4322
+environ[17] ---- HISTFILE ---> c:/tmp/tmp11176.aaa
+environ[18] ---- HOME ---> C:/Documents and Settings/VRenu
+environ[19] ---- HOMEDRIVE ---> C:
+environ[20] ---- HOMEPATH ---> \Documents and Settings\VRenu
+environ[21] ---- INCLUDE ---> C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\ATLMFC\INCLUDE;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\INCLUDE;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\include\prerelease;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\include;C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\include;
+environ[22] ---- LIB ---> C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\ATLMFC\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib\prerelease;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\PlatformSDK\lib;C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\lib;c:\Windows;c:\windows\system32;c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\Lib\
+environ[23] ---- LOGNAME ---> VRenu
+environ[24] ---- LOGONSERVER ---> \\G2W0065
+environ[25] ---- MAN_CHM_INDEX ---> C:/mksnt/mksnt/tkutil.idx;C:/mksnt/mksnt/tkapi.idx;C:/mksnt/mksnt/tcltk.idx;C:/mksnt/mksnt/tkperl.idx
+environ[26] ---- MAN_TXT_INDEX ---> C:/mksnt/etc/tkutil.idx;C:/mksnt/etc/tkapi.idx;C:/mksnt/etc/tcltk.idx;C:/mksnt/etc/tkperl.idx
+environ[27] ---- MKSARGS ---> 00000778
+environ[28] ---- MSVCDir ---> C:\Program Files\Microsoft Visual Studio .NET 2003\VC7
+environ[29] ---- NUMBER_OF_PROCESSORS ---> 4
+environ[30] ---- NUTCROOT ---> C:\mksnt
+environ[31] ---- OS ---> Windows_NT
+environ[32] ---- Path ---> C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\IDE;C:\Program Files\Microsoft Visual Studio .NET 2003\VC7\BIN;C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools;C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\bin\prerelease;C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\bin;C:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\bin;C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322;C:\Tdm_SQL\bin;C:\mksnt\bin;C:\mksnt\bin\X11;C:\mksnt\mksnt;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\Program Files\ActivCard\ActivCard Gold\resources;C:\Rational\common;C:\Rational\ClearCase\bin;c:\mksnt;c:\mksnt\etc;w:\toolbin;w:\etk\G06.20\bin;c:\;C:\MKSNT;C:\MKSNT\mksnt;C:\MKSNT\bin;C:\MKSNT\bin\X11;C:\Windows\SYSTEM32;C:\Windows;C:\Windows\SYSTEM32\Wbem;C:\Tdm_SQL\bin;C:\rational\Clearcase\bin;C:\j2sdk1.4.2_12\jre\bin\client;C:\j2sdk1.4.2_12\bin; ;
+environ[33] ---- PATHEXT ---> .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.sh;.ksh;.csh;.sed;.awk;.pl
+environ[34] ---- PROCESSOR_ARCHITECTURE ---> x86
+environ[35] ---- PROCESSOR_IDENTIFIER ---> x86 Family 6 Model 23 Stepping 6, GenuineIntel
+environ[36] ---- PROCESSOR_LEVEL ---> 6
+environ[37] ---- PROCESSOR_REVISION ---> 1706
+environ[38] ---- ProgramFiles ---> C:\Program Files
+environ[39] ---- PROMPT ---> $P$G
+environ[40] ---- ROOTDIR ---> C:/mksnt
+environ[41] ---- SESSIONNAME ---> Console
+environ[42] ---- SHELL ---> c:/mksnt/mksnt/ksh.exe
+environ[43] ---- SWITCHAR ---> /
+environ[44] ---- SystemDrive ---> C:
+environ[45] ---- SystemRoot ---> C:\WINDOWS
+environ[46] ---- TEMP ---> c:\temp
+environ[47] ---- TERM ---> nutc
+environ[48] ---- TERMCAP ---> C:\mksnt\etc\termcap
+environ[49] ---- TERMINFO ---> C:\mksnt\usr\lib\terminfo
+environ[50] ---- TMP ---> c:\tmp
+environ[51] ---- TMPDIR ---> c:/tmp
+environ[52] ---- USERDNSDOMAIN ---> AMERICAS.CPQCORP.NET
+environ[53] ---- USERDOMAIN ---> AMERICAS
+environ[54] ---- USERNAME ---> VRenu
+environ[55] ---- USERPROFILE ---> C:\Documents and Settings\VRenu
+environ[56] ---- USE_MS_DOTNET_2003 ---> 1
+environ[57] ---- VC71_INCLUDE ---> c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\include\
+environ[58] ---- VC71_LIB ---> c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\Lib\
+environ[59] ---- VCINSTALLDIR ---> C:\Program Files\Microsoft Visual Studio .NET 2003
+environ[60] ---- VS71COMNTOOLS ---> c:\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\
+environ[61] ---- VS71_INCLUDE ---> c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\include\
+environ[62] ---- VS71_LIB ---> c:\Program Files\Microsoft Visual Studio .NET 2003\SDK\v1.1\Lib\
+environ[63] ---- VS71_PATH ---> C:\mksnt\bin;C:\mksnt\bin\X11;C:\mksnt\mksnt;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\Program Files\ActivCard\ActivCard Gold\resources;C:\Rational\common;C:\Rational\ClearCase\bin;c:\mksnt;c:\mksnt\etc
+environ[64] ---- VSINSTALLDIR ---> C:\Program Files\Microsoft Visual Studio .NET 2003\Common7\IDE
+environ[65] ---- windir ---> C:\WINDOWS
+environ[66] ---- _ ---> C:/Tdm_SQL/bin/sqlci.EXE
+environ[67] ---- DUMPENV ---> ddd
+environ[68] ---- SECONDARY_MXCMP ---> 1
+environ[69] ---- SQLMX_CATMAN_PRIMARY_CACHE_SIZE ---> 0
+environ[70] ---- MX_SKIP_VCC ---> 1

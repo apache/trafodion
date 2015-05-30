@@ -1,0 +1,2165 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema TPCH.SCH;
+
+--- SQL operation complete.
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default cache_histograms '0';
+
+--- SQL operation complete.
+>>control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+--- SQL operation complete.
+>>
+>>-- LIKE predicates
+>>
+>>-- Q1
+>>prepare xx from
++>select * from part where p_name like 'gr%';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             5.00E+006           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select * from part where p_name like 'gr%';
+Histograms for query showstats for query select * from part where p_name like 'gr%';
+**************************************************************
+VEGcolumn:
+
+  56: VEGRef_56((TPCH.SCH.PART.P_PARTKEY))
+Merge state:
+
+   3: TPCH.SCH.PART.P_PARTKEY
+Applied preds:
+***UNIQUE COLUMN***
+
+   TotalUEC = 5000000.000000 
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 20000000.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 20000000.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      20000000.0000 )
+ : rows=5000000.000000,uec=5000000.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  59: VEGRef_59((TPCH.SCH.PART.P_NAME))
+Merge state:
+
+   4: TPCH.SCH.PART.P_NAME
+Applied preds:
+
+  95: (VEGRef_59((TPCH.SCH.PART.P_NAME)) >= 'gr\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+  97: (VEGRef_59((TPCH.SCH.PART.P_NAME)) < 'gs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+***FAKE*** histogram
+***MINMAX SET BY PRED***
+
+   TotalUEC = 4990118.000000 
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 4990117.750000 (pre-current-join-uec)
+
+   Max Frequency = 1.001980 
+   Encoded MinValue = ( 7279316731691008.0000
+ )
+   Encoded MaxValue = ( 7279591609597952.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      7279316731691008.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <       (
+     7279591609597952.0000 ) : rows=5000000.000000,uec=4990118.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  62: VEGRef_62((TPCH.SCH.PART.P_MFGR))
+Merge state:
+
+   5: TPCH.SCH.PART.P_MFGR
+Applied preds:
+   TotalUEC = 5.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 5.000000 (pre-current-join-uec)
+
+   Max Frequency = 1000000.000000 
+   Encoded MinValue = (
+5445175062665304.0000 )
+   Encoded MaxValue = ( 5445175062665304.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5445175062665304.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5445175062665304.0000 ) : rows=5000000.000000,uec=5.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  65: VEGRef_65((TPCH.SCH.PART.P_BRAND))
+Merge state:
+
+   6: TPCH.SCH.PART.P_BRAND
+Applied preds:
+   TotalUEC = 25.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 200000.000000 
+   Encoded MinValue = (
+4675777813088460.0000 )
+   Encoded MaxValue = ( 4675777813088461.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4675777813088460.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4675777813088461.0000 ) : rows=5000000.000000,uec=25.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  68: VEGRef_68((TPCH.SCH.PART.P_TYPE))
+Merge state:
+
+   7: TPCH.SCH.PART.P_TYPE
+Applied preds:
+   TotalUEC = 150.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 33333.333333 
+   Encoded MinValue = (
+4873945322083158.0000 )
+   Encoded MaxValue = ( 5863765632421972.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4873945322083158.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5863765632421972.0000 ) : rows=5000000.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  71: VEGRef_71((TPCH.SCH.PART.P_SIZE))
+Merge state:
+
+   8: TPCH.SCH.PART.P_SIZE
+Applied preds:
+   TotalUEC = 50.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 50.000000 (pre-current-join-uec)
+
+   Max Frequency = 100000.000000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 50.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      50.0000 ) : rows=5000000.000000,uec=50.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  74: VEGRef_74((TPCH.SCH.PART.P_CONTAINER))
+Merge state:
+
+   9: TPCH.SCH.PART.P_CONTAINER
+Applied preds:
+   TotalUEC = 40.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 40.000000 (pre-current-join-uec)
+
+   Max Frequency = 125000.000000 
+   Encoded MinValue = (
+5230734647478288.0000 )
+   Encoded MaxValue = ( 6144690861118482.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5230734647478288.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6144690861118482.0000 ) : rows=5000000.000000,uec=40.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  77: VEGRef_77((TPCH.SCH.PART.P_RETAILPRICE))
+Merge state:
+
+  10: TPCH.SCH.PART.P_RETAILPRICE
+Applied preds:
+
+   TotalUEC = 119899.000000 
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 119899.000000 (pre-current-join-uec)
+
+   Max Frequency = 41.701766 
+   Encoded MinValue = ( 900.0100 )
+
+   Encoded MaxValue = ( 2098.9900 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      900.0100 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      2098.9900 )
+ : rows=5000000.000000,uec=119899.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  80: VEGRef_80((TPCH.SCH.PART.P_COMMENT))
+Merge state:
+
+  11: TPCH.SCH.PART.P_COMMENT
+Applied preds:
+   TotalUEC = 599858.000000 
+
+   Rowcount = 5000000.000000 
+
+   BaseUEC  = 599858.000000 (pre-current-join-uec)
+
+   Max Frequency = 8.335306 
+   Encoded MinValue = ( 5939959523231752.0000
+ )
+   Encoded MaxValue = ( 8400668693667016.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5939959523231752.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8400668693667016.0000 ) : rows=5000000.000000,uec=599858.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>prepare xx from
++>select * from part where p_name not like 'gr%';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.50E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Q3
+>>prepare xx from
++>select * from part where p_name like '%';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             2.00E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Q4
+>>prepare xx from
++>select * from part where p_name not like '%';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      1.00E+000           
+2     FILE_SCAN_UNIQUE                PART             1.00E+000           
+3     INDEX_SCAN                      PART             1.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Q5
+>>prepare xx from
++>select * from part where p_name like '%gr';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             5.00E+006           
+
+--- 1 row(s) selected.
+>>
+>>-- Q6
+>>prepare xx from
++>select * from part where p_name not like '%gr';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.50E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Q7
+>>prepare xx from
++>select * from part where UPPER(p_name) like '%g';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.00E+007           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select * from part where UPPER(p_name) like '%g';
+Histograms for query showstats for query select * from part where UPPER(p_name) like '%g';
+**************************************************************
+VEGcolumn:
+
+  53: VEGRef_53((TPCH.SCH.PART.P_PARTKEY))
+Merge state:
+
+   3: TPCH.SCH.PART.P_PARTKEY
+Applied preds:
+***UNIQUE COLUMN***
+
+   TotalUEC = 10000000.000000 
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 20000000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.500000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 20000000.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      20000000.0000 )
+ : rows=10000000.000000,uec=10000000.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  56: VEGRef_56((TPCH.SCH.PART.P_NAME))
+Merge state:
+
+   4: TPCH.SCH.PART.P_NAME
+Applied preds:
+
+  51: (upper(cast(VEGRef_56((TPCH.SCH.PART.P_NAME)))) like '%g')
+
+   TotalUEC = 10000000.000000 
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 19960471.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.500990 
+   Encoded MinValue = ( 6855572504418568.0000
+ )
+   Encoded MaxValue = ( 8542497133026760.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      6855572504418568.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8542497133026760.0000 ) : rows=10000000.000000,uec=10000000.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  59: VEGRef_59((TPCH.SCH.PART.P_MFGR))
+Merge state:
+
+   5: TPCH.SCH.PART.P_MFGR
+Applied preds:
+   TotalUEC = 5.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 5.000000 (pre-current-join-uec)
+
+   Max Frequency = 2000000.000000 
+   Encoded MinValue = (
+5445175062665304.0000 )
+   Encoded MaxValue = ( 5445175062665304.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5445175062665304.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5445175062665304.0000 ) : rows=10000000.000000,uec=5.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  62: VEGRef_62((TPCH.SCH.PART.P_BRAND))
+Merge state:
+
+   6: TPCH.SCH.PART.P_BRAND
+Applied preds:
+   TotalUEC = 25.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 400000.000000 
+   Encoded MinValue = (
+4675777813088460.0000 )
+   Encoded MaxValue = ( 4675777813088461.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4675777813088460.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4675777813088461.0000 ) : rows=10000000.000000,uec=25.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  65: VEGRef_65((TPCH.SCH.PART.P_TYPE))
+Merge state:
+
+   7: TPCH.SCH.PART.P_TYPE
+Applied preds:
+   TotalUEC = 150.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 66666.666667 
+   Encoded MinValue = (
+4873945322083158.0000 )
+   Encoded MaxValue = ( 5863765632421972.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4873945322083158.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5863765632421972.0000 ) : rows=10000000.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  68: VEGRef_68((TPCH.SCH.PART.P_SIZE))
+Merge state:
+
+   8: TPCH.SCH.PART.P_SIZE
+Applied preds:
+   TotalUEC = 50.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 50.000000 (pre-current-join-uec)
+
+   Max Frequency = 200000.000000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 50.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      50.0000 ) : rows=10000000.000000,uec=50.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  71: VEGRef_71((TPCH.SCH.PART.P_CONTAINER))
+Merge state:
+
+   9: TPCH.SCH.PART.P_CONTAINER
+Applied preds:
+   TotalUEC = 40.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 40.000000 (pre-current-join-uec)
+
+   Max Frequency = 250000.000000 
+   Encoded MinValue = (
+5230734647478288.0000 )
+   Encoded MaxValue = ( 6144690861118482.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5230734647478288.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6144690861118482.0000 ) : rows=10000000.000000,uec=40.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  74: VEGRef_74((TPCH.SCH.PART.P_RETAILPRICE))
+Merge state:
+
+  10: TPCH.SCH.PART.P_RETAILPRICE
+Applied preds:
+
+   TotalUEC = 119899.000000 
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 119899.000000 (pre-current-join-uec)
+
+   Max Frequency = 83.403531 
+   Encoded MinValue = ( 900.0100 )
+
+   Encoded MaxValue = ( 2098.9900 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      900.0100 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      2098.9900 )
+ : rows=10000000.000000,uec=119899.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  77: VEGRef_77((TPCH.SCH.PART.P_COMMENT))
+Merge state:
+
+  11: TPCH.SCH.PART.P_COMMENT
+Applied preds:
+   TotalUEC = 599858.000000 
+
+   Rowcount = 10000000.000000 
+
+   BaseUEC  = 599858.000000 (pre-current-join-uec)
+
+   Max Frequency = 16.670612 
+   Encoded MinValue = ( 5939959523231752.0000
+ )
+   Encoded MaxValue = ( 8400668693667016.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5939959523231752.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8400668693667016.0000 ) : rows=10000000.000000,uec=599858.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q8
+>>prepare xx from
++>select * from part where UPPER(p_name) not like '%g';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.00E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Q9
+>>prepare xx from
++>select * from part where
++>LOWER(p_name) > 'blue'
++>and
++>LOWER(p_name) < 'mint';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.06E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Q10
+>>prepare xx from
++>select * from part where
++>TRIM(p_name) = 'UNITED';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select * from part where
++>TRIM(p_name) = 'UNITED';
+Histograms for query showstats for query select * from part where TRIM(p_name) = 'UNITED';
+**************************************************************
+VEGcolumn:
+
+  54: VEGRef_54((TPCH.SCH.PART.P_PARTKEY))
+Merge state:
+
+   3: TPCH.SCH.PART.P_PARTKEY
+Applied preds:
+***UNIQUE COLUMN***
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 20000000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 20000000.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      20000000.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  57: VEGRef_57((TPCH.SCH.PART.P_NAME))
+Merge state:
+
+   4: TPCH.SCH.PART.P_NAME
+Applied preds:
+
+  52: ((' ' trim cast(VEGRef_57((TPCH.SCH.PART.P_NAME)))) = 'UNITED')
+
+***FAKE*** histogram
+***MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 6002862468452616.0000
+ )
+   Encoded MaxValue = ( 6002862468452616.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      6002862468452616.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6002862468452616.0000 ) : rows=1.001980,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  60: VEGRef_60((TPCH.SCH.PART.P_MFGR))
+Merge state:
+
+   5: TPCH.SCH.PART.P_MFGR
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 5.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.200000 
+   Encoded MinValue = ( 5445175062665304.0000
+ )
+   Encoded MaxValue = ( 5445175062665304.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5445175062665304.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5445175062665304.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  63: VEGRef_63((TPCH.SCH.PART.P_BRAND))
+Merge state:
+
+   6: TPCH.SCH.PART.P_BRAND
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.040000 
+   Encoded MinValue = ( 4675777813088460.0000
+ )
+   Encoded MaxValue = ( 4675777813088461.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4675777813088460.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4675777813088461.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  66: VEGRef_66((TPCH.SCH.PART.P_TYPE))
+Merge state:
+
+   7: TPCH.SCH.PART.P_TYPE
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.006667 
+   Encoded MinValue = ( 4873945322083158.0000
+ )
+   Encoded MaxValue = ( 5863765632421972.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4873945322083158.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5863765632421972.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  69: VEGRef_69((TPCH.SCH.PART.P_SIZE))
+Merge state:
+
+   8: TPCH.SCH.PART.P_SIZE
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 50.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.020000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 50.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      50.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  72: VEGRef_72((TPCH.SCH.PART.P_CONTAINER))
+Merge state:
+
+   9: TPCH.SCH.PART.P_CONTAINER
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 40.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.025000 
+   Encoded MinValue = ( 5230734647478288.0000
+ )
+   Encoded MaxValue = ( 6144690861118482.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5230734647478288.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6144690861118482.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  75: VEGRef_75((TPCH.SCH.PART.P_RETAILPRICE))
+Merge state:
+
+  10: TPCH.SCH.PART.P_RETAILPRICE
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 119899.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000008 
+   Encoded MinValue = ( 900.0100 )
+
+   Encoded MaxValue = ( 2098.9900 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      900.0100 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      2098.9900 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  78: VEGRef_78((TPCH.SCH.PART.P_COMMENT))
+Merge state:
+
+  11: TPCH.SCH.PART.P_COMMENT
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 599858.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000002 
+   Encoded MinValue = ( 5939959523231752.0000
+ )
+   Encoded MaxValue = ( 8400668693667016.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5939959523231752.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8400668693667016.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'D1', path 'TPCH.SCH.PART'),
++>scan(TABLE 'D2', path 'TPCH.SCH.PART'));
+
+--- SQL operation complete.
+>>
+>>-- Q11
+>>prepare xx from
++>select * from part d1, part d2 where
++>d1.p_name = UPPER(d2.p_name);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.00E+007           
+2     FILE_SCAN                       PART)            2.00E+007           
+3     FILE_SCAN                       PART)            2.00E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q12
+>>prepare xx from
++>select * from part d1, part d2 where
++>d1.p_name <> UPPER(d2.p_name);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.66E+014           
+2     FILE_SCAN                       PART)            2.00E+007           
+3     FILE_SCAN                       PART)            2.00E+007           
+
+--- 3 row(s) selected.
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>-- Q13
+>>prepare xx from
++>select * from nation where
++>UPPER(n_name) NOT IN ('INDIA', 'IRAN', 'UNITED STATES');
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       NATION           2.20E+001           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select * from nation where
++>UPPER(n_name) NOT IN ('INDIA', 'IRAN', 'UNITED STATES');
+Histograms for query showstats for query select * from nation where UPPER(n_name) NOT IN ('INDIA', 'IRAN', 'UNITED STATES');
+**************************************************************
+VEGcolumn:
+
+  30: VEGRef_30((TPCH.SCH.NATION.N_NATIONKEY))
+Merge state:
+
+   3: TPCH.SCH.NATION.N_NATIONKEY
+Applied preds:
+***UNIQUE COLUMN***
+
+   TotalUEC = 22.000000 
+   Rowcount = 22.000000 
+
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.880000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 24.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      24.0000 ) : rows=22.000000,uec=22.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  33: VEGRef_33((TPCH.SCH.NATION.N_NAME))
+Merge state:
+
+   4: TPCH.SCH.NATION.N_NAME
+Applied preds:
+
+  42: (upper(cast(VEGRef_33((TPCH.SCH.NATION.N_NAME)))) <> 'INDIA')
+
+  43: (upper(cast(VEGRef_33((TPCH.SCH.NATION.N_NAME)))) <> 'UNITED STATES')
+
+  44: (upper(cast(VEGRef_33((TPCH.SCH.NATION.N_NAME)))) <> 'IRAN')
+
+   TotalUEC = 22.000000 
+   Rowcount = 22.000000 
+
+   BaseUEC  = 22.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 4594935618900560.0000
+ )
+   Encoded MaxValue = ( 6071852528275539.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4594935618900560.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6071852528275539.0000 ) : rows=22.000000,uec=22.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  36: VEGRef_36((TPCH.SCH.NATION.N_REGIONKEY))
+Merge state:
+
+   5: TPCH.SCH.NATION.N_REGIONKEY
+Applied preds:
+   TotalUEC = 5.000000 
+
+   Rowcount = 22.000000 
+   BaseUEC  = 5.000000 (pre-current-join-uec)
+
+   Max Frequency = 4.400000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 4.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      4.0000 ) : rows=22.000000,uec=5.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  39: VEGRef_39((TPCH.SCH.NATION.N_COMMENT))
+Merge state:
+
+   6: TPCH.SCH.NATION.N_COMMENT
+Applied preds:
+   TotalUEC = 22.000000 
+
+   Rowcount = 22.000000 
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.880000 
+   Encoded MinValue = ( 6855583183297736.0000
+ )
+   Encoded MaxValue = ( 8263505750612059.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      6855583183297736.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8263505750612059.0000 ) : rows=22.000000,uec=22.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q14
+>>prepare xx from
++>select * from nation where
++>UPPER(n_name) IN ('INDIA', 'IRAN', 'UNITED STATES') OR
++>cast( n_regionkey as real) = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       NATION           7.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>----------------------------------------
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+--- SQL operation complete.
+>>
+>>-- Q15
+>>prepare xx from
++>select * from t7 where log(a) > 7 and log(a) < 900;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T7               1.20E+001           
+
+--- 1 row(s) selected.
+>>
+>>-- Q16
+>>control query shape implicit enforcers hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T10'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>  select t8.a, t8.b
++>  from t8, t10
++>  where (case when t8.a = 10
++>              then t8.b
++>              else t8.a + t8.b end) = t10.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q17
+>>prepare xx from
++>  select t8.a, t8.b
++>  from t8, t10
++>  where (case when t8.a = 10
++>              then t8.b
++>              else t8.a + t8.b end) = (t10.a + t10.b);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q18
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'D1', path 'CAT.HCUBE.T8'),
++>scan(TABLE 'D2', path 'CAT.HCUBE.T8'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 d1, t8 d2 where
++>(d1.b * d2.b) = d2.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     FILE_SCAN                       T8)              1.00E+003           
+3     FILE_SCAN                       T8)              1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q19
+>>control query shape implicit enforcers nested_join(unpack(tuple),nested_join(
++>update,
++>union(delete_unique ,insert)));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>UPDATE  t10
++>           SET   b = b + 2
++>           WHERE (c = ?[3000]) ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      2.00E+005           
+2     NESTED_JOIN                                      6.66E+001           
+3     BLOCKED_UNION                                    2.00E+000           
+4     INSERT                          IX10B            1.00E+000           
+5     CURSOR_DELETE                   IX10B            1.00E+000           
+6     SUBSET_UPDATE                   T10              3.33E+001           
+7     UNPACK                                           3.00E+003           
+8     VALUES                                           1.00E+000           
+
+--- 8 row(s) selected.
+>>
+>>-- Q20
+>>prepare xx from
++>UPDATE  t10
++>           SET   b = b + 2
++>           WHERE (c = ?[300]) ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      2.00E+005           
+2     NESTED_JOIN                                      6.66E+002           
+3     BLOCKED_UNION                                    2.00E+000           
+4     INSERT                          IX10B            1.00E+000           
+5     CURSOR_DELETE                   IX10B            1.00E+000           
+6     SUBSET_UPDATE                   T10              3.33E+002           
+7     UNPACK                                           3.00E+002           
+8     VALUES                                           1.00E+000           
+
+--- 8 row(s) selected.
+>>
+>>-- Q21
+>>create table ui1 like t10;
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers nested_join(sort(hash_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T10'),
++>scan(path 'CAT.HCUBE.T4')))),
++>insert);
+
+--- SQL operation complete.
+>>
+>>prepare XX from
++>insert into ui1 select *
++>                from t10
++>                where t10.b <= (select count (*)
++>                      from t4
++>                      where t10.c = t4.b) ;
+
+*** WARNING[6008] Statistics for column (A) from table CAT.HCUBE.UI1 were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     TUPLE_FLOW                                       3.33E+004           
+2     INSERT_VSBB                     UI1              1.00E+000           
+3     HASH_GROUPBY                                     3.33E+004           
+4     LEFT_HYBRID_HASH_JOIN                            1.00E+005           
+5     FILE_SCAN                       T10              1.00E+005           
+6     FILE_SCAN                       T4               1.00E+001           
+
+--- 6 row(s) selected.
+>>
+>>-- Test Delete-Select
+>>-- Q22
+>>control query shape implicit enforcers nested_join(nested_join(
++>scan(path 'CAT.HCUBE.UI1'),
++>hash_groupby(nested_join(
++>scan(path 'CAT.HCUBE.T10'),
++>scan(path 'CAT.HCUBE.T4')))),
++>delete_unique);
+
+--- SQL operation complete.
+>>
+>>prepare XX from
++>delete from ui1 where ui1.a in (select t10.a
++>                from t10
++>                where t10.b <= (select count (*)
++>                      from t4
++>                      where t10.c = t4.b)) ;
+
+*** WARNING[6008] Statistics for column (A) from table CAT.HCUBE.UI1 were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     TUPLE_FLOW                                       1.01E+002           
+2     CURSOR_DELETE                   UI1              1.00E+000           
+3     NESTED_SEMI_JOIN                                 1.00E+002           
+4     HASH_GROUPBY                                     1.00E+000           
+5     LEFT_NESTED_JOIN                                 1.00E+002           
+6     FILE_SCAN                       T4               1.00E+002           
+7     FILE_SCAN_UNIQUE                T10              1.00E+000           
+8     FILE_SCAN                       UI1              1.00E+002           
+
+--- 8 row(s) selected.
+>>
+>>-- Join with Tuple Lists
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>control query default comp_int_22 '2';
+
+--- SQL operation complete.
+>>
+>>-- Q23
+>>prepare xx from
++>select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
++>T.a = T8.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+001           
+2     FILE_SCAN                       T8               1.00E+003           
+3     TUPLELIST                                        5.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
++>T.a = T8.b;
+Histograms for query showstats for query select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where T.a = T8.b;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T8.B))
+Merge state:
+  12: CAT.HCUBE.T8.B
+
+Applied preds:
+   TotalUEC = 5.000000 
+   Rowcount = 50.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.500000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=50.000000,uec=5.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  24: VEGRef_24((CAT.HCUBE.T8.A))
+Merge state:
+  11: CAT.HCUBE.T8.A
+
+Applied preds:
+   TotalUEC = 50.000000 
+   Rowcount = 50.000000 
+
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.050000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=50.000000,uec=50.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  30: VEGRef_30((CAT.HCUBE.T8.C))
+Merge state:
+  13: CAT.HCUBE.T8.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 50.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 5.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=50.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q24
+>>prepare xx from
++>select * from (values (1),(2),(3),(4),(5), (1),(2),(3),(4),(5), (1),(2),(3),(4),(5), (1),(2),(3),(4),(5)) as T(a), t8 where
++>T.a = T8.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     FILE_SCAN                       T8               1.00E+003           
+3     TUPLELIST                                        2.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q25
+>>prepare xx from
++>select * from t4 where t4.a in (1, 2, 3);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.00E+000           
+2     FILE_SCAN                       T4               1.00E+001           
+3     HASH_GROUPBY                                     3.00E+000           
+4     TUPLELIST                                        3.00E+000           
+
+--- 4 row(s) selected.
+>>
+>>-- Q26
+>>prepare xx from
++>select * from t8 where t8.b in (1, 2, 3, 4);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+001           
+2     FILE_SCAN                       T8               1.00E+003           
+3     HASH_GROUPBY                                     4.00E+000           
+4     TUPLELIST                                        4.00E+000           
+
+--- 4 row(s) selected.
+>>
+>>-- Q27
+>>prepare xx from
++>select * from t8 where t8.c in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 1,1,1,1,1,1,1,1,1,1,2,3);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     FILE_SCAN                       T8               1.00E+003           
+3     HASH_GROUPBY                                     2.40E+001           
+4     TUPLELIST                                        2.40E+001           
+
+--- 4 row(s) selected.
+>>
+>>-- Q28
+>>prepare xx from
++>select * from t8 where t8.b in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 1,1,1,1,1,1,1,1,1,1,2,3);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.40E+002           
+2     FILE_SCAN                       T8               1.00E+003           
+3     HASH_GROUPBY                                     2.40E+001           
+4     TUPLELIST                                        2.40E+001           
+
+--- 4 row(s) selected.
+>>
+>>control query default join_order_by_user 'on';
+
+--- SQL operation complete.
+>>
+>>-- Q29
+>>prepare xx from
++>select * from (values (1),(2),(3),(4),(5)) as T(a), t4 where
++>T.a = T4.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+000           
+2     TUPLELIST                                        5.00E+000           
+3     FILE_SCAN                       T4               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q30
+>>prepare xx from
++>select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
++>T.a = T8.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+001           
+2     TUPLELIST                                        5.00E+000           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q31
+>>prepare xx from
++>select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
++>T.a = T8.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+002           
+2     TUPLELIST                                        5.00E+000           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Query on column with duplicate interval boundaries
+>>
+>>-- Q32
+>>-- look for 'some text'. The result should be 126K
+>>
+>>prepare xx from select * from cube2 where txt = 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            1.49E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q33
+>>-- look for 'bright yellow flower'. The result shoule be 600
+>>
+>>prepare xx from select * from cube2 where txt = 'bright yellow flower';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            8.99E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q34
+>>-- look for all values greater than or equal to 'some text'. Result should be
+>>-- 128K
+>>
+>>prepare xx from select * from cube2 where txt >= 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            2.50E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q35
+>>-- look for all values greater than 'some text'. Result should be
+>>-- 2400
+>>
+>>prepare xx from select * from cube2 where txt > 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            2.50E+004           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query select * from cube2 where txt > 'some text';
+Histograms for query showstats for query select * from cube2 where txt > 'some text';
+**************************************************************
+VEGcolumn:
+
+  37: VEGRef_37((CAT.HCUBE.CUBE2.A))
+Merge state:
+   3: CAT.HCUBE.CUBE2.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 2500.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=25000.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  40: VEGRef_40((CAT.HCUBE.CUBE2.B))
+Merge state:
+   4: CAT.HCUBE.CUBE2.B
+
+Applied preds:
+   TotalUEC = 100.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 250.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=25000.000000,uec=100.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  43: VEGRef_43((CAT.HCUBE.CUBE2.C))
+Merge state:
+   5: CAT.HCUBE.CUBE2.C
+
+Applied preds:
+   TotalUEC = 150.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 166.666667 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=25000.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  46: VEGRef_46((CAT.HCUBE.CUBE2.D))
+Merge state:
+   6: CAT.HCUBE.CUBE2.D
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 2500.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=25000.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  49: VEGRef_49((CAT.HCUBE.CUBE2.E))
+Merge state:
+   7: CAT.HCUBE.CUBE2.E
+
+Applied preds:
+   TotalUEC = 100.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 250.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=25000.000000,uec=100.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  52: VEGRef_52((CAT.HCUBE.CUBE2.F))
+Merge state:
+   8: CAT.HCUBE.CUBE2.F
+
+Applied preds:
+   TotalUEC = 150.000000 
+   Rowcount = 25000.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 166.666667 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=25000.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  55: VEGRef_55((CAT.HCUBE.CUBE2.TXT))
+Merge state:
+
+   9: CAT.HCUBE.CUBE2.TXT
+Applied preds:
+
+  35: (VEGRef_55((CAT.HCUBE.CUBE2.TXT)) > 'some text')
+
+***FAKE*** histogram
+***MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+
+   Rowcount = 25000.000000 
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 25000.000000 
+   Encoded MinValue = (
+8123034490117401.0000 )
+   Encoded MaxValue = ( 18014398509481984.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      8123034490117401.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     18014398509481984.0000 ) : rows=25000.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q36
+>>-- look for all values less than 'some text'. Result should be
+>>-- 21K
+>>
+>>prepare xx from select * from cube2 where txt < 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            1.49E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- Q37
+>>-- look for all values less than or equal to 'some text'. Result should be
+>>-- 147K
+>>
+>>prepare xx from select * from cube2 where txt <= 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            1.50E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- Q38
+>>-- look for all values not equal to 'some text'. Result should be
+>>-- 23K
+>>
+>>prepare xx from select * from cube2 where txt <> 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            1.50E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- Q39
+>>-- look for all values greater than or equal to 'some text' and
+>>-- less than or equal to 'some text repeated again. Result should be
+>>-- 129K
+>>
+>>prepare xx from select * from cube2 where txt >= 'some text' 
++>and txt <= 'some text repeated again';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            2.50E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q40
+>>-- look for all values greater than or equal to 'some text'. Result should be
+>>-- 128K
+>>
+>>prepare xx from select * from cube2 where txt > 'bright yellow sun' 
++>and txt <= 'some text';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       CUBE2            8.98E+004           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query select * from cube2 where txt > 'bright yellow sun' 
++>and txt <= 'some text';
+Histograms for query showstats for query select * from cube2 where txt > 'bright yellow sun'  and txt <= 'some text';
+**************************************************************
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.CUBE2.A))
+Merge state:
+   3: CAT.HCUBE.CUBE2.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 8987.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=89877.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  42: VEGRef_42((CAT.HCUBE.CUBE2.B))
+Merge state:
+   4: CAT.HCUBE.CUBE2.B
+
+Applied preds:
+   TotalUEC = 100.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 898.770000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=89877.000000,uec=100.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  45: VEGRef_45((CAT.HCUBE.CUBE2.C))
+Merge state:
+   5: CAT.HCUBE.CUBE2.C
+
+Applied preds:
+   TotalUEC = 150.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 599.180000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=89877.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  48: VEGRef_48((CAT.HCUBE.CUBE2.D))
+Merge state:
+   6: CAT.HCUBE.CUBE2.D
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 8987.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=89877.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  51: VEGRef_51((CAT.HCUBE.CUBE2.E))
+Merge state:
+   7: CAT.HCUBE.CUBE2.E
+
+Applied preds:
+   TotalUEC = 100.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 898.770000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=89877.000000,uec=100.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  54: VEGRef_54((CAT.HCUBE.CUBE2.F))
+Merge state:
+   8: CAT.HCUBE.CUBE2.F
+
+Applied preds:
+   TotalUEC = 150.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 599.180000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=89877.000000,uec=150.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  57: VEGRef_57((CAT.HCUBE.CUBE2.TXT))
+Merge state:
+
+   9: CAT.HCUBE.CUBE2.TXT
+Applied preds:
+
+  74: (VEGRef_57((CAT.HCUBE.CUBE2.TXT)) > 'bright yellow sun')
+
+  76: (VEGRef_57((CAT.HCUBE.CUBE2.TXT)) <= 'some text')
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 3.000000 
+   Rowcount = 89877.000000 
+
+   BaseUEC  = 3.000000 (pre-current-join-uec)
+
+   Max Frequency = 75000.000000 
+   Encoded MinValue = (
+6927586187418888.0000 )
+   Encoded MaxValue = ( 8123034490117401.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <=      (      6927586187418888.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8123034490117401.0000 ) : rows=89876.973071,uec=2.997266 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>LOG;

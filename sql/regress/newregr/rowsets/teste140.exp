@@ -1,0 +1,123 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+
+test1 : Expecting rownumber = 9999
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 9999
+Failed to insert. SQLCODE = -8102
+
+
+test2 : Expecting rownumber = 0
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 0
+Failed to insert. SQLCODE = -8102
+
+
+test3 : Expecting rownumber = 5
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 5
+Failed to insert. SQLCODE = -8102
+
+
+test4 : Expecting rownumber = 498
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 498
+Failed to insert. SQLCODE = -8102
+
+
+test5 : Expecting rownumber = 8
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 8
+Failed to update. SQLCODE = -8102
+
+
+test6 : Expecting rownumber = 8
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 8
+Failed. SQLCODE = -8102
+
+
+test7 : Expecting rownumber = 3
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : 3
+Failed. SQLCODE = -8102
+
+
+test8 : Expecting rownumber = 8
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : 8
+Failed to update. SQLCODE = -8419
+
+
+test9 : Expecting rownumber = 8
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : 8
+Failed to delete. SQLCODE = -8419
+
+
+test10a : Expecting rownumber = -1
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : -1
+
+
+test10b : Expecting rownumber = -1
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : -1
+
+
+test11 : Expecting rownumber = -1 in both cases
+Number  : 1
+Sqlcode : -8102
+Message : *** ERROR[8102] The operation is prevented by a unique constraint.
+RowNum  : -1
+Failed to insert. SQLCODE = -8102
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : -1
+
+
+test12 : Expecting rownumber = 8
+Number  : 1
+Sqlcode : -8419
+Message : *** ERROR[8419] An arithmetic expression attempted a division by zero. Operand1 Type:LARGEINT(MBIN64S) Operand1 Value:1000000000000 Operand2 Type:LARGEINT(MBIN64S) Operand2 Value:0. Instruction:DIV_MBIN64S_MBIN64S_MBIN64S Operation:DIV.
+RowNum  : 8
+Failed to update. SQLCODE = -8419

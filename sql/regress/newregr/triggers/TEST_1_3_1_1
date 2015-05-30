@@ -1,0 +1,129 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- full correct syntax
+-- Disable an existing trigger and ensure it has no effect.
+
+
+obey TEST_1_3_1_1(clean_up);
+obey TEST_1_3_1_1(set_up);
+log   LOG_1_3_1_1 clear;
+obey TEST_1_3_1_1(tests);
+LOG;
+obey TEST_1_3_1_1(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+drop trigger trig1;
+drop trigger trig2;
+obey clearTables;
+
+?section set_up
+SET SCHEMA cat1.schm;
+
+INSERT INTO tab1A VALUES (1,2,3,4);
+
+CREATE TRIGGER trig1 AFTER UPDATE
+	ON tab1A
+	REFERENCING NEW AS newrow
+	FOR EACH ROW
+		WHEN (newrow.a < 5 )
+	
+		INSERT INTO cat3.schm.tab3a VALUES (100,100);
+
+?section tests
+
+------------------------------------------------------------------
+-- 	TEST CASE
+------------------------------------------------------------------
+
+-- NOTE: the following statement should add a row to cat3.schm.tab3a
+
+UPDATE tab1A SET d=2 WHERE a=1;
+
+-- showlabel on trigger should return error
+showlabel trig1;
+
+showddl tab1A;
+showlabel tab1A, detail;
+ALTER TRIGGER DISABLE trig1;
+showddl tab1A;
+showlabel tab1A, detail;
+
+-- NOTE: the following statement should NOT add a row to cat3.schm.tab3a
+
+UPDATE tab1A SET c=2 WHERE a=1;
+
+-- RESULT: cat3.schm.tab3a should have one row only
+
+SELECT count(*) FROM cat3.schm.tab3a;
+
+-- Re-enable a disabled trigger and ensure it is in effect.
+
+ALTER TRIGGER ENABLE trig1;
+showddl tab1A;
+showlabel tab1A, detail;
+
+-- NOTE: the following statement should add a row to cat3.schm.tab3a
+
+UPDATE tab1A SET b=2 ;
+
+
+-- RESULT: cat3.schm.tab3a should have two rows
+
+SELECT count(*) FROM cat3.schm.tab3a;
+
+DELETE FROM cat3.schm.tab3a;
+
+ALTER TRIGGER DISABLE trig1;
+showddl tab1A;
+showlabel tab1A, detail;
+
+CREATE TRIGGER trig2 AFTER UPDATE
+	ON tab1A
+	REFERENCING NEW AS newrow
+	FOR EACH ROW
+		WHEN (newrow.a < 6 )
+	
+		INSERT INTO cat3.schm.tab3a VALUES (200,200);
+showddl tab1A;
+showlabel tab1A, detail;
+
+ALTER TRIGGER ENABLE ALL OF tab1a;
+showddl tab1A;
+showlabel tab1A, detail;
+
+-- NOTE: the following statement should add TWO rows to cat3.schm.tab3a
+
+UPDATE tab1A SET d=2 ;
+
+select * from cat3.schm.tab3a;
+
+ALTER TRIGGER DISABLE ALL OF tab1a;
+showddl tab1A;
+showlabel tab1A, detail;
+
+-- NOTE: the following statement should NOT ADD rows to cat3.schm.tab3a
+
+UPDATE tab1A SET c=3 ;
+
+-- RESULT: cat3.schm.tab3a should have two rows
+
+SELECT count(*) FROM cat3.schm.tab3a;
+
+--------------------------------------------------------

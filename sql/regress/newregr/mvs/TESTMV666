@@ -1,0 +1,348 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------------------------
+-- TESTMV666
+-- -------------
+-- MV Cols test
+-------------------------------------------------------------------------------
+
+obey TESTMV666(clean_up);
+obey TESTMV666(set_up);
+
+log LOGMV666 clear;
+
+-- Run tests
+  obey TESTMV666(Test1);
+  obey TESTMV666(Test2);
+  obey TESTMV666(Test3);
+  obey TESTMV666(Test4);
+  obey TESTMV666(Test5);
+  obey TESTMV666(Test6);
+  obey TESTMV666(Test7);
+  obey TESTMV666(Test8);
+  obey TESTMV666(Test9);
+  obey TESTMV666(Test10);
+  obey TESTMV666(Test11);
+  
+-- Clean and Exit
+obey TESTMV666(clean_up);
+log;
+exit;
+
+-------------------------------------------------------------------------------
+?section set_up
+
+set schema catmvs.mvschm;
+
+create table T_666_T1 (a int not null not droppable,
+		 b int,
+		 c int,
+		 primary key (a))
+		 store by primary key;
+ALTER TABLE T_666_T1 attribute all mvs allowed;
+create table T_666_T2 (d int not null not droppable,
+		 e int,
+		 f int,
+		 primary key (d))
+		 store by primary key;
+ALTER TABLE T_666_T2 attribute all mvs allowed;
+
+prepare cols from 
+  select substring(t_name, 0, 10) t_name,
+	 substring(column_name, 0, 10) orig_col_name, 
+	 mv_col_name, 
+	 orig_col_num,
+	 mv_col_num,
+	 column_type,
+	 dep1,
+	 is_complex,
+	 is_used_by_join,
+	 usage_type,
+	 is_system
+  from 
+	(select mv_col_num, 
+		original_col_num orig_col_num, 
+		substring(column_name, 0, 10) mv_col_name,
+		column_type,
+		is_complex,
+		is_used_by_join,
+		usage_type,
+		is_system,
+		original_table_uid,
+		DEPENDENT_COL_1 dep1
+	  from	HP_DEFINITION_SCHEMA.mvs_cols c,
+		HP_DEFINITION_SCHEMA.cols c1,
+		HP_DEFINITION_SCHEMA.objects o
+	  where mv_col_num = column_number
+	  and	mv_uid = c1.object_uid
+	  and	mv_uid = o.object_uid
+	  and	object_name = ?name
+	  for read uncommitted access) cc1
+  left join
+	(select substring(object_name, 0, 10) t_name,
+		column_number,
+		column_name,
+		c2.object_uid
+	  from  HP_DEFINITION_SCHEMA.objects o,
+		HP_DEFINITION_SCHEMA.cols c2
+	  where c2.object_uid = o.object_uid) c2o
+  on cc1.orig_col_num = c2o.column_number
+  and cc1.original_table_uid = c2o.object_uid 
+  order by mv_col_num, orig_col_num, mv_col_name, column_name;
+
+prepare mvs_base_table from
+  select  substring(object_name, 0, 10) mv_name,
+	  substring(column_name, 0, 10) column_name,
+	  column_number
+  from	  HP_DEFINITION_SCHEMA.objects o,
+	  HP_DEFINITION_SCHEMA.cols c
+  where	  o.object_uid = c.object_uid
+  and	  object_name = ?name
+  order by column_number
+  for read uncommitted access;
+
+prepare mvs_join_cols from 
+  select  substring(o1.object_name, 0, 10) mv_name,
+	  substring(o2.object_name, 0, 10) table_name,
+	  col_num,
+	  seq_number,
+	  veg_index,
+	  usage_type,
+	  is_complex,
+	  left_join_table_type
+  from	HP_DEFINITION_SCHEMA.objects o1,
+	HP_DEFINITION_SCHEMA.objects o2,
+	HP_DEFINITION_SCHEMA.mvs_join_cols c
+  where	o1.object_name = ?name
+  and   o1.object_uid = c.mv_uid
+  and	o2.object_uid = c.table_uid
+  order by seq_number
+  for read uncommitted access;
+-------------------------------------------------------------------------------
+?section Test1
+
+create mv T_666_MV1
+  refresh on statement
+initialized on refresh
+  as select a, b b1, b b2
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV1 attribute all mvs allowed;
+
+set param ?name 'T_666_MV1';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV1;
+-------------------------------------------------------------------------------
+?section Test2
+
+create mv T_666_MV2
+  refresh on statement
+  initialize on create
+  as select a, d
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV2 attribute all mvs allowed;
+
+set param ?name 'T_666_MV2';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV2;
+-------------------------------------------------------------------------------
+?section Test3
+
+create mv T_666_MV3
+  refresh on statement
+  initialize on create
+  as select a
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV3 attribute all mvs allowed;
+
+set param ?name 'T_666_MV3';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV3;
+-------------------------------------------------------------------------------
+?section Test4
+
+create mv T_666_MV4
+  refresh on statement
+  initialize on create
+  as select b
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV4 attribute all mvs allowed;
+
+set param ?name 'T_666_MV4';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV4;
+-------------------------------------------------------------------------------
+?section Test5
+
+create mv T_666_MV5
+  refresh on statement
+  initialize on create
+  as select b b1, b b2
+  from T_666_T1;
+ALTER MV T_666_MV5 attribute all mvs allowed;
+
+set param ?name 'T_666_MV5';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV5;
+-------------------------------------------------------------------------------
+?section Test6
+
+create mv T_666_MV6
+  refresh on statement
+  initialize on create
+  as select a a1, a a2
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV6 attribute all mvs allowed;
+
+set param ?name 'T_666_MV6';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV6;
+-------------------------------------------------------------------------------
+?section Test7
+
+create mv T_666_MV7
+  refresh on statement
+  initialize on create
+  as select (b+c) bc
+    from T_666_T1;
+ALTER MV T_666_MV7 attribute all mvs allowed;
+
+set param ?name 'T_666_MV7';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV7;
+-------------------------------------------------------------------------------
+?section Test8
+
+create mv T_666_MV8
+  refresh on statement
+  initialize on create
+  as select a a1, a a2, c, d, a+b+c abc, a+d ad, b+c bc
+    from T_666_T1, T_666_T2
+    where a = d;
+ALTER MV T_666_MV8 attribute all mvs allowed;
+  
+set param ?name 'T_666_MV8';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV8;
+-------------------------------------------------------------------------------
+?section Test9
+
+create mv T_666_MV9A
+  refresh on statement
+  initialize on create
+  as select b b1, b b2
+    from T_666_T1;
+ALTER MV T_666_MV9A attribute all mvs allowed;
+
+set param ?name 'T_666_MV9A';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+
+create mv T_666_MV9B
+  refresh on statement
+  initialize on create
+  as select b1+b2 bb
+  from T_666_MV9A;
+ALTER MV T_666_MV9B attribute all mvs allowed;
+
+set param ?name 'T_666_MV9B';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+
+drop mv T_666_MV9B;
+drop mv T_666_MV9A;
+-------------------------------------------------------------------------------
+?section Test10
+
+create mv T_666_MV10
+  refresh on statement
+  initialize on create
+  as select a 
+    from T_666_T1, T_666_T2
+    where b = e;
+ALTER MV T_666_MV10 attribute all mvs allowed;
+
+set param ?name 'T_666_MV10';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+drop mv T_666_MV10;
+-------------------------------------------------------------------------------
+?section Test11
+
+insert into T_666_T1 values (1, 2, 3);
+
+alter table T_666_T1 attribute insertlog;
+
+create mv T_666_MV11
+  refresh on statement
+  initialize on create
+  as select a, a a1, a a2
+    from T_666_T1;
+ALTER MV T_666_MV11 attribute all mvs allowed;
+
+set param ?name 'T_666_MV11';
+execute cols;
+execute mvs_base_table;
+execute mvs_join_cols;
+
+alter table T_666_T1 attribute no insertlog;
+
+showddl T_666_MV11;
+drop mv T_666_MV11;
+
+-------------------------------------------------------------------------------
+?section clean_up
+
+set schema catmvs.mvschm;
+drop mv T_666_MV11;
+drop mv T_666_MV10;
+drop mv T_666_MV9B;
+drop mv T_666_MV9A;
+drop mv T_666_MV8;
+drop mv T_666_MV7;
+drop mv T_666_MV6;
+drop mv T_666_MV5;
+drop mv T_666_MV4;
+drop mv T_666_MV3;
+drop mv T_666_MV2;
+drop mv T_666_MV1;
+drop table T_666_T2;
+drop table T_666_T1;

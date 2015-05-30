@@ -1,0 +1,1347 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>obey TESTMV215(SET_UP);
+>>-------------------------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>set PARSERFLAGS 1;
+>>set schema cat.tpcd;
+
+--- SQL operation complete.
+>>
+>>obey ./TPCD/CREATEALL.OBEY(SET_UP);
+>>
+>>create catalog cat;
+
+*** ERROR[1035] Catalog CAT already exists.
+
+--- SQL operation completed with errors.
+>>create schema cat.tpcd;
+
+*** ERROR[1022] Schema CAT.TPCD already exists.
+
+--- SQL operation completed with errors.
+>>cd ./tpcd;
+>>
+>>set schema CAT.TPCD;
+
+--- SQL operation complete.
+>>set envvar DSS_CONFIG . ;
+>>-- change all of these lines together if needed
+>>#ifNSK
+>>set envvar DSS_TEMP ./TPCDTEMP;
+>>sh mkdir $DSS_TEMP;
+>>#ifNSK
+>>#ifNT
+>>set envvar DSS_TEMP .\TPCDTEMP;
+>>sh mkdir %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\dbgen.exe %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\Dists.dss %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\*.fmt %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\generateTpcd.ksh %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\*.awk %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\runGen.pl %DSS_TEMP% ;
+>>#ifNT
+>>
+>>cd TPCDTEMP;
+>>
+>>cd tpcdtemp;
+>>
+>>log SQLCI.LOG clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @10@ ;
+
+--- SQL operation complete.
+>>SET PARAM ?table_name 'SUPPLIER';
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE  
+-------------  --------------------  ----------------  ------------  -------------  ---------------  
+
+           10                466965  Y                 N             N              A                
+
+--- 1 row(s) selected.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 5
+Import Completed Successfully
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>-- should be equal to 5
+>>select count(*) from table(iud_log_table cat.tpcd.supplier);
+
+(EXPR)                
+--------------------  
+
+                   5  
+
+--- 1 row(s) selected.
+>>
+>>internal refresh mv4q5 
++>        from singleDelta supplier
++>		between 10 and 10 no de insert only;
+
+--- 0 row(s) inserted.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @0@ @10@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 75
+Import Completed Successfully
+>>
+>>update customer
++>set c_nationkey = 12 -- 'JAPAN'
++>where c_custkey in (
++>	select c_custkey
++>	from customer,nation
++>	where c_nationkey = n_nationkey 
++>	      and c_acctbal < 4000
++>	      and n_name = 'IRAN'
++>	);
+
+--- 14 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>update customer
++>set c_nationkey = 10 -- 'IRAN'
++>where c_custkey in (
++>	select c_custkey
++>	from customer,nation
++>	where c_nationkey = n_nationkey 
++>	      and c_acctbal > 3000
++>	      and n_name = 'JAPAN'
++>	);
+
+--- 18 row(s) updated.
+>>
+>>update customer
++>set c_nationkey = 12 -- 'IRAN'
++>where c_custkey in (
++>	select c_custkey
++>	from customer,nation
++>	where c_nationkey = n_nationkey 
++>	      and c_acctbal < 2500
++>	      and n_name = 'JAPAN'
++>	);
+
+--- 14 row(s) updated.
+>>
+>>--select count(*),c_custkey 
+>>--from table(iud_log_table customer) 
+>>--group by c_custkey
+>>--order by c_custkey;
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @1@ @0@;
+
+--- SQL operation complete.
+>>internal refresh mv4q5 
++>        from singleDelta customer
++>		between 10 and 11 no de;
+
+--- 0 row(s) inserted.
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------------------
+>>    obey TESTMV215(TEST2);
+>>-------------------------------------------------------------
+>>
+>>obey ./TPCD/CREATEMVS(MV9);
+>>create mv mv4q9 
++>    refresh on request 
++>    as
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>-- Basic Q9
+>>PREPARE stat1 FROM 
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select nation, yr,sum_profit
++>	from mv4q9 
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @20@ ;
+
+--- SQL operation complete.
+>>internal refresh mv4q9 
++>        from singleDelta supplier
++>		between 20 and 20 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--parts
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @0@ @20@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 100
+Import Completed Successfully
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q9 
++>        from singleDelta part
++>		between 20 and 20 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- partsupp
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @0@ @20@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 400
+Import Completed Successfully
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q9 
++>        from singleDelta partsupp
++>		between 20 and 20 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- lineitem
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @20@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q9 from
++>        singleDelta lineitem
++>		between 20 and 20 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>----------------------------------------------------------
+>>    obey TESTMV215(TEST3);
+>>----------------------------------------------------------
+>>
+>>obey ./TPCD/CREATEMVS(MV1);
+>>create mv mv4q1
++>    refresh on request
++>    as
++>    select
++>        l_returnflag,
++>        l_linestatus,
++>        sum(l_quantity) as sum_qty,
++>        sum(l_extendedprice) as sum_base_price,
++>        sum( l_extendedprice * (1-l_discount)) as sum_disc_price,
++>        sum(l_extendedprice * (1-l_discount) * (1 + l_tax) )as sum_charge,
++>        avg(l_quantity) as avg_qty,
++>        avg(l_extendedprice) as avg_price,
++>        avg(l_discount) as avg_disc,
++>        count(*) as count_order
++>    from lineitem
++>    where 
++>        l_shipdate <= date '1998-12-01' - interval '90' day
++>    group by l_returnflag, l_linestatus;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>-- Basic Q1
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>        l_returnflag,
++>        l_linestatus,
++>        sum(l_quantity) as sum_qty,
++>        sum(l_extendedprice) as sum_base_price,
++>        sum( l_extendedprice * (1-l_discount)) as sum_disc_price,
++>        sum(l_extendedprice * (1-l_discount) * (1 + l_tax) )as sum_charge,
++>        avg(l_quantity) as avg_qty,
++>        avg(l_extendedprice) as avg_price,
++>        avg(l_discount) as avg_disc,
++>        count(*) as count_order
++>    from lineitem
++>    where 
++>        l_shipdate <= date '1998-12-01' - interval '90' day
++>    group by l_returnflag, l_linestatus
++>    order by l_returnflag, l_linestatus;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select l_returnflag, l_linestatus, sum_qty, sum_base_price, sum_disc_price,
++>           sum_charge, avg_qty, avg_price, avg_disc, count_order
++>    from mv4q1
++>    order by l_returnflag, l_linestatus;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- insert delta
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @30@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 500
+Import Completed Successfully
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q1
++>        from singledelta lineitem
++>		between 30 and 30 no de;
+
+--- 0 row(s) inserted.
+>> --  insert only;
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>update lineitem
++>set l_quantity = 1000
++>where l_partkey between 30.00 and 39.00;
+
+--- 103 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q1
++>        from singledelta lineitem
++>		between 31 and 31 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------------
+>>
+>>    obey TESTMV215(TEST4);
+>>--------------------------------------------------------------
+>>-- Irefresh from multidelta
+>>obey ./TPCD/CREATEMVS(MV3);
+>>create mv mv4q3
++>    refresh on request
++>    as
++>    select 
++>        l_orderkey, 
++>        cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
++>        o_orderdate, o_shippriority
++>    from customer,orders,lineitem
++>    where
++>        c_mktsegment = 'BUILDING'
++>        and c_custkey = o_custkey
++>        and l_orderkey = o_orderkey
++>        and o_orderdate < date '1995-03-15'
++>        and l_shipdate >  date '1995-03-15'
++>    group by l_orderkey, o_orderdate, o_shippriority;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>-- Basic Q3
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>        l_orderkey, 
++>        cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
++>        o_orderdate, o_shippriority
++>    from customer,orders,lineitem
++>    where
++>        c_mktsegment = 'BUILDING'
++>        and c_custkey = o_custkey
++>        and l_orderkey = o_orderkey
++>        and o_orderdate < date '1995-03-15'
++>        and l_shipdate >  date '1995-03-15'
++>    group by l_orderkey, o_orderdate, o_shippriority
++>    order by revenue desc,o_orderdate;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select l_orderkey, revenue, o_orderdate, o_shippriority
++>    from mv4q3
++>    order by revenue desc, o_orderdate;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- iud deltas
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @40@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.orders@ @0@ @40@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @0@ @40@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 75
+Import Completed Successfully
+>>
+>>update lineitem
++>set l_comment = 'broken'
++>where l_suppkey > 30 and l_suppkey < 40;
+
+--- 2091 row(s) updated.
+>>
+>>update customer
++>set c_comment = 'good'
++>where c_mktsegment = 'AUTOMOBILE';
+
+--- 113 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.orders@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q3 from
++>        multidelta lineitem between 40 and 40 no de,
++>                   orders   between 40 and 40 no de,
++>                   customer between 40 and 40 no de
++>        phase 0;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from table (iud_log_table cat.tpcd.orders);
+
+--- 2500 row(s) deleted.
+>>delete from table (iud_log_table cat.tpcd.customer);
+
+--- 301 row(s) deleted.
+>>delete from table (iud_log_table cat.tpcd.lineitem);
+
+--- 6682 row(s) deleted.
+>>log LOGMV215;
+>>
+>>----------------------------------------------------
+>>--- obey TESTMV215(TEST5); -- numeric inconsistancy
+>>--- obey TESTMV215(TEST6); -- numeric inconsistancy
+>>    obey TESTMV215(TEST7);
+>>----------------------------------------------------
+>>-- Irefresh from multidelta, one of them is self-cancelling
+>>obey ./TPCD/CREATEMVS(MV11);
+>>create mv mv4q11
++>    refresh on request
++>    as
++>    select
++>        ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
++>    from partsupp,supplier,nation
++>    where ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_partkey;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>-- Basic Q11
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>        ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
++>    from partsupp,supplier,nation
++>    where ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_partkey
++>    order by pvalue desc;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select 
++>        ps_partkey, pvalue
++>    from mv4q11
++>    order by pvalue desc;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- iud deltas
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @0@ @70@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @70@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.nation@ @0@ @70@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 400
+Import Completed Successfully
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 10
+Import Completed Successfully
+>>
+>>update partsupp
++>set ps_comment = 'not available'
++>where ps_partkey between 52 and 57;
+
+--- 24 row(s) updated.
+>>
+>>-- nation ----> self cancelling delta
+>>insert into nation values (45, 2, 'BOLIVIA', 'yes'), (46, 3, 'ICELAND', '');
+
+--- 2 row(s) inserted.
+>>delete from nation where n_name = 'ICELAND';
+
+--- 1 row(s) deleted.
+>>insert into nation values (87, 3, 'HOLLAND','yes');
+
+--- 1 row(s) inserted.
+>>delete from nation where n_name = 'HOLLAND' or n_name = 'BOLIVIA';
+
+--- 2 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.nation@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q11 from
++>        multidelta partsupp between 70 and 70 no de,
++>                   supplier between 70 and 70 no de,
++>                   nation   between 70 and 70 no de
++>        phase 0;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from table (iud_log_table cat.tpcd.supplier);
+
+--- 15 row(s) deleted.
+>>delete from table (iud_log_table cat.tpcd.partsupp);
+
+--- 448 row(s) deleted.
+>>delete from table (iud_log_table cat.tpcd.nation);
+
+--- 6 row(s) deleted.
+>>log LOGMV215;
+>>
+>>-------------------------------------------------------
+>>    obey TESTMV215(TEST8);
+>>-------------------------------------------------------
+>>-- Irefresh from multidelta
+>>obey ./TPCD/CREATEMVS(MV12);
+>>create mv mv4q12
++>    refresh on request
++>    as
++>    select
++>        l_shipmode, 
++>        sum (case when o_orderpriority ='1-URGENT'
++>        or o_orderpriority ='2-HIGH'
++>        then 1 else 0 end) as high_line_count,
++>        sum (case when o_orderpriority <> '1-URGENT'
++>        and o_orderpriority <> '2-HIGH'
++>        then 1 else 0 end) as low_line_count
++>    from orders,lineitem
++>    where 
++>        o_orderkey = l_orderkey
++>        and l_shipmode in ('MAIL','SHIP')
++>        and l_commitdate < l_receiptdate
++>        and l_shipdate < l_commitdate
++>        and l_receiptdate >= date '1994-01-01'
++>        and l_receiptdate < date '1994-01-01' + interval '1' year
++>    group by l_shipmode;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>-- Basic Q12
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>        l_shipmode, 
++>        sum (case when o_orderpriority ='1-URGENT'
++>        or o_orderpriority ='2-HIGH'
++>        then 1 else 0 end) as high_line_count,
++>        sum (case when o_orderpriority <> '1-URGENT'
++>        and o_orderpriority <> '2-HIGH'
++>        then 1 else 0 end) as low_line_count
++>    from orders,lineitem
++>    where 
++>        o_orderkey = l_orderkey
++>        and l_shipmode in ('MAIL','SHIP')
++>        and l_commitdate < l_receiptdate
++>        and l_shipdate < l_commitdate
++>        and l_receiptdate >= date '1994-01-01'
++>        and l_receiptdate < date '1994-01-01' + interval '1' year
++>    group by l_shipmode
++>    order by l_shipmode;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select
++>        l_shipmode, high_line_count, low_line_count
++>    from mv4q12
++>    order by l_shipmode;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- iud deltas
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.orders@ @0@ @80@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @80@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 1000
+Import Completed Successfully
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+>>
+>>update orders
++>set o_totalprice = 1099.00 where o_custkey < 100;
+
+--- 538 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.orders@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q12 from
++>        multidelta orders   between 80 and 80 no de,
++>                   lineitem between 80 and 80 no de
++>        phase 0;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from table (iud_log_table cat.tpcd.orders);
+
+--- 2076 row(s) deleted.
+>>delete from table (iud_log_table cat.tpcd.lineitem);
+
+--- 2500 row(s) deleted.
+>>log LOGMV215;
+>>
+>>-------------------------------------------------------
+>>    obey TESTMV215(TEST9);
+>>-------------------------------------------------------
+>>
+>>obey ./TPCD/CREATEMVS(MV15);
+>>create mv mv4q15
++>    refresh on request
++>    as
++>    select
++>        l_suppkey , sum(l_extendedprice * (1-l_discount)) as total
++>    from lineitem
++>    where
++>        l_shipdate >= date '1996-01-01'
++>        and l_shipdate < date '1996-01-01' + interval '3' month
++>    group by l_suppkey;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>-- Basic Q15
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>        l_suppkey , sum(l_extendedprice * (1-l_discount)) as total
++>    from lineitem
++>    where
++>        l_shipdate >= date '1996-01-01'
++>        and l_shipdate < date '1996-01-01' + interval '3' month
++>    group by l_suppkey
++>    order by l_suppkey;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select l_suppkey, total
++>    from mv4q15
++>    order by l_suppkey;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- lineitem
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @90@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+>>delete from lineitem where l_partkey < 100;
+
+--- 1361 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q15 from
++>        singleDelta lineitem
++>		between 90 and 90 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------------
+>>    obey TESTMV215(TEST10);
+>>-------------------------------------------------------
+>>-- This test checks MV that is based on tables from different schemas
+>>
+>>-- Creating new schemas
+>>create catalog cat3;
+
+--- SQL operation complete.
+>>create schema cat3.details;
+
+--- SQL operation complete.
+>>create schema cat3.geography;
+
+--- SQL operation complete.
+>>create schema cat3.testing;
+
+--- SQL operation complete.
+>>-- Creating new tables
+>>set schema cat3.details;
+
+--- SQL operation complete.
+>>Create table partsupp  (
++>   ps_partkey          int                not null not droppable, 
++>   ps_suppkey          int                not null not droppable, 
++>   ps_availqty         int                not null not droppable, 
++>   ps_supplycost       numeric(12,2)      not null not droppable, 
++>   ps_comment          varchar(199)       not null not droppable, 
++>primary key (ps_partkey,ps_suppkey) not droppable) 
++>store by primary key 
++>location $$partition1$$
++>partition ( 
++>   add first key (          1001) location $$partition2$$)
++>attribute buffered, audit;
+
+--- SQL operation complete.
+>>
+>>Create table supplier  (
++>   s_suppkey           int                not null not droppable, 
++>   s_nationkey         int                not null not droppable, 
++>   s_acctbal           numeric(12,2)      not null not droppable, 
++>   s_phone             char(15)           not null not droppable, 
++>   s_name              char(25)           not null not droppable, 
++>   s_address           varchar(40)        not null not droppable, 
++>   s_comment           varchar(101)       not null not droppable, 
++>primary key (s_suppkey) not droppable) 
++>store by primary key 
++>location $$partition1$$
++>partition ( 
++>   add first key (            501) location $$partition2$$)
++>attribute buffered, audit;
+
+--- SQL operation complete.
+>>
+>>set schema cat3.geography;
+
+--- SQL operation complete.
+>>
+>>Create table nation  (
++>   n_nationkey         int                not null not droppable, 
++>   n_regionkey         int                not null not droppable, 
++>   n_name              char(25)           not null not droppable, 
++>   n_comment           varchar(152)       not null not droppable, 
++>primary key (n_nationkey) not droppable) 
++>store by primary key 
++>location $$partition1$$
++>attribute buffered, audit;
+
+--- SQL operation complete.
+>>
+>>-- Inserting data
+>>cd ./tpcd/tpcdtemp;
+>>sh import cat3.details.supplier -I supplier.tbl -U supplier.fmt -r -C 60;
+>>sh import cat3.details.partsupp -I partsupp.tbl -U partsupp.fmt -r -C 6000;
+>>sh import cat3.geography.nation -I nation.tbl -U nation.fmt;
+>>cd ../..;
+>>
+>>-- Creating MV67
+>>set schema cat3.testing;
+
+--- SQL operation complete.
+>>obey ./TPCD/CREATEMVS(MV67);
+>>create mv mv4q67
++>    refresh on request
++>    as
++>    select
++>    ps_suppkey,
++>    sum(ps_supplycost*ps_availqty) as total
++>    from cat3.details.partsupp,
++>         cat3.details.supplier,
++>         cat3.geography.nation
++>    where 
++>        ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_suppkey;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>
+>>
+>>-- Basic Q67
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select
++>    ps_suppkey,
++>    sum(ps_supplycost*ps_availqty) as total
++>    from cat3.details.partsupp,
++>         cat3.details.supplier,
++>         cat3.geography.nation
++>    where 
++>        ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_suppkey
++>    order by total;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>    select ps_suppkey, total
++>    from cat3.testing.mv4q67
++>    order by total;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- partsupp
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.details.partsupp@ @0@ @100@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 400
+Import Completed Successfully
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.details.partsupp@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q67 from
++>        singleDelta cat3.details.partsupp
++>		between 100 and 100 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- supplier
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.details.supplier@ @0@ @100@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 10
+Import Completed Successfully
+>>
+>>update cat3.details.supplier
++>set s_comment = 'not trustable'
++>where s_suppkey < 15 and s_suppkey > 3;
+
+--- 11 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.details.supplier@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q67 from
++>        singleDelta cat3.details.supplier
++>		between 100 and 100 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- nation
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.geography.nation@ @0@ @100@ ;
+
+--- SQL operation complete.
+>>insert into cat3.geography.nation values (50, 1, 'CANADA', 'yes'), (51, 2, 'MEXICO', 'yes');
+
+--- 2 row(s) inserted.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.geography.nation@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh mv4q67 from
++>        singleDelta cat3.geography.nation
++>        between 100 and 100 no de;
+
+--- 0 row(s) inserted.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- Clean and exit
+>>
+>>obey TESTMV215(CLEAN_UP);
+>>-----------------------------------------------------
+>>
+>>
+>>set schema cat.tpcd;
+
+--- SQL operation complete.
+>>obey ./TPCD/CREATEMVS(DROPALL);
+>>drop mv cat3.testing.mv4q67;
+
+--- SQL operation complete.
+>>drop mv mv4q17;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.MV4Q17 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object  could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q15;
+
+--- SQL operation complete.
+>>drop mv mv4q12;
+
+--- SQL operation complete.
+>>drop mv mv4q11;
+
+--- SQL operation complete.
+>>drop mv mv4q10;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.MV4Q10 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object  could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q9;
+
+--- SQL operation complete.
+>>drop mv mv4q7;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.MV4Q7 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object  could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q6;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.MV4Q6 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object  could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q5;
+
+--- SQL operation complete.
+>>drop mv mv4q3;
+
+--- SQL operation complete.
+>>drop mv mv4q1;
+
+--- SQL operation complete.
+>>
+>>
+>>--------------------------
+>>drop table cat3.details.partsupp;
+
+--- SQL operation complete.
+>>drop table cat3.details.supplier;
+
+--- SQL operation complete.
+>>drop table cat3.geography.nation;
+
+--- SQL operation complete.
+>>drop schema cat3.details;
+
+--- SQL operation complete.
+>>drop schema cat3.geography;
+
+--- SQL operation complete.
+>>drop schema cat3.testing;
+
+--- SQL operation complete.
+>>drop catalog cat3;
+
+--- SQL operation complete.
+>>obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+>>
+>>drop table customer;
+
+--- SQL operation complete.
+>>drop table supplier;
+
+--- SQL operation complete.
+>>drop table lineitem;
+
+--- SQL operation complete.
+>>drop table orders;
+
+--- SQL operation complete.
+>>drop table part;
+
+--- SQL operation complete.
+>>drop table partsupp;
+
+--- SQL operation complete.
+>>drop table nation;
+
+--- SQL operation complete.
+>>drop table region;
+
+--- SQL operation complete.
+>>drop table customer;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.CUSTOMER does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.CUSTOMER could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table supplier;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.SUPPLIER does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.SUPPLIER could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table lineitem;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.LINEITEM does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.LINEITEM could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table orders;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.ORDERS does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.ORDERS could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table part;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.PART does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.PART could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table partsupp;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.PARTSUPP does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.PARTSUPP could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table nation;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.NATION does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.NATION could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table region;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.REGION does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.REGION could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop table timelog;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.TIMELOG does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.TIMELOG could not be dropped.
+
+--- SQL operation completed with errors.
+>>
+>>-- ---------------------------------------------------------------------------
+>>
+>>-- The objects that were left in the system:
+>>obey ./TPCD/SHOW_OBJECTS_TPCD;
+>>select Substring(objects.OBJECT_NAME,1,20) as objct,
++>       objects.OBJECT_NAME_SPACE,
++>       objects.OBJECT_TYPE,Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>       objects.object_uid
++>from DEFINITION_SCHEMA_VERSION_$$VERS_CURR_SCHEMA_VERSION$$.objects objects,
++>     $$system_catalog$$.system_schema.schemata schemata
++>where schemata.schema_uid = objects.schema_uid
++>      and objects.OBJECT_NAME_SPACE <> 'CN'
++>      and schema_name = 'TPCD'
++>      and object_security_class = 'UT'
++>order by SCHEMA_NAME,objects.OBJECT_TYPE,objct;
+
+--- 0 row(s) selected.
+>>log;

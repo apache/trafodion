@@ -1,0 +1,352 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--=============================================================
+-- TestMV520
+-- Create table LIKE test
+--=============================================================
+
+obey TESTMV520(CLEAN_UP);
+-- ALTER TABLE LIKE attribute all mvs allowed;
+log LOGMV520 clear;
+obey TESTMV520(SET_UP);
+
+-- Run tests
+  obey TESTMV520(INSERTLOG);
+  obey TESTMV520(LOCKONREFRESH);
+  obey TESTMV520(RANGELOG);
+  obey TESTMV520(MVSALLOWED);
+  obey TESTMV520(MVATTRIBUTE);
+  obey TESTMV520(LIKEMV1);
+  obey TESTMV520(LIKEMV2);
+-- Clean and Exit
+log;
+obey TESTMV520(CLEAN_UP);
+exit;
+
+---------------------------------------------------------------
+?section INSERTLOG
+
+alter table T_520_T1 attribute INSERTLOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both IS_INSERTLOG should be Y
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute NO INSERTLOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both IS_INSERTLOG should be N
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+---------------------------------------------------------------
+?section LOCKONREFRESH
+
+alter table T_520_T1 attribute NO LOCKONREFRESH;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both IS_LOCKONREFRESH should be N
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute LOCKONREFRESH;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both IS_LOCKONREFRESH should be Y
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+
+---------------------------------------------------------------
+?section RANGELOG
+
+alter table T_520_T1 attribute NO RANGELOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both RANGELOG_TYPE should be N
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute AUTOMATIC RANGELOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both RANGELOG_TYPE should be A
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute MANUAL RANGELOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both RANGELOG_TYPE should be M
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute MIXED RANGELOG;
+
+create table T_520_T2 like T_520_T1;
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+-- both RANGELOG_TYPE should be X
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+---------------------------------------------------------------
+?section MVSALLOWED
+
+alter table T_520_T1 attribute NO MVS ALLOWED;
+
+create table T_520_T2 like T_520_T1;
+
+-- MVS_ALLOWED_TYPE should be N
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+-- MVS_ALLOWED_TYPE should be N
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute ALL MVS ALLOWED;
+
+create table T_520_T2 like T_520_T1;
+
+-- MVS_ALLOWED_TYPE should be A
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+-- MVS_ALLOWED_TYPE should be A
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute ON REQUEST MVS ALLOWED;
+
+create table T_520_T2 like T_520_T1;
+
+-- MVS_ALLOWED_TYPE should be R
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+-- MVS_ALLOWED_TYPE should be R
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute ON STATEMENT MVS ALLOWED;
+
+create table T_520_T2 like T_520_T1;
+
+-- MVS_ALLOWED_TYPE should be S
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+-- MVS_ALLOWED_TYPE should be S
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+alter table T_520_T1 attribute RECOMPUTE MVS ALLOWED;
+
+create table T_520_T2 like T_520_T1;
+
+-- MVS_ALLOWED_TYPE should be C
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+-- MVS_ALLOWED_TYPE should be C
+set param ?table_name T_520_T2;
+execute select_mvs_table_info;
+
+drop table T_520_T2;
+
+---------------------------------------------------------------
+?section MVATTRIBUTE
+
+drop table T_520_T1;
+
+create table T_520_T1 ( a int );
+ALTER TABLE T_520_T1 attribute all mvs allowed;
+create table T_520_T2 ( b int );
+ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+create mv T_520_MV1
+  refresh on request 
+initialized on refresh
+  as select a, sum(a) as suma
+  from T_520_T1, T_520_T2
+  where a = b
+  group by a;
+ALTER MV T_520_MV1 attribute all mvs allowed;
+
+insert into T_520_T1 values (12), (23), (344), (11), (33);
+insert into T_520_T2 values (12), (11), (90);
+
+refresh T_520_MV1;
+
+create table T_520_T3 like T_520_T1;
+ALTER TABLE T_520_T3 attribute all mvs allowed;
+
+set param ?table_name T_520_T1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_T3;
+execute select_mvs_table_info;
+
+drop mv T_520_MV1;
+drop table T_520_T3;
+
+----------------------------------------------------------------
+?section LIKEMV1
+
+create table T_520_T10 (a int);
+ALTER TABLE T_520_T10 attribute all mvs allowed;
+
+create mv T_520_MV1
+  refresh on request
+initialized on refresh
+  as select avg(a) as aa 
+  from T_520_T10;
+ALTER MV T_520_MV1 attribute all mvs allowed;
+
+insert into T_520_T10 values (2), (4), (5);
+
+create table T_520_MV1_LIKE_1 like T_520_MV1;
+ALTER TABLE T_520_MV1_LIKE_1 attribute all mvs allowed;
+
+set param ?table_name T_520_MV1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_MV1_LIKE_1;
+execute select_mvs_table_info;
+
+----------------------------------------------------------------
+?section LIKEMV2
+
+create mv T_520_MV2
+  refresh on request 
+initialized on refresh
+  as select sum(aa) as sa
+  from T_520_MV1;
+ALTER MV T_520_MV2 attribute all mvs allowed;
+
+create table T_520_MV1_LIKE_2 like T_520_MV1;
+ALTER TABLE T_520_MV1_LIKE_2 attribute all mvs allowed;
+
+set param ?table_name T_520_MV1;
+execute select_mvs_table_info;
+
+set param ?table_name T_520_MV1_LIKE_2;
+execute select_mvs_table_info;
+
+
+
+---------------------------------------------------------------
+?section SET_UP
+
+set schema catmvs.mvschm;
+create table T_520_T1 ( a int, b int );
+ALTER TABLE T_520_T1 attribute all mvs allowed;
+
+PREPARE select_mvs_table_info FROM
+    SELECT CURRENT_EPOCH, MV_ATTRIBUTES_BITMAP, IS_LOCKONREFRESH, 
+	IS_INSERTLOG, RANGELOG_TYPE,MVSALLOWED_TYPE
+	FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	WHERE base_table_uid = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+	  WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
+	FOR READ UNCOMMITTED ACCESS);
+
+---------------------------------------------------------------
+?section CLEAN_UP
+
+set schema catmvs.mvschm;
+drop mv T_520_MV2;
+drop mv T_520_MV1;
+drop table T_520_T1;
+drop table T_520_T2;
+drop table T_520_T3;
+drop table T_520_T10;
+drop table T_520_MV1_LIKE_1;
+drop table T_520_MV1_LIKE_2;

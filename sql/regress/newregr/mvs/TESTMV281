@@ -1,0 +1,841 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV281
+--  2.18.2  No Audit, No audit on refresh
+------------------------------------------------------
+set schema catmvs.mvschm;
+-- Disable automatic creation of MVGroup objects
+control query default MVGROUP_AUTOMATIC_CREATION 'OFF';
+obey PREPARE_DDL_SELECTS;
+log LOGMV281 clear;
+obey TESTMV281(CLEAN_UP);
+obey TESTMV281(SETUP);
+
+
+
+-- Run Tests
+
+
+	obey TESTMV281(TEST1);
+	obey TESTMV281(TEST2);
+	obey TESTMV281(TEST3);
+--	obey TESTMV281(TEST6); -- bug 613 no audit mvs are not fully supported
+--	obey TESTMV281(TEST7); -- bug 613 no audit mvs are not fully supported
+--	obey TESTMV281(TEST8); -- bug 613 no audit mvs are not fully supported
+--	obey TESTMV281(TEST9); -- bug 613 no audit mvs are not fully supported
+
+-- Check the drop statement on the way out
+
+obey TESTMV281(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+log;
+exit;
+---------------------------------------------------------
+?section SETUP
+---------------------------------------------------------
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+set schema catmvs.mvschm;
+
+create table A_281(id int NOT NULL NOT DROPPABLE,
+					name CHARACTER (15) ,
+					mounth int NOT NULL NOT DROPPABLE,
+					year1 int,
+					age int,
+					salary int , 
+					primary key (id ASC , mounth ASC))
+					store by primary key;
+ALTER TABLE A_281 attribute all mvs allowed;
+
+INSERT INTO A_281
+VALUES (121,'Anna',4,1999,23,3000),
+		(121,'Anna',5,1999,23,5000),
+		(121,'Anna',7,1999,23,5000),
+		(343,'Itay',1,1999,35,10000),
+		(343,'Itay',2,1999,35,10000),
+		(343,'Itay',3,1999,35,10000),
+		(343,'Itay',4,1999,35,10000),
+		(545,'Shiri',1,1999,27,14000),
+		(545,'Shiri',2,1999,27,15000),
+		(545,'Shiri',3,1999,27,45000),
+		(545,'Shiri',4,1999,27,14000);
+
+
+create table T_281_tab1(id int NOT NULL NOT DROPPABLE,
+					name CHARACTER (15),
+					primary key (id));
+ALTER TABLE T_281_tab1 attribute all mvs allowed;
+create table T_281_tab2(id int NOT NULL NOT DROPPABLE,
+					salary  int,
+					primary key (id));
+ALTER TABLE T_281_tab2 attribute all mvs allowed;
+create table T_281_tab3(id int NOT NULL NOT DROPPABLE,
+					age int,
+					primary key (id));	
+ALTER TABLE T_281_tab3 attribute all mvs allowed;
+create table T_281_tab4(id int NOT NULL NOT DROPPABLE,
+					city CHARACTER (15),
+					primary key (id));
+ALTER TABLE T_281_tab4 attribute all mvs allowed;
+create table T_281_tab5(id int NOT NULL NOT DROPPABLE,
+					country CHARACTER (15),
+					primary key (id));
+ALTER TABLE T_281_tab5 attribute all mvs allowed;
+create table T_281_tab6(id int NOT NULL NOT DROPPABLE,
+					phone int,
+					primary key (id));
+ALTER TABLE T_281_tab6 attribute all mvs allowed;
+
+
+create mv T_281_MV1
+	refresh on request
+initialized on refresh
+	MVAttributes no audit
+	as
+	select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age;
+ALTER MV T_281_MV1 attribute all mvs allowed;
+
+create mv T_281_MV2
+	refresh on request 
+initialized on refresh
+	MVAttributes no Audit
+	as
+	select T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age1
+	from T_281_tab1,T_281_tab3
+	where T_281_tab1.id=T_281_tab3.id
+	group by T_281_tab1.id,name;
+ALTER MV T_281_MV2 attribute all mvs allowed;
+
+create mv T_281_MV3
+refresh on request 
+initialized on refresh
+MVAttributes no Audit
+as
+	select	T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age,T_281_tab2.salary,T_281_tab4.city,
+	T_281_tab5.country,T_281_tab6.phone
+	from T_281_tab1,T_281_tab2,T_281_tab3,T_281_tab4,T_281_tab5,T_281_tab6
+	where T_281_tab1.id=T_281_tab2.id and T_281_tab2.id=T_281_tab3.id and T_281_tab3.id=T_281_tab4.id
+	and T_281_tab4.id=T_281_tab5.id and T_281_tab5.id=T_281_tab6.id
+	group by T_281_tab1.id,name,salary,city,country,phone;
+ALTER MV T_281_MV3 attribute all mvs allowed;
+
+create mv T_281_MV6
+refresh on request
+initialized on refresh
+MVAttribute  no Audit
+as
+	select id,name,max(salary) as max_salary
+	from A_281
+	group by id,name;
+ALTER MV T_281_MV6 attribute all mvs allowed;
+
+create mv T_281_MV7
+	refresh on request 
+initialized on refresh
+	MVAttributes no audit
+	as
+	select max(T_281_tab3.age) oldest,T_281_tab5.country country
+	from T_281_tab3,T_281_tab5
+	where T_281_tab3.id = T_281_tab5.id
+	group by country;
+ALTER MV T_281_MV7 attribute all mvs allowed;
+
+create table temp1 ( epoch INT UNSIGNED , table_name char(100));
+ALTER TABLE temp1 attribute all mvs allowed;
+create table temp2 (mv_name CHARACTER(20), bt_name CHARACTER(20), EPOCH int);
+ALTER TABLE temp2 attribute all mvs allowed;
+
+
+prepare save_epoch from 
+insert into temp1 
+SELECT CURRENT_EPOCH,?table_name
+	FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	WHERE base_table_uid = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+	  WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
+	FOR READ UNCOMMITTED ACCESS);
+
+prepare if_bigger from 
+select 'BIGGER' as rel
+from temp1
+where  table_name = ?table_name and 
+       epoch
+	<
+	(SELECT CURRENT_EPOCH
+		FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	 WHERE base_table_uid = (SELECT object_uid 
+	 FROM HP_DEFINITION_SCHEMA.objects 
+   	   WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
+	 FOR READ UNCOMMITTED ACCESS)
+	)
+;
+
+Create MVGroup MVG1_281;
+ 
+ --------------------------------------------------------------
+?section TEST1
+---------------------------------------------------------------
+refresh T_281_MV1 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+log LOGMV281;
+
+INSERT INTO A_281
+VALUES (121,'Anna',2,1999,23,6000),
+		(121,'Anna',3,1999,23,2000),
+		(121,'Anna',1,1999,23,7000);
+
+set param ?table_name 'A_281';
+execute save_epoch ;
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_used_umd;
+
+refresh T_281_MV1 outfile REFRESH.LOG;
+
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+log LOGMV281;
+
+
+set param ?table_name 'A_281';
+execute if_bigger ;
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+	select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age
+	order by id,name,year1,age;
+PREPARE stat2 FROM
+	select * from T_281_MV1
+	order by id,name,year1,age;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV281 ;
+log LOGMV281;
+
+log;
+delete from temp1;
+delete from temp2;
+log LOGMV281;
+---------------------------------------------------------------
+?section TEST2
+---------------------------------------------------------------
+drop mv T_281_MV1;
+
+create mv T_281_MV1
+	refresh on request
+	initialize on refresh
+	MVAttributes no auditonrefresh
+	as
+	select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age;
+ALTER MV T_281_MV1 attribute all mvs allowed;
+alter mv T_281_MV1 attribute all mvs allowed;
+
+create mv T_281_MV1_stam
+refresh on request 
+initialized on refresh
+as
+select count(*) stam
+from T_281_MV1;
+ALTER MV T_281_MV1_stam attribute all mvs allowed;
+
+INSERT INTO A_281
+VALUES (121,'Anna',11,1999,23,5000),
+		(121,'Anna',12,1999,23,3000);
+
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_table_info_umd; 
+
+refresh T_281_MV1 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+log LOGMV281;
+
+--Expected - Audit
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_table; 
+
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_table_info_umd;
+
+PREPARE stat1 FROM
+	select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age
+	order by id,name,year1,age;
+PREPARE stat2 FROM
+	select * from T_281_MV1
+	order by id,name,year1,age;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV281 ;
+log LOGMV281;
+
+drop mv T_281_MV1_stam;
+log;
+delete from temp1;
+log LOGMV281;
+--------------------------------------------------------------
+?section TEST3
+--------------------------------------------------------------
+-- refresh by recompute
+refresh T_281_MV2 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+INSERT INTO T_281_tab1
+VALUES (6760,'Shirli'),
+		(2904,'Mats');
+
+INSERT INTO T_281_tab3
+VALUES (6760,25),
+		(2904,38);
+
+set param ?table_name 'T_281_TAB1';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB3';
+execute save_epoch ;
+
+set param ?mv_name 'T_281_MV2';
+execute select_mvs_used_umd;
+
+refresh T_281_MV2 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+--Expected bigger
+set param ?table_name 'T_281_TAB1';
+execute if_bigger;
+set param ?table_name 'T_281_TAB3';
+execute if_bigger  ;
+
+set param ?mv_name 'T_281_MV2';
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+	select T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age1
+	from T_281_tab1,T_281_tab3
+	where T_281_tab1.id=T_281_tab3.id
+	group by T_281_tab1.id,name
+	order by id ,name; 
+PREPARE stat2 FROM
+	select * from T_281_MV2
+	order by id,name;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281;
+log LOGMV281;
+
+log;
+delete from temp1;
+delete from temp2;
+log LOGMV281;
+---------------------------------------------------------------------------
+?section TEST4
+---------------------------------------------------------------------------
+-- refresh by recompute
+refresh T_281_MV3 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+INSERT INTO T_281_tab1
+VALUES (3455,'Iris');
+
+INSERT INTO T_281_tab2
+VALUES (3455,17000),
+		(748,34444),
+		(2222,0);
+
+INSERT INTO T_281_tab3
+VALUES (3455,37);
+
+INSERT INTO T_281_tab4
+VALUES (3455,'Milano'),
+		(748,'Rome'),
+		(2222,'Verona');
+
+INSERT INTO T_281_tab5
+	VALUES (3455,'Italy'),
+			(748,'Italy'),
+			(2222,'Italy');
+
+INSERT INTO T_281_tab6
+	VALUES (3455,937362),
+			(748,292906),
+			(2222,322233);
+
+set param ?mv_name 'T_281_MV3';
+execute select_mvs_used_umd;
+
+set param ?table_name 'T_281_TAB1';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB2';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB3';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB4';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB5';
+execute save_epoch ;
+set param ?table_name 'T_281_TAB6';
+execute save_epoch ;
+
+refresh T_281_MV3 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+--Expected bigger
+set param ?table_name 'T_281_TAB1';
+execute if_bigger;
+set param ?table_name 'T_281_TAB2';
+execute if_bigger;
+set param ?table_name 'T_281_TAB3';
+execute if_bigger;
+set param ?table_name 'T_281_TAB4';
+execute if_bigger;
+set param ?table_name 'T_281_TAB5';
+execute if_bigger;
+set param ?table_name 'T_281_TAB6';
+execute if_bigger;
+
+set param ?mv_name 'T_281_MV3';
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+	select T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age,T_281_tab2.salary,T_281_tab4.city,
+	T_281_tab5.country,T_281_tab6.phone
+	from T_281_tab1,T_281_tab2,T_281_tab3,T_281_tab4,T_281_tab5,T_281_tab6
+	where T_281_tab1.id=T_281_tab2.id and T_281_tab2.id=T_281_tab3.id and T_281_tab3.id=T_281_tab4.id
+	and T_281_tab4.id=T_281_tab5.id and T_281_tab5.id=T_281_tab6.id
+	group by T_281_tab1.id,name,salary,city,country,phone
+	order by T_281_tab1.id,name,salary,city,country,phone;
+PREPARE stat2 FROM
+	select * from T_281_MV3
+	order by id,name,salary,city,country,phone;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+log;
+delete from temp1;
+delete from temp2;
+log LOGMV281;
+
+-------------------------------------------------------------------------
+?section TEST5
+-------------------------------------------------------------------------\
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '5');
+
+Alter mv T_281_MV1 MVAttribute NO AUDIT ;
+
+create mv T_281_MV4
+refresh on request 
+initialized on refresh
+MVAttributes no Audit 
+as
+select id,name,age,sum( salary_per_year) salary
+	from T_281_MV1
+	group by id,name,age;
+ALTER MV T_281_MV4 attribute all mvs allowed;
+
+create mv T_281_MV5
+refresh on request 
+initialized on refresh
+MVAttributes no Audit 
+as
+	select age, avg(salary) avg_salary
+	from T_281_MV4
+	group by age;
+ALTER MV T_281_MV5 attribute all mvs allowed;
+
+Alter MVGroup MVG1_281 
+add T_281_MV1,T_281_MV4,T_281_MV5;
+
+-- expected recompute
+Refresh MVGroup MVG1_281;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+
+INSERT INTO A_281
+VALUES 	(343,'Itay',10,1999,35,10000),
+		(343,'Itay',11,1999,35,20000),
+		(343,'Itay',12,1999,35,9000);
+
+set param ?table_name 'A_281';
+execute save_epoch ;
+set param ?table_name 'T_281_MV1';
+set param ?mv_name 'T_281_MV1';
+execute save_epoch ;
+execute select_mvs_used_umd;
+set param ?table_name 'T_281_MV4';
+set param ?mv_name 'T_281_MV4';
+execute save_epoch ;
+execute select_mvs_used_umd;
+set param ?table_name 'T_281_MV5';
+set param ?mv_name 'T_281_MV5';
+execute save_epoch ;
+execute select_mvs_used_umd;
+
+Refresh MVGroup MVG1_281;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+--Expected 'bigger'
+set param ?table_name 'A_281';
+execute if_bigger;
+--Expected no word 'bigger'
+set param ?table_name 'T_281_MV1';
+set param ?mv_name 'T_281_MV1';
+execute if_bigger;
+execute select_mvs_used_umd;
+--Expected no word 'bigger'
+set param ?table_name 'T_281_MV4';
+set param ?mv_name 'T_281_MV4';
+execute if_bigger;
+execute select_mvs_used_umd;
+--Expected no word 'bigger'
+set param ?table_name 'T_281_MV5';
+set param ?mv_name 'T_281_MV5';
+execute if_bigger;
+execute select_mvs_used_umd;
+
+--Expected "EMPTY" 
+select case 
+		when count(*) > 0 then 'NOT_EMPTY'
+		else 'EMPTY'
+		end
+from table(iud_log_table T_281_MV1);
+
+--Expected "EMPTY" 
+select case 
+		when count(*) > 0 then 'NOT_EMPTY'
+		else 'EMPTY'
+		end
+from table(iud_log_table T_281_MV4);
+
+--Expected "EMPTY" 
+select case 
+		when count(*) > 0 then 'NOT_EMPTY'
+		else 'EMPTY'
+		end
+from table(iud_log_table A_281);
+
+
+PREPARE stat1 FROM
+select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age
+	order by id,name,year1,age;
+PREPARE stat2 FROM
+select * from T_281_MV1
+order by id,name,year1,age;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+PREPARE stat1 FROM
+select age,avg(salary)
+	from T_281_MV4
+	group by age
+	order by age;
+PREPARE stat2 FROM 
+select * from T_281_MV5
+order by age;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+log;
+delete from temp1;
+delete from temp2;
+log LOGMV281;
+
+drop mv T_281_MV5;
+drop mv T_281_MV4;
+
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+--------------------------------------------------------------------------
+?section TEST6
+--------------------------------------------------------------------------
+Alter mv T_281_MV1 MVAttribute NO AUDIT ;
+
+create mv T_281_MV1_stam
+refresh on request 
+initialized on refresh
+as
+select count(*) stam
+from T_281_MV1;
+ALTER MV T_281_MV1_stam attribute all mvs allowed;
+
+INSERT INTO A_281
+VALUES 	(545,'Shiri',7,1999,27,20000),
+		(545,'Shiri',8,1999,27,19000),
+		(545,'Shiri',9,1999,27,20000),
+		(545,'Shiri',10,1999,27,18000),
+		(545,'Shiri',11,1999,27,18000),
+		(545,'Shiri',12,1999,27,18000);
+
+
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_table_info_umd; 
+
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_used_umd;
+
+
+refresh T_281_MV1 recompute outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_table_info_umd; 
+set param ?mv_name 'T_281_MV1';
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+select id,name,age,year1,sum(salary) salary_per_year
+	from A_281
+	group by id,name,year1,age
+	order by id,name,year1,age;
+PREPARE stat2 FROM
+select * from T_281_MV1
+order by id,name,year1,age;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+log;
+delete from temp1;
+delete from temp2;
+log LOGMV281;
+
+drop mv T_281_MV1_stam;
+--------------------------------------------------------------------------
+?section TEST7
+--------------------------------------------------------------------------
+Alter mv T_281_MV1 MVAttribute NO AUDIT ;
+refresh T_281_MV6 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+create mv T_281_MV6_stam
+refresh on request
+initialized on refresh
+as
+select count(*) stam
+from T_281_MV6;
+ALTER MV T_281_MV6_stam attribute all mvs allowed;
+
+delete from A_281 
+where id=545 and mounth=3;
+
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_table_info_umd; 
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_used_umd;
+
+-- T_281_MV6 has to be recomputed;
+refresh T_281_MV6 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_table_info_umd; 
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+	select id,name,max(salary) as max_salary
+	from A_281
+	group by id,name
+	order by id,name;
+PREPARE stat2 FROM
+	select * from T_281_MV6
+	order by id,name;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+drop mv T_281_MV6_stam;
+--------------------------------------------------------------------------
+?section TEST8
+--------------------------------------------------------------------------
+
+-- initialize mv 
+Refresh T_281_MV7;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+create mv T_281_MV7_stam
+refresh on request
+initialized on refresh
+as
+select count(*) stam
+from T_281_MV7;
+ALTER MV T_281_MV7_stam attribute all mvs allowed;
+
+-- initialize mv 
+Refresh T_281_MV7_stam;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+INSERT INTO T_281_tab3
+VALUES (25,22),
+		(46,85);
+
+INSERT INTO T_281_tab5
+	VALUES (25,'Israel'),
+			(46,'Israel');
+
+
+set param ?mv_name 'T_281_MV7';
+execute select_mvs_table_info_umd; 
+set param ?mv_name 'T_281_MV7';
+execute select_mvs_used_umd;
+
+--expected recompute
+Refresh T_281_MV7;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+
+set param ?mv_name 'T_281_MV7';
+execute select_mvs_table_info_umd; 
+set param ?mv_name 'T_281_MV7';
+execute select_mvs_used_umd;
+
+delete from T_281_tab3
+where age>46;
+
+-- Expected T_281_MV7 recomputed 
+Refresh T_281_MV7;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+PREPARE stat1 FROM
+select max(T_281_tab3.age) oldest,T_281_tab5.country country
+	from T_281_tab3,T_281_tab5
+	where T_281_tab3.id = T_281_tab5.id
+	group by country
+	order by country;
+PREPARE stat2 FROM 
+select * from T_281_MV7
+order by country;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+drop mv T_281_MV7_stam;
+--------------------------------------------------------------------------
+?section TEST9
+--------------------------------------------------------------------------
+create mv T_281_MV6_stam
+refresh on request
+initialized on refresh
+as
+select count(*) stam
+from T_281_MV6;
+ALTER MV T_281_MV6_stam attribute all mvs allowed;
+
+delete from A_281 
+where id=545 and mounth=1;
+
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_table_info_umd; 
+execute select_mvs_used_umd;
+
+-- T_281_MV6 has to be not recomputed, just refreshed;
+refresh T_281_MV6 outfile REFRESH.LOG;
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV281;
+	log LOGMV281;
+
+--recompute_Epoch not changed
+set param ?mv_name 'T_281_MV6';
+execute select_mvs_table_info_umd; 
+execute select_mvs_used_umd;
+
+PREPARE stat1 FROM
+	select id,name,max(salary) as max_salary
+	from A_281
+	group by id,name
+	order by id,name;
+PREPARE stat2 FROM
+	select * from T_281_MV6
+	order by id,name;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV281 ;
+log LOGMV281;
+
+drop mv T_281_MV6_stam;
+--------------------------------------------------------------------------
+?section CLEAN_UP
+--------------------------------------------------------------------------
+refresh  T_281_MV6_stam cancel outfile REFRESH.LOG ;
+refresh  T_281_MV7 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV6 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV5 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV4 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV3 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV2 cancel outfile REFRESH.LOG ;
+refresh  T_281_MV1 cancel outfile REFRESH.LOG ;
+
+
+drop mv T_281_MV6_stam;
+drop mv T_281_MV7;
+drop mv T_281_MV6;
+drop mv T_281_MV5;
+drop mv T_281_MV4;
+drop mv T_281_MV3;
+drop mv T_281_MV2;
+drop mv T_281_MV1;
+
+drop table A_281 cascade;
+
+drop table T_281_tab1 cascade;
+drop table T_281_tab2 cascade;
+drop table T_281_tab3 cascade;
+drop table T_281_tab4 cascade;
+drop table T_281_tab5 cascade;
+drop table T_281_tab6 cascade;
+
+drop table temp1;
+drop table temp2;
+
+drop mvgroup MVG1_281;

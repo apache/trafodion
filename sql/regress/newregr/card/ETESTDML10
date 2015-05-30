@@ -1,0 +1,3461 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_SAMPLE_PERCENT_DIFF '50';
+
+--- SQL operation complete.
+>>
+>>-- Q1
+>>log;
+>>
+>>prepare YY from
++>select count(*) from t10 where a >= 20 and b < 2;
+
+--- SQL command prepared.
+>>
+>>execute querytest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 200          198  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t10 where a >= 20 and b < 2;
+Histograms for query showstats for query select count(*) from t10 where a >= 20 and b < 2;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T10.C))
+Merge state:
+   5: CAT.HCUBE.T10.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>log;
+>>prepare yy from
++>select count(*) from r1 where a > 'aaaaccccd' and a < 'bbb';
+
+--- SQL command prepared.
+>>
+>>execute querytest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  19            8  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q3
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where t10.b = t10.a or t10.b < 200;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               60010        20800  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q4
+>>
+>>log;
+>>
+>>prepare yy from 
++>select count(*) from t10 where (b + c) > 6 and (b - c) < 8;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109         5722  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q5
+>>
+>>log;
+>>
+>>prepare yy from 
++>select count(*) from t10 where (a + c) > 6 and (a - c) < 8;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q6
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where (t10.a*2) > t10.c;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        99999  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q7
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where
++>(t10.a > 500 and t10.a < 1000) or
++>(t10.a > 100 and t10.a < 200);
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 600          598  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q8
+>>-- Cardinality returned from sample is 1050, which is greater than 10%
+>>-- of the actual row count causing the test to fail. 
+>>-- This is still within the acceptable limits so we can actually assume
+>>-- this to be pass
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10
++>where (b + 5) between 3 and 13;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109          900  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q9
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where cast(b + c as real) < 250.5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        20150  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q10
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        94000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+Histograms for query showstats for query select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+**************************************************************
+VEGcolumn:
+
+  28: VEGRef_28((CAT.HCUBE.T10.C))
+Merge state:
+   5: CAT.HCUBE.T10.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q11
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where mod(a,7) >= 1 and mod(a,7) < 4;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109        42858  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q12
+>>-- cardinality from sample is just above 10% of the actual
+>>-- so assume the test to pass
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10
++>where (t10.b * 2) < 30 and
++>cast((t10.a * 2.3) as real) > 40.0;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109         1485  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q13
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t5 where cast((a + b) as real) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   5            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q14
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where a + b = c + d ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               50000         1000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q15
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where d in (1, 2, 3) and a = d;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               15000        30000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q16
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t5 where cast(b as real) IS NOT NULL;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10           10  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q17
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t5 where cast(b as real) IS NULL;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   1            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q18
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where (b*b - 4*a*c) < 0;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        91841  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q19
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where (b*b - 4*a*c) > 0;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330         8158  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q20
+>>
+>>log;
+>>
+>>prepare yy from
++>  select count(*)
++>  from t10
++>  where (case when t10.a > 10 and t10.b < 5
++>              then t10.b
++>              else t10.a + t10.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               50000            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>  select count(*)
++>  from t10
++>  where (case when t10.a > 10 and t10.b < 5
++>              then t10.b
++>              else t10.a + t10.b end) = 7;
+Histograms for query showstats for query   select count(*)   from t10   where (case when t10.a > 10 and t10.b < 5               then t10.b               else t10.a + t10.b end) = 7;
+**************************************************************
+VEGcolumn:
+
+  33: VEGRef_33((CAT.HCUBE.T10.C))
+Merge state:
+   5: CAT.HCUBE.T10.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.166667 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>set param ?q 100;
+>>
+>>-- Q21
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from CUBE1 where
++>CUBE1.c > ?q and
++>(case when CUBE1.a > 10 and CUBE1.b < 5
++>              then CUBE1.b
++>              else CUBE1.a + CUBE1.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               16665            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q22
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where
++>lower(a) IN ('aaaa', 'baaa', 'caaa') OR
++>d between date '2009-02-17' and date '2009-02-14';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  17            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q23
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where
++>lower(a) NOT IN ('aaaa', 'baaa', 'caaa') OR
++>d between date '2009-02-17' and date '2009-02-14';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  36           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q24
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where
++>UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
++>cast(b as real) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            2  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q25
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where right(a, 2) = 'ab';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q26
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a like 'a%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           14  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q27
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a like 'a%a';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q28
+>>
+>>log;
+>>
+>>prepare yy from 
++>select count(*) from r1 where a like '%a';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q29
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where upper(c) like _UCS2'%c';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q30
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where c like _UCS2'a%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           31  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r1 where c like _UCS2'a%';
+Histograms for query showstats for query select count(*) from r1 where c like _UCS2'a%';
+**************************************************************
+VEGcolumn:
+
+  32: VEGRef_32((CAT.HCUBE.R1.C))
+Merge state:
+   6: CAT.HCUBE.R1.C
+
+Applied preds:
+
+  44: (VEGRef_32((CAT.HCUBE.R1.C)) >= 'a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+  46: (VEGRef_32((CAT.HCUBE.R1.C)) < 'b\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+***FAKE*** histogram
+***MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 15.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.400000 
+   Encoded MinValue = ( 26663156973568.0000 )
+
+   Encoded MaxValue = ( 26938034880512.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      26663156973568.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <       (
+     26938034880512.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q31
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where c = _UCS2'abcabcabg';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   1            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q32
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a = 'bbbaaaaaf';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   1            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Check for Rolling column issues
+>>-- Q33
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   8            5  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q34
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  30           30  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q35
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d < date '2009-02-23' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  39           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q36
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where left(a, 2) = 'ab';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q37
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where right(a, 2) = 'd';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           12  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q38
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where right(a, 2) = 'a';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q39
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where lcase(a) like 'ab';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   3            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q40
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where concat('date', a) like 'dateab%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   5            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r1 where concat('date', a) like 'dateab%';
+Histograms for query showstats for query select count(*) from r1 where concat('date', a) like 'dateab%';
+**************************************************************
+VEGcolumn:
+
+  29: VEGRef_29((CAT.HCUBE.R1.A))
+Merge state:
+   4: CAT.HCUBE.R1.A
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 13.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.179487 
+   Encoded MinValue = ( 6852535903639768.0000
+ )
+   Encoded MaxValue = ( 6923180603644056.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      6852535903639768.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6923180603644056.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q41
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where char_length(a) > 5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  13           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q42
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where code_value(a) = 98;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           25  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q43
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where code_value(a) = 97;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           14  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q44
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where round(b * 5.3) > 2000;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        62200  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q45
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where substring(a from 1 for 2) = 'aa';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q46
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where substring(a from 1 for 2) = 'bb';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           25  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q47
+>>
+>>log;
+>>
+>>prepare yy from
++>select count (*) from r1 where
++>(substring(case WHEN A is null THEN NULL 
++>            WHEN (char_length(A) >= 2) THEN A 
++>            ELSE 
++>            substring(A , 1, (2 - char_length(A))) 
++>            END , 1, 2)) = 'bb';
+
+--- SQL command prepared.
+>>
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           25  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q48
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where month(d) = 2;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         1000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q49
+>>-- 
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where year(d) = 2008;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q50
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where year(d) = 2009;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         9000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r3 where year(d) = 2009;
+Histograms for query showstats for query select count(*) from r3 where year(d) = 2009;
+**************************************************************
+VEGcolumn:
+
+  22: VEGRef_22((CAT.HCUBE.R3.D))
+Merge state:
+   5: CAT.HCUBE.R3.D
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 90.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.011111 
+   Encoded MinValue = ( 63366451200.0000 )
+
+   Encoded MaxValue = ( 63388224000.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      63366451200.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63388224000.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q51
+>>-- The optimizer uses histograms to compute selectivity for the following
+>>-- kind of queries, hence failure is acceptable
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where dayofyear(d) > 25;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                3000         8000  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q52
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where dayofweek(d) = 2;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         1300  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q53
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where dayofmonth(d) < 5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                3000         3600  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q54
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where dayname(d) = 'Monday';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         1300  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q55
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where monthname(d) = 'February';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         1000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q56
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where monthname(d) = 'January';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         1000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q57
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where quarter(d) = 1;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         3000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q58
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where quarter(d) = 3;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500         3000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q59
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where lpad(a,2) = 'aa';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q60
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where lpad(a,2) = 'bb';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  20           25  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r1 where lpad(a,2) = 'bb';
+Histograms for query showstats for query select count(*) from r1 where lpad(a,2) = 'bb';
+**************************************************************
+VEGcolumn:
+
+  40: VEGRef_40((CAT.HCUBE.R1.A))
+Merge state:
+   4: CAT.HCUBE.R1.A
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 13.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.179487 
+   Encoded MinValue = ( 6852535903639768.0000
+ )
+   Encoded MaxValue = ( 6923180603644056.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      6852535903639768.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     6923180603644056.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q61
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where rpad(a,1) = 'b';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  11           25  PASS            
+
+--- 1 row(s) selected.
+>>
+>>
+>>-------------------------------------------------------------------
+>>update statistics for table r1 clear;
+
+--- SQL operation complete.
+>>
+>>control query default hist_missing_stats_warning_level '0';
+
+--- SQL operation complete.
+>>
+>>-- since Stats are missing CTS should be invoked for all queries
+>>------------------------------------------------------------------
+>>
+>>-- Q62
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where
++>UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
++>cast(b as real) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  37            2  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q63
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where
++>UPPER(a) NOT IN ('Aaaa', 'Baaa', 'Caaa');
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  90           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q64
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where upper(a) = upper('Aaaa') or upper(a) <> 'BBBA';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  90           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q65
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where right(a, 2) = 'd';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  50           12  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q66
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a like 'a%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  50           14  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q67
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a like 'a%a';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  25            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q68
+>>
+>>log;
+>>
+>>prepare yy from 
++>select count(*) from r1 where a like '%a';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  50            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q69
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where upper(c) like _UCS2'%c';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  50            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q70
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where c like _UCS2'a%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  50           31  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r1 where c like _UCS2'a%';
+Histograms for query showstats for query select count(*) from r1 where c like _UCS2'a%';
+**************************************************************
+VEGcolumn:
+
+  32: VEGRef_32((CAT.HCUBE.R1.C))
+Merge state:
+   6: CAT.HCUBE.R1.C
+
+Applied preds:
+
+  44: (VEGRef_32((CAT.HCUBE.R1.C)) >= 'a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+  46: (VEGRef_32((CAT.HCUBE.R1.C)) < 'b\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+
+***FAKE*** histogram
+***Histogram with NO statistics
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 26663156973568.0000 )
+   Encoded MaxValue = (
+26938034880512.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      26663156973568.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <       (
+     26938034880512.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q71
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where c = _UCS2'abcabcabg';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q72
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where a = 'bbbaaaaaf';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Check for Rolling column issues
+>>-- Q73
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d < date '2009-02-23' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  39           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q74
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  30           30  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q75
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   8            5  PASS            
+
+--- 1 row(s) selected.
+>>
+>>set param ?r 100;
+>>set param ?q 5;
+>>
+>>-- Q76
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from CUBE1 where
++>CUBE1.c > ?r and
++>(case when CUBE1.a > 10 and CUBE1.b < ?q
++>              then CUBE1.b
++>              else CUBE1.a + CUBE1.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               16665            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q77
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from CUBE1 where
++>CUBE1.c > ?r and
++>(case when CUBE1.a > 10 and CUBE1.b < ?q
++>              then CUBE1.b
++>              else CUBE1.a/4 end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 500            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q78
+>>-- cardinality from sample is just above 10% of the actual
+>>-- so assume the test to pass
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>(case when CUBE1.a > 10 and CUBE1.b < 5
++>              then CUBE1.b
++>              else CUBE1.a * CUBE1.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               50000          200  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q79
+>>-- cardinality from sample is just above 10% of the actual
+>>-- so assume the test to pass
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>(case when CUBE1.a > 10 or CUBE1.b > 2
++>              then CUBE1.b
++>              else CUBE1.a + CUBE1.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               50000         1300  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Following query should invoke CTS since multi-column stats
+>>-- is missing for columns with preds
+>>
+>>control query default COMP_INT_43 reset;
+
+--- SQL operation complete.
+>>
+>>-- Q80
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>b = 5 and
++>c = 6;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10           10  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from cube1 where
++>b = 5 and
++>c = 6;
+Histograms for query showstats for query select count(*) from cube1 where b = 5 and c = 6;
+**************************************************************
+VEGcolumn:
+
+  56: VEGRef_56((CAT.HCUBE.CUBE1.F))
+Merge state:
+   8: CAT.HCUBE.CUBE1.F
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Following query should not invoke CTS since the columns
+>>-- constitute a unique index
+>>
+>>-- Q81
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>b = 5 and
++>c = 6 and 
++>a =2;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   1            1  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Following query should invoke CTS since there is a 
+>>-- predicate with more than one column from the same table
+>>-- cardinality returned from sample is 5, which is a good
+>>-- cardinality but the test fails as it is outside the 20% error
+>>-- margin kept for the test
+>>
+>>-- Q82
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>b = 5 and
++>c = 6 and
++>a = d;
+
+--- SQL command prepared.
+>>
+>>-- execute queryTest;
+>>
+>>-- Q83
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>b > d;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        94500  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q84
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where c = 4 and d*e=10;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 500            3  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q85
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>b = d;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               50000         1000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q86
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from CUBE1 where
++>CUBE1.c > ?q
++>OR
++>(case when CUBE1.a > 10 and CUBE1.b < 5
++>              then CUBE1.b
++>              else CUBE1.a + CUBE1.b end) = 7;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               33330        94048  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q87
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 101          101  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q88
+>>-- Set query cache ON, such that we get all constants as parametrized variables
+>>-- CTS should be able to unparse them as literals, and then evaluate and
+>>-- unparse the predicates accordingly. The expected cardinality should be same 
+>>-- as obtained earlier with CTS
+>>
+>>control query default query_cache reset;
+
+--- SQL operation complete.
+>>
+>>prepare yy from
++>select count(*) from cube1 where
++>((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 101          101  PASS            
+
+--- 1 row(s) selected.
+>>
+>>control query default QUERY_CACHE '0';
+
+--- SQL operation complete.
+>>
+>>-- Q89
+>>-- Test with a VEG
+>>log;
+>>
+>>prepare yy from
++>select count(*) from T1, T2 where
++>T1. a = T1.b and
++>T1. a = T2.a;
+
+--- SQL command prepared.
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T2               1.00E+001           
+2     FILE_SCAN                       T1               5.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T1               1.00E+001       
+2     FILE_SCAN                       T2               1.00E+001       
+
+--- 2 row(s) selected.
+>>
+>>-- Q90
+>>-- Test with a VEG
+>>log;
+>>
+>>prepare yy from
++>select count(*) from T1, T2 where
++>T1. a = 5 and
++>T1.b > 3 and
++>T1. a = T2.a;
+
+--- SQL command prepared.
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN_UNIQUE                T1               1.00E+000           
+2     FILE_SCAN_UNIQUE                T2               1.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN_UNIQUE                T1               1.00E+000       
+2     FILE_SCAN_UNIQUE                T2               1.00E+000       
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from T1, T2 where
++>T1. a = 5 and
++>T1.b > 3 and
++>T1. a = T2.a;
+Histograms for query showstats for query select count(*) from T1, T2 where T1. a = 5 and T1.b > 3 and T1. a = T2.a;
+**************************************************************
+VEGcolumn:
+
+  25: VEGRef_25((CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = 5))
+Merge state:
+
+  10: CAT.HCUBE.T2.A
+Applied preds:
+
+  26: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = 5)
+***UNIQUE COLUMN***
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 5.0000 )
+   Encoded MaxValue = ( 5.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      5.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q91
+>>-- Test with a VEG
+>>log;
+>>
+>>prepare yy from
++>select count(*) from T1, T2 where
++>T1. a = 5 and
++>T1.b = 3 and
++>T1. a = T2.a and 
++>T1.b = T2.b;
+
+--- SQL command prepared.
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN_UNIQUE                T1               1.00E+000           
+2     FILE_SCAN_UNIQUE                T2               1.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN_UNIQUE                T1               1.00E+000       
+2     FILE_SCAN_UNIQUE                T2               1.00E+000       
+
+--- 2 row(s) selected.
+>>
+>>-- Q92
+>>-- Test with a VEG
+>>log;
+>>
+>>prepare yy from
++>select count(*) from T1, T2 where
++>T1.b > T1.a and
++>T1. a = T2.a and 
++>T1.b = T2.b;
+
+--- SQL command prepared.
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T1               3.00E+000           
+2     FILE_SCAN                       T2               3.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T1               1.00E+000       
+2     FILE_SCAN                       T2               1.00E+000       
+
+--- 2 row(s) selected.
+>>
+>>-- Q93
+>>-- Index does not cover all the predicates 
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tDML10  <<+ index t3idx1 >>
++>where
++>s2 > 1900 and I2 >= 'A';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 944          946  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q94
+>>-- Index has more predicates than were executed 
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tDML10  <<+ index t3idx3 >>
++>where
++>s2 > 1900 and I1 >= 'A' and s0 < ?q;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 315            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q95
+>>-- Index has more predicates than were executed 
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tDML10  <<+ index t3idx2 >>
++>where
++>s2 > 1900 and I1 >= 'A';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 944          946  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q96
+>>
+>>log;
+>>
+>>CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+--- SQL operation complete.
+>>
+>>prepare yy from
++>select count(*) from cube2 where
++>cube2.txt like '%sun%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               18750          600  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q97
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube2 where
++>cube2.txt  = 'some text';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               14999        14999  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q98
+>>-- Tests for out of range values
+>>
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where a*2 > 2000;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                3000            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Now insert the actual rows into the table and do not
+>>-- do update stats. 
+>>
+>>-- 90,000 rows inserted
+>>insert into r3 select t8.a*2, r2.d from r2,t8;
+
+--- 90000 row(s) inserted.
+>>
+>>update statistics for table r3 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+--- SQL operation complete.
+>>
+>>-- Q99
+>>-- Tests for additional rows that have been added but do not appear 
+>>-- in histograms
+>>-- Tests should give accurate results with CTS.
+>>-- Without CTS, the row count will be similar to what
+>>-- we got in the previous query. With CTS it should be closer to
+>>-- actual as that should actually run the query on a newly 
+>>-- created sample table.
+>>--
+>>-- This query will report queryTest as FAILED. This is expected
+>>-- due to changes in compile time stats caching changes.
+>>-- 
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where a*2 > 2000;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                3000        44910  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q100
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where d = date '2009-02-09';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100         1100  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r3 where d = date '2009-02-09';
+Histograms for query showstats for query select count(*) from r3 where d = date '2009-02-09';
+**************************************************************
+VEGcolumn:
+
+  21: VEGRef_21((CAT.HCUBE.R3.D = 2009-02-09))
+Merge state:
+
+   5: CAT.HCUBE.R3.D
+Applied preds:
+  22: (CAT.HCUBE.R3.D = 2009-02-09)
+***
+MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 63369820800.0000 )
+   Encoded MaxValue = (
+63369820800.0000 )
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+
+   Histogram : 
+     Bound  <       (      63369820800.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63369820800.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Queries to test the cases where histogram boundaries are
+>>-- duplicated and there is a skew in the data
+>>
+>>CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+--- SQL operation complete.
+>>
+>>-- Q101
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube2 where 
++>cube2.txt like '%repeated  %';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                9375        75000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q102
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube2 where 
++>cube2.txt = 'some text repeated';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               75000        75000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q103
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube2 where 
++>cube2.txt like '%sky%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               18750        60000  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q104
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube2 where 
++>cube2.txt like '%grass%';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                9375        14850  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q105
+>>-- date predicate will not be handled by CTS while the range would be
+>>-- Date lies outside the table range
+>>
+>>CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+
+--- SQL operation complete.
+>>CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '90000';
+
+--- SQL operation complete.
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>a/10 >= 2 and a/10 < 5 and d = date'2009-10-23';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  12            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q106
+>>-- date predicate will not be handled by CTS while the range would be
+>>-- Date lies in the table range but is outside the histogram range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>a/10 >= 2 and a/10 < 5 and d = date'2009-10-09';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  12            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q107
+>>-- Both date and range predicates will be handled by CTS
+>>-- since the date is within the histogram boundaries
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>a/10 >= 2 and a/10 < 5 and d = date'2009-02-02';
+
+--- SQL command prepared.
+>>
+>>--execute queryTest;
+>>
+>>-- Q108
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should be
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d = date'2009-02-02';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100         1100  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q109
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d = date'2010-02-02';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q110
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not since atleast one value is outside range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 400         3300  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r3 where 
++>d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+Histograms for query showstats for query select count(*) from r3 where  d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+**************************************************************
+VEGcolumn:
+
+  30: VEGRef_30((CAT.HCUBE.R3.D))
+Merge state:
+   5: CAT.HCUBE.R3.D
+
+Applied preds:
+***MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 4.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 63382176000.0000 )
+
+   Encoded MaxValue = ( 63392803200.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      63382176000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63392803200.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q111
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not since atleast one date is outside range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d >= date'2009-07-02' and d <= date'2009-08-02'
++>or
++>d >= date'2009-09-02' and d <= date'2009-11-02';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                2000        22000  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q112
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should do the first predicate and use histogram for 
+>>-- the second one
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d >= date'2009-09-02' and d <= date'2009-11-02';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 900         9900  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q113
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should do the first predicate and use histogram for 
+>>-- the second one
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d <> date'2009-11-02';
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                9000        99000  FAIL            
+
+--- 1 row(s) selected.
+>>
+>>-- Q114
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should since all values are withon histogram range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-09-03');
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 400         4400  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q115
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not, since the value is outside the range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d = date'2009-07-02' + interval '1' year;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q116
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not, since the value is outside the range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d  + interval '1' year = date'2009-07-02' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                4500            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q117
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should not, since the value is outside the range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d = date'2009-07-02' - interval '1' year;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q118
+>>-- Test to see if fetchCount is being invoked or not
+>>-- It should, since the value is within the range
+>>
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r3 where 
++>d = date'2010-07-02' - interval '1' year;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                 100         1100  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q119
+>>log;
+>>
+>>prepare yy from
++>select * from t8 where
++>(t8.b + t8.c) = 10;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+--- 0 row(s) selected.
+>>
+>>-- Q120
+>>log;
+>>
+>>prepare yy from
++>select * from t8 where
++>(3 *t8.b + 4) = (4 * t8.b + 10);
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+--- 0 row(s) selected.
+>>
+>>showstats for query
++>select * from t8 where
++>(3 *t8.b + 4) = (4 * t8.b + 10);
+Histograms for query showstats for query select * from t8 where (3 *t8.b + 4) = (4 * t8.b + 10);
+**************************************************************
+VEGcolumn:
+
+  23: VEGRef_23((CAT.HCUBE.T8.A))
+Merge state:
+   3: CAT.HCUBE.T8.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.001000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  26: VEGRef_26((CAT.HCUBE.T8.B))
+Merge state:
+   4: CAT.HCUBE.T8.B
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  29: VEGRef_29((CAT.HCUBE.T8.C))
+Merge state:
+   5: CAT.HCUBE.T8.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q121
+>>log;
+>>
+>>prepare yy from
++>select * from t8, t10 where
++>t8.b *(t8.a + t10.b) + 4 =  10;
+
+--- SQL command prepared.
+>>
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T10              1.00E+005           
+2     FILE_SCAN                       T8               1.00E+003           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T10              1.00E+005       
+2     FILE_SCAN                       T8               1.00E+003       
+
+--- 2 row(s) selected.
+>>
+>>-- Q122
+>>log;
+>>
+>>prepare yy from
++>select * from t8, t10 where
++>t8.b + 4 =  t10.b + 10;
+
+--- SQL command prepared.
+>>
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T8               1.00E+003           
+2     FILE_SCAN                       T10              1.00E+005           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T8               1.00E+003       
+2     FILE_SCAN                       T10              1.00E+005       
+
+--- 2 row(s) selected.
+>>
+>>-- Q123
+>>log;
+>>
+>>prepare yy from
++>select * from t8, t10 where
++>(t8.b + t8.c) = (t10.b + t10.c);
+
+--- SQL command prepared.
+>>
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T8               1.00E+003           
+2     FILE_SCAN                       T10              1.00E+005           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T8               1.00E+003       
+2     FILE_SCAN                       T10              1.00E+005       
+
+--- 2 row(s) selected.
+>>
+>>-- Q124
+>>log;
+>>
+>>prepare yy from
++>select * from t8, t10 where
++>t8.b  > (t10.b + t10.c);
+
+--- SQL command prepared.
+>>
+>>
+>>execute cardFromHist;
+
+NUM   OP                              TAB_NAME         Card From Histograms
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       T10              1.00E+005           
+2     FILE_SCAN                       T8               1.00E+003           
+
+--- 2 row(s) selected.
+>>
+>>execute cardFromSample;
+
+NUM   OP                              TAB_NAME         Card From Sample
+----  ------------------------------  ---------------  ----------------
+
+1     FILE_SCAN                       T10              1.00E+005       
+2     FILE_SCAN                       T8               1.00E+003       
+
+--- 2 row(s) selected.
+>>
+>>-- Q125
+>>log;
+>>
+>>prepare yy from
++>select count(*) from cube1 where cube1.a/5 > 5 and cube1.b*2 = cube1.c*3;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               16665            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q126
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t10 where
++>(case when b<0 then a*5 else b*5 end) between 1 and 2;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+               11109            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q127
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t8 where b < 1 and c in (2, 3);
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            2  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q128
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t8 where b < 1 and c in (2, 3, 4, 5, 6);
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  10            5  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q129
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t8 where b in (1,2) or a < 5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  25           23  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q130
+>>log;
+>>
+>>prepare yy from
++>select count(*) from t8 where b = 1 or a between 3 and 5;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  14           13  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t8 where b = 1 or a between 3 and 5;
+Histograms for query showstats for query select count(*) from t8 where b = 1 or a between 3 and 5;
+**************************************************************
+VEGcolumn:
+
+  29: VEGRef_29((CAT.HCUBE.T8.C))
+Merge state:
+   5: CAT.HCUBE.T8.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.099714 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=0.997143,uec=0.997143 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q131
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
++>and s2 between 1500 and 1600;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  11            3  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q132
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
++>and s2 between 1500 and 1700;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  24            6  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q133
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
++>and s2 between 1500 and 1800;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  37            7  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q134
+>>log;
+>>
+>>prepare yy from
++>select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
++>and s2 between 1500 and 2000;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  63           10  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-----------------------------------------------------------------------
+>>-- Queries to test rolling columns for less than predicate
+>>-- The histogram if required should be extrapolated for greater
+>>-- than predicate and not for less than or less than equal to
+>>-----------------------------------------------------------------------
+>>
+>>-- Q135
+>>#ifNT
+>>-- COMPUTETIMESTAMP on NT can't handle year 9999.
+>>CQD RANGESPEC_TRANSFORMATION 'OFF';
+
+--- SQL operation complete.
+>>#ifNT
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '2009-02-19' and d < date '9999-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   8            5  PASS            
+
+--- 1 row(s) selected.
+>>#ifNT
+>>CQD RANGESPEC_TRANSFORMATION RESET;
+
+--- SQL operation complete.
+>>#ifNT
+>>
+>>-- Q136
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d < date '2009-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  39           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q137
+>>#ifNT
+>>-- COMPUTETIMESTAMP on NT can't handle year 9999.
+>>CQD RANGESPEC_TRANSFORMATION 'OFF';
+
+--- SQL operation complete.
+>>#ifNT
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d < date '9999-02-27' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  39           39  PASS            
+
+--- 1 row(s) selected.
+>>#ifNT
+>>CQD RANGESPEC_TRANSFORMATION RESET;
+
+--- SQL operation complete.
+>>#ifNT
+>>
+>>-- Q138
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d <= date '2009-02-19' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                  39           39  PASS            
+
+--- 1 row(s) selected.
+>>
+>>-- Q139
+>>#ifNT
+>>-- COMPUTETIMESTAMP on NT can't handle year 9999.
+>>CQD RANGESPEC_TRANSFORMATION 'OFF';
+
+--- SQL operation complete.
+>>#ifNT
+>>log;
+>>
+>>prepare yy from
++>select count(*) from r1 where d >= date '9999-02-19' ;
+
+--- SQL command prepared.
+>>
+>>execute queryTest;
+
+Card From Histograms  Actual Card  Card From Sample
+--------------------  -----------  ----------------
+
+                   5            0  PASS            
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from r1 where d >= date '9999-02-19' ;
+Histograms for query showstats for query select count(*) from r1 where d >= date '9999-02-19' ;
+**************************************************************
+VEGcolumn:
+
+  30: VEGRef_30((CAT.HCUBE.R1.D))
+Merge state:
+   7: CAT.HCUBE.R1.D
+
+Applied preds:
+  14: (VEGRef_30((CAT.HCUBE.R1.D)) >= 9999-02-19)
+***MIN
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 0.000050 (pre-current-join-uec)
+   Max Frequency = 0.278571 
+
+   Encoded MinValue = ( 315510681600.0000 )
+   Encoded MaxValue = (
+315511027200.0000 )
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+
+   Histogram : 
+     Bound  <       (      315510681600.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      315511027200.0000
+ ) : rows=0.915306,uec=0.915306 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>#ifNT
+>>CQD RANGESPEC_TRANSFORMATION RESET;
+
+--- SQL operation complete.
+>>#ifNT
+>>
+>>
+>>log;

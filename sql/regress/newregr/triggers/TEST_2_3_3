@@ -1,0 +1,170 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Test various partitioning of the temporary table
+-- (Using the special DEFAULTS entry)
+--
+--
+-- Note: Requires DP volumes named $SYSTEM, $DATA, $DATA1, $DATA2.
+--  
+
+obey TEST_2_3_3(clean_up);
+log   LOG_2_3_3 clear;
+obey TEST_2_3_3(test_create);
+obey TEST_2_3_3(tests);
+LOG;
+obey TEST_2_3_3(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+DROP TRIGGER cat1.schm.trg233b;
+DROP TRIGGER cat1.schm.trg233d;
+DROP TRIGGER cat1.schm.trg233e;
+
+DROP TABLE cat1.schm.t233A;
+DROP TABLE cat1.schm.t233B;
+
+-- safety measure...
+delete from nonstop_sqlmx_nsk.system_defaults_schema.system_defaults
+where attribute='TEMPORARY_TABLE_HASH_PARTITIONS';
+
+?section test_create
+
+create table t233A(
+	a int not null not droppable, 
+	b int not null, 
+	c int not null,
+	d int,
+	e int,
+	constraint t231bplus check (b > 0), 
+	constraint t231ubc unique(b,c),
+	primary key(a) droppable)
+	store by (c)
+	location $$partition3$$
+	range partition(add first key  (100) location $$partition$$,
+		  add first key  (200) location $$partition1$$,
+		  add first key  (300) location $$partition2$$);
+
+create table t233B (v int, w int, x int, y int, z int);
+
+insert into t233A values
+  (11,111,1111,11111,10),
+  (22,222,2222,22222,10),
+  (33,333,3333,33333,10),
+  (44,444,4444,44444,10),
+  (55,555,5555,55555,10),
+  (66,666,6666,66666,10),
+  (77,777,7777,77777,10),
+  (88,888,8888,88888,10),
+  (99,999,9999,99999,10),
+  (12,345,6789,12345,10);
+
+?section tests
+
+------------------------------------------------------------------
+--  First run: No default
+------------------------------------------------------------------
+-- The DEFAULTS table entry was removed in the clean_up section
+
+obey TEST_2_3_3(subtest);
+-- Display the LOCATION line in "showddl"
+set envvar SQLMX_CMP_DESCRIBE_MORE_INFO 1;
+
+------------------------------------------------------------------
+--  Second run: A single default partition
+------------------------------------------------------------------
+
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition3$$;
+obey TEST_2_3_3(subtest);
+
+------------------------------------------------------------------
+--  Third run: Many partitions
+------------------------------------------------------------------
+
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition$$;
+obey TEST_2_3_3(subtest);
+
+------------------------------------------------------------------
+--  Fourth run: Many repeated same partition
+------------------------------------------------------------------
+
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition5$$;
+obey TEST_2_3_3(subtest);
+
+------------------------------------------------------------------
+--  Fifth run: Non-existing partition
+------------------------------------------------------------------
+
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition4$$;
+obey TEST_2_3_3(subtest);
+
+------------------------------------------------------------------
+--  Sixth run: Default has garbage
+------------------------------------------------------------------
+
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition6$$;
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition2$$;
+
+obey TEST_2_3_3(subtest);
+
+
+log   LOG_2_3_3;
+
+-- Show the "results"
+select * from t233B order by v,w,x,y,z;
+
+?section subtest
+
+-- Create a trigger, which would also create a new
+-- temporary table, which would use the defaults to set up a different
+-- partitioning scheme.
+
+-- Enable "showddl" to show TEMP TABLE
+set parserflags 1;
+
+log LOG_2_3_3 ;
+
+SET SCHEMA cat1.schm;
+
+create trigger trg233b after update of (b) on t233A
+ referencing old as myold, new as mynew
+  for each statement
+    update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+create trigger trg233d after update of (d) on t233A
+ referencing old as myold, new as mynew
+  for each statement
+    update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+create trigger trg233e after update of (e) on t233A
+ referencing old as myold, new as mynew
+  for each statement
+    insert into t233B select e,a,b,c,d from mynew
+        where mynew.e > (select MAX(e) from myold);
+
+-- remember to remove the suffix __TEMP when the code is changed
+showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+update t233A set b=b+1;
+
+drop trigger trg233e;
+drop trigger trg233d;
+drop trigger trg233b;
+

@@ -1,0 +1,152 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets
+-- RW-conflicting set
+-- runs on cat1.schm and cat1.schm_alt
+-- known diff was created for MV project bug 618 (delete after closing the bug)
+----------------------------------------
+
+--CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF';
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_6_2_3_2(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_6_2_3_2(clean_up);
+
+-- start logging
+log   LOG_6_2_3_2 clear;
+
+set schema CAT1.SCHM;
+obey TEST_6_2_3_2(set_up);
+obey TEST_6_2_3_2(tests);
+obey TEST_6_2_3_2(clean_up);
+
+-- switch schemas and make trig temp tables partitioned
+set schema CAT1.SCHM_ALT;
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition1$$;
+obey TEST_6_2_3_2(set_up);
+obey TEST_6_2_3_2(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_6_2_3_2(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+
+DROP TRIGGER rt1;
+DROP TRIGGER rt2; 
+DROP TRIGGER st3; 
+DROP TRIGGER rt4; 
+DROP TRIGGER rt5; 
+DROP TRIGGER st6; 
+DROP TRIGGER st7; 
+DROP TRIGGER rt8; 
+obey clearTables2;
+
+?section set_up
+
+INSERT INTO T1 VALUES (1,2);
+INSERT INTO T1 VALUES (2,3);
+INSERT INTO T1 VALUES (3,4);
+INSERT INTO T1 VALUES (4,5);
+
+INSERT INTO T4 VALUES (0);
+
+---------------------------------
+-- DEFINE TRIGGERS
+---------------------------------
+
+CREATE TRIGGER rt1
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T2 VALUES (oldR.a, oldR.b);
+
+----------
+CREATE TRIGGER rt2
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T3 VALUES (oldR.a, oldR.b);
+
+----------
+CREATE TRIGGER st3
+AFTER UPDATE ON T1
+INSERT INTO T4 VALUES (1);
+
+----------
+CREATE TRIGGER rt4
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T5 VALUES (5);
+
+----------
+CREATE TRIGGER rt5
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+UPDATE T4 SET a = a+1 WHERE a<>0;
+
+----------
+CREATE TRIGGER st6
+AFTER UPDATE ON T1
+INSERT INTO T7 VALUES (6),(7);
+
+
+----------
+CREATE TRIGGER st7
+AFTER UPDATE ON T1
+INSERT INTO T6 (SELECT * FROM T7);
+
+----------
+CREATE TRIGGER rt8
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T8 VALUES (oldR.b);
+
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE T1 SET b = b+1 WHERE a < 4;
+
+SELECT * FROM T1 ORDER BY a,b; -- check result
+
+SELECT * FROM T2 ORDER BY a,b; -- check result
+
+SELECT * FROM T3 ORDER BY a,b; -- check result
+
+SELECT * FROM T4 ORDER BY a; -- check result
+
+SELECT * FROM T5 ORDER BY a; -- check result
+
+SELECT * FROM T6 ORDER BY a; -- check result
+
+SELECT * FROM T7 ORDER BY a; -- check result
+
+SELECT * FROM T8 ORDER BY a; -- check result
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

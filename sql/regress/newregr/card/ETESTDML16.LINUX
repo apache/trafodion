@@ -1,0 +1,1567 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>
+>>-------------------------------------
+>>-- Scan test cases
+>>-------------------------------------
+>>
+>>showstats for query 
++>select a from t1;
+Histograms for query showstats for query  select a from t1;
+**************************************************************
+VEGcolumn:
+
+  15: VEGRef_15((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select * from t1;
+Histograms for query showstats for query  select * from t1;
+**************************************************************
+VEGcolumn:
+
+  15: VEGRef_15((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  18: VEGRef_18((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  21: VEGRef_21((CAT.HCUBE.T1.C))
+Merge state:
+   5: CAT.HCUBE.T1.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select b from t1;
+Histograms for query showstats for query  select b from t1;
+**************************************************************
+VEGcolumn:
+
+  18: VEGRef_18((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-------------------------------------
+>>-- Join test cases
+>>-------------------------------------
+>>
+>>-- 2-way joins
+>>showstats for query
++>select t1.a, t3.b from t1, t3
++>where t1.a = t3.b;
+Histograms for query showstats for query select t1.a, t3.b from t1, t3 where t1.a = t3.b;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T1.A = CAT.HCUBE.T3.B))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  15: CAT.HCUBE.T3.B
+Applied preds:
+
+  28: (CAT.HCUBE.T1.A = CAT.HCUBE.T3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.a, t3.b from t1, t3
++>where t1.b = t3.a;
+Histograms for query showstats for query select t1.a, t3.b from t1, t3 where t1.b = t3.a;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.T3.B))
+Merge state:
+  15: CAT.HCUBE.T3.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select * from t1, t3
++>where t1.b = t3.a;
+Histograms for query showstats for query select * from t1, t3 where t1.b = t3.a;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  30: VEGRef_30((CAT.HCUBE.T1.B = CAT.HCUBE.T3.A))
+Merge state:
+
+   4: CAT.HCUBE.T1.B
+  14: CAT.HCUBE.T3.A
+Applied preds:
+
+  31: (CAT.HCUBE.T1.B = CAT.HCUBE.T3.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  33: VEGRef_33((CAT.HCUBE.T1.C))
+Merge state:
+   5: CAT.HCUBE.T1.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.T3.B))
+Merge state:
+  15: CAT.HCUBE.T3.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  42: VEGRef_42((CAT.HCUBE.T3.C))
+Merge state:
+  16: CAT.HCUBE.T3.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- 3-way joins
+>>showstats for query
++>select t1.a, t3.b, t5.c from t1, t3, t5
++>where t1.a = t3.b
++>and   t3.a = t5.c;
+Histograms for query showstats for query select t1.a, t3.b, t5.c from t1, t3, t5 where t1.a = t3.b and   t3.a = t5.c;
+**************************************************************
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.T1.A = CAT.HCUBE.T3.B))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  15: CAT.HCUBE.T3.B
+Applied preds:
+
+  40: (CAT.HCUBE.T1.A = CAT.HCUBE.T3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  48: VEGRef_48((CAT.HCUBE.T3.A = CAT.HCUBE.T5.C))
+Merge state:
+
+  14: CAT.HCUBE.T3.A
+  27: CAT.HCUBE.T5.C
+Applied preds:
+
+  49: (CAT.HCUBE.T3.A = CAT.HCUBE.T5.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.a, t3.b, t5.c from t1, t3, t5
++>where t1.b = t3.a
++>and   t3.c = t5.a;
+Histograms for query showstats for query select t1.a, t3.b, t5.c from t1, t3, t5 where t1.b = t3.a and   t3.c = t5.a;
+**************************************************************
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  51: VEGRef_51((CAT.HCUBE.T3.B))
+Merge state:
+  15: CAT.HCUBE.T3.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  63: VEGRef_63((CAT.HCUBE.T5.C))
+Merge state:
+  27: CAT.HCUBE.T5.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select * from t1, t3, t5
++>where t1.a = t3.b
++>and   t3.a = t5.c;
+Histograms for query showstats for query select * from t1, t3, t5 where t1.a = t3.b and   t3.a = t5.c;
+**************************************************************
+VEGcolumn:
+
+  39: VEGRef_39((CAT.HCUBE.T1.A = CAT.HCUBE.T3.B))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  15: CAT.HCUBE.T3.B
+Applied preds:
+
+  40: (CAT.HCUBE.T1.A = CAT.HCUBE.T3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  42: VEGRef_42((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  45: VEGRef_45((CAT.HCUBE.T1.C))
+Merge state:
+   5: CAT.HCUBE.T1.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  48: VEGRef_48((CAT.HCUBE.T3.A = CAT.HCUBE.T5.C))
+Merge state:
+
+  14: CAT.HCUBE.T3.A
+  27: CAT.HCUBE.T5.C
+Applied preds:
+
+  49: (CAT.HCUBE.T3.A = CAT.HCUBE.T5.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  54: VEGRef_54((CAT.HCUBE.T3.C))
+Merge state:
+  16: CAT.HCUBE.T3.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  57: VEGRef_57((CAT.HCUBE.T5.A))
+Merge state:
+  25: CAT.HCUBE.T5.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  60: VEGRef_60((CAT.HCUBE.T5.B))
+Merge state:
+  26: CAT.HCUBE.T5.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-------------------------------------
+>>-- Group By test cases
+>>-------------------------------------
+>>
+>>showstats for query 
++>select a from t1
++>group by a;
+Histograms for query showstats for query  select a from t1 group by a;
+**************************************************************
+VEGcolumn:
+
+  15: VEGRef_15((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select a, count(*) from t1
++>group by a;
+Histograms for query showstats for query  select a, count(*) from t1 group by a;
+**************************************************************
+VEGcolumn:
+
+  17: VEGRef_17((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select a, b from t1
++>group by a, b;
+Histograms for query showstats for query  select a, b from t1 group by a, b;
+**************************************************************
+VEGcolumn:
+
+  15: VEGRef_15((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  18: VEGRef_18((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select count(a) from t1;
+Histograms for query showstats for query  select count(a) from t1;
+**************************************************************
+VEGcolumn:
+
+  17: VEGRef_17((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select count(*) from t1;
+Histograms for query showstats for query  select count(*) from t1;
+**************************************************************
+VEGcolumn:
+
+  17: VEGRef_17((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.a from t1, t3
++>where t1.b = t3.a
++>group by t1.a;
+Histograms for query showstats for query select t1.a from t1, t3 where t1.b = t3.a group by t1.a;
+**************************************************************
+VEGcolumn:
+
+  27: VEGRef_27((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-------------------------------------
+>>-- Sub-query test cases
+>>-------------------------------------
+>>
+>>showstats for query 
++>select * from t1 where a = (select min(a) from t2);
+Histograms for query showstats for query  select * from t1 where a = (select min(a) from t2);
+**************************************************************
+VEGcolumn:
+
+  29: VEGRef_29((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+***UNIQUE COLUMN***
+***MINMAX SET BY PRED***
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 0.0000 )
+   Encoded MaxValue = ( 0.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  32: VEGRef_32((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  35: VEGRef_35((CAT.HCUBE.T1.C))
+Merge state:
+   5: CAT.HCUBE.T1.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select (select a from t1), (select b from t2) from t1;
+Histograms for query showstats for query  select (select a from t1), (select b from t2) from t1;
+**************************************************************
+VEGcolumn:
+
+  62: VEGRef_62((CAT.HCUBE.T2.B))
+Merge state:
+  28: CAT.HCUBE.T2.B
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query 
++>select (select count(*) from t1), (select count(*) from t2) from t1;
+Histograms for query showstats for query  select (select count(*) from t1), (select count(*) from t2) from t1;
+**************************************************************
+VEGcolumn:
+
+  60: VEGRef_60((CAT.HCUBE.T2.A))
+Merge state:
+  28: CAT.HCUBE.T2.A
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t5.a
++>from t5
++>where t5.b >= (select max (t4.a)
++>               from t4
++>               where t5.c = t4.b);
+Histograms for query showstats for query select t5.a from t5 where t5.b >= (select max (t4.a)                from t4                where t5.c = t4.b);
+**************************************************************
+VEGcolumn:
+
+  30: VEGRef_30((CAT.HCUBE.T5.A))
+Merge state:
+   3: CAT.HCUBE.T5.A
+
+Applied preds:
+   TotalUEC = 3.000000 
+   Rowcount = 3.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.300000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=3.000000,uec=3.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select *
++>from t4
++>where t4.b in (select t5.a
++>               from t5
++>               where t4.c = t5.b);
+Histograms for query showstats for query select * from t4 where t4.b in (select t5.a                from t5                where t4.c = t5.b);
+**************************************************************
+VEGcolumn:
+
+  28: VEGRef_28((CAT.HCUBE.T4.A))
+Merge state:
+   3: CAT.HCUBE.T4.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  31: VEGRef_31((CAT.HCUBE.T4.B = CAT.HCUBE.T5.A))
+Merge state:
+
+   4: CAT.HCUBE.T4.B
+  14: CAT.HCUBE.T5.A
+Applied preds:
+
+  32: (CAT.HCUBE.T4.B = CAT.HCUBE.T5.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  34: VEGRef_34((CAT.HCUBE.T4.C = CAT.HCUBE.T5.B))
+Merge state:
+
+   5: CAT.HCUBE.T4.C
+  15: CAT.HCUBE.T5.B
+Applied preds:
+
+  35: (CAT.HCUBE.T4.C = CAT.HCUBE.T5.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t4.a
++>from t4
++>where exists (select *
++>              from t7
++>              where t4.b = t7.b);
+Histograms for query showstats for query select t4.a from t4 where exists (select *               from t7               where t4.b = t7.b);
+**************************************************************
+VEGcolumn:
+
+  40: VEGRef_40((CAT.HCUBE.T4.A))
+Merge state:
+   3: CAT.HCUBE.T4.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      1.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      2.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      3.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      4.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      5.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      6.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      7.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      8.0000 ) : rows=1.000000,uec=1.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select count(t4.a)
++>from t4
++>where not exists (select *
++>                  from t7
++>                  where t4.b = t7.b);
+Histograms for query showstats for query select count(t4.a) from t4 where not exists (select *                   from t7                   where t4.b = t7.b);
+**************************************************************
+VEGcolumn:
+
+  58: VEGRef_58((CAT.HCUBE.T7.C))
+Merge state:
+  16: CAT.HCUBE.T7.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select *
++>from t8
++>where exists (select *
++>              from t9 where t8.b = t9.b);
+Histograms for query showstats for query select * from t8 where exists (select *               from t9 where t8.b = t9.b);
+**************************************************************
+VEGcolumn:
+
+  52: VEGRef_52((CAT.HCUBE.T8.A))
+Merge state:
+   3: CAT.HCUBE.T8.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1000.000000 
+
+   Rowcount = 1000.000000 
+
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=1000.000000,uec=1000.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  55: VEGRef_55((CAT.HCUBE.T8.B = CAT.HCUBE.T9.B))
+Merge state:
+
+   4: CAT.HCUBE.T8.B
+  27: CAT.HCUBE.T9.B
+Applied preds:
+
+  56: (CAT.HCUBE.T8.B = CAT.HCUBE.T9.B)
+***RECENT JOIN***
+
+   TotalUEC = 100.000000 
+   Rowcount = 1000.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 100.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      1.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      2.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      3.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      4.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      5.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      6.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      7.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      8.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      10.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      11.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      12.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      13.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      14.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      15.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      16.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      17.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      18.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      19.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      20.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      21.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      22.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      23.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      24.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      25.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      26.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      27.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      28.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      29.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      30.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      31.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      32.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      33.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      34.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      35.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      36.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      37.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      38.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      39.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      40.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      41.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      42.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      43.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      44.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      45.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      46.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      47.0000 ) : rows=10.000000,uec=1.000000 
+
+     Bound  <=      (      99.0000 ) : rows=520.000000,uec=52.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  58: VEGRef_58((CAT.HCUBE.T8.C))
+Merge state:
+   5: CAT.HCUBE.T8.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 1000.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 100.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1000.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>log;

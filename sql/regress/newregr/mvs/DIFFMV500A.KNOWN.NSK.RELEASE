@@ -1,0 +1,222 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+6d5
+< >>
+14c13
+< 
+---
+> >>
+690,696d688
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+705d696
+< >>
+1189d1179
+< >>
+1198,1199d1187
+< >>
+< >>
+1255c1243,1246
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1259c1250,1255
+< --- 1 row(s) inserted.
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (10,2);
+>  ^ (zzz characters from start of SQL statement)
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1278c1274,1277
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1282c1281,1283
+< *** ERROR[8573] The user does not have INSERT privilege on table or view C1.S1.MV10 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (11,3);
+>  ^ (zzz characters from start of SQL statement)
+1284c1285,1286
+< --- 0 row(s) inserted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+1323c1325,1328
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1326c1331,1336
+< --- 1 row(s) inserted.
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (11,3);
+>  ^ (zzz characters from start of SQL statement)
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1364c1374,1377
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1368c1381,1383
+< *** ERROR[8573] The user does not have INSERT privilege on table or view C1.S1.MV10 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (11,3);
+>  ^ (zzz characters from start of SQL statement)
+1370c1385,1386
+< --- 0 row(s) inserted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+1389c1405,1408
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1393c1412,1414
+< *** ERROR[8573] The user does not have INSERT privilege on table or view C1.S1.MV10 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (11,3);
+>  ^ (zzz characters from start of SQL statement)
+1395c1416,1417
+< --- 0 row(s) inserted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+1452c1474,1477
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1455c1480,1485
+< --- 1 row(s) inserted.
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (12,4);
+>  ^ (zzz characters from start of SQL statement)
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1535c1565,1568
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1539c1572,1574
+< *** ERROR[8573] The user does not have INSERT privilege on table or view C1.S1.MV10 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table  ( MV_TABLE c1.s1.mv10 ) values (12,4);
+>  ^ (zzz characters from start of SQL statement)
+1541c1576,1577
+< --- 0 row(s) inserted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+1655,1657d1690
+< >>
+< >>
+< >>
+1666,1667d1698
+< >>
+< >>
+1711c1742,1745
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1716c1750,1755
+< --- 0 row(s) updated.
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> update TABLE (MV_TABLE mv10) set a=1 where a=6;
+>  ^ (zzz characters from start of SQL statement)
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1753,1757d1791
+< >>
+< >>
+< >>
+< >>
+< >>
+1766d1799
+< >>
+3236,3239d3268
+< >>
+< >>
+< >>
+< >>
+3248d3276
+< >>
+3725,3726d3752
+< >>
+< >>
+3735d3760
+< >>
+4863,4875d4887
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+< >>
+4884d4895
+< >>
+5196,5199d5206
+< >>
+< >>
+< >>
+< >>

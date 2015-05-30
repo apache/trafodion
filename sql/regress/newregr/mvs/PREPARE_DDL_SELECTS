@@ -1,0 +1,183 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+SET PARAM ?mv_name 'g1';
+SET PARAM ?gr_name 'g1';
+SET PARAM ?table_name 'g1';
+
+PREPARE select_mvs_table FROM
+    SELECT	
+			COMMIT_REFRESH_EACH,
+			MV_TYPE, 
+			REWRITE_ENABLED, 
+			LEFT_LINEAR, 
+			INCREMENTALY_MAINTAINABLE,
+			CREATION_REFRESH_TYPE,
+			CONTAINS_MVS, 
+			MVSTATUS,
+			IS_MINMAX,
+			MV_AUDIT
+	FROM HP_DEFINITION_SCHEMA.mvs
+	WHERE mv_uid = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+			WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA');
+
+PREPARE select_mvs_used FROM
+    SELECT SUBSTRING(object_name, 0, 20) as table_name, 
+           used_object_type,USAGE_ORIGIN,TABLE_ATTRIBUTES,IS_INNER_LJ
+    FROM  HP_DEFINITION_SCHEMA.mvs_used
+          left join HP_DEFINITION_SCHEMA.objects used_object
+	  on used_object.object_uid = used_object_uid
+    WHERE 
+	 mv_uid = (SELECT object_uid 
+	    	       FROM HP_DEFINITION_SCHEMA.objects 
+	      	       WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA')
+    order by object_name;
+
+
+PREPARE select_mvs_used_no_null FROM
+    SELECT SUBSTRING(object_name, 0, 20) as table_name, 
+           used_object_type,USAGE_ORIGIN,TABLE_ATTRIBUTES,IS_INNER_LJ
+    FROM  HP_DEFINITION_SCHEMA.mvs_used
+          left join (select * from HP_DEFINITION_SCHEMA.OBJECTS union
+		     (select * from catmvs.HP_DEFINITION_SCHEMA.objects union
+		      (select * from MVTestEnv.HP_DEFINITION_SCHEMA.objects union
+		       (select * from MVTestEnv2.HP_DEFINITION_SCHEMA.objects)))) used_object
+	  on used_object.object_uid = used_object_uid
+    WHERE 
+	 mv_uid = (SELECT object_uid 
+	    	       FROM HP_DEFINITION_SCHEMA.objects 
+	      	       WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA')
+    order by object_name;
+
+
+PREPARE select_mvs_used_umd FROM
+	select SUBSTRING(mvobj.object_name, 0, 20)  as mv_name,SUBSTRING(btobj.object_name, 0, 20)  as bt_name, 
+           EPOCH,DELTA_SIZE
+	from HP_DEFINITION_SCHEMA.objects mvobj,
+			HP_DEFINITION_SCHEMA.objects btobj,
+			mvs_used_umd 
+	where	btobj.object_uid = mvs_used_umd.bt_uid and 
+			mvobj.object_uid = (SELECT object_uid 
+	    	       FROM HP_DEFINITION_SCHEMA.objects 
+	      	       WHERE object_name = ?mv_name
+			     AND OBJECT_NAME_SPACE = 'TA') and
+			mvobj.object_uid = mvs_used_umd.mv_uid
+	order by mv_name,bt_name	;
+
+
+PREPARE select_mvs_table_info_umd FROM
+	select SUBSTRING(mvobj.object_name, 0, 20)  as mv_name,LAST_DE_EPOCH,RECOMPUTE_EPOCH, IS_LAST_DE_COMPLETE
+	from HP_DEFINITION_SCHEMA.objects mvobj,
+			HP_DEFINITION_SCHEMA.objects btobj,
+			mvs_table_info_umd 
+	where	btobj.object_uid = mvs_table_info_umd.bt_uid and 
+			mvobj.object_uid = (SELECT object_uid 
+	    	       FROM HP_DEFINITION_SCHEMA.objects 
+	      	       WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA') and
+			mvobj.object_uid = mvs_table_info_umd.bt_uid
+			;
+	
+
+
+
+
+
+PREPARE select_mvs_cols FROM
+    SELECT mv_col_num, SUBSTRING(objects.object_name, 0, 20) as orig_table, 
+	   original_col_num orig_col, column_type, operator_type, 
+	   is_complex, is_used_by_join, usage_type, 
+    	   dependent_col_1 dep1, dependent_col_2 dep2, dependent_col_3 dep3, 
+	   is_system,  SUBSTRING(text, 0, 170) col_text
+	FROM ((HP_DEFINITION_SCHEMA.mvs_cols
+		   left outer join
+		   HP_DEFINITION_SCHEMA.objects objects
+		   on objects.object_uid = original_table_uid)
+           left outer join
+		   HP_DEFINITION_SCHEMA.text text_table
+		   on (text_table.object_uid = mv_uid        AND
+	           text_table.object_sub_id = mv_col_num AND
+               text_table.object_sub_id <> -1))
+	WHERE  mv_uid = (SELECT object_uid
+	      		 FROM HP_DEFINITION_SCHEMA.objects 
+	      		 WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA')
+	ORDER BY mv_col_num,orig_table,original_col_num, usage_type;
+
+PREPARE select_mvs_join_cols FROM
+    SELECT 
+    SUBSTRING(o.object_name , 0, 20) as base_table,  
+    col_num,
+    seq_number,
+    veg_index,
+    usage_type,
+    is_complex,
+    left_join_table_type
+    FROM   HP_DEFINITION_SCHEMA.objects o,
+	   HP_DEFINITION_SCHEMA.mvs_join_cols
+    WHERE  mv_uid = (SELECT object_uid 
+	    	     	FROM HP_DEFINITION_SCHEMA.objects 
+	      		WHERE object_name = ?mv_name and OBJECT_NAME_SPACE = 'TA')
+	  AND  o.object_uid  = HP_DEFINITION_SCHEMA.mvs_join_cols.table_uid
+    ORDER BY seq_number;
+
+
+
+PREPARE select_partitions FROM
+	SELECT o.OBJECT_UID,
+	       SubString(OBJECT_NAME,1,40) as object_name,
+	       DATA_SOURCE,
+	       SubString(FIRST_KEY,1,40) as first_key
+	FROM  HP_DEFINITION_SCHEMA.partitions p,
+	      HP_DEFINITION_SCHEMA.objects o
+	WHERE o.object_uid=p.object_uid;
+
+PREPARE select_group FROM
+    SELECT ALL SUBSTRING(GroupsObj.object_name, 0, 20) as Group_name,
+         SUBSTRING(Mvs.object_name, 0, 20) as MV_name
+    FROM HP_DEFINITION_SCHEMA.objects GroupsObj,
+       HP_DEFINITION_SCHEMA.objects Mvs,
+       HP_DEFINITION_SCHEMA.MVGroups MVsGroup
+    WHERE GroupsObj.object_uid = MVsGroup.MVRGroup_uid AND MVsGroup.MV_uid=Mvs.object_uid AND
+       (( SUBSTRING ( ?gr_name FROM 1 FOR 1) = '' ) OR (MVsGroup.MVRGroup_uid = (SELECT object_uid
+                     FROM HP_DEFINITION_SCHEMA.objects
+                     WHERE object_name = ?gr_name)))
+    ORDER BY Group_name,MV_name;
+
+
+PREPARE select_mvs_table_info FROM
+    SELECT CURRENT_EPOCH, MV_ATTRIBUTES_BITMAP, IS_LOCKONREFRESH, 
+	IS_INSERTLOG, RANGELOG_TYPE,MVSALLOWED_TYPE
+	FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	WHERE base_table_uid = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+	  WHERE object_name = ?table_name AND OBJECT_NAME_SPACE = 'TA');
+
+
+
+
+
+--PREPARE Compare_objects FROM
+--    SELECT SUBSTRING(GroupsObj.object_name, 0, 20) as Group_name,
+--	   SUBSTRING(Mvs.object_name, 0, 20) as MV_name
+--    FROM HP_DEFINITION_SCHEMA.objects A, 
+--	 HP_DEFINITION_SCHEMA.objects B,
+--	 HP_DEFINITION_SCHEMA.MVGroups MVsGroup
+--    WHERE GroupsObj.object_uid = MVsGroup.MVRGroup_uid AND MVsGroup.MV_uid=Mvs.object_uid 
+--	 AND MVsGroup.MVRGroup_uid = (SELECT object_uid 
+--	    	       FROM HP_DEFINITION_SCHEMA.objects 
+--	      	       WHERE object_name = ?gr_name);
+--

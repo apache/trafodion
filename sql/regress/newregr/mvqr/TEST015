@@ -1,0 +1,366 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST015
+-- Unit Test to test LOJ predicate matching.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+-- Revision History:
+--     Updated by Barry on 1/13/2013 to run test once with extra-hub tables enabled,
+--     and once again with them disabled.
+----------------------------------------------------
+
+-- Remove files created by last run and clear the log file.
+obey TEST015(clean_up_files);
+log LOG015 clear;
+
+-- Enable extra-hub tables, run the tests, and then re-run with extra-hub
+-- tables turned off. Append a macro to all file names that has a different
+-- value in the hub/no-hub runs, so the files won't be overwritten in the
+-- 2nd run.
+control query default MVQR_USE_EXTRA_HUB_TABLES 'ON';
+set pattern $$phase$$ EHUB_ON;
+obey TEST015(run_test);
+-- The following 3 commands could be used instead of sticking $$pattern$$
+-- everywhere, but they don't work on MKS, so the NT test would fail.
+--sh rename LOJ LOJ_EHUB LOJ*;
+--sh sed -i 's/LOJ/LOJ_EHUB/g' LOJ_EHUB*.in;
+--sh rename T015 T015_EHUB T015*;
+
+-- Now disable extra-hub tables and repeat the test.
+control query default MVQR_USE_EXTRA_HUB_TABLES 'OFF';
+set pattern $$phase$$ EHUB_OFF;
+obey TEST015(run_test);
+obey TEST015(clean_up);
+exit;
+
+?section run_test
+obey TEST015(clean_up);
+obey TEST015(set_up);
+obey TEST015(create_mvs);
+obey TEST015(match_inner);
+obey TEST015(match_outer);
+
+?section clean_up
+log;
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema LOJ cascade;
+log LOG015;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm LOJ*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+--control query default QUERY_CACHE '0';
+
+obey GetMvDesc;
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+create schema LOJ;
+set schema LOJ;
+set pattern $$MVSchemaName$$ LOJ;
+
+create table fact (
+	pk     int not null not droppable primary key,
+	f1     int,
+	f2     int,
+	name   char(20),
+	dimkey int)
+	store by primary key;
+
+create table dim1 (dkey int not null not droppable primary key, dimdata int);
+create table dim2 (dkey int not null not droppable primary key, dimdata int);
+
+insert into fact values 
+  ( 1,  1,  1, ' 1',  1), ( 2,  2,  2, ' 2',  2),
+  (11, 11, 11, '11', 11), (12, 12, 12, '12', 12);
+
+insert into dim1 values 
+  (1, 1), (3, 3), (11, 11), (13, 13);
+  
+insert into dim2 values 
+  (1, 1), (4, 4), (11, 11), (14, 14);
+  
+?section create_mvs
+--===========================================
+-- MJVs
+--===========================================
+
+-- No LOJs.
+create mv LOJ_MJV_INNER
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dkey, dimdata
+	    from fact
+	    inner join dim1
+	    on dimkey=dkey;
+
+set pattern $$MVName$$ LOJ_MJV_INNER;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_INNER 
+  order by dimkey, dimdata;
+  
+-- Single column LOJ pred.
+create mv LOJ_MJV_OUTER1
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dkey, dimdata
+	    from fact
+	    left outer join dim1
+	    on dimkey=dkey;
+
+set pattern $$MVName$$ LOJ_MJV_OUTER1;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_OUTER1
+  order by dimkey, dimdata;
+  
+-- Single column LOJ pred, dkey not provided.
+create mv LOJ_MJV_OUTER2
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dimdata
+	    from fact
+	    left outer join dim1
+	    on dimkey=dkey;
+
+set pattern $$MVName$$ LOJ_MJV_OUTER2;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_OUTER2
+  order by dimkey, dimdata;
+  
+-- Single column LOJ pred, range pred in WHERE clause.
+-- Normalizer should transform to inner join.
+create mv LOJ_MJV_OUTER3
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dkey, dimdata
+	    from fact
+	    left outer join dim1
+	    on dimkey=dkey
+	    where dimdata > 10;
+
+set pattern $$MVName$$ LOJ_MJV_OUTER3;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_OUTER3
+  order by dimkey, dimdata;
+  
+-- Single column LOJ pred, AND range pred in ON clause.
+create mv LOJ_MJV_OUTER4
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dkey, dimdata
+	    from fact
+	    left outer join dim1
+	    on dimkey=dkey and dimdata > 10;
+
+set pattern $$MVName$$ LOJ_MJV_OUTER4;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_OUTER4
+  order by dimkey, dimdata;
+  
+-- Single column LOJ pred, OR range pred in ON clause.
+create mv LOJ_MJV_OUTER5
+	recompute
+	initialized on create
+	as  select f1, f2, dimkey, dkey, dimdata
+	    from fact
+	    left outer join dim1
+	    on dimkey=dkey or dimdata > 10;
+
+set pattern $$MVName$$ LOJ_MJV_OUTER5;
+obey TEST015(dump_MV);
+
+select * from LOJ_MJV_OUTER5
+  order by dimkey, dimdata;
+  
+--============================================================================
+?section LOJ_INNER
+prepare QueryStmt from
+  select f1, f2, dimkey, dkey, dimdata
+  from fact
+  inner join dim1
+  on dimkey=dkey
+  order by dimkey, dimdata;
+
+?section match_inner
+--============================================================================
+--== Inner join query, should match LOJ_MJV_INNER
+--============================================================================
+set pattern $$QueryName$$ LOJ_INNER;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST015($$QueryName$$);
+
+obey TEST015(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                    >> LOJ1_$$phase$$.in;
+sh echo MATCH LOJ_INNER_$$phase$$.xml >> LOJ1_$$phase$$.in;
+
+-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+-- the file names derived from them to/from fixed-name files that are used in
+-- the invocation of QMS.
+sh cp LOJ1_$$phase$$.in t015.copy.in;
+sh sh -c "$QMS t015.copy.in t015.copy.out";
+sh cp t015.copy.out LOJ_$$phase$$.out;
+
+log;
+sh cat LOJ_$$phase$$.out >> LOG015;
+log LOG015;
+
+control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+obey TEST015(compare);
+
+--============================================================================
+?section LOJ_OUTER
+prepare QueryStmt from
+  select f1, f2, dimkey, dkey, dimdata
+  from fact
+  left outer join dim1
+  on dimkey=dkey
+  order by dimkey, dimdata;
+
+?section match_outer
+--============================================================================
+--== Outer join query, should match LOJ_MJV_INNER 
+--== and also LOJ_MJV_OUTER with NOT NULL predicate.
+--============================================================================
+set pattern $$QueryName$$ LOJ_OUTER;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST015($$QueryName$$);
+
+obey TEST015(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                    >> LOJ2_$$phase$$.in;
+sh echo MATCH LOJ_OUTER_$$phase$$.xml >> LOJ2_$$phase$$.in;
+
+-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+-- the file names derived from them to/from fixed-name files that are used in
+-- the invocation of QMS.
+sh cp LOJ2_$$phase$$.in t015.copy.in;
+sh sh -c "$QMS t015.copy.in t015.copy.out";
+sh cp t015.copy.out LOJ_$$phase$$.out;
+
+log;
+sh cat LOJ_$$phase$$.out >> LOG015;
+log LOG015;
+
+control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+obey TEST015(compare);
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$_$$phase$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$_$$phase$$.TMP > $$MVName$$_$$phase$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$_$$phase$$.tmp.f -o $$MVName$$_$$phase$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$_$$phase$$.tmp -o $$MVName$$_$$phase$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$_$$phase$$.xml >> LOG015;
+log LOG015;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$_$$phase$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG015;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$_$$phase$$.TMP -o $$QueryName$$_$$phase$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST015($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log T015_C1_$$phase$$.txt clear;
+execute QueryStmt;
+log;
+log LOG015;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST015($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log T015_C2_$$phase$$.txt clear;
+execute QueryStmt;
+log;
+log LOG015;
+
+-- Diff query results
+log;
+sh diff T015_C1_$$phase$$.txt T015_C2_$$phase$$.txt >> LOG015;
+log LOG015;
+-- Diff is done.

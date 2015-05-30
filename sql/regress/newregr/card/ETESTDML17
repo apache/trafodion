@@ -1,0 +1,592 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------------------------
+>>-- Single table using local predicates
+>>----------------------------------------------------------------------------------
+>>
+>>-- Comparison predicates
+>>prepare xx from select * from t10 where b = 3 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where (b = 3 and c = 2) <<+ selectivity 10e-2 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b = c and c = 2 <<+ selectivity 10e-2 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b > 10 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b  <= 123 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b = (select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+004
+3    5    6    nested_join                                           1.00E+004
+4    .    5    partition_access                                      1.00E+004
+.    .    4    file_scan             fr        T10                   1.00E+004
+2    .    3    sort_scalar_aggr                                      1.00E+000
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>
+>>-- Null predicates
+>>prepare xx from select * from t10 where b is null <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b is not null <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>
+>>-- Between predicates 
+>>prepare xx from select * from t10 where c between 2 and 10 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where A * c between 2 and 10 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>
+>>-- In predicates
+>>prepare xx from select * from t10 where b  in (1) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b  in (1,2,3) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+004
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b  in (select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi  u                               1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>
+>>-- Quantified comparison predicates
+>>prepare xx from select * from t10 where b = any(select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi  u                               1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where (b  <> any(select b from t10)) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi                                  1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where a > all(select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_anti_sem                                  1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where (b  < all(select b from t10)) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_anti_sem                                  1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b  <= some(select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi                                  1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where (a >= some(select b from t10)) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi                                  1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>
+>>-- BiLogic predicates
+>>prepare xx from select * from t10 where a = 3 or b = 2 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+9    .    10   root                                                  1.00E+004
+2    8    9    merge_union                                           3.50E+001
+4    7    8    nested_join                                           3.40E+001
+6    .    7    probe_cache                                           1.00E+000
+5    .    6    partition_access                                      1.00E+000
+.    .    5    file_scan_unique      fr        T10                   1.00E+000
+3    .    4    partition_access                                      3.40E+001
+.    .    3    index_scan            fr        IX10B                 3.40E+001
+1    .    2    partition_access      o                               1.00E+000
+.    .    1    file_scan_unique      o fr      T10                   1.00E+000
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where (a = 3 or b = 2) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+9    .    10   root                                                  1.00E+004
+2    8    9    merge_union                                           3.50E+001
+4    7    8    nested_join                                           3.40E+001
+6    .    7    probe_cache                                           1.00E+000
+5    .    6    partition_access                                      1.00E+000
+.    .    5    file_scan_unique      fr        T10                   1.00E+000
+3    .    4    partition_access                                      3.40E+001
+.    .    3    index_scan            fr        IX10B                 3.40E+001
+1    .    2    partition_access      o                               1.00E+000
+.    .    1    file_scan_unique      o fr      T10                   1.00E+000
+
+--- SQL operation complete.
+>>
+>>-- Like predicates
+>>prepare xx from select * from cube2 where txt like 'some text' <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.50E+004
+1    .    2    partition_access                                      1.50E+004
+.    .    1    file_scan             fr        CUBE2                 1.50E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from cube2 where txt like 'blue%' <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.50E+004
+1    .    2    partition_access                                      1.50E+004
+.    .    1    file_scan             fr        CUBE2                 1.50E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from cube2 where txt not like 'some%text' <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.50E+004
+1    .    2    partition_access                                      1.50E+004
+.    .    1    file_scan             fr        CUBE2                 1.50E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from cube2 where txt like '%lue' <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.50E+004
+1    .    2    partition_access                                      1.50E+004
+.    .    1    file_scan             fr        CUBE2                 1.50E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from cube2 where txt not like 'blue sky%' <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.50E+004
+1    .    2    partition_access                                      1.50E+004
+.    .    1    file_scan             fr        CUBE2                 1.50E+004
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------------------------------------------------------------------
+>>-- Join predicate 
+>>----------------------------------------------------------------------------------
+>>
+>>prepare xx from select * from t10 r1, t10 r2 where r1.c = r2.b  <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+009
+4    2    5    hybrid_hash_join                                      1.00E+009
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    file_scan             fr        T10                   1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 where b  in (select b from t10) <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_semi_joi  u                               1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    index_scan            fr        IX10B                 1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2 where r1.c = r2.b  <<+ selectivity 10e-2 >> and r1.b = 3;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+9    .    10   root                                                  1.00E+006
+8    6    9    hybrid_hash_join                                      1.00E+006
+7    .    8    partition_access                                      1.00E+005
+.    .    7    file_scan             fr        T10                   1.00E+005
+2    5    6    nested_join                                           1.00E+002
+4    .    5    probe_cache                                           9.99E-003
+3    .    4    partition_access                                      9.99E-003
+.    .    3    file_scan_unique      fr        T10                   9.99E-003
+1    .    2    partition_access                                      1.00E+002
+.    .    1    index_scan            fr        IX10B                 1.00E+002
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2 where r1.c = r2.a and r1.b = 3 <<+ selectivity 10e-2 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+004
+4    2    5    hybrid_hash_join                                      1.00E+004
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+004
+.    .    1    file_scan             fr        T10                   1.00E+004
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2 where r1.c = r2.b  <<+ selectivity 10e-2 >> and r1.b = 3 <<+ selectivity 10e-3 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+007
+4    2    5    hybrid_hash_join                                      1.00E+007
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+003
+.    .    1    file_scan             fr        T10                   1.00E+003
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2, t10 r3 where r1.c = r2.b  <<+ selectivity 10e-2 >> and r1.b = r3.a and r1.b = 3;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+12   .    13   root                                                  1.00E+006
+11   2    12   hybrid_hash_join                                      1.00E+006
+4    10   11   nested_join                                           1.00E+002
+6    9    10   nested_join                                           1.00E+002
+8    .    9    probe_cache                                           1.00E+000
+7    .    8    partition_access                                      1.00E+000
+.    .    7    file_scan_unique      fr        T10                   1.00E+000
+5    .    6    partition_access                                      1.00E+000
+.    .    5    index_scan            fr        IX10B                 1.00E+000
+3    .    4    partition_access                                      1.00E+000
+.    .    3    file_scan_unique      fr        T10                   1.00E+000
+1    .    2    partition_access                                      1.00E+005
+.    .    1    file_scan             fr        T10                   1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2, t10 r3 where r1.c = r2.b  <<+ selectivity 10e-2 >> and r1.b = r3.a;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+009
+7    2    8    hybrid_hash_join                                      1.00E+009
+6    4    7    hybrid_hash_join                                      1.00E+005
+5    .    6    partition_access                                      1.00E+005
+.    .    5    file_scan             fr        T10                   1.00E+005
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    file_scan             fr        T10                   1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2, t10 r3 where r1.c = r2.a and r1.b = r3.a  <<+ selectivity 10e-3 >>;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+008
+7    2    8    hybrid_hash_join      u                               1.00E+008
+6    4    7    hybrid_hash_join                                      1.00E+005
+5    .    6    partition_access                                      1.00E+005
+.    .    5    file_scan             fr        T10                   1.00E+005
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    file_scan             fr        T10                   1.00E+005
+
+--- SQL operation complete.
+>>prepare xx from select * from t10 r1, t10 r2, t10 r3 where r1.c = r2.b  <<+ selectivity 10e-2 >> and r1.b = r3.a  <<+ selectivity 10e-3 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+012
+7    2    8    hybrid_hash_join                                      1.00E+012
+6    4    7    hybrid_hash_join                                      1.00E+008
+5    .    6    partition_access                                      1.00E+005
+.    .    5    file_scan             fr        T10                   1.00E+005
+3    .    4    partition_access                                      1.00E+005
+.    .    3    file_scan             fr        T10                   1.00E+005
+1    .    2    partition_access                                      1.00E+005
+.    .    1    file_scan             fr        T10                   1.00E+005
+
+--- SQL operation complete.
+>>
+>>log;

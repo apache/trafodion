@@ -1,0 +1,608 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------
+-- TESTDML09 (Cardinality)
+-- Functionality: Tests join cardinalities for default predicates.
+-- Expected Files: ETESTDML09.
+-- History: Created on 04/09/2009
+-- Owner: Rayees Pasha
+----------------------------------------------
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator = 'ORDERED_CROSS_PRODUCT')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+cqd nested_joins 'off';
+cqd merge_joins 'off';
+
+log ATESTDML09 clear;
+
+set schema cat.hcube;
+
+control query default query_cache '0';
+
+control query default cache_histograms '0';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+----------------------------------------------
+-- BiArith local predicate test cases
+----------------------------------------------
+
+prepare xx from 
+select * from t8 where
+(t8.b + t8.c) = 10;
+
+execute explainCard;
+
+showstats for query
+select * from t8 where
+(t8.b + t8.c) = 10;
+
+prepare xx from
+select * from t8 where
+(3 *t8.b + 4) = (4 * t8.b + 10);
+
+execute explainCard; 
+
+prepare xx from
+select * from t8, t10 where
+t8.b *(t8.a + t10.b) + 4 =  10;
+
+execute explainCard; 
+
+----------------------------------------------
+-- BiArith equijoin expression testcases
+----------------------------------------------
+
+prepare xx from
+select * from t8, t10 where
+t8.b + 4 =  t10.b + 10;
+
+execute explainCard; 
+
+showstats for query
+select t8.b, t10.b from t8, t10 where
+t8.b + 4 =  t10.b + 10;
+
+prepare xx from
+select * from t8, t10 where
+t8.b = (t10.b + t10.c);
+
+execute explainCard; 
+
+prepare xx from
+select * from t8, t10 where
+(t8.b + t8.c) = (t10.b + t10.c);
+
+execute explainCard; 
+
+prepare xx from
+select * from t8, t10 where
+(3 *t8.b + 4) = (4 * t10.b + 10);
+
+execute explainCard; 
+
+----------------------------------------------
+-- Range predicate test case
+----------------------------------------------
+
+prepare xx from
+select * from t8, t10 where
+t8.b  < t10.b;
+
+execute explainCard; 
+
+showstats for query
+select t8.a, t10.a from t8, t10 where
+t8.b  < t10.b;
+
+prepare xx from
+select * from t8, t10 where
+t8.b  > (t10.b + t10.c);
+
+execute explainCard; 
+
+prepare xx from
+select * from t8, t10 where
+(t8.b + t10.c) >= (t10.b + t10.c);
+
+execute explainCard; 
+
+----------------------------------------------
+-- Case Expression predicate test case
+----------------------------------------------
+
+-- Two types of Case expressions:
+
+-- Simple Case expression:
+
+-- CASE <expression> WHEN <expression1> THEN <outcome1>
+--		  WHEN <expression2> THEN <outcome2>
+--		  ELSE <outcome3>
+
+-- Searched Case expression:
+
+-- CASE WHEN <condition1> THEN <outcome1>
+--          <condition2> THEN <outcome2>
+--                     ELSE <outcome3>
+
+--Possible test cases:
+
+-- 1. All the outcomes are constants
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then 0
+              else 1 end) = t10.a;
+
+execute explainCard;
+
+showstats for query
+select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then 0
+              else 1 end) = t10.a;
+
+-- Scan only
+-- Force shape, since plan may vary, but we are just interested in cardinality.
+control query shape implicit exchange hybrid_hash_join(partition_access(
+scan(path 'CAT.HCUBE.IX10B', forward, blocks_per_access 391 , mdam off)),
+partition_access(scan(path 'CAT.HCUBE.T8', forward, blocks_per_access 5
+, mdam off)));
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10 then 0
+              when t8.b = 10 then 1 
+              when t8.c = 10 then 2 
+              else 3 end) = 10;
+
+execute explainCard;
+control query shape cut;
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10 then 0
+              when t8.b = 10 then 1 
+              when t8.c = 10 then 2 
+              else 3 end) = t10.a;
+
+execute explainCard;
+
+showstats for query
+select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10 then 0
+              when t8.b = 10 then 1 
+              when t8.c = 10 then 2 
+              else 3 end) = t10.a;
+
+-- 2. All the outcomes are columns
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.b
+              else t8.c end) = t10.a;
+
+execute explainCard;
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10 then t8.a
+              when t8.b = 10 then t8.b 
+              else t8.c end) = t10.a;
+
+execute explainCard;
+
+showstats for query
+select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10 then t8.a
+              when t8.b = 10 then t8.b 
+              else t8.c end) = t10.a;
+
+-- 3. All the outcomes are expressions
+
+prepare xx from select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.a + t8.b
+              else t8.a + t8.c end) = (t10.a + t10.b);
+
+execute explainCard;
+
+prepare xx from select *
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.b
+              else t8.a + t8.b end) = (case when t10.a = 10
+              then t10.b 
+              else t10.a + t10.b end);
+
+execute explainCard;
+
+-- 4. Outcomes are a combination of constants and columns.
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then 0
+              else t8.a end) = t10.a;
+
+execute explainCard;
+
+-- 5. Outcomes are a combination of constants and expressions.
+
+prepare xx from select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then 0
+              else t8.a + t8.b end) = t10.a;
+
+
+execute explainCard;
+
+showstats for query
+select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then 0
+              else t8.a + t8.b end) = t10.a;
+
+
+-- 6. Outcomes are a combination of expressions and columns.
+
+prepare xx from select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.b
+              else t8.a + t8.b end) = (t10.a + t10.b);
+
+
+execute explainCard;
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then ?p1
+              else ?p2 end) = ?p3 and
+         t8.a = t10.a;
+
+
+execute explainCard;
+
+----------------------------------------------
+-- Substring statement test case
+----------------------------------------------
+
+prepare xx from select * from cube1
+where substring(txt for 2) = 'a';
+
+execute explainCard;
+
+showstats for query
+select txt from cube1
+where substring(txt for 2) = 'a';
+
+prepare xx from select * from cube1, cube2
+where substring(cube1.txt from 1 for 2) = cube2.txt;
+
+execute explainCard;
+
+prepare xx from select * from cube1, cube2
+where substring(cube1.txt from 1 for 2) = substring(cube2.txt from 3 for 2) ;
+
+execute explainCard;
+
+prepare xx from select * from cube1, cube2
+where substring((case when cube1.txt is not null
+                    then cube1.txt
+                    else '*****' end) for 4) =  cube2.txt;
+
+execute explainCard;
+
+showstats for query
+select cube1.a, cube2.b from cube1, cube2
+where substring((case when cube1.txt is not null
+                    then cube1.txt
+                    else '*****' end) for 4) =  cube2.txt;
+
+prepare xx from select * from cube1, cube2
+where substring(cube1.txt from 1 for 2) = ?p1 and 
+cube1.txt = cube2.txt;
+
+execute explainCard;
+
+----------------------------------------------
+-- Dynamic Parameters test cases
+----------------------------------------------
+cqd comp_int_22 '100';
+cqd or_pred_to_semijoin '0';
+cqd join_order_by_user 'on';
+
+prepare xx from 
+select * from t8
+where t8.a in (?a, ?b)
+and t8.a = t8.b;
+
+execute explainCard;
+
+prepare xx from
+select * from t8, t10
+where t8.a in (?a, ?b)
+and t8.a = t10.b;
+
+execute explainCard;
+
+prepare xx from 
+select * from t8, t10
+where
+(t8.a + t8.b) in (?a, ?b) and
+t8.a + t8.b = t10.b;
+
+execute explainCard;
+
+prepare xx from  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then ?p1
+              else ?p2 end) = ?p3 and
+         t8.a = t10.a;
+
+execute explainCard;
+
+cqd comp_int_22 reset;
+cqd or_pred_to_semijoin reset;
+cqd join_order_by_user reset;
+
+----------------------------------------------
+-- Date/Time function test cases
+----------------------------------------------
+
+set schema TPCH.SCH;
+
+-- DAYNAME (Selectivity: 1/7)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+dayname(l_shipdate) = dayname(o_orderdate);
+
+execute explainCard;
+
+-- DAYOFWEEK (Selectivity: 1/7)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+dayofweek(l_shipdate) = dayofweek(o_orderdate);
+
+execute explainCard;
+
+showstats for query
+select l_shipdate from lineitem, orders
+where l_orderkey = o_orderkey and
+dayofweek(l_shipdate) = dayofweek(o_orderdate);
+
+-- DAY (Selectivity: 1/31)
+
+prepare xx from 
+select * from lineitem inner join orders
+on l_orderkey = o_orderkey and
+day(l_shipdate) = dayofmonth(o_orderdate);
+
+execute explainCard;
+
+-- DAYOFMONTH (Selectivity: 1/31)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+dayofmonth(l_shipdate) = dayofmonth(o_orderdate);
+
+execute explainCard;
+
+-- DAYOFYEAR (Selectivity: 1/366)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+dayofyear(l_shipdate) = dayofyear(o_orderdate);
+
+execute explainCard;
+
+-- MONTH (Selectivity: 1/12)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+month(l_shipdate) = month(o_orderdate);
+
+execute explainCard;
+
+-- MONTHNAME (Selectivity: 1/12)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+monthname(l_shipdate) = monthname(o_orderdate);
+
+execute explainCard;
+
+showstats for query
+select o_orderkey from lineitem, orders
+where l_orderkey = o_orderkey and
+monthname(l_shipdate) = monthname(o_orderdate);
+
+-- QUARTER (Selectivity: 1/4)
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+quarter(l_shipdate) = quarter(o_orderdate);
+
+execute explainCard;
+
+-- WEEK (Selectivity: 1/54) 
+
+prepare xx from 
+select * from lineitem, orders
+where l_orderkey = o_orderkey and
+week(l_shipdate) = week(o_orderdate);
+
+execute explainCard;
+
+set schema cat.hcube;
+
+--------------------------------------------------
+-- Character String functions
+--------------------------------------------------
+
+-- ASCII - Selectivity = 1 / 256
+prepare xx from select * from cube1, cube2 where ascii(cube1.txt)  = ascii(cube2.txt);
+
+execute explainCard;
+
+showstats for query
+select cube1.txt, cube2.txt from cube1, cube2 where ascii(cube1.txt)  = ascii(cube2.txt);
+
+-- CHAR_LENGTH - Selectivity = 1 / Max String Length
+prepare xx from select * from cube1, cube2 where char_length(cube1.txt)  = char_length(cube2.txt);
+
+execute explainCard;
+
+prepare xx from select * from cube1, cube2 where character_length(cube1.txt)  = character_length(cube2.txt);
+
+execute explainCard;
+
+showstats for query
+select cube1.txt, cube2.txt from cube1, cube2 where character_length(cube1.txt)  = character_length(cube2.txt);
+
+-- OCTET_LENGTH - Selectivity = 1 / Max String Length * byte length of character
+prepare xx from select * from cube1, cube2 where octet_length(cube1.txt)  = octet_length(cube2.txt);
+
+execute explainCard;
+
+-- CONCAT - Selectivity = 1 / max UEC
+prepare xx from select * from cube1, cube2 where concat(cube1.txt, 'lower')  = concat(cube2.txt, 'upper');
+
+execute explainCard;
+
+showstats for query
+select cube1.txt, cube2.txt from cube1, cube2 where concat(cube1.txt, 'lower')  = concat(cube2.txt, 'upper');
+
+-- LOCATE, POSITION - Selectivity = 1 / (Max String Length - length of substring)
+prepare xx from select * from cube1, cube2 where locate('abs', cube1.txt) = position('abs'in cube2.txt);
+
+execute explainCard;
+
+-- REPLACE - Selectivity = 1 / max UEC
+prepare xx from select * from cube1, cube2 where replace ((cube2.txt), 'blah', 'duh') = replace ((cube1.txt), 'blah', 'duh');
+
+execute explainCard;
+
+-------------------------------------------------------
+-- Math functions - Selectivity =  1/(UEC of the child)
+-------------------------------------------------------
+
+-- Arithmetic functions
+-- ABS, CEILING, FLOOR: 
+
+prepare xx from select * from t7, t10 where ABS(t7.a) = FLOOR(t10.b);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where CEILING(t7.a) = FLOOR(t10.b);
+
+execute explainCard;
+
+showstats for query
+select t7.b, t10.a from t7, t10 where CEILING(t7.a) = FLOOR(t10.b);
+
+-- Geometric functions
+-- DEGREES, RADIANS, 
+
+prepare xx from select * from t7, t10 where RADIANS(t7.a) = DEGREES(t10.a);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where DEGREES(t7.a) = RADIANS(t10.a);
+
+execute explainCard;
+
+showstats for query
+select t7.a from t7, t10 where DEGREES(t7.a) = RADIANS(t10.a);
+
+-- Trigonometric functions
+-- ACOS, ASIN, ATAN, ATAN2, COS, COSH, SIN, SINH, TAN, TANH
+
+prepare xx from select * from t7, t10 where SINH(t7.a) = COSH(t10.b);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where TAN(t7.a) = SIN(t10.b);
+
+execute explainCard;
+
+showstats for query
+select t10.b from t7, t10 where TAN(t7.a) = SIN(t10.b);
+
+-- Other math functions
+-- EXP, LOG, LOG10, POWER, SQRT
+
+prepare xx from select * from t7, t10 where LOG(t7.a) = LOG10(t10.b);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where EXP(t7.a) = LOG10(t10.b);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where EXP(t7.a) = SQRT(t10.b);
+
+execute explainCard;
+
+showstats for query
+select t10.b from t7, t10 where EXP(t7.a) = SQRT(t10.b);
+
+-- MODULUS: Selectivity = 1/divisor
+
+prepare xx from select * from t7, t10 where t7.a = mod(t10.a,200);
+
+execute explainCard;
+
+prepare xx from select * from t7, t10 where t7.a = mod(t10.a,t10.b);
+
+execute explainCard;
+
+showstats for query
+select t7.a from t7, t10 where t7.a = mod(t10.a,t10.b);
+
+log;
+

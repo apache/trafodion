@@ -1,0 +1,319 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#! /bin/sh
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 1994-2009 Hewlett-Packard Development Company, L.P.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# +++ Copyright added on 2003/12/3
+# +++ Copyright modified on 2009/3/9
+#
+# +++ Code modified on 2003/11/23
+#
+#
+######################################################################
+# This is the MVQR initialization script to be run on an NSK system after
+# installing SQL/MX [from the SUT] and T0725 product. It can be run by the 
+# super ID only.
+#-----------------------------------------------------------------------
+#  Usage:
+#          installMvqr    -- A.1 creates MANAGEABILITY.MV_REWRITE schema.
+#                         -- A.2 creates table
+#                         --     MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+#                         -- B.  starts MXQMM as persistent process.
+#
+#          installMvqr crRWPubTab  -- pefromns only A.1 and A.2 above.
+#          installMvqr startQMM    -- performs only B above.
+#
+#
+#   Modification History.
+# =====================
+#  04/02/2010   RN  A new initial script.
+# 
+####################################################################
+version=1.0
+
+# -- MXQMM location
+typeset qmmloc
+qmmloc="\$$NSK_OBJ_VOL.$NSK_OBJ_SUBVOL"
+test "$NSK_OBJ_VOL" = "" &&  qmmloc='$system.system'
+
+#--QMM process name
+qmmName="ZQM03"
+
+# tacl script name
+qmmscr="$thome/startQmm"
+
+# The script can start from anywhere
+thome=`/bin/pwd`
+
+# OUtput files
+mvqrLog="$thome/startQmm.log"
+crTabLog="$thome/crPubTab.log"
+
+ARG1="$1"
+NULL=/dev/null
+TRUE=1
+FALSE=0
+
+isSuperSuper=$FALSE
+
+function printVersion
+{
+   echo Version $version
+   exit 0
+}
+
+function Usage
+{
+  echo "Usage: installMvqr [ crPubTab | startQMM | help | -h | version | -v ]"
+  echo "initializes MVQR on Neo. Must be run after SQLMX and T0725 installation"
+  echo " "
+  echo "    crPubTab      - creates REWRITE_PUBLISH table."
+  echo "    startQMM      - starts MXQMM as persistent process."
+  echo "    help (-h)     - Help information"
+  echo "    version (-v)  - Version information of this script"
+  echo " "
+  echo "Default is to create REWRITE_PUBLISH table and start MXQMM."
+#  exit 0
+}
+
+function startQMM
+{
+  # Remove TACL script and its LOG file.
+  rm $mvqrLog > /dev/null 2>&1
+  rm $qmmscr > /dev/null 2>&1
+
+  # checking if MXQMM is already running.
+  gtacl -c 'status $ZQM03' | grep -e $qmmName > /dev/null 2>&1
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  if [[ $result = 0 ]]; then
+    echo " MXQMM persistent process $qmmName is already running..."
+    echo " Invoke uninstallMvqr script before starting again"
+  else
+    start_qmm_from_scf;
+  fi
+}
+
+function start_qmm_from_scf
+{
+  
+  # to make screen messages look better
+  echo " "
+  echo "Starting MXQMM as persistent process. Please wait...."
+  echo " "
+ 
+  # constrct TACL script
+  echo >  $qmmscr "scf"
+  echo >> $qmmscr "assume process \$zzkrn"
+  echo >> $qmmscr "abort #MXQMM"
+  echo >> $qmmscr "delete #MXQMM"
+  echo >> $qmmscr "add #MXQMM, autorestart 10, cpu 3, &"
+  echo >> $qmmscr "defaultvol $qmmloc, highpin on, &"
+  echo >> $qmmscr "hometerm \$ZHOME, name \$ZQM03,priority 130, &"
+  echo >> $qmmscr "program $qmmloc.MXQMM, startmode APPLICATION, &"
+  echo >> $qmmscr "stopmode standard, type other, userid super.services"
+  echo >> $qmmscr "start #MXQMM"
+ 
+  cat $qmmscr | gtacl | tee -a $mvqrLog > /dev/null 2>&1
+
+  sleep 60
+
+  # verify persistent process $qmmName started successfully
+  gtacl -c 'status $ZQM03' | grep -e $qmmName > /dev/null 2>&1
+  result=$?
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+
+  # to make screen messages look better
+  echo " "
+  echo " "
+
+  if [[ $result = 0 ]];then
+     echo "MXQMM process $qmmName started successfully."
+  else
+     echo "Failed to start MXQMM as persistent process."
+     echo "Please see $mvqrLog for more details."
+  fi
+
+  # to make screen messages look better
+  echo " "
+  echo " "
+
+}
+
+function createTable
+{
+  echo "mxqmm is from $qmmloc"
+  #echo "Deleting previous log file $crTabLog."
+  rm $crTabLog > /dev/null 2>&1
+  crTab;
+  # Check to see if the create table was successful
+  grep -i "Error" $crTabLog
+  result=$?
+
+  # to make screen messages look better
+  echo " "
+  echo " "
+
+  
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+  if [[ $result = 1 ]]; then
+     print "REWRITE_PUBLISH table created successfully.\n"
+  else
+     print "*** ERROR: create REWRITE_PUBLISH table has failed. Check $crTabLog for details.\n"
+  fi
+}
+
+
+function crTab
+{
+  echo " "
+  echo "creating REWRITE_PUBLISH table. Please wait...."
+  /usr/tandem/sqlmx/bin/mxci <<aeof >>$NULL
+    -- only for qa, remove in the final version
+    create catalog MANAGEABILITY;
+    log $crTabLog clear;
+--
+    create schema MANAGEABILITY.MV_REWRITE;
+    set schema MANAGEABILITY.MV_REWRITE;
+    control query default POS 'off';
+    CREATE TABLE MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH   (
+      OPERATION_TIMESTAMP   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , REDEF_TIME            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , REFRESH_AT_TIME       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_UID            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , CATALOG_UID           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_NAME        CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_NEW_NAME    CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT DEFAULT NULL
+      , DESCRIPTOR_INDEX      INT NO DEFAULT
+      , OPERATION_TYPE      CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+      , IGNORE_CHANGES_USED CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+      ,PRIMARY KEY (OPERATION_TIMESTAMP, REDEF_TIME)) NO PARTITION;
+--
+    exit;
+aeof
+
+  # Super.services should be running this script, but if super.super installs
+  # it then privileges to the MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH 
+  # table need to be assigned  to super.services
+  if [ $isSuperSuper = $TRUE ] ; then
+
+  /usr/tandem/sqlmx/bin/mxci <<aeof >>$NULL
+       log $crTabLog;
+       begin work;
+       GRANT ALL PRIVILEGES ON TABLE
+       MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH 
+       --TO "super.services" WITH GRANT OPTION;
+       TO PUBLIC;
+       commit work;
+       exit;
+aeof
+  fi
+
+}
+
+####################################################################
+#                                                                  #
+#                  Main Script starts here                         #
+#                                                                  #
+####################################################################
+TITLEBAR=$0;
+
+#
+# Default option
+#
+if [ -z "$ARG1" ]; then
+  ARG1="both"
+fi
+
+# Only SUPER.SERVICES can run this script.
+# Check who is executing the script.
+
+whoami | grep "SUPER.SERVICES" > /dev/null 2>&1
+result=$?
+# Check if return value of grep, 0 is at least one match found, 1 is no
+# matches found, 2 is error
+if [[ $result != 0 ]]; then
+  whoami | grep -i "SUPER.SUPER" > /dev/null 2>&1
+  result1=$?
+  if [ $result1 != 0 ]; then
+    whoami | grep -i "superuser" > /dev/null 2>&1
+    result2=$?
+    if [ $result2 != 0 ]; then
+    whoami | grep -i "hpsupport" > /dev/null 2>&1
+    result3=$?
+      if [[ $result3 != 0 ]]; then
+        print "\n*** ERROR[100] You do not have the correct authority to install MVQR\n"
+        print "The MVQR installation has aborted.\n"
+        exit 0
+      fi
+    fi
+  fi
+  isSuperSuper=$TRUE;
+fi
+
+
+#Convert ARG1 to all lowercase
+typeset -l temp
+temp=$ARG1
+ARG1=$temp
+
+
+#
+# Call the functions depending on the given argument
+#
+case $ARG1 in
+
+  ( "-help" | "-h" )
+          { Usage; } ;;
+
+  ( "-version" | "-v" )
+          { printVersion; } ;;
+
+  ( "crpubtab" )
+         { createTable; } ;;
+
+  ( "startqmm" )
+         { startQMM; } ;;
+
+
+  ( "both" )
+        { createTable; startQMM; } ;;
+
+  ( * )
+          {
+            echo $0: Invalid argument \'$ARG1\';
+            echo " "
+            Usage;
+          } ;;
+
+esac

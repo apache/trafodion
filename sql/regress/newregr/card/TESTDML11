@@ -1,0 +1,599 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML11 (Cardinality)
+-- Functionality: Uses atomicdatabase to test join cardinalities.
+-- Expected Files: ETESTDML11.
+-- History: Created on 10/06/2009
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+control query default osim_simulation_loc './atomic';
+
+control query default create_objects_in_metadata_only 'on';
+
+control query default query_cache '0';
+control query default cache_histograms '0';
+control query default optimization_level '0';
+
+obey $$REGRTSTDIR$$/atomic/CQDS;
+
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+log ATESTDML11 clear;
+
+set schema cat.atomic;
+
+--1
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+--2
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+
+--3
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+
+--4
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--5
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+
+--6
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--7
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+--8
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+--9
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--10
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--11
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--12
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--13
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--14
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+--15
+prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+
+--16
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+--17
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+--18
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+--19
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--20
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+--21
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--22
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+--23
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+--24
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--25
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--26
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--27
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--28
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--29
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+--30
+prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+
+--31
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+--32
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+--33
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+--34
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--35
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+--36
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--37
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+--38
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+--39
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--40
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--41
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--42
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--43
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--44
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+--45
+prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+
+--46
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+
+--47
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+--48
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+--49
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--50
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+
+--51
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--52
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+
+--53
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+--54
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--55
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--56
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--57
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--58
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--59
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+
+--60
+prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+
+--61
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+--62
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+--63
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+--64
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--65
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+
+--66
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--67
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+--68
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+
+--69
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--70
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--71
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--72
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--73
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--74
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+--75
+prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+
+--76
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+
+execute explainCard;
+
+--77
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+
+execute explainCard;
+
+--78
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+
+execute explainCard;
+
+
+--79
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+
+execute explainCard;
+
+--80
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+
+execute explainCard;
+
+--81
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+
+execute explainCard;
+
+--82
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+
+execute explainCard;
+
+--83
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+
+execute explainCard;
+
+--84
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+
+execute explainCard;
+
+--85
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+
+execute explainCard;
+
+--86
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+
+execute explainCard;
+
+--87
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+
+execute explainCard;
+
+--88
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+
+execute explainCard;
+
+--89
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+
+execute explainCard;
+
+--90
+prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+
+execute explainCard;
+

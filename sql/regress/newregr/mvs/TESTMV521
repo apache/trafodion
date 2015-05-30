@@ -1,0 +1,172 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--==========================================================
+-- TestMV521
+-- -----------
+-- Purge Data test
+--==========================================================
+
+log LOGMV521 clear;
+
+-- Run Tests
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+	sh sh runmxci.ksh -i "TESTMV521(User1Setup)" -u $$SQLUSER1Q$$;
+-- exit
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+log;
+exit;
+
+------------------------------------------------------------
+?section USER1SETUP
+
+-- On LINUX, POS is on, add this CQD
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+
+log LOGMV521;
+-- User1Setup
+----------------------
+create catalog c;
+create schema c.s;
+set schema c.s;
+create table T1_T_521 (a int);
+ALTER TABLE T1_T_521 attribute all mvs allowed;
+create mv MV1_T_521
+	refresh on request
+initialized on refresh
+	--mvattribute no audit
+	as
+	select sum(a) as sa
+	from T1_T_521;
+ALTER MV MV1_T_521 attribute all mvs allowed;
+
+-- SUCCEED (using purge data)
+refresh MV1_T_521 recompute outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV521;
+log LOGMV521;
+
+sh sh runmxci.ksh -i "TestMV521(User1Grant)" -u $$SQLUSER1Q$$;
+
+sh sh runmxci.ksh -i "TestMV521(User2Refresh)" -u $$SQLUSER2Q$$;
+
+--FAIL
+sh sh runmxci.ksh -i "TestMV521(User3Refresh1)" -u $$SQLUSER3Q$$;
+
+sh sh runmxci.ksh -i "TestMV521(User1Grant2)" -u $$SQLUSER1Q$$;
+
+sh sh runmxci.ksh -i "TestMV521(User2Grant)" -u $$SQLUSER2Q$$;
+
+-- SUCCESS
+sh sh runmxci.ksh -i "TestMV521(User3Refresh2)" -u $$SQLUSER3Q$$;
+
+sh sh runmxci.ksh -i "TestMV521(User1CleanUP)" -u $$SQLUSER1Q$$;
+
+log;
+exit;
+
+------------------------------------------------------------
+?section USER1GRANT
+
+log LOGMV521;
+-- User1Grant
+----------------------
+set schema c.s;
+
+grant select on T1_T_521 to $$SQLUSER2Q$$;
+grant select on MV1_T_521 to $$SQLUSER2Q$$;
+grant insert on MV1_T_521 to $$SQLUSER2Q$$;
+grant delete on MV1_T_521 to $$SQLUSER2Q$$;
+log;
+
+------------------------------------------------------------
+?section USER2REFRESH
+
+log LOGMV521;
+-- User2Refresh
+---------------------
+set schema c.s;
+
+-- SUCCEED (using purge data)
+refresh MV1_T_521 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV521;
+
+------------------------------------------------------------
+?section USER3REFRESH1
+
+log LOGMV521;
+-- User3Refresh
+---------------------
+set schema c.s;
+
+refresh MV1_T_521 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV521;
+
+------------------------------------------------------------
+?section USER1GRANT2
+
+log LOGMV521;
+-- User1Grant2
+---------------------
+set schema c.s;
+
+grant select on T1_T_521 to $$SQLUSER2Q$$ with grant option;
+grant select on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+grant insert on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+grant delete on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+log;
+
+------------------------------------------------------------
+?section USER2GRANT
+
+log LOGMV521;
+-- User2Grant
+--------------------
+set schema c.s;
+
+grant select on T1_T_521 to $$SQLUSER3Q$$;
+grant select, insert, delete on MV1_T_521 to $$SQLUSER3Q$$;
+log;
+
+------------------------------------------------------------
+?section USER3REFRESH2
+
+log LOGMV521;
+-- User3Refresh
+---------------------
+set schema c.s;
+
+refresh MV1_T_521 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV521;
+
+-----------------------------------------------------------
+?section USER1CLEANUP
+
+log LOGMV521;
+-- User1CleanUP
+--------------------
+set schema c.s;
+drop mv MV1_T_521;
+drop table T1_T_521;
+drop schema c.s;
+drop catalog c;
+log;

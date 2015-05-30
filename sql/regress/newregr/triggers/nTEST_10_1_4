@@ -1,0 +1,71 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- 3GL commands
+-- BEGIN and END blocks
+
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+
+obey TEST_10_1_4(clean_up);
+obey TEST_10_1_4(set_up);
+log   LOG_10_1_4 clear;
+obey TEST_10_1_4(tests);
+LOG;
+obey TEST_10_1_4(clean_up);
+exit;
+
+?section clean_up
+DROP TRIGGER atrig1013;
+
+------------------------------------------------------------------
+obey clearTables;
+
+?section set_up
+INSERT INTO tab1A VALUES (1, 2, 3, 4);
+INSERT INTO tab1A VALUES (2, 3, 4, 5);
+
+
+---------------------------------
+-- DEFINE TRIGGER atrig1013
+---------------------------------
+
+CREATE TRIGGER atrig1013
+AFTER UPDATE OF (b) ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+IF (newR.b > 3) THEN 
+INSERT INTO tab1A values(100,100, 0, 0);
+INSERT INTO tab1A VALUES (200,200, 0, 0);
+END IF;
+
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b=b+1;
+
+SELECT * FROM tab1A ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

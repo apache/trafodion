@@ -1,0 +1,172 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDDL01 (Cardinality)
+-- Functionality: creates QASchema database.
+-- Expected Files: ETESTDDL06.
+-- History: Created on 10/05/2009
+-- Owner: Renu Varshneya
+-----------------------------------------------------------------------------
+
+drop schema cat.qaschema cascade;
+create schema cat.qaschema;
+set schema cat.qaschema;
+cqd POS 'OFF';
+LOG ATESTDDL06 clear;
+
+---------------------------------------------------------------------------
+
+Create table D01
+(
+  pk int not null not droppable primary key
+, val01 int
+, val02 int
+);
+ 
+  
+Create table D02
+(
+  pk int not null not droppable primary key
+, val01 int
+, val02 int
+);
+  
+Create table D03
+(
+  pk int not null not droppable primary key
+, val01 int
+, val02 int
+);
+  
+Create table D04 like D01;
+  
+Create table D05 like D02;
+  
+Create table F01
+(
+  pk int not null not droppable 
+, fk_d01 int not null -- foreign key references D01(pk)
+, fk_d02 int not null -- foreign key references D02(pk)
+, fk_d03 int not null -- foreign key references D03(pk)
+, fk_d04 int not null -- foreign key references D04(pk)
+, fk_d05 int not null -- foreign key references D05(pk)
+, val01 int
+, val02 int
+, val01_d01 int
+, val02_d01 int
+, val01_d02 int
+, val02_d02 int
+, val01_d03 int
+, val02_d03 int
+);
+ 
+  
+Create table F02 like F01 with partitions;
+ 
+-- D01 (10 rows): 10-3-6
+  
+insert into D01
+select c1, mod(c1,3), mod(c1,6)
+from (values(1)) T
+transpose 0,1,2,3,4,5,6,7,8,9 as c1
+;
+-- D02 (100 rows): 100-5-10
+  
+insert into D02
+select c1+c2*10, mod(c1+c2*10,5), c1
+from (values(1)) T
+transpose 0,1,2,3,4,5,6,7,8,9 as c1
+transpose 0,1,2,3,4,5,6,7,8,9 as c2
+;
+-- D03 (1,000 rows): 1000-10-100
+  
+insert into D03
+select c1+c2*10+c3*100, c1, c1+c2*10
+from (values(1)) T
+transpose 0,1,2,3,4,5,6,7,8,9 as c1
+transpose 0,1,2,3,4,5,6,7,8,9 as c2
+transpose 0,1,2,3,4,5,6,7,8,9 as c3
+;
+  
+insert into F01
+select c1+c2*10+c3*100+c4*200
+      ,c1                       -- fk_d01(10)
+      ,c1+c2*10                 -- fk_d02(100)
+      ,c1+c2*10+c3*100          -- fk_d03(1,000)
+      ,c1                       -- fk_d04(10)
+      ,c1+c2*10                 -- fk_d05(100)
+      ,c1+c2*10                 -- val01 (100)
+      ,mod(c1+c2*100+c3*100,200)-- val02 (200)
+      ,mod(c1,3)                -- val01_d01(3)
+      ,mod(c1,6)                -- val02_d01(6)
+      ,mod(c1+c2*10,5)          -- val01_d02(5)
+      ,c1                       -- val02_d02(10)
+      ,c1                       -- val01_d03(10)
+      ,c1+c2*10                 -- val02_d03(100)
+from (values(1)) T
+transpose 0,1,2,3,4,5 as c1
+transpose 0,1,2,3,4,5 as c2
+transpose 0,1,2,3,4,5 as c3
+transpose 0,1,2,3,4,5 as c4
+transpose 0,1,2,3,4,5 as c5
+transpose 0,1,2,3,4,5 as c6
+;
+  
+insert into D04 select * from D01;
+  
+  
+insert into D05 select * from D02;
+  
+insert into F02 select * from F01;
+  
+update statistics for table D01 on every column;
+  
+update statistics for table D02 on every column;
+  
+update statistics for table D03 on every column;
+  
+update statistics for table D04 on every column;
+  
+update statistics for table D05 on every column;
+  
+update statistics for table F01 on every key;
+  
+update statistics for table F02 on every key;
+
+update statistics for table F01 on every column;
+  
+update statistics for table F02 on every column;
+
+update statistics for table F01 on (FK_D01, FK_D02, FK_D03), (FK_D02, FK_D03), 
+(FK_D01, FK_D02), (VAL01_D03, VAL02_D03), (FK_D04, FK_D05), (VAL01, VAL02); 
+
+update statistics for table F02 on (FK_D01, FK_D02, FK_D03), (FK_D02, FK_D03), 
+(FK_D01, FK_D02), (VAL01_D03, VAL02_D03), (FK_D04, FK_D05), (VAL01, VAL02); 
+
+update statistics for table D01 on (VAL01, VAL02);
+
+update statistics for table D02 on (VAL01, VAL02);
+
+update statistics for table D03 on (VAL01, VAL02);
+
+update statistics for table D04 on (VAL01, VAL02);
+
+update statistics for table D05 on (VAL01, VAL02);
+
+log;
+
+exit;

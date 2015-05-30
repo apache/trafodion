@@ -1,0 +1,269 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+--  Test security 
+--
+
+set schema CAT1.SCHM;
+obey TEST_13_2_5(clean_up);
+obey TEST_13_2_5(set_up);
+log LOG_13_2_5 clear;
+obey TEST_13_2_5(tests);
+log;
+obey TEST_13_2_5(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.guest_schema;
+drop trigger trg1325_1;
+drop trigger trg1325_2;
+drop trigger trg1325_3;
+drop table t1325K;
+drop table t1325L;
+drop schema CAT1.guest_schema cascade;
+
+set schema CAT1.SCHM;
+drop trigger trg1325X;
+drop table t1325A;
+drop table t1325B;
+drop table t1325C;
+drop table t1325D;
+drop table t1325E;
+drop table t1325F;
+drop table t1325G;
+drop table t1325H;
+
+?section set_up
+set schema CAT1.SCHM;
+
+-- On Linux, POS is on, use CQD to allow the non-pk table creation
+--
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+create table t1325A (i int, j int);
+create table t1325B (i int, j int);
+create table t1325C (i int, j int);
+create table t1325D (i int, j int);
+create table t1325E (i int, j int);
+create table t1325F (i int, j int);
+create table t1325G (i int, j int);
+create table t1325H (i int, j int, k int);
+
+insert into t1325A values (11,21),(12,22),(13,23);
+insert into t1325B values (5,55),(6,56),(7,57);
+insert into t1325C values (33,111),(34,122),(35,133);
+insert into t1325D values (33,111),(34,122),(35,133);
+insert into t1325E values (33,111),(34,122),(35,133);
+
+create trigger trg1325X after insert on t1325A
+ insert into t1325F values (0,0);
+
+sh sh runmxci.ksh -i "TEST_13_2_5(set_up_guest)" -u $$SQLUSER1Q$$;
+
+?section set_up_guest
+create schema cat1.guest_schema ;
+
+set schema cat1.guest_schema ;
+--
+-- On Linux, POS is on, use CQD to allow the non-pk table creation
+--
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+create table t1325K (i int, j int );
+create table t1325L (i int, j int );
+insert into t1325K values (1,1),(2,2),(3,3),(4,4);
+insert into t1325L values (0,1),(1,2),(2,3),(3,4);
+
+----------------------------------------
+--  Anything below should be logged !!
+----------------------------------------
+
+?section tests
+
+set schema cat1.schm;
+
+-- guest should try CREATE TRIGGER, but fail
+sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+grant all on table t1325A to $$SQLUSER1Q$$;
+grant all on table t1325B to $$SQLUSER1Q$$;
+grant all on table t1325C to $$SQLUSER1Q$$;
+grant select on table t1325D to $$SQLUSER1Q$$;
+grant insert on table t1325F to $$SQLUSER1Q$$;
+grant update (i) on table t1325G to $$SQLUSER1Q$$;
+grant update (j) on table t1325G to $$SQLUSER1Q$$;
+--grant select(i,j) on CAT1.SCHM.T1325G to $$SQLUSER1Q$$;
+grant select on CAT1.SCHM.T1325G to $$SQLUSER1Q$$;
+grant delete on table t1325H to $$SQLUSER1Q$$;
+
+-- guest should try CREATE TRIGGER, but fail due to rights on  t1325E
+sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+grant all on table t1325E to $$SQLUSER1Q$$;
+
+-- Now guest got MAX rights on all tables
+-- Guest try misc. operations (all should fail) 
+sh sh runmxci.ksh -i "TEST_13_2_5(misc_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+-- guest should try CREATE TRIGGER, and now succeed !!!
+sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+-- guest should try CREATE TRIGGER for the other triggers
+-- all should succeed
+sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_2_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+-- Guest try and execute
+sh sh runmxci.ksh -i "TEST_13_2_5(use_trigger_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+-- verify that trigger worked
+select * from t1325F;
+
+-- try and drop dependant objects (all these should fail)
+drop table t1325A;
+drop table t1325B;
+drop table t1325C;
+drop table t1325D;
+drop table t1325E;
+drop table t1325F;
+
+-- all revoke operations should fail because of dependent
+-- descriptors
+revoke select on table t1325A from $$SQLUSER1Q$$;
+revoke select on table t1325B from $$SQLUSER1Q$$;
+revoke select on table t1325C from $$SQLUSER1Q$$;
+revoke all on table t1325D from $$SQLUSER1Q$$;
+revoke all on table t1325E from $$SQLUSER1Q$$;
+revoke insert on table t1325F from $$SQLUSER1Q$$;
+revoke update (i) on table t1325G from $$SQLUSER1Q$$;
+revoke delete on table t1325H from $$SQLUSER1Q$$;
+
+-- Guest try and execute (should execute)
+sh sh runmxci.ksh -i "TEST_13_2_5(use_trigger_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+
+-- all revoke operations should fail because of dependent
+-- descriptors
+revoke select on table t1325A from $$SQLUSER1Q$$ cascade;
+revoke select on table t1325B from $$SQLUSER1Q$$ cascade;
+revoke select on table t1325C from $$SQLUSER1Q$$ cascade;
+revoke all on table t1325D from $$SQLUSER1Q$$ cascade;
+revoke all on table t1325E from $$SQLUSER1Q$$ cascade;
+revoke insert on table t1325F from $$SQLUSER1Q$$ cascade;
+revoke update (i) on table t1325G from $$SQLUSER1Q$$ cascade;
+revoke delete on table t1325H from $$SQLUSER1Q$$ cascade;
+
+-- try and drop the triggers, should all fail because the triggers
+-- should have been dropped by the revoke cascade above
+sh sh runmxci.ksh -i "TEST_13_2_5(drop_trigger_guest)" -u $$SQLUSER1Q$$;
+log LOG_13_2_5;
+------------------------
+--  That's all the tests
+------------------------
+
+?section create_trigger_1_guest
+log LOG_13_2_5;
+--------------------------------------------------
+--  CREATE TRIGGER  trg1325_1 for GUEST
+--------------------------------------------------
+set schema cat1.guest_schema ;
+
+create trigger trg1325_1 after insert on t1325K
+  referencing new as newrow
+    for each row
+      when ( newrow.i = 11 ) 
+        insert into cat1.schm.t1325F
+              select j, 
+                     case
+                        when i=5 then (select MAX(j) from SCHM.t1325C)
+			when i=6 then 
+			   (select count(*) from SCHM.t1325D,SCHM.t1325E)
+			when i in (select i from SCHM.t1325A)
+				then 777
+			else newrow.j+200
+		     end
+		from SCHM.t1325B;
+
+
+?section create_trigger_2_guest
+log LOG_13_2_5;
+--------------------------------------------------
+--  CREATE TRIGGER for the other triggers for GUEST
+--------------------------------------------------
+set schema cat1.guest_schema ;
+
+create trigger trg1325_2 before update on t1325K 
+  referencing new as newr 
+    when (exists (select * from SCHM.t1325B))
+       set newr.i = newr.j + 20;
+
+create trigger trg_1325_3 after update on t1325K
+  update SCHM.t1325G set i = i + 3, j = j + 20;
+
+create trigger trg1325_4 after delete on t1325L
+  delete from SCHM.t1325H;
+
+?section use_trigger_guest
+log LOG_13_2_5;
+--------------------------------------------------
+--  USE  TRIGGER  GUEST
+--------------------------------------------------
+set schema cat1.guest_schema ;
+
+insert into t1325K values (99,88); -- WHEN should return FALSE
+insert into t1325K values (11,77); -- WHEN should return TRUE
+update t1325K set i = i + 20, j = j + 12;
+delete from t1325L where i < 100;
+
+
+?section drop_trigger_guest
+log LOG_13_2_5;
+--------------------------------------------------
+--  DROP  TRIGGER  GUEST
+--------------------------------------------------
+set schema cat1.guest_schema ;
+
+drop trigger trg1325_1;
+drop trigger trg1325_2;
+drop trigger trg1325_3;
+drop trigger trg1325_4;
+
+?section misc_guest
+--------------------------------------------------------------------
+-- In the MISC part, the guest tries to alter/drop a trigger in the
+-- other schema, and create a trigger ON a subject table in the
+-- other schema; all those attempt should fail !!
+--------------------------------------------------------------------
+log LOG_13_2_5;
+set schema cat1.guest_schema ;
+
+-- try and drop the other trigger (should fail)
+drop trigger cat1.schm.trg1325X ;
+
+-- try and alter the other trigger (should fail)
+alter trigger disable all of cat1.schm.t1325A;
+
+-- try and create a trigger on the other tables (should fail too)
+create trigger trg1325fail after insert on schm.t1325A
+ delete from t1325K;
+

@@ -1,0 +1,1289 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML06 (Cardinality)
+-- Functionality: Uses HCUBE and MCRAND database to test various join cardinalities.
+-- Expected Files: ETESTDML06.
+-- History: Created on 12/05/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator like '%GROUP%')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+prepare explainJoin from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where  (operator like '%JOIN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+control query default hist_rowcount_requiring_stats '1';
+
+control query default query_cache '0';
+control query default cache_histograms '0';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+control query default merge_joins 'off';
+
+control query default or_pred_to_semijoin '2' ;
+
+log ATESTDML06 clear;
+
+set schema cat.hcube;
+
+-- Q1
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T2' ),
+scan(path 'CAT.HCUBE.T3')));
+
+prepare xx from 
+select count(*) from t2, t3 
+where t2.a = t3.a and t3.b = 50;
+
+execute explainCard;
+
+showstats for query
+select count(*) from t2, t3 
+where t2.a = t3.a and t3.b = 50;
+
+-- Q2
+prepare xx from 
+select count(*) from t2, t3 
+where t2.a = t3.a and t3.b > 5;
+
+execute explainCard;
+
+-- Q3
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9C'),
+scan(path 'CAT.HCUBE.T7' )),
+scan(path 'CAT.HCUBE.IX8B')));
+
+prepare xx from 
+select count(*)
+from t9, t7, t8
+where  t9.a = t7.c
+and ((t7.b  = 5 and
+        t8.b = 5)
+or (t7.b = 7  and
+     t8.b = 7));
+
+execute explainCard;
+
+-- left join
+-- Q4
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B' ));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a;
+
+execute explainCard;
+
+-- Q5
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.b = T9.b;
+
+execute explainCard;
+
+-- Q6
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.b;
+
+execute explainCard;
+
+-- Q7
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B'));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a
+    LEFT JOIN T7 ON T8.a = T7.a;
+
+execute explainCard;
+
+-- Q8
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T7')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a
+     LEFT JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+-- Q9
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+scan(path 'CAT.HCUBE.T7')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a
+    LEFT JOIN T7 ON T8.a = T7.b;
+
+execute explainCard;
+
+-- Q10
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.b
+    LEFT JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+showstats for query
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.b
+    LEFT JOIN T7 ON T8.b = T7.b;
+
+-- left outer join
+-- Q11
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B'));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.a;
+
+execute explainCard;
+
+-- Q12
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+scan(path 'CAT.HCUBE.IX9B')));
+
+execute explainCard;
+
+-- Q13
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.b = T9.b;
+
+execute explainCard;
+
+-- Q14
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.b;
+
+execute explainCard;
+
+-- Q15
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B'));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
+     LEFT OUTER JOIN T7 ON T8.a = T7.a;
+
+execute explainCard;
+
+-- Q16
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T7')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
+    LEFT OUTER JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+-- Q17
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T7')));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
+     LEFT OUTER JOIN T7 ON T8.a = T7.b;
+
+execute explainCard;
+
+-- Q18
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T7' )),
+scan(path 'CAT.HCUBE.IX9B' )));
+
+prepare xx from
+select count(*) from 
+T8 LEFT OUTER JOIN T9 ON T8.a = T9.b
+    LEFT OUTER JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+-- Q19
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B'),
+scan(path 'CAT.HCUBE.T7' )),
+scan(path 'CAT.HCUBE.IX8C')));
+
+prepare xx from 
+select count(*) from t9	
+      LEFT OUTER JOIN t8 ON t9.a = t8.c 
+      LEFT OUTER JOIN t7 ON t9.b = t7.c;
+
+execute explainCard;
+
+-- full outer join
+-- Q20
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.HCUBE.T5' ),
+scan(path 'CAT.HCUBE.T8'
+));
+
+prepare xx from
+select * from t5 natural full outer join t8;
+
+execute explainCard;
+
+showstats for query
+select * from t5 natural full outer join t8;
+
+-- Q21
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.HCUBE.T5' ),
+scan(path 'CAT.HCUBE.T8'));
+
+prepare xx from
+select * from t5 full outer join t8 on t5.b = 2;
+
+execute explainCard;
+
+-- Q22
+prepare xx from
+select * from t5 full outer join t8 on t5.a = 20;
+
+execute explainCard;
+
+-- Q23
+prepare xx from
+select * from t5 full outer join t8 on t5.b = t8.a;
+
+execute explainCard;
+
+-- Q24
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.HCUBE.T8' ),
+scan(path 'CAT.HCUBE.T5'));
+
+prepare xx from
+select * from t8 full outer join t5 on t5.b = t8.a;
+
+execute explainCard;
+
+-- Q25
+prepare xx from
+select * from t8 full outer join t5 on t5.b = t8.a
+      OR t5.b = 2;
+
+execute explainCard;
+
+-- Q26
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.HCUBE.T5' ),
+scan(path 'CAT.HCUBE.T8'));
+
+prepare xx from
+select * from t5 full outer join t8 on t5.b = t8.a
+      OR t5.b = 2;
+
+execute explainCard;
+
+-- Semi-join queries
+-- Q27
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B' ),
+scan(path 'CAT.HCUBE.IX10B')));
+
+prepare xx from
+select count(*) from t9 where b in (select a from t10 where b < 10) group by b;
+
+execute explainCard;
+
+-- Q28
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B' ),
+scan(path 'CAT.HCUBE.T10')));
+
+prepare xx from
+select count(*) from t9 where b in (select a from t10) and b < 10 group by b;
+
+execute explainCard;
+
+-- Q29
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B' ),
+scan(path 'CAT.HCUBE.IX10C' )));
+
+prepare xx from
+select count(*) from t9 where b in (select a from t10) group by b;
+
+execute explainCard;
+
+-- Q30
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B'),
+scan(path 'CAT.HCUBE.IX10C')));
+
+prepare xx from
+select count(*) from t9 where b in (select a from t10);
+
+execute explainCard;
+
+showstats for query
+select count(*) from t9 where b in (select a from t10);
+
+-- Q31
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9B' ),
+scan(path 'CAT.HCUBE.IX10B')));
+
+prepare xx from
+select count(*) from t9 where b in (select a from t10 where b = 10) group by b;
+
+execute explainCard;
+
+-- Q32
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.T8'),
+scan(path 'CAT.HCUBE.IX10B' ));
+
+prepare xx from
+select * from t8 where (b =  any (select b from t10));
+
+execute explainCard;
+
+-- Q33
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.T8'),
+scan(path 'CAT.HCUBE.T10' ));
+
+prepare xx from
+select * from t8 where (a >=  any (select a from t10));
+
+execute explainCard;
+
+-- Q34
+prepare xx from
+select * from t8 where (b =  all (select b from t10));
+
+execute explainCard;
+
+-- Q35
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.T8' ),
+scan(path 'CAT.HCUBE.T10' ));
+
+prepare xx from
+select * from t8 where (a >=  all (select a from t10));
+
+execute explainCard;
+
+-- Q36
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.T8' ),
+scan(path 'CAT.HCUBE.IX10B'));
+
+prepare xx from
+select * from t8 where exists (select * from t10);
+
+execute explainCard;
+
+-- Q37
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T4')));
+
+prepare xx from
+select count(*) from t8
+where a not in (select b from t4 where b is not null)
+  and a is not null;
+
+execute explainCard;
+
+-- Q38
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.HCUBE.T8' ),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T4' ),
+scan(path 'CAT.HCUBE.T6' )));
+
+prepare xx from
+select * from t8 where t8.a in (select a from t4 where not (
+exists (select a from t6 where a=t4.a)));
+
+execute explainCard;
+
+------------------------------------------
+set schema cat.mcrand;
+
+-- Q39
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
+scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts f1, facts f2 where
+f1.xy = f2.xy and
+f1.xpy < 50;
+
+execute explainCard;
+
+-- Q40
+prepare xx from
+select count(*) from facts f1, facts f2 where
+f1.xy = f2.xy and
+f1.xpy = 100;
+
+execute explainCard;
+
+showstats for query
+select count(*) from facts f1, facts f2 where
+f1.xy = f2.xy and
+f1.xpy = 100;
+
+-- Q41
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
+scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts f1, facts f2 where
+f1.xy = f2.xy and
+f1.x1 = 50 and f2.x1 < 70;
+
+execute explainCard;
+
+-- Q42
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
+scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts f1, facts f2 where
+f1.xty = f2.xty and
+f1.x1 = 50 and f2.x1 = 70;
+
+execute explainCard;
+
+-- Q43
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.HUNDRED1000'),
+scan(path 'CAT.MCRAND.TEN1000')));
+
+prepare xx from
+select count(*) 
+from hundred1000, ten1000 where
+(hundred1000.c = 1 or (hundred1000.c = 9 and hundred1000.b = 20) )and
+hundred1000.c = ten1000.c and
+hundred1000.b = ten1000.b;
+
+execute explainCard;
+
+-- Q44
+-- OR predicate on one of the joining columns. The columns are non-unique
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.HUNDRED1000'),
+scan(path 'CAT.MCRAND.TEN1000')));
+
+prepare xx from
+select count(*) 
+from hundred1000, ten1000 where
+(hundred1000.c = 1 or hundred1000.c = 20 )and
+hundred1000.c = ten1000.c and
+hundred1000.b = ten1000.b;
+
+execute explainCard;
+
+-- Q45
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.HUNDRED1000' )));
+
+prepare xx from
+select count(*)
+from 
+ten1000, hundred1000 where
+ten1000.a = hundred1000.a and
+ten1000.b = hundred1000.b and
+ten1000.c = hundred1000.c;
+
+execute explainCard;
+
+-- Q46
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.HUNDRED1000' )));
+
+prepare xx from
+select count(*)
+from 
+ten1000, hundred1000 where
+ten1000.b = 849 and
+ten1000.c = hundred1000.c and
+ten1000.d = hundred1000.d;
+
+execute explainCard;
+
+-- Q47
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.HUNDRED1000')));
+
+prepare xx from
+select count(*)
+from 
+ten1000, hundred1000 where
+ten1000.c = 5 and
+ten1000.c = hundred1000.c and
+ten1000.d = hundred1000.d;
+
+execute explainCard;
+
+-- Q48
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.HUNDRED1000')));
+
+prepare xx from
+select count(*)
+from 
+ten1000, hundred1000 where
+ten1000.b < 500 and
+ten1000.b = hundred1000.b and
+ten1000.c = hundred1000.c;
+
+execute explainCard;
+
+-- Q49
+-- use minimum optimization level to avoid pland changes
+
+control query default OPTIMIZATION_LEVEL 'minimum';
+
+control query shape cut;
+
+
+prepare xx from
+select count(*) from hundred1000, randcols
+where hundred1000.a IN (24999, 49999, 74999) and
+hundred1000.b in (249, 499, 794) and
+hundred1000.a = randcols.x and
+hundred1000.b = randcols.y;
+
+execute explainJoin;
+
+-- Q50
+-- OR predicate on a joining column. Same column is also unique by stats. Other side is not unique
+
+prepare xx from
+select count(*) from hundred1000, randcols
+where hundred1000.a IN (24999, 49999, 74999) and
+hundred1000.a = randcols.x and
+hundred1000.b = randcols.y;
+
+execute explainJoin;
+
+showstats for query
+select count(*) from hundred1000, randcols
+where hundred1000.a IN (24999, 49999, 74999) and
+hundred1000.a = randcols.x and
+hundred1000.b = randcols.y;
+
+-- Q51
+-- OR predicate on the joining column. Same column is also unique. Other side is unique too
+control query default OPTIMIZATION_LEVEL reset;
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.MCRAND.HUNDRED1000'),
+cut),
+nested_join(
+cut,
+scan(path 'CAT.MCRAND.FACTS'))));
+
+prepare xx from
+select count(*) from hundred1000, facts
+where hundred1000.a IN (24999, 49999) and
+hundred1000.a = facts.x and
+hundred1000.d = facts.z and
+hundred1000.b = facts.y;
+
+execute explainCard;
+
+-- Q52
+-- There is an issue with the way tables for MC join cardinality adjustment are picked up. Sol 10-091208-6929
+-- is being used to track that. 
+
+control query shape cut;
+
+prepare xx from
+select count(*) from rc2, ten1000,randcols
+where ten1000.b=randcols.y 
+and ten1000.c=randcols.z 
+and rc2.y=randcols.y 
+and rc2.z=randcols.z ;
+
+-- execute explainCard;
+
+-- Q53
+
+prepare xx from 
+select count(*) from randcols,ten1000,rc2
+where ten1000.a=randcols.x and 
+ten1000.b=randcols.y and 
+ten1000.c=randcols.z and 
+rc2.x=randcols.x and 
+rc2.y=randcols.y and 
+rc2.z=randcols.z;
+
+-- execute explainCard;
+
+-- Q54
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.RANDCOLS' )));
+
+prepare xx from 
+select count(*) from ten1000,randcols
+where ten1000.a=randcols.x and 
+ten1000.b=randcols.y and 
+ten1000.c=randcols.z ;
+
+execute explainCard;
+
+-- Q55
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.RC2' )));
+
+prepare xx from 
+select count(*) from randcols,rc2
+where 
+rc2.x=randcols.x and 
+rc2.y=randcols.y and 
+rc2.z=randcols.z;
+
+execute explainCard;
+
+-- Q56
+
+control query shape cut;
+
+prepare xx from
+select count(*) from rc2,ten1000,randcols
+where randcols.x < 50 and
+ten1000.a < 5000 and
+ten1000.b=randcols.y and 
+ten1000.c=randcols.z and 
+rc2.y=randcols.y and 
+rc2.z=randcols.z ;
+
+-- execute explainCard;
+
+-- Q57
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RC2' ),
+scan(path 'CAT.MCRAND.RANDCOLS')));
+
+prepare xx from
+select count(*) from rc2,randcols
+where randcols.x < 50 and
+rc2.y=randcols.y and 
+rc2.z=randcols.z ;
+
+execute explainCard;
+
+-- No unique set of columns. All tables joining on two columns
+
+-- Q58
+
+control query shape cut;
+
+prepare xx from
+select count(*) from facts, hundred1000, randcols, rc2
+where 
+facts.y=randcols.y and 
+facts.z=randcols.z and 
+rc2.y=randcols.y and 
+rc2.z=randcols.z and
+facts.y = hundred1000.b and
+facts.z = hundred1000.c;
+
+-- execute explainCard;
+
+-- All tables joining on three columns. 
+
+-- Q59
+
+prepare xx from
+select count(*) from facts, hundred1000, randcols,rc2
+where 
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.z=randcols.z and 
+rc2.x = randcols.x and
+rc2.y=randcols.y and 
+rc2.z=randcols.z and
+facts.x = hundred1000.a and
+facts.y = hundred1000.b and
+facts.z = hundred1000.c;
+
+-- execute explainCard;
+
+-- Q60
+-- applied a range predicate on a joining column. We cannot capture correlation between columns which have been modified
+-- using any predicate other than equality predicate. Should we remove them while getting MC UEC for Join too? Example
+-- in the query below, when doing join, consider MCUEC for facts (y,xpy) and randcols (y,z) only
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+ 
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.x < 5 and 
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+showstats for query
+select count(*) from facts, randcols
+where 
+facts.x < 5 and 
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+-- Q61
+-- apply equality predicate to a joining column. The columns are not unique
+-- all columns to be considered for MC UEC
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+ 
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.x = 5 and 
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+-- Q62
+-- apply range predicate to one joining column and equality to the other one. Columns are non-unique. 
+-- Only two columns with no local predicate applied to be considred for 
+-- MC UECs, column with range predicate assumed to be not correlated
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+ 
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.x < 5 and 
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+-- Q63
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+(facts.x < 5 OR facts.y = 8)  and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+-- Q64
+-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.z = 5 and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+-- Q65
+-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.z > 5 and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.xpy = randcols.z ;
+
+execute explainCard;
+
+-- Q66
+-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC. Also
+-- column set fo FACTS are unique by stats
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.xpy = 5 and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.z = randcols.z ;
+
+execute explainCard;
+
+-- Q67
+-- There is an equality predicate on one of the joining columns and also the columns are unique
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.z = 5 and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.z = randcols.z ;
+
+execute explainCard;
+
+-- Q68
+-- There is a range predicate on one of the joining columns and total joining column set is unique
+-- but the columns for which only MC UEC should be considered for a non unique set
+
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'CAT.MCRAND.RANDCOLS'),
+scan(path 'CAT.MCRAND.FACTS')));
+
+prepare xx from
+select count(*) from facts, randcols
+where 
+facts.z > 5 and
+facts.x = randcols.x and
+facts.y=randcols.y and 
+facts.z = randcols.z ;
+
+execute explainCard;
+
+-- Q69
+control query shape implicit enforcers hybrid_hash_join(
+scan(path 'CAT.MCRAND.FACTS' ),
+scan(path 'CAT.MCRAND.RC2' ));
+
+prepare xx from
+select facts.x
+from facts
+where facts.y in (select rc2.x
+                      from rc2
+                      where facts.z = rc2.x OR rc2.y = 1);
+
+execute explainCard;
+
+-- Q70
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.MCRAND.FACTS' ),
+sort_groupby(nested_join(
+scan(path 'CAT.MCRAND.TEN1000' ),
+scan(path 'CAT.MCRAND.RC2' ))));
+
+prepare xx from
+select facts.x  
+from facts  
+where  facts.y  > (select  ten1000.b  
+                 from ten1000  
+                 where ten1000.c = facts.x  and  ten1000.a=5 and   
+                          exists (select rc2.x  from rc2  
+                                      where   rc2.y = ten1000.d  and  rc2.z < facts.x ));
+
+
+execute explainCard;
+
+showstats for query
+select facts.x  
+from facts  
+where  facts.y  > (select  ten1000.b  
+                 from ten1000  
+                 where ten1000.c = facts.x  and  ten1000.a=5 and   
+                          exists (select rc2.x  from rc2  
+                                      where   rc2.y = ten1000.d  and  rc2.z < facts.x ));
+
+set schema cat.hcube;
+
+-- Q71
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(TABLE 'C1', path 'CAT.HCUBE.IXCUBE1F'),
+scan(path 'CAT.HCUBE.IXCUBE1F')));
+
+prepare xx from
+select count(*) from cube1 c1 where c1.c in (select a
+from cube1);
+
+execute explainCard;
+
+-- Q72
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(TABLE 'C1', path 'CAT.HCUBE.IX10C'),
+scan(path 'CAT.HCUBE.IX10C')));
+
+prepare xx from
+select count(*) from T10 c1 where c1.a in (select a
+from T10);
+
+execute explainCard;
+
+-- Q73
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(TABLE 'C1', path 'CAT.HCUBE.IX10C'),
+scan(path 'CAT.HCUBE.IXCUBE1F')));
+
+prepare xx from
+select count(*) from T10 c1 where c1.c in (select a
+from cube1);
+
+execute explainCard;
+
+-- Q74
+control query shape cut;
+
+control query default nested_joins 'off';
+
+-- tests for joins with tuple lists
+
+prepare xx from
+select count(*) from t9, t10 where t10.a = t9.a and
+t10.a in (1,2,3,4);
+
+execute explainJoin;
+
+-- Q75
+
+prepare xx from
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q76
+control query default comp_int_22 '1';
+
+control query default nested_joins reset;
+
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
+scan(path 'CAT.HCUBE.T9')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainCard;
+
+control query default comp_int_22 reset;
+
+-- Q77
+control query default hist_assume_independent_reduction 'off';
+
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
+scan(path 'CAT.HCUBE.T9')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainCard;
+
+control query default hist_assume_independent_reduction reset;
+
+-- Q78
+control query default hist_assume_independent_reduction 'off';
+control query default hist_optimistic_card_optimization '0';
+
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
+scan(path 'CAT.HCUBE.T9')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainCard;
+
+control query default hist_assume_independent_reduction reset;
+control query default hist_optimistic_card_optimization reset;
+
+-- Q79
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
+scan(path 'CAT.HCUBE.T9')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.b = t10.b and
+t9.b in (1,2,3,4,5,6,7,8);
+
+execute explainCard;
+
+-- Q82
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T9'),
+scan(path 'CAT.HCUBE.T10')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.b in (1,2,3,4);
+
+execute explainCard;
+
+showstats for query
+select count(*) from t9, t10 where t9.a = t10.a and
+t9.b in (1,2,3,4);
+
+-- Q83
+control query shape implicit enforcers sort_groupby(
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T9'),
+scan(path 'CAT.HCUBE.T10')));
+
+prepare xx from
+select count(*) from t9, t10 where t9.b = t10.b and
+t9.a in (1,2,3,4);
+
+execute explainCard;
+
+control query shape cut;
+
+control query default nested_joins 'off';
+control query default merge_joins 'off';
+
+-- Q84
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t9.b in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q85
+prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q86
+prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
+t10.a in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q87
+prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5);
+
+execute explainJoin;
+
+-- Q88
+prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16,17,18);
+
+execute explainJoin;
+
+-- Q89
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16);
+
+execute explainJoin;
+
+-- Q90
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+
+execute explainJoin;
+
+showstats for query
+select count(*) from t9, t10 where t9.b = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+
+-- Q91
+prepare xx from select count(*) from t9, t10
+where t9.a = t10.a and
+t9.b = t10.b;
+
+execute explainJoin;
+
+-- Q92
+prepare xx from select count(*) from t8, t9, t10
+where t8.a = t9.a and
+t8.a = t10.a and
+t8.b = t9.b;
+
+execute explainJoin;
+
+-- The following CQD sets a threshold beyond which the optimizer will not merge 
+-- frequent value lists when joining on unique columns, instead will only
+-- scale the frequency and the rowcount. The default value of this CQD is 40
+-- it is being lowered to 5 for testing purposes
+
+cqd HIST_TUPLE_FREQVAL_LIST_THRESHOLD '5';
+
+-- Q93
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t9.b in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q94
+prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
+t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q95
+prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
+t10.a in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5,6,7,8);
+
+execute explainJoin;
+
+-- Q96
+prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5);
+
+execute explainJoin;
+
+-- Q97
+prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16,17,18);
+
+execute explainJoin;
+
+-- Q98
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16);
+
+execute explainJoin;
+
+-- Q99
+prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
+t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+
+execute explainJoin;
+
+-- Q100
+-- check with two tuple lists
+cqd or_pred_to_semijoin '10';
+cqd pcode_opt_level 'off';
+cqd pcode_opt_flags '1';
+
+prepare xx from select * from t8, t9 
+where t8.a = t9.a 
+and t8.a in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
+execute explainJoin;
+
+showstats for query
+select * from t8, t9 
+where t8.a = t9.a 
+and t8.a in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
+LOG;
+
+exit;

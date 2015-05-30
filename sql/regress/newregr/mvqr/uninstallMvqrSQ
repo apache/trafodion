@@ -1,0 +1,274 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#! /bin/sh
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 1994-2009 Hewlett-Packard Development Company, L.P.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# +++ Copyright added on 2003/12/3
+# +++ Copyright modified on 2009/3/9
+#
+# +++ Code modified on 2003/11/23
+#
+#
+######################################################################
+# This is the MVQR initialization script to be run on an NSK system after
+# installing SQL/MX [from the SUT] and T0725 product. It can be run by the 
+# super ID only.
+#-----------------------------------------------------------------------
+#  Usage:
+#          uninstallMvqr  -- A.1 drops MANAGEABILITY.MV_REWRITE schema.
+#                         -- A.2 drops table
+#                         --     MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+#          uninstallMvqr  -- B.1  stops tdm_arkqmm persistent process.
+#
+#          uninstallMvqr droppubtab  -- peforms only A.1 and A.2 above.
+#          uninstallMvqr stopqmm     -- performs only B.1 above.
+#
+#   Modification History.
+# =====================
+#  04/02/2010   RN  A new initial script.
+#  11/05/2010   TBA port script to SQ.
+# 
+####################################################################
+version=1.0
+
+# qmm name
+qmmName="ZQM0003"
+
+# The script can start from anywhere
+thome=`pwd`
+
+# who is the current user
+currentUser=`whoami`
+
+# script name
+qmmscr="$thome/stopQmm"
+
+# OUtput files
+mvqrLog="$thome/stopQmm.log"
+drTabLog="$thome/dropPubTab.log"
+
+ARG1="$1"
+NULL=/dev/null
+
+# by default we assume we are running on a cluster
+thisIsACluster=1
+
+isSuperSuper=$FALSE
+
+# check if this is a real cluster
+function checkCluster
+{
+  if [ -f $SQ_PDSH ]; then
+     thisIsACluster=1
+     echo " "
+     echo "running the mvqr initialization script in a cluster ....."
+  else
+     thisIsACluster=0
+     echo " "
+     echo "running the mvqr initialization script in a workstation ....."
+     qmmName="ZQM0000"
+  fi
+}
+
+function printVersion
+{
+   echo Version $version
+   exit 0
+}
+
+function Usage
+{
+  echo "Usage:uninstallMvqr [ droppubtab | stopqmm | help | -h | version | -v ]"
+  echo "uninitializes MVQR on Neo. Must be run after SQLMX and T0725 installation"
+  echo " "
+  echo "    droppubtab      - drops REWRITE_PUBLISH table."
+  echo "    stopqmm         - stops tdm_arkqmm process - will also stop all other mvqr processes."
+  echo "    help (-h)       - Help information"
+  echo "    version (-v)    - Version information of this script"
+  echo " "
+  echo "Default is to drop REWRITE_PUBLISH table and stop tdm_arkqmm."
+}
+
+function stopQMM
+{
+  # Remove script and its LOG file.
+  rm $mvqrLog > /dev/null 2>&1
+  rm $qmmscr > /dev/null 2>&1
+
+  echo " " | tee -a $mvqrLog
+  echo "checking if tdm_arkqmm is running." |  tee -a $mvqrLog
+  if [[ $thisIsACluster = 1 ]]; then
+    sqps | grep -a $qmmName  > /dev/null 2>&1
+  else
+    ps -fu $currentUser | grep -a $qmmName | grep -v grep > /dev/null 2>&1
+  fi
+
+  result=$?
+  # to make screen msgs look better
+  echo " " | tee -a $mvqrLog
+
+  # 0 means at least one match. 1 means no  match. 2 means error
+  if [[ $result != 0 ]]; then
+    echo "tdm_arkqmm persistent process $qmmName is already stopped..."  |  tee -a $mvqrLog
+    echo " " | tee -a $mvqrLog
+  else
+    stop_qmm;
+    rm $qmmscr > /dev/null 2>&1
+  fi
+}
+  
+function stop_qmm
+{
+  echo "Stopping tdm_arkqmm persistent process. Please wait...."
+
+  # constrct TACL script
+  cat > $qmmscr << EOF
+  sqshell -a <<eof
+  set  {process \\\$$qmmName} PERSIST_RETRIES=0,60
+  kill \\\$$qmmName 
+  exit
+eof
+EOF
+
+  # run  stopQMM.ksh
+  chmod 777 $qmmscr
+  sh $qmmscr > $mvqrLog 2>&1
+
+  # to make screen msgs look better
+  echo " " | tee -a $mvqrLog
+
+  # verify persistent process $qmmName stopped successfully
+  sleep 5
+  if [[ $thisIsACluster = 1 ]]; then
+    sqps | grep $qmmName > /dev/null 2>&1
+  else
+    ps -fu $currentUser | grep $qmmName | grep -v grep > /dev/null 2>&1
+  fi
+
+  result=$?
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+
+  if [[ $result = 1 ]];then
+     echo "tdm_arkqmm process $qmmName stopped successfully." | tee -a $mvqrLog
+  else
+     echo "Failed to stop tdm_arkqmm persistent process."
+     echo "Please see $mvqrLog for more details."
+  fi
+
+  # to make screen msgs look better
+  echo " " | tee -a $mvqrLog
+}
+
+
+function dropTable
+{
+  #echo "Deleting previous log file $drTabLog."
+  rm $drTabLog > /dev/null 2>&1
+  drTab; 
+  # Check to see if drop table was successful
+  grep -i "Error" $drTabLog > /dev/null 2>&1
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+  if [[ $result = 1 ]]; then
+     echo "REWRITE_PUBLISH table dropped successfully."
+  else
+     echo "*** ERROR: drop REWRITE_PUBLISH table has failed. Check $drTabLog for details."
+  fi
+}
+
+
+function drTab
+{
+  echo "dropping REWRITE_PUBLISH table. Please wait...."
+  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+    log $drTabLog clear;
+--
+    drop schema MANAGEABILITY.MV_REWRITE cascade;
+--
+    exit;
+aeof
+}
+
+####################################################################
+#                                                                  #
+#                  Main Script starts here                         #
+#                                                                  #
+####################################################################
+TITLEBAR=$0;
+
+#
+# Default option
+#
+if [ -z "$ARG1" ]; then
+  ARG1="both"
+fi
+
+#Convert ARG1 to all lowercase
+typeset temp
+temp=$ARG1
+ARG1=$temp
+
+#check where we are running this script
+checkCluster;
+
+#
+# Call the functions depending on the given argument
+#
+case $ARG1 in
+
+  ( "-help" | "-h" )
+          { Usage; } ;;
+
+  ( "-version" | "-v")
+          { printVersion; } ;;
+
+  ( "droppubtab")
+         { dropTable; } ;;
+
+  ( "stopqmm" )
+         { stopQMM; } ;;
+
+  ( "both" )
+        { stopQMM; dropTable; } ;;
+
+  ( * )
+          {
+            echo $0: Invalid argument \'$ARG1\';
+            echo " "
+            Usage;
+          } ;;
+
+esac
+
+

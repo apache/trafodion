@@ -1,0 +1,96 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- cascading triggers
+-- recursive 'after' triggers
+
+-- runs on cat1.SCHM_ALT only
+----------------------------------------
+
+-- clean_up on all schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_5_4_4(clean_up);
+
+-- start logging
+log   LOG_5_4_4 clear;
+
+set schema CAT1.SCHM_ALT;
+obey TEST_5_4_4(set_up);
+obey TEST_5_4_4(tests);
+obey TEST_5_4_4(clean_up);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_5_4_4(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+
+DROP TRIGGER atrig544;
+DROP TRIGGER atrig544b;
+obey clearTables;
+
+?section set_up
+
+INSERT INTO tab1A VALUES (1, 11, 21, 31);
+INSERT INTO tab1A VALUES (2, 12, 22, 32);
+INSERT INTO tab1A VALUES (3, 13, 23, 33);
+
+
+---------------------------------
+-- DEFINE TRIGGER atrig544
+---------------------------------
+
+
+CREATE TRIGGER atrig544
+AFTER INSERT ON tab1B
+REFERENCING NEW AS newT
+INSERT INTO tab1A 
+	(SELECT a+1,b+1, a+21,b+21 FROM newT 
+	WHERE a> ANY (select b from tab1b) AND 10>(select count(*) from newT) );
+
+--------------------------------
+-- DEFINE TRIGGER atrig544b
+---------------------------------
+
+
+CREATE TRIGGER atrig544b
+AFTER INSERT ON tab1A
+REFERENCING NEW AS newT
+INSERT INTO tab1b 
+	(SELECT a+1,d+1 FROM newT WHERE newT.a> ALL (select c from tab1a)    
+	OR (22, 32) NOT IN (select c,d from newT) );
+
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+INSERT INTO tab1b (SELECT a,b from tab1a);
+
+SELECT * FROM tab1A; -- check result
+SELECT * FROM tab1B; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

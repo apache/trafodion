@@ -1,0 +1,310 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- opttest02
+--
+-- Tests negative partitioning keys, etc.
+--
+-- Phil Koza, Mike Skarpelos
+--
+--
+
+
+?section droptemp
+drop table PTABt0;
+drop table PTABt1;
+drop table PTABt2;
+drop table PTABt3;
+
+?section crtemp
+-- First key of first partition is a negative value
+create table PTABt0 (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null not droppable,
+  sInt32_uniq  integer      signed    not null not droppable,
+  int64_100    largeint,
+  int64_uniq   largeint               not null not droppable,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(8)                not null not droppable,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null not droppable,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null not droppable,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null not droppable, 
+
+primary key (sInt32_uniq) not droppable)
+store by primary key
+location $data2
+partition ( 
+   add first key (-200) location $data3,
+   add first key (400) location $data4)
+attribute buffered, audit;
+
+-- First key of first partition is a negative value
+create table PTABt1 (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  char_50p     char(1780),
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  char_uniq    char(9)                not null not droppable,
+  uInt32_uniq  integer      unsigned  not null not droppable,
+  sInt32_uniq  integer      signed    not null not droppable,
+  int64_100    largeint,
+  int64_uniq   largeint               not null not droppable,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null not droppable,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null not droppable,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null not droppable, 
+
+primary key (int64_uniq) not droppable)
+store by primary key
+location $data2
+partition ( 
+   add first key (-200) location $data3,
+   add first key (400) location $data1)
+attribute buffered, audit;
+
+-- Part the same as PTAB10, only difference is this table
+-- has a varchar key instead of a char key.
+create table PTABt2 (
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null not droppable,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null not droppable,
+  sInt32_uniq  integer      signed    not null not droppable,
+  int64_100    largeint,
+  int64_uniq   largeint               not null not droppable,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null not droppable,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null not droppable,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null not droppable, 
+
+primary key (varchar_uniq) not droppable)
+store by primary key
+location $data2
+partition ( 
+   add first key ('IAAAAAAA') location $data3,
+   add first key ('QAAAAAAA') location $data1)
+attribute buffered, audit;
+
+-- Not part the same as PTAB10, and this table
+-- has a varchar key instead of a char key.
+create table PTABt3 (
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null not droppable,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null not droppable,
+  sInt32_uniq  integer      signed    not null not droppable,
+  int64_100    largeint,
+  int64_uniq   largeint               not null not droppable,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null not droppable,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null not droppable,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null not droppable, 
+
+primary key (varchar_uniq) not droppable)
+store by primary key
+location $data2
+partition ( 
+   add first key ('IAAAAAAA') location $data3,
+   add first key ('PAAAAAAA') location $data1)
+attribute buffered, audit;
+
+
+
+?section cpara
+control query default PARALLEL_EXECUTION 'ON';
+control query default DEF_NUM_LOCAL_SMP_CPUS '4';
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '1';
+control query default NESTED_JOIN_CONTROL 'OFF';
+
+----------------
+-- HASH JOINS
+----------------
+
+?section qhj1
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways, but part keys do not match
+-- Will have to use logical partitioning.
+-- Numeric key columns.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T03')),exchange(scan('T04')),plan1));
+prepare P from
+select  T03.sInt32_uniq,T04.uInt32_uniq, T04.sInt32_100,
+        substring(T04.char_50p from 1 for 8)  
+  from  PTAB03 T03, PTAB04 T04
+  where     T03.sInt32_uniq = T04.uInt32_uniq
+        and T03.sInt32_100 < 5;
+
+-- explain the node structure (leave details off)
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+
+?section qhj2
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways, and part keys match exactly,
+-- but are of different types.
+-- Char and Varchar key columns.
+----------------------------------------------------------------
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T10')),
+            exchange(scan('Tt2')),
+            plan1
+                          )
+         );
+prepare P from
+select T10.char_uniq,Tt2.varchar_uniq, Tt2.sInt32_100,
+       substring(T10.char_50p from 1 for 8)  
+  from PTAB10 T10, PTABt2 Tt2
+  where    T10.char_uniq = Tt2.varchar_uniq
+       and T10.sInt32_100 < 5;
+
+-- explain the node structure (leave details off)
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+
+?section qhj3
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways, but part keys do not match
+-- Will have to use logical partitioning.
+-- Char and Varchar key columns.
+----------------------------------------------------------------
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T10')),
+            exchange(scan('Tt3')),
+            plan1
+                          )
+         );
+prepare P from
+select T10.char_uniq,Tt3.varchar_uniq, Tt3.sInt32_100,
+       substring(T10.char_50p from 1 for 8)  
+  from PTAB10 T10, PTABt3 Tt3
+  where    T10.char_uniq = Tt3.varchar_uniq
+       and T10.sInt32_100 < 5;
+
+-- explain the node structure (leave details off)
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+
+?section qhj4
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways, and part keys match exactly,
+-- but are of different types.
+-- Numeric key columns.
+-- First key of first partition is a negative value
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('Tt0')),exchange(scan('Tt1')),plan1));
+prepare P from
+select  Tt0.sInt32_uniq,Tt1.int64_uniq, Tt0.sInt32_100,
+        substring(Tt0.char_50p from 1 for 8)  
+  from  PTABt0 Tt0, PTABt1  Tt1
+  where     Tt0.sInt32_uniq = Tt1.int64_uniq
+        and Tt0.sInt32_100 < 5;
+
+-- explain the node structure (leave details off)
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+
+?section qhj5
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways, but part keys do not match
+-- Will have to use logical partitioning.
+-- Numeric key columns.
+-- First key of first partition of one table is a negative value
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('Tt0')),exchange(scan('T01')),plan1));
+prepare P from
+select  Tt0.sInt32_uniq,T01.int64_uniq, Tt0.sInt32_100,
+        substring(Tt0.char_50p from 1 for 8)  
+  from  PTABt0 Tt0, PTAB01  T01
+  where     Tt0.sInt32_uniq = T01.uInt32_uniq
+        and Tt0.sInt32_100 < 5;
+
+-- explain the node structure (leave details off)
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+
+
+

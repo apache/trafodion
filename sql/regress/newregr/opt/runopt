@@ -1,0 +1,55 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#! /bin/sh
+
+./runregr $*
+exit
+
+===============================================================================
+Steps to run optimizer regression test on NT:
+  1.  start services and TMF; initialize SQL if you haven't yet
+  2.  cd w:/regress/opt
+  3.  ./runopt
+
+Steps to run optimizer regression test on NSK:
+  1.  To run optimizer regression on NSK, you need:
+      a. SMF must be up & running, and configured to allow 100 or so partitions.
+	 ***As of 02/16/00, none of the standalones has such an SMF --
+	 ***talk to Marek Fridrich and/or Doris Thompson.
+      b. On NSK in OSS, create directory "opt" under "regress".
+           e.g., cd /usr/yourname/regress; mkdir opt tools;
+  2.  Ftp all files from  NT w:/regress/opt  ->  NSK /usr/yourname/regress/opt
+  3.  Logon to your NSK standalone machine
+  4.  Goto your catalog volume and subvolume
+        e.g., volume $data04.yourcat
+  5.  Goto OSS (osh)
+  6.  You have probably already done all this prior to running other regression
+      suites...but in case you haven't:
+	a. Goto your regress/tools directory
+	     e.g., cd /usr/yourname/regress/tools
+	b. Edit setupnskenv, changing the "export rundir" line to, e.g.,
+	     export rundir=/usr/yourname/regress
+	c. Optionally, source your new setupnskenv:
+	     . setupnskenv	# i.e., "dot space setupnskenv"
+	   This is optional because
+	     opt/runopt     runs  tools/runregr and
+	     tools/runregr  runs  tools/setupnskenv
+  7.  Goto your regress/opt directory
+        e.g., cd /usr/yourname/regress/opt
+  8.  You're ready:
+        ./runopt

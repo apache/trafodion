@@ -1,0 +1,110 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------
+-- TESTMV863:
+-- DE tests
+-------------------------------------------------------------
+set schema catmvs.mvschm;
+obey TESTMV863(clean_up);
+
+log LOGMV863 clear;
+obey TESTMV863(set_up);
+
+-- Run Tests
+  obey TESTMV863(Test1);
+  obey TESTMV863(Test2);
+
+-- Clean and Exit
+obey TESTMV863(clean_up);
+exit;
+
+------------------------------------------------------------
+?section Test1 - test insert/update (same row)
+------------------------------------------------------------
+refresh T_863_MV1;
+
+insert into T_863_T1 values (1,1);
+
+update T_863_T1 set b = 2 where a = 1;
+
+refresh T_863_MV1 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV863;
+log LOGMV863;
+
+select a from T_863_T1;
+select * from T_863_MV1;
+
+------------------------------------------------------------
+?section Test2 -  test delete/update (same/diff rows)
+--
+------------------------------------------------------------
+insert into T_863_T1 values (2,2),(3,3);
+refresh T_863_MV1;
+
+update T_863_T1 set b = 3 where a = 2;
+delete from T_863_T1 where a = 2;
+
+refresh T_863_MV1 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV863;
+log LOGMV863;
+
+select a from T_863_T1;
+select * from T_863_MV1;
+
+insert into T_863_T1 values (4,4);
+refresh T_863_MV1;
+
+select a from T_863_T1;
+select * from T_863_MV1;
+
+update T_863_T1 set b = 4 where a = 3;
+delete from T_863_T1 where a = 4;
+
+refresh T_863_MV1 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV863;
+log LOGMV863;
+
+select a from T_863_T1;
+select * from T_863_MV1;
+
+------------------------------------------------------------
+?section set_up
+------------------------------------------------------------
+set parserflags 3;
+create table T_863_T1 
+(a int not null not droppable, b int,primary key(a) not droppable);
+
+
+create mv T_863_MV1
+        refresh on request
+        initialized on refresh
+        as
+        select a from T_863_T1; 
+
+------------------------------------------------------------
+?section clean_up
+------------------------------------------------------------
+drop mv T_863_MV1;
+drop table T_863_T1;
+

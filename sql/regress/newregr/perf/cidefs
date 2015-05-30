@@ -1,0 +1,37 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+control query default SKIP_METADATA_VIEWS 'ON';
+
+?ifMX
+set pattern $$table1$$ tpcd.sch.lineitem;
+set pattern $$table2$$ tpcd.sch.orders;
+set pattern $$base$$ tpcd.sch.base;
+set pattern $$sec$$ second;
+?ifMX
+
+?ifNSKRel1
+set pattern $$disk1$$ $data02;
+set pattern $$disk2$$ $data08;
+set pattern $$table1$$ \maya.$data02.tpcd.lineitem;
+set pattern $$table2$$ \maya.$data08.tpcd.orders;
+set pattern $$mastertab1$$ \maya.$data03.tpcdtab.lineitem;
+set pattern $$mastertab2$$ \maya.$data03.tpcdtab.orders;
+set pattern $$base$$ \maya.$data05.mycat.base;
+set pattern $$sec$$ fraction;
+?ifNSKRel1
+

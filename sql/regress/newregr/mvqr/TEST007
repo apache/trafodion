@@ -1,0 +1,726 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------------------------------
+-- TEST007
+-- Unit Test to test Join elimination and cascaded Group By with MV mathcing
+-- Owner: MV Query Rewrite team
+------------------------------------------------------------------------------
+
+obey TEST007(clean_up);
+obey TEST007(clean_up_files);
+log LOG007 clear;
+obey TEST007(set_up);
+obey TEST007(create_tables);
+obey TEST007(create_mvs);
+obey TEST007(MATCH1);
+obey TEST007(MATCH2);
+obey TEST007(MATCH3);
+obey TEST007(MATCH4);
+obey TEST007(MATCH5);
+obey TEST007(MATCH6);
+obey TEST007(MATCH9);
+obey TEST007(MATCH10);
+obey TEST007(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema mvqrtest007 cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm mvqrtest007*;
+sh rm ROLLUP*;
+sh rm rollup*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default query_cache '0';
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default MVQR_PUBLISH_TO 'PRIVATE';
+control query default MULTI_JOIN_THRESHOLD '2';
+cqd HIDE_INDEXES 'ALL';
+--control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION 'OFF';
+--control query default HIST_ON_DEMAND_STATS_SIZE '0';
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.SUMBYDAY, :CAT.MVQRTEST007.SUMBYMONTH, :CAT.MVQRTEST007.SUMBYYEAR';
+
+prepare checkPlan from
+select operator, tname
+from table(explain(NULL, 'QUERYSTMT'))
+where operator like '%_SCAN%'
+order by tname;
+
+obey GetMvDesc;
+
+create schema mvqrtest007;
+set schema mvqrtest007;
+set pattern $$MVSchemaName$$ MVQRTEST007;
+
+?section create_tables
+
+create table fact (
+  fday   int,
+  fmonth int,
+  fyear  int,
+  fprice numeric (8,2),
+  dimkey int) no partition;
+
+
+create table dim1 (dkey int not null not droppable primary key,
+                   dimdata int, 
+                   fk1 int) no partition;
+create table dim2 (dkey int not null not droppable primary key,
+                   dimdata int, 
+                   fk1 int) no partition;
+create table dim3 (dkey int not null not droppable primary key,
+                   dimdata int, 
+                   fk1 int) no partition;
+
+--insert into fact(fday,fmonth,fyear,fprice,dimkey) values
+--  ( 6, 2,2011,79,16),
+--  (26,11,2011,45,12),
+--  (11, 4,2012,54,11),
+--  (26,11,2012,25, 8),
+--  (11, 1,2011,93, 6),
+--  (19,10,2011,62,15),
+--  (31, 9,2010,48, 6),
+--  (24, 1,2010,61,12),
+--  (11, 4,2010,84,17),
+--  (19,10,2011,27,10),
+--  (12,12,2011,80, 5),
+--  (17, 2,2012,50,17),
+--  (17, 7,2011,90, 8),
+--  (18, 3,2011,37, 2),
+--  ( 6, 8,2012,66, 3),
+--  (19, 9,2012,96,15),
+--  (30,12,2011,70,12),
+--  ( 3,10,2010,96, 7),
+--  ( 3, 5,2012,41, 8),
+--  (14, 4,2011,25,12),
+--  ( 4, 4,2012,27,16),
+--  (24, 8,2010,14, 2),
+--  (20, 2,2012,89, 2),
+--  (17,11,2010,81,13),
+--  (17, 5,2010,67, 2),
+--  (24, 5,2011,74,18),
+--  ( 1,12,2010,96,18),
+--  (18, 5,2011,77, 4),
+--  ( 1, 9,2010,69, 1),
+--  ( 9, 4,2012,26,12),
+--  ( 6, 2,2012,58,10),
+--  ( 2,10,2012,67, 5),
+--  (26,10,2011,68,18),
+--  (20, 4,2012,49, 4),
+--  (20,11,2012,56, 4),
+--  (19, 4,2010,92,13),
+--  (24, 2,2010,51,11),
+--  (14,10,2010,10, 4),
+--  (12, 2,2011,28,18),
+--  (22, 6,2010,79,17),
+--  (20, 9,2011,30,16),
+--  (17, 8,2010,33,15),
+--  ( 9, 9,2012,97, 2),
+--  (29, 4,2010,55,11),
+--  ( 9, 5,2012,22,12),
+--  (28, 2,2010,48,10),
+--  (19, 5,2010,27, 2),
+--  (25, 4,2012,43,10),
+--  (17, 5,2012,13,15),
+--  ( 2, 3,2010,83,18);
+--
+--insert into dim1(dkey, dimdata, fk1) values
+--  (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5), (6, 6, 6), (7, 7, 7), (8, 8, 8), (9, 9, 9), (10, 10, 10),
+--  (11, 11, 11), (12, 12, 12), (13, 13, 13), (14, 14, 14), (15, 15, 15), (16, 16, 16), (17, 17, 17), (18, 18, 18), (19, 19, 19);
+--
+--insert into dim2(dkey, dimdata, fk1) 
+--  select dkey, dimdata, fk1 from dim1;
+--
+--insert into dim3(dkey, dimdata, fk1)
+--  select dkey, dimdata, fk1 from dim1;
+
+alter table dim2 add constraint dim2_fk foreign key (fk1)
+                  references dim3(dkey);
+
+?section create_mvs
+
+create mv sumbyDay
+        refresh on request
+        initialized on create
+        as  select sum(fprice) day_price, fday, fmonth, fyear
+            from fact
+            group by fday, fmonth, fyear;
+
+
+set pattern $$MVName$$ SUMBYDAY;
+obey TEST007(dump_MV);
+
+
+create mv sumbyMonth
+        refresh on request
+        initialized on create
+        as  select sum(day_price) month_price, fmonth, fyear
+            from sumbyDay
+            group by fmonth, fyear;
+
+set pattern $$MVName$$ SUMBYMONTH;
+obey TEST007(dump_MV);
+
+
+create mv sumbyYear
+        refresh on request
+        initialized on create
+        as  select sum(month_price) year_price, fyear
+            from sumbyMonth
+            group by fyear;
+
+set pattern $$MVName$$ SUMBYYEAR;
+obey TEST007(dump_MV);
+
+
+create mv minbyDay
+        refresh on request
+        initialized on create
+        as  select min(fprice) min_day_price, fday, fmonth, fyear
+            from fact
+            group by fday, fmonth, fyear;
+
+
+set pattern $$MVName$$ MINBYDAY;
+obey TEST007(dump_MV);
+
+
+create mv minbyMonth
+        refresh on request
+        initialized on create
+        as  select min(min_day_price) min_month_price, fmonth, fyear
+            from minbyDay
+            group by fmonth, fyear;
+
+set pattern $$MVName$$ MINBYMONTH;
+obey TEST007(dump_MV);
+
+
+create mv minbyYear
+        refresh on request
+        initialized on create
+        as  select min(min_month_price) min_year_price, fyear
+            from minbyMonth
+            group by fyear;
+
+set pattern $$MVName$$ MINBYYEAR;
+obey TEST007(dump_MV);
+
+
+create mv countbyDay
+        refresh on request
+        initialized on create
+        as  select count(*) count_by_day, fday, fmonth, fyear
+            from fact
+            group by fday, fmonth, fyear;
+
+
+set pattern $$MVName$$ COUNTBYDAY;
+obey TEST007(dump_MV);
+
+
+create mv countbyMonth
+        refresh on request
+        initialized on create
+        as  select sum(count_by_day) count_by_month, fmonth, fyear
+            from countbyDay
+            group by fmonth, fyear;
+
+set pattern $$MVName$$ COUNTBYMONTH;
+obey TEST007(dump_MV);
+
+create mv countbyYear
+        refresh on request
+        initialized on create
+        as  select sum(count_by_month) count_by_year, fyear
+            from countbyMonth
+            group by fyear;
+
+set pattern $$MVName$$ COUNTBYYEAR;
+obey TEST007(dump_MV);
+
+
+create mv  MV1
+    refresh on request 
+    initialize on create 
+    enable query rewrite
+    as select fprice, dimkey, dim1.fk1, dim1.dkey
+       from fact, dim1
+       where dimkey=dim1.dkey;
+
+set pattern $$MVName$$ MV1;
+obey TEST007(dump_MV);
+
+
+create mv  MV2
+    refresh on request 
+    initialize on create 
+    enable query rewrite
+    as select dim2.dkey
+       from dim1, dim2
+       where dim1.fk1 = dim2.dkey;
+
+set pattern $$MVName$$ MV2;
+obey TEST007(dump_MV);
+
+
+?section query1
+prepare QueryStmt from
+  select sum(fprice), fyear
+  from fact 
+  group by fyear
+  order by fyear;
+
+?section query2
+prepare QueryStmt from
+  select sum(fprice), fyear
+  from fact
+  group by fmonth, fyear
+  order by fyear;
+
+?section query3
+prepare QueryStmt from
+  select min(fprice), fyear
+  from fact
+  group by fyear
+  order by fyear;
+
+?section query4
+prepare QueryStmt from
+  select min(fprice), fyear
+  from fact
+  group by fmonth, fyear
+  order by fyear;
+
+?section query5
+prepare QueryStmt from
+  select count(*), fyear
+  from fact
+  group by fyear
+  order by fyear;
+
+?section query6
+prepare QueryStmt from
+  select count(*), fyear
+  from fact
+  group by fmonth, fyear
+  order by fyear;
+
+?section query9
+prepare QueryStmt from
+  select fprice, dimkey
+  from fact, dim1, dim2, dim3
+  where dimkey=dim1.dkey
+    and dim1.fk1=dim2.dkey
+    and dim2.fk1=dim3.dkey
+  order by dimkey;
+
+?section query10
+prepare QueryStmt from
+  select dim2.dkey
+  from dim1, dim2, dim3
+  where dim1.fk1=dim2.dkey
+    and dim2.fk1=dim3.dkey
+  order by dim2.dkey;
+
+?section MATCH1
+--===========================================
+--== Query 1
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query1);
+
+set pattern $$QueryName$$ ROLLUP1;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup1.in;
+sh echo PUBLISH SUMBYDAY.xml >> rollup1.in;
+sh echo PUBLISH SUMBYMONTH.xml  >> rollup1.in;
+sh echo PUBLISH SUMBYYEAR.xml  >> rollup1.in;
+sh echo MATCH ROLLUP1.xml >> rollup1.in;
+
+sh sh -c "$QMS rollup1.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.SUMBYDAY, :CAT.MVQRTEST007.SUMBYMONTH';
+
+obey TEST007(query1);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.SUMBYDAY, :CAT.MVQRTEST007.SUMBYMONTH, :CAT.MVQRTEST007.SUMBYYEAR';
+
+obey TEST007(query1);
+
+execute checkPlan;
+
+--===========================================
+--== Query 2
+--===========================================
+?section MATCH2
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query2);
+
+set pattern $$QueryName$$ ROLLUP2;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup2.in;
+sh echo PUBLISH SUMBYDAY.xml >> rollup2.in;
+sh echo PUBLISH SUMBYMONTH.xml  >> rollup2.in;
+sh echo PUBLISH SUMBYYEAR.xml  >> rollup2.in;
+sh echo MATCH ROLLUP2.xml >> rollup2.in;
+
+sh sh -c "$QMS rollup2.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.SUMBYDAY';
+
+obey TEST007(query2);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.SUMBYDAY, :CAT.MVQRTEST007.SUMBYMONTH, :CAT.MVQRTEST007.SUMBYYEAR';
+
+obey TEST007(query2);
+
+execute checkPlan;
+
+
+?section MATCH3
+--===========================================
+--== Query 3
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query3);
+
+set pattern $$QueryName$$ ROLLUP3;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup3.in;
+sh echo PUBLISH MINBYDAY.xml >> rollup3.in;
+sh echo PUBLISH MINBYMONTH.xml >> rollup3.in;
+sh echo PUBLISH MINBYYEAR.xml >> rollup3.in;
+sh echo MATCH ROLLUP3.xml >> rollup3.in;
+
+sh sh -c "$QMS rollup3.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.MINBYDAY, CAT.MVQRTEST007.MINBYMONTH';
+
+obey TEST007(query3);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.MINBYDAY, :CAT.MVQRTEST007.MINBYMONTH, :CAT.MVQRTEST007.MINBYYEAR';
+
+obey TEST007(query3);
+
+execute checkPlan;
+
+
+--===========================================
+--== Query 4
+--===========================================
+?section MATCH4
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query4);
+
+set pattern $$QueryName$$ ROLLUP4;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup4.in;
+sh echo PUBLISH MINBYDAY.xml >> rollup4.in;
+sh echo PUBLISH MINBYMONTH.xml  >> rollup4.in;
+sh echo PUBLISH MINBYYEAR.xml  >> rollup4.in;
+sh echo MATCH ROLLUP4.xml >> rollup4.in;
+
+sh sh -c "$QMS rollup4.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.MINBYDAY';
+
+obey TEST007(query4);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.MINBYDAY, :CAT.MVQRTEST007.MINBYMONTH, :CAT.MVQRTEST007.MINBYYEAR';
+
+obey TEST007(query4);
+
+execute checkPlan;
+
+?section MATCH5
+--===========================================
+--== Query 5
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query5);
+
+set pattern $$QueryName$$ ROLLUP5;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+-- Don't do an INITIALIZE here; it causes unwanted MVs to be considered.
+sh echo PUBLISH COUNTBYDAY.xml >> rollup5.in;
+sh echo PUBLISH COUNTBYMONTH.xml >> rollup5.in;
+sh echo PUBLISH COUNTBYYEAR.xml >> rollup5.in;
+sh echo MATCH ROLLUP5.xml >> rollup5.in;
+
+sh sh -c "$QMS rollup5.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.COUNTBYMONTH';
+
+obey TEST007(query5);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.COUNTBYDAY, :CAT.MVQRTEST007.COUNTBYMONTH, :CAT.MVQRTEST007.COUNTBYYEAR';
+
+obey TEST007(query5);
+
+execute checkPlan;
+
+?section MATCH6
+--===========================================
+--== Query 6
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query6);
+
+set pattern $$QueryName$$ ROLLUP6;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+-- Don't do an INITIALIZE here; it causes unwanted MVs to be considered.
+sh echo PUBLISH COUNTBYDAY.xml >> rollup6.in;
+sh echo PUBLISH COUNTBYMONTH.xml  >> rollup6.in;
+sh echo PUBLISH COUNTBYYEAR.xml  >> rollup6.in;
+sh echo MATCH ROLLUP6.xml >> rollup6.in;
+
+sh sh -c "$QMS rollup6.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.COUNTBYDAY';
+
+obey TEST007(query6);
+
+execute checkPlan;
+
+-- Verify that the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.MVQRTEST007.COUNTBYDAY, :CAT.MVQRTEST007.COUNTBYMONTH, :CAT.MVQRTEST007.COUNTBYYEAR';
+
+obey TEST007(query6);
+
+execute checkPlan;
+
+?section MATCH9
+--===========================================
+--== Query 9
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query9);
+
+set pattern $$QueryName$$ ROLLUP9;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup9.in;
+sh echo PUBLISH MV1.xml  >> rollup9.in;
+sh echo PUBLISH MV2.xml  >> rollup9.in;
+sh echo MATCH ROLLUP9.xml >> rollup9.in;
+
+sh sh -c "$QMS rollup9.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+obey TEST007(query9);
+
+execute checkPlan;
+
+?section MATCH10
+--===========================================
+--== Query 10
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST007(query10);
+
+set pattern $$QueryName$$ ROLLUP10;
+obey TEST007(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE >> rollup10.in;
+sh echo PUBLISH MV1.xml  >> rollup10.in;
+sh echo PUBLISH MV2.xml  >> rollup10.in;
+sh echo MATCH ROLLUP10.xml >> rollup10.in;
+
+sh sh -c "$QMS rollup10.in mvqrtest007.out";
+
+log;
+sh cat mvqrtest007.out >> LOG007;
+log LOG007;
+
+-- Verify that the MV is picked by the optimizer.
+obey TEST007(query10);
+
+execute checkPlan;
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG007;
+log LOG007;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG007;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST007($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log T007_C1.txt clear;
+execute QueryStmt;
+log;
+log LOG007;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST007($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log T007_C2.txt clear;
+execute QueryStmt;
+log;
+log LOG007;
+
+-- Diff query results
+log;
+sh diff T007_C1.txt T007_C2.txt >> LOG007;
+log LOG007;
+-- Diff is done.

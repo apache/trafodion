@@ -1,0 +1,375 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+?section ALL_SECTIONS
+	log MVCREATEDB.LOG clear;
+	obey MVCREATEDB(CREATE_CATALOG);
+	obey MVCREATEDB(SCHEMA_PERSNL);
+	obey MVCREATEDB(SCHEMA_SALES);
+	obey MVCREATEDB(SCHEMA_INVENT);
+	log;
+?section OBJECTS
+	log MVCREATEDB.LOG clear;
+	obey MVCREATEDB(SCHEMA_PERSNL);
+	obey MVCREATEDB(SCHEMA_SALES);
+	obey MVCREATEDB(SCHEMA_INVENT);
+	log;
+?section CREATE_CATALOG
+-- CREATE CATALOG and SCHEMAs
+
+CREATE CATALOG MVTestEnv;
+CREATE CATALOG MVTestEnv2;
+CREATE SCHEMA MVTestEnv.PERSNL;
+CREATE SCHEMA MVTestEnv.SALES;
+CREATE SCHEMA MVTestEnv2.INVENT;
+
+-- CREATE TABLES/VIEWS in SCHEMA PERSNL
+
+?section SCHEMA_PERSNL
+SET SCHEMA  MVTestEnv.PERSNL;
+
+CREATE TABLE job      (
+                         jobcode        NUMERIC (4) UNSIGNED
+                                        NO DEFAULT
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'Job/Code'
+                        ,jobdesc        VARCHAR (18)
+                                        DEFAULT ' '
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'Job Description'
+                        ,PRIMARY KEY    (jobcode) NOT DROPPABLE
+                      )
+;
+ALTER TABLE job attribute all mvs allowed;
+
+CREATE TABLE employee (
+                         empnum         NUMERIC (5) UNSIGNED
+                                        NO DEFAULT
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'Employee/Number'
+                        ,first_name     CHARACTER (15)
+                                        DEFAULT ' '
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'First Name'
+                        ,last_name      CHARACTER (20)
+                                        DEFAULT ' '
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'Last Name'
+                        ,deptnum        NUMERIC (5)
+                                        UNSIGNED
+                                        NO DEFAULT
+                                        NOT NULL NOT DROPPABLE
+                                        HEADING 'Dept/Num'
+                        ,jobcode        NUMERIC (4) UNSIGNED
+                                        DEFAULT NULL
+                                        HEADING 'Job/Code'
+                        ,salary         NUMERIC (8, 2) UNSIGNED
+                                        DEFAULT NULL
+                                        HEADING 'Salary'
+                        ,PRIMARY KEY    (empnum) NOT DROPPABLE
+                     );
+ALTER TABLE employee attribute all mvs allowed;
+
+ALTER TABLE employee
+  ADD CONSTRAINT empnum_constrnt
+    CHECK (empnum BETWEEN 0001 AND 99999);
+
+
+CREATE INDEX xempname
+  ON employee (
+                last_name
+               ,first_name
+              );
+
+CREATE UNIQUE INDEX XEMP
+	ON PERSNL.EMPLOYEE (LAST_NAME, EMPNUM)
+	LOCATION $$partition1$$
+	RANGE PARTITION (ADD FIRST KEY 'J' LOCATION $$partition1$$,
+		   ADD FIRST KEY 'S' LOCATION $$partition2$$);
+
+CREATE TABLE dept     (
+                         deptnum         NUMERIC (5) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Dept/Num'
+                        ,deptname        CHARACTER (12)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Dept/Name'
+                        ,manager         NUMERIC (5) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Mgr'
+					 CONSTRAINT manager_fk REFERENCES persnl.employee
+                        ,rptdept         NUMERIC (4) UNSIGNED
+                                         DEFAULT 0
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Rpt/Dept'
+                        ,location        VARCHAR (18)
+                                         DEFAULT ' '
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Location'
+                        ,PRIMARY KEY     (deptnum) NOT DROPPABLE
+                      );
+ALTER TABLE dept attribute all mvs allowed;
+
+CREATE INDEX xdeptmgr
+  ON dept     (
+                manager
+              );
+
+CREATE INDEX xdeptrpt
+  ON dept     (
+                rptdept
+              );
+
+
+create materialized view ManagerList
+	Refresh on request
+	initialized on create
+	as
+	select deptnum,sum(salary) sum_sal,avg(salary) avg_salary  
+        from Employee
+	group by deptnum;
+alter mv ManagerList attribute all mvs allowed;
+
+create materialized view TopManagers
+	Recompute
+	initialized on create
+	as
+	select * from ManagerList
+	where  sum_sal > 500000.00;
+alter mv TopManagers attribute all mvs allowed;
+
+-- CREATE TABLES/VIEWS in SCHEMA SALES
+
+?section SCHEMA_SALES
+SET SCHEMA MVTestEnv.SALES;
+
+CREATE TABLE customer (
+                         custnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Cust/Num'
+                        ,custname        CHARACTER (18)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Customer Name'
+                        ,street          CHARACTER (22)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Street'
+                        ,PRIMARY KEY     (custnum) NOT DROPPABLE
+                      )
+LOCATION $$partition2$$;
+ALTER TABLE customer attribute all mvs allowed;
+
+CREATE TABLE orders   (
+                         ordernum        NUMERIC (6) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Order/Num'
+                        ,order_date      DATE
+                                         DEFAULT DATE '1997-07-01'
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Order/Date'
+                        ,deliv_date      DATE
+                                         DEFAULT DATE '1997-08-01'
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Deliv/Date'
+                        ,salesrep        NUMERIC (5) UNSIGNED
+                                         DEFAULT 0
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Sales/Rep'
+					 CONSTRAINT salesrep_fk REFERENCES persnl.employee
+                        ,custnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Cust/Num'
+ 					 CONSTRAINT custnum_fk REFERENCES SALES.customer
+                        ,PRIMARY KEY     (ordernum) NOT DROPPABLE
+                      )
+LOCATION $$partition2$$;
+ALTER TABLE orders attribute all mvs allowed;
+
+ALTER TABLE ORDERS
+  ADD CONSTRAINT date_constrnt
+    CHECK (deliv_date >= order_date);
+
+CREATE INDEX xordrep
+  ON orders   (
+                salesrep
+              );
+
+CREATE INDEX xordcus
+  ON orders   (
+                custnum
+              );
+
+CREATE VIEW ordrep
+     AS SELECT empnum
+              ,last_name
+              ,ordernum
+              ,o.custnum
+     FROM
+        MVTestEnv.persnl.employee e
+       ,orders o
+       ,customer c
+     WHERE
+         e.empnum = o.salesrep
+       AND
+         o.custnum = C.custnum;
+
+CREATE INDEX xcustnam
+  ON customer (
+                custname
+              );
+
+
+CREATE TABLE odetail  (
+                         ordernum        NUMERIC (6) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Order/Num'
+                        ,partnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Part/Num'
+                        ,unit_price      NUMERIC (8, 2)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Unit/Price'
+                        ,qty_ordered     NUMERIC (5) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Qty/Ord'
+                        ,PRIMARY KEY     (ordernum,partnum) NOT DROPPABLE
+			)
+			STORE BY PRIMARY KEY
+			LOCATION $$partition1$$
+			RANGE PARTITION (ADD FIRST KEY (03000) LOCATION $$partition2$$);
+ALTER TABLE odetail attribute all mvs allowed;
+
+create mv SalesMaxMin
+refresh on request
+initialize on refresh
+as
+select partnum,Max(unit_price) as max_price,
+                    Min(Unit_price) as min_price,
+	     	    Max(qty_ordered) as max_qty,
+                    Min(qty_ordered) as min_qty
+from odetail  
+ where OrderNum > 200000
+group by partnum;
+ALTER MV SalesMaxMin attribute all mvs allowed;
+
+CREATE TABLE parts    (
+                         partnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Part/Num'
+                        ,partdesc        CHARACTER (18)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Part Description'
+                        ,price           NUMERIC (8, 2)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Price'
+                        ,qty_available   NUMERIC (5)
+                                         DEFAULT 0  
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Qty/Avail'
+                        ,PRIMARY KEY     (partnum) NOT DROPPABLE
+                      )
+		LOCATION $$partition2$$;
+ALTER TABLE parts attribute all mvs allowed;
+
+CREATE INDEX xpartdes
+  ON parts    (
+                partdesc
+              );
+
+CREATE VIEW ODetailParts
+     AS SELECT ODetail.ordernum,unit_price,qty_ordered,Parts.*
+        FROM Parts,
+	     ODetail
+        WHERE Parts.partnum = ODetail.partnum;
+
+-------------------------------------------------------------------------------
+-- MV on top of a view is currently unsupported! Uncomment this later.
+-------------------------------------------------------------------------------
+--create materialized view OrdersParts
+--	Refresh on statement
+--	initialized on refresh
+--        LOCATION $$partition1$$
+--	as
+--        SELECT order_date,custnum,ODetailParts.*
+--        FROM ODetailParts,
+--	     Orders
+--        WHERE orders.ordernum = ODetailParts.ordernum;
+--alter mv OrdersParts attribute all mvs allowed;
+
+create materialized view ManagerSalesOrder
+     Refresh on request
+     initialized on create
+     LOCATION $$partition1$$
+	as
+     select e.empnum, salary,e.last_name as salesman_name,
+            o.ordernum,o.order_date,od.partnum,od.unit_price
+     from MVTestEnv.PERSNL.employee e,MVTestEnv.Sales.orders o,MVTestEnv.Sales.odetail od
+     where e.empnum = o.salesrep and
+           o.ordernum = od.ordernum and
+           e.salary < 38000.00 ;
+alter mv ManagerSalesOrder attribute all mvs allowed;
+
+
+?section SCHEMA_INVENT
+-- CREATE TABLES/VIEWS in SCHEMA INVENT
+
+SET SCHEMA MVTestEnv2.INVENT;
+
+CREATE TABLE partsupp (
+                         partnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Part/Num'
+	
+                        ,suppnum         NUMERIC (4) UNSIGNED
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Supp/Num'
+                        ,partcost        NUMERIC (8, 2)
+                                         NO DEFAULT
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Part/Cost'
+                        ,qty_received    NUMERIC (5) UNSIGNED
+                                         DEFAULT 0
+                                         NOT NULL NOT DROPPABLE
+                                         HEADING 'Qty/Rec'
+                        ,PRIMARY KEY     (partnum,suppnum) NOT DROPPABLE
+                      )
+			LOCATION $$partition2$$;;
+ALTER TABLE partsupp attribute all mvs allowed;
+
+CREATE INDEX XSUPORD
+  ON partsupp (
+                suppnum
+              );
+
+
+

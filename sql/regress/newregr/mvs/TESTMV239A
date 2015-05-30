@@ -1,0 +1,549 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- Testmv239a
+--- 2.13.1
+--- PURPOSE: duplicate elimination tests with range inserts        
+--
+--- The same as TestMV239, but enforces full DE
+------------------------------------------------------
+control query default pos 'OFF';
+obey TESTMV239A(CLEAN_UP);
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '1');
+log LOGMV239A clear;
+
+obey TESTMV239A(SET_UP);
+-- Run Tests
+	set schema catmvs.mvschm;
+	obey TESTMV239A(TEST1);
+	obey TESTMV239A(TEST2);
+	obey TESTMV239A(TEST3);
+-- Clean and exit
+set schema catmvs.mvschm;
+obey TESTMV239A(CLEAN_UP);
+log;
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+exit;
+
+------------------------------------------
+?section SET_UP
+------------------------------------------
+--Activate the VSBB inserts
+control query default insert_vsbb 'USER';
+control query default vsbb_test_mode 'ON';
+set PARSERFLAGS 3;
+
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+obey CREATERANGE(CREAT);
+-- Create the base tables
+obey DUPENV(CREATE_SIMPLE);
+obey DUPENV(CREATE_DUP_MV1);
+
+  Delete from Dup_A
+   where prim >= 30;
+
+  Delete from Dup_B
+   where prim >= 30;
+
+insert into Dup_A values (30,'S');
+insert into Dup_B values (30,'S1','S');
+  
+refresh MVGroup Dup_MVG1 with MVLOG cleanup;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @0@ @202@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @0@ @202@ ;
+
+?section TEST1
+
+log;
+prepare select_iud_log_a from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, ch
+ from table(iud_log_table dup_a)
+ where
+ prim in (30, 50, 100, 220, 230) or ("@OPERATION_TYPE" > 3)
+ order by prim desc,"@TS";
+
+prepare select_range_log_a from
+ select "@EPOCH"
+ 		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@ER_PRIM"
+ from table(range_log_table dup_a)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM" desc;
+
+prepare select_iud_log_b from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, prim2, ch
+ from table(iud_log_table dup_b)
+ where 
+ prim in (30, 100, 220, 230) or ("@OPERATION_TYPE" > 3)
+ order by prim, prim2 desc ,"@TS";
+
+prepare select_range_log_b from
+ select "@EPOCH"
+  		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@BR_PRIM2"
+        , "@ER_PRIM"
+        , "@ER_PRIM2"
+ from table(range_log_table dup_b)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM", "@BR_PRIM2" desc;
+
+ log LOGMV239A;
+
+  Insert into Dup_A
+    select 250 - 2*RunningCount(*) as a,'R1'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Insert into Dup_B
+    select 2*RunningCount(*) + 50 as a,'9','R1'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+  
+  Delete from Dup_A
+   where prim between 10 and 230 ;
+
+  Delete from Dup_B
+   where prim between 10 and 230 ;
+  
+  Insert into Dup_A
+    select 220 - 2*RunningCount(*) as a,'R2'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Insert into Dup_B
+    select 2*RunningCount(*) + 20 as a,'9','R2'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Delete from Dup_A
+   where prim = 30;
+
+  Delete from Dup_B
+   where prim = 30 ;
+
+-- IUD LOG 
+execute select_iud_log_a;
+execute select_iud_log_b;
+
+Refresh MVGroup Dup_MVG1 without  MVLOG cleanup debug 55; -- epoch 202
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+log LOGMV239A;
+
+-- IUD LOG 
+
+execute select_iud_log_a;    
+execute select_iud_log_b;
+-- RANGE LOG
+execute select_range_log_a;
+execute select_range_log_b;
+
+Refresh MVGroup Dup_MVG1 do only MVLOG cleanup;
+
+-- Correctness check
+
+obey DUPENV(CHECK_DUP_MV3);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV2);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV1);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+?section TEST2
+  
+-- Test scenario - "bridge"
+
+--  ---------      ---------- Epoch 203
+--        --------------      Epoch 205
+
+log;
+prepare select_iud_log_a from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, ch
+ from table(iud_log_table dup_a)
+ where "@OPERATION_TYPE" > 3
+ order by prim desc,"@TS";
+
+prepare select_range_log_a from
+ select "@EPOCH"
+ 		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@ER_PRIM"
+ from table(range_log_table dup_a)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM" desc;
+
+prepare select_iud_log_b from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, prim2, ch
+ from table(iud_log_table dup_b)
+ where @OPERATION_TYPE" > 3
+ order by prim, prim2 desc ,"@TS";
+
+prepare select_range_log_b from
+ select "@EPOCH"
+  		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@BR_PRIM2"
+        , "@ER_PRIM"
+        , "@ER_PRIM2"
+ from table(range_log_table dup_b)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM", "@BR_PRIM2" desc;
+
+ log LOGMV239A;
+
+  Insert into Dup_A
+    select 10000 - 2*RunningCount(*) as a,'R3'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Insert into Dup_B
+    select 2*RunningCount(*) + 9800 as a,'9','R3'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Insert into Dup_A
+    select 11000 - 2*RunningCount(*) as a,'R4'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+  Insert into Dup_B
+    select 2*RunningCount(*) + 10800 as a,'9','R4'
+    from Range_Factor100 p100
+    sequence by p100.ts;
+
+-- IUD LOG 
+execute select_iud_log_a;
+execute select_iud_log_b;
+
+Refresh Dup_MV1 without  MVLOG cleanup debug 55; -- epoch 203
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+log LOGMV239A;
+
+-- IUD LOG 
+execute select_iud_log_a;
+execute select_iud_log_b;
+-- RANGE LOG
+execute select_range_log_a;
+execute select_range_log_b;
+
+  Delete from Dup_A
+   where prim between 9000 and 11000 ;
+
+  Delete from Dup_B
+   where prim between 9000 and 11000 ;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ; -- epoch 204
+
+  Insert into Dup_A
+    select 10900 - 2*RunningCount(*) as a,'R5'
+    from Range_Factor100 p100,Range_Factor5 p5
+    sequence by p5.ts,p100.ts;
+
+  Insert into Dup_B
+    select 2*RunningCount(*) + 9900 as a,'9','R5'
+    from Range_Factor100 p100,Range_Factor5 p5
+    sequence by p5.ts,p100.ts;
+   
+-- IUD LOG 
+execute select_iud_log_a;
+execute select_iud_log_b;
+
+Refresh MVGroup Dup_MVG1 without  MVLOG cleanup debug 55; -- epoch 205
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+log LOGMV239A;
+
+-- IUD LOG 
+execute select_iud_log_a;
+execute select_iud_log_b;
+-- RANGE LOG
+execute select_range_log_a;
+execute select_range_log_b;
+
+Refresh MVGroup Dup_MVG1 do only MVLOG cleanup;
+
+-- Correctness check
+
+obey DUPENV(CHECK_DUP_MV3);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV2);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV1);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+?section TEST3
+
+log;
+prepare select_iud_log_a from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, ch
+ from table(iud_log_table dup_a)
+ where "@OPERATION_TYPE" > 3
+ order by prim desc,"@TS";
+
+prepare select_range_log_a from
+ select "@EPOCH"
+ 		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@ER_PRIM"
+ from table(range_log_table dup_a)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM" desc;
+
+prepare select_iud_log_b from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, prim2, ch
+ from table(iud_log_table dup_b)
+ where @OPERATION_TYPE" > 3
+ order by prim, prim2 desc ,"@TS";
+
+prepare select_range_log_b from
+ select "@EPOCH"
+  		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@BR_PRIM2"
+        , "@ER_PRIM"
+        , "@ER_PRIM2"
+ from table(range_log_table dup_b)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM", "@BR_PRIM" desc;
+
+ log LOGMV239A;
+
+  Insert into Dup_A
+	select 20000 - 10*RunningCount(*) as a,'R6'
+	from Range_Factor100 p100
+	sequence by p100.ts;
+
+  Insert into Dup_B
+	select 10*RunningCount(*) + 19000 as a,'9','R6'
+	from Range_Factor100 p100
+	sequence by p100.ts;
+
+	-- IUD LOG 
+	execute select_iud_log_a;
+	execute select_iud_log_b;
+
+	Refresh MVGroup Dup_MVG3 without MVLOG cleanup debug 55; -- epoch 6
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+	log LOGMV239A;
+
+	-- IUD LOG 
+	execute select_iud_log_a;
+	execute select_iud_log_b;
+	-- RANGE LOG
+	execute select_range_log_a;
+	execute select_range_log_b;
+
+  Delete from Dup_A
+   where prim >19400;
+
+  Delete from Dup_B
+   where prim >19400;
+
+  Insert into Dup_A
+	select 20500 - 10*RunningCount(*) as a,'R7'
+	from Range_Factor100 p100
+	sequence by p100.ts;
+
+  Insert into Dup_B
+	select 10*RunningCount(*) + 19500 as a,'9','R7'
+	from Range_Factor100 p100
+	sequence by p100.ts;
+
+	-- IUD LOG 
+	execute select_iud_log_a;
+	execute select_iud_log_b;
+
+	Refresh MVGroup Dup_MVG3 without MVLOG cleanup debug 55; -- epoch 7
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+	log LOGMV239A;
+
+	-- IUD LOG 
+	execute select_iud_log_a;
+	execute select_iud_log_b;
+	-- RANGE LOG
+	execute select_range_log_a;
+	execute select_range_log_b;
+
+	Refresh Dup_MV1 without MVLOG cleanup debug 55; -- epoch 8
+	log;
+	sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV239A;
+	log LOGMV239A;
+
+	-- IUD LOG 
+	execute select_iud_log_a;
+	execute select_iud_log_b;
+	-- RANGE LOG
+	execute select_range_log_a;
+	execute select_range_log_b;
+
+-- Correctness check
+
+obey DUPENV(CHECK_DUP_MV3);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV2);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+obey DUPENV(CHECK_DUP_MV1);
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV239A ;
+log LOGMV239A;
+
+--------------------------------------------
+?section CLEAN_UP
+--------------------------------------------
+set schema catmvs.mvschm;
+Refresh mvgroup Dup_MVG1 cancel;
+obey DUPENV(DROP_SIMPLE);
+set schema catmvs.mvschm;
+obey CREATERANGE(DROPALL);
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table catmvs.mvschm.Num_Obj;

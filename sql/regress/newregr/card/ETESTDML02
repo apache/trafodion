@@ -1,0 +1,1706 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema TPCH.SCH;
+
+--- SQL operation complete.
+>>
+>>-- don't use CTS as these are fabricated histograms
+>>control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+--- SQL operation complete.
+>>
+>>-- Q1
+>>control query shape implicit enforcers expr(sort_groupby(sort_groupby(
++>scan(path 'TPCH.SCH.ORDIDX3' ))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from orders 
++>where o_orderdate >= date '1997-07-01' 
++>and o_orderdate < date '1997-07-01' + interval '3' month ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      ORDERS           5.79E+006           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from orders 
++>where o_orderdate >= date '1997-07-01' 
++>and o_orderdate < date '1997-07-01' + interval '3' month ;
+Histograms for query showstats for query select  count(*)   from orders  where o_orderdate >= date '1997-07-01'  and o_orderdate < date '1997-07-01' + interval '3' month ;
+**************************************************************
+VEGcolumn:
+
+  80: VEGRef_80((TPCH.SCH.ORDERS.O_ORDERDATE))
+Merge state:
+
+   7: TPCH.SCH.ORDERS.O_ORDERDATE
+Applied preds:
+
+ 105: (VEGRef_80((TPCH.SCH.ORDERS.O_ORDERDATE)) >= 1997-07-01)
+
+ 107: (VEGRef_80((TPCH.SCH.ORDERS.O_ORDERDATE)) < 1997-10-01)
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 93.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010753 
+   Encoded MinValue = ( 63003398400.0000 )
+
+   Encoded MaxValue = ( 63011347200.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      63003398400.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <       (      63011347200.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>control query shape implicit enforcers expr(sort_groupby(sort_groupby(
++>scan(path 'TPCH.SCH.PART'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part 
++>where p_brand = 'Brand#23' 
++>and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') 
++>and p_size between 1 and 5 ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FILE_SCAN                       PART             1.59E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q3
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PAIDX1'),
++>scan(path 'TPCH.SCH.PSIDX1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, partsupp 
++>where p_partkey = ps_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+007           
+2     INDEX_SCAN                      PART             2.00E+007           
+3     INDEX_SCAN                      PARTSUPP         8.00E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q4
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.CUIDX2'),
++>scan(path 'TPCH.SCH.ORDIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, orders 
++>where c_custkey = o_custkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.50E+008           
+2     INDEX_SCAN                      CUSTOMER         1.50E+007           
+3     INDEX_SCAN                      ORDERS           1.50E+008           
+
+--- 3 row(s) selected.
+>>
+>>-- Q5
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.NATION')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier , nation  
++>where s_nationkey = n_nationkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+006           
+2     INDEX_SCAN                      SUPPLIER         1.00E+006           
+3     FILE_SCAN                       NATION           2.50E+001           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from supplier , nation  
++>where s_nationkey = n_nationkey ;
+Histograms for query showstats for query select  count(*)   from supplier , nation   where s_nationkey = n_nationkey ;
+**************************************************************
+VEGcolumn:
+
+  74: VEGRef_74((TPCH.SCH.SUPPLIER.S_NATIONKEY = TPCH.SCH.NATION.N_NATIONKEY))
+
+Merge state:
+   6: TPCH.SCH.SUPPLIER.S_NATIONKEY
+
+  46: TPCH.SCH.NATION.N_NATIONKEY
+Applied preds:
+
+  75: (TPCH.SCH.SUPPLIER.S_NATIONKEY = TPCH.SCH.NATION.N_NATIONKEY)
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.040000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 24.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      24.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q6
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from partsupp, supplier  
++>where s_suppkey = ps_suppkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+007           
+2     INDEX_SCAN                      PARTSUPP         8.00E+007           
+3     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 3 row(s) selected.
+>>
+>>-- Q7
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>scan(path 'TPCH.SCH.ORDIDX3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from lineitem, orders 
++>where l_orderkey = o_orderkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     INDEX_SCAN                      ORDERS           1.50E+008           
+
+--- 3 row(s) selected.
+>>
+>>-- Q8
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.LIIDX3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, lineitem 
++>where l_suppkey = s_suppkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      5.99E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+002           
+3     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 3 row(s) selected.
+>>
+>>-- Q9
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'TPCH.SCH.PAIDX1'),
++>scan(path 'TPCH.SCH.LIIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem 
++>where p_partkey = l_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      5.99E+008           
+2     INDEX_SCAN                      LINEITEM         2.99E+001           
+3     INDEX_SCAN                      PART             2.00E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q10
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>scan(path 'TPCH.SCH.LIIDX4')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from partsupp, lineitem 
++>where ps_suppkey = l_suppkey 
++>and ps_partkey = l_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     INDEX_SCAN                      PARTSUPP         8.00E+007           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from partsupp, lineitem 
++>where ps_suppkey = l_suppkey 
++>and ps_partkey = l_partkey ;
+Histograms for query showstats for query select  count(*)   from partsupp, lineitem  where ps_suppkey = l_suppkey  and ps_partkey = l_partkey ;
+**************************************************************
+VEGcolumn:
+
+ 206: VEGRef_206((TPCH.SCH.LINEITEM.L_RECEIPTDATE))
+Merge state:
+
+  52: TPCH.SCH.LINEITEM.L_RECEIPTDATE
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 2555.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000391 
+   Encoded MinValue = ( 62830080000.0000 )
+
+   Encoded MaxValue = ( 63050745600.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      62830080000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63050745600.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q11
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'TPCH.SCH.CUSTOMER'),
++>scan(path 'TPCH.SCH.ORDIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, orders 
++>where c_custkey = o_custkey 
++>and c_mktsegment = 'BUILDING' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      4.50E+007           
+2     INDEX_SCAN                      ORDERS           1.50E+001           
+3     FILE_SCAN                       CUSTOMER         3.00E+006           
+
+--- 3 row(s) selected.
+>>
+>>-- Q12
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.CUIDX2'),
++>scan(path 'TPCH.SCH.ORDERS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, orders 
++>where c_custkey = o_custkey 
++>and o_orderdate < date '1995-03-15' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.29E+007           
+2     INDEX_SCAN                      CUSTOMER         1.50E+007           
+3     FILE_SCAN                       ORDERS           7.29E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q13
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.CUSTOMER'),
++>scan(path 'TPCH.SCH.ORDERS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  f
++>from customer, orders 
++>where c_custkey = o_custkey 
++>and c_mktsegment = 'BUILDING' 
++>and o_orderdate < date '1995-03-15' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.18E+007           
+2     FILE_SCAN                       CUSTOMER         3.00E+006           
+3     FILE_SCAN                       ORDERS           7.29E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q14
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>scan(path 'TPCH.SCH.ORDIDX3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from lineitem, orders 
++>where l_orderkey = o_orderkey 
++>and o_orderdate >= date '1997-07-01' 
++>and o_orderdate < date '1997-07-01' + interval '3' month ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.31E+007           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     INDEX_SCAN                      ORDERS           5.79E+006           
+
+--- 3 row(s) selected.
+>>
+>>-- Q15
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'TPCH.SCH.PART'),
++>scan(path 'TPCH.SCH.LIIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem 
++>where p_partkey = l_partkey 
++>and p_type = 'ECONOMY ANODIZED STEEL' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      3.99E+006           
+2     INDEX_SCAN                      LINEITEM         2.99E+001           
+3     FILE_SCAN                       PART             1.33E+005           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from part, lineitem 
++>where p_partkey = l_partkey 
++>and p_type = 'ECONOMY ANODIZED STEEL' ;
+Histograms for query showstats for query select  count(*)   from part, lineitem  where p_partkey = l_partkey  and p_type = 'ECONOMY ANODIZED STEEL' ;
+**************************************************************
+VEGcolumn:
+
+ 227: VEGRef_227((TPCH.SCH.LINEITEM.L_RECEIPTDATE))
+Merge state:
+
+  60: TPCH.SCH.LINEITEM.L_RECEIPTDATE
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 2555.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000391 
+   Encoded MinValue = ( 62830080000.0000 )
+
+   Encoded MaxValue = ( 63050745600.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      62830080000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63050745600.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q16
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LINEITEM'),
++>scan(path 'TPCH.SCH.ORDIDX3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from lineitem, orders 
++>where l_orderkey = o_orderkey 
++>and l_returnflag = 'R' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.47E+008           
+2     FILE_SCAN                       LINEITEM         1.47E+008           
+3     INDEX_SCAN                      ORDERS           1.50E+008           
+
+--- 3 row(s) selected.
+>>
+>>-- Q17
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>scan(path 'TPCH.SCH.ORDERS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from lineitem, orders 
++>where o_orderkey = l_orderkey 
++>and o_orderstatus = 'F' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.92E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     FILE_SCAN                       ORDERS           7.30E+007           
+
+--- 3 row(s) selected.
+>>
+>>-- Q18
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PAIDX1'),
++>scan(path 'TPCH.SCH.LINEITEM')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem 
++>where l_partkey = p_partkey 
++>and l_shipdate >= date '1995-09-01' 
++>and l_shipdate < date '1995-09-01' + interval '1' month ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.72E+006           
+2     INDEX_SCAN                      PART             2.00E+007           
+3     FILE_SCAN                       LINEITEM         7.72E+006           
+
+--- 3 row(s) selected.
+>>
+>>-- Q19
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'TPCH.SCH.PART'),
++>scan(path 'TPCH.SCH.LIIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem 
++>where l_partkey = p_partkey 
++>and p_brand = 'Brand#23' 
++>and p_container = 'MED BOX' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      6.00E+005           
+2     INDEX_SCAN                      LINEITEM         2.99E+001           
+3     FILE_SCAN                       PART             2.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q20
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PAIDX1'),
++>scan(path 'TPCH.SCH.LINEITEM')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem 
++>where p_partkey = l_partkey 
++>and l_shipmode in ('AIR', 'AIR REG') 
++>and l_shipinstruct = 'DELIVER IN PERSON' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.14E+007           
+2     INDEX_SCAN                      PART             2.00E+007           
+3     FILE_SCAN                       LINEITEM         2.14E+007           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from part, lineitem 
++>where p_partkey = l_partkey 
++>and l_shipmode in ('AIR', 'AIR REG') 
++>and l_shipinstruct = 'DELIVER IN PERSON' ;
+Histograms for query showstats for query select  count(*)   from part, lineitem  where p_partkey = l_partkey  and l_shipmode in ('AIR', 'AIR REG')  and l_shipinstruct = 'DELIVER IN PERSON' ;
+**************************************************************
+VEGcolumn:
+
+ 238: VEGRef_238((TPCH.SCH.LINEITEM.L_SHIPMODE))
+Merge state:
+
+  62: TPCH.SCH.LINEITEM.L_SHIPMODE
+Applied preds:
+***MINMAX SET BY PRED***
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 4594122640328712.0000 )
+   Encoded MaxValue = (
+4594122640328712.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4594122640328712.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4594122640328712.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q21
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LINEITEM'),
++>scan(path 'TPCH.SCH.ORDERS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select count(*)
++>from lineitem, orders
++>where o_orderkey = l_orderkey
++>and o_clerk = 'Clerk#000000088'
++>and l_returnflag = 'R';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.48E+003           
+2     FILE_SCAN                       LINEITEM         1.47E+008           
+3     FILE_SCAN                       ORDERS           1.50E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q22
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.NATION'),
++>scan(path 'TPCH.SCH.REGION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, nation, region  
++>where s_nationkey = n_nationkey 
++>and n_regionkey = r_regionkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+006           
+2     INDEX_SCAN                      SUPPLIER         1.00E+006           
+3     HYBRID_HASH_JOIN                                 2.50E+001           
+4     FILE_SCAN                       NATION           2.50E+001           
+5     FILE_SCAN                       REGION           5.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>-- Q23
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from partsupp, supplier, nation 
++>where s_suppkey = ps_suppkey 
++>and s_nationkey = n_nationkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+007           
+2     INDEX_SCAN                      PARTSUPP         8.00E+007           
+3     HYBRID_HASH_JOIN                                 1.00E+006           
+4     INDEX_SCAN                      SUPPLIER         1.00E+006           
+5     FILE_SCAN                       NATION           2.50E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q24
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDIDX2'),
++>scan(path 'TPCH.SCH.CUIDX2'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     HYBRID_HASH_JOIN                                 1.50E+008           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     INDEX_SCAN                      CUSTOMER         1.50E+007           
+
+--- 5 row(s) selected.
+>>
+>>-- Q25
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>scan(path 'TPCH.SCH.PAIDX1')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, partsupp, supplier 
++>where p_partkey = ps_partkey 
++>and s_suppkey = ps_suppkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+007           
+2     HYBRID_HASH_JOIN                                 8.00E+007           
+3     INDEX_SCAN                      PARTSUPP         8.00E+007           
+4     INDEX_SCAN                      PART             2.00E+007           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from part, partsupp, supplier 
++>where p_partkey = ps_partkey 
++>and s_suppkey = ps_suppkey ;
+Histograms for query showstats for query select  count(*)   from part, partsupp, supplier  where p_partkey = ps_partkey  and s_suppkey = ps_suppkey ;
+**************************************************************
+VEGcolumn:
+
+ 184: VEGRef_184((TPCH.SCH.SUPPLIER.S_NATIONKEY))
+Merge state:
+
+  88: TPCH.SCH.SUPPLIER.S_NATIONKEY
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.040000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 24.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      24.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q26
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDIDX2'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.CUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, nation, orders 
++>where c_custkey = o_custkey 
++>and c_nationkey = n_nationkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.50E+008           
+2     INDEX_SCAN                      ORDERS           1.50E+008           
+3     HYBRID_HASH_JOIN                                 1.50E+007           
+4     INDEX_SCAN                      CUSTOMER         1.50E+007           
+5     FILE_SCAN                       NATION           2.50E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q27
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX3'),
++>scan(path 'TPCH.SCH.ORDIDX3')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, lineitem, orders 
++>where l_orderkey = o_orderkey 
++>and l_suppkey = s_suppkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q28
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX3'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, nation, lineitem 
++>where l_suppkey = s_suppkey 
++>and s_nationkey = n_nationkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     HYBRID_HASH_JOIN                                 1.00E+006           
+4     INDEX_SCAN                      SUPPLIER         1.00E+006           
+5     FILE_SCAN                       NATION           2.50E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q29
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX2'),
++>scan(path 'TPCH.SCH.ORDIDX3')),
++>scan(path 'TPCH.SCH.PAIDX1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem, orders 
++>where p_partkey = l_partkey 
++>and l_orderkey = o_orderkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     INDEX_SCAN                      PART             2.00E+007           
+
+--- 5 row(s) selected.
+>>
+>>-- Q30
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX4'),
++>scan(path 'TPCH.SCH.PSIDX2')),
++>scan(path 'TPCH.SCH.PAIDX1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, partsupp, lineitem 
++>where ps_suppkey = l_suppkey 
++>and ps_partkey = l_partkey 
++>and p_partkey = l_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      PARTSUPP         8.00E+007           
+5     INDEX_SCAN                      PART             2.00E+007           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from part, partsupp, lineitem 
++>where ps_suppkey = l_suppkey 
++>and ps_partkey = l_partkey 
++>and p_partkey = l_partkey ;
+Histograms for query showstats for query select  count(*)   from part, partsupp, lineitem  where ps_suppkey = l_suppkey  and ps_partkey = l_partkey  and p_partkey = l_partkey ;
+**************************************************************
+VEGcolumn:
+
+ 279: VEGRef_279((TPCH.SCH.LINEITEM.L_RECEIPTDATE))
+Merge state:
+
+  97: TPCH.SCH.LINEITEM.L_RECEIPTDATE
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 2555.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000391 
+   Encoded MinValue = ( 62830080000.0000 )
+
+   Encoded MaxValue = ( 63050745600.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      62830080000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      63050745600.0000
+ ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q31
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX4'),
++>scan(path 'TPCH.SCH.PAIDX1')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, supplier, lineitem 
++>where s_suppkey = l_suppkey 
++>and p_partkey = l_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      PART             2.00E+007           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q32
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX4'),
++>scan(path 'TPCH.SCH.PSIDX2')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, partsupp, lineitem 
++>where s_suppkey = l_suppkey 
++>and ps_suppkey = l_suppkey 
++>and ps_partkey = l_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.99E+008           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      PARTSUPP         8.00E+007           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q33
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'LO', path 'TPCH.SCH.LIIDX2'),
++>scan(path 'TPCH.SCH.PAIDX1')),
++>scan(TABLE 'LI', path 'TPCH.SCH.LIIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem lo, lineitem li 
++>where p_partkey = lo.l_partkey 
++>and li.l_partkey = p_partkey ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.79E+010           
+2     HYBRID_HASH_JOIN                                 5.99E+008           
+3     INDEX_SCAN                      LINEITEM)        5.99E+008           
+4     INDEX_SCAN                      PART             2.00E+007           
+5     INDEX_SCAN                      LINEITEM)        5.99E+008           
+
+--- 5 row(s) selected.
+>>
+>>-- Q34
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.NATION'),
++>scan(path 'TPCH.SCH.REGION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, nation, region
++>where s_nationkey = n_nationkey 
++>and n_regionkey = r_regionkey 
++>and r_name = 'ASIA' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.00E+005           
+2     INDEX_SCAN                      SUPPLIER         1.00E+006           
+3     HYBRID_HASH_JOIN                                 5.00E+000           
+4     FILE_SCAN                       NATION           2.50E+001           
+5     FILE_SCAN                       REGION           1.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>-- Q35
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>scan(path 'TPCH.SCH.PART')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, partsupp, supplier 
++>where p_partkey = ps_partkey 
++>and s_suppkey = ps_suppkey 
++>and p_size = 15 ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.59E+006           
+2     HYBRID_HASH_JOIN                                 1.59E+006           
+3     INDEX_SCAN                      PARTSUPP         8.00E+007           
+4     FILE_SCAN                       PART             3.99E+005           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from part, partsupp, supplier 
++>where p_partkey = ps_partkey 
++>and s_suppkey = ps_suppkey 
++>and p_size = 15 ;
+Histograms for query showstats for query select  count(*)   from part, partsupp, supplier  where p_partkey = ps_partkey  and s_suppkey = ps_suppkey  and p_size = 15 ;
+**************************************************************
+VEGcolumn:
+
+ 186: VEGRef_186((TPCH.SCH.SUPPLIER.S_NATIONKEY))
+Merge state:
+
+  88: TPCH.SCH.SUPPLIER.S_NATIONKEY
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.040000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 24.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      24.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q36
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDIDX2'),
++>scan(path 'TPCH.SCH.CUSTOMER'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey 
++>and c_mktsegment = 'BUILDING' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.79E+008           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     HYBRID_HASH_JOIN                                 4.50E+007           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     FILE_SCAN                       CUSTOMER         3.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q37
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LINEITEM'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDIDX2'),
++>scan(path 'TPCH.SCH.CUIDX2'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey 
++>and l_returnflag = 'R' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.47E+008           
+2     FILE_SCAN                       LINEITEM         1.47E+008           
+3     HYBRID_HASH_JOIN                                 1.50E+008           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     INDEX_SCAN                      CUSTOMER         1.50E+007           
+
+--- 5 row(s) selected.
+>>
+>>-- Q38
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX5'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDIDX2'),
++>scan(path 'TPCH.SCH.CUSTOMER'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey 
++>and c_mktsegment = 'BUILDING' 
++>and l_shipdate > date '1995-03-15' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.69E+007           
+2     INDEX_SCAN                      LINEITEM         3.23E+008           
+3     HYBRID_HASH_JOIN                                 4.50E+007           
+4     INDEX_SCAN                      ORDERS           1.50E+008           
+5     FILE_SCAN                       CUSTOMER         3.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q39
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX5'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDERS'),
++>scan(path 'TPCH.SCH.CUSTOMER'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select count(*)
++>from customer,orders,lineitem
++>where c_mktsegment = 'BUILDING'
++>and c_custkey = o_custkey
++>and l_orderkey = o_orderkey
++>and o_orderdate < DATE '1995-03-15'
++>and l_shipdate > DATE '1995-03-15';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.71E+007           
+2     INDEX_SCAN                      LINEITEM         3.23E+008           
+3     HYBRID_HASH_JOIN                                 2.18E+007           
+4     FILE_SCAN                       ORDERS           7.29E+007           
+5     FILE_SCAN                       CUSTOMER         3.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q40
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX6'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDERS'),
++>scan(path 'TPCH.SCH.CUIDX2'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey 
++>and o_orderdate >= date '1994-01-01' 
++>and o_orderdate < date '1994-01-01' + interval '1' year ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.12E+007           
+2     INDEX_SCAN                      LINEITEM         5.99E+008           
+3     HYBRID_HASH_JOIN                                 2.28E+007           
+4     FILE_SCAN                       ORDERS           2.28E+007           
+5     INDEX_SCAN                      CUSTOMER         1.50E+007           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from customer, lineitem, orders 
++>where c_custkey = o_custkey 
++>and l_orderkey = o_orderkey 
++>and o_orderdate >= date '1994-01-01' 
++>and o_orderdate < date '1994-01-01' + interval '1' year ;
+Histograms for query showstats for query select  count(*)   from customer, lineitem, orders  where c_custkey = o_custkey  and l_orderkey = o_orderkey  and o_orderdate >= date '1994-01-01'  and o_orderdate < date '1994-01-01' + interval '1' year ;
+**************************************************************
+VEGcolumn:
+
+ 236: VEGRef_236((TPCH.SCH.CUSTOMER.C_NATIONKEY))
+Merge state:
+
+   6: TPCH.SCH.CUSTOMER.C_NATIONKEY
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 25.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.040000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 24.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      24.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q41
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX3'),
++>scan(path 'TPCH.SCH.ORDIDX3')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, lineitem, orders 
++>where l_orderkey = o_orderkey 
++>and l_suppkey = s_suppkey 
++>and o_orderdate >= date '1994-01-01' 
++>and o_orderdate < date '1994-01-01' + interval '1' year ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.12E+007           
+2     HYBRID_HASH_JOIN                                 9.12E+007           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      ORDERS           2.28E+007           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>-- Q42
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX2'),
++>scan(path 'TPCH.SCH.ORDIDX3')),
++>scan(path 'TPCH.SCH.PAIDX1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem, orders 
++>where p_partkey = l_partkey 
++>and l_orderkey = o_orderkey 
++>and o_orderdate between date '1995-01-01' and date '1996-12-31' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.82E+008           
+2     HYBRID_HASH_JOIN                                 1.82E+008           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     INDEX_SCAN                      ORDERS           4.56E+007           
+5     INDEX_SCAN                      PART             2.00E+007           
+
+--- 5 row(s) selected.
+>>
+>>-- Q43
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LIIDX2'),
++>scan(path 'TPCH.SCH.PART')),
++>scan(path 'TPCH.SCH.ORDIDX3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from part, lineitem, orders 
++>where p_partkey = l_partkey 
++>and l_orderkey = o_orderkey 
++>and p_type = 'ECONOMY ANODIZED STEEL' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.99E+006           
+2     HYBRID_HASH_JOIN                                 3.99E+006           
+3     INDEX_SCAN                      LINEITEM         5.99E+008           
+4     FILE_SCAN                       PART             1.33E+005           
+5     INDEX_SCAN                      ORDERS           1.50E+008           
+
+--- 5 row(s) selected.
+>>
+>>-- Q44
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.ORDERS'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.CUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from customer, nation, orders 
++>where c_nationkey = n_nationkey 
++>and c_custkey = o_custkey 
++>and o_orderdate >= date '1993-10-01' 
++>and o_orderdate < date '1993-10-01' + interval '3' month ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.79E+006           
+2     FILE_SCAN                       ORDERS           5.79E+006           
+3     HYBRID_HASH_JOIN                                 1.50E+007           
+4     INDEX_SCAN                      CUSTOMER         1.50E+007           
+5     FILE_SCAN                       NATION           2.50E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q45
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.PSIDX2'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, partsupp, nation 
++>where s_nationkey = n_nationkey 
++>and ps_suppkey = s_suppkey 
++>and n_name = 'GERMANY' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.22E+006           
+2     INDEX_SCAN                      PARTSUPP         8.00E+007           
+3     HYBRID_HASH_JOIN                                 4.02E+004           
+4     INDEX_SCAN                      SUPPLIER         1.00E+006           
+5     FILE_SCAN                       NATION           1.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select  count(*)  
++>from supplier, partsupp, nation 
++>where s_nationkey = n_nationkey 
++>and ps_suppkey = s_suppkey 
++>and n_name = 'GERMANY' ;
+Histograms for query showstats for query select  count(*)   from supplier, partsupp, nation  where s_nationkey = n_nationkey  and ps_suppkey = s_suppkey  and n_name = 'GERMANY' ;
+**************************************************************
+VEGcolumn:
+
+ 144: VEGRef_144((TPCH.SCH.NATION.N_NAME = 'GERMANY'))
+Merge state:
+
+  84: TPCH.SCH.NATION.N_NAME
+Applied preds:
+
+ 145: (TPCH.SCH.NATION.N_NAME = 'GERMANY')
+***MINMAX SET BY PRED***
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 5015235783054230.0000 )
+   Encoded MaxValue = (
+5015235783054230.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      5015235783054230.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     5015235783054230.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q46
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LINEITEM'),
++>hybrid_hash_join(
++>scan(path 'TPCH.SCH.SUIDX2'),
++>scan(path 'TPCH.SCH.NATION'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, nation, lineitem 
++>where l_suppkey = s_suppkey 
++>and s_nationkey = n_nationkey 
++>and l_shipdate >= date '1994-01-01' 
++>and l_shipdate < date '1994-01-01' + interval '1' year ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.11E+007           
+2     FILE_SCAN                       LINEITEM         9.11E+007           
+3     HYBRID_HASH_JOIN                                 1.00E+006           
+4     INDEX_SCAN                      SUPPLIER         1.00E+006           
+5     FILE_SCAN                       NATION           2.50E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q47
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'TPCH.SCH.LINEITEM'),
++>scan(path 'TPCH.SCH.PSIDX2')),
++>scan(path 'TPCH.SCH.SUIDX2')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from  select  count(*)  
++>from supplier, partsupp, lineitem 
++>where s_suppkey = ps_suppkey 
++>and l_partkey = ps_partkey 
++>and l_suppkey = ps_suppkey 
++>and l_suppkey = s_suppkey 
++>and l_shipdate >= date '1994-01-01' 
++>and l_shipdate < date '1994-01-01' + interval '1' year ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.11E+007           
+2     HYBRID_HASH_JOIN                                 9.11E+007           
+3     FILE_SCAN                       LINEITEM         9.11E+007           
+4     INDEX_SCAN                      PARTSUPP         8.00E+007           
+5     INDEX_SCAN                      SUPPLIER         1.00E+006           
+
+--- 5 row(s) selected.
+>>
+>>LOG;

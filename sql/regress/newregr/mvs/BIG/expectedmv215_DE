@@ -1,0 +1,967 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>obey TESTMV215_DE(SET_UP);
+>>----------------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>set PARSERFLAGS 3;
+>>
+>>set schema cat.tpcd;
+
+--- SQL operation complete.
+>>
+>>obey ./TPCD/CREATEALL.OBEY(SET_UP);
+>>
+>>create catalog cat;
+
+*** ERROR[1035] Catalog CAT already exists.
+
+--- SQL operation completed with errors.
+>>create schema cat.tpcd;
+
+*** ERROR[1022] Schema CAT.TPCD already exists.
+
+--- SQL operation completed with errors.
+>>cd ./TPCD;
+>>
+>>set schema CAT.TPCD;
+
+--- SQL operation complete.
+>>set envvar DSS_CONFIG . ;
+>>-- change all of these lines together if needed
+>>#ifNSK
+>>set envvar DSS_TEMP ./TPCDTEMP;
+>>sh mkdir $DSS_TEMP;
+>>#ifNSK
+>>#ifNT
+>>set envvar DSS_TEMP .\TPCDTEMP;
+>>sh mkdir %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\dbgen.exe %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\Dists.dss %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\*.fmt %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\generateTpcd.ksh %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\*.awk %DSS_TEMP% ;
+>>sh cp %DSS_CONFIG%\runGen.pl %DSS_TEMP% ;
+>>#ifNT
+>>
+>>cd TPCDTEMP;
+>>
+>>log SQLCI.LOG clear;
+>>
+>>delete from lineitem;
+
+--- 5864 row(s) deleted.
+>>delete from supplier;
+
+--- 79 row(s) deleted.
+>>delete from orders;
+
+--- 1618 row(s) deleted.
+>>delete from part;
+
+--- 1499 row(s) deleted.
+>>delete from partsupp;
+
+--- 4736 row(s) deleted.
+>>delete from customer;
+
+--- 799 row(s) deleted.
+>>delete from nation;
+
+--- 25 row(s) deleted.
+>>delete from region;
+
+--- 5 row(s) deleted.
+>>
+>>cd tpcd/tpcdtemp;
+>>sh import cat.tpcd.nation -I nation.tbl -U nation.fmt;
+>>sh import cat.tpcd.region -I region.tbl -U region.fmt;
+>>sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -C 30;
+>>sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -C 17000;
+>>sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -C 4500;
+>>sh import cat.tpcd.part -I part.tbl -U part.fmt -r -C 600;
+>>sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -C 2400;
+>>sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -C 450;
+>>cd ../..;
+>>
+>>
+>>obey ./TPCD/CREATEMVS(CREATEALL);
+>>    obey ./TPCD/CREATEMVS(MV1);
+>>create mv mv4q1
++>    refresh on request
++>initialized on refresh
++>	  as
++>    select
++>        l_returnflag,
++>        l_linestatus,
++>        sum(l_quantity) as sum_qty,
++>        sum(l_extendedprice) as sum_base_price,
++>        sum( l_extendedprice * (1-l_discount)) as sum_disc_price,
++>        sum(l_extendedprice * (1-l_discount) * (1 + l_tax) )as sum_charge,
++>        avg(l_quantity) as avg_qty,
++>        avg(l_extendedprice) as avg_price,
++>        avg(l_discount) as avg_disc,
++>        count(*) as count_order
++>    from lineitem
++>    where 
++>        l_shipdate <= date '1998-12-01' - interval '90' day
++>    group by l_returnflag, l_linestatus;
+
+--- SQL operation complete.
+>>ALTER MV mv4q1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV3);
+>>create mv mv4q3
++>    refresh on request
++>initialized on refresh
++>    as
++>    select 
++>        l_orderkey, 
++>        cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
++>        o_orderdate, o_shippriority
++>    from customer,orders,lineitem
++>    where
++>        c_mktsegment = 'BUILDING'
++>        and c_custkey = o_custkey
++>        and l_orderkey = o_orderkey
++>        and o_orderdate < date '1995-03-15'
++>        and l_shipdate >  date '1995-03-15'
++>    group by l_orderkey, o_orderdate, o_shippriority;
+
+--- SQL operation complete.
+>>ALTER MV mv4q3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV5);
+>>create mv mv4q5
++>	refresh on request 
++>initialized on refresh
++>	store  by (n_name)
++>	as
++>	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
++>	from customer,orders,lineitem,supplier,nation, region
++>	where
++>	    c_custkey = o_custkey
++>	    and o_orderkey = l_orderkey
++>	    and l_suppkey = s_suppkey
++>	    and c_nationkey= s_nationkey
++>	    and s_nationkey = n_nationkey
++>	    and n_regionkey = r_regionkey
++>	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
++>	    and o_orderdate >= date '1994-01-01'
++>	    and o_orderdate < date '1994-01-01' + interval '3' year
++>	group by n_name;
+
+--- SQL operation complete.
+>>ALTER MV mv4q5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV6);
+>>create mv mv4q6
++>    refresh on request
++>initialized on refresh
++>    as
++>    select
++>       l_shipdate,
++>       cast(sum(l_extendedprice*l_discount)as numeric(18,2)) as revenue
++>    from lineitem
++>    where 
++>        l_shipdate >= date '1994-01-01'
++>        and l_shipdate < date '1994-01-01' + interval '1' year
++>        and l_discount between .06 - 0.01 and .06 + 0.01
++>        and l_quantity < 24
++>    group by l_shipdate;
+
+--- SQL operation complete.
+>>ALTER MV mv4q6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV7);
+>>create mv mv4q7
++>    refresh on request
++>initialized on refresh
++>    as
++>    select 
++>        supp_nation, cust_nation, yr -- , sum(volume) as revenue
++>    from
++>        (select
++>             n1.n_name as supp_nation,
++>             n2.n_name as cust_nation,
++>             extract (year from l_shipdate) as yr,
++>             l_extendedprice*(1-l_discount) as volume
++>         from supplier,lineitem,orders,customer, nation n1, nation n2
++>         where 
++>             s_suppkey = l_suppkey
++>             and o_orderkey = l_orderkey
++>             and c_custkey = o_custkey
++>             and s_nationkey = n1.n_nationkey
++>             and c_nationkey = n2.n_nationkey
++>             and 
++>             (n1.n_name  = 'FRANCE' and 
++>             n2.n_name = 'GERMANY')
++>--             or
++>--             (n1.n_name = 'GERMANY'  and
++>--             n2.n_name = 'FRANCE'))
++>             and l_shipdate between 
++>             date '1995-01-01' and date '1996-12-31'
++>        ) as shipping
++>    group by supp_nation, cust_nation, yr;
+
+*** ERROR[12001] Creation failed ! MV can not be incrementally maintained!
+
+--- SQL operation completed with errors.
+>>ALTER MV mv4q7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV9);
+>>create mv mv4q9 
++>    refresh on request 
++>initialized on refresh
++>    as
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr;
+
+*** WARNING[12108] The materialized view was defined without a store by clause.
+
+*** WARNING[12109] To ensure optimal Refresh performance, the store by clause should include the following group-by columns: NATION.
+
+*** WARNING[12112] Secondary index CAT.TPCD.MV4Q9_573247592_1374 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv4q9 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV10);
+>>create mv mv4q10
++>    refresh on request
++>initialized on refresh
++>    as
++>    select 
++>        c_custkey, c_name,
++>        cast (sum(l_extendedprice*(1-l_discount)) 
++>        as numeric(18,2)) as revenue,
++>        c_acctbal,  n_name, c_address, c_phone, c_comment
++>    from customer,orders,lineitem, nation
++>    where 
++>        c_custkey = o_custkey
++>        and l_orderkey = o_orderkey
++>        and o_orderdate >= date '1993-10-01'
++>        and o_orderdate < date '1993-10-01' + interval '3' month
++>        and l_returnflag = 'R'
++>        and c_nationkey = n_nationkey
++>    group by c_custkey, c_name, c_acctbal, c_phone, n_name,
++>        c_address, c_comment;
+
+--- SQL operation complete.
+>>ALTER MV mv4q10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV11);
+>>create mv mv4q11
++>    refresh on request
++>initialized on refresh
++>    as
++>    select
++>        ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
++>    from partsupp,supplier,nation
++>    where ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_partkey;
+
+--- SQL operation complete.
+>>ALTER MV mv4q11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV12);
+>>create mv mv4q12
++>    refresh on request
++>initialized on refresh
++>    as
++>    select
++>        l_shipmode, 
++>        sum (case when o_orderpriority ='1-URGENT'
++>        or o_orderpriority ='2-HIGH'
++>        then 1 else 0 end) as high_line_count,
++>        sum (case when o_orderpriority <> '1-URGENT'
++>        and o_orderpriority <> '2-HIGH'
++>        then 1 else 0 end) as low_line_count
++>    from orders,lineitem
++>    where 
++>        o_orderkey = l_orderkey
++>        and l_shipmode in ('MAIL','SHIP')
++>        and l_commitdate < l_receiptdate
++>        and l_shipdate < l_commitdate
++>        and l_receiptdate >= date '1994-01-01'
++>        and l_receiptdate < date '1994-01-01' + interval '1' year
++>    group by l_shipmode;
+
+--- SQL operation complete.
+>>ALTER MV mv4q12 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV15);
+>>create mv mv4q15
++>    refresh on request
++>initialized on refresh
++>    as
++>    select
++>        l_suppkey , sum(l_extendedprice * (1-l_discount)) as total
++>    from lineitem
++>    where
++>        l_shipdate >= date '1996-01-01'
++>        and l_shipdate < date '1996-01-01' + interval '3' month
++>    group by l_suppkey;
+
+--- SQL operation complete.
+>>ALTER MV mv4q15 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>    obey ./TPCD/CREATEMVS(MV17);
+>>create mv mv4q17
++>	refresh on request
++>initialized on refresh
++> 	as
++>	select  	orders.o_custkey , 
++>			sum ( orders.o_totalprice) sum_price ,
++>			sum ( lineitem.l_quantity) quantity ,
++>			sum (lineitem.l_discount) discount,
++>			min(orders.o_orderdate) orderdate,
++>			count(*) cnt
++>	from orders,lineitem
++>	where orders.o_orderkey = lineitem.l_orderkey          
++>	group by orders.o_custkey ;
+
+--- SQL operation complete.
+>>ALTER MV mv4q17 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------
+>>
+>>    obey ./TPCD/CREATEMVS(MV67);
+>>create mv mv4q67
++>    refresh on request
++>initialized on refresh
++>    as
++>    select
++>    ps_suppkey,
++>    sum(ps_supplycost*ps_availqty) as total
++>    from cat3.details.partsupp,
++>         cat3.details.supplier,
++>         cat3.geography.nation
++>    where 
++>        ps_suppkey = s_suppkey
++>        and s_nationkey = n_nationkey
++>        and n_name = 'GERMANY'
++>    group by ps_suppkey;
+
+*** ERROR[1002] Catalog CAT3 does not exist or has not been registered on node \NSK.
+
+*** ERROR[4082] Table CAT3.DETAILS.PARTSUPP does not exist or is inaccessible.
+
+*** ERROR[1079] Unable to prepare the statement.
+
+--- SQL operation completed with errors.
+>>ALTER MV mv4q67 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-------------------------
+>>
+>>
+>>
+>>-------------------------
+>>
+>> set schema cat.tpcd;
+
+--- SQL operation complete.
+>>
+>>Alter table supplier  Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table customer  Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table orders Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table lineitem Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table nation Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table region Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>Alter table partsupp Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------
+>>log LOGMV215_DE;
+>>
+>>-- Run Tests
+>>	set schema cat.tpcd;
+
+--- SQL operation complete.
+>>	obey TESTMV215_DE(TEST1);
+>>-------------------------------------------------------
+>>-- Basic Q5
+>>
+>>
+>>refresh mv4q5 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q5 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q5 was found up to date.
+Starting the log cleanup of table CAT.TPCD.REGION...
+
+Finished the log cleanup of table CAT.TPCD.REGION.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+Starting the log cleanup of table CAT.TPCD.CUSTOMER...
+
+Finished the log cleanup of table CAT.TPCD.CUSTOMER.
+
+
+>>
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
++>	from customer,orders,lineitem,supplier,nation, region
++>	where
++>	    c_custkey = o_custkey
++>	    and o_orderkey = l_orderkey
++>	    and l_suppkey = s_suppkey
++>	    and c_nationkey= s_nationkey
++>	    and s_nationkey = n_nationkey
++>	    and n_regionkey = r_regionkey
++>	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
++>	    and o_orderdate >= date '1994-01-01'
++>	    and o_orderdate < date '1994-01-01' + interval '3' year
++>	group by n_name
++>	order by n_name,revenue desc ;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select n_name,revenue,rows_in_group
++>	from mv4q5 
++>	order by n_name,revenue desc;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>SET PARAM ?table_name 'SUPPLIER';
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          104                467477  Y                 N             A              A              
+
+--- 1 row(s) selected.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 5
+Import Completed Successfully
+>>
+>>
+>>-- should be equal to 5
+>>select count(*) from table(iud_log_table cat.tpcd.supplier);
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>
+>>REFRESH mv4q5 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q5 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q5 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.REGION...
+
+Finished the log cleanup of table CAT.TPCD.REGION.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+Starting the log cleanup of table CAT.TPCD.CUSTOMER...
+
+Finished the log cleanup of table CAT.TPCD.CUSTOMER.
+
+
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 75
+Import Completed Successfully
+>>
+>>update customer
++>set c_nationkey = 12 -- 'JAPAN'
++>where c_nationkey = 10 and c_acctbal < 4000;
+
+--- 14 row(s) updated.
+>>
+>>update customer
++>set c_nationkey = 10 -- 'IRAN'
++>where c_nationkey = 12 and c_acctbal > 3000;
+
+--- 18 row(s) updated.
+>>
+>>
+>>update customer
++>set c_nationkey = 12 -- 'IRAN'
++>where c_nationkey = 12 and c_acctbal < 2500;
+
+--- 14 row(s) updated.
+>>
+>>Refresh mv4q5 debug 54, 61;
+
+--- SQL operation complete.
+>>log;
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>------------------------------------------------------------------
+>>	obey TESTMV215_DE(TEST2);
+>>------------------------------------------------------------------
+>>-- Basic Q9
+>>
+>>
+>>REFRESH mv4q9 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select nation, yr,sum_profit
++>	from mv4q9 
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--parts
+>>
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 100
+Import Completed Successfully
+>>
+>>
+>>
+>>--CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @1@ @0@ ;
+>>
+>>REFRESH mv4q9 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- partsupp
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 400
+Import Completed Successfully
+>>
+>>REFRESH mv4q9 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+Task DE(CAT.TPCD.PARTSUPP) has been completed in 20 transaction(s).
+IUD statements performed by the task:
+	Range log insert: 20 invocations.
+	Range log delete: 0 invocations.
+	IUD log subset delete: 20 invocations.
+	IUD log subset update @IGNORE: 0 invocations.
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- lineitem
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 2500
+Import Completed Successfully
+>>
+>>
+>>REFRESH mv4q9 debug 54,61;
+
+--- SQL operation complete.
+>>log;
+
+Task DE(CAT.TPCD.LINEITEM) has been completed in 68 transaction(s).
+IUD statements performed by the task:
+	Range log insert: 68 invocations.
+	Range log delete: 0 invocations.
+	IUD log subset delete: 68 invocations.
+	IUD log subset update @IGNORE: 0 invocations.
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- Clean and exit
+>>obey TESTMV215_DE(CLEAN_UP);
+>>-----------------------------------------
+>>set schema cat.tpcd;
+
+--- SQL operation complete.
+>>obey ./TPCD/CREATEMVS(DROPALL);
+>>drop mv cat3.testing.mv4q67;
+
+*** ERROR[1002] Catalog CAT3 does not exist or has not been registered on node \NSK.
+
+*** ERROR[1031] Object CAT3.TESTING.MV4Q67 could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q17;
+
+--- SQL operation complete.
+>>drop mv mv4q15;
+
+--- SQL operation complete.
+>>drop mv mv4q12;
+
+--- SQL operation complete.
+>>drop mv mv4q11;
+
+--- SQL operation complete.
+>>drop mv mv4q10;
+
+--- SQL operation complete.
+>>drop mv mv4q9;
+
+--- SQL operation complete.
+>>drop mv mv4q7;
+
+*** ERROR[1004] Table, view, or stored procedure CAT.TPCD.MV4Q7 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.TPCD.MV4Q7 could not be dropped.
+
+--- SQL operation completed with errors.
+>>drop mv mv4q6;
+
+--- SQL operation complete.
+>>drop mv mv4q5;
+
+--- SQL operation complete.
+>>drop mv mv4q3;
+
+--- SQL operation complete.
+>>drop mv mv4q1;
+
+--- SQL operation complete.
+>>
+>>
+>>--------------------------
+>>
+>>
+>>-- ---------------------------------------------------------------------------
+>>
+>>log;

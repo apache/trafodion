@@ -1,0 +1,62 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+# margin percentage
+margin=5
+
+case `uname` in
+ Windows_NT)
+   ci=sqlci
+ ;;
+ NONSTOP_KERNEL)
+   ci=$mxcidir/mxci
+ ;;
+esac
+
+echo "select q$1 from \$\$base\$\$ where 
+      (interval '$2' hour to second(3) >
+      (q$1 + (q$1 * $margin/100)));" > temp
+echo "obey cidefs;obey temp;" > temp1
+$ci< temp1 > temp2
+result=`grep "selected" temp2|sed -e 's/selected.//' -e 's/--- //' -e 's/row(s)//' -e 's/ //g'`
+echo "select q$1 from \$\$base\$\$ where (interval '$2' hour to second(3) <
+               (q$1 * .8));" > temp
+echo "obey cidefs;obey temp;">temp1
+$ci< temp1 > temp2
+improve=`grep "selected" temp2|sed -e 's/selected.//' -e 's/--- //' -e 's/row(s)//' -e 's/ //g'`
+
+# 0 = pass
+# 2 = no base number
+# 1 = fail
+# 3 = improvement
+
+if [ "$result" = "0" ]; then
+  if [ "$improve" = "1" ]; then
+    echo "### IMPROVEMENT ###"
+  else
+    echo "### PASS ###"
+  fi
+else
+  if [ "$result" = "" ]; then
+    echo "### NO BASE NUMBER ###"
+  else
+    echo "### FAIL ###"
+  fi
+fi
+
+rm temp1 temp2
+exit

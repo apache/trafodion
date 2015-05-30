@@ -1,0 +1,281 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#! /bin/sh
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 1994-2009 Hewlett-Packard Development Company, L.P.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+# +++ Copyright added on 2003/12/3
+# +++ Copyright modified on 2009/3/9
+#
+# +++ Code modified on 2003/11/23
+#
+#
+######################################################################
+# This is the MVQR initialization script to be run on an NSK system after
+# installing SQL/MX [from the SUT] and T0725 product. It can be run by the 
+# super ID only.
+#-----------------------------------------------------------------------
+#  Usage:
+#          uninstallMvqr  -- A.1 drops MANAGEABILITY.MV_REWRITE schema.
+#                         -- A.2 drops table
+#                         --     MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+#          uninstallMvqr  -- B.1  stops MXQMM persistent process.
+#                         -- B.2  stops MXQMP process.
+#
+#          uninstallMvqr dropPubTab  -- peforms only A.1 and A.2 above.
+#          uninstallMvqr stopQMM     -- performs only B.1 and B.2 above.
+#          uninstallMvqr stopQMP     -- performs only B.2 above.
+#
+#   Modification History.
+# =====================
+#  04/02/2010   RN  A new initial script.
+# 
+####################################################################
+version=1.0
+
+# qmm name
+qmmName="ZQM03"
+qmpName="ZQP03"
+# tacl script name
+qmmscr="$thome/stopQmm"
+
+# The script can start from anywhere
+thome=`/bin/pwd`
+
+# OUtput files
+mvqrLog="$thome/stopQmm.log"
+drTabLog="$thome/dropPubTab.log"
+
+ARG1="$1"
+NULL=/dev/null
+
+function printVersion
+{
+   echo Version $version
+   exit 0
+}
+
+function Usage
+{
+  echo "Usage:uninstallMvqr [ dropPubTab | stopQMM | stopQMP | help | -h | version | -v ]"
+  echo "uninitializes MVQR on Neo. Must be run after SQLMX and T0725 installation"
+  echo " "
+  echo "    dropPubTab      - drops REWRITE_PUBLISH table."
+  echo "    stopQMM         - stops MXQMM and MXQMP processes."
+  echo "    stopQMP         - stops MXQMP process."
+  echo "    help (-h)       - Help information"
+  echo "    version (-v)    - Version information of this script"
+  echo " "
+  echo "Default is to drop REWRITE_PUBLISH table and stop MXQMM."
+}
+
+function stopQMM
+{
+  # Remove TACL script and its LOG file.
+  rm $mvqrLog > /dev/null 2>&1
+  rm $qmmscr > /dev/null 2>&1
+
+  # checking if MXQMM is not running.
+  gtacl -c 'status $ZQM03' | grep -e $qmmName > /dev/null 2>&1
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  # 0 means at least one match. 1 means no  match. 2 means error
+  if [[ $result != 0 ]]; then
+    echo " MXQMM persistent process $qmmName is already stopped..."
+    echo " Invoke installMvqr script before stopping again"
+    stopQMP;
+  else
+    stop_qmm_from_scf;
+  fi
+
+}
+  
+function stop_qmm_from_scf
+{
+  echo "Stopping MXQMM persistent process. Please wait...."
+
+  # constrct TACL script
+  echo >  $qmmscr "scf"
+  echo >> $qmmscr "assume process \$zzkrn"
+  echo >> $qmmscr "abort #MXQMM"
+  echo >> $qmmscr "delete #MXQMM"
+ 
+  cat $qmmscr | gtacl | tee -a $mvqrLog > /dev/null 2>&1
+
+  # to make screen msgs look better
+  echo " "
+
+  # verify persistent process $qmmName stopped successfully
+  gtacl -c 'status $ZQM03' | grep -e $qmmName > /dev/null 2>&1
+  result=$?
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+
+  if [[ $result = 1 ]];then
+     echo "MXQMM process $qmmName stopped successfully."
+  else
+     echo "Failed to stop MXQMM persistent process."
+     echo "Please see $mvqrLog for more details."
+  fi
+
+  # to make screen msgs look better
+  echo " "
+  stopQMP;
+
+}
+
+function stopQMP
+{
+  # next stop MXQMP process
+
+  # checking if MXQMP is not running.
+  gtacl -c 'status $ZQP03' | grep -e $qmpName > /dev/null 2>&1
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  # 0 means at least one match. 1 means no  match. 2 means error
+  if [[ $result != 0 ]]; then
+    echo " MXQMP process $qmpName is already stopped..."
+    echo " Invoke installMvqr script before stopping again"
+
+  else
+    echo "Stopping MXQMP process. Please wait...."
+    gtacl -c 'stop $ZQP03' | tee -a $mvqrLog > /dev/null 2>&1
+ 
+    # verify mxqmp process stopped successfully
+    gtacl -c 'status $ZQP03' | grep -e $qmpName > /dev/null 2>&1
+    result=$?
+
+    # to make screen msgs look better
+    echo " "
+
+    #Check if return value of grep,
+    #   0 is at least one match found,
+    #   1 is no matches found,
+    #   2 is error
+
+    if [[ $result = 1 ]];then
+       echo "MXQMP process $qmpName stopped successfully."
+    else
+       echo "Failed to stop MXQMP persistent process."
+       echo "Please see $mvqrLog for more details."
+    fi
+
+  fi
+  echo " "
+
+}
+
+function dropTable
+{
+  #echo "Deleting previous log file $drTabLog."
+  rm $drTabLog > /dev/null 2>&1
+  drTab;
+  # Check to see if the create table was successful
+  grep -i "Error" $drTabLog
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+  if [[ $result = 1 ]]; then
+     print "REWRITE_PUBLISH table dropped successfully.\n"
+  else
+     print "*** ERROR: drop REWRITE_PUBLISH table has failed. Check $drTabLog for details.\n"
+  fi
+}
+
+
+function drTab
+{
+  echo " "
+  echo "dropping REWRITE_PUBLISH table. Please wait...."
+  /usr/tandem/sqlmx/bin/mxci <<aeof >>$NULL
+    log $drTabLog clear;
+--
+    drop schema MANAGEABILITY.MV_REWRITE cascade;
+--
+    exit;
+aeof
+}
+
+####################################################################
+#                                                                  #
+#                  Main Script starts here                         #
+#                                                                  #
+####################################################################
+TITLEBAR=$0;
+
+#
+# Default option
+#
+if [ -z "$ARG1" ]; then
+  ARG1="both"
+fi
+
+#Convert ARG1 to all lowercase
+typeset -l temp
+temp=$ARG1
+ARG1=$temp
+
+
+#
+# Call the functions depending on the given argument
+#
+case $ARG1 in
+
+  ( "-help" | "-h" )
+          { Usage; } ;;
+
+  ( "-version" | "-v")
+          { printVersion; } ;;
+
+  ( "droppubtab")
+         { dropTable; } ;;
+
+  ( "stopqmm" )
+         { stopQMM; } ;;
+
+  ( "stopqmp" )
+         { stopQMP; } ;;
+
+  ( "both" )
+        { dropTable; stopQMM; } ;;
+
+  ( * )
+          {
+            echo $0: Invalid argument \'$ARG1\';
+            echo " "
+            Usage;
+          } ;;
+
+esac

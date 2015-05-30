@@ -1,0 +1,170 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+?section CREATE_SIMPLE
+
+set schema catmvs.mvschm;
+
+
+-- The AUTOMATIC RANGELOG attribute will:
+-- (1) Force the utility to perform duplicate elimination
+-- (2) Allow the VSBB range-logging.
+
+create table Dup_A (prim integer NOT NULL NOT DROPPABLE,
+                   ch char(2),
+                   PRIMARY KEY (prim desc) NOT DROPPABLE) 
+                   store by (prim desc)
+				   location $$partition1$$
+				   attribute automatic rangelog;
+ALTER TABLE Dup_A attribute all mvs allowed;
+
+create table Dup_B (prim integer NOT NULL NOT DROPPABLE,
+                    prim2 char(20) NOT NULL NOT DROPPABLE,
+                    ch char(2),
+                    PRIMARY KEY (prim,prim2 desc) NOT DROPPABLE) 
+                    store by (prim asc, prim2 desc)
+					attribute automatic rangelog;
+ALTER TABLE Dup_B attribute all mvs allowed;
+
+insert into Dup_A values (10,'a'),(20,'b'),(35,'c'),(45,'d'),(50,'e'),(55,'f'), (2000, 'AA'); 
+insert into Dup_B values (10,'a1','a'),(20,'b1','b'),(35,'c1','c'),(45,'d1','d'),(50,'e1','e'), (2000, '2', 'AA');
+
+create materialized view Dup_MV2
+	Refresh on request
+	initialized on refresh
+	as 
+	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
+	from Dup_B
+	Group by Dup_B.ch;
+alter mv Dup_MV2 attribute all mvs allowed;
+
+--create materialized view Dup_MV2
+--	Refresh on request
+--	initialized on refresh
+--	as 
+--	select Dup_A.prim,Dup_B.prim2
+--	from Dup_A,Dup_B 
+--	where Dup_A.prim = Dup_B.prim;
+
+create materialized view Dup_MV3
+	Refresh on request
+	initialized on refresh
+	as 
+	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
+	from Dup_A
+	Group by Dup_A.ch;      
+alter mv Dup_MV3 attribute all mvs allowed;
+
+create mvgroup Dup_MVG1;
+alter mvgroup Dup_MVG1 add Dup_MV2, Dup_MV3;
+
+create mvgroup Dup_MVG2;
+alter mvgroup Dup_MVG2 add Dup_MV2;
+
+create mvgroup Dup_MVG3;
+alter mvgroup Dup_MVG3 add Dup_MV2, Dup_MV3;
+
+?section CHECK_DUP_MV1
+prepare stat1 from
+	select Dup_A.ch, sum(Dup_A.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
+	from Dup_A,Dup_B
+	where Dup_A.prim = Dup_B.prim
+	Group by Dup_A.ch
+	order by 1;
+
+prepare stat2 from
+	select ch, sum_prim1, avg_prim1
+	from Dup_MV1
+	order by 1;
+		
+?section CHECK_DUP_MV2
+
+prepare stat1 from
+	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
+	from Dup_B
+	Group by Dup_B.ch
+	order by 1;
+
+
+prepare stat2 from
+	select ch,sum_prim1,avg_prim1
+	from Dup_MV2
+	order by 1;
+	
+?section CHECK_DUP_MV3
+PREPARE stat1 FROM 
+	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
+	from Dup_A
+	Group by Dup_A.ch
+	order by 1;
+
+PREPARE stat2 FROM 
+	select ch,sum_prim1 
+	from Dup_MV3
+	order by 1;
+
+?section CREATE_DUP_MV1
+create materialized view Dup_MV1
+	Refresh on request
+	initialized on refresh
+	as 
+	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
+	from Dup_A,Dup_B
+	where Dup_A.prim = Dup_B.prim
+	Group by Dup_A.ch;
+alter mv dup_mv1 attribute all mvs allowed;
+	alter mvgroup Dup_MVG1 add Dup_MV1;
+	alter mvgroup Dup_MVG2 add Dup_MV1;
+
+?section DROP_DUP_MV1
+drop materialized view Dup_MV1;
+
+?section CREATE_MV_DUMMY
+create materialized view Dup_MV1_dummy
+	Refresh on request
+	initialized on create
+	as 
+	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
+	from Dup_A
+	Group by Dup_A.ch; 
+alter mv Dup_MV1_dummy attribute all mvs allowed;
+create materialized view Dup_MV2_dummy
+	Refresh on request
+	initialized on create
+	as 
+	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
+	from Dup_B
+	Group by Dup_B.ch;
+alter mv Dup_MV2_dummy attribute all mvs allowed;
+
+?section DROP_MV_DUMMY
+drop mv Dup_MV1_dummy;
+drop mv Dup_MV2_dummy;
+
+
+?section DROP_SIMPLE
+set schema catmvs.mvschm;
+drop materialized view Dup_MV3;
+drop materialized view Dup_MV2;
+drop materialized view Dup_MV1;
+
+drop MVGroup Dup_MVG1;
+drop MVGroup Dup_MVG2;
+drop MVGroup Dup_MVG3;
+
+drop table Dup_A;
+drop table Dup_B;

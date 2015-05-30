@@ -1,0 +1,292 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--==============================================================
+-- TestMV518
+-- -----------
+-- CatApi Tests
+--==============================================================
+
+set PARSERFLAGS 1;
+
+obey TESTMV518(CLEAN_UP);
+obey TESTMV518(SET_UP);
+
+log LOGMV518 clear;
+
+-- Run Tests
+-- ==== CatApi 19 Tests (audit/no audit) ==== --
+	obey TESTMV518(TEST1);
+	obey TESTMV518(TEST2);
+	obey TESTMV518(TEST3);
+--	obey TESTMV518(TEST4);  -- BUG 471: after altering the base table state to audit/no audit 
+				-- and then dropping the index, drop mv (table) returns internal error.
+
+-- ==== CatApi 14 Test ( popoulate index ) ==== --
+	obey TESTMV518(TEST5);
+-- Clean and Exit
+log;
+obey TESTMV518(CLEAN_UP);
+exit;
+
+--==============================================================
+?section SET_UP
+
+set schema catmvs.mvschm;
+
+PREPARE select_path_table FROM
+    SELECT AUDITED, ?obj
+	FROM HP_DEFINITION_SCHEMA.ACCESS_PATHS
+	WHERE ACCESS_PATH_UID = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+			WHERE object_name = ?obj
+	FOR READ UNCOMMITTED ACCESS);
+
+create table T_518_T1 ( a int , b int );
+ALTER TABLE T_518_T1 attribute all mvs allowed;
+
+--==============================================================
+?section TEST1
+
+create mv T_518_MV1 
+refresh on request
+initialize on create
+as select a, sum(b) as sb
+from T_518_T1
+group by a;
+ALTER MV T_518_MV1 attribute all mvs allowed;
+
+alter mv T_518_MV1 mvattribute no auditonrefresh;
+
+create index T_518_I1 on T_518_MV1(a);
+
+-- check that they are AUDITED (Y)
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV1@ @1@;
+
+-- check that they are NO AUDITED (N)
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV1@ @0@;
+
+-- check that they are AUDITED (Y)
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+--==============================================================
+?section TEST2
+
+log;
+set schema catmvs.mvschm;
+obey TESTMV518(CLEAN_UP);
+obey TESTMV518(SET_UP);
+log log518;
+
+create mv catmvs.mvschm2.T_518_MV1 
+refresh on request
+initialize on create
+as select a, sum(b) as sb
+from catmvs.mvschm.T_518_T1
+group by a;
+ALTER MV catmvs.mvschm2.T_518_MV1 attribute all mvs allowed;
+
+alter mv catmvs.mvschm2.T_518_MV1 mvattribute no auditonrefresh;
+
+create index T_518_I1 on catmvs.mvschm2.T_518_MV1(a);
+
+-- check that they are AUDITED (Y)
+
+set schema catmvs.mvschm2;
+
+log;
+PREPARE select_path_table FROM
+    SELECT AUDITED, ?obj
+	FROM HP_DEFINITION_SCHEMA.ACCESS_PATHS
+	WHERE ACCESS_PATH_UID = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+			WHERE object_name = ?obj
+	FOR READ UNCOMMITTED ACCESS);
+
+log LOGMV518;
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set schema catmvs.mvschm;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm2.T_518_MV1@ @1@;
+
+-- check that they are NO AUDITED (N)
+
+set schema catmvs.mvschm2;
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set schema catmvs.mvschm;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+set schema catmvs.mvschm2;
+
+set PARSERFLAGS 1;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm2.T_518_MV1@ @0@;
+
+-- check that they are AUDITED (Y)
+
+set param ?obj 'T_518_MV1';
+execute select_path_table;
+
+set schema catmvs.mvschm;
+
+set param ?obj 'T_518_I1';
+execute select_path_table;
+
+set schema catmvs.mvschm2;
+
+--==============================================================
+?section TEST3
+
+set schema catmvs.mvschm;
+
+create mv T_518_MV2 
+refresh on request
+initialize on create
+as select a, sum(b) as sb
+from T_518_T1
+group by a;
+ALTER MV T_518_MV2 attribute all mvs allowed;
+
+alter mv T_518_MV2 mvattribute no auditonrefresh;
+
+create index T_518_I2 on T_518_MV2(a);
+
+set param ?obj 'T_518_MV2';
+execute select_path_table;
+set param ?obj 'T_518_I2';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+set param ?obj 'T_518_MV2';
+execute select_path_table;
+set param ?obj 'T_518_I2';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+set param ?obj 'T_518_MV2';
+execute select_path_table;
+set param ?obj 'T_518_I2';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+set param ?obj 'T_518_MV2';
+execute select_path_table;
+set param ?obj 'T_518_I2';
+execute select_path_table;
+
+--==============================================================
+?section TEST4
+
+set schema catmvs.mvschm;
+
+create mv T_518_MV3 
+refresh on request
+initialized on refresh
+as select a , sum(b) as sb
+from T_518_T1
+group by a;
+ALTER MV T_518_MV3 attribute all mvs allowed;
+
+create index T_518_I3 on T_518_MV3(a) no populate;
+
+set param ?obj 'T_518_MV3';
+execute select_path_table;
+set param ?obj 'T_518_I3';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV3@ @1@;
+
+set param ?obj 'T_518_MV3';
+execute select_path_table;
+set param ?obj 'T_518_I3';
+execute select_path_table;
+
+CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV3@ @0@;
+
+set param ?obj 'T_518_MV3';
+execute select_path_table;
+set param ?obj 'T_518_I3';
+execute select_path_table;
+--==============================================================
+?section TEST5
+
+set schema catmvs.mvschm;
+
+create table t1 (a int );
+ALTER TABLE t1 attribute all mvs allowed;
+create index i1 on t1(a);
+
+set PARSERFLAGS 3;
+
+CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.T1L> <CATMVS.MVSCHM.T1> <0> <3> ;
+
+-- should pass
+CREATE TANDEM_CAT_REQUEST&1 11 4 @CATMVS.MVSCHM.I1@ @1@ @@ @CATMVS.MVSCHM.T1L@;
+CREATE TANDEM_CAT_REQUEST&1 11 4 @CATMVS.MVSCHM.I1@ @0@ @@ @CATMVS.MVSCHM.T1L@;
+CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.T1L> ;
+drop index i1;
+drop table t1;
+
+
+----------------------------------------------------------------
+?section CLEAN_UP
+
+set schema catmvs.mvschm2;
+drop mv T_518_MV1;
+
+set schema catmvs.mvschm;
+drop index T_518_I3;
+drop mv T_518_MV3;
+drop index T_518_I2;
+drop mv T_518_MV2;
+drop index T_518_I1;
+drop mv T_518_MV1;
+drop table T_518_T1;

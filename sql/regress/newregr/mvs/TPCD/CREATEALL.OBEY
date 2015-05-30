@@ -1,0 +1,230 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------
+?section SET_UP
+
+create catalog cat;
+create schema cat.tpcd;
+cd ./TPCD;
+
+set schema CAT.TPCD;
+set envvar DSS_CONFIG . ;
+-- change all of these lines together if needed
+#ifNSK
+set envvar DSS_TEMP ./TPCDTEMP;
+sh mkdir $DSS_TEMP;
+#ifNSK
+#ifLINUX
+set envvar DSS_TEMP ./TPCDTEMP;
+sh mkdir $DSS_TEMP;
+#ifLINUX
+#ifNT
+set envvar DSS_TEMP .\TPCDTEMP;
+sh mkdir %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\DBGEN.EXE %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\DISTS.DSS %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\*.FMT %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\GENERATETPCD.KSH %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\*.AWK %DSS_TEMP% ;
+sh cp %DSS_CONFIG%\RUNGEN.PL %DSS_TEMP% ;
+#ifNT
+
+cd TPCDTEMP;
+
+log SQLCI.LOG clear;
+env;
+
+-- ******************************************************************
+-- * Drop old tables                                                *
+-- ******************************************************************
+
+obey ../CREATEALL.OBEY(CLEAN_UP);
+-- ******************************************************************
+-- * Create the tables                                              *
+-- ******************************************************************
+
+Create table customer  (
+   c_custkey           int                not null not droppable, 
+   c_nationkey         int                not null not droppable, 
+   c_acctbal           numeric(12,2)      not null not droppable, 
+   c_phone             char(15)           not null not droppable, 
+   c_mktsegment        char(10)           not null not droppable, 
+   c_name              varchar(25)        not null not droppable, 
+   c_address           varchar(40)        not null not droppable, 
+   c_comment           varchar(117)       not null not droppable, 
+primary key (c_custkey) not droppable)
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (           401) location $$partition2$$)
+attribute buffered;
+ALTER TABLE customer attribute all mvs allowed;
+
+Create table supplier  (
+   s_suppkey           int                not null not droppable, 
+   s_nationkey         int                not null not droppable, 
+   s_acctbal           numeric(12,2)      not null not droppable, 
+   s_phone             char(15)           not null not droppable, 
+   s_name              char(25)           not null not droppable, 
+   s_address           varchar(40)        not null not droppable, 
+   s_comment           varchar(101)       not null not droppable, 
+primary key (s_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (            501) location $$partition2$$)
+attribute buffered;
+ALTER TABLE supplier attribute all mvs allowed;
+
+Create table lineitem  (
+   l_orderkey          int                not null not droppable, 
+   l_linenumber        int                not null not droppable, 
+   l_partkey           int                not null not droppable, 
+   l_suppkey           int                not null not droppable, 
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (         10001) location $$partition2$$)
+attribute buffered;
+ALTER TABLE lineitem attribute all mvs allowed;
+
+Create table orders  (
+   o_orderkey          int                not null not droppable, 
+   o_custkey           int                not null not droppable, 
+   o_shippriority      int                not null not droppable, 
+   o_totalprice        numeric(12,2)      not null not droppable, 
+   o_orderdate         date               not null not droppable, 
+   o_orderstatus       char(1)            not null not droppable, 
+   o_orderpriority     char(15)           not null not droppable, 
+   o_clerk             char(15)           not null not droppable, 
+   o_comment           varchar(79)        not null not droppable, 
+primary key (o_orderkey) not droppable) 
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (         2001) location $$partition2$$)
+attribute buffered;
+ALTER TABLE orders attribute all mvs allowed;
+
+Create table part  (
+   p_partkey           int                not null not droppable, 
+   p_size              int                not null not droppable, 
+   p_retailprice       numeric(12,2)      not null not droppable, 
+   p_mfgr              char(25)           not null not droppable, 
+   p_brand             char(10)           not null not droppable, 
+   p_container         char(10)           not null not droppable, 
+   p_name              varchar(55)        not null not droppable, 
+   p_type              varchar(25)        not null not droppable, 
+   p_comment           varchar(23)        not null not droppable, 
+primary key (p_partkey) not droppable) 
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (          1001) location $$partition2$$)
+attribute buffered;
+ALTER TABLE part attribute all mvs allowed;
+
+Create table partsupp  (
+   ps_partkey          int                not null not droppable, 
+   ps_suppkey          int                not null not droppable, 
+   ps_availqty         int                not null not droppable, 
+   ps_supplycost       numeric(12,2)      not null not droppable, 
+   ps_comment          varchar(199)       not null not droppable, 
+primary key (ps_partkey,ps_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+range partition ( 
+   add first key (          1001) location $$partition2$$)
+attribute buffered;
+ALTER TABLE partsupp attribute all mvs allowed;
+
+Create table nation  (
+   n_nationkey         int                not null not droppable, 
+   n_regionkey         int                not null not droppable, 
+   n_name              char(25)           not null not droppable, 
+   n_comment           varchar(152)       not null not droppable, 
+primary key (n_nationkey) not droppable) 
+store by primary key 
+location $$partition1$$
+attribute buffered;
+ALTER TABLE nation attribute all mvs allowed;
+
+Create table region  (
+   r_regionkey         int                not null not droppable, 
+   r_name              char(25)           not null not droppable, 
+   r_comment           varchar(152)       not null not droppable, 
+primary key (r_regionkey) not droppable) 
+store by primary key 
+location $$partition1$$
+attribute buffered;
+ALTER TABLE region attribute all mvs allowed;
+
+-- ******************************************************************
+-- * Import into all base tables.                                   *
+-- ******************************************************************
+
+#ifNSK
+--sh . ./LOADTPCD-NSK.KSH;
+#ifNSK
+#ifNT
+sh perl RUNGEN.PL;
+
+sh awk -f ./FILTER_KEY.AWK  -v  downLimit1=0 -v upLimit1=1500 part.tbl > part.tbl1 ;
+sh awk -f ./FILTER_KEY.AWK  -v  downLimit1=0 -v upLimit1=80 supplier.tbl > supplier.tbl1 ;
+sh awk -f ./FILTER_2KEY.AWK -v  downLimit1=0 -v downLimit2=0 -v upLimit1=1500 -v upLimit2=80 partsupp.tbl > partsupp.tbl1 ;
+sh awk -f ./FILTER_KEY.AWK  -v  downLimit1=0 -v upLimit1=800 customer.tbl > customer.tbl1 ;
+sh awk -f ./FILTER_2KEY.AWK  -v  downLimit1=0 -v downLimit2=0 -v upLimit1=12000 -v upLimit2=800 orders.tbl > orders.tbl1 ;
+sh awk -f ./FILTER_3KEY.AWK -v  downLimit1=0 -v downLimit2=0 -v downLimit3=0 -v upLimit1=10000 -v upLimit2=1500 -v upLimit3=80  lineitem.tbl > lineitem.tbl1 ;
+
+sh import cat.tpcd.nation -I nation.tbl -U NATION.FMT ;
+sh import cat.tpcd.region -I region.tbl -U REGION.FMT ;
+sh import cat.tpcd.supplier -I supplier.tbl1 -U SUPPLIER.FMT  ;
+sh import cat.tpcd.part -I part.tbl1 -U PART.FMT  ;
+sh import cat.tpcd.partsupp -I partsupp.tbl1 -U PARTSUPP.FMT  ;
+sh import cat.tpcd.customer -I customer.tbl1 -U CUSTOMER.FMT ;
+sh import cat.tpcd.orders -I orders.tbl1 -U ORDERS.FMT ;
+sh import cat.tpcd.lineitem -I lineitem.tbl1 -U LINEITEM.FMT  ;
+#ifNT
+
+cd ../..;
+log;
+
+----------------------------------------------------------------
+?section CLEAN_UP
+
+drop table customer;
+drop table supplier;
+drop table lineitem;
+drop table orders;
+drop table part;
+drop table partsupp;
+drop table nation;
+drop table region;

@@ -1,0 +1,3623 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.atomic;
+
+--- SQL operation complete.
+>>
+>>--1
+>>prepare II from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.42E+008       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.42E+008        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.42E+008       
+
+--- 1 row(s) selected.
+>>
+>>--2
+>>prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.42E+008       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.42E+008        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.42E+008       
+
+--- 1 row(s) selected.
+>>
+>>--3
+>>prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.50E+008       
+
+--- 1 row(s) selected.
+>>
+>>--4
+>>prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.50E+008       
+
+--- 1 row(s) selected.
+>>
+>>--5
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.60E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.46E+008        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.50E+008       
+
+--- 1 row(s) selected.
+>>
+>>--6
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>
+>>--7
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>
+>>--8
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.74E+006       
+
+--- 1 row(s) selected.
+>>
+>>--9
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.74E+006       
+
+--- 1 row(s) selected.
+>>
+>>--10
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.56E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.74E+006       
+
+--- 1 row(s) selected.
+>>
+>>--11
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>
+>>--12
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.75E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.43E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.43E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>
+>>--13
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>
+>>--14
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>
+>>--15
+>>prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.09E+007       
+
+--- 1 row(s) selected.
+>>
+>>--16
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                7.05E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.34E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.05E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.37E+007       
+
+--- 1 row(s) selected.
+>>
+>>--17
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                7.05E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.34E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           6.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.37E+007       
+
+--- 1 row(s) selected.
+>>
+>>--18
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.16E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--19
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.08E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--20
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.89E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--21
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.40E+006       
+
+--- 1 row(s) selected.
+>>
+>>--22
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.40E+006       
+
+--- 1 row(s) selected.
+>>
+>>--23
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--24
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--25
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--26
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.68E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           9.27E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.74E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.36E+006       
+
+--- 1 row(s) selected.
+>>
+>>--27
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.16E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           9.27E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.74E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.36E+006       
+
+--- 1 row(s) selected.
+>>
+>>--28
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.93E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.83E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.29E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.48E+006       
+
+--- 1 row(s) selected.
+>>
+>>--29
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.83E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.29E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.48E+006       
+
+--- 1 row(s) selected.
+>>
+>>--30
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.48E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.22E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.06E+006       
+
+--- 1 row(s) selected.
+>>
+>>--31
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           4.07E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.61E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.26E+007       
+
+--- 1 row(s) selected.
+>>
+>>--32
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.87E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.86E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.40E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.05E+007       
+
+--- 1 row(s) selected.
+>>
+>>--33
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.42E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--34
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.37E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--35
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.54E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--36
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--37
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--38
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.35E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.68E+007       
+
+--- 1 row(s) selected.
+>>
+>>--39
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--40
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--41
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.83E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--42
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.75E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.48E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--43
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.69E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.92E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.79E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.25E+007       
+
+--- 1 row(s) selected.
+>>
+>>--44
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.40E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--45
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.39E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--46
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                7.05E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.34E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.05E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.37E+007       
+
+--- 1 row(s) selected.
+>>
+>>--47
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                7.05E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.34E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           6.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.37E+007       
+
+--- 1 row(s) selected.
+>>
+>>--48
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.16E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--49
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.08E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--50
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.89E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.14E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           7.11E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.20E+007       
+
+--- 1 row(s) selected.
+>>
+>>--51
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.40E+006       
+
+--- 1 row(s) selected.
+>>
+>>--52
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.86E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           8.40E+006       
+
+--- 1 row(s) selected.
+>>
+>>--53
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--54
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--55
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.67E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.46E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.29E+006       
+
+--- 1 row(s) selected.
+>>
+>>--56
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.68E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           9.27E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.74E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.36E+006       
+
+--- 1 row(s) selected.
+>>
+>>--57
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.16E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           9.27E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           2.74E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.36E+006       
+
+--- 1 row(s) selected.
+>>
+>>--58
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.93E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.83E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.29E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.48E+006       
+
+--- 1 row(s) selected.
+>>
+>>--59
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.83E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.29E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.48E+006       
+
+--- 1 row(s) selected.
+>>
+>>--60
+>>prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.86E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           8.48E+006       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.22E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           9.06E+006       
+
+--- 1 row(s) selected.
+>>
+>>--61
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           4.07E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.61E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.26E+007       
+
+--- 1 row(s) selected.
+>>
+>>--62
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.87E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.86E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.40E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.05E+007       
+
+--- 1 row(s) selected.
+>>
+>>--63
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.42E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--64
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.37E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--65
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.54E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--66
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--67
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--68
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.35E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.68E+007       
+
+--- 1 row(s) selected.
+>>
+>>--69
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--70
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--71
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.83E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--72
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.75E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.48E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--73
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.69E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.92E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.79E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.25E+007       
+
+--- 1 row(s) selected.
+>>
+>>--74
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.40E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--75
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.39E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--76
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                3.17E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           4.07E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.61E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.26E+007       
+
+--- 1 row(s) selected.
+>>
+>>--77
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                2.87E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.86E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.40E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.05E+007       
+
+--- 1 row(s) selected.
+>>
+>>--78
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.42E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--79
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.37E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--80
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.54E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           3.79E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           3.75E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           4.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--81
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--82
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.40E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           8.38E+006        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.47E+007       
+
+--- 1 row(s) selected.
+>>
+>>--83
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.35E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.09E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.68E+007       
+
+--- 1 row(s) selected.
+>>
+>>--84
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--85
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.38E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.08E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.23E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           1.55E+007       
+
+--- 1 row(s) selected.
+>>
+>>--86
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                1.20E+007        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.83E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--87
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                9.75E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           2.12E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.48E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.49E+007       
+
+--- 1 row(s) selected.
+>>
+>>--88
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.69E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.92E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.79E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.25E+007       
+
+--- 1 row(s) selected.
+>>
+>>--89
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.40E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>--90
+>>prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>log;
+>>
+>>execute innerCard;
+
+OP                              Inner Cardinality
+------------------------------  -----------------
+
+HYBRID_HASH_JOIN                8.39E+006        
+
+--- 1 row(s) selected.
+>>execute leftCard;
+
+OP                              Left Cardinality
+------------------------------  ----------------
+
+LEFT_HYBRID_HASH_JOIN           1.62E+007       
+
+--- 1 row(s) selected.
+>>execute rightCard;
+
+OP                              Right Cardinality
+------------------------------  -----------------
+
+LEFT_HYBRID_HASH_JOIN           1.95E+007        
+
+--- 1 row(s) selected.
+>>execute fullCard;
+
+OP                              Full Cardinality
+------------------------------  ----------------
+
+FULL_HYBRID_HASH_JOIN           2.11E+007       
+
+--- 1 row(s) selected.
+>>
+>>log;

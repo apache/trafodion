@@ -1,0 +1,99 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- HL_R2_Triggers_Spec.doc: SPJ enhancements to Triggers
+-- CS with one trigger event that is recursive.
+-- Result: Success
+
+--control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+
+obey TEST_SPJC_FUNC_007(clean_up);
+obey TEST_SPJC_FUNC_007(set_up);
+log  LOG_SPJC_FUNC_007 clear;
+obey TEST_SPJC_FUNC_007(tests);
+log;
+obey TEST_SPJC_FUNC_007(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+
+drop trigger TRIG01_SPJC_FUNC_007;
+drop trigger TRIG02_SPJC_FUNC_007;
+
+drop table TAB01_SPJC_FUNC_007;
+drop table TAB02_SPJC_FUNC_007;
+
+?section set_up
+set schema CAT1.SCHM;
+
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+create table TAB01_SPJC_FUNC_007(a int, b int, c int, d int);
+create table TAB02_SPJC_FUNC_007(a int, b int, c int, d int);
+create table TAB03_SPJC_FUNC_007(a int, b int, c int, d int);
+
+INSERT INTO TAB01_SPJC_FUNC_007 VALUES (1, 2, 3, 4),
+				(8, 6, 4, 2),
+				(3, 6, 9, 12),
+				(3, 6, 9, 12),
+				(3, 6, 9, 12);
+
+?section tests
+
+------------------------------------------------------------------
+-- TEST CASE 01: Recursive trigger
+-- Result: Success
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG01_SPJC_FUNC_007 AFTER DELETE ON
+TAB01_SPJC_FUNC_007
+REFERENCING OLD ROW AS O
+FOR EACH ROW
+	INSERT INTO TAB02_SPJC_FUNC_007 VALUES (O.A, O.B, O.C, O.D);
+
+CREATE TRIGGER TRIG02_SPJC_FUNC_007 AFTER INSERT ON
+TAB02_SPJC_FUNC_007
+REFERENCING NEW ROW AS N
+FOR EACH ROW
+	DELETE FROM TAB01_SPJC_FUNC_007
+		WHERE TAB01_SPJC_FUNC_007.D = N.A + N.D + 2;
+
+------------------------------------------------------------------
+
+-- original table
+select * from TAB01_SPJC_FUNC_007;
+
+-- The tests
+
+BEGIN
+-- Triggers an insert of old values into TAB02_SPJC_FUNC_007
+-- which in turn deletes rows with D = 12, effectively
+-- deleting all except one row in TAB01_SPJC_FUNC_007
+-- Raises a warning that trigger may be triggered recursively more
+-- than 16 times
+	DELETE FROM TAB01_SPJC_FUNC_007 where a = 8;
+END;
+
+
+-- Result: TAB01_SPJC_FUNC_007 has one row
+select * from TAB01_SPJC_FUNC_007;
+
+-- Result: TAB02_SPJC_FUNC_007 has four rows
+select * from TAB02_SPJC_FUNC_007;
+------------------------------------------------------------------

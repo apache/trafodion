@@ -1,0 +1,103 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- EMBEDDED SQL/C test w/ Triggers on Update
+-- runs on cat1.SCHM only
+----------------------------------------
+
+-- clean_up on all schemas
+set schema CAT1.SCHM;
+obey TEST_14_4(clean_up);
+obey TEST_14_4(set_up);
+
+-- start logging
+log   LOG_14_4 clear;
+
+set schema CAT1.SCHM;
+obey TEST_14_4(tests);
+
+log;
+
+delete from tab1a;
+delete from tab1b;
+delete from cat3.schm.tab3a;
+
+obey emb-env.sql;
+
+log   LOG_14_4;
+alter trigger disable trig1;
+alter trigger disable trig4;
+
+obey TEST_14_4(tests);
+
+
+-- end logging
+LOG;
+
+-- cleanup 
+obey TEST_14_4(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+-------------------
+SET SCHEMA cat1.schm;
+
+obey clear.sql;
+
+sh rm -f etest_14_4.cpp etest_14_4.exe etest_14_4.ilk etest_14_4.obj etest_14_4.pdb etest_14_4.lst etest_14_4.m;
+
+?section set_up
+-------------------
+
+obey emb-env.sql;
+
+SET SCHEMA cat1.schm;
+
+--
+-- defining trig1 and trig4
+
+
+CREATE TRIGGER trig1
+AFTER UPDATE OF (b)
+ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+WHEN (newR.b <> newR.a +10)
+INSERT INTO tab1B VALUES
+(newR.a, newR.b);
+
+CREATE TRIGGER trig4
+AFTER INSERT ON tab1B
+INSERT INTO cat3.schm.tab3A (SELECT b, d FROM cat1.schm.tab1A WHERE b=d);
+
+
+
+
+
+-- make the executable
+
+-- sh sh ./make-emb etest_14_4 | tee -a LOG_14_4;
+sh sh ./makefileall.ksh etest_14_4 ${mxcmpdir} ${mxcidir} 2>&1;
+
+?section tests
+-------------------
+
+log   LOG_14_4;
+sh ./etest_14_4.exe | tee -a LOG_14_4;
+

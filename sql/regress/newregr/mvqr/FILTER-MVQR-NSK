@@ -1,0 +1,51 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#! /bin/sh
+
+# Specialized filter for MVQR project to filter out by Taoufik
+# 1. 
+# 2. 
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
+sed "
+s/ id='[A-Z][0-9]*'/ id='ID'/g
+s/ ref='[A-Z][0-9]*'/ ref='REF'/g
+s/MV \(.*\) was disqualified because MV residual predicate \(.*\) was \(.*\)/MV \1 was disqualified because MV residual predicate PRED was \3/g
+s/MV \(.*\) was disqualified because MV range predicate \(.*\) was \(.*\)/MV \1 was disqualified because MV range predicate PRED was \3/g
+s/MV \(.*\) was disqualified because The query range predicate \(.*\) is \(.*\)/MV \1 was disqualified because The query range predicate PRED is \3/g
+s/MV \(.*\) was disqualified because Table \(.*\) failed \(.*\)/MV XXX was disqualified because Table \2 failed REASON/g
+s/MV \(.*\) was disqualified because Output expression \(.*\) cannot be Provided/MV \1 was disqualified because Output expression ID cannot be Provided/g
+s/TS='[0-9]*'/TS='TS'/g
+s/CONSTRAINT [A-Za-z0-9][_A-Z\.a-z0-9]*\_[0-9]*\_[0-9]*/CONSTRAINT @tablename@_nnnnnn_nnn/g
+/^ *$/d
+" $fil
+
+#
+# Only need the following SED command if we want to remove mismatched extra
+# blank lines, but then the line numbers appearing in the DIFF files do not
+# correspond to the line numbers in the LOG files; they correspond to the
+# line numbers in the LOGxxx.flt files.
+#
+# /^ *$/d
+#
+

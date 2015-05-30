@@ -1,0 +1,582 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TESTMV215N
+--- 2.4.4.
+--- PURPOSE: Refresh tests with TPCD database         
+------------------------------------------------------
+
+control query default GEN_PA_NUM_BUFFERS  '10';
+
+obey TESTMV215N(CLEAN_UP);
+obey TESTMV215N(SET_UP);
+
+log LOGMV215N clear;
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215N(TEST1);
+--	obey TESTMV215N(TEST2);  6 delta's
+   obey TESTMV215N(TEST4); 
+    obey TESTMV215N(TEST7);
+    obey TESTMV215N(TEST8);
+    
+-- Clean and exit
+log;
+obey TESTMV215N(CLEAN_UP);
+log LOGMV215N;
+-- The objects that were left in the system:
+obey ./TPCD/SHOW_OBJECTS_TPCD;
+log;
+exit;
+
+-------------------------------------------------------
+?section SET_UP
+-------------------------------------------------------
+
+control query default insert_vsbb 'OFF';
+set PARSERFLAGS 1;
+set schema cat.tpcd;
+
+obey ./TPCD/CREATEALL.OBEY(SET_UP);
+
+-- insert only selected data
+delete from lineitem;
+delete from supplier;
+delete from orders;
+delete from part;
+delete from partsupp;
+delete from customer;
+delete from nation;
+delete from region;
+
+cd tpcd/tpcdtemp;
+sh import cat.tpcd.nation -I nation.tbl -U nation.fmt;
+sh import cat.tpcd.region -I region.tbl -U region.fmt;
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -C 30;
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -C 17000;
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -C 4500;
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -C 600;
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -C 2400;
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -C 450;
+cd ../..;
+
+obey PREPARE_DDL_SELECTS;
+
+-----------------------------------------------------
+?section CLEAN_UP
+-----------------------------------------------------
+
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+drop table cat3.details.partsupp;
+drop table cat3.details.supplier;
+drop table cat3.geography.nation;
+drop schema cat3.details;
+drop schema cat3.geography;
+drop schema cat3.testing;
+drop catalog cat3;
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+
+-- ---------------------------------------------------------------------------
+?section TEST1
+-----------------------------------------------------
+-- SingleDelta
+obey ./TPCD/CREATEMVS(MV5);
+
+-- Basic Q5
+-- for compare 
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N ;
+
+
+-- creating delta
+sh import cat.tpcd.customer -I ./tpcd/tpcdtemp/customer.tbl -U ./tpcd/tpcdtemp/customer.fmt -r -F 450 -C 75 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+log LOGMV215N;
+-- updates
+update customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_nationkey = 10 and c_acctbal < 4000;
+
+update customer
+set c_nationkey = 10 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal > 3000;
+
+update customer
+set c_nationkey = 12 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal < 2500;
+
+refresh mv4q5;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N ;
+delete from table (iud_log_table cat.tpcd.customer);
+log LOGMV215N;
+
+-------------------------------------------------------------
+?section TEST2
+-------------------------------------------------------------
+-- MultiDelta (6 deltas).
+-- the test uses mv, stat1, stat2 as were declared on the previous section
+
+-- De-comment this when Yuval fixes bug 395
+-- alter table cat.tpcd.lineitem
+-- attribute automatic rangelog;
+
+SET PARAM ?table_name 'SUPPLIER';
+execute select_mvs_table_info;
+
+log;
+sh import cat.tpcd.supplier -I ./tpcd/tpcdtemp/supplier.tbl -U ./tpcd/tpcdtemp/supplier.fmt -r -F 30 -C 5 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+log LOGMV215N;
+
+-- should be equal to 5
+select count(*) from table(iud_log_table cat.tpcd.supplier);
+
+log;
+
+sh import cat.tpcd.lineitem -I ./tpcd/tpcdtemp/lineitem.tbl -U ./tpcd/tpcdtemp/lineitem.fmt -r -F 17000 -C 2500 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+update lineitem
+set l_comment = 'missing'
+where l_extendedprice between 500 and 1000;
+
+sh import cat.tpcd.customer -I ./tpcd/tpcdtemp/customer.tbl -U ./tpcd/tpcdtemp/customer.fmt -r -F 650 -C 75 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+sh import cat.tpcd.orders -I ./tpcd/tpcdtemp/orders.tbl -U ./tpcd/tpcdtemp/orders.fmt -r -F 9050 -C 40 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+--update nation
+--set n_comment = 'yes'
+--where n_regionkey = 1;
+
+log LOGMV215N;
+insert into nation values (1199,  3,'NEVERLAND', 'yes');
+insert into region values (10, 'MOON', 'space');
+log;
+
+--update region
+--set r_comment = 'yes'
+--where r_regionkey = 1;
+
+log LOGMV215N;
+
+set PARSERFLAGS 3;
+
+-----------------------
+update statistics for table customer on (c_custkey) ;
+update statistics for table orders on  (o_orderkey) ;
+update statistics for table supplier on  (s_suppkey) ;
+update statistics for table nation on  (n_nationkey) ,(n_name);
+update statistics for table region on  (r_regionkey)  ;
+update statistics for table lineitem on  (l_orderkey ,l_linenumber)  ;
+
+update statistics for table mv4q5 on (n_name);
+
+update statistics for table(iud_log_table orders )  on (o_orderkey);
+update statistics for table(iud_log_table lineitem )  on (l_orderkey,l_linenumber);
+update statistics for table(iud_log_table customer )  on (c_custkey);
+update statistics for table(iud_log_table supplier )  on (s_suppkey);
+update statistics for table(iud_log_table nation )  on (n_nationkey) ,(n_name);
+update statistics for table(iud_log_table region )  on (r_regionkey);
+
+
+------------------------
+refresh mv4q5 debug 51;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK| sort >> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+delete from table (iud_log_table cat.tpcd.orders);
+delete from table (iud_log_table cat.tpcd.customer);
+delete from table (iud_log_table cat.tpcd.supplier);
+delete from table (iud_log_table cat.tpcd.region);
+delete from table (iud_log_table cat.tpcd.nation);
+delete from table (iud_log_table cat.tpcd.lineitem);
+delete from table (range_log_table cat.tpcd.lineitem);
+log LOGMV215N;
+
+-- De-comment this when Yuval fixes bug 395
+-- alter table cat.tpcd.lineitem
+-- attribute no rangelog;
+
+----------------------------------------------------------
+?section TEST4
+--------------------------------------------------------------
+-- MultiDelta (3 deltas) + min and max functions
+-- min and max don't work yet, remove comment marks ('-') when they do work
+create mv mv4q3
+    refresh on request
+    initialize on create
+    as
+    select 
+        l_orderkey, 
+        cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
+        o_orderdate, o_shippriority
+       , max(c_custkey) as maxcust,
+         min(c_custkey) as mincust
+    from customer,orders,lineitem
+    where
+        c_mktsegment = 'BUILDING'
+        and c_custkey = o_custkey
+        and l_orderkey = o_orderkey
+        and o_orderdate < date '1995-03-15'
+        and l_shipdate >  date '1995-03-15'
+    group by l_orderkey, o_orderdate, o_shippriority;
+
+select count(*) from mv4q3;
+-- Basic Q3
+-- for compare
+PREPARE stat1 FROM
+    select
+        l_orderkey, 
+        cast(sum(l_extendedprice*(1-l_discount)) as numeric(18,2)) as revenue,
+        o_orderdate, o_shippriority
+       , max(c_custkey) as maxcust,
+        min(c_custkey) as mincust
+    from customer,orders,lineitem
+    where
+        c_mktsegment = 'BUILDING'
+        and c_custkey = o_custkey
+        and l_orderkey = o_orderkey
+        and o_orderdate < date '1995-03-15'
+        and l_shipdate >  date '1995-03-15'
+    group by l_orderkey, o_orderdate, o_shippriority
+    order by revenue desc,o_orderdate;
+
+PREPARE stat2 FROM
+    select l_orderkey, revenue, o_orderdate, o_shippriority, maxcust, mincust
+    from mv4q3
+    order by revenue desc, o_orderdate;        
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N ;
+log LOGMV215N;
+
+-- iud deltas
+log;
+sh import cat.tpcd.lineitem -I ./tpcd/tpcdtemp/lineitem.tbl -U ./tpcd/tpcdtemp/lineitem.fmt -r -F 20000 -C 2500 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat.tpcd.orders -I ./tpcd/tpcdtemp/orders.tbl -U ./tpcd/tpcdtemp/orders.fmt -r -F 4500 -C 2500 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat.tpcd.customer -I ./tpcd/tpcdtemp/customer.tbl -U ./tpcd/tpcdtemp/customer.fmt -r -F 525 -C 75 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+log LOGMV215N;
+
+update lineitem
+set l_comment = 'broken'
+where l_suppkey > 30 and l_suppkey < 40;
+
+update customer
+set c_comment = 'good'
+where c_mktsegment = 'AUTOMOBILE';
+
+refresh mv4q3;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+delete from table (iud_log_table cat.tpcd.orders);
+delete from table (iud_log_table cat.tpcd.customer);
+delete from table (iud_log_table cat.tpcd.lineitem);
+log LOGMV215N;
+
+----------------------------------------------------
+?section TEST7
+----------------------------------------------------
+-- MultiDelta(3 deltas) + one of them is self cancelling
+obey ./TPCD/CREATEMVS(MV11);
+refresh mv4q11;
+
+-- Basic Q11
+-- for compare
+PREPARE stat1 FROM
+    select
+        ps_partkey, sum(ps_supplycost*ps_availqty) as pvalue
+    from partsupp,supplier,nation
+    where ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'GERMANY'
+    group by ps_partkey
+    order by pvalue desc;
+
+PREPARE stat2 FROM
+    select 
+        ps_partkey, pvalue
+    from mv4q11
+    order by pvalue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+log LOGMV215N;
+
+-- iud deltas
+log;
+sh import cat.tpcd.partsupp -I ./tpcd/tpcdtemp/partsupp.tbl -U ./tpcd/tpcdtemp/partsupp.fmt -r -F 2800 -C 400 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat.tpcd.supplier -I ./tpcd/tpcdtemp/supplier.tbl -U ./tpcd/tpcdtemp/supplier.fmt -r -F 35 -C 10 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+log LOGMV215N;
+
+update partsupp
+set ps_comment = 'not available'
+where ps_partkey between 52 and 57;
+
+-- nation ----> self cancelling delta
+insert into nation values (45, 2, 'BOLIVIA', 'yes'), (46, 3, 'ICELAND', '');
+delete from nation where n_name = 'ICELAND';
+insert into nation values (87, 3, 'HOLLAND','yes');
+delete from nation where n_name = 'HOLLAND' or n_name = 'BOLIVIA';
+
+refresh mv4q11;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+
+delete from table (iud_log_table cat.tpcd.supplier);
+delete from table (iud_log_table cat.tpcd.partsupp);
+delete from table (iud_log_table cat.tpcd.nation);
+log LOGMV215N;
+
+-------------------------------------------------------
+?section TEST8
+-------------------------------------------------------
+-- MultiDelta (2 deltas)
+obey ./TPCD/CREATEMVS(MV12);
+refresh mv4q12;
+
+-- Basic Q12
+-- for compare
+PREPARE stat1 FROM
+    select
+        l_shipmode, 
+        sum (case when o_orderpriority ='1-URGENT'
+        or o_orderpriority ='2-HIGH'
+        then 1 else 0 end) as high_line_count,
+        sum (case when o_orderpriority <> '1-URGENT'
+        and o_orderpriority <> '2-HIGH'
+        then 1 else 0 end) as low_line_count
+    from orders,lineitem
+    where 
+        o_orderkey = l_orderkey
+        and l_shipmode in ('MAIL','SHIP')
+        and l_commitdate < l_receiptdate
+        and l_shipdate < l_commitdate
+        and l_receiptdate >= date '1994-01-01'
+        and l_receiptdate < date '1994-01-01' + interval '1' year
+    group by l_shipmode
+    order by l_shipmode;
+
+PREPARE stat2 FROM
+    select
+        l_shipmode, high_line_count, low_line_count
+    from mv4q12
+    order by l_shipmode;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+log LOGMV215N;
+
+-- iud deltas
+log;
+sh import cat.tpcd.orders -I ./tpcd/tpcdtemp/orders.tbl -U ./tpcd/tpcdtemp/orders.fmt -r -F 8000 -C 1000 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat.tpcd.lineitem -I ./tpcd/tpcdtemp/lineitem.tbl -U ./tpcd/tpcdtemp/lineitem.fmt -r -F 27500 -C 2500 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+log LOGMV215N;
+
+update orders
+set o_totalprice = 1099.00 where o_custkey < 100;
+
+refresh mv4q12;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+
+delete from table (iud_log_table cat.tpcd.orders);
+delete from table (iud_log_table cat.tpcd.lineitem);
+log LOGMV215N;
+
+-------------------------------------------------------
+?section TEST10
+-------------------------------------------------------
+-- MultiDelta (3 deltas).This test checks MV that is based on tables from different schemas
+
+-- Creating new schemas
+create catalog cat3;
+create schema cat3.details;
+create schema cat3.geography;
+create schema cat3.testing;
+-- Creating new tables
+set schema cat3.details;
+Create table partsupp  (
+   ps_partkey          int                not null not droppable, 
+   ps_suppkey          int                not null not droppable, 
+   ps_availqty         int                not null not droppable, 
+   ps_supplycost       numeric(12,2)      not null not droppable, 
+   ps_comment          varchar(199)       not null not droppable, 
+primary key (ps_partkey,ps_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (          1001) location $$partition2$$);
+
+Create table supplier  (
+   s_suppkey           int                not null not droppable, 
+   s_nationkey         int                not null not droppable, 
+   s_acctbal           numeric(12,2)      not null not droppable, 
+   s_phone             char(15)           not null not droppable, 
+   s_name              char(25)           not null not droppable, 
+   s_address           varchar(40)        not null not droppable, 
+   s_comment           varchar(101)       not null not droppable, 
+primary key (s_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (            501) location $$partition2$$);
+
+set schema cat3.geography;
+
+Create table nation  (
+   n_nationkey         int                not null not droppable, 
+   n_regionkey         int                not null not droppable, 
+   n_name              char(25)           not null not droppable, 
+   n_comment           varchar(152)       not null not droppable, 
+primary key (n_nationkey) not droppable) 
+store by primary key 
+location $$partition1$$;
+
+-- Inserting data
+log;
+cd ./tpcd/tpcdtemp;
+sh import cat3.details.supplier -I supplier.tbl -U supplier.fmt -r -C 60;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat3.details.partsupp -I partsupp.tbl -U partsupp.fmt -r -C 6000;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+sh import cat3.geography.nation -I nation.tbl -U nation.fmt;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+cd ../..;
+log LOGMV215N;
+
+-- Creating MV67
+set schema cat3.testing;
+obey ./TPCD/CREATEMVS(MV67);
+-- Basic Q67
+-- for compare
+PREPARE stat1 FROM
+    select
+    ps_suppkey,
+    sum(ps_supplycost*ps_availqty) as total
+    from cat3.details.partsupp,
+         cat3.details.supplier,
+         cat3.geography.nation
+    where 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'GERMANY'
+    group by ps_suppkey
+    order by total;
+
+PREPARE stat2 FROM
+    select ps_suppkey, total
+    from cat3.testing.mv4q67
+    order by total;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+
+sh import cat3.details.partsupp -I ./tpcd/tpcdtemp/partsupp.tbl -U ./tpcd/tpcdtemp/partsupp.fmt -r -F 6000 -C 400 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+sh import cat3.details.supplier -I ./tpcd/tpcdtemp/supplier.tbl -U ./tpcd/tpcdtemp/supplier.fmt -r -F 60 -C 10 >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>LOGMV215N;
+
+log LOGMV215N;
+update cat3.details.supplier
+set s_comment = 'not trustable'
+where s_suppkey < 15 and s_suppkey > 3;
+
+insert into cat3.geography.nation values (50, 1, 'CANADA', 'yes'), (51, 2, 'MEXICO', 'yes');
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat3.geography.nation@ @1@ @0@ ;
+
+refresh mv4q67;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV215N;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215N;
+delete from table (iud_log_table cat3.details.partsupp);
+delete from table (iud_log_table cat3.details.supplier);
+delete from table (iud_log_table cat3.geography.nation);
+log LOGMV215N;
+

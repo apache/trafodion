@@ -1,0 +1,108 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- NOTE: the following commnads should all SUCCEED
+
+-- This CQD is added for creating a table  with no
+-- partition or primary key when the POS is enabled on NSK and LINUX
+-- The Partitioning Scheme of the test cases is RP on NT and N on NSK/LINUX
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+
+
+CREATE CATALOG cat1;
+SET CATALOG cat1;
+CREATE SCHEMA schm;
+SET SCHEMA schm;
+
+CREATE TABLE tab1A (a INT NOT NULL, b INT, c INT, d INT, PRIMARY KEY (a) NOT DROPPABLE) NO PARTITION;
+CREATE TABLE tab1B (a INT NOT NULL, b INT, PRIMARY KEY (a) NOT DROPPABLE) NO PARTITION;
+CREATE TABLE T1 (a INT default null, b INT default null);
+CREATE TABLE T2 (a INT default null, b INT default null);
+CREATE TABLE T3 (a INT default null, b INT default null);
+CREATE TABLE T4 (a INT default null);
+CREATE TABLE T5 (a INT default null);
+CREATE TABLE T6 (a INT default null);
+CREATE TABLE T7 (a INT default null);
+CREATE TABLE T8 (a INT default null);
+
+
+CREATE CATALOG cat2;
+SET CATALOG cat2;
+CREATE SCHEMA schm;
+SET SCHEMA schm;
+
+CREATE TABLE tab2A (a INT NOT NULL, b INT, PRIMARY KEY (a) NOT DROPPABLE) NO PARTITION;
+CREATE TABLE tab2B (a INT NOT NULL, b INT, PRIMARY KEY (a) NOT DROPPABLE) NO PARTITION;
+
+CREATE CATALOG cat3;
+SET CATALOG cat3;
+CREATE SCHEMA schm;
+SET SCHEMA schm;
+
+CREATE TABLE tab3A (a INT, b INT);
+
+----------------------------------------------------------
+-- create an alternative to cat1.schm: cat1.schm_alt
+--                                     --------------
+-- with the same tables only different clustering keys 
+-- and constarain
+-----------------------------------------------------------
+CREATE SCHEMA cat1.schm_alt;
+SET SCHEMA cat1.schm_alt;
+
+CREATE TABLE tab1A (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE, 
+	PRIMARY KEY (a,d) NOT DROPPABLE, 
+	CONSTRAINT constr1 CHECK (100000 > a+b+c))
+	STORE BY (a,d) NO PARTITION;	
+
+CREATE TABLE tab1B (a INT NOT NULL, b INT NOT NULL NOT DROPPABLE, PRIMARY KEY (a) NOT DROPPABLE)
+	STORE BY (a) NO PARTITION;
+
+CREATE TABLE T1 (a INT default null, b INT NOT NULL NOT DROPPABLE);
+CREATE TABLE T2 (a INT default null, b INT NOT NULL NOT DROPPABLE) STORE BY (b);
+CREATE TABLE T3 (a INT NOT NULL NOT DROPPABLE, b INT  NOT NULL NOT DROPPABLE);
+CREATE TABLE T4 (a INT default null);
+CREATE TABLE T5 (a INT default null);
+CREATE TABLE T6 (a INT NOT NULL NOT DROPPABLE);
+CREATE TABLE T7 (a INT default null);
+CREATE TABLE T8 (a INT default null);
+
+-----------------------------------------------------
+-- additional indices
+-----------------------------------------------------
+create index tab1a_i2 on cat1.schm_alt.tab1a(b,c);
+
+create index tab1b_i1 on cat1.schm_alt.tab1b(b desc);
+create index t1_i1 on cat1.schm_alt.t1(b);
+create index t1_i2 on cat1.schm_alt.t1(a desc, b);
+create index t3_i2 on cat1.schm_alt.t3(a);
+
+-----------------------------------------------------
+-- additional constraints
+-----------------------------------------------------
+
+alter table cat1.schm_alt.tab1b add constraint constr2 check (a < b+10000);
+
+alter table cat1.schm_alt.t1 add constraint constr3 check (a + b > -10);
+
+alter table cat1.schm_alt.t2 add constraint constr4 check (b + 3 <> -70);
+
+
+
+

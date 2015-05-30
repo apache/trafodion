@@ -1,0 +1,85 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- HL_R2_Triggers_Spec.doc: SPJ enhancements to Triggers
+-- CS with one or more Select statements.
+-- Result: Error
+
+
+obey TEST_SPJC_CSTA_002(clean_up);
+obey TEST_SPJC_CSTA_002(set_up);
+log  LOG_SPJC_CSTA_002 clear;
+obey TEST_SPJC_CSTA_002(tests);
+LOG;
+obey TEST_SPJC_CSTA_002(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+
+
+drop trigger TRIG01_SPJC_CSTA_002;
+drop trigger TRIG02_SPJC_CSTA_002;
+
+drop table TAB01_SPJC_CSTA_002;
+drop table TAB02_SPJC_CSTA_002;
+
+?section set_up
+set schema CAT1.SCHM;
+
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+create table TAB01_SPJC_CSTA_002(a int, b int, c int, d int);
+create table TAB02_SPJC_CSTA_002(a int, b int, c int, d int);
+
+insert into TAB01_SPJC_CSTA_002 values(1, 2, 3, 4);
+
+insert into TAB02_SPJC_CSTA_002 values(1, 2, 3, 4);
+
+?section tests
+
+------------------------------------------------------------------
+-- TEST CASE 01: CS with one or more Select statements (row trigger).
+-- Result: ERROR[11047] SELECT statements are not allowed in the
+-- compound action of a trigger.
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG01_SPJC_CSTA_002 AFTER DELETE ON
+TAB01_SPJC_CSTA_002
+REFERENCING OLD ROW AS O
+FOR EACH ROW
+BEGIN ATOMIC
+	SELECT * FROM TAB02_SPJC_CSTA_002;
+END;
+------------------------------------------------------------------
+
+------------------------------------------------------------------
+-- TEST CASE 02: CS with one or more Select statements (statement
+-- trigger).
+-- Result: ERROR[11047] SELECT statements are not allowed in the
+-- compound action of a trigger.
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG02_SPJC_CSTA_002 AFTER UPDATE ON
+TAB01_SPJC_CSTA_002
+REFERENCING NEW TABLE AS NT
+FOR EACH STATEMENT
+BEGIN ATOMIC
+	SELECT * FROM TAB02_SPJC_CSTA_002;
+END;
+------------------------------------------------------------------

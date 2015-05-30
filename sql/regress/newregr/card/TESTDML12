@@ -1,0 +1,1602 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML12 (Cardinality)
+-- Functionality: Uses atomicdatabase to test outer join cardinalities.
+-- Expected Files: ETESTDML12.
+-- History: Created on 10/06/2009
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+control query default osim_simulation_loc './atomic';
+
+control query default create_objects_in_metadata_only 'on';
+
+control query default query_cache '0';
+control query default cache_histograms '0';
+control query default optimization_level '0';
+
+obey $$REGRTSTDIR$$/atomic/CQDS;
+
+prepare innerCard from
+select plan.op, plan.card "Inner Cardinality"
+from (select cast(cardinality as char(10)), 
+      cast(operator as char (30))
+      from table(explain(null,'II'))
+      where (operator like '%JOIN%')) plan(card, op)
+;
+
+prepare leftCard from
+select plan.op, plan.card "Left Cardinality"
+from (select cast(cardinality as char(10)), 
+      cast(operator as char (30))
+      from table(explain(null,'LL'))
+      where (operator like '%JOIN%')) plan(card, op)
+;
+
+prepare rightCard from
+select plan.op, plan.card "Right Cardinality"
+from (select cast(cardinality as char(10)), 
+      cast(operator as char (30))
+      from table(explain(null,'RR'))
+      where (operator like '%JOIN%')) plan(card, op)
+;
+
+prepare fullCard from
+select plan.op, plan.card "Full Cardinality"
+from (select cast(cardinality as char(10)), 
+      cast(operator as char (30))
+      from table(explain(null,'FF'))
+      where (operator like '%JOIN%')) plan(card, op)
+;
+
+log ATESTDML12 clear;
+
+set schema cat.atomic;
+
+--1
+prepare II from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1;
+
+log;
+
+prepare LL from select * from BIG R left outer  JOIN BIG S ON R.N1 = S.N1;
+
+prepare RR from select * from BIG R right outer  JOIN BIG S ON R.N1 = S.N1;
+
+prepare FF from select * from BIG R full outer  JOIN BIG S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--2
+prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--3
+prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--4
+prepare ii from select * from BIG R inner JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--5
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--6
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--7
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--8
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--9
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--10
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--11
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--12
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--13
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--14
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--15
+prepare ii from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--16
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--17
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--18
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--19
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--20
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--21
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--22
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--23
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--24
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--25
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--26
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--27
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--28
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--29
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--30
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--31
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--32
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--33
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--34
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--35
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--36
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--37
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--38
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--39
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--40
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--41
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--42
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--43
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--44
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--45
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--46
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--47
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--48
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--49
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--50
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--51
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--52
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--53
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--54
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--55
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--56
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--57
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--58
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--59
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--60
+prepare ii from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--61
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--62
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--63
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--64
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--65
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--66
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--67
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--68
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--69
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--70
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--71
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--72
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--73
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--74
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--75
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--76
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--77
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--78
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--79
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--80
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--81
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--82
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--83
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--84
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--85
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--86
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--87
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--88
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--89
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+--90
+prepare ii from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log;
+prepare ll from select * from BIG R left outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare rr from select * from BIG R right outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+prepare ff from select * from BIG R full outer JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+log ATESTDML12;
+
+execute innerCard;
+execute leftCard;
+execute rightCard;
+execute fullCard;
+
+log;
+exit;

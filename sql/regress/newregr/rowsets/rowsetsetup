@@ -1,0 +1,667 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+#ifNSK
+CONTROL QUERY DEFAULT POS_ALLOW_NON_PK_TABLES 'ON';
+#ifNSK
+
+#ifLinux
+CONTROL QUERY DEFAULT POS_ALLOW_NON_PK_TABLES 'ON';
+#ifLinux
+
+set schema $$TEST_SCHEMA$$;
+
+drop table RSSTAFF;
+CREATE TABLE RSSTAFF
+   (EMPNUM   CHAR(3) NOT NULL,
+    EMPNAME  CHAR(20),
+    GRADE    INT,
+    CITY     VARCHAR(15)
+    );
+
+drop table RSPROJ;
+CREATE TABLE RSPROJ
+   (PNUM     CHAR(3) NOT NULL,
+    PNAME    CHAR(20),
+    PTYPE    VARCHAR(6),
+    BUDGET   INT,
+    CITY     VARCHAR(15));
+
+drop table RSWORKS;
+CREATE TABLE RSWORKS
+   (EMPNUM   CHAR(3) NOT NULL,
+    PNUM     CHAR(3) NOT NULL,
+    HOURS    INT
+   );
+
+
+drop table RSVTABLE;
+CREATE TABLE RSVTABLE
+   (COL1   INTEGER,
+    COL2   INTEGER,
+    COL3   INTEGER,
+    COL4   INTEGER,
+    COL5   DECIMAL(7,2));
+
+drop table TPASSDP2;
+create table TPASSDP2(f1 char(100),f2 float);
+create index if1 on TPASSDP2(f1);
+
+drop table dt;
+
+#ifMX
+create table dt
+   (
+     cnt		 int,
+     date1               Date,
+     time0               Time,
+     time4		 time(4) not null,
+     ts_0                timestamp(0),
+     ts                  timestamp not null
+  );
+#ifMX
+
+#ifMP
+create table dt
+   (
+     cnt		 int,
+     date1               Date,
+     time0               Time,
+     time4		 datetime hour to fraction(4) not null,
+     ts_0                datetime year to second,
+     ts                  datetime year to fraction(6) not null
+  );
+#ifMP
+
+INSERT INTO RSSTAFF VALUES ('E1','Alice',12,'Deale'),
+                           ('E2','Betty',10,'Vienna'),
+                           ('E3','Carmen',13,'Vienna'),
+                           ('E4','Don',12,'Deale'),
+                           ('E5','Ed',13,'Akron');
+
+INSERT INTO RSPROJ VALUES ('P1','MXSS','Design',10000,'Deale'),
+                          ('P2','CALM','Code',30000,'Vienna'),
+                          ('P3','SDP','Test',30000,'Tampa'),
+                          ('P4','SDP','Design',20000,'Deale'),
+                          ('P5','IRM','Test',10000,'Vienna'),
+                          ('P6','PAYR','Design',50000,'Deale');
+
+INSERT INTO RSWORKS VALUES ('E1','P1',40),
+                           ('E1','P2',20),
+                           ('E1','P3',80),
+                           ('E1','P4',20),
+                           ('E1','P5',12),
+                           ('E1','P6',12),
+                           ('E2','P1',40),
+                           ('E2','P2',80),
+                           ('E3','P2',20),
+                           ('E4','P2',20),
+                           ('E4','P4',40),
+                           ('E4','P5',80);
+
+INSERT INTO RSVTABLE VALUES (10,+20,30,40,10.50),
+                            (0,1,2,3,4.25),
+	                    (100,200,300,400,500.01),
+	                    (1000,-2000,3000,NULL,4000.00);
+
+insert into dt values 
+  (1,date '1938-06-07',time '23:18:41',time '10:52:53.2911',timestamp '1931-09-10 02:37:26',timestamp '1910-07-15 10:53:07.012650'),
+  (2,date '1981-03-01',time '15:31:28',time '18:47:10.7545',timestamp '1920-11-17 02:44:40',timestamp '1972-11-08 17:55:01.021181'),
+  (3,date '1952-04-04',time '03:39:28',time '06:03:39.7382',timestamp '1994-11-22 07:26:34',timestamp '1968-01-11 06:44:42.012273'),
+  (4,date '1991-12-15',time '11:58:46',time '09:33:51.6419',timestamp '1924-09-17 06:40:51',timestamp '1982-02-23 17:58:44.027916'),
+  (5,date '1967-03-27',time '21:52:12',time '23:11:23.2000',timestamp '1986-07-28 21:23:10',timestamp '1913-01-14 10:45:50.032677'),
+  (6,date '1943-02-19',time '19:07:23',time '03:45:16.2075',timestamp '1922-05-13 10:04:26',timestamp '1998-09-01 17:29:07.012894'),
+  (7,date '1990-05-28',time '17:32:38',time '09:37:02.2443',timestamp '1986-02-19 18:43:04',timestamp '1962-01-17 16:20:55.017296'),
+  (8,date '1914-04-08',time '06:01:14',time '10:19:07.0263',timestamp '1998-12-19 21:12:28',timestamp '1962-03-01 05:20:42.005424'),
+  (9,date '1975-12-11',time '09:53:44',time '18:41:13.4658',timestamp '1991-12-02 00:19:17',timestamp '1907-08-27 23:06:07.013857'),
+  (10,date '1954-08-02',time '04:08:30',time '07:36:15.2654',timestamp '1923-03-23 07:32:27',timestamp '1946-05-01 06:41:30.031673'),
+  (11,date '1962-02-19',time '00:57:24',time '19:35:47.3309',timestamp '1960-07-17 18:08:49',timestamp '1900-05-03 04:46:44.022068'),
+  (12,date '1990-08-06',time '19:28:11',time '01:21:58.9441',timestamp '1916-01-22 03:18:36',timestamp '1981-03-24 09:12:09.000779'),
+  (13,date '1939-05-11',time '07:17:29',time '08:50:09.7966',timestamp '1987-01-17 22:01:18',timestamp '1995-06-15 01:08:52.015070'),
+  (14,date '1919-04-12',time '17:28:19',time '01:18:58.2689',timestamp '1900-06-05 00:46:22',timestamp '1931-08-26 08:05:48.012671'),
+  (15,date '1964-03-25',time '07:25:25',time '12:19:56.7841',timestamp '1903-12-17 19:53:14',timestamp '1993-09-11 08:30:28.024165'),
+  (16,date '1989-09-10',time '08:50:31',time '01:18:29.0912',timestamp '1959-09-28 07:21:05',timestamp '1928-07-27 02:07:20.023534'),
+  (17,date '1965-03-12',time '11:17:18',time '14:38:30.8459',timestamp '1974-05-27 02:16:25',timestamp '1901-02-18 05:49:10.031852'),
+  (18,date '1978-10-22',time '14:53:24',time '20:39:00.7346',timestamp '1953-04-19 09:12:56',timestamp '1916-06-16 17:14:23.030058'),
+  (19,date '1920-01-15',time '01:05:17',time '20:04:13.5278',timestamp '1921-04-15 01:08:05',timestamp '1910-06-16 18:42:54.004160'),
+  (20,date '1983-04-10',time '06:24:18',time '19:38:36.5692',timestamp '1974-03-14 21:38:42',timestamp '1989-05-12 22:29:36.021358'),
+  (21,date '1915-05-04',time '01:33:33',time '19:08:53.1225',timestamp '1983-06-09 17:53:59',timestamp '1905-01-21 23:11:15.026564'),
+  (22,date '1912-01-20',time '21:39:09',time '20:11:41.9945',timestamp '1912-05-26 07:18:45',timestamp '1949-04-06 23:30:24.012486'),
+  (23,date '1968-07-23',time '08:45:51',time '09:28:12.1821',timestamp '1953-09-24 22:47:13',timestamp '1923-05-28 02:10:12.027764'),
+  (24,date '1923-03-03',time '16:47:43',time '00:33:13.1655',timestamp '1982-01-12 10:09:26',timestamp '1957-10-08 20:36:32.030612'),
+  (25,date '1952-12-07',time '21:47:23',time '05:51:57.5438',timestamp '1986-10-01 16:21:41',timestamp '1975-09-07 17:25:43.001898'),
+  (26,date '1900-06-17',time '13:27:59',time '08:16:04.2212',timestamp '1929-01-26 16:50:39',timestamp '1959-08-24 11:12:07.010050'),
+  (27,date '1910-04-05',time '19:27:55',time '23:06:29.0559',timestamp '1946-05-04 22:15:37',timestamp '1947-05-16 05:53:20.011900'),
+  (28,date '1930-11-07',time '05:55:17',time '15:27:13.0390',timestamp '1964-09-08 22:41:57',timestamp '1991-05-08 11:38:36.005446'),
+  (29,date '1980-07-23',time '13:41:14',time '18:34:47.3265',timestamp '1906-07-19 08:54:51',timestamp '1993-07-13 13:20:52.001985'),
+  (30,date '1997-07-12',time '02:33:56',time '06:12:03.1107',timestamp '1904-05-09 06:46:38',timestamp '1957-02-22 02:54:17.024568'),
+  (31,date '1931-11-21',time '11:17:05',time '16:28:28.9198',timestamp '1979-03-28 16:31:32',timestamp '1963-04-21 11:20:05.030237'),
+  (32,date '1904-11-05',time '08:41:32',time '17:00:07.0816',timestamp '1939-07-11 12:39:38',timestamp '1997-07-02 14:56:58.016628'),
+  (33,date '1924-04-24',time '22:09:07',time '02:21:34.0836',timestamp '1974-05-16 16:26:17',timestamp '1961-01-11 16:42:51.007342'),
+  (34,date '1939-05-03',time '13:39:13',time '06:02:15.1413',timestamp '1972-06-01 14:58:48',timestamp '1908-04-16 02:35:34.004283'),
+  (35,date '1914-09-09',time '09:19:54',time '12:25:17.0935',timestamp '1917-09-21 14:51:48',timestamp '1953-06-20 04:14:31.018467'),
+  (36,date '1941-10-11',time '13:09:51',time '18:04:04.1030',timestamp '1979-09-25 05:12:02',timestamp '1948-02-11 23:32:45.020359'),
+  (37,date '1950-12-12',time '12:40:39',time '19:57:48.0101',timestamp '1980-03-27 11:36:02',timestamp '1928-10-12 07:47:07.001136'),
+  (38,date '1915-06-12',time '14:41:42',time '03:14:50.8674',timestamp '1914-01-23 19:55:37',timestamp '1913-07-10 01:50:43.030624'),
+  (39,date '1957-10-06',time '20:03:05',time '10:01:48.4695',timestamp '1973-05-25 08:35:53',timestamp '1970-08-01 22:15:51.016984'),
+  (40,date '1969-05-06',time '08:34:07',time '01:57:45.2260',timestamp '1941-05-03 15:06:16',timestamp '1909-07-13 19:14:17.019336'),
+  (41,date '1989-11-18',time '05:43:50',time '13:04:22.0071',timestamp '1920-01-12 10:26:01',timestamp '1983-04-08 14:48:20.009151'),
+  (42,date '1991-01-13',time '08:31:37',time '22:43:46.5338',timestamp '1909-09-01 00:39:49',timestamp '1964-08-25 10:02:38.020176'),
+  (43,date '1920-03-26',time '10:44:25',time '15:36:10.9461',timestamp '1926-04-05 12:11:40',timestamp '1973-10-16 17:30:42.007878'),
+  (44,date '1922-11-19',time '10:51:02',time '11:43:58.5671',timestamp '1919-10-23 16:40:01',timestamp '1994-01-23 22:10:07.012941'),
+  (45,date '1915-03-21',time '08:09:55',time '15:30:36.4125',timestamp '1970-08-20 12:56:57',timestamp '1905-06-25 06:33:27.030499'),
+  (46,date '1906-02-23',time '05:45:45',time '12:00:23.5934',timestamp '1912-10-08 22:33:48',timestamp '1980-07-15 16:27:31.018061'),
+  (47,date '1947-10-28',time '12:29:36',time '22:27:48.0159',timestamp '1938-06-16 10:47:12',timestamp '1973-11-17 06:50:11.025135'),
+  (48,date '1946-11-25',time '05:34:05',time '11:41:02.8494',timestamp '1954-05-14 14:29:29',timestamp '1981-10-19 15:25:14.001769'),
+  (49,date '1906-11-28',time '18:18:50',time '01:46:56.9752',timestamp '1995-10-25 03:16:49',timestamp '1990-07-27 14:43:58.021911'),
+  (50,date '1912-09-11',time '10:42:15',time '02:10:56.2445',timestamp '1996-08-06 10:37:54',timestamp '1962-07-19 22:13:47.012675'),
+  (51,null,time '07:15:38',time '01:36:42.0905',timestamp '1931-03-14 22:41:37',timestamp '1958-12-20 13:34:47.020937'),
+  (52,date '1944-10-01',null,time '13:42:56.4694',timestamp '1978-06-16 19:54:30',timestamp '1912-04-17 05:22:22.000403'),
+  (53,date '1985-09-23',time '17:31:59',time '19:13:56.4898',null,timestamp '1970-01-24 21:42:13.016479'),
+  (54,null,null,time '22:20:58.6161',timestamp '1972-07-27 03:28:28',timestamp '1946-09-04 14:15:03.020305'),
+  (55,date '1991-06-13',null,time '14:05:26.8417',null,timestamp '1970-11-11 07:18:24.003134'),
+  (56,null,null,time '04:06:42.8944',null,timestamp '1973-12-10 11:34:16.028759'),
+  (57,null,time '21:19:06',time '14:32:29.5946',timestamp '1987-11-23 21:26:00',timestamp '1988-07-23 23:43:55.015399'),
+  (58,date '1976-07-21',null,time '08:48:25.3499',timestamp '1953-07-13 10:36:34',timestamp '1909-10-07 02:22:06.024920'),
+  (59,date '1939-09-16',time '16:58:11',time '14:16:33.5623',null,timestamp '1958-06-15 03:37:09.025059'),
+  (60,null,time '03:54:22',time '18:21:24.0054',null,timestamp '1952-01-16 00:22:50.003132'),
+  (61,date '1995-10-06',time '11:05:07',time '17:36:55.4722',timestamp '1986-10-12 00:08:37',timestamp '1908-09-03 06:56:27.028509'),
+  (62,date '1958-05-26',time '17:03:44',time '18:10:50.4668',timestamp '1967-02-06 10:03:50',timestamp '1999-07-14 08:19:26.030147'),
+  (63,date '1920-12-27',time '08:04:33',time '17:25:38.6988',timestamp '1998-01-16 08:38:01',timestamp '1940-09-13 04:45:20.018488'),
+  (64,date '1958-07-25',time '07:16:48',time '23:48:26.9550',timestamp '1930-04-10 08:14:21',timestamp '1927-08-27 11:24:20.021557'),
+  (65,date '1906-04-20',time '19:19:59',time '06:50:22.2758',timestamp '1946-01-18 03:03:00',timestamp '1914-05-11 19:28:12.000464'),
+  (66,date '1995-03-12',time '05:14:21',time '04:34:04.9909',timestamp '1973-08-20 10:12:21',timestamp '1936-03-16 10:30:36.005335'),
+  (67,date '1902-03-05',time '22:20:13',time '13:08:22.1592',timestamp '1903-12-23 16:07:59',timestamp '1930-03-06 18:35:53.001185'),
+  (68,date '1984-05-01',time '23:48:28',time '03:27:49.0765',timestamp '1917-02-06 18:22:30',timestamp '1985-02-18 14:57:55.014348'),
+  (69,date '1964-01-27',time '04:22:19',time '14:03:23.0399',timestamp '1938-11-13 13:24:09',timestamp '1961-11-13 13:49:32.031113'),
+  (70,date '1940-09-10',time '09:22:19',time '20:34:51.8961',timestamp '1964-03-16 01:39:52',timestamp '1942-09-26 06:53:02.015484'),
+  (71,date '1929-02-07',time '15:02:17',time '09:41:47.1826',timestamp '1995-08-14 23:17:05',timestamp '1937-11-05 07:43:14.027235'),
+  (72,date '1986-06-13',time '16:01:39',time '16:06:19.0928',timestamp '1902-07-18 17:21:40',timestamp '1933-02-03 01:26:53.008076'),
+  (73,date '1977-08-10',time '06:47:04',time '10:53:11.6024',timestamp '1928-08-19 23:12:33',timestamp '1911-12-15 16:20:32.004329'),
+  (74,date '1993-04-28',time '03:52:36',time '21:59:43.8929',timestamp '1950-04-12 01:57:10',timestamp '1932-06-04 02:12:38.022028'),
+  (75,date '1910-10-23',time '07:38:17',time '21:57:49.4155',timestamp '1965-12-03 16:14:38',timestamp '1947-01-04 06:21:15.018402'),
+  (76,date '1912-01-20',time '22:38:08',time '19:56:46.6502',timestamp '1900-10-14 23:15:49',timestamp '1996-08-24 17:54:56.006638'),
+  (77,date '1938-07-03',time '08:57:28',time '19:39:27.0382',timestamp '1946-04-25 19:55:24',timestamp '1983-04-24 01:12:12.016900'),
+  (78,date '1934-02-06',time '07:34:03',time '06:56:26.5144',timestamp '1984-06-16 14:46:32',timestamp '1994-01-24 19:33:36.004699'),
+  (79,date '1973-11-08',time '16:30:54',time '20:54:06.0923',timestamp '1902-02-03 09:45:59',timestamp '1938-04-13 23:54:19.024345'),
+  (80,date '1990-08-20',time '13:59:33',time '02:00:18.1698',timestamp '1989-01-22 04:17:28',timestamp '1938-10-28 01:38:11.016774'),
+  (81,date '1924-04-14',time '11:19:56',time '20:27:20.1774',timestamp '1908-11-08 22:56:24',timestamp '1901-05-19 17:46:50.000830'),
+  (82,date '1957-08-14',time '20:58:54',time '22:17:04.0184',timestamp '1949-09-04 17:02:12',timestamp '1951-09-25 14:10:59.022536'),
+  (83,date '1938-07-02',time '15:21:29',time '12:45:33.1326',timestamp '1944-08-25 10:05:17',timestamp '1997-07-22 05:56:12.001370'),
+  (84,date '1944-10-11',time '23:11:07',time '11:18:34.4047',timestamp '1960-03-06 11:08:11',timestamp '1994-06-09 01:09:42.008110'),
+  (85,date '1931-01-03',time '15:12:10',time '06:33:56.5803',timestamp '1977-02-27 03:43:14',timestamp '1908-11-09 00:05:55.028964'),
+  (86,date '1901-02-06',time '17:07:40',time '13:05:01.0109',timestamp '1945-01-14 16:18:02',timestamp '1922-06-24 23:18:24.012291'),
+  (87,date '1994-10-19',time '13:29:08',time '13:27:04.2848',timestamp '1976-01-16 19:49:16',timestamp '1907-10-22 11:09:08.017991'),
+  (88,date '1986-12-19',time '22:43:33',time '03:01:23.9300',timestamp '1910-06-24 20:01:19',timestamp '1928-08-27 05:18:01.007411'),
+  (89,date '1967-05-16',time '12:21:12',time '04:55:38.0270',timestamp '1911-10-27 00:22:56',timestamp '1913-12-13 04:39:26.024972'),
+  (90,date '1966-03-14',time '17:03:12',time '13:07:52.7992',timestamp '1922-12-14 00:41:55',timestamp '1941-07-15 02:05:56.023647'),
+  (91,date '1973-05-10',time '12:01:13',time '16:53:37.0040',timestamp '1991-03-05 18:12:02',timestamp '1954-03-25 20:54:16.009745'),
+  (92,date '1927-06-03',time '19:43:34',time '13:10:06.0155',timestamp '1956-03-05 10:53:42',timestamp '1950-09-16 08:59:09.018814'),
+  (93,date '1963-08-19',time '19:46:26',time '08:27:18.1346',timestamp '1940-09-14 06:22:34',timestamp '1998-06-13 10:15:23.007152'),
+  (94,date '1946-05-04',time '11:10:31',time '09:09:38.7822',timestamp '1921-06-03 21:42:00',timestamp '1911-03-03 07:44:24.001369'),
+  (95,date '1977-07-26',time '23:17:10',time '10:45:18.4706',timestamp '1977-01-04 11:14:52',timestamp '1981-11-03 18:10:48.024304'),
+  (96,date '1923-11-09',time '14:00:06',time '21:09:05.4284',timestamp '1924-03-26 22:48:01',timestamp '1965-08-09 09:00:25.002502'),
+  (97,date '1906-09-19',time '14:13:20',time '13:44:49.3902',timestamp '1987-09-12 03:31:01',timestamp '1953-04-26 04:38:39.013064'),
+  (98,date '1963-02-24',time '14:57:40',time '21:30:49.9921',timestamp '1904-07-27 01:43:19',timestamp '1977-11-19 01:48:49.010409'),
+  (99,date '1993-10-06',time '15:14:33',time '01:21:53.3489',timestamp '1966-08-21 13:50:53',timestamp '1970-06-17 10:45:31.013795'),
+  (100,date '1995-03-01',time '00:06:06',time '12:46:04.6815',timestamp '1950-09-23 19:19:22',timestamp '1917-04-09 13:09:31.029556');
+
+
+
+drop table rownum1;
+drop table rownum2;
+drop table rownum3;
+drop table rownum4;
+
+
+
+create table rownum1 ( a int not null, b int not null, primary key (a)) ;
+create table rownum2 ( a int not null, b int not null, primary key (a)) ;
+create index row2ix on rownum2(b) ;
+
+#ifMX
+create table rownum3 ( a int not null, b int not null, primary key (a), unique(b)) no partition;
+#ifMX
+#ifMP
+drop index row3ix ;
+create table rownum3 (a int not null, b int not null, primary key(a));
+create unique index row3ix on rownum3(b);
+#ifMP
+
+create table rownum4 ( a int not null, b int not null, primary key (a)) 
+#ifMX
+location $$partition$$ 
+range partition (add first key (500) location $$partition2$$ )
+#ifMX
+#ifMP
+range partition ($$partition2$$.$$NSK_SUBVOL$$.rownum4 
+           first key (500))
+#ifMP
+;
+
+#ifMX
+drop trigger itertrig1;
+drop trigger itertrig2;
+drop trigger itertrig3;
+drop trigger itertrig4;
+drop mv MV_rownum9;
+drop mv MV_rownum12;
+drop mv MV_settablemv;
+drop table rownum5;
+drop table rownum6;
+drop table rownum7;
+drop table rownum8;
+drop table rownum9;
+drop table rownum10;
+drop table rownum11;
+drop table rownum12;
+drop table rownum7temptab;
+drop table rownum265;
+drop table settablemv;
+
+?section clean_create_ri_mv
+
+drop table ct2 cascade;
+drop table tab1_irm_ct2 cascade;
+drop table tab1_rm_ct2 cascade;
+
+drop table tab1_irm cascade;
+drop table ct1 cascade;
+drop table tab1_im cascade;
+drop table tab1_rm cascade;
+drop table tabind cascade;
+drop table tab1_irm2 cascade;
+drop table dt2;
+
+
+-----------------------------------------------------------------------------------------
+
+
+
+
+-- BEFORE TRIGGERS 
+create table rownum5 ( a int not null, b int not null, primary key (a), constraint rwcons1 check (b > 0)) ;
+CREATE TRIGGER itertrig1 BEFORE INSERT
+        ON rownum5
+        REFERENCING NEW AS newrow
+        FOR EACH ROW
+                WHEN (newrow.a < 0)
+                SET   newrow.b = -10;
+
+create table rownum6 ( a int not null, b int not null, primary key (a), constraint rwcons2 check (b > 0)) ;
+CREATE TRIGGER itertrig2
+        BEFORE UPDATE OF (b) ON rownum6
+        REFERENCING NEW AS newrow
+        FOR EACH ROW
+        SET newrow.b = newrow.b - 10;
+
+
+-- AFTER TRIGGERS 
+create table rownum7 like rownum1;
+create table rownum7temptab (a int, constraint rwcons3 check (a > 0));
+CREATE TRIGGER itertrig3 AFTER INSERT
+        ON rownum7
+        REFERENCING NEW AS newrow
+        FOR EACH ROW
+                WHEN (newrow.a < 0) 
+INSERT INTO rownum7temptab VALUES (newrow.a);
+
+
+CREATE TRIGGER itertrig4 AFTER UPDATE
+        ON rownum7
+        REFERENCING NEW AS newrow
+        FOR EACH ROW
+                WHEN (newrow.b < 0) 
+INSERT INTO rownum7temptab VALUES (newrow.b);
+
+
+-- RI tests
+create table rownum11 like rownum1 ;
+create table ri_fatal_error_referenced like rownum1 ;
+
+create table rownum8(x int not null, y int not null, 
+               primary key(x),
+               constraint rwcons4 foreign key(y) references $$TEST_SCHEMA$$.rownum11(a));
+
+create table ri_fatal_error_dependent
+  (x int not null, y int not null,
+  primary key(x),
+  constraint rifatal foreign key(y) references
+  $$TEST_SCHEMA$$.ri_fatal_error_referenced(a));
+
+--MV tests
+create table rownum9(a int not null, b int not null, primary key(a))
+attribute all mvs allowed;
+
+create mv MV_rownum9
+        refresh on statement
+        initialize on create
+        store by (b)
+        as
+        select b
+        from rownum9;
+
+create table rownum12(a int not null, b int not null, primary key(a))
+attribute all mvs allowed;
+
+create mv MV_rownum12
+        refresh on request
+        initialize on create
+        store by (b)
+        as
+        select b, min(a) min_a
+        from rownum12
+	group by b;
+
+create set table settablemv(a int not null, b int not null, c int not null,  primary key(a,b))
+attribute all mvs allowed;
+
+create mv MV_settablemv
+        refresh on statement
+        initialize on create
+        store by (c)
+        as
+        select c
+        from settablemv;
+
+
+
+--multiple indexes
+create table rownum10 (a int not null, b int not null, c int not null, d int not null, primary key (a));
+create unique index rownum10idx1 on rownum10(b);
+create unique index rownum10idx2 on rownum10(c);
+create unique index rownum10idx3 on rownum10(d);
+
+
+--multiple indexes on a SET table
+create set table rownum10set (a int not null, b int not null, c int not null, d int not null, primary key (a));
+create unique index rownum10idx1set on rownum10set(b);
+create unique index rownum10idx2set on rownum10set(c);
+create unique index rownum10idx3set on rownum10set(d);
+
+
+--multiple indexes plus composite pk (teste265)
+create table rownum265 (a int not null,
+                        b int not null,
+                        c int not null,
+                        primary key (b,c));
+create unique index rownum265idx1 on rownum265(a);
+create unique index rownum265idx2 on rownum265(c);
+
+#ifMX
+
+
+drop table dynamic1;
+drop table dynamic2;
+drop table dynamic3;
+drop table dynamic4;
+drop table dynamic5;
+drop table dynamic6;
+
+create table DYNAMIC1 (A int, B int, C int not null, d int, e int, f int);
+create table DYNAMIC2 ( a float not null, b char(25), e int);
+create table DYNAMIC3 (a int);
+create table DYNAMIC4 ( a float not null, b char(25), e int);
+create table DYNAMIC5 (a char(3), b int);
+create table DYNAMIC6 (a numeric(20), b NUMERIC(20, 2) NOT NULL);
+
+insert into DYNAMIC3 values (1), (2), (3) ;
+
+drop table t232rt1;
+drop table t232rt2;
+
+create table t232rt1(t1 int);
+create table t232rt2(t1 int);
+
+
+drop view ntv1;
+drop table nt1;
+drop table nt2;
+
+drop view ntv1set;
+drop table nt1set;
+drop table settable cascade;
+
+drop view sntv1;
+drop index int1;
+drop table snt1;
+
+CREATE TABLE nt1 (id int not null, 
+eventtime timestamp, 
+description varchar(12), 
+primary key (id)
+?ifMX
+, constraint cons1 check (id > 0)
+?ifMX
+) ; 
+
+?ifMP
+create constraint cons1 on nt1 check (id > 0);
+?ifMP
+
+CREATE VIEW ntv1 (v_id, v_eventtime, v_description) AS
+SELECT id, eventtime, description from nt1
+WHERE id > 100
+WITH CHECK OPTION 
+?ifMP
+for protection
+?ifMP
+;
+
+CREATE TABLE nt2 (id int not null, 
+eventdate date, 
+primary key (id)) ;
+
+CREATE SET  TABLE nt1set (id int not null, 
+eventtime timestamp, 
+description varchar(12), 
+primary key (id)
+, constraint cons1set check (id > 0)
+) ; 
+
+
+CREATE VIEW ntv1set (v_id, v_eventtime, v_description) AS
+SELECT id, eventtime, description from nt1set
+WHERE id > 100
+WITH CHECK OPTION 
+
+;
+
+create set table  settable( ID INT NO DEFAULT NOT NULL NOT DROPPABLE,
+                     POINTS INT UNSIGNED NOT NULL,
+                     DEPT INT UNSIGNED NOT NULL,
+                     PRIMARY KEY(ID)) NO PARTITION;
+         
+
+create index settablein on settable (POINTS, DEPT);
+
+CREATE TABLE snt1 (id int not null, id2 int,
+eventtime timestamp, 
+description varchar(12), 
+primary key (id) 
+?ifMX
+, constraint scons1 check (id > 0)
+?ifMX
+) ; 
+
+?ifMP
+create constraint scons1 on snt1 check (id > 0);
+?ifMP
+
+create index isnt1 on snt1 (id2);  
+
+drop table snt2;
+
+CREATE TABLE snt2 (id int not null, id2 int,
+eventdate date,
+primary key (id)) ;
+
+create index isnt2 on snt2 (id2);
+
+CREATE VIEW sntv1 (v_id, v_eventtime, v_description) AS
+SELECT id, eventtime, description from snt1
+WHERE id > 100
+WITH CHECK OPTION 
+?ifMP
+for protection
+?ifMP
+;
+
+?section create_ri_mv
+
+create table tab1_irm_ct2 ( d1 int not null, d2 int, primary key (d1));
+
+-- table with indexes , RI and MV
+
+CREATE TABLE tab1_irm (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE,PRIMARY KEY (a, d) NOT DROPPABLE, constraint consirm foreign key (c) references tab1_irm_ct2 (d1) ) ;
+
+
+
+
+create mv tab1_irm_MV
+        Refresh on request
+        initialize on create
+        as
+        select a,sum (b) sum_b
+        from tab1_irm
+        group by a;
+
+create index i_tab1_irm_b on tab1_irm (b);
+
+create unique index i_tab1_irm_c on tab1_irm (c);
+
+
+
+
+-----------------------------------------------------------------------------------------
+
+
+
+
+-- table with indexes , RI
+
+create table ct2 ( d1 int not null, d2 int, primary key (d1));
+
+
+create table ct1 (c1 int not null, c2 int , primary key (c1) ,constraint consct1 foreign key (c2)
+ references ct2 (d1) );
+create unique index uit1 on ct1 (c2);
+create index it1 on ct1 (c2);
+create index it2 on ct2 (c2);
+create index it3 on ct3 (c2);
+
+
+-------------------------------------------------------------------------------------------
+
+-- table with RI and MV 
+create table tab1_rm_ct2 ( d1 int not null, d2 int, primary key (d1));
+
+
+CREATE TABLE tab1_rm (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE,
+        PRIMARY KEY (a, d) NOT DROPPABLE, constraint consrm foreign key (c)
+ references tab1_rm_ct2 (d1) ) ;
+
+
+
+create mv tab1_rm_MV
+        Refresh on request
+        initialize on create
+        as
+        select a,sum (b) sum_b
+        from tab1_rm
+        group by a;
+
+
+
+--------------------------------------------------------------------------------------------
+
+-- table with Index and MV
+
+DROP TABLE tab1_dupkey cascade;
+
+CREATE TABLE tab1_dupkey (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE,
+        PRIMARY KEY (a) NOT DROPPABLE );
+
+
+
+create mv tab1_mvdk
+        Refresh on request
+        initialize on create
+        as
+        select a,sum (b) sum_b
+        from tab1_dupkey
+        group by a;
+--------------------------------------------------------------------------------------------
+
+-- table with  MV
+
+
+CREATE TABLE tab1_im (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE,
+        PRIMARY KEY (a, d) NOT DROPPABLE );
+
+
+
+create mv tab1_im_MV
+        Refresh on request
+        initialize on create
+        as
+        select a,sum (b) sum_b
+        from tab1_im
+        group by a;
+create index itab_im_b on tab1_im (b);
+
+create unique index i_tab1_im_c on tab1_im (c);
+------------------------------------------------------------------------------------------
+
+-- table with multiple indexes
+create table tabind (c1 int not null, c2 int , primary key (c1)  );
+create unique index uitabind1  on tabind (c2);
+create unique index uitabind2  on tabind (c2);
+create unique index uitabind3  on tabind (c2);
+
+------------------------------------------------------------------------------------------
+
+--table with on statement mv, on request mv, RI and index
+create table dt2 ( d1 int not null, d2 int, primary key (d1));
+
+CREATE TABLE tab1_irm2 (a INT NOT NULL, b INT, c INT not NULL NOT DROPPABLE , d INT NOT NULL NOT DROPPABLE,
+        PRIMARY KEY (a, d) NOT DROPPABLE, constraint consirm2 foreign key (c)
+ references dt2 (d1) ) ;
+
+
+
+create mv tab1_irm2_or_MV
+        Refresh on request
+        initialize on create
+        as
+        select a,sum (b) sum_b
+        from tab1_irm2
+        group by a;
+
+create unique index itab_irm2_c on tab1_irm2 (c);
+
+create mv tab1_irm2_os_MV
+        refresh on statement
+        initialize on create
+        store by (d)
+        as
+        select d
+        from tab1_irm2;
+
+
+----------------------------------------------------------------------------------------------
+

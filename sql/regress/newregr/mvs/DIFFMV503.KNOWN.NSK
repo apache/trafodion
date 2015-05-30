@@ -1,0 +1,58 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+789c789
+< *** ERROR[12087] Operation failed since table log is not empty.
+---
+> *** WARNING[8427] DROP TABLE C.S.T_503_A3
+791c791,800
+< --- SQL operation failed with errors.
+---
+> *** WARNING[8427] CREATE TABLE C.S.T_503_A3 (
+> 	 "@EPOCH"	  INT NOT NULL NOT DROPPABLE
+>  , "@OPERATION_TYPE"	  INT UNSIGNED
+>  , "@IGNORE"	  INT UNSIGNED DEFAULT 0
+>  , "@RANGE_SIZE"	INT UNSIGNED
+>  , "@UPDATE_BITMAP"	CHAR(16)
+>  ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,A1 INT ,A2 INT ,A3 INT ,A4 INT ,A5 INT ,A6 INT ,A7 INT ,A8 INT ,A9 INT ,A10 INT ,A11 INT ,A12 INT ,A13 INT ,A14 INT ,A15 INT ,A16 INT ,A17 INT ,A18 INT ,A19 INT ,A20 INT ,A21 INT ,A22 INT ,A23 INT ,A24 INT ,A25 INT ,A26 INT ,A27 INT ,A28 INT ,A29 INT ,A30 INT ,A31 INT ,A32 INT ,A33 INT ,A34 INT ,A35 INT ,A36 INT ,A37 INT ,A38 INT ,A39 INT ,A40 INT ,A41 INT ,A42 INT ,A43 INT ,A44 INT ,A45 INT ,A46 INT ,A47 INT ,A48 INT ,A49 INT ,A50 INT ,A51 INT ,A52 INT ,A53 INT ,A54 INT ,A55 INT ,A56 INT ,A57 INT ,A58 INT ,A59 INT ,A60 INT ,A61 INT ,A62 INT ,A63 INT ,A64 INT)  STORE BY ( "@EPOCH", "@SYSKEY" )  LOCATION @system@.@volume@ NAME @partition_name@@logicalname@
+>  ATTRIBUTE AUDIT ;
+> 
+> --- SQL operation completed with warnings.
+795,797c804
+< *** ERROR[12087] Operation failed since table log is not empty.
+< 
+< --- SQL operation failed with errors.
+---
+> --- SQL operation complete.
+801,803c808
+< *** ERROR[12087] Operation failed since table log is not empty.
+< 
+< --- SQL operation failed with errors.
+---
+> --- SQL operation complete.
+807,809c812
+< *** ERROR[12087] Operation failed since table log is not empty.
+< 
+< --- SQL operation failed with errors.
+---
+> --- SQL operation complete.
+813,815c816
+< *** ERROR[12087] Operation failed since table log is not empty.
+< 
+< --- SQL operation failed with errors.
+---
+> --- SQL operation complete.

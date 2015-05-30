@@ -1,0 +1,190 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+---------------------------------------------------------------------------
+-- TestMV516
+-- Special Tables Tests
+---------------------------------------------------------------------------
+
+obey TestMV516(clean_up);
+obey TestMV516(set_up);
+
+log LOGMV516 clear;
+
+-- Run Tests
+  obey TestMV516(Test1);
+  obey TestMV516(Test2);
+  obey TestMV516(Test3);
+  obey TestMV516(Test4);
+  obey TestMV516(Test5);
+  obey TestMV516(Test6);
+  obey TestMV516(Test7);
+  obey TestMV516(Test8);
+
+-- clean and exit
+
+log;
+obey TestMV516(clean_up);
+
+exit;
+
+---------------------------------------------------------------------------
+?section set_up
+
+set schema catmvs.mvschm;
+
+---------------------------------------------------------------------------
+?section clean_up
+
+drop mv T_516_MV6;
+drop table T_516_T1;
+drop table (iud_log_table T_516_T1);
+drop table T_516_T6;
+drop table T_516_T7;
+drop table (iud_log_table T_516_T7);
+drop table (iud_log_table T_516_T8);
+drop table (range_log_table T_516_T8);
+drop table T_516_T6_log;
+
+---------------------------------------------------------------------------
+?section Test1
+
+reset PARSERFLAGS;
+
+-- FAIL
+create table (iud_log_table T_516_T1) (a int);
+
+-- FAIL
+create table (range_log_table T_516_T2) (a int);
+
+set PARSERFLAGS 1;
+
+-- PASS
+create table (iud_log_table T_516_T1) (a int);
+
+-- PASS
+create table (range_log_table T_516_T2) (a int);
+
+----------------------------------------------------------------------------
+?section Test2
+
+reset PARSERFLAGS;
+
+-- FAIL
+drop table (iud_log_table T_516_T1);
+
+-- FAIL
+drop table (range_log_table T_516_T2);
+
+set PARSERFLAGS 1;
+
+-- PASS
+drop table (iud_log_table T_516_T1);
+
+-- PASS
+drop table (range_log_table T_516_T2);
+
+-----------------------------------------------------------------------------
+?section Test3
+
+set PARSERFLAGS 1;
+
+create table (iud_log_table T_516_T1) (a int, b int);
+
+-- FAIL
+-- table already exists
+create table (iud_log_table T_516_T1) (a int, b int);
+
+-----------------------------------------------------------------------------
+?section Test4
+
+set PARSERFLAGS 1;
+drop table (iud_log_table T_516_T1);
+
+-- FAIL
+-- no such table
+drop table (iud_log_table T_516_T1);
+
+-----------------------------------------------------------------------------
+?section Test5
+
+set PARSERFLAGS 1;
+
+create table (iud_log_table T_516_T1) (a int, b int);
+
+insert into table (iud_log_table T_516_T1) values (1, 1), (2, 2);
+
+create table T_516_T1 (a int, b int);
+ALTER TABLE T_516_T1 attribute all mvs allowed;
+
+insert into T_516_T1 select * from table (iud_log_table T_516_T1);
+
+prepare stat1 from select * from T_516_T1 order by a, b;
+
+prepare stat2 from select * from table (iud_log_table T_516_T1) order by a, b;
+
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV516 ;
+log LOGMV516;
+
+-----------------------------------------------------------------------------
+?section Test6
+
+set PARSERFLAGS 3;
+
+create table T_516_T6 (a int, b int);
+ALTER TABLE T_516_T6 attribute all mvs allowed;
+create mv T_516_MV6 refresh on request 
+initialized on refresh
+as
+select a, count(b) cb from T_516_T6 group by a;
+ALTER MV T_516_MV6 attribute all mvs allowed;
+ 
+create table T_516_T6_log like table (iud_log_table T_516_T6);
+ALTER TABLE T_516_T6_log attribute all mvs allowed;
+
+invoke T_516_T6_log;
+
+invoke table (iud_log_table T_516_T6);
+
+-----------------------------------------------------------------------------
+?section Test7
+
+set PARSERFLAGS 3;
+
+create table T_516_T7 (a int, b int);
+ALTER TABLE T_516_T7 attribute all mvs allowed;
+
+create table (iud_log_table T_516_T7) like T_516_T7;
+
+invoke T_516_T7;
+invoke table (iud_log_table T_516_T7);
+
+----------------------------------------------------------------------------
+?section Test8
+
+set PARSERFLAGS 3;
+
+create table (iud_log_table T_516_T8) (a int, b int);
+
+create table (range_log_table T_516_T8) like table (iud_log_table T_516_T8);
+
+invoke table (iud_log_table T_516_T8);
+
+invoke table (range_log_table T_516_T8);

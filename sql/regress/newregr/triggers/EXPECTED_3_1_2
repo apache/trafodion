@@ -1,0 +1,72 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>obey TEST_3_1_2(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>control query default auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>PREPARE s FROM 
++>	INSERT INTO tab1A VALUES (50,51,52,53);
+
+--- SQL command prepared.
+>>
+>>DROP TRIGGER tr1;
+
+--- SQL operation complete.
+>>
+>>EXECUTE s;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8575] Timestamp mismatch on table CAT1.SCHM.TAB1A.
+
+--- 1 row(s) inserted.
+>>-- should recompile
+>>
+>>--------------------------------------------------------
+>>-- CHECK RESULTS:
+>>
+>>select * from tab1a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         50           51           52           53
+
+--- 1 row(s) selected.
+>>
+>>select * from tab1b;
+
+--- 0 row(s) selected.
+>>
+>>select * from cat2.schm.tab2b;
+
+A            B          
+-----------  -----------
+
+         50           51
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

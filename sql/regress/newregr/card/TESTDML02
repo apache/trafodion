@@ -1,0 +1,749 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML02 (Cardinality)
+-- Functionality: Uses TPCH database to test basic cardinalities.
+-- Expected Files: ETESTDML02.
+-- History: Created on 12/03/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator = 'ORDERED_CROSS_PRODUCT')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+control query default hist_rowcount_requiring_stats '1';
+control query default cache_histograms '0';
+control query default query_cache '0';
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF' ;
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF' ;
+
+
+-- display only single column missing stats warning
+control query default HIST_MISSING_STATS_WARNING_LEVEL '1';
+
+log ATESTDML02 clear;
+
+set schema TPCH.SCH;
+
+-- don't use CTS as these are fabricated histograms
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+-- Q1
+control query shape implicit enforcers expr(sort_groupby(sort_groupby(
+scan(path 'TPCH.SCH.ORDIDX3' ))));
+
+prepare xx from  select  count(*)  
+from orders 
+where o_orderdate >= date '1997-07-01' 
+and o_orderdate < date '1997-07-01' + interval '3' month ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from orders 
+where o_orderdate >= date '1997-07-01' 
+and o_orderdate < date '1997-07-01' + interval '3' month ;
+
+-- Q2
+control query shape implicit enforcers expr(sort_groupby(sort_groupby(
+scan(path 'TPCH.SCH.PART'))));
+
+prepare xx from  select  count(*)  
+from part 
+where p_brand = 'Brand#23' 
+and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') 
+and p_size between 1 and 5 ;
+
+execute explainCard;
+
+-- Q3
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PAIDX1'),
+scan(path 'TPCH.SCH.PSIDX1')));
+
+prepare xx from  select  count(*)  
+from part, partsupp 
+where p_partkey = ps_partkey ;
+
+execute explainCard;
+
+-- Q4
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.CUIDX2'),
+scan(path 'TPCH.SCH.ORDIDX2')));
+
+prepare xx from  select  count(*)  
+from customer, orders 
+where c_custkey = o_custkey ;
+
+execute explainCard;
+
+-- Q5
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.NATION')));
+
+prepare xx from  select  count(*)  
+from supplier , nation  
+where s_nationkey = n_nationkey ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from supplier , nation  
+where s_nationkey = n_nationkey ;
+
+-- Q6
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from partsupp, supplier  
+where s_suppkey = ps_suppkey ;
+
+execute explainCard;
+
+-- Q7
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+scan(path 'TPCH.SCH.ORDIDX3')));
+
+prepare xx from  select  count(*)  
+from lineitem, orders 
+where l_orderkey = o_orderkey ;
+
+execute explainCard;
+
+-- Q8
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.LIIDX3')));
+
+prepare xx from  select  count(*)  
+from supplier, lineitem 
+where l_suppkey = s_suppkey ;
+
+execute explainCard;
+
+-- Q9
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'TPCH.SCH.PAIDX1'),
+scan(path 'TPCH.SCH.LIIDX2')));
+
+prepare xx from  select  count(*)  
+from part, lineitem 
+where p_partkey = l_partkey ;
+
+execute explainCard;
+
+-- Q10
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+scan(path 'TPCH.SCH.LIIDX4')));
+
+prepare xx from  select  count(*)  
+from partsupp, lineitem 
+where ps_suppkey = l_suppkey 
+and ps_partkey = l_partkey ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from partsupp, lineitem 
+where ps_suppkey = l_suppkey 
+and ps_partkey = l_partkey ;
+
+-- Q11
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'TPCH.SCH.CUSTOMER'),
+scan(path 'TPCH.SCH.ORDIDX2')));
+
+prepare xx from  select  count(*)  
+from customer, orders 
+where c_custkey = o_custkey 
+and c_mktsegment = 'BUILDING' ;
+
+execute explainCard;
+
+-- Q12
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.CUIDX2'),
+scan(path 'TPCH.SCH.ORDERS')));
+
+prepare xx from  select  count(*)  
+from customer, orders 
+where c_custkey = o_custkey 
+and o_orderdate < date '1995-03-15' ;
+
+execute explainCard;
+
+-- Q13
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.CUSTOMER'),
+scan(path 'TPCH.SCH.ORDERS')));
+
+prepare xx from  select  count(*)  f
+from customer, orders 
+where c_custkey = o_custkey 
+and c_mktsegment = 'BUILDING' 
+and o_orderdate < date '1995-03-15' ;
+
+execute explainCard;
+
+-- Q14
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+scan(path 'TPCH.SCH.ORDIDX3')));
+
+prepare xx from  select  count(*)  
+from lineitem, orders 
+where l_orderkey = o_orderkey 
+and o_orderdate >= date '1997-07-01' 
+and o_orderdate < date '1997-07-01' + interval '3' month ;
+
+execute explainCard;
+
+-- Q15
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'TPCH.SCH.PART'),
+scan(path 'TPCH.SCH.LIIDX2')));
+
+prepare xx from  select  count(*)  
+from part, lineitem 
+where p_partkey = l_partkey 
+and p_type = 'ECONOMY ANODIZED STEEL' ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from part, lineitem 
+where p_partkey = l_partkey 
+and p_type = 'ECONOMY ANODIZED STEEL' ;
+
+-- Q16
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LINEITEM'),
+scan(path 'TPCH.SCH.ORDIDX3')));
+
+prepare xx from  select  count(*)  
+from lineitem, orders 
+where l_orderkey = o_orderkey 
+and l_returnflag = 'R' ;
+
+execute explainCard;
+
+-- Q17
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+scan(path 'TPCH.SCH.ORDERS')));
+
+prepare xx from  select  count(*)  
+from lineitem, orders 
+where o_orderkey = l_orderkey 
+and o_orderstatus = 'F' ;
+
+execute explainCard;
+
+-- Q18
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PAIDX1'),
+scan(path 'TPCH.SCH.LINEITEM')));
+
+prepare xx from  select  count(*)  
+from part, lineitem 
+where l_partkey = p_partkey 
+and l_shipdate >= date '1995-09-01' 
+and l_shipdate < date '1995-09-01' + interval '1' month ;
+
+execute explainCard;
+
+-- Q19
+control query shape implicit enforcers sort_groupby(nested_join(
+scan(path 'TPCH.SCH.PART'),
+scan(path 'TPCH.SCH.LIIDX2')));
+
+prepare xx from  select  count(*)  
+from part, lineitem 
+where l_partkey = p_partkey 
+and p_brand = 'Brand#23' 
+and p_container = 'MED BOX' ;
+
+execute explainCard;
+
+-- Q20
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PAIDX1'),
+scan(path 'TPCH.SCH.LINEITEM')));
+
+prepare xx from  select  count(*)  
+from part, lineitem 
+where p_partkey = l_partkey 
+and l_shipmode in ('AIR', 'AIR REG') 
+and l_shipinstruct = 'DELIVER IN PERSON' ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from part, lineitem 
+where p_partkey = l_partkey 
+and l_shipmode in ('AIR', 'AIR REG') 
+and l_shipinstruct = 'DELIVER IN PERSON' ;
+
+-- Q21
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LINEITEM'),
+scan(path 'TPCH.SCH.ORDERS')));
+
+prepare xx from  select count(*)
+from lineitem, orders
+where o_orderkey = l_orderkey
+and o_clerk = 'Clerk#000000088'
+and l_returnflag = 'R';
+
+execute explainCard;
+
+-- Q22
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.NATION'),
+scan(path 'TPCH.SCH.REGION'))));
+
+prepare xx from  select  count(*)  
+from supplier, nation, region  
+where s_nationkey = n_nationkey 
+and n_regionkey = r_regionkey ;
+
+execute explainCard;
+
+-- Q23
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from partsupp, supplier, nation 
+where s_suppkey = ps_suppkey 
+and s_nationkey = n_nationkey ;
+
+execute explainCard;
+
+-- Q24
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDIDX2'),
+scan(path 'TPCH.SCH.CUIDX2'))));
+
+prepare xx from  select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey ;
+
+execute explainCard;
+
+-- Q25
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+scan(path 'TPCH.SCH.PAIDX1')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from part, partsupp, supplier 
+where p_partkey = ps_partkey 
+and s_suppkey = ps_suppkey ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from part, partsupp, supplier 
+where p_partkey = ps_partkey 
+and s_suppkey = ps_suppkey ;
+
+-- Q26
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDIDX2'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.CUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from customer, nation, orders 
+where c_custkey = o_custkey 
+and c_nationkey = n_nationkey ;
+
+execute explainCard;
+
+-- Q27
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX3'),
+scan(path 'TPCH.SCH.ORDIDX3')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from supplier, lineitem, orders 
+where l_orderkey = o_orderkey 
+and l_suppkey = s_suppkey ;
+
+execute explainCard;
+
+-- Q28
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX3'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from supplier, nation, lineitem 
+where l_suppkey = s_suppkey 
+and s_nationkey = n_nationkey ;
+
+execute explainCard;
+
+-- Q29
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX2'),
+scan(path 'TPCH.SCH.ORDIDX3')),
+scan(path 'TPCH.SCH.PAIDX1')));
+
+prepare xx from  select  count(*)  
+from part, lineitem, orders 
+where p_partkey = l_partkey 
+and l_orderkey = o_orderkey ;
+
+execute explainCard;
+
+-- Q30
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX4'),
+scan(path 'TPCH.SCH.PSIDX2')),
+scan(path 'TPCH.SCH.PAIDX1')));
+
+prepare xx from  select  count(*)  
+from part, partsupp, lineitem 
+where ps_suppkey = l_suppkey 
+and ps_partkey = l_partkey 
+and p_partkey = l_partkey ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from part, partsupp, lineitem 
+where ps_suppkey = l_suppkey 
+and ps_partkey = l_partkey 
+and p_partkey = l_partkey ;
+
+-- Q31
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX4'),
+scan(path 'TPCH.SCH.PAIDX1')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from part, supplier, lineitem 
+where s_suppkey = l_suppkey 
+and p_partkey = l_partkey ;
+
+execute explainCard;
+
+-- Q32
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX4'),
+scan(path 'TPCH.SCH.PSIDX2')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from supplier, partsupp, lineitem 
+where s_suppkey = l_suppkey 
+and ps_suppkey = l_suppkey 
+and ps_partkey = l_partkey ;
+
+execute explainCard;
+
+-- Q33
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'LO', path 'TPCH.SCH.LIIDX2'),
+scan(path 'TPCH.SCH.PAIDX1')),
+scan(TABLE 'LI', path 'TPCH.SCH.LIIDX2')));
+
+prepare xx from  select  count(*)  
+from part, lineitem lo, lineitem li 
+where p_partkey = lo.l_partkey 
+and li.l_partkey = p_partkey ;
+
+execute explainCard;
+
+-- Q34
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.NATION'),
+scan(path 'TPCH.SCH.REGION'))));
+
+prepare xx from  select  count(*)  
+from supplier, nation, region
+where s_nationkey = n_nationkey 
+and n_regionkey = r_regionkey 
+and r_name = 'ASIA' ;
+
+execute explainCard;
+
+-- Q35
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+scan(path 'TPCH.SCH.PART')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from part, partsupp, supplier 
+where p_partkey = ps_partkey 
+and s_suppkey = ps_suppkey 
+and p_size = 15 ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from part, partsupp, supplier 
+where p_partkey = ps_partkey 
+and s_suppkey = ps_suppkey 
+and p_size = 15 ;
+
+-- Q36
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDIDX2'),
+scan(path 'TPCH.SCH.CUSTOMER'))));
+
+prepare xx from  select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey 
+and c_mktsegment = 'BUILDING' ;
+
+execute explainCard;
+
+-- Q37
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LINEITEM'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDIDX2'),
+scan(path 'TPCH.SCH.CUIDX2'))));
+
+prepare xx from  select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey 
+and l_returnflag = 'R' ;
+
+execute explainCard;
+
+-- Q38
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX5'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDIDX2'),
+scan(path 'TPCH.SCH.CUSTOMER'))));
+
+prepare xx from  select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey 
+and c_mktsegment = 'BUILDING' 
+and l_shipdate > date '1995-03-15' ;
+
+execute explainCard;
+
+-- Q39
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX5'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDERS'),
+scan(path 'TPCH.SCH.CUSTOMER'))));
+
+prepare xx from  select count(*)
+from customer,orders,lineitem
+where c_mktsegment = 'BUILDING'
+and c_custkey = o_custkey
+and l_orderkey = o_orderkey
+and o_orderdate < DATE '1995-03-15'
+and l_shipdate > DATE '1995-03-15';
+
+execute explainCard;
+
+-- Q40
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX6'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDERS'),
+scan(path 'TPCH.SCH.CUIDX2'))));
+
+prepare xx from  select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey 
+and o_orderdate >= date '1994-01-01' 
+and o_orderdate < date '1994-01-01' + interval '1' year ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from customer, lineitem, orders 
+where c_custkey = o_custkey 
+and l_orderkey = o_orderkey 
+and o_orderdate >= date '1994-01-01' 
+and o_orderdate < date '1994-01-01' + interval '1' year ;
+
+-- Q41
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX3'),
+scan(path 'TPCH.SCH.ORDIDX3')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from supplier, lineitem, orders 
+where l_orderkey = o_orderkey 
+and l_suppkey = s_suppkey 
+and o_orderdate >= date '1994-01-01' 
+and o_orderdate < date '1994-01-01' + interval '1' year ;
+
+execute explainCard;
+
+-- Q42
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX2'),
+scan(path 'TPCH.SCH.ORDIDX3')),
+scan(path 'TPCH.SCH.PAIDX1')));
+
+prepare xx from  select  count(*)  
+from part, lineitem, orders 
+where p_partkey = l_partkey 
+and l_orderkey = o_orderkey 
+and o_orderdate between date '1995-01-01' and date '1996-12-31' ;
+
+execute explainCard;
+
+-- Q43
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LIIDX2'),
+scan(path 'TPCH.SCH.PART')),
+scan(path 'TPCH.SCH.ORDIDX3')));
+
+prepare xx from  select  count(*)  
+from part, lineitem, orders 
+where p_partkey = l_partkey 
+and l_orderkey = o_orderkey 
+and p_type = 'ECONOMY ANODIZED STEEL' ;
+
+execute explainCard;
+
+-- Q44
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.ORDERS'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.CUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from customer, nation, orders 
+where c_nationkey = n_nationkey 
+and c_custkey = o_custkey 
+and o_orderdate >= date '1993-10-01' 
+and o_orderdate < date '1993-10-01' + interval '3' month ;
+
+execute explainCard;
+
+-- Q45
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.PSIDX2'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from supplier, partsupp, nation 
+where s_nationkey = n_nationkey 
+and ps_suppkey = s_suppkey 
+and n_name = 'GERMANY' ;
+
+execute explainCard;
+
+showstats for query
+select  count(*)  
+from supplier, partsupp, nation 
+where s_nationkey = n_nationkey 
+and ps_suppkey = s_suppkey 
+and n_name = 'GERMANY' ;
+
+-- Q46
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+scan(path 'TPCH.SCH.LINEITEM'),
+hybrid_hash_join(
+scan(path 'TPCH.SCH.SUIDX2'),
+scan(path 'TPCH.SCH.NATION'))));
+
+prepare xx from  select  count(*)  
+from supplier, nation, lineitem 
+where l_suppkey = s_suppkey 
+and s_nationkey = n_nationkey 
+and l_shipdate >= date '1994-01-01' 
+and l_shipdate < date '1994-01-01' + interval '1' year ;
+
+execute explainCard;
+
+-- Q47
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+scan(path 'TPCH.SCH.LINEITEM'),
+scan(path 'TPCH.SCH.PSIDX2')),
+scan(path 'TPCH.SCH.SUIDX2')));
+
+prepare xx from  select  count(*)  
+from supplier, partsupp, lineitem 
+where s_suppkey = ps_suppkey 
+and l_partkey = ps_partkey 
+and l_suppkey = ps_suppkey 
+and l_suppkey = s_suppkey 
+and l_shipdate >= date '1994-01-01' 
+and l_shipdate < date '1994-01-01' + interval '1' year ;
+
+execute explainCard;
+
+LOG;
+exit;

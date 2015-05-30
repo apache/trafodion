@@ -1,0 +1,434 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV215h
+------------------------------------------------------
+
+obey TESTMV215H(CLEAN_UP);
+
+-- remove after debug - temp
+log LOGMV215H clear;
+obey TESTMV215H(SET_UP);
+
+--log LOGMV215H clear;
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215H(TEST1);
+	obey TESTMV215H(TEST2); --  to reproduse the bugs  please comment
+							--  update statistics.  Bug 515,Bug 519
+
+-- Clean and exit
+log;
+obey TESTMV215H(CLEAN_UP);
+exit;
+
+
+-----------------------------------------------------------
+?section SET_UP
+-----------------------------------------------------------
+control query default insert_vsbb 'USER';
+control query default attempt_esp_parallelism 'OFF'; -- ????
+set PARSERFLAGS 1;
+
+set schema cat.tpcd;
+obey ./TPCD/CREATEALLVSBB.OBEY(SET_UP);
+obey ./TPCD/CREATEMVS(CREATEALL);
+obey PREPARE_DDL_SELECTS;
+
+ALTER TABLE orders Attributes MIXed RANGELOG ;
+ALTER TABLE lineitem Attributes MIXed RANGELOG ;
+ALTER TABLE supplier Attributes MIXed RANGELOG ;
+ALTER TABLE customer Attributes MIXed RANGELOG ;
+ALTER TABLE part	Attributes MIXed RANGELOG ;
+ALTER TABLE partsupp Attributes MIXed RANGELOG ;
+
+
+create table temp_orders 
+like orders;
+
+create table temp_lineitem
+like lineitem;
+
+create table temp_supplier
+like supplier;
+
+create table temp_customer
+like customer;
+
+create table temp_part
+like part;
+
+create table temp_partsupp
+like partsupp;
+
+
+-------------------------------------------------------------------------
+?section TEST1
+-------------------------------------------------------------------------
+-- Q17
+
+PREPARE stat1 FROM
+	select  	orders.o_custkey , 
+			sum ( orders.o_totalprice) sum_price ,
+			sum ( lineitem.l_quantity) quantity ,
+			sum (lineitem.l_discount) discount,
+			min(orders.o_orderdate) orderdate,
+			count(*) cnt
+	from orders,lineitem
+	where orders.o_orderkey = lineitem.l_orderkey          
+	group by orders.o_custkey 
+	order by o_custkey;
+
+PREPARE stat2 FROM
+	select * from mv4q17
+	order by o_custkey;
+
+
+refresh mv4q17 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H ;
+log LOGMV215H;
+
+
+-- Prepare deltas----------------------------------------------------
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=12000 
+                                 -v upLimit1=45000   
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK 
+								 -v downLimit1=10000 
+								 -v upLimit1=20000     
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.temp_orders -I orders.tbl1 -U orders.fmt ;
+sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt;
+
+cd ../..;
+
+
+insert NOLOG into orders 
+select * from temp_orders
+;
+
+insert NOLOG into lineitem
+select * from temp_lineitem
+;
+
+MVLOG INTO RANGELOG OF orders (o_orderkey ) BETWEEN (12000) AND (45000);
+
+MVLOG INTO RANGELOG OF lineitem (l_orderkey) BETWEEN (10000) AND (20000);
+
+insert into orders 
+VALUES (10,23,0,100 ,DATE '1977-05-14','F','5-LOW','Clerk#000000557','dsgG'),
+		(11,23,0,102.12 ,DATE '1989-06-14','O','2-HIGH','Clerk#000000557','fgsjhtgk'),
+		(12,23,0,10000 ,DATE '1995-05-25','F','1-URGENT','Clerk#000000557','dsgG');
+
+delete from orders
+where o_orderkey = 12994 ;
+
+delete from lineitem 
+where l_orderkey = 3140;
+
+update orders 
+set o_custkey = 280
+where o_orderkey =99;
+
+update orders 
+set o_totalprice = 10000
+where o_orderkey =70;
+
+update orders 
+set o_custkey = 8
+where o_orderkey =98;
+
+
+-- End prepare deltas -----------------------------------------------------------
+
+refresh mv4q17 debug 51;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H;
+log LOGMV215H;
+
+---------------------------------------------------------------------------------------------
+?section TEST2
+---------------------------------------------------------------------------------------------
+-- Basic Q5
+-- for compare 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+
+refresh mv4q5 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H ;
+log LOGMV215H;
+
+
+-- Prepare deltas----------------------------------------------------
+
+delete from temp_supplier;
+delete from temp_customer;
+delete from temp_part;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=81
+                                 -v upLimit1=5000   
+									./tpcd/tpcdtemp/supplier.tbl > ./tpcd/tpcdtemp/supplier.tbl1 ;
+
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=900
+                                 -v upLimit1=5000   
+									./tpcd/tpcdtemp/customer.tbl > ./tpcd/tpcdtemp/customer.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=1700
+                                 -v upLimit1=3000   
+									./tpcd/tpcdtemp/part.tbl > ./tpcd/tpcdtemp/part.tbl1 ;
+
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.temp_supplier -I supplier.tbl1 -U supplier.fmt ;
+sh import cat.tpcd.temp_customer -I customer.tbl1 -U customer.fmt;
+sh import cat.tpcd.temp_part -I part.tbl1 -U part.fmt;
+
+cd ../..;
+		
+
+insert  NOLOG into supplier 
+select * from temp_supplier
+;
+
+MVLOG INTO RANGELOG OF supplier (s_suppkey) BETWEEN (80) AND (5000);
+
+insert NOLOG into customer 
+select * from temp_customer
+;
+
+MVLOG INTO RANGELOG OF customer (c_custkey) BETWEEN (900) AND (5000);
+
+insert NOLOG into part 
+select * from temp_part
+;
+
+MVLOG INTO RANGELOG OF part (p_partkey) BETWEEN (1600) AND (3000);
+
+update customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_nationkey = 10 and c_acctbal < 4000;
+
+	
+update customer
+set c_nationkey = 10 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal > 3000;
+
+update customer
+set c_nationkey = 12 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal < 2500;
+
+delete from temp_lineitem;
+sh awk -f ./TPCD/FILTER_KEY.AWK 
+								 -v downLimit1=21000 
+								 -v upLimit1=30000     
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+cd tpcd/tpcdtemp;
+sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt ;					
+cd ../..;
+
+insert NOLOG into lineitem
+select * from temp_lineitem
+;
+
+MVLOG INTO RANGELOG OF lineitem (l_orderkey ) BETWEEN (21000) AND (30000);
+
+-----------------------
+update statistics for table customer on (c_custkey) ;
+update statistics for table orders on  (o_orderkey) ;
+update statistics for table supplier on  (s_suppkey) ;
+update statistics for table nation on  (n_nationkey) ,(n_name);
+update statistics for table region on  (r_regionkey)  ;
+update statistics for table lineitem on  (l_orderkey ,l_linenumber)  ;
+
+update statistics for table mv4q5 on (n_name);
+
+update statistics for table(iud_log_table orders )  on (o_orderkey);
+update statistics for table(iud_log_table lineitem )  on (l_orderkey,l_linenumber);
+update statistics for table(iud_log_table customer )  on (c_custkey);
+update statistics for table(iud_log_table supplier )  on (s_suppkey);
+update statistics for table(iud_log_table nation )  on (n_nationkey) ,(n_name);
+update statistics for table(iud_log_table region )  on (r_regionkey);
+
+
+------------------------
+-- End prepare deltas ---------------------------------------------------------------
+
+REFRESH mv4q5 debug 51;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H ;
+log LOGMV215H;
+
+-------------------------------------------------------------------
+
+PREPARE stat1 FROM 
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr
+	order by nation, yr;
+
+PREPARE stat2 FROM 
+	select nation, yr,sum_profit
+	from mv4q9 
+	order by nation, yr;
+
+refresh mv4q9 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H ;
+log LOGMV215H;
+
+
+
+delete from temp_partsupp;
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=1600
+                                 -v upLimit1=5000   
+									./tpcd/tpcdtemp/partsupp.tbl > ./tpcd/tpcdtemp/partsupp.tbl1 ;
+cd tpcd/tpcdtemp;
+sh import cat.tpcd.temp_partsupp -I partsupp.tbl1 -U partsupp.fmt ;
+cd ../..;
+
+insert NOLOG into partsupp
+select * from temp_partsupp
+;
+
+MVLOG INTO RANGELOG OF partsupp (ps_partkey ) BETWEEN (1600) AND (5000);
+
+
+
+
+update statistics for table lineitem on (l_orderkey,l_linenumber);
+update statistics for table customer on (c_custkey) ;
+update statistics for table orders on  (o_orderkey) ;
+update statistics for table supplier on  (s_suppkey) ;
+update statistics for table nation on  (n_nationkey) ,(n_name);
+update statistics for table region on  (r_regionkey)  ;
+
+
+update statistics for table mv4q9  on (nation), (yr);
+
+update statistics for table(iud_log_table orders )  on (o_orderkey),(o_orderdate);
+update statistics for table(iud_log_table lineitem )  on (l_orderkey,l_linenumber);
+update statistics for table(iud_log_table customer )  on (c_custkey);
+update statistics for table(iud_log_table supplier )  on (s_suppkey);
+update statistics for table(iud_log_table nation )  on (n_nationkey) ,(n_name);
+update statistics for table(iud_log_table region )  on (r_regionkey);
+
+
+REFRESH mv4q9 debug 51;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215H ;
+log LOGMV215H;
+
+-----------------------------------------------------------------------------------------
+?section CLEAN_UP
+---------------------------------------------------------------------------------------------
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+
+drop table temp_orders;
+drop table temp_lineitem;
+drop table temp_supplier;
+drop table temp_customer;
+drop table temp_part;
+drop table temp_partsupp;
+
+
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+obey ./TPCD/CREATEALLVSBB.OBEY(CLEAN_UP);

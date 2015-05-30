@@ -1,0 +1,135 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+Expected number of input columns is 7.
+ Actual number of input colums = 7
+Expected maximum input array size = 50.
+ Actual maximum input array size = 50
+Expected datatype = 4.
+ Actual datatype = 4
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+Expected var layout size = 4.
+ Actual var layout size = 4
+Expected datatype = 4.
+ Actual datatype = 4
+
+
+ 0   0   0   0   0   0
+ 1   1   1   1   1   1
+ 2   2   2   2   2   2
+ 3   3   3   3   3   3
+ 4   4   4   4   4   4
+ 5   5   5   5   5   5
+ 6   6   6   6   6   6
+ 7   7   7   7   7   7
+ 8   8   8   8   8   8
+ 9   9   9   9   9   9
+ 10   10   10   10   10   10
+ 11   11   11   11   11   11
+ 12   12   12   12   12   12
+ 13   13   13   13   13   13
+ 14   14   14   14   14   14
+ 15   15   15   15   15   15
+ 16   16   16   16   16   16
+ 17   17   17   17   17   17
+ 18   18   18   18   18   18
+ 19   19   19   19   19   19
+ 20   20   20   20   20   20
+ 21   21   21   21   21   21
+ 22   22   22   22   22   22
+ 23   23   23   23   23   23
+ 24   24   24   24   24   24
+ 25   25   25   25   25   25
+ 26   26   26   26   26   26
+ 27   27   27   27   27   27
+ 28   28   28   28   28   28
+ 29   29   29   29   29   29
+ 30   30   30   30   30   30
+ 31   31   31   31   31   31
+ 32   32   32   32   32   32
+ 33   33   33   33   33   33
+ 34   34   34   34   34   34
+ 35   35   35   35   35   35
+ 36   36   36   36   36   36
+ 37   37   37   37   37   37
+ 38   38   38   38   38   38
+ 39   39   39   39   39   39
+ 40   40   40   40   40   40
+ 41   41   41   41   41   41
+ 42   42   42   42   42   42
+ 43   43   43   43   43   43
+ 44   44   44   44   44   44
+ 45   45   45   45   45   45
+ 46   46   46   46   46   46
+ 47   47   47   47   47   47
+ 48   48   48   48   48   48
+ 49   49   49   49   49   49
+ 50  NULL   50   50   50  NULL
+ 60   61   62   63   64  NULL
+ 70   72   74   76   78  NULL
+ 80   83   86   89   92  NULL
+ 90   94   98   102   106  NULL
+ 100   105   110   115   120  NULL
+ 110   116   122   128   134  NULL
+ 120   127   134   141   148  NULL
+ 130   138   146   154   162  NULL
+ 140   149   158   167   176  NULL
+ 150   160   170   180   190  NULL
+ 160   171   182   193   204  NULL
+ 170   182   194   206   218  NULL
+ 180   193   206   219   232  NULL
+ 190   204   218   232   246  NULL
+ 200   215   230   245   260  NULL
+ 210   226   242   258   274  NULL
+ 220   237   254   271   288  NULL
+ 230   248   266   284   302  NULL
+ 240   259   278   297   316  NULL
+ 250   270   290   310   330  NULL
+ 260   281   302   323   344  NULL
+ 270   292   314   336   358  NULL
+ 280   303   326   349   372  NULL
+ 290   314   338   362   386  NULL
+ 1000   2000   3000  NULL  NULL   6000
