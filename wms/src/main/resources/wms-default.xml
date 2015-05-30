@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!--  
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,21 +37,6 @@
  */
 -->
 <configuration>
-<!-- 
-  <property>
-    <name>wms.rootdir</name>
-    <value>file:///tmp/wms-${user.name}/wms</value>
-    <description>The directory shared by region servers and into
-    which Wms persists.  The URL should be 'fully-qualified'
-    to include the filesystem scheme.  For example, to specify the
-    HDFS directory '/wms' where the HDFS instance's namenode is
-    running at namenode.example.org on port 9000, set this value to:
-    hdfs://namenode.example.org:9000/wms.  By default Wms writes
-    into /tmp.  Change this configuration else all data will be lost
-    on machine restart.
-    </description>
-  </property>
- -->
   <property>
     <name>wms.tmp.dir</name>
     <value>${java.io.tmpdir}/wms-${user.name}</value>
@@ -341,98 +326,6 @@
     </description>
   </property>
   <property>
-    <name>vertica.workloads.enabled</name>
-    <value>false</value>
-    <description>
-        If set to true start Vertica client and monitor it's workloads.
-    </description>
-  </property>
-  <property>
-    <name>vertica.query.timeout.min</name>
-    <value>0</value>
-    <description>
-        The time in minutes that a workload duration is active
-        before timing out for vertica queries. The default is 0 or no timeout.
-    </description>
-  </property>
-  <property>
-    <name>vertica.jdbc.url</name>
-    <value>jdbc:vertica://localhost:5433/VMart</value>
-    <description>
-        The Vertica JDBC driver url.
-    </description>
-  </property>
-  <property>
-    <name>vertica.jdbc.url.user</name>
-    <value>vertica</value>
-    <description>
-        The Vertica JDBC driver user.
-    </description>
-  </property>
-    <property>
-    <name>vertica.jdbc.url.password</name>
-    <value>vertica</value>
-    <description>
-        The Vertica JDBC driver password.
-    </description>
-  </property>
-  <property>
-    <name>vertica.jdbc.collect.delay</name>
-    <value>10</value>
-    <description>
-        The delay in seconds when Vertica connector starts to collect data measured from start of the query.
-    </description>
-  </property>
-    <property>
-    <name>vertica.jdbc.collect.timeout</name>
-    <value>10</value>
-    <description>
-        The Vertica connector timeout in seconds between collecting cicles.
-    </description>
-  </property>
-  <property>
-    <name>hadoop.workloads.enabled</name>
-    <value>false</value>
-    <description>
-        If set to true start Hadoop client and monitor it's workloads.
-    </description>
-  </property>
-  <property>
-    <name>hadoop.mapred.job.tracker</name>
-    <value>localhost</value>
-    <description>
-        The Hadoop JobTracker hostname. The default is localhost
-    </description>
-  </property>
-  <property>
-    <name>hadoop.mapred.job.tracker.port</name>
-    <value></value>
-    <description>
-        The Hadoop JobTracker port. 
-    </description>
-  </property>
-  <property>
-    <name>yarn.rest.enabled</name>
-    <value>false</value>
-    <description>
-        If set to true start Yarn Rest Client and monitor it's workloads.
-    </description>
-  </property>
-  <property>
-    <name>yarn.rest.url</name>
-    <value>http://localhost:8088/ws/v1/cluster/apps</value>
-    <description>
-        The Yarn Rest Client url.
-    </description>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.address</name>
-    <value>0.0.0.0:8032</value>
-    <description>
-        The Yarn RM address.
-    </description>
-  </property>
-  <property>
     <name>wms.server.workload.cleaner.initial.delay</name>
     <value>30</value>
     <description>The period in seconds before the workload
@@ -444,15 +337,6 @@
     <value>30</value>
     <description>The period in seconds between each 
        run of the workload store cleaner.
-    </description>
-  </property>
-  <property>
-    <name>wms.server.cep.vertica.keys</name>
-    <value>operation,int,type,string,userName,string,applicationName,string,transactionId,long,workloadId,string,
-        poolName,string,memoryAllocated,long,rowsSent,long,requestType,string,state,string,subState,string,
-        duration,long,sessionId,string,request,string,statementId,long,beginTimestamp,long,endTimestamp,long
-    </value>
-    <description>A comma separated list of Vertica workload keys/types.
     </description>
   </property>
   <property>

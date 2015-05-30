@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,44 +46,41 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.trafodion.wms.thrift.generated.Request;
-import org.trafodion.wms.thrift.generated.Stream;
-import org.trafodion.wms.thrift.generated.Rule;
 import org.trafodion.wms.tmpl.master.MasterStatusTmpl;
 
 /**
- * The servlet responsible for rendering the index page of the
- * master.
+ * The servlet responsible for rendering the index page of the master.
  */
 public class MasterStatusServlet extends HttpServlet {
-	private static final Log LOG = LogFactory.getLog(MasterStatusServlet.class);
-	private static final long serialVersionUID = 1L;
-  
-  @Override
-  public void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws IOException
-  {
-    WmsMaster master = (WmsMaster) getServletContext().getAttribute(WmsMaster.MASTER);
-    assert master != null : "No Master in context!";
-    
-    Configuration conf = master.getConfiguration();
-    ArrayList<String> servers = master.getServerManager().getServersList();
-    ArrayList<String> clients = master.getServerManager().getClientsList();
-    ArrayList<Request> workloads = master.getServerManager().getWorkloadsList();
-    ArrayList<Rule> rules = master.getServerManager().getRulesList();
-    ArrayList<Stream> streams = master.getServerManager().getStreamsList();
+    private static final Log LOG = LogFactory.getLog(MasterStatusServlet.class);
+    private static final long serialVersionUID = 1L;
 
-    response.setContentType("text/html");
-    MasterStatusTmpl tmpl = new MasterStatusTmpl() 
-      .setServers(servers)
-      .setClients(clients)
-      .setStreams(streams)
-      .setRules(rules)
-      .setWorkloads(workloads);
-    if (request.getParameter("filter") != null)
-      tmpl.setFilter(request.getParameter("filter"));
-    if (request.getParameter("format") != null)
-      tmpl.setFormat(request.getParameter("format"));
-    tmpl.render(response.getWriter(), master);
-  }
+    @Override
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        WmsMaster master = (WmsMaster) getServletContext().getAttribute(
+                WmsMaster.MASTER);
+        assert master != null : "No Master in context!";
+
+        Configuration conf = master.getConfiguration();
+        ArrayList<String> servers = master.getServerManager().getServersList();
+        ArrayList<String> clients = master.getServerManager().getClientsList();
+        /*
+         * ArrayList<Request> workloads = master.getServerManager()
+         * .getWorkloadsList(); ArrayList<Rule> rules =
+         * master.getServerManager().getRulesList(); ArrayList<Stream> streams =
+         * master.getServerManager().getStreamsList();
+         * 
+         * response.setContentType("text/html"); MasterStatusTmpl tmpl = new
+         * MasterStatusTmpl().setServers(servers)
+         * .setClients(clients).setStreams(streams).setRules(rules)
+         * .setWorkloads(workloads);
+         * 
+         * if (request.getParameter("filter") != null)
+         * tmpl.setFilter(request.getParameter("filter")); if
+         * (request.getParameter("format") != null)
+         * tmpl.setFormat(request.getParameter("format"));
+         * tmpl.render(response.getWriter(), master);
+         */
+    }
 }

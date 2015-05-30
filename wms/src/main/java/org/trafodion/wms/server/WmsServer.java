@@ -42,7 +42,6 @@ import org.trafodion.wms.zookeeper.ZKConfig;
 import org.trafodion.wms.script.ScriptManager;
 ;
 import org.trafodion.wms.server.store.*;
-import org.trafodion.wms.server.connectors.*;
 
 public class WmsServer extends Thread {
 	private static  final Log LOG = LogFactory.getLog(WmsServer.class);
@@ -59,7 +58,6 @@ public class WmsServer extends Thread {
 	private long startTime;
     private String parentZnode;
 	private int infoPort;
-	private int thriftPort;
 	private String[] args;
 	private String instance=null;
     private ExecutorService pool=null;
@@ -124,7 +122,6 @@ public class WmsServer extends Thread {
 			//Setup RPC services
 			ia = InetAddress.getLocalHost();
 			serverName = ia.getCanonicalHostName();
-			thriftPort = findFreePort();
 
 			//Setup script manager
 			ScriptManager.getInstance(); 
@@ -157,25 +154,25 @@ public class WmsServer extends Thread {
 		    }
 
 			//Setup Hadoop Job Tracker client and Vertica Client
-			if(conf.getBoolean("hadoop.workloads.enabled",false)) {
-				LOG.info("Hadoop workloads enabled");
+			//if(conf.getBoolean("hadoop.workloads.enabled",false)) {
+			//	LOG.info("Hadoop workloads enabled");
 				//JTClient jtc = new JTClient();
-			} else {
-				LOG.info("Hadoop workloads disabled");
-			}
-			if(conf.getBoolean("vertica.workloads.enabled",false)) {	
-				LOG.info("Vertica workloads enabled");
-				VerticaClient vc = new VerticaClient();
-			} else {
-				LOG.info("Vertica workloads disabled");
-			}
-			if(conf.getBoolean(Constants.YARN_REST_ENABLED,false)) {
-				LOG.info("Yarn workloads enabled");
+			//} else {
+			//	LOG.info("Hadoop workloads disabled");
+			//}
+			//if(conf.getBoolean("vertica.workloads.enabled",false)) {	
+			//	LOG.info("Vertica workloads enabled");
+			//	VerticaClient vc = new VerticaClient();
+			//} else {
+			//	LOG.info("Vertica workloads disabled");
+			//}
+			//if(conf.getBoolean(Constants.YARN_REST_ENABLED,false)) {
+			//	LOG.info("Yarn workloads enabled");
 				//final ExecutorService exService = Executors.newSingleThreadExecutor();
 				//final Future<String> callFuture = exService.submit(new YarnClient(new YarnClientExecute());
-			} else {
-				LOG.info("Yarn workloads disabled");
-			}
+			//} else {
+			//	LOG.info("Yarn workloads disabled");
+			//}
 		
 			pool = Executors.newSingleThreadExecutor();
 			serverManager = new ServerManager(this);
@@ -199,10 +196,6 @@ public class WmsServer extends Thread {
 		return ia;
 	}
 	
-	public int getThriftPort(){
-		return thriftPort;
-	}
-
 	public String getInstance(){
 		return instance;
 	}
