@@ -1406,10 +1406,11 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
     {
       short datatype;
       Lng32 returned_len;
-      Lng32 length;
+      Lng32 length = 0;
       Lng32 precision;
       Lng32 scale;
       Lng32 unnamed;
+      Lng32 vcIndLen = -1;
       CharInfo::CharSet charset = CharInfo::CHARSET_MIN;
       
       char param_name[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
@@ -1460,6 +1461,14 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 	    HandleCLIError(retcode, sqlci_env);
 	    
 	    charset = (CharInfo::CharSet)temp;
+
+            if ( DFS2REC::isSQLVarChar(datatype))
+              {
+                retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                               SQLDESC_VC_IND_LENGTH,
+                                               &vcIndLen, 0, 0, 0, 0);
+                HandleCLIError(retcode, sqlci_env);
+              }
           }
 	  retcode = SQL_EXEC_GetDescItem(input_desc, entry,
 					 whatToPutIntoPrecision,
@@ -1546,15 +1555,15 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 	      else  {
 		NABoolean error = FALSE;
 		
-	 Lng32 inLength = length;
-	 Int32 previousEntry = diags.getNumber();
+                Lng32 inLength = length;
+                Int32 previousEntry = diags.getNumber();
 		
 		if ( DFS2REC::isAnyCharacter(datatype) ) 
 		  scale = (Lng32)charset; // pass in target charset in argument 'scale'
 		
 		retcode = param->convertValue(sqlci_env, datatype, length,
-					      precision, scale, &diags);
-	 Int32 newestEntry = diags.getNumber();
+					      precision, scale, vcIndLen, &diags);
+                Int32 newestEntry = diags.getNumber();
 		
 		//if the convertValue gets a string overflow warning, convert
 		//it to error for non characters and it remains warning for characters
@@ -1566,7 +1575,6 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 		    }
 		  }
 		}
-		
 		
 		// If convertValue did not return any errors continue on this path
 		if ((retcode >= 0) && !error) {

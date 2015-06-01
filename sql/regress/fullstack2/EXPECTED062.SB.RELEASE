@@ -1,3 +1,21 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
 >>
 >>?section ABC
 >>?section def;
@@ -499,6 +517,7 @@ CONTROL QUERY DEFAULT
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
   HBASE_FILTER_PREDS            	ON
+  TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   SCHEMA                        	AAA.BBB
   CATALOG                       	CCC
@@ -541,6 +560,7 @@ CONTROL QUERY DEFAULT
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
   HBASE_FILTER_PREDS            	ON
+  TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
@@ -574,6 +594,7 @@ CONTROL QUERY DEFAULT
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
   HBASE_FILTER_PREDS            	ON
+  TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001

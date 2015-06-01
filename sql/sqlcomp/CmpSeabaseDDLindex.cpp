@@ -397,6 +397,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAString btSchemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   NAString btObjectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   NAString extTableName = tableName.getExternalName(TRUE);
+  NAString extTableNameForHbase = 
+    btCatalogNamePart + "." + btSchemaNamePart + "." + btObjectNamePart;
 
   ComObjectName indexName(createIndexNode->getIndexName());
   indexName.applyDefaults(btCatalogNamePart, btSchemaNamePart); 
@@ -897,18 +899,46 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     {
-      NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
-      // populate index
-      if (populateSeabaseIndexFromTable(&cliInterface,
-					createIndexNode->isUniqueSpecified(),
-					extIndexName, 
-                                        isVolatileTable ? volTabName : tableName, 
-                                        selColList,
-                                        useLoad))
-	{ 
-          goto label_error_drop_index;
-	}
-      
+      NABoolean useLoad = 
+        (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
+
+      NABoolean indexOpt = 
+        (CmpCommon::getDefault(TRAF_INDEX_CREATE_OPT) == DF_ON);
+
+      if (indexOpt)
+        {
+          // validate that table is empty
+          HbaseStr tblName;
+          tblName.val = (char*)extTableNameForHbase.data();
+          tblName.len = extNameForHbase.length();
+          retcode = ehi->isEmpty(tblName);
+          if (retcode < 0)
+            {
+              goto label_error;
+            }
+          
+          if (retcode == 0) // not empty
+            indexOpt = FALSE;
+        }
+
+      if (NOT indexOpt)
+        {
+          // populate index
+          if (populateSeabaseIndexFromTable(&cliInterface,
+                                            createIndexNode->isUniqueSpecified(),
+                                            extIndexName, 
+                                            isVolatileTable ? volTabName : tableName, 
+                                            selColList,
+                                            useLoad))
+            { 
+              goto label_error_drop_index;
+            }
+        }
+      else
+        {
+          // TBD. Validate that table is empty.
+        }
+
       if (updateObjectAuditAttr(&cliInterface, 
 			       catalogNamePart, schemaNamePart, objectNamePart,
 				TRUE, COM_INDEX_OBJECT_LIT))
@@ -934,8 +964,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   deallocEHI(ehi);
 
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 

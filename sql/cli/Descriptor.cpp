@@ -51,9 +51,6 @@
 #include "dfs2rec.h"
 #include "sql_id.h"
 #include "exp_clause_derived.h"
-#if defined( NA_SHADOWCALLS )
-#include "sqlclisp.h"
-#endif
 
 // WARNING: assuming varchar length indicator of sizeof(long) == 4
 #ifdef NA_64BIT
@@ -352,14 +349,14 @@ char *Descriptor::getVarItem(desc_struct &descItem, Lng32 idxrow)
 	// special case for COBOL VARCHARs, the length parts
 	// have to be aligned.
 	if ((descItem.rowsetVarLayoutSize % 2) == 0) {
-	  ptr += idxrow * (descItem.rowsetVarLayoutSize + sizeof(short));
+	  ptr += idxrow * (descItem.rowsetVarLayoutSize + descItem.vc_ind_length);
 	}
 	else {
-	  ptr += idxrow * (descItem.rowsetVarLayoutSize + 1 + sizeof(short));
+	  ptr += idxrow * (descItem.rowsetVarLayoutSize + 1 + descItem.vc_ind_length);
 	}
       }
       else if (DFS2REC::isSQLVarChar(descItem.datatype)) {
-	  ptr += idxrow * (descItem.rowsetVarLayoutSize + sizeof(short));
+	  ptr += idxrow * (descItem.rowsetVarLayoutSize + descItem.vc_ind_length);
       }
       else {
 	ptr += idxrow * descItem.rowsetVarLayoutSize;
@@ -378,9 +375,6 @@ char *Descriptor::getIndItem(desc_struct &descItem, Lng32 idxrow)
   else
   {
     ptr = (char *)descItem.ind_ptr;
-#if defined( NA_SHADOWCALLS )
-    ptr = (char *)SqlCliSp_GetDescVarPtr((Lng32)ptr, (void *)this);
-#endif
     if (descItem.rowsetVarLayoutSize > 0)
         ptr += idxrow * descItem.rowsetIndLayoutSize;
   }
@@ -1006,14 +1000,14 @@ RETCODE Descriptor::getDescItem(Lng32 entry, Lng32 what_to_get,
 	    // special case for COBOL VARCHARs, the length parts
 	    // have to be aligned.
 	    if ((descItem.rowsetVarLayoutSize % 2) == 0) {
-	      var_ptr += idxrow * (descItem.rowsetVarLayoutSize + sizeof(short));
+	      var_ptr += idxrow * (descItem.rowsetVarLayoutSize + descItem.vc_ind_length);
 	    }
 	    else {
-	      var_ptr += idxrow * (descItem.rowsetVarLayoutSize + 1 + sizeof(short));
+	      var_ptr += idxrow * (descItem.rowsetVarLayoutSize + 1 + descItem.vc_ind_length);
 	    }
 	  }
 	  else if (DFS2REC::isSQLVarChar(descItem.datatype)) {
-	    var_ptr += idxrow * (descItem.rowsetVarLayoutSize + sizeof(short));
+	    var_ptr += idxrow * (descItem.rowsetVarLayoutSize + descItem.vc_ind_length);
 	  }
 	  else {
 	    var_ptr += idxrow * descItem.rowsetVarLayoutSize;
@@ -2109,11 +2103,6 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
   desc_struct  & descItem = ((entry > 0) 
                              ? desc[entry - 1] : desc[0]); // Zero base
 
-#if defined( NA_SHADOWCALLS )
-  const Lng32 eightBytes = 8;
-  Lng32 varLen, indLen;
-#endif
-
   Lng32 sourceType = 0, sourceLen = 0, sourcePrecision = 0, sourceScale = 0;
   Lng32 targetType = 0, targetLen = 0, targetPrecision = 0, targetScale = 0;
   Lng32 targetVCLenSize = 0;
@@ -2554,28 +2543,12 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
 	{
 	  reComputeBulkMoveInfo();
 
-#if defined( NA_SHADOWCALLS )
-	  varLen = (rowsetSize == 0 || descItem.rowsetVarLayoutSize == 0)
-	    ? descItem.length
-	    : rowsetSize * descItem.rowsetVarLayoutSize;
-	  if (rowsetSize != 0 && DFS2REC::isSQLVarChar(descItem.datatype))
-	    varLen += sizeof(short);
-	  
-	  descItem.var_ptr = SqlCliSp_SetDescVarPtr(&varLen, descItem.var_ptr, numeric_value, (void *)this);
-#else
 	  descItem.var_ptr = numeric_value;
-#endif
 	}
       break;
 
     case SQLDESC_IND_PTR:
-#if defined( NA_SHADOWCALLS )
-      indLen = (rowsetSize == 0 || descItem.rowsetIndLayoutSize == 0) ?
-      		eightBytes : rowsetSize * descItem.rowsetIndLayoutSize;
-      descItem.ind_ptr = SqlCliSp_SetDescVarPtr(&indLen, descItem.ind_ptr, numeric_value, (void *)this);
-#else
       descItem.ind_ptr = numeric_value;
-#endif
      
       // ind_data becomes undefined.
       descItem.ind_data = 0;

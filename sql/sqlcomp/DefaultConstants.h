@@ -3532,9 +3532,10 @@ enum DefaultConstants
   MEMORY_LIMIT_NATABLECACHE_UPPER_KB,
   MEMORY_LIMIT_QCACHE_UPPER_KB,
 
-  // if set, change blob datatype to varchar. This is needed until blob
-  // support is in.
+  // if set, change blob/clob datatype to varchar. This is needed until blob/clob
+  // support is externalized.
   TRAF_BLOB_AS_VARCHAR,
+  TRAF_CLOB_AS_VARCHAR,
 
   // for internal use only.
   // execute a create table statement and create the table with this UID.
@@ -3713,6 +3714,17 @@ enum DefaultConstants
 
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
+
+  // if set, index population step is skipped for external and internal index creates.
+  // Should be set as an opt when objects are being
+  // created in one session (create table, create index, add constraints, etc).
+  // Does a fast check to see if source table is empty to validate.
+  TRAF_INDEX_CREATE_OPT, 
+
+  // truncate strings on insert and updates without returning an error.
+  TRAF_STRING_AUTO_TRUNCATE,
+  // return a warning on truncation.
+  TRAF_STRING_AUTO_TRUNCATE_WARNING,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

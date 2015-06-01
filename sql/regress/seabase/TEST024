@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ drop sequence test024seq5;
 drop sequence test024seq6;
 drop sequence test024seq7;
 drop sequence test024seq8;
+drop sequence test024seq9;
 drop sequence error_seq;
 
 drop table test024t1;
@@ -195,6 +196,12 @@ execute s;
 execute s;
 execute s;
 execute s;
+create sequence test024seq9 no cache;
+prepare s from select seqnum(test024seq9) from (values (1)) x(a);
+execute s;
+execute s;
+alter sequence test024seq9 reset;
+execute s;
 
 -- select from metadata sequences view
 invoke trafodion."_MD_".sequences_view;
@@ -215,6 +222,7 @@ create sequence error_seq cache 1;
 create sequence error_seq minvalue 1 maxvalue 3 cache 10;
 alter sequence error_seq start with 50;
 create sequence error_seq;
+create sequence error_seq reset;
 alter sequence error_seq start with 50;
 
 

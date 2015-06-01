@@ -6110,11 +6110,30 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	  NABoolean specialMode = 
 	    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
 	     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+
+          NABoolean checkForTrunc = TRUE;
+          NABoolean noStringTruncWarn = FALSE;
+          if (specialMode)
+            {
+              checkForTrunc = FALSE;
+              noStringTruncWarn = TRUE;
+            }
+          else
+            {
+              if (CmpCommon::getDefault(TRAF_STRING_AUTO_TRUNCATE) == DF_ON)
+                {
+                  checkForTrunc = FALSE;
+                  noStringTruncWarn = TRUE;
+                  if (CmpCommon::getDefault(TRAF_STRING_AUTO_TRUNCATE_WARNING) == DF_ON)
+                    noStringTruncWarn = FALSE;
+                }
+            }
+
 	  newChild = new(bindWA->wHeap()) Cast(child(1),
 					       &child(0)->getValueId().getType(),
 					       ITM_CAST,
-					       specialMode? FALSE:TRUE,
-					       specialMode? TRUE:FALSE);
+                                               checkForTrunc,
+                                               noStringTruncWarn);
 	}
       else
 	newChild = new (bindWA->wHeap()) Cast(child(1),

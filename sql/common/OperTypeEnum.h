@@ -1140,6 +1140,7 @@ enum OperatorTypeEnum {
                         ELM_SG_OPT_CYCLE_OPTION_ELEM,
                         ELM_SG_OPT_CACHE_OPTION_ELEM,
                         ELM_SG_OPT_DATATYPE_ELEM,
+                        ELM_SG_OPT_RESET_OPTION_ELEM,
                         ELM_SG_OPTS_DEFAULT_ELEM,
 
                         ELM_STORE_OPT_DEFAULT_ELEM,

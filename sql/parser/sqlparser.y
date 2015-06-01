@@ -2541,6 +2541,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		sg_identity_option
 %type <pElemDDL>  		sg_identity_function
 %type <pElemDDL>  		sequence_generator_options
+%type <pElemDDL>  		all_sequence_generator_options
 %type <pElemDDL>  		sequence_generator_option
 %type <pElemDDL>  		sequence_generator_option_list
 %type <pElemDDL>  		start_with_option
@@ -2549,6 +2550,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		min_value_option
 %type <pElemDDL>  		cache_option
 %type <pElemDDL>  		cycle_option
+%type <pElemDDL>  		reset_option
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
@@ -8964,26 +8966,32 @@ sg_identity_function :
                                        $3 /*sequence_generator_option_list*/);
                                      
 		    }  
-		                   
+	
+/* type pElemDDL */
+all_sequence_generator_options : empty
+                                {
+                                  $$ = NULL;
+                                }
+                      | sequence_generator_option_list
+                      | reset_option
+	                   
 /* type pElemDDL */
 sequence_generator_options : empty
                                 {
                                   $$ = NULL;
                                 }
-
                       | sequence_generator_option_list
 
 /* type pElemDDL */
 sequence_generator_option_list :   sequence_generator_option
-
 		      | sequence_generator_option_list sequence_generator_option
-		     
-        {
-                    $$ = new (PARSERHEAP())
-				    ElemDDLOptionList(
-                                       $1 /*sequence_generator_option_list*/,
-                                       $2 /*sequence_generator_option*/);
-        }
+                        {
+                          $$ = new (PARSERHEAP())
+                            ElemDDLOptionList(
+                                              $1 /*sequence_generator_option_list*/,
+                                              $2 /*sequence_generator_option*/);
+                        }
+
 /* type pElemDDL */
 sequence_generator_option : start_with_option
                       | increment_option
@@ -9100,6 +9108,15 @@ cycle_option : TOK_CYCLE
   
      }
 
+/* type pElemDDL */
+reset_option : TOK_RESET
+     {
+        // RESET Option
+        $$ = new (PARSERHEAP())
+          ElemDDLSGOptionResetOption();
+  
+     } 
+                                          
 /* type pElemDDL */
 cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
      {
@@ -11291,34 +11308,26 @@ tok_char_or_character_or_byte : TOK_CHAR | TOK_CHARACTER
 /* type na_type */
 blob_type : TOK_BLOB blob_optional_left_len_right 
             {
-	
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("BLOB");
 		}
 	      else
 		{
-    
-		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
-	     
-
+    		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
 		}
             }
           | TOK_CLOB blob_optional_left_len_right 
             {
-
-	      
-
-	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
+	      if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("CLOB");
 		}
 	      else
 		{
-
-
-	      $$ = new (PARSERHEAP()) SQLClob ( $2 );
-	      
+                  $$ = new (PARSERHEAP()) SQLClob ( $2 );
 		}
             }
 
@@ -29337,7 +29346,7 @@ create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_
 			delete $4 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
 			ElemDDLSGOptions *sgOptions = 
 			  new (PARSERHEAP()) ElemDDLSGOptions(
@@ -29352,7 +29361,7 @@ alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_ge
 			delete $3 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
                         if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
                           {
@@ -30995,6 +31004,19 @@ alter_table_alter_column_set_sg_option : TOK_ALTER TOK_COLUMN column_name TOK_SE
 				  ElemDDLSGOptions *sgOptions = new (PARSERHEAP()) ElemDDLSGOptions(
 				     1, /* SG_INTERNAL */
 				     $5 /*sequence_generator_option_list*/);
+                                       
+				  $$ = new (PARSERHEAP())
+				    StmtDDLAlterTableAlterColumnSetSGOption(
+				      *$3,        // column name
+				      sgOptions  /* sequence generator options*/);
+				      
+				  delete $3;
+				}
+                             | TOK_ALTER TOK_COLUMN column_name reset_option
+				{
+				  ElemDDLSGOptions *sgOptions = new (PARSERHEAP()) ElemDDLSGOptions(
+				     1, /* SG_INTERNAL */
+				     $4 /*sequence_generator_option_list*/);
                                        
 				  $$ = new (PARSERHEAP())
 				    StmtDDLAlterTableAlterColumnSetSGOption(

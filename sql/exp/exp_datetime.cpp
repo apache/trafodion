@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1783,8 +1783,9 @@ scanField(char *&src,
       delim = '\0';
     }
 
-    // Check actual delimiter against the expected delimiter.  An
-    // expected delimiter of ';' matches a ':' or a ' ' (space).
+    // Check actual delimiter against the expected delimiter. 
+    // An expected delimiter of ';' matches a ':' or a ' ' (space).
+    // An expected delimiter of '|' matches a ':' or a ' ' (space) or 'T' (ISO format).
     // A NULL actual delimiter matches any expected delimiter.
     //
     if (delim) {
@@ -1798,6 +1799,10 @@ scanField(char *&src,
         }
       } else if (exptDelim == ';') {
         if (delim != ':' && delim != ' ') {
+          return FALSE;
+        }
+      } else if (exptDelim == '|') {
+        if (delim != ':' && delim != ' ' && delim != 'T') {
           return FALSE;
         }
       } else {
@@ -1951,6 +1956,22 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     srcLen -= 3;
   }    
 
+  // Indicates if a 'Z' appears at the end of source.
+  // 'Z' is a local timezone indicator for ISO format datetime values.
+  // 0 - means no 'Z' indicator
+  // 1 - means Z
+  //
+  short defZ = 0;
+
+  // Check for the " AM" or " PM" at the end of the source.  If it is
+  // there, record and adjust the srcLen to in effect remove it from
+  // the source.
+  //
+  if ((usaAmPm == 0) && (srcData[srcLen - 1] == 'Z')) {
+    defZ = 1;
+    srcLen -= 1;
+  } 
+
   // Get the start and end fields for the destination datetime type.
   //
   rec_datetime_field dstStartField;
@@ -2010,7 +2031,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   // first field.
   //
   static const char delimiters[][DATETIME_MAX_NUM_FIELDS+1] = {
-    "x--;::.",  // DEFAULT
+    "x--|::.",  // DEFAULT
     "x//;::.",  // USA
     "x..;..."   // EUROPEAN
   };

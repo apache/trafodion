@@ -167,6 +167,9 @@ class ExpHbaseInterface : public NABasicObject
 		     LIST(NAString) &col1ValueList, // output
 		     LIST(NAString) &col2ValueList, // output
 		     LIST(NAString) &col3ValueList); // output
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName) = 0;
 		     
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -452,6 +455,9 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 scanClose();
 
   virtual Lng32 getHTable(HbaseStr &tblName);
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName);
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,

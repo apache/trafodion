@@ -3239,7 +3239,8 @@ Int64 CmpSeabaseDDL::getObjectUID(
                                    const char * inObjType,
                                    const char * inObjTypeStr,
                                    char * outObjType,
-                                   NABoolean lookInObjectsIdx)
+                                   NABoolean lookInObjectsIdx,
+                                   NABoolean reportErrorNow)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -3295,7 +3296,8 @@ Int64 CmpSeabaseDDL::getObjectUID(
 
   if (cliRC == 100) // did not find the row
     {
-      *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
+      if (reportErrorNow)
+        *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
 
       return -1;
     }
@@ -6859,6 +6861,12 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
   if (sgo->isCycleSpecified())
     {
       str_sprintf(tmpBuf, " cycle_option = '%s',", (sgo->getCycle() ? "Y" : "N"));
+      strcat(setOptions, tmpBuf);
+    }
+
+  if (sgo->isResetSpecified())
+    {
+      str_sprintf(tmpBuf, " next_value = start_value, num_calls = 0, ");
       strcat(setOptions, tmpBuf);
     }
   

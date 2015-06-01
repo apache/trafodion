@@ -137,12 +137,14 @@ ElemDDLSGOptions::initializeDataMembers()
   isCycleSpec_           = FALSE;
   isCacheSpec_           = FALSE;
   isDatatypeSpec_       = FALSE;
-  
+  isResetSpec_            = FALSE;
+
   isNoMinValue_        = FALSE;
   isNoMaxValue_        = FALSE;
   cycle_               = FALSE;
   cache_               = 0;
   isNoCache_        = FALSE;
+  reset_                = FALSE;
 
   startValue_      = 0;
   increment_       = 0;
@@ -330,6 +332,23 @@ ElemDDLSGOptions::setSGOpt(ElemDDLNode * pSGOpt)
       pSGOpt->castToElemDDLSGOptionDatatype()->getDatatype();
     break;
 
+   case ELM_SG_OPT_RESET_OPTION_ELEM :
+    if (isResetSpec_)
+    {
+      // cout << "*** Error *** Duplicate options in sg option list.
+      if (ieType_ == SG_INTERNAL)
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("RESET")
+		         << DgString1("IDENTITY column");
+      else
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("RESET")
+		         << DgString1("sequence generator");
+    }
+    isResetSpec_ = TRUE;
+    reset_ = TRUE;
+    break;
+
   default :
     ABORT("internal logic error");
     break;
@@ -427,9 +446,18 @@ short ElemDDLSGOptions::validate(short queryType)
         }
 
       maxValue = getMaxValue();
-    }
+    } // alter
   else
     {
+      if (isResetSpecified())
+        {
+          *CmpCommon::diags() << DgSqlCode(-1592)
+                              << DgString0("RESET") 
+                              << DgString1(queryTypeStr);
+          
+          return -1;
+        }
+ 
       minValue = ((isMinValueSpecified() && (NOT isNoMinValue())) ? 
                   getMinValue() : 1LL); 
       startValue = (isStartValueSpecified() ? getStartValue() : minValue);
@@ -585,6 +613,8 @@ short ElemDDLSGOptions::genSGA(SequenceGeneratorAttributes &sga)
 
   sga.setSGFSDataType(getFSDataType());
 
+  sga.setSGResetOption(isReset());
+
   return 0;
 }
 
@@ -600,6 +630,8 @@ short ElemDDLSGOptions::importSGA(const SequenceGeneratorAttributes *sga)
 
   setCache(sga->getSGCache());
   setCycle(sga->getSGCycleOption());
+
+  setReset(sga->getSGResetOption());
 
   return 0;
 }
@@ -648,6 +680,12 @@ short ElemDDLSGOptions::importSGO(const ElemDDLSGOptions *sgo)
     {
       setCycleSpec(TRUE);
       setCycle(sgo->isCycle());
+    }
+
+  if (sgo->isResetSpecified())
+    {
+      setResetSpec();
+      setReset(sgo->isReset());
     }
 
   return 0;

@@ -3271,6 +3271,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
+ DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
@@ -3278,6 +3280,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
+
+  DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
 
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
@@ -3313,6 +3317,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDkwd__(TRAF_STRING_AUTO_TRUNCATE,      "OFF"),
+  DDkwd__(TRAF_STRING_AUTO_TRUNCATE_WARNING,      "OFF"),
+
   //TRAF_TABLE_SNAPSHOT_SCAN CQD can be set to :
   //NONE-->    Snapshot scan is disabled and regular scan is used , 
   //SUFFIX --> Snapshot scan enabled for the bulk unload (bulk unload 

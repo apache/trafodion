@@ -1107,7 +1107,8 @@ short CmpSeabaseDDL::updateIndexInfo(
 short CmpSeabaseDDL::createSeabaseTable2(
                                          ExeCliInterface &cliInterface,
                                          StmtDDLCreateTable * createTableNode,
-                                         NAString &currCatName, NAString &currSchName)
+                                         NAString &currCatName, NAString &currSchName,
+                                         NABoolean isCompound)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -1897,10 +1898,14 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
     }
 
-  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
-    NATableDB::REMOVE_MINE_ONLY, COM_BASE_TABLE_OBJECT);
-  
+  if (NOT isCompound)
+    {
+      CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
+                                                      NATableDB::REMOVE_MINE_ONLY, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
+
   processReturn();
 
   return 0;
@@ -1908,7 +1913,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
 
 void CmpSeabaseDDL::createSeabaseTable(
                                        StmtDDLCreateTable * createTableNode,
-                                       NAString &currCatName, NAString &currSchName)
+                                       NAString &currCatName, NAString &currSchName,
+                                       NABoolean isCompound)
 {
   NABoolean xnWasStartedHere = FALSE;
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
@@ -1918,7 +1924,8 @@ void CmpSeabaseDDL::createSeabaseTable(
     return;
 
   short rc =
-    createSeabaseTable2(cliInterface, createTableNode, currCatName, currSchName);
+    createSeabaseTable2(cliInterface, createTableNode, currCatName, currSchName,
+                        isCompound);
   if ((CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
       (rc < 0))
     {
@@ -1954,7 +1961,8 @@ void CmpSeabaseDDL::addConstraints(
                                    StmtDDLAddConstraintPK * pkConstr,
                                    StmtDDLAddConstraintUniqueArray &uniqueConstrArr,
                                    StmtDDLAddConstraintRIArray &riConstrArr,
-                                   StmtDDLAddConstraintCheckArray &checkConstrArr)
+                                   StmtDDLAddConstraintCheckArray &checkConstrArr,
+                                   NABoolean isCompound)
 {
   Lng32 cliRC = 0;
 
@@ -2140,14 +2148,18 @@ void CmpSeabaseDDL::addConstraints(
               
             }
 
-          CorrName cn2(refdObjNamePart.data(),
-                       STMTHEAP,
-                       refdSchNamePart.data(),
-                       refdCatNamePart.data());
-
-          // remove natable for the table being referenced
-          ActiveSchemaDB()->getNATableDB()->removeNATable(cn2,
-            NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+          if (NOT isCompound)
+            {
+              CorrName cn2(refdObjNamePart.data(),
+                           STMTHEAP,
+                           refdSchNamePart.data(),
+                           refdCatNamePart.data());
+              
+              // remove natable for the table being referenced
+              ActiveSchemaDB()->getNATableDB()->removeNATable(cn2,
+                                                              NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                              COM_BASE_TABLE_OBJECT);
+            }
 
           if (cliRC < 0)
             goto label_return;
@@ -2198,15 +2210,20 @@ void CmpSeabaseDDL::addConstraints(
     }
 
  label_return:
-  // remove NATable cache entries for this table
-  CorrName cn(objectNamePart.data(),
-              STMTHEAP,
-              schemaNamePart.data(),
-              catalogNamePart.data());
-  
-  // remove NATable for this table
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  if (NOT isCompound)
+    {
+      // remove NATable cache entries for this table
+      CorrName cn(objectNamePart.data(),
+                  STMTHEAP,
+                  schemaNamePart.data(),
+                  catalogNamePart.data());
+      
+      // remove NATable for this table
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 }
@@ -2243,7 +2260,7 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
       goto label_error;
     }
 
-  createSeabaseTable(createTableNode, currCatName, currSchName);
+  createSeabaseTable(createTableNode, currCatName, currSchName, TRUE);
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
     {
       return;
@@ -2263,7 +2280,8 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
                  NULL,
                  createTableNode->getAddConstraintUniqueArray(),
                  createTableNode->getAddConstraintRIArray(),
-                 createTableNode->getAddConstraintCheckArray());
+                 createTableNode->getAddConstraintCheckArray(),
+                 TRUE);
 
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
     {
@@ -2300,6 +2318,13 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
     }
   
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+
+  {
+    CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+    ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
+                                                    NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                    COM_BASE_TABLE_OBJECT);
+  }
 
   return;
 
@@ -4707,6 +4732,12 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
           options += tmpBuf;
         }
 
+      if (sgo->isResetSpecified())
+        {
+          str_sprintf(tmpBuf, " reset ");
+          options += tmpBuf;
+        }
+
       char buf[4000];
       str_sprintf(buf, "alter internal sequence %s.\"%s\".\"%s\" %s",
                   catalogNamePart.data(), schemaNamePart.data(), seqName.data(),
@@ -4912,6 +4943,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
         }
 
+      if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+        {
+          // remove NATable for this table
+          ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                          NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                          COM_BASE_TABLE_OBJECT);
+        }
+      
       return;
     }
 
@@ -4995,9 +5034,13 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
-  // remove NATable for this table
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      // remove NATable for this table
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 }
@@ -5171,9 +5214,13 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
       return;
     }
 
-  // remove NATable for this table
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      // remove NATable for this table
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 }
@@ -5516,7 +5563,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       const NAColumn * ringNAC = ringNACarr.getColumn(ringColName);
       const NAColumn * refdNAC = refdNACarr.getColumn(refdColName);
 
-      //      if (NOT(*ringNAC->getType() == *refdNAC->getType()))
+      if (! refdNAC)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1009)
+                              << DgColumnName(refdColName);
+          processReturn();
+          return;
+        }
+
       if (NOT (ringNAC->getType()->equalIgnoreNull(*refdNAC->getType())))
         {
           *CmpCommon::diags()
@@ -5701,13 +5755,18 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       return;
     }
 
-  // remove NATable for this table
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
-
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      // remove NATable for this table
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
+  
   // remove natable for the table being referenced
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn2,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+                                                  NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                  COM_BASE_TABLE_OBJECT);
 
   return;
 }
@@ -6089,9 +6148,13 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
       return;
     }
 
-  // remove NATable for this table
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      // remove NATable for this table
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 }

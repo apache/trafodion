@@ -1,7 +1,7 @@
 -- Test: TEST123 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 
 -- remove after this is made the default.  
 cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
+cqd TRAF_CLOB_AS_VARCHAR 'OFF'; 
 
 obey TEST130(clnup);
 

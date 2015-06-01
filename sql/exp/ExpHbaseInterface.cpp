@@ -1215,6 +1215,32 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
  }
 */
 
+Lng32 ExpHbaseInterface_JNI::isEmpty(
+                                     HbaseStr &tblName)
+{
+  Lng32 retcode;
+
+  retcode = init(hbs_);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+  
+  LIST(HbaseStr) columns(heap_);
+
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, 
+       NULL, NULL, NULL);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+
+  retcode = nextRow();
+
+  scanClose();
+  if (retcode == HBASE_ACCESS_EOD)
+    return 1; // isEmpty
+  else if (retcode == HBASE_ACCESS_SUCCESS)
+    return 0; // not empty
+
+  return -HBASE_ACCESS_ERROR; // error
+}
 
 //----------------------------------------------------------------------------
 // Avoid messing up the class data members (like htc_)

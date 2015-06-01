@@ -6151,13 +6151,11 @@ ExRowsetArrayScan::eval(char          *op_data[],
   // SQLVarChar;
   // The size of the field is sizeof(short) for rowset SQLVarChars. 
   if(SourceAttr->getVCIndicatorLength() > 0){
-    assert(SourceAttr->getVCIndicatorLength() == sizeof(short));
     str_cpy_all((char*)op_data[-ex_clause::MAX_OPERANDS], 
-      (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), sizeof(short));
+      (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), 
+                SourceAttr->getVCIndicatorLength()); //sizeof(short));
     SourceElemPtr += sizeof(short);
-#pragma nowarn(1506)   // warning elimination 
-    str_cpy_all(op_data[0], SourceElemPtr, size-sizeof(short));
-#pragma warn(1506)  // warning elimination 
+    str_cpy_all(op_data[0], SourceElemPtr, size - SourceAttr->getVCIndicatorLength());
   }
   else {
   // Note we do not have variable length for host variables. But we may not
@@ -6283,17 +6281,18 @@ ExRowsetArrayInto::eval(char *op_data[], CollHeap *heap,
   if (resultIsNull == FALSE){  
     if (DFS2REC::isSQLVarChar(resultAttr->getDatatype())) { 
       unsigned short VCLen = 0;
-      assert(resultAttr->getVCIndicatorLength() == sizeof(short));
       str_cpy_all((char *) &VCLen,
-	(char*)op_data[-ex_clause::MAX_OPERANDS + 1], sizeof(short));
+                  (char*)op_data[-ex_clause::MAX_OPERANDS + 1], 
+                  resultAttr->getVCIndicatorLength());
     
       str_cpy_all( resultElemPtr+resultAttr->getNullIndicatorLength(),
-	(char *) &VCLen,
-	sizeof(short));
+                   (char *) &VCLen,
+                   resultAttr->getVCIndicatorLength());
 
       str_cpy_all( 
-resultElemPtr+resultAttr->getNullIndicatorLength()+resultAttr->getVCIndicatorLength(),
-      op_data[1], VCLen); 
+                  resultElemPtr+resultAttr->getNullIndicatorLength()+
+                  resultAttr->getVCIndicatorLength(),
+                  op_data[1], VCLen); 
     }
     else {
       str_cpy_all(resultElemPtr + resultAttr->getNullIndicatorLength(), 
