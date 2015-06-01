@@ -2324,11 +2324,6 @@ func_exit:
 		case odbc_SQLSvc_GetSQLCatalogs_SQLError_exn_:
 			jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidDBMMethodId, currentTxid);
 			throwSQLException(jenv, &exception_.u.SQLError);
-			for (int i = 0; i < exception_.u.SQLError.errorList._length; i++)
-			{
-			    MEMORY_DELETE_ARRAY((exception_.u.SQLError.errorList._buffer + i)->errorText);
-			}
-			MEMORY_DELETE_ARRAY(exception_.u.SQLError.errorList._buffer);
 			break;
 		case odbc_SQLSvc_GetSQLCatalogs_SQLInvalidHandle_exn_:
 			jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidDBMMethodId, currentTxid);
