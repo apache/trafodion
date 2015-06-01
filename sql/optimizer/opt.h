@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1797,6 +1797,8 @@ public:
 
   ~PlanWorkSpace();
 
+  const Context *getContext() const { return myContext_; }
+
   // ---------------------------------------------------------------------
   // Set the context under which this operator is optimized for. A plan
   // must have already been created for this context by CreatePlanTask.
@@ -2135,6 +2137,8 @@ public:
   // get/set TMUDF-related things
   // ---------------------------------------------------------------------
   tmudr::UDRPlanInfo *getUDRPlanInfo()           { return udrPlanInfo_; }
+  const tmudr::UDRPlanInfo *getUDRPlanInfo() const
+                                                 { return udrPlanInfo_; }
   void setUDRPlanInfo(tmudr::UDRPlanInfo *pi)      { udrPlanInfo_ = pi; }
 
 private:

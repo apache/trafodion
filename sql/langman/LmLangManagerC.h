@@ -125,9 +125,9 @@ public:
 
   virtual LmResult getObjRoutine(
     const char            *serializedInvocationInfo,
-    int                    invocationInfoLen,
+    int                    serializedInvocationInfoLen,
     const char            *serializedPlanInfo,
-    int                    planInfoLen,
+    int                    serializedPlanInfoLen,
     ComRoutineLanguage     language,
     ComRoutineParamStyle   paramStyle,
     const char            *externalName,

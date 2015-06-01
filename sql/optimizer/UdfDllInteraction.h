@@ -73,11 +73,20 @@ class TMUDFDllInteraction : public NABasicObject
                              ValueIdSet &predsEvaluatedByUDF,
                              ValueIdSet &predsToPushDown);
   NABoolean describeConstraints(TableMappingUDF * tmudfNode);
+  NABoolean describeStatistics(TableMappingUDF * tmudfNode,
+                               const EstLogPropSharedPtr& inputEstLogProp);
   NABoolean degreeOfParallelism(TableMappingUDF * tmudfNode,
                                 TMUDFPlanWorkSpace * pws,
                                 int &dop);
   NABoolean finalizePlan(TableMappingUDF * tmudfNode,
                          tmudr::UDRPlanInfo *planInfo);
+
+  // methods for retrieving statistics specified by the UDR
+  CostScalar getResultCardinality(TableMappingUDF *tmudfNode);
+  CostScalar getCardinalityScaleFactorFromFunctionType(
+       TableMappingUDF *tmudfNode);
+  CostScalar getOutputColumnUEC(TableMappingUDF *tmudfNode,
+                                int colNum);
 
   // helper methods for routine invocation and error handling
   NABoolean invokeRoutine(tmudr::UDRInvocationInfo::CallPhase cp,
@@ -141,6 +150,10 @@ public:
        tmudr::UDRInvocationInfo *tgt);
   static NABoolean createConstraintInfoFromRelExpr(
        TableMappingUDF * tmudfNode);
+  static NABoolean setChildOutputStats(
+       tmudr::UDRInvocationInfo *tgt,
+       TableMappingUDF * tmudfNode,
+       const EstLogPropSharedPtr& inputLP);
 
   // methods to convert tmudr objects to Trafodion objects (allocated on NAHeap)
   static NAType *createNATypeFromTypeInfo(

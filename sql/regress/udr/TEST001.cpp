@@ -43,6 +43,13 @@ public:
   // generate constraints for the table-valued result
   void describeConstraints(UDRInvocationInfo &info);
 
+  // estimate result cardinality
+  void describeStatistics(UDRInvocationInfo &info);
+
+  // this method is only used to set the cost
+  void describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
+                                          UDRPlanInfo &plan);
+
   // override the runtime method
   void processData(UDRInvocationInfo &info,
                    UDRPlanInfo &plan);
@@ -236,6 +243,34 @@ void Sessionize::describeConstraints(UDRInvocationInfo &info)
   uc.addColumn(1); // the sequence number alway column #1
   info.out().addUniquenessConstraint(uc);
 
+}
+
+void Sessionize::describeStatistics(UDRInvocationInfo &info)
+{
+  // We set the function type to REDUCER earlier. The Trafodion compiler
+  // estimates one output row per input partition for reducer function,
+  // unless the UDF specifies another value. Since our sessionize UDF
+  // returns one output row per input row, make sure the optimizer has
+  // a better cardinality estimate.
+
+  // Crude estimate, assume each predicate evaluated by the UDF
+  // reduces the number of output columns by 50%. At this point, only
+  // predicates that are evaluated by the UDF are left in the list.
+  double selectivity = pow(2,-info.getNumPredicates());
+  long resultRowCount =
+    static_cast<long>(info.in().getEstimatedNumRows() * selectivity);
+
+  info.out().setEstimatedNumRows(resultRowCount);
+}
+
+void Sessionize::describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
+                                                    UDRPlanInfo &plan)
+{
+  // call the base class method for determining DoP
+  UDR::describeDesiredDegreeOfParallelism(info, plan);
+
+  // add cost info, not necessarily realistic
+  plan.setCostPerRow(999999);
 }
 
 void Sessionize::processData(UDRInvocationInfo &info,

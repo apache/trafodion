@@ -1742,6 +1742,8 @@ LmResult LmLanguageManagerJava::getObjRoutine(
      LmRoutine            **handle,
      ComDiagsArea          *diagsArea)
 {
+  *handle = NULL;
+
   NABoolean status = lmRestoreJavaSignalHandlers();
   if (status != TRUE) {
     if (diagsArea)
@@ -1752,7 +1754,6 @@ LmResult LmLanguageManagerJava::getObjRoutine(
   LM_DEBUG_SIGNAL_HANDLERS("[SIGNAL] Restored Java signal handlers before entering Java in getObjRoutine");
 
   JNIEnv *jni = (JNIEnv*)jniEnv_;
-  *handle = NULL;
   LmContainer *container = NULL;
   LmResult result = LM_OK;
 
@@ -1795,8 +1796,13 @@ LmResult LmLanguageManagerJava::getObjRoutine(
       if (newUDRObj == NULL || jni->ExceptionOccurred())
         {
           if (diagsArea)
-            *diagsArea_ << DgSqlCode(-LME_CONSTRUCTOR_ERROR)
-                        << DgString0(containerName);
+            exceptionReporter_->insertDiags(
+                 diagsArea,
+                 -LME_UDR_METHOD_ERROR,
+                 "constructor",
+                 // Details: field will be blank, detail info
+                 // is provided in a separate error entry.
+                 containerName);
           result = LM_ERR;
         }
 

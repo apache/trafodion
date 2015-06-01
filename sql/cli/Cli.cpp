@@ -11671,7 +11671,7 @@ Int32 SQLCLI_InvokeRoutine
   ContextCli   &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags       = currContext.diags();
   LmResult      res         = LM_ERR;
-  LmRoutine    *lmRoutine   = cliGlobals->currContext()->getTrustedRoutine(handle);
+  LmRoutine    *lmRoutine   = cliGlobals->currContext()->findTrustedRoutine(handle);
 
   if (lmRoutine)
     res = lmRoutine->invokeRoutineMethod(
@@ -11721,7 +11721,7 @@ Int32 SQLCLI_GetRoutineInvocationInfo
   ContextCli   &currContext = *(cliGlobals->currContext());
   ComDiagsArea &diags       = currContext.diags();
   LmResult      res         = LM_ERR;
-  LmRoutine    *lmRoutine   = cliGlobals->currContext()->getTrustedRoutine(handle);
+  LmRoutine    *lmRoutine   = cliGlobals->currContext()->findTrustedRoutine(handle);
 
   if (lmRoutine)
     res = lmRoutine->getRoutineInvocationInfo(

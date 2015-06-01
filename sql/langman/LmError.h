@@ -157,10 +157,10 @@ enum LangManErrorCode
      LME_BUFFER_OVERWRITE               = 11254,
      LME_FACTORY_METHOD                 = 11255,
 
-     LME_COMPILER_INTERFACE_ERROR       = 11256,
+     LME_OBJECT_INTERFACE_ERROR         = 11256,
 
      LME_ROUTINE_VALIDATED              = 11257,
-     LME_CONSTRUCTOR_ERROR              = 11258,
+     LME_UDR_METHOD_ERROR               = 11258,
 
      LME_LAST_ERROR = 11299
 };

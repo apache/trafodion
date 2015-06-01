@@ -181,7 +181,7 @@ Context* RelExpr::createPlan(Context* myContext,
     // -----------------------------------------------------------------
     Lng32 planNumber =
       pws->getCountOfChildContexts()/(getArity()>0 ? getArity() : 1);
-    if(isBigMemoryOperator(myContext,planNumber))
+    if(isBigMemoryOperator(pws,planNumber))
     {
       pws->setBigMemoryOperator(TRUE);
       myPlan->setBigMemoryOperator(TRUE);
@@ -235,7 +235,7 @@ Context* RelExpr::createPlan(Context* myContext,
       {
       if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
           operatorCost =
-            cm->scmComputeOperatorCost(this, myContext, countOfStreams);
+            cm->scmComputeOperatorCost(this, pws, countOfStreams);
         else
           operatorCost =
             cm->computeOperatorCost(this, myContext, countOfStreams);
@@ -1237,9 +1237,11 @@ PartitioningFunction* RelExpr::mapPartitioningFunction(
 // -----------------------------------------------------------------------
 // member functions for class Sort
 // -----------------------------------------------------------------------
-NABoolean Sort::isBigMemoryOperator(const Context* context,
+NABoolean Sort::isBigMemoryOperator(const PlanWorkSpace* pws,
                                     const Lng32 planNumber)
 {
+  const Context* context = pws->getContext();
+
   // Get addressability to the defaults table and extract default memory.
   // CURRSTMT_OPTDEFAULTS->getMemoryLimitPerCPU() should not be called since it can
   // set to > 20MB in some cases, for example if the query tree contains
@@ -8288,15 +8290,15 @@ PartitioningFunction* HashJoin::mapPartitioningFunction(
 } // end HashJoin::mapPartitioningFunction()
 
 
-NABoolean HashJoin::isBigMemoryOperator(const Context* context,
+NABoolean HashJoin::isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber)
 {
   double dummy;
-  return isBigMemoryOperatorSetRatio( context, planNumber, dummy);
+  return isBigMemoryOperatorSetRatio( pws->getContext(), planNumber, dummy);
 }
 
 NABoolean HashJoin::isBigMemoryOperatorSetRatio(const Context* context,
-						const Lng32 planNumber,
+                                                const Lng32 planNumber,
 						double & ratio)
 {
   double memoryLimitPerCPU = CURRSTMT_OPTDEFAULTS->getMemoryLimitPerCPU();
@@ -12031,9 +12033,10 @@ PhysShortCutGroupBy::synthPhysicalProperty(const Context* myContext,
 // -----------------------------------------------------------------------
 // member functions for class HashGroupBy
 // -----------------------------------------------------------------------
-NABoolean HashGroupBy::isBigMemoryOperator(const Context* context,
+NABoolean HashGroupBy::isBigMemoryOperator(const PlanWorkSpace* pws,
                                            const Lng32 planNumber)
 {
+  const Context* context = pws->getContext();
   double memoryLimitPerCPU = CURRSTMT_OPTDEFAULTS->getMemoryLimitPerCPU();
 
   // ---------------------------------------------------------------------
@@ -17388,10 +17391,41 @@ PartitioningFunction* TableMappingUDF::mapPartitioningFunction(
   return RelExpr::mapPartitioningFunction(partFunc, rewriteForChild0);
 };
 
-NABoolean TableMappingUDF::isBigMemoryOperator(const Context* context,
-                                        const Lng32 /*planNumber*/)
+NABoolean TableMappingUDF::isBigMemoryOperator(const PlanWorkSpace* pws,
+                                               const Lng32 /*planNumber*/)
 {
-  return FALSE;
+  NABoolean result = FALSE;
+  const Context* context = pws->getContext();
+  const TMUDFPlanWorkSpace *udfPWS = static_cast<const TMUDFPlanWorkSpace *>(pws);
+  int udfWriterDop = tmudr::UDRPlanInfo::ANY_DEGREE_OF_PARALLELISM;
+
+  if (udfPWS->getUDRPlanInfo())
+    udfWriterDop = udfPWS->getUDRPlanInfo()->getDesiredDegreeOfParallelism();
+
+  if (udfWriterDop > 0)
+    {
+      // the UDF writer specified a desired degree of parallelism,
+      // this means that the UDF needs parallelism, so it is a BMO
+      result = TRUE;
+    }
+  else
+    {
+      // values <= 0 indicate special instructions for the DoP,
+      // defined as enum values in file ../sqludr/sqludr.h
+      switch (udfWriterDop)
+        {
+        case tmudr::UDRPlanInfo::MAX_DEGREE_OF_PARALLELISM:
+        case tmudr::UDRPlanInfo::ONE_INSTANCE_PER_NODE:
+          result = TRUE;
+          break;
+
+        default:
+          // leave result at FALSE
+          break;
+        }
+    }
+
+  return result;
 };
 
 // -----------------------------------------------------------------------
@@ -17558,15 +17592,18 @@ PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
      PlanWorkSpace  *pws)
 {
   PartitioningFunction* myPartFunc = NULL;
+  Int32 arity = getArity();
+  Lng32 numOfESPs = 0;
+  NABoolean createSinglePartFunc = FALSE;
+  NABoolean createRandomPartFunc = FALSE;
 
-  if (getArity() == 0)
+  if (arity == 0)
   {
     // for a TMUDF with no table inputs, call okToAttemptESPParallelism()
     // here to determine the DoP. In the other case where we had table
     // inputs, we did that already in
     // PhysicalTableMappingUDF::createContextForAChild()
 
-    Lng32 numOfESPs = 0;
     float allowedDeviation = 0.0;
     NABoolean numOfESPsForced = FALSE;
 
@@ -17578,54 +17615,108 @@ PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
          numOfESPsForced);
 
     if (useAParallelPlan && numOfESPs > 1)
-      {
-        //----------------------------------------------------------
-        // Create a node map with a single, active, wild-card entry.
-        //----------------------------------------------------------
-        NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-          NodeMap(CmpCommon::statementHeap(),
-                  numOfESPs,
-                  NodeMapEntry::ACTIVE);
-
-        // set node numbers in the entries, if we need to have one
-        // ESP per node
-        if (numOfESPs == gpClusterInfo->numOfSMPs())
-          for (int i=0; i<numOfESPs; i++)
-            myNodeMap->getNodeMapEntry(i)->setNodeNumber(i);
-
-        ValueIdSet partKey;
-        ItemExpr *randNum =
-          new(CmpCommon::statementHeap()) RandomNum(NULL, TRUE);
-        randNum->synthTypeAndValueId();
-        partKey.insert(randNum->getValueId());
-        myPartFunc = new(CmpCommon::statementHeap())
-          Hash2PartitioningFunction (partKey,
-                                     partKey,
-                                     numOfESPs,
-                                     myNodeMap);
-        myPartFunc->createPartitioningKeyPredicates();
-      }
+      createRandomPartFunc = TRUE;
     else
-      {
-        //----------------------------------------------------------
-        // Create a node map with a single, active, wild-card entry.
-        //----------------------------------------------------------
-        NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-          NodeMap(CmpCommon::statementHeap(),
-                  1,
-                  NodeMapEntry::ACTIVE);
-
-        myPartFunc = new(CmpCommon::statementHeap())
-          SinglePartitionPartitioningFunction(myNodeMap);
-      }
-
+      createSinglePartFunc = TRUE;
   }
   else
   {
-    // for now, simply propagate the physical property of the first child
-    const PhysicalProperty * const sppOfChild =
-      myContext->getPhysicalPropertyOfSolutionForChild(0);
-    myPartFunc = sppOfChild->getPartitioningFunction();
+    const PhysicalProperty * sppOfChild;
+    const PartitioningFunction *childPartFunc;
+    Int32 childToUse = 0;
+    NABoolean foundChildToUse = FALSE;
+
+    // find a child that is not replicated, the first such
+    // child will determine our partitioning function
+    while (!foundChildToUse && childToUse < arity)
+      {
+        sppOfChild =
+          myContext->getPhysicalPropertyOfSolutionForChild(childToUse);
+        childPartFunc =
+          sppOfChild->getPartitioningFunction();
+
+        if (childPartFunc &&
+            !childPartFunc->isAReplicationPartitioningFunction())
+          foundChildToUse = TRUE;
+        else
+          childToUse++;
+      }
+
+    if (!foundChildToUse ||
+        childPartFunc->isASinglePartitionPartitioningFunction())
+      {
+        createSinglePartFunc = TRUE;
+      }
+    else
+      {
+        // Check whether the partitioning key of the child is visible
+        // in our characteristic outputs. If so, then we can map the
+        // first child's partitioning function to our own. Otherwise,
+        // we will generate a HASH2 part func on a random number - in
+        // other words that's a partitioning function with a known
+        // number of partitions but an unknown partitioning key.
+        ValueIdSet passThruCols(udfOutputToChildInputMap_.getBottomValues());
+
+        if (passThruCols.contains(childPartFunc->getPartitioningKey()))
+          {
+            // use a copy of the child's part func, with the key
+            // columns remapped to our corresponding pass-through
+            // output columns
+            myPartFunc = childPartFunc->copyAndRemap(
+                 udfOutputToChildInputMap_, TRUE);
+          }
+        else
+          {
+            // child's partitioning key is not visible to the
+            // parent, create a part func w/o a usable partitioning key
+            numOfESPs = childPartFunc->getCountOfPartitions();
+            createRandomPartFunc = TRUE;
+          }
+      } // found a partitioned child
+  } // arity > 0
+
+  // a couple of common cases
+  if (createSinglePartFunc)
+  {
+    //----------------------------------------------------------
+    // Create a node map with a single, active, wild-card entry.
+    //----------------------------------------------------------
+    NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+      NodeMap(CmpCommon::statementHeap(),
+              1,
+              NodeMapEntry::ACTIVE);
+
+    myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+  }
+  else if (createRandomPartFunc)
+  {
+    //-----------------------------------------------------------
+    // Create a node map with numOfESPs active, wild-card entries
+    //-----------------------------------------------------------
+    NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+      NodeMap(CmpCommon::statementHeap(),
+              numOfESPs,
+              NodeMapEntry::ACTIVE);
+
+    // set node numbers in the entries, if we need to have one
+    // ESP per node
+    if (numOfESPs == gpClusterInfo->numOfSMPs())
+      for (int i=0; i<numOfESPs; i++)
+        myNodeMap->getNodeMapEntry(i)->setNodeNumber(i);
+
+    ValueIdSet partKey;
+    ItemExpr *randNum =
+      new(CmpCommon::statementHeap()) RandomNum(NULL, TRUE);
+
+    randNum->synthTypeAndValueId();
+    partKey.insert(randNum->getValueId());
+    myPartFunc = new(CmpCommon::statementHeap())
+      Hash2PartitioningFunction (partKey,
+                                 partKey,
+                                 numOfESPs,
+                                 myNodeMap);
+    myPartFunc->createPartitioningKeyPredicates();
   }
   
   PhysicalProperty * sppForMe =
@@ -17648,8 +17739,10 @@ PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
 //
 //
 //***********************************************************************
-NABoolean RelExpr::isBigMemoryOperator(const Context* context, const Lng32)
+NABoolean RelExpr::isBigMemoryOperator(const PlanWorkSpace *pws,
+                                       const Lng32)
 {
+  const Context* context = pws->getContext();
   const PhysicalProperty* spp = context->getPlan()->getPhysicalProperty();
 
   if (spp == NULL || CmpCommon::getDefault(COMP_BOOL_51) != DF_ON)

@@ -170,6 +170,9 @@ public:
   LmHandle getContainerHandle()
     { return ((LmContainer*)container_)->getHandle(); }
 
+  // make a final call to the UDF or do the equivalent, if needed
+  virtual LmResult handleFinalCall(ComDiagsArea *diagsArea = NULL) = 0;
+
 protected:
   LmRoutine(LmHandle container,
             LmHandle routine,

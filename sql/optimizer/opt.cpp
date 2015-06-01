@@ -2636,7 +2636,7 @@ PlanWorkSpace::getFinalOperatorCost(Lng32 planNumber)
   //---------------------------------------------------------------
   NABoolean opChangedMindAboutBeingABMO = FALSE;
 
-  if (op->isBigMemoryOperator(myContext_,planNumber))
+  if (op->isBigMemoryOperator(this,planNumber))
   {
     if (isBMO_ == FALSE)
     {
@@ -2735,7 +2735,7 @@ PlanWorkSpace::getFinalOperatorCost(Lng32 planNumber)
     Lng32 countOfStreams;
     if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
     {
-      operatorCost = cm->scmComputeOperatorCost(op,myContext_,countOfStreams);
+      operatorCost = cm->scmComputeOperatorCost(op,this,countOfStreams);
     }
     else
     {
@@ -3041,7 +3041,7 @@ PlanWorkSpace::getCostOfPlan(Lng32 planNumber)
     //----------------------------------
     CostMethod* cm = op->costMethod();
     if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
-      cost = cm->scmComputePlanCost(op,myContext_,this,planNumber);
+      cost = cm->scmComputePlanCost(op,this,planNumber);
     else
       cost = cm->computePlanCost(op,myContext_,this,planNumber);
 

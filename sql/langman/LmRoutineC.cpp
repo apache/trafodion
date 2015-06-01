@@ -367,6 +367,12 @@ void LmRoutineC::deletePassThroughInputs()
   }
 }
 
+LmResult LmRoutineC::handleFinalCall(ComDiagsArea *diagsArea)
+{
+  setFinalCall();
+  return invokeRoutine(NULL, NULL, diagsArea);
+}
+
 LmResult
 LmRoutineC::processReturnStatus(ComSInt32 retcode, ComDiagsArea *diags)
 {

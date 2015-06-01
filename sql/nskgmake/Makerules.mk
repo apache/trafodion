@@ -363,7 +363,7 @@ endif
 
 # Some (soon maybe all) Java files get built through Maven
 mavenbuild:
-	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -v WARNING
+	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
 
 # This is where the top-level is declared to build everything.

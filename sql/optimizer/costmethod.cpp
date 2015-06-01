@@ -13837,7 +13837,7 @@ CostMethodTableMappingUDF::computeOperatorCostInternal(RelExpr* op,
 
  **************************************************/
 
-  // Size of a record in kilobytes. Let's not use this one for now…enable it if required.
+  // Size of a record in kilobytes. Let's not use this one for now. Enable it if required.
   //double recordSize = op->child(0).getGroupAttr()->getRecordLength() / 1024.0;
   // per stream Rows from child 
   CostScalar  rowsFromChildPerStream ;

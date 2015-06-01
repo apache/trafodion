@@ -16060,9 +16060,15 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       childName = "_inputTable" + bindWA->fabricateUniqueName();
     }
     
+    // ask for histograms of all child outputs, since we don't
+    // know what the UDF will need and what predicates exist
+    // on passthru columns of the UDF
+    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
+
     // Get NAColumns
-    for(CollIndex j=0; 
-      j < (CollIndex) childRetDesc->getColumnList()->entries(); j++)
+    
+    CollIndex numChildCols = childRetDesc->getColumnList()->entries();
+    for(CollIndex j=0; j < numChildCols; j++)
     {
       NAColumn * childCol = new (heap) NAColumn(
         childRetDesc->getColRefNameObj(j).getColName().data(),
@@ -16070,7 +16076,10 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
         childRetDesc->getType(j).newCopy(heap),
         heap);
       childColumns.insert(childCol);
+
+      bindWA->markAsReferencedColumn(childRetDesc->getValueId(j));
     }
+    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
 
     // get child root
     CMPASSERT(child(i)->getOperator().match(REL_ROOT) ||
@@ -16087,6 +16096,9 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     childRetDesc->getValueIdList(vidList, USER_COLUMN);
     ValueIdSet childPartition(myChild->partitionArrangement());
     ValueIdList childOrder(myChild->reqdOrder());
+
+    // request multi-column histograms for the PARTITION BY columns
+    bindWA->getCurrentScope()->context()->inGroupByClause() = TRUE;
 
     // replace 1-based ordinals in the child's partition by / order by with
     // actual columns
@@ -16123,7 +16135,9 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
               return NULL;
             }
         }
+        bindWA->markAsReferencedColumn(cp);
       }
+    bindWA->getCurrentScope()->context()->inGroupByClause() = FALSE;
 
     for (CollIndex co=0; co<childOrder.entries(); co++)
       {

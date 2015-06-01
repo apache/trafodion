@@ -144,6 +144,8 @@ protected:
   virtual LmLanguageManagerJava *getLM()
   { return (LmLanguageManagerJava *) lm_; }
 
+  virtual LmResult handleFinalCall(ComDiagsArea *diagsArea = NULL);
+
 private:
   LmResult generateDefAuthToken(char *defAuthToken, ComDiagsArea *da);
 

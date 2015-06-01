@@ -1236,8 +1236,8 @@ public:
   // quantities of memory. For example, a Type-2 parallel hash join vs.
   // a Type-1 parallel hash join.
   // ---------------------------------------------------------------------
-  virtual NABoolean isBigMemoryOperator(const Context* context,
-                                        const Lng32 /*planNumber*/);
+  virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
+                                        const Lng32 planNumber);
 
   virtual CostScalar getEstimatedRunTimeMemoryUsageInMB(NABoolean perCPU) 
       { return getEstimatedRunTimeMemoryUsage(perCPU) / (1024*1024); }
