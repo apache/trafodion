@@ -6154,7 +6154,7 @@ ExRowsetArrayScan::eval(char          *op_data[],
     str_cpy_all((char*)op_data[-ex_clause::MAX_OPERANDS], 
       (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), 
                 SourceAttr->getVCIndicatorLength()); //sizeof(short));
-    SourceElemPtr += sizeof(short);
+    SourceElemPtr += SourceAttr->getVCIndicatorLength();
     str_cpy_all(op_data[0], SourceElemPtr, size - SourceAttr->getVCIndicatorLength());
   }
   else {

@@ -617,9 +617,18 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 			memOffSet += SQLItemDesc->maxLen + 1;
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
-			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
-			VarPtr = memPtr + memOffSet;
-			memOffSet += SQLItemDesc->maxLen + 3;
+			if( SQLItemDesc->maxLen > SHRT_MAX )
+			{
+				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
+				VarPtr = memPtr + memOffSet;
+				memOffSet += SQLItemDesc->maxLen + 5;
+			}
+			else
+			{
+				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+				VarPtr = memPtr + memOffSet;
+				memOffSet += SQLItemDesc->maxLen + 3;
+			}
 			break;
 		case SQLTYPECODE_VARCHAR_LONG:
 			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
@@ -922,10 +931,20 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 				AllocLength = SQLItemDesc->maxLen + 1;
 				break;
 			case SQLTYPECODE_VARCHAR_WITH_LENGTH:
-				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
-				VarPtr = memPtr + memOffSet;
-				memOffSet += SQLItemDesc->maxLen + 3;
-				AllocLength = SQLItemDesc->maxLen + 3;
+				if( SQLItemDesc->maxLen > SHRT_MAX )
+				{
+					memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
+					VarPtr = memPtr + memOffSet;
+					memOffSet += SQLItemDesc->maxLen + 5;
+					AllocLength = SQLItemDesc->maxLen + 5;
+				}
+				else
+				{
+					memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+					VarPtr = memPtr + memOffSet;
+					memOffSet += SQLItemDesc->maxLen + 3;
+					AllocLength = SQLItemDesc->maxLen + 3;
+				}
 				break;
 			case SQLTYPECODE_INTERVAL: 
 				VarPtr = memPtr + memOffSet;
@@ -2352,18 +2371,27 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
-			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
-			VarPtr = memPtr + memOffSet;
-			memOffSet += SqlDescInfo[i].Length + 3;
-			// Adjust quad var_layout to even byte boundry
-                        if (SqlDescInfo[i].Length == ((SqlDescInfo[i].Length >> 1) << 1))
-                          inputQuadList[i+1].var_layout = SqlDescInfo[i].Length;
+			if( SqlDescInfo[i].Length > SHRT_MAX )
+			{
+				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
+				VarPtr = memPtr + memOffSet;
+				memOffSet += SqlDescInfo[i].Length + 5;
+			}
 			else
-                          inputQuadList[i+1].var_layout = SqlDescInfo[i].Length + 1;
+			{
+				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+				VarPtr = memPtr + memOffSet;
+				memOffSet += SqlDescInfo[i].Length + 3;
+			}
+			// Adjust quad var_layout to even byte boundry
+			if (SqlDescInfo[i].Length == ((SqlDescInfo[i].Length >> 1) << 1))
+				inputQuadList[i+1].var_layout = SqlDescInfo[i].Length;
+			else
+				inputQuadList[i+1].var_layout = SqlDescInfo[i].Length + 1;
 			break;
 		case SQLTYPECODE_SMALLINT:
 		case SQLTYPECODE_SMALLINT_UNSIGNED:
-			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
+			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
 			VarPtr = memPtr + memOffSet;
 			memOffSet += SqlDescInfo[i].Length;
 			break;
