@@ -3691,6 +3691,10 @@ void msg_mon_init() {
                           sizeof(Close_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NewProcess_Notice_def) ==
                           sizeof(NewProcess_Notice_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeAdded_def) ==
+                          sizeof(NodeAdded_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeDeleted_def) ==
+                          sizeof(NodeDeleted_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeDown_def) ==
                           sizeof(NodeDown_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeJoining_def) ==

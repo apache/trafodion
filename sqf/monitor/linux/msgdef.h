@@ -298,6 +298,8 @@ typedef enum {
     MsgType_Change=1,                       // registry information has changed notification
     MsgType_Close,                          // process close notification
     MsgType_Event,                          // generic event notification
+    MsgType_NodeAdded,                      // node is added notification
+    MsgType_NodeDeleted,                    // node is deleted notification
     MsgType_NodeDown,                       // node is down notification
     MsgType_NodeJoining,                    // node is joining notification
     MsgType_NodePrepare,                    // node prepare notification
@@ -651,6 +653,20 @@ struct PNodeInfo_reply_def
     int last_pnid;                          // Last Physical Node ID returned
     bool integrating;                       // true if re-integration in progress in local monitor
     bool continuation;                      // true if continuation of earlier request
+};
+
+struct NodeAdded_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+struct NodeDeleted_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
 };
 
 struct NodePrepare_def
@@ -1057,6 +1073,8 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
+        struct NodeAdded_def         added;
+        struct NodeDeleted_def       deleted;
     } u;
 };
 

@@ -373,6 +373,8 @@ typedef enum {
     MS_MsgType_Change = 1,
     MS_MsgType_Close,
     MS_MsgType_Event,
+    MS_MsgType_NodeAdded,
+    MS_MsgType_NodeDeleted,
     MS_MsgType_NodeDown,
     MS_MsgType_NodeJoining,
     MS_MsgType_NodePrepare,
@@ -465,6 +467,21 @@ struct MS_Mon_NewProcess_Notice_def {
     char            process_name[MS_MON_MAX_PROCESS_NAME];
     int             ferr; // return_code;
 };
+
+struct MS_Mon_NodeAdded_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
+
+struct MS_Mon_NodeDeleted_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
+
 struct MS_Mon_NodeDown_def {
     int  nid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
@@ -565,6 +582,8 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_TmSyncNotice_def        tmsync;
         struct MS_Mon_NodeUp_def              up;
         struct MS_Mon_TmRestarted_def         tmrestarted;        
+        struct MS_Mon_NodeAdded_def           added;
+        struct MS_Mon_NodeDeleted_def         deleted;
     } u;
 } MS_Mon_Msg;
 typedef struct MS_Mon_Open_Comp_Type {
