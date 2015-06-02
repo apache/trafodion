@@ -3570,7 +3570,13 @@ HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &r
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_GETROWS_PARAM;
      }
+     numColsInScan_ = cols.entries();
   }
+  else
+     numColsInScan_ = 0;
+  // Need to swap the bytes 
+  short numReqRows = *(short *)rowIDs.val;
+  numReqRows_ = bswap_16(numReqRows);
   jlong j_tid = transID;  
   jshort j_rowIDLen = rowIDLen;
  
@@ -4650,7 +4656,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
         jintArray jKvFamLen, jintArray jKvFamOffset, 
         jlongArray jTimestamp, 
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
-        jintArray jKvsPerRow, jint numCellsReturned)
+        jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned)
 {
    HTableClient_JNI *htc = (HTableClient_JNI *)jniObject;
    if (htc->getFetchMode() == HTableClient_JNI::GET_ROW ||
@@ -4658,7 +4664,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
       htc->setJavaObject(jobj);
    htc->setResultInfo(jKvValLen, jKvValOffset,
                 jKvQualLen, jKvQualOffset, jKvFamLen, jKvFamOffset,
-                jTimestamp, jKvBuffer, jRowIDs, jKvsPerRow, numCellsReturned);  
+                jTimestamp, jKvBuffer, jRowIDs, jKvsPerRow, numCellsReturned, numRowsReturned);  
    return 0;
 }
 
@@ -4686,7 +4692,7 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
-        jintArray jKvsPerRow, jint numCellsReturned)
+        jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned)
 {
    if (numRowsReturned_ > 0)
       cleanupResultInfo();
@@ -4742,6 +4748,7 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
          exceptionFound = TRUE;
    }
    numCellsReturned_ = numCellsReturned;
+   numRowsReturned_ = numRowsReturned;
    prevRowCellNum_ = 0;
    currentRowNum_ = -1;
    cleanupDone_ = FALSE;

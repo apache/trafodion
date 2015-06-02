@@ -301,7 +301,7 @@ public:
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
-        jintArray jKvsPerRow, jint numCellsReturned);
+        jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned);
   void getResultInfo();
   void cleanupResultInfo();
   HTC_RetCode fetchRows();

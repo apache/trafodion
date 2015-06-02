@@ -535,16 +535,16 @@ public class HTableClient {
 			byte[] rowID = (byte[])rows[i]; 
 			Get get = new Get(rowID);
 			listOfGets.add(get);
+			if (columns != null)
+			{
+				for (int j = 0; j < columns.length; j++ ) {
+					byte[] col = (byte[])columns[j];
+					get.addColumn(getFamily(col), getName(col));
+				}
+			}
 		}
 		if (columns != null)
-		{
-			for (int j = 0; j < columns.length; j++ ) {
-				byte[] col = (byte[])columns[j];
-				for (Get get : listOfGets)
-					get.addColumn(getFamily(col), getName(col));
-			}
 			numColsInScan = columns.length;
-		}
 		else
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
@@ -579,16 +579,15 @@ public class HTableClient {
                         bbRowIDs.get(rowID, 0, rowIDLen);
 			Get get = new Get(rowID);
 			listOfGets.add(get);
+			if (columns != null) {
+				for (int j = 0; j < columns.length; j++ ) {
+					byte[] col = (byte[])columns[j];
+					get.addColumn(getFamily(col), getName(col));
+				}
+			}
 		}
 		if (columns != null)
-		{
-			for (int j = 0; j < columns.length; j++ ) {
-				byte[] col = (byte[])columns[j];
-				for (Get get : listOfGets)
-					get.addColumn(getFamily(col), getName(col));
-			}
 			numColsInScan = columns.length;
-		}
 		else
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
@@ -598,7 +597,9 @@ public class HTableClient {
 			getResultSet = table.get(listOfGets);
 			fetchType = BATCH_GET;
 		}
-                 pushRowsToJni(getResultSet);
+		if (getResultSet.length != numRows)
+                   throw new IOException("Number of rows retunred is not equal to requested number of rows");
+ 		pushRowsToJni(getResultSet);
 		return getResultSet.length;
 	}
 
@@ -712,11 +713,11 @@ public class HTableClient {
 		if (cellsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, cellsReturned);
+				null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		else 
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -776,11 +777,11 @@ public class HTableClient {
 		if (numColsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, numColsReturned);
+				null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		else
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned);
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -1189,7 +1190,8 @@ public class HTableClient {
 				int[] kvFamLen, int[] kvFamOffset,
   				long[] timestamp, 
 				byte[][] kvBuffer, byte[][] rowIDs,
-				int[] kvsPerRow, int numCellsReturned);
+				int[] kvsPerRow, int numCellsReturned,
+				int rowsReturned);
 
    private native void cleanup(long jniObject);
 
