@@ -234,6 +234,7 @@ typedef enum {
     ReqType_Exit,                           // process is exiting
     ReqType_Get,                            // Retrieve information from the registry
     ReqType_Kill,                           // stop and cleanup the identified process
+    ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
     ReqType_NodeDown,                       // request to take down the identified node
@@ -256,7 +257,6 @@ typedef enum {
     ReqType_TmSeqNum,                       // request the next TM cluster sequence number
     ReqType_TmSync,                         // request to sync data across all TM's in cluster
     ReqType_TransInfo,                      // request transaction enlistment information
-    ReqType_MonStats,                       // get monitor statistics
     ReqType_ZoneInfo,                       // zone information request 
 
     ReqType_Invalid                         // marks the end of the request
@@ -272,19 +272,19 @@ typedef enum {
     ReplyType_Generic=100,                  // general reply across message types
     ReplyType_Dump,                         // reply with dump info
     ReplyType_Get,                          // reply with configuration key/value pairs
+    ReplyType_MonStats,                     // reply with monitor statistics
+    ReplyType_Mount,                        // reply with mount info
     ReplyType_NewProcess,                   // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
-    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
-    ReplyType_ProcessInfo,                  // reply with info on list of processes
     ReplyType_Open,                         // reply with open server information
     ReplyType_OpenInfo,                     // reply with list of opens for a process
+    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
+    ReplyType_ProcessInfo,                  // reply with info on list of processes
+    ReplyType_Stfsd,                        // reply with stfsd info
+    ReplyType_Startup,                      // reply with startup info
     ReplyType_TmSeqNum,                     // reply with the next TM cluster sequence number
     ReplyType_TmSync,                       // reply from unsolicited TmSync message
     ReplyType_TransInfo,                    // reply with transaction enlistment process list
-    ReplyType_Stfsd,                        // reply with stfsd info
-    ReplyType_Startup,                      // reply with startup info
-    ReplyType_Mount,                        // reply with mount info
-    ReplyType_MonStats,                     // reply with monitor statistics
     ReplyType_ZoneInfo,                     // reply with info on list of zones
 
 
@@ -301,6 +301,8 @@ typedef enum {
     MsgType_Change=1,                       // registry information has changed notification
     MsgType_Close,                          // process close notification
     MsgType_Event,                          // generic event notification
+    MsgType_NodeAdded,                      // node is added notification
+    MsgType_NodeDeleted,                    // node is deleted notification
     MsgType_NodeDown,                       // node is down notification
     MsgType_NodeJoining,                    // node is joining notification
     MsgType_NodePrepare,                    // node prepare notification
@@ -309,14 +311,14 @@ typedef enum {
     MsgType_Open,                           // process open notification
     MsgType_ProcessCreated,                 // process creation completed notification
     MsgType_ProcessDeath,                   // process death notification
+    MsgType_ReintegrationError,             // Problem during node reintegration
     MsgType_Service,                        // request a service from the monitor
-    MsgType_SpareUp,                        // spare node is up notification
     MsgType_Shutdown,                       // system shutdown notification
+    MsgType_SpareUp,                        // spare node is up notification
     MsgType_TmRestarted,                    // DTM process restarted notification
     MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
     MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
     MsgType_UnsolicitedMessage,             // Outgoing monitor msg expecting a reply 
-    MsgType_ReintegrationError,             // Problem during node reintegration
 
     MsgType_Invalid                         // marks the end of the message
                                             // types, add any new message types 
@@ -1075,6 +1077,8 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
+        struct NodeAdded_def         added;
+        struct NodeDeleted_def       deleted;
     } u;
 };
 
