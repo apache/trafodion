@@ -78,6 +78,8 @@
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
 #define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PERSIST_KEY_STR   51
+#define MAX_PERSIST_VALUE_STR 51 
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
@@ -244,6 +246,7 @@ typedef enum {
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
+    ReqType_ProcessInfoPat,                 // process information request (pattern)
     ReqType_Set,                            // Add configuration infomation to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_Startup,                        // process startup notification
@@ -539,6 +542,20 @@ struct NewProcess_Notice_def
     int  return_code;                       // mpi error code of spawn operation
 };
 
+struct NodeAdded_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+struct NodeDeleted_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
 struct NodeDown_def
 {
     int  nid;
@@ -608,49 +625,6 @@ struct NodeJoining_def
     int  pnid;
     char node_name[MPI_MAX_PROCESSOR_NAME];
     JOINING_PHASE  phase;
-};
-
-struct PNodeInfo_def
-{
-    int  nid;                               // node id of requesting process
-    int  pid;                               // process id of requesting process
-    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
-    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
-    int  last_pnid;                         // Last Physical Node ID returned
-    bool continuation;                      // true if continuation of earlier request
-};
-
-struct PNodeInfo_reply_def
-{
-    int num_nodes;                          // Number of logical nodes in the cluster
-    int num_pnodes;                         // Number of physical nodes in the cluster
-    int num_spares;                         // Number of spare nodes in the cluster
-    int num_available_spares;               // Number of currenly available spare nodes in the cluster
-    int num_returned;                       // Number of nodes returned
-    struct
-    {
-        int      pnid;                      // Node's Physical ID 
-        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
-        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
-        int      lnode_count;               // Number of logical nodes
-        int      process_count;             // Number of processes in executing on the node
-        bool     spare_node;                // True when physical node is spare
-        unsigned int memory_total;          // Node's total memory
-        unsigned int memory_free;           // Node's current free memory
-        unsigned int swap_free;             // Node's current free swap
-        unsigned int cache_free;            // Node's current free buffer/cache
-        unsigned int memory_active;         // Node's memory in active use
-        unsigned int memory_inactive;       // Node's memory available for reclamation
-        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
-        unsigned int memory_writeback;      // Node's memory being written to disk
-        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
-        unsigned int btime;                 // Boot time (secs since 1/1/1970)
-        int      cores;                     // Number of processors in physical node
-    } node[MAX_NODE_LIST];
-    int return_code;                        // error returned to sender
-    int last_pnid;                          // Last Physical Node ID returned
-    bool integrating;                       // true if re-integration in progress in local monitor
-    bool continuation;                      // true if continuation of earlier request
 };
 
 struct NodePrepare_def
@@ -759,6 +733,49 @@ struct OpenInfo_reply_def
     int  return_code;                       // error returned to sender
 };
 
+struct PNodeInfo_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
+    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
+    int  last_pnid;                         // Last Physical Node ID returned
+    bool continuation;                      // true if continuation of earlier request
+};
+
+struct PNodeInfo_reply_def
+{
+    int num_nodes;                          // Number of logical nodes in the cluster
+    int num_pnodes;                         // Number of physical nodes in the cluster
+    int num_spares;                         // Number of spare nodes in the cluster
+    int num_available_spares;               // Number of currenly available spare nodes in the cluster
+    int num_returned;                       // Number of nodes returned
+    struct
+    {
+        int      pnid;                      // Node's Physical ID 
+        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
+        int      lnode_count;               // Number of logical nodes
+        int      process_count;             // Number of processes in executing on the node
+        bool     spare_node;                // True when physical node is spare
+        unsigned int memory_total;          // Node's total memory
+        unsigned int memory_free;           // Node's current free memory
+        unsigned int swap_free;             // Node's current free swap
+        unsigned int cache_free;            // Node's current free buffer/cache
+        unsigned int memory_active;         // Node's memory in active use
+        unsigned int memory_inactive;       // Node's memory available for reclamation
+        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
+        unsigned int memory_writeback;      // Node's memory being written to disk
+        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
+        unsigned int btime;                 // Boot time (secs since 1/1/1970)
+        int      cores;                     // Number of processors in physical node
+    } node[MAX_NODE_LIST];
+    int return_code;                        // error returned to sender
+    int last_pnid;                          // Last Physical Node ID returned
+    bool integrating;                       // true if re-integration in progress in local monitor
+    bool continuation;                      // true if continuation of earlier request
+};
+
 struct ProcessDeath_def
 {
     int nid;                                // dead process's node id
@@ -782,7 +799,8 @@ struct ProcessInfo_def
     int  target_nid;                        // Node id of processes for status request (-1 for all)
     int  target_pid;                        // Process id of process for status request (-1 for all)
     Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
-    char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
+    char target_process_name[MAX_PROCESS_NAME];    // Name of process for status request (NULL if not used)
+    char target_process_pattern[MAX_PROCESS_NAME]; // Name of process pattern for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
 

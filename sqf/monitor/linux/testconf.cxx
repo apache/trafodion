@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -55,6 +55,10 @@ static bool ClusterConfigTest   = false;
 char Node_name[MPI_MAX_PROCESSOR_NAME];
 int MyPNID = -1;
 long trace_settings = 0;
+
+const char *PersistTypeString( PersistType_t type );
+const char *FormatNidString( FormatNid_t type );
+const char *FormatZidString( FormatZid_t type );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -129,40 +133,105 @@ void SpareListString( char *str, int sparePNids[], int spareCount )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Function/Method: ProcessTypeString()
+//
+// Usage:           Invoked by TestClusterConfig()
+//
+///////////////////////////////////////////////////////////////////////////////
+const char *ProcessTypeString( PROCESSTYPE type )
+{
+    const char *str;
+    
+    switch( type )
+    {
+        case ProcessType_Undefined:
+            str = "ProcessType_Undefined";
+            break;
+        case ProcessType_TSE:
+            str = "ProcessType_TSE";
+            break;
+        case ProcessType_DTM:
+            str = "ProcessType_DTM";
+            break;
+        case ProcessType_ASE:
+            str = "ProcessType_ASE";
+            break;
+        case ProcessType_Generic:
+            str = "ProcessType_Generic";
+            break;
+        case ProcessType_Watchdog:
+            str = "ProcessType_Watchdog";
+            break;
+        case ProcessType_AMP:
+            str = "ProcessType_AMP";
+            break;
+        case ProcessType_Backout:
+            str = "ProcessType_Backout";
+            break;
+        case ProcessType_VolumeRecovery:
+            str = "ProcessType_VolumeRecovery";
+            break;
+        case ProcessType_MXOSRVR:
+            str = "ProcessType_MXOSRVR";
+            break;
+        case ProcessType_SPX:
+            str = "ProcessType_SPX";
+            break;
+        case ProcessType_SSMP:
+            str = "ProcessType_SSMP";
+            break;
+        case ProcessType_PSD:
+            str = "ProcessType_PSD";
+            break;
+        case ProcessType_SMS:
+            str = "ProcessType_SMS";
+            break;
+        default:
+            str = "ProcessType_Invalid";
+    }
+
+    return( str );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Function/Method: ZoneTypeString()
 //
 // Usage:           Invoked by TestClusterConfig()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void ZoneTypeString( char *str, ZoneType type )
+const char *ZoneTypeString( ZoneType type )
 {
+    const char *str;
+    
     switch( type )
     {
         case ZoneType_Edge:
-            sprintf(str, "%s", "Edge" );
+            str = "Edge";
             break;
         case ZoneType_Excluded:
-            sprintf(str, "%s", "Excluded" );
+            str = "Excluded";
             break;
         case ZoneType_Aggregation:
-            sprintf(str, "%s", "Aggregation" );
+            str = "Aggregation";
             break;
         case ZoneType_Storage:
-            sprintf(str, "%s", "Storage" );
+            str = "Storage";
             break;
         case ZoneType_Frontend:
-            sprintf(str, "%s", "Frontend" );
+            str = "Frontend";
             break;
         case ZoneType_Backend:
-            sprintf(str, "%s", "Backend" );
+            str = "Backend";
             break;
         case ZoneType_Any:
-            sprintf(str, "%s", "Any" );
+            str = "Any";
             break;
         default:
-            sprintf(str, "%s", "Undefined" );
-            break;
+            str = "Undefined";
     }
+
+    return( str );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -182,11 +251,11 @@ int TestClusterConfig( void )
     int spareListCount;
     int sparePNids[MAX_NODES];
     char coreMaskStr[17] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','\0'};
-    char zoneTypeStr[30] = {'\0'};
     char spareListStr[80] = {'\0'};
     CClusterConfig  clusterConfig;
     CPNodeConfig   *pnodeConfig;
     CLNodeConfig   *lnodeConfig;
+    CPersistConfig *persistConfig;
     cpu_set_t       coreMask;
 
     printf( "BEGIN 'cluster.conf' Test\n" );
@@ -259,13 +328,13 @@ int TestClusterConfig( void )
                     
                     coreMask = lnodeConfig->GetCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
+                    
                     printf( "pnid=%d, nid=%d, processors=%d, coremask=%s, zone=%s\n"
                           , lnodeConfig->GetPNid()
                           , lnodeConfig->GetNid()
                           , lnodeConfig->GetProcessors()
                           , coreMaskStr
-                          , zoneTypeStr
+                          , ZoneTypeString(lnodeConfig->GetZoneType())
                           );
                 }
             }
@@ -278,13 +347,12 @@ int TestClusterConfig( void )
                 {
                     coreMask = lnodeConfig->GetCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
                     printf( "pnid=%d, nid=%d, processors=%d, coremask=%s, zone=%s\n"
                           , lnodeConfig->GetPNid()
                           , lnodeConfig->GetNid()
                           , lnodeConfig->GetProcessors()
                           , coreMaskStr
-                          , zoneTypeStr
+                          , ZoneTypeString(lnodeConfig->GetZoneType())
                           );
                 }
             }
@@ -310,12 +378,11 @@ int TestClusterConfig( void )
                         {
                             coreMask = lnodeConfig->GetCoreMask();
                             CoreMaskString( coreMaskStr, coreMask );
-                            ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
                             printf( " nid=%d, processors=%d, coremask=%s, zone=%s\n"
                                   , lnodeConfig->GetNid()
                                   , lnodeConfig->GetProcessors()
                                   , coreMaskStr
-                                  , zoneTypeStr
+                                  , ZoneTypeString(lnodeConfig->GetZoneType())
                                   );
                         }
                     }
@@ -352,6 +419,39 @@ int TestClusterConfig( void )
                     spareNodeConfig = *itSnSet;
                     printf( "   spare set member node=%s\n"
                           , spareNodeConfig->GetName()
+                          );
+                }
+            }
+
+            // Print persistent processes
+            printf( "persistent processes list test\n" );
+            persistConfig = clusterConfig.GetFirstPersistConfig();
+            for ( ; persistConfig; persistConfig = persistConfig->GetNext() )
+            {
+                if ( persistConfig )
+                {
+                    printf( "type = %s\n"
+                            "   processName = {%s:%s} (%s)\n"
+                            "   processType = %s\n"
+                            "   programName = %s\n"
+                            "   stdout      = {%s:%s} (%s)\n"
+                            "   requiresDTM = %s\n"
+                            "   retries     = {%d:%d}\n"
+                            "   zid         = {%s} (%s)\n"
+                          , PersistTypeString(persistConfig->GetPersistType())
+                          , persistConfig->GetProcessNamePrefix()
+                          , persistConfig->GetProcessNameFormat()
+                          , FormatNidString(persistConfig->GetProcessNameNidFormat())
+                          , ProcessTypeString(persistConfig->GetProcessType())
+                          , persistConfig->GetProgramName()
+                          , persistConfig->GetStdoutPrefix()
+                          , persistConfig->GetStdoutFormat()
+                          , FormatNidString(persistConfig->GetStdoutNidFormat())
+                          , persistConfig->GetRequiresDTM()?"Y":"N"
+                          , persistConfig->GetPersistRetries()
+                          , persistConfig->GetPersistWindow()
+                          , persistConfig->GetZoneFormat()
+                          , FormatZidString(persistConfig->GetZoneZidFormat())
                           );
                 }
             }

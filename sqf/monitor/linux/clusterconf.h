@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -31,11 +31,20 @@
 
 #include "lnodeconfig.h"
 #include "pnodeconfig.h"
+#include "persistconfig.h"
 
 #define MAX_TOKEN   132
+#define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
+#define PERSIST_PROCESS_TYPE_KEY   "PROCESS_TYPE"
+#define PERSIST_PROGRAM_NAME_KEY   "PROGRAM_NAME"
+#define PERSIST_REQUIRES_DTM       "REQUIRES_DTM"
+#define PERSIST_STDOUT_KEY         "STDOUT"
+#define PERSIST_RETRIES_KEY        "PERSIST_RETRIES"
+#define PERSIST_ZONES_KEY          "PERSIST_ZONES"
 
 class CClusterConfig  : public CPNodeConfigContainer
                       , public CLNodeConfigContainer
+                      , public CPersistConfigContainer
 {
 public:
 
@@ -74,9 +83,25 @@ private:
     int        sparePNid_[MAX_NODES];
     int        spareIndex_;
     CLNodeConfig *lnodeConfig_;
+    char            persistPrefix_[MAX_PERSIST_KEY_STR];
+    char            processNamePrefix_[MAX_PERSIST_VALUE_STR];
+    char            processNameFormat_[MAX_PERSIST_VALUE_STR];
+    char            stdoutPrefix_[MAX_PERSIST_VALUE_STR];
+    char            stdoutFormat_[MAX_PERSIST_VALUE_STR];
+    char            programName_[MAX_PERSIST_VALUE_STR];
+    char            zoneFormat_[MAX_PERSIST_VALUE_STR];
+    PROCESSTYPE     processType_;
+    bool            requiresDTM_;
+    int             persistRetries_;
+    int             persistWindow_;
+    CPersistConfig *persistConfig_;
+
     sqlite3   *db_;
 
     void  AddNodeConfiguration( bool spareNode );
+    void  AddPersistConfiguration( PersistType_t   persistType );
+    PersistType_t GetPersistType( const char *processkey );
+    PROCESSTYPE GetProcessType( const char *processtype );
     bool  ProcessLNode( int nid
                       , int pnid
                       , const char *nodename
@@ -91,6 +116,9 @@ private:
                       , int excfirstcore
                       , int exclastcore
                       , int spnid );
+    bool  ProcessPersist( PersistType_t   persistType );
+    bool  ProcessPersistData( const char *persistkey
+                            , const char *persistvalue );
 };
 
 #endif /* CLUSTERCONF_H_ */
