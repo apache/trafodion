@@ -218,6 +218,17 @@ fi
 sleep 2
 echo
 
+#Change Zookeeeper settings
+
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME zoo.cfg maxClientCnxns 0
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to modify maxClientCnxns through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
+echo
+
+
 #=====================================
 # stop HBase to restart HDFS and pick up all the changes just made
 
@@ -261,6 +272,46 @@ while [ $completed -eq 0 ]; do
 done
 
 echo "***INFO: HBase stop completed"
+
+#=====================================
+#Stop Zookeeper
+
+echo "***INFO: Stopping Zookeeper..."
+curl --user $ADMIN:$PASSWORD \
+    -H "X-Requested-By: Trafodion" \
+    -X PUT -d '{"ServiceInfo": { "state" : "INSTALLED" }}' \
+    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/ZOOKEEPER > $TRAF_WORKDIR/traf_zoo_restart_temp
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to restart Zookeeper"
+   echo "***ERROR: Please manually restart Zookeeper through the Ambari web GUI"
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_zoo_restart_temp | grep Error | wc -l)
+
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to restart Zookeeper"
+    echo "***ERROR: Please manually restart Zookeeper through the Ambari web GUI"
+fi
+
+echo "***INFO: ...polling every $poll_time seconds until Zookeeper stop is completed."
+command_id=$(cat $TRAF_WORKDIR/traf_zoo_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until stop is completed as a stop can take a while
+completed=0
+while [ $completed -eq 0 ]; do
+    sleep $poll_time
+    curl --user $ADMIN:$PASSWORD \
+        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
+        > $LOCAL_WORKDIR/traf_zoo_restart_temp
+    cat $LOCAL_WORKDIR/traf_zoo_restart_temp
+    echo "***INFO: ...polling every $poll_time seconds until Zookeeper stop is completed."
+    # if stop command is completed then completed will not equal 0
+    completed=$(cat $LOCAL_WORKDIR/traf_zoo_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
+done
 
 #=====================================
 # restart HDFS to pick up all the changes just made
@@ -344,6 +395,47 @@ echo "***INFO: HDFS restart completed"
 # wait to make sure HDFS is fully restarted and out of safemode
 echo "***INFO: waiting for HDFS to exit safemode"
 sudo su hdfs --command "hdfs dfsadmin -safemode wait"
+
+#=====================================
+# Start Zookeeper to pick up all the changes just made
+
+echo "***INFO: Starting Zookeeper..."
+curl --user $ADMIN:$PASSWORD \
+    -H "X-Requested-By: Trafodion" \
+    -X PUT -d '{"ServiceInfo": { "state" : "STARTED" }}' \
+    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/ZOOKEEPER > $TRAF_WORKDIR/traf_zoo_restart_temp
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to restart Zookeeper"
+   echo "***ERROR: Please manually restart Zookeeper through the Ambari web GUI"
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_zoo_restart_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to restart Zookeeper"
+    echo "***ERROR: Please manually restart Zookeeper through the Ambari web GUI"
+fi
+
+echo "***INFO: ...polling every $poll_time seconds until Zookeeper start is completed."
+command_id=$(cat $TRAF_WORKDIR/traf_zoo_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until start is completed as a start can take a while
+completed=0
+while [ $completed -eq 0 ]; do
+    sleep $poll_time
+    curl --user $ADMIN:$PASSWORD \
+        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
+        > $LOCAL_WORKDIR/traf_zoo_restart_temp
+    cat $LOCAL_WORKDIR/traf_zoo_restart_temp
+    echo "***INFO: ...polling every $poll_time seconds until Zookeeper start is completed."
+    # if start command is completed then completed will not equal 0
+    completed=$(cat $LOCAL_WORKDIR/traf_zoo_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
+done
+
+echo "***INFO: Zookeeper start completed"
 
 #=====================================
 # restart HBase to pick up all the changes just made
