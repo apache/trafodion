@@ -383,14 +383,14 @@ typedef enum {
     MS_MsgType_Open,
     MS_MsgType_ProcessCreated,
     MS_MsgType_ProcessDeath,
+    MS_MsgType_ReintegrationError,
     MS_MsgType_Service,
-    MS_MsgType_SpareUp,
     MS_MsgType_Shutdown,
+    MS_MsgType_SpareUp,
     MS_MsgType_TmRestarted,
     MS_MsgType_TmSyncAbort,
     MS_MsgType_TmSyncCommit,
-    MS_MsgType_UnsolicitedMessage,
-    MS_MsgType_ReintegrationError
+    MS_MsgType_UnsolicitedMessage
 } MS_Mon_MSGTYPE;
 typedef enum {
     MS_ReqType_Close = 1,
@@ -399,6 +399,7 @@ typedef enum {
     MS_ReqType_Exit,
     MS_ReqType_Get,
     MS_ReqType_Kill,
+    MS_ReqType_MonStats,
     MS_ReqType_Mount,
     MS_ReqType_NewProcess,
     MS_ReqType_NodeDown,
@@ -420,9 +421,7 @@ typedef enum {
     MS_ReqType_TmSeqNum,
     MS_ReqType_TmSync,
     MS_ReqType_TransInfo,
-    MS_ReqType_MonStats,
-    MS_ReqType_ZoneInfo,
-    MS_ReqType_TmRestarted
+    MS_ReqType_ZoneInfo
 } MS_Mon_REQTYPE;
 typedef enum {
     MS_ProcessType_Undefined = 0,
