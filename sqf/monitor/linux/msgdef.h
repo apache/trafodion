@@ -79,7 +79,7 @@
 #define MAX_OPEN_CONTEXT 5
 #define MAX_PID_VALUE    0x00FFD1C9
 #define MAX_PERSIST_KEY_STR   51
-#define MAX_PERSIST_VALUE_STR 51 
+#define MAX_PERSIST_VALUE_STR 51
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
