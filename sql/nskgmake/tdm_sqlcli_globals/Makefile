@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,15 +20,6 @@
 
 CPPSRC := GlobalsDef.cpp
 
-ifeq ($(TARGTYPE),linux)
 CPPSRC += vers_libtdm_sqlcli_globals.cpp
-endif
-
-ifeq ($(TARGTYPE),nt)
-INCLUDE_DIRS := dwf/include
-DEFS += -DWIN32 -D_WINDOWS
-
-SYS_LIBS := kernel32.lib
-endif
 
 SRCPATH := cli
