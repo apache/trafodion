@@ -78,6 +78,8 @@
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
 #define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PERSIST_KEY_STR   51
+#define MAX_PERSIST_VALUE_STR 51
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
@@ -245,6 +247,7 @@ typedef enum {
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
+    ReqType_ProcessInfoPat,                 // process information request (pattern)
     ReqType_Set,                            // Add configuration infomation to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_Startup,                        // process startup notification
@@ -799,6 +802,7 @@ struct ProcessInfo_def
     int  target_pid;                        // Process id of process for status request (-1 for all)
     Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
     char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
+    char target_process_pattern[MAX_PROCESS_NAME]; // Name of process pattern for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
 
