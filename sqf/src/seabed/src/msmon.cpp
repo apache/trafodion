@@ -3750,6 +3750,8 @@ void msg_mon_init() {
                           static_cast<int>(ReqType_ProcessInfo)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfoCont) ==
                           static_cast<int>(ReqType_ProcessInfoCont)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfoPat) ==
+                          static_cast<int>(ReqType_ProcessInfoPat)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_Set) ==
                           static_cast<int>(ReqType_Set)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_Shutdown) ==
