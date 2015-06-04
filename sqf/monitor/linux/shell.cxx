@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2819,7 +2819,10 @@ void help_cmd (void)
     printf ("[%s] -- ls [{[detail]}] [<path>]\n", MyName);
     printf ("[%s] -- measure | measure_cpu\n", MyName);
     printf ("[%s] -- monstats\n", MyName);
-    printf ("[%s] -- node [info [<nid>]]\n", MyName);
+    printf ("[%s] -- node add {<node-name>}\n", MyName);
+    printf ("[%s] -- node config [<nid>|<node-name>]\n", MyName);
+    printf ("[%s] -- node delete {<node-name>}\n", MyName);
+    printf ("[%s] -- node info [<nid>]\n", MyName);
     printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- ps [{ASE|TSE|DTM|AMP|BO|VR|CS}] [<process_name>|<nid,pid>]\n", MyName);
     printf ("[%s] -- pwd\n", MyName);

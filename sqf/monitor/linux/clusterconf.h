@@ -24,10 +24,7 @@
 #define CLUSTERCONF_H_
 
 #include <stdlib.h>
-
-#ifdef USE_CONFIG_DB
 #include <sqlite3.h>
-#endif
 
 #include "lnodeconfig.h"
 #include "pnodeconfig.h"

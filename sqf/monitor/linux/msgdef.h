@@ -29,12 +29,7 @@
 
 // Compile options
 //#define DEBUGGING
-#define USE_ONE_SYNC_RECV_BUFFER
 #define NO_OPEN_CLOSE_NOTICES
-//#define USE_MEMORY_LOADBALANCING
-#define USE_CONFIG_DB
-
-#define VERSION "Monitor v0.12 2-17-2009" 
 
 #define SERVICE_TAG      1
 #define INTERNAL_TAG     2
@@ -754,7 +749,7 @@ struct PNodeInfo_reply_def
     int num_returned;                       // Number of nodes returned
     struct
     {
-        int      pnid;                      // Node's Physical ID 
+        int      pnid;                      // Node's Physical ID
         char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
         STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
         int      lnode_count;               // Number of logical nodes
@@ -801,7 +796,7 @@ struct ProcessInfo_def
     int  target_nid;                        // Node id of processes for status request (-1 for all)
     int  target_pid;                        // Process id of process for status request (-1 for all)
     Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
-    char target_process_name[MAX_PROCESS_NAME];    // Name of process for status request (NULL if not used)
+    char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
     char target_process_pattern[MAX_PROCESS_NAME]; // Name of process pattern for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
