@@ -453,6 +453,8 @@ typedef enum {
  ,HBC_ERROR_REL_HTC_EXCEPTION
  ,HBC_ERROR_CREATE_PARAM
  ,HBC_ERROR_CREATE_EXCEPTION
+ ,HBC_ERROR_ALTER_PARAM
+ ,HBC_ERROR_ALTER_EXCEPTION
  ,HBC_ERROR_DROP_PARAM
  ,HBC_ERROR_DROP_EXCEPTION
  ,HBC_ERROR_LIST_PARAM
@@ -519,6 +521,7 @@ public:
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies, NABoolean isMVCC);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
                      int numSplits, int keyLength, const char** splitValues, Int64 transID, NABoolean isMVCC);
+  HBC_RetCode alter(const char* fileName, NAText*  hbaseOptions, Int64 transID);
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
@@ -579,6 +582,7 @@ private:
    ,JM_CREATE
    ,JM_CREATEK
    ,JM_TRUNCABORT
+   ,JM_ALTER
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL

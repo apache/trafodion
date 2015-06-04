@@ -43,6 +43,7 @@ import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hbase.util.HFileArchiveUtil;
+import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.util.PoolMap;
 import org.apache.hadoop.hbase.util.PoolMap.PoolType;
 import org.apache.hadoop.hbase.security.access.AccessController;
@@ -249,6 +250,227 @@ public class HBaseClient {
             return true;
    } 
 
+   // used for returning two flags from setDescriptors method
+
+   private class ChangeFlags {
+       boolean tableDescriptorChanged;
+       boolean columnDescriptorChanged;
+
+       ChangeFlags() {
+           tableDescriptorChanged = false;
+           columnDescriptorChanged = false;
+       }
+
+       void setTableDescriptorChanged() {
+           tableDescriptorChanged = true;
+       }
+
+       void setColumnDescriptorChanged() {
+           columnDescriptorChanged = true;
+       }
+
+       boolean tableDescriptorChanged() {
+           return tableDescriptorChanged;
+       }
+
+       boolean columnDescriptorChanged() {
+           return columnDescriptorChanged;
+       }
+   }
+
+   private ChangeFlags setDescriptors(Object[] tableOptions,
+                                      HTableDescriptor desc,
+                                      HColumnDescriptor colDesc,
+                                      int defaultVersionsValue) {
+       ChangeFlags returnStatus = new ChangeFlags();
+       String trueStr = "TRUE";
+       for (int i = 0; i < tableOptions.length; i++) {
+           if (i == HBASE_NAME)	
+               continue ;
+           String tableOption = (String)tableOptions[i];
+           if ((i != HBASE_MAX_VERSIONS) && (tableOption.isEmpty()))
+               continue ;
+           switch (i) {
+           case HBASE_MAX_VERSIONS:
+               if (tableOption.isEmpty()) {
+                   if (colDesc.getMaxVersions() != defaultVersionsValue) {
+                       colDesc.setMaxVersions(defaultVersionsValue);
+                       returnStatus.setColumnDescriptorChanged();
+                   }
+               }
+               else {
+                   colDesc.setMaxVersions
+                       (Integer.parseInt(tableOption));
+                   returnStatus.setColumnDescriptorChanged();
+               }
+               break ;
+           case HBASE_MIN_VERSIONS:
+               colDesc.setMinVersions
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_TTL:
+               colDesc.setTimeToLive
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOCKCACHE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setBlockCacheEnabled(true);
+               else
+                   colDesc.setBlockCacheEnabled(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_IN_MEMORY:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setInMemory(true);
+               else
+                   colDesc.setInMemory(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_COMPRESSION:
+               if (tableOption.equalsIgnoreCase("GZ"))
+                   colDesc.setCompressionType(Algorithm.GZ);
+               else if (tableOption.equalsIgnoreCase("LZ4"))
+                   colDesc.setCompressionType(Algorithm.LZ4);
+               else if (tableOption.equalsIgnoreCase("LZO"))
+                   colDesc.setCompressionType(Algorithm.LZO);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setCompressionType(Algorithm.NONE);
+               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+                   colDesc.setCompressionType(Algorithm.SNAPPY); 
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOOMFILTER:
+               if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setBloomFilterType(BloomType.NONE);
+               else if (tableOption.equalsIgnoreCase("ROW"))
+                   colDesc.setBloomFilterType(BloomType.ROW);
+               else if (tableOption.equalsIgnoreCase("ROWCOL"))
+                   colDesc.setBloomFilterType(BloomType.ROWCOL); 
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOCKSIZE:
+               colDesc.setBlocksize
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_DATA_BLOCK_ENCODING:
+               if (tableOption.equalsIgnoreCase("DIFF"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.DIFF);
+               else if (tableOption.equalsIgnoreCase("FAST_DIFF"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.NONE);
+               else if (tableOption.equalsIgnoreCase("PREFIX"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX);
+               else if (tableOption.equalsIgnoreCase("PREFIX_TREE"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_BLOOMS_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheBloomsOnWrite(true);
+               else
+                   colDesc.setCacheBloomsOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_DATA_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheDataOnWrite(true);
+               else
+                   colDesc.setCacheDataOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_INDEXES_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheIndexesOnWrite(true);
+               else
+                   colDesc.setCacheIndexesOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_COMPACT_COMPRESSION:
+               if (tableOption.equalsIgnoreCase("GZ"))
+                   colDesc.setCompactionCompressionType(Algorithm.GZ);
+               else if (tableOption.equalsIgnoreCase("LZ4"))
+                   colDesc.setCompactionCompressionType(Algorithm.LZ4);
+               else if (tableOption.equalsIgnoreCase("LZO"))
+                   colDesc.setCompactionCompressionType(Algorithm.LZO);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setCompactionCompressionType(Algorithm.NONE);
+               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+                   colDesc.setCompactionCompressionType(Algorithm.SNAPPY); 
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_PREFIX_LENGTH_KEY:
+               desc.setValue(KeyPrefixRegionSplitPolicy.PREFIX_LENGTH_KEY,
+                             tableOption);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_EVICT_BLOCKS_ON_CLOSE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setEvictBlocksOnClose(true);
+               else
+                   colDesc.setEvictBlocksOnClose(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_KEEP_DELETED_CELLS:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setKeepDeletedCells(true);
+               else
+                   colDesc.setKeepDeletedCells(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_REPLICATION_SCOPE:
+               colDesc.setScope
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_MAX_FILESIZE:
+               desc.setMaxFileSize
+                   (Long.parseLong(tableOption));
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_COMPACT:
+              if (tableOption.equalsIgnoreCase(trueStr))
+                   desc.setCompactionEnabled(true);
+               else
+                   desc.setCompactionEnabled(false); 
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_DURABILITY:
+               if (tableOption.equalsIgnoreCase("ASYNC_WAL"))
+                   desc.setDurability(Durability.ASYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("FSYNC_WAL"))
+                   desc.setDurability(Durability.FSYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("SKIP_WAL"))
+                   desc.setDurability(Durability.SKIP_WAL);
+               else if (tableOption.equalsIgnoreCase("SYNC_WAL"))
+                   desc.setDurability(Durability.SYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("USE_DEFAULT"))
+                   desc.setDurability(Durability.USE_DEFAULT);
+               returnStatus.setTableDescriptorChanged(); 
+               break ;
+           case HBASE_MEMSTORE_FLUSH_SIZE:
+               desc.setMemStoreFlushSize
+                   (Long.parseLong(tableOption));
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_SPLIT_POLICY:
+               // This method not yet available in earlier versions
+               // desc.setRegionSplitPolicyClassName(tableOption));
+               desc.setValue(desc.SPLIT_POLICY, tableOption);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           default:
+               break;
+           }
+       }
+
+       return returnStatus;
+   }
+   
+
    public boolean createk(String tblName, Object[] tableOptions,
        Object[]  beginEndKeys, long transID, int numSplits, int keyLength,
        boolean isMVCC)
@@ -259,164 +481,18 @@ public class HBaseClient {
             HTableDescriptor desc = new HTableDescriptor(tblName);
             HColumnDescriptor colDesc = new 
 		HColumnDescriptor((String)tableOptions[HBASE_NAME]);
-            for (int i = 0; i < tableOptions.length; i++) {
-                if (i == HBASE_NAME) 
-			continue ;
-		String tableOption = (String)tableOptions[i];
-                if ((i != HBASE_MAX_VERSIONS) && (tableOption.isEmpty()))
-			 continue ;
-                switch (i) {
-                case HBASE_MAX_VERSIONS:
-                    if (tableOption.isEmpty()) {
-                      if (isMVCC)
-                        colDesc.setMaxVersions(DtmConst.MVCC_MAX_VERSION);
-                      else
-                        colDesc.setMaxVersions(DtmConst.SSCC_MAX_VERSION);
-                    } else 
-                        colDesc.setMaxVersions
-                            (Integer.parseInt(tableOption));
-                    break ;
-                case HBASE_MIN_VERSIONS:
-                    colDesc.setMinVersions
-                        (Integer.parseInt(tableOption));
-                    break ;
-                case HBASE_TTL:
-                    colDesc.setTimeToLive
-                        (Integer.parseInt(tableOption));
-                    break ;
-                case HBASE_BLOCKCACHE:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setBlockCacheEnabled(true);
-                    else
-                        colDesc.setBlockCacheEnabled(false);
-                    break ;
-                case HBASE_IN_MEMORY:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setInMemory(true);
-                    else
-                        colDesc.setInMemory(false);
-                    break ;
-                case HBASE_COMPRESSION:
-                    if (tableOption.equalsIgnoreCase("GZ"))
-                        colDesc.setCompressionType(Algorithm.GZ);
-                    else if (tableOption.equalsIgnoreCase("LZ4"))
-                        colDesc.setCompressionType(Algorithm.LZ4);
-                    else if (tableOption.equalsIgnoreCase("LZO"))
-                        colDesc.setCompressionType(Algorithm.LZO);
-                    else if (tableOption.equalsIgnoreCase("NONE"))
-                        colDesc.setCompressionType(Algorithm.NONE);
-                    else if (tableOption.equalsIgnoreCase("SNAPPY"))
-                    colDesc.setCompressionType(Algorithm.SNAPPY); 
-                    break ;
-                case HBASE_BLOOMFILTER:
-                      if (tableOption.equalsIgnoreCase("NONE"))
-                        colDesc.setBloomFilterType(BloomType.NONE);
-                    else if (tableOption.equalsIgnoreCase("ROW"))
-                        colDesc.setBloomFilterType(BloomType.ROW);
-                    else if (tableOption.equalsIgnoreCase("ROWCOL"))
-                    colDesc.setBloomFilterType(BloomType.ROWCOL); 
-                    break ;
-                case HBASE_BLOCKSIZE:
-                    colDesc.setBlocksize
-                        (Integer.parseInt(tableOption));
-                    break ;
-                case HBASE_DATA_BLOCK_ENCODING:
-                    if (tableOption.equalsIgnoreCase("DIFF"))
-                        colDesc.setDataBlockEncoding(DataBlockEncoding.DIFF);
-                    else if (tableOption.equalsIgnoreCase("FAST_DIFF"))
-                        colDesc.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
-                    else if (tableOption.equalsIgnoreCase("NONE"))
-                        colDesc.setDataBlockEncoding(DataBlockEncoding.NONE);
-                    else if (tableOption.equalsIgnoreCase("PREFIX"))
-                        colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX);
-                  else if (tableOption.equalsIgnoreCase("PREFIX_TREE"))
-                    colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
-                    break ;
-                case HBASE_CACHE_BLOOMS_ON_WRITE:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setCacheBloomsOnWrite(true);
-                    else
-                        colDesc.setCacheBloomsOnWrite(false);
-                    break ;
-                case HBASE_CACHE_DATA_ON_WRITE:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setCacheDataOnWrite(true);
-                    else
-                        colDesc.setCacheDataOnWrite(false);
-                    break ;
-                case HBASE_CACHE_INDEXES_ON_WRITE:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setCacheIndexesOnWrite(true);
-                    else
-                        colDesc.setCacheIndexesOnWrite(false);
-                    break ;
-                case HBASE_COMPACT_COMPRESSION:
-                    if (tableOption.equalsIgnoreCase("GZ"))
-                        colDesc.setCompactionCompressionType(Algorithm.GZ);
-                    else if (tableOption.equalsIgnoreCase("LZ4"))
-                        colDesc.setCompactionCompressionType(Algorithm.LZ4);
-                    else if (tableOption.equalsIgnoreCase("LZO"))
-                        colDesc.setCompactionCompressionType(Algorithm.LZO);
-                    else if (tableOption.equalsIgnoreCase("NONE"))
-                        colDesc.setCompactionCompressionType(Algorithm.NONE);
-                    else if (tableOption.equalsIgnoreCase("SNAPPY"))
-                    colDesc.setCompactionCompressionType(Algorithm.SNAPPY); 
-                    break ;
-                case HBASE_PREFIX_LENGTH_KEY:
-                    desc.setValue(KeyPrefixRegionSplitPolicy.PREFIX_LENGTH_KEY,
-                                  tableOption);
-                    break ;
-                case HBASE_EVICT_BLOCKS_ON_CLOSE:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setEvictBlocksOnClose(true);
-                    else
-                        colDesc.setEvictBlocksOnClose(false);
-                    break ;
-                case HBASE_KEEP_DELETED_CELLS:
-                    if (tableOption.equalsIgnoreCase(trueStr))
-                        colDesc.setKeepDeletedCells(true);
-                    else
-                        colDesc.setKeepDeletedCells(false);
-                    break ;
-                case HBASE_REPLICATION_SCOPE:
-                    colDesc.setScope
-                        (Integer.parseInt(tableOption));
-                    break ;
-                case HBASE_MAX_FILESIZE:
-                    desc.setMaxFileSize
-                        (Long.parseLong(tableOption));
-                    break ;
-                case HBASE_COMPACT:
-                   if (tableOption.equalsIgnoreCase(trueStr))
-                        desc.setCompactionEnabled(true);
-                    else
-                    desc.setCompactionEnabled(false); 
-                    break ;
-                case HBASE_DURABILITY:
-                    if (tableOption.equalsIgnoreCase("ASYNC_WAL"))
-                        desc.setDurability(Durability.ASYNC_WAL);
-                    else if (tableOption.equalsIgnoreCase("FSYNC_WAL"))
-                        desc.setDurability(Durability.FSYNC_WAL);
-                    else if (tableOption.equalsIgnoreCase("SKIP_WAL"))
-                        desc.setDurability(Durability.SKIP_WAL);
-                    else if (tableOption.equalsIgnoreCase("SYNC_WAL"))
-                        desc.setDurability(Durability.SYNC_WAL);
-                    else if (tableOption.equalsIgnoreCase("USE_DEFAULT"))
-                    desc.setDurability(Durability.USE_DEFAULT); 
-                    break ;
-                case HBASE_MEMSTORE_FLUSH_SIZE:
-                    desc.setMemStoreFlushSize
-                        (Long.parseLong(tableOption));
-                    break ;
-                case HBASE_SPLIT_POLICY:
-                    // This method not yet available in earlier versions
-                    // desc.setRegionSplitPolicyClassName(tableOption));
-                    desc.setValue(desc.SPLIT_POLICY, tableOption);
-                    break ;
-                default:
-                    break;
-                }
-            }
+            int defaultVersionsValue = 0;
+            if (isMVCC)
+                defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
+            else
+                defaultVersionsValue = DtmConst.SSCC_MAX_VERSION;
+
+            // change the descriptors based on the tableOptions; note that
+            // the tableOptions effect only the first column family, as
+            // Trafodion at present only uses one column family for its
+            // SQL columns
+            setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+
             desc.addFamily(colDesc);
             HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
             if (isMVCC)
@@ -471,6 +547,73 @@ public class HBaseClient {
            if (logger.isDebugEnabled()) logger.debug("HbaseClient.registerTruncateOnAbort error" + e);
            throw e;
         }
+        return true;
+    }
+
+    private void waitForCompletion(String tblName,HBaseAdmin admin) 
+        throws IOException {
+        // poll for completion of an asynchronous operation
+        boolean keepPolling = true;
+        while (keepPolling) {
+            // status.getFirst() returns the number of regions yet to be updated
+            // status.getSecond() returns the total number of regions
+            Pair<Integer,Integer> status = admin.getAlterStatus(tblName.getBytes());
+
+            keepPolling = (status.getFirst() > 0) && (status.getSecond() > 0);
+            if (keepPolling) {
+                try {
+                    Thread.sleep(2000);  // sleep two seconds or until interrupted
+                }
+                catch (InterruptedException e) {
+                    // ignore the interruption and keep going
+                }    
+            }
+        }
+    }
+
+    public boolean alter(String tblName, Object[] tableOptions, long transID)
+        throws IOException, MasterNotRunningException {
+
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.alter(" + tblName + ") called.");
+        cleanupCache(tblName);
+        HBaseAdmin admin = new HBaseAdmin(config);
+        HTableDescriptor htblDesc = admin.getTableDescriptor(tblName.getBytes());       
+        HColumnDescriptor[] families = htblDesc.getColumnFamilies();
+        HColumnDescriptor colDesc = families[0];  // Trafodion keeps SQL columns only in first column family
+        int defaultVersionsValue = colDesc.getMaxVersions(); 
+
+        ChangeFlags status = 
+            setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+
+        // TODO: Remove this stub once transactional alter method is added to table member
+        transID = 0;  // stub
+
+        try {
+            if (transID != 0) {
+                // TODO: write this method to support transactional alter
+                // table.alter(tblName, tableOptions, transID);
+            }
+            else {
+                // the modifyTable and modifyColumn operations are asynchronous,
+                // so we have to have additional code to poll for their completion
+                // (I hear that synchronous versions will be available in HBase 1.x)
+                if (status.tableDescriptorChanged()) {
+                    admin.modifyTable(tblName,htblDesc);
+                    waitForCompletion(tblName,admin);
+                }
+                else if (status.columnDescriptorChanged()) {
+                    admin.modifyColumn(tblName,colDesc);                  
+                    waitForCompletion(tblName,admin);
+                }
+                admin.close();
+            }
+        }
+        catch (IOException e) {
+            if (logger.isDebugEnabled()) logger.debug("HbaseClient.drop  error" + e);
+            throw e;
+        }
+
+        cleanupCache(tblName);
         return true;
     }
 

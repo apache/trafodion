@@ -108,6 +108,10 @@ class ExpHbaseInterface : public NABasicObject
                        NABoolean noXn,
                        NABoolean isMVCC) =0;
 
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn) =0;
+
   // During upsert using load, register truncate on abort will be used
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
 
@@ -415,6 +419,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                        const char ** splitValues,
                        NABoolean noXn,
                        NABoolean isMVCC);
+
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn);
 
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 

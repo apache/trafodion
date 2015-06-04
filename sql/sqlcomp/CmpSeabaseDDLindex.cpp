@@ -1923,6 +1923,7 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
   NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
+  NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
@@ -2048,9 +2049,21 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
 
   // tell HBase to change the options
 
-  // TODO: Write this code
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+  result = alterHbaseTable(ehi,
+                           &hbaseTable,
+                           &(edhbo->getHbaseOptions()));
+  if (result < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
 
   // invalidate cached NATable info on this table for all users
+
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 

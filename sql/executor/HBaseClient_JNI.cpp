@@ -262,6 +262,8 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in releaseHTableClient()."
  ,"Preparing parameters for create()."
  ,"Java exception in create()."
+ ,"Preparing parameters for alter()."
+ ,"Java exception in alter()."
  ,"Preparing parameters for drop()."
  ,"Java exception in drop()."
  ,"Preparing parameters for exists()."
@@ -419,6 +421,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;JIIZ)Z";
     JavaMethods_[JM_TRUNCABORT ].jm_name      = "registerTruncateOnAbort";
     JavaMethods_[JM_TRUNCABORT ].jm_signature = "(Ljava/lang/String;J)Z";
+    JavaMethods_[JM_ALTER      ].jm_name      = "alter";
+    JavaMethods_[JM_ALTER      ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;J)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
@@ -909,6 +913,70 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
 
 //////////////////////////////////////////////////////////////////////////////
 // 
+//////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::alter(const char* fileName,
+                                   NAText* createOptionsArray,
+                                   Int64 transID)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::alter(%s) called.", fileName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_ALTER_PARAM;
+  }
+  jstring js_fileName = jenv_->NewStringUTF(fileName);
+  if (js_fileName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CREATE_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_ALTER_PARAM;
+  }
+  jobjectArray j_opts = convertToStringObjectArray(createOptionsArray, 
+                   HBASE_MAX_OPTIONS);
+  if (j_opts == NULL)
+  {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
+     jenv_->DeleteLocalRef(js_fileName); 
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_ALTER_PARAM;
+  }
+
+  jlong j_tid = transID;
+
+  tsRecentJMFromJNI = JavaMethods_[JM_ALTER].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+          JavaMethods_[JM_ALTER].methodID, js_fileName, j_opts, j_tid);
+
+  jenv_->DeleteLocalRef(js_fileName); 
+  jenv_->DeleteLocalRef(j_opts);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_ALTER_EXCEPTION;
+  }
+
+  if (jresult == false) 
+  {
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::alter()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_ALTER_EXCEPTION;
+  }
+  jenv_->PopLocalFrame(NULL);
+
+  return HBC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
 //////////////////////////////////////////////////////////////////////////////
 HBaseClientRequest::HBaseClientRequest(NAHeap *heap, HBaseClientReqType reqType)
                     :  heap_(heap)
