@@ -46,7 +46,6 @@
 
 
 
-    #include "nsk/nskcommonhi.h"
 
 #include "Measure.h"
 #include <stdio.h>
@@ -623,18 +622,16 @@ void LmLanguageManagerJava::initialize(LmResult &result,
 
     if (lmObjMethodInvokeClass_ != NULL)
     {
-      /* temporarily commented out
       makeNewObjId_ = jni->GetStaticMethodID((jclass) lmObjMethodInvokeClass_,
         "makeNewObj",
         "(Lorg/trafodion/sql/udr/UDR;[B[B)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke;");
-      */
 
       routineMethodInvokeId_ = jni->GetMethodID((jclass) lmObjMethodInvokeClass_,
         "invokeRoutineMethod",
         "(I[B[BI)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke$ReturnInfo;");
 
       if (jni->ExceptionOccurred() ||
-          // temporarily commented out makeNewObjId_ == NULL ||
+          makeNewObjId_ == NULL ||
           routineMethodInvokeId_ == NULL)
       {
         exceptionReporter_->insertDiags(diagsArea_,
