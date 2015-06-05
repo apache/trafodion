@@ -419,9 +419,12 @@ protected:
   char *rowIDAllocatedVal_;
   // Direct Buffer to store multiple rowIDs
   // Format for rowID direct buffer
-  // numRowIds + rowId + rowId + …
+  // numRowIds + rowIDSuffix + rowId + rowIDSuffix + rowId + …
   // rowId len is passed as a parameter to Java functions
-  //
+  // rowIDSuffix is '0' then the subsequent rowID is of length 
+  //                             =  passed rowID len
+  //                '1' then the subsequent rowID is of length
+  //                              = passed rowID len+1
   BYTE *directRowIDBuffer_;
   Lng32 directRowIDBufferLen_;
   // Current row num in the Direct Buffers

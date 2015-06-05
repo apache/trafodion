@@ -3683,6 +3683,12 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
   }
+  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)		
+  {		
+      // To ensure no row is found, add extra byte with "0" value 		
+      rowIdRowText.val[rowIdRowText.len] = '\0';		
+      rowIdRowText.len += 1;		
+  }		
   copyRowIDToDirectBuffer(rowIdRowText);
   return 0;
 }
