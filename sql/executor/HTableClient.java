@@ -573,10 +573,18 @@ public class HTableClient {
 		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
 		List<Get> listOfGets = new ArrayList<Get>();
 		short numRows = bbRowIDs.getShort();
+		short actRowIDLen ;
+		byte rowIDSuffix;
+		byte[] rowID;
 
 		for (int i = 0; i < numRows; i++) {
-                        byte[] rowID = new byte[rowIDLen];
-                        bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 			Get get = new Get(rowID);
 			listOfGets.add(get);
 			if (columns != null) {
@@ -824,10 +832,17 @@ public class HTableClient {
 		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
 		short numRows = bbRowIDs.getShort();
                 byte[] rowID;		
+		byte rowIDSuffix;
+		short actRowIDLen;
        
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
-			rowID = new byte[rowIDLen];
-			bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 
 			Delete del;
 			if (timestamp == -1)
@@ -963,7 +978,8 @@ public class HTableClient {
 		short colNameLen;
                 int colValueLen;
 		byte[] colName, colValue, rowID;
-
+		byte rowIDSuffix;
+                short actRowIDLen;
 		bbRowIDs = (ByteBuffer)rowIDs;
 		bbRows = (ByteBuffer)rows;
 
@@ -971,8 +987,13 @@ public class HTableClient {
 		numRows = bbRowIDs.getShort();
 		
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
-			rowID = new byte[rowIDLen];
-			bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 			put = new Put(rowID);
 			numCols = bbRows.getShort();
 			for (short colIndex = 0; colIndex < numCols; colIndex++)

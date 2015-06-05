@@ -1918,7 +1918,7 @@ void ExHbaseAccessTcb::allocateDirectRowIDBufferForJNI(short maxRows)
    rowIDLen = hbaseAccessTdb().getRowIDLen();
    if (directRowIDBuffer_ == NULL)
    {
-      directRowIDBufferLen_  = (rowIDLen * maxRows) + sizeof(short); // For no. of Rows
+      directRowIDBufferLen_  = ((rowIDLen+1)* maxRows) + sizeof(short); // For no. of Rows
       directRowIDBuffer_ = new (getHeap()) BYTE[directRowIDBufferLen_];
       rowIDs_.val = (char *)directRowIDBuffer_; 
       rowIDs_.len = sizeof(short); // To store num of Rows
@@ -2006,6 +2006,15 @@ short ExHbaseAccessTcb::copyRowIDToDirectBuffer(HbaseStr &rowID)
      dbRowID_.val = rowIDs_.val + sizeof(short);
      dbRowID_.len = 0;
    }
+   UInt32 keyLen = hbaseAccessTdb().getRowIDLen();
+   if (keyLen == rowID.len)
+      *dbRowID_.val = '0';
+   else if ((keyLen+1) == rowID.len)
+      *dbRowID_.val = '1';
+   else
+      ex_assert(FALSE, "Invalid RowID length");
+   dbRowID_.val++;  
+   rowIDs_.len++;
    memcpy(dbRowID_.val, rowID.val, rowID.len);
    dbRowID_.val += rowID.len;
    dbRowID_.len = 0;
