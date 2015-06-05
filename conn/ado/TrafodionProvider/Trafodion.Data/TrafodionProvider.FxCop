@@ -1,0 +1,2491 @@
+﻿<!--
+
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+-->
+<?xml version="1.0" encoding="utf-8"?>
+<FxCopProject Version="1.36" Name="TrafodionProvder">
+ <ProjectOptions>
+  <SharedProject>False</SharedProject>
+  <Stylesheet Apply="False">c:\program files\microsoft fxcop 1.36\Xml\FxCopReport.xsl</Stylesheet>
+  <SaveMessages>
+   <Project Status="Active, Excluded" NewOnly="False" />
+   <Report Status="Active" NewOnly="False" />
+  </SaveMessages>
+  <ProjectFile Compress="True" DefaultTargetCheck="True" DefaultRuleCheck="True" SaveByRuleGroup="" Deterministic="True" />
+  <EnableMultithreadedLoad>True</EnableMultithreadedLoad>
+  <EnableMultithreadedAnalysis>True</EnableMultithreadedAnalysis>
+  <SourceLookup>True</SourceLookup>
+  <AnalysisExceptionsThreshold>10</AnalysisExceptionsThreshold>
+  <RuleExceptionsThreshold>1</RuleExceptionsThreshold>
+  <Spelling Locale="en-US" />
+  <OverrideRuleVisibilities>False</OverrideRuleVisibilities>
+  <CustomDictionaries SearchFxCopDir="True" SearchUserProfile="True" SearchProjectDir="True" />
+  <SearchGlobalAssemblyCache>False</SearchGlobalAssemblyCache>
+  <DeadlockDetectionTimeout>120</DeadlockDetectionTimeout>
+  <IgnoreGeneratedCode>False</IgnoreGeneratedCode>
+ </ProjectOptions>
+ <Targets>
+  <AssemblyReferenceDirectories>
+   <Directory>C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Assemblies\</Directory>
+  </AssemblyReferenceDirectories>
+  <Target Name="C:\Build\HPAdo\HP.Data.dll" Analyze="True" AnalyzeAllChildren="True" />
+ </Targets>
+ <Rules>
+  <RuleFiles>
+   <RuleFile Name="$(FxCopDir)\Rules\DesignRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\GlobalizationRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\InteroperabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\MobilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\NamingRules.dll" Enabled="True" AllRulesEnabled="False">
+    <Rule Name="CompoundWordsShouldBeCasedCorrectly" Enabled="True" />
+    <Rule Name="DoNotNameEnumValuesReserved" Enabled="True" />
+    <Rule Name="DoNotPrefixEnumValuesWithTypeName" Enabled="True" />
+    <Rule Name="EventsShouldNotHaveBeforeOrAfterPrefix" Enabled="True" />
+    <Rule Name="FlagsEnumsShouldHavePluralNames" Enabled="True" />
+    <Rule Name="IdentifiersShouldBeCasedCorrectly" Enabled="True" />
+    <Rule Name="IdentifiersShouldDifferByMoreThanCase" Enabled="True" />
+    <Rule Name="IdentifiersShouldHaveCorrectPrefix" Enabled="True" />
+    <Rule Name="IdentifiersShouldHaveCorrectSuffix" Enabled="True" />
+    <Rule Name="IdentifiersShouldNotContainTypeNames" Enabled="True" />
+    <Rule Name="IdentifiersShouldNotContainUnderscores" Enabled="True" />
+    <Rule Name="IdentifiersShouldNotHaveIncorrectPrefix" Enabled="True" />
+    <Rule Name="IdentifiersShouldNotHaveIncorrectSuffix" Enabled="True" />
+    <Rule Name="IdentifiersShouldNotMatchKeywords" Enabled="True" />
+    <Rule Name="OnlyFlagsEnumsShouldHavePluralNames" Enabled="True" />
+    <Rule Name="ParameterNamesShouldMatchBaseDeclaration" Enabled="True" />
+    <Rule Name="ParameterNamesShouldNotMatchMemberNames" Enabled="True" />
+    <Rule Name="PropertyNamesShouldNotMatchGetMethods" Enabled="True" />
+    <Rule Name="ResourceStringCompoundWordsShouldBeCasedCorrectly" Enabled="True" />
+    <Rule Name="ResourceStringsShouldBeSpelledCorrectly" Enabled="True" />
+    <Rule Name="TypeNamesShouldNotMatchNamespaces" Enabled="True" />
+    <Rule Name="UsePreferredTerms" Enabled="True" />
+   </RuleFile>
+   <RuleFile Name="$(FxCopDir)\Rules\PerformanceRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\PortabilityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\SecurityRules.dll" Enabled="True" AllRulesEnabled="True" />
+   <RuleFile Name="$(FxCopDir)\Rules\UsageRules.dll" Enabled="True" AllRulesEnabled="True" />
+  </RuleFiles>
+  <Groups />
+  <Settings />
+ </Rules>
+ <FxCopReport Version="1.36">
+  <Targets>
+   <Target Name="C:\Build\HPAdo\HP.Data.dll">
+    <Modules>
+     <Module Name="hp.data.dll">
+      <Messages>
+       <Message TypeName="MarkAssembliesWithClsCompliant" Category="Microsoft.Design" CheckId="CA1014" Created="2010-04-06 19:05:53Z">
+        <Issue>
+         <Item>'HP.Data.dll'</Item>
+        </Issue>
+       </Message>
+       <Message TypeName="MarkAssembliesWithNeutralResourcesLanguage" Category="Microsoft.Performance" CheckId="CA1824" Created="2010-04-06 19:05:53Z">
+        <Issue>
+         <Item>'HP.Data.dll'</Item>
+        </Issue>
+       </Message>
+      </Messages>
+      <Namespaces>
+       <Namespace Name="HP.Data">
+        <Types>
+         <Type Name="CancelReply">
+          <Members>
+           <Member Name="#errorDetail">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'CancelReply.errorDetail'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#errorText">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'CancelReply.errorText'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="DataStream">
+          <Members>
+           <Member Name="#.ctor(System.Byte[],HP.Data.ByteOrder)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DataStream.DataStream(byte[], ByteOrder)'</Item>
+               <Item>'DataStream._pos'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ByteOrder">
+            <Accessors>
+             <Accessor Name="#get_ByteOrder()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'DataStream.ByteOrder.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#Position">
+            <Accessors>
+             <Accessor Name="#set_Position(System.Int32)">
+              <Messages>
+               <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+                <Issue Name="TooGeneric">
+                 <Item>'DataStream.Position.set(int)'</Item>
+                 <Item>'Exception'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#Reset()">
+            <Messages>
+             <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DataStream.Reset()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#WriteUserSid(System.Byte[])">
+            <Messages>
+             <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DataStream.WriteUserSid(byte[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="Descriptor">
+          <Members>
+           <Member Name="#headingName">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.headingName'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#intLeadPrec">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.intLeadPrec'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#MapDataType()">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'Descriptor.MapDataType()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'Descriptor.MapDataType()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ndcsPrecision">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.ndcsPrecision'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#signed">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.signed'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#sqlCharset">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.sqlCharset'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#version">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Descriptor.version'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="ErrorDesc">
+          <Members>
+           <Member Name="#errorCodeType">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.errorCodeType'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#errorDiagnosticId">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.errorDiagnosticId'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#operationAbortId">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.operationAbortId'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param1">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param1'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param2">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param2'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param3">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param3'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param4">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param4'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param5">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param5'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param6">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param6'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Param7">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ErrorDesc.Param7'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="ExecuteReply">
+          <Members>
+           <Member Name="#paramCount">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'ExecuteReply.paramCount'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="FetchReply">
+          <Members>
+           <Member Name="#dataFormat">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'FetchReply.dataFormat'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="GetObjRefReply">
+          <Members>
+           <Member Name="#userSid">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GetObjRefReply.userSid'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="Header">
+          <Members>
+           <Member Name="#.ctor()">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Header.Header()'</Item>
+               <Item>'Header.compressLength'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+              <Issue>
+               <Item>'Header.Header()'</Item>
+               <Item>'Header.compressType'</Item>
+               <Item>'char'</Item>
+               <Item>'\0'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Header.Header()'</Item>
+               <Item>'Header.error'</Item>
+               <Item>'short'</Item>
+               <Item>0</Item>
+              </Issue>
+              <Issue>
+               <Item>'Header.Header()'</Item>
+               <Item>'Header.errorDetail'</Item>
+               <Item>'short'</Item>
+               <Item>0</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionCodeAccessPermission">
+          <Members>
+           <Member Name="#.ctor(System.Security.Permissions.PermissionState)">
+            <Messages>
+             <Message Id="state" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'state'</Item>
+               <Item>'TrafodionCodeAccessPermission.TrafodionCodeAccessPermission(PermissionState)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionCommand">
+          <Messages>
+           <Message TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063" Created="2010-04-06 19:05:53Z">
+            <Issue Name="IDisposableReimplementation">
+             <Item>'TrafodionCommand'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.ctor(System.String,HP.DataConnection,HP.DataTransaction)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionCommand.TrafodionCommand(string, TrafodionConnection, TrafodionTransaction)'</Item>
+               <Item>'TrafodionCommand._hasPrepareDescriptors'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionCommand.TrafodionCommand(string, TrafodionConnection, TrafodionTransaction)'</Item>
+               <Item>'TrafodionCommand._isPrepared'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ConvertStringToBigNum(System.String,System.Int32,System.Int32)">
+            <Messages>
+             <Message Id="targetScale" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'targetScale'</Item>
+               <Item>'TrafodionCommand.ConvertStringToBigNum(string, int, int)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CreateDataBuffer()">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.CreateDataBuffer()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CreateParameter()">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'TrafodionCommand.CreateParameter()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Execute()">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.Execute()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#InsertParam(HP.Data.DataStream,HP.DataParameter)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToDateTime(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToDateTime(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDateTime(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToDecimal(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToDecimal(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDecimal(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToDouble(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToDouble(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToDouble(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToInt16(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToInt16(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToInt16(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToInt32(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToInt32(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToInt32(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToInt64(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToInt64(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToInt64(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToSingle(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToSingle(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToSingle(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToString(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToString(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToString(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToString(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToString(object, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'Convert.ToString(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToString(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToUInt16(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToUInt16(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToUInt16(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Convert.ToUInt32(System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'Convert.ToUInt32(object)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'Convert.ToUInt32(object, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.DateTime.ToString(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DateTime.ToString(string)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'DateTime.ToString(string, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'DateTime.ToString(string)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'DateTime.ToString(string, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'DateTime.ToString(string)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'DateTime.ToString(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Decimal.ToString(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'decimal.ToString(string)'</Item>
+               <Item>'TrafodionCommand.InsertParam(DataStream, TrafodionParameter)'</Item>
+               <Item>'decimal.ToString(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#IsPrepared">
+            <Accessors>
+             <Accessor Name="#get_IsPrepared()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionCommand.IsPrepared.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#UpdateStatementType()">
+            <Messages>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'TrafodionCommand.UpdateStatementType()'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionCommandBuilder">
+          <Members>
+           <Member Name="#ApplyParameterInfo(System.Data.Common.DbParameter,System.Data.DataRow,System.Data.StatementType,System.Boolean)">
+            <Messages>
+             <Message TypeName="DoNotCastUnnecessarily" Category="Microsoft.Performance" CheckId="CA1800" Created="2010-04-06 19:05:53Z">
+              <Issue Name="Parameter">
+               <Item>'parameter'</Item>
+               <Item>'TrafodionParameter'</Item>
+               <Item>'TrafodionCommandBuilder.ApplyParameterInfo(DbParameter, DataRow, StatementType, bool)'</Item>
+               <Item>castclass</Item>
+              </Issue>
+              <Issue Name="Parameter">
+               <Item>'parameter'</Item>
+               <Item>'TrafodionParameter'</Item>
+               <Item>'TrafodionCommandBuilder.ApplyParameterInfo(DbParameter, DataRow, StatementType, bool)'</Item>
+               <Item>castclass</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetParameterName(System.Int32)">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object)'</Item>
+               <Item>'TrafodionCommandBuilder.GetParameterName(int)'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetParameterName(System.String)">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object)'</Item>
+               <Item>'TrafodionCommandBuilder.GetParameterName(string)'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetParameterPlaceholder(System.Int32)">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object)'</Item>
+               <Item>'TrafodionCommandBuilder.GetParameterPlaceholder(int)'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionConnection">
+          <Messages>
+           <Message TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063" Created="2010-04-06 19:05:53Z">
+            <Issue Name="IDisposableReimplementation">
+             <Item>'TrafodionConnection'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.ctor(System.String)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.TrafodionConnection(string)'</Item>
+               <Item>'TrafodionConnection._database'</Item>
+               <Item>'string'</Item>
+               <Item>null</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#_asAddress">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection._asAddress'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#_asPort">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection._asPort'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#BeginTransaction(System.Data.IsolationLevel)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionConnection.BeginTransaction(IsolationLevel)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionConnection.BeginTransaction(IsolationLevel)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Cancel()">
+            <Messages>
+             <Message Id="message" TypeName="RemoveUnusedLocals" Category="Microsoft.Performance" CheckId="CA1804" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.Cancel()'</Item>
+               <Item>'message'</Item>
+               <Item>'CancelMessage'</Item>
+              </Issue>
+             </Message>
+             <Message Id="reply" TypeName="RemoveUnusedLocals" Category="Microsoft.Performance" CheckId="CA1804" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.Cancel()'</Item>
+               <Item>'reply'</Item>
+               <Item>'CancelReply'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Int32.ToString" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'int.ToString()'</Item>
+               <Item>'TrafodionConnection.Cancel()'</Item>
+               <Item>'int.ToString(IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ChangeDatabase(System.String)">
+            <Messages>
+             <Message TypeName="RethrowToPreserveStackDetails" Category="Microsoft.Usage" CheckId="CA2200" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.ChangeDatabase(string)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CleanupServer()">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.CleanupServer()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ConnectionString">
+            <Accessors>
+             <Accessor Name="#set_ConnectionString(System.String)">
+              <Messages>
+               <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+                <Issue Name="TooGeneric">
+                 <Item>'TrafodionConnection.ConnectionString.set(string)'</Item>
+                 <Item>'Exception'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#CreateVersionList()">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'TrafodionConnection.CreateVersionList()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Disconnect()">
+            <Messages>
+             <Message Id="reply" TypeName="RemoveUnusedLocals" Category="Microsoft.Performance" CheckId="CA1804" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.Disconnect()'</Item>
+               <Item>'reply'</Item>
+               <Item>'TermDialogueReply'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Dispose()">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.Dispose()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionConnection.Dispose()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#DownloadCertificate()">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionConnection.DownloadCertificate()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#EncodePassword(System.String)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'TrafodionConnection.EncodePassword(string)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Encoder">
+            <Accessors>
+             <Accessor Name="#get_Encoder()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionConnection.Encoder.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#GetObjRef()">
+            <Messages>
+             <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'int.Parse(string)'</Item>
+               <Item>'TrafodionConnection.GetObjRef()'</Item>
+               <Item>'int.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#InitDiag(System.Boolean)">
+            <Messages>
+             <Message Id="downloadCertificate" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'downloadCertificate'</Item>
+               <Item>'TrafodionConnection.InitDiag(bool)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Open()">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionConnection.Open()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ParseServerString(System.String)">
+            <Messages>
+             <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'int.Parse(string)'</Item>
+               <Item>'TrafodionConnection.ParseServerString(string)'</Item>
+               <Item>'int.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#SecureLogin(HP.Data.GetObjRefReply)">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.SecureLogin(GetObjRefReply)'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="RethrowToPreserveStackDetails" Category="Microsoft.Usage" CheckId="CA2200" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnection.SecureLogin(GetObjRefReply)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionConnection.SecureLogin(GetObjRefReply)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionConnection.SecureLogin(GetObjRefReply)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ServerVersionList">
+            <Accessors>
+             <Accessor Name="#get_ServerVersionList()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionConnection.ServerVersionList.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionConnectionStringBuilder">
+          <Messages>
+           <Message TypeName="ICollectionImplementationsHaveStronglyTypedMembers" Category="Microsoft.Design" CheckId="CA1035" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionConnectionStringBuilder'</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="IdentifiersShouldHaveCorrectSuffix" Category="Microsoft.Naming" CheckId="CA1710" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionConnectionStringBuilder'</Item>
+             <Item>Dictionary</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.cctor()">
+            <Messages>
+             <Message TypeName="InitializeReferenceTypeStaticFieldsInline" Category="Microsoft.Performance" CheckId="CA1810" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnectionStringBuilder'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ContainsKey(System.String)">
+            <Messages>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'TrafodionConnectionStringBuilder.ContainsKey(string)'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CpuToUse">
+            <Accessors>
+             <Accessor Name="#get_CpuToUse()">
+              <Messages>
+               <Message Id="System.Int16.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'short.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.CpuToUse.get()'</Item>
+                 <Item>'short.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#FetchBufferSize">
+            <Accessors>
+             <Accessor Name="#get_FetchBufferSize()">
+              <Messages>
+               <Message Id="System.Int16.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'short.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.FetchBufferSize.get()'</Item>
+                 <Item>'short.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#IdleTimeout">
+            <Accessors>
+             <Accessor Name="#get_IdleTimeout()">
+              <Messages>
+               <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'int.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.IdleTimeout.get()'</Item>
+                 <Item>'int.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#LoginTimeout">
+            <Messages>
+             <Message Id="Login" TypeName="UsePreferredTerms" Category="Microsoft.Naming" CheckId="CA1726" Created="2010-04-06 19:05:53Z">
+              <Issue Name="Member">
+               <Item>Login</Item>
+               <Item>'TrafodionConnectionStringBuilder.LoginTimeout'</Item>
+               <Item>LogOn</Item>
+              </Issue>
+             </Message>
+            </Messages>
+            <Accessors>
+             <Accessor Name="#get_LoginTimeout()">
+              <Messages>
+               <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'int.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.LoginTimeout.get()'</Item>
+                 <Item>'int.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#MapKeyword(System.String)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'TrafodionConnectionStringBuilder.MapKeyword(string)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'TrafodionConnectionStringBuilder.MapKeyword(string)'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ResetDefaultValues()">
+            <Messages>
+             <Message Id="System.String.LastIndexOf(System.String)" TypeName="SpecifyStringComparison" Category="Microsoft.Globalization" CheckId="CA1307" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionConnectionStringBuilder.ResetDefaultValues()'</Item>
+               <Item>'string.LastIndexOf(string)'</Item>
+               <Item>'string.LastIndexOf(string, StringComparison)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#RetryCount">
+            <Accessors>
+             <Accessor Name="#get_RetryCount()">
+              <Messages>
+               <Message Id="System.Int16.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'short.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.RetryCount.get()'</Item>
+                 <Item>'short.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#RetryTime">
+            <Accessors>
+             <Accessor Name="#get_RetryTime()">
+              <Messages>
+               <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'int.Parse(string)'</Item>
+                 <Item>'TrafodionConnectionStringBuilder.RetryTime.get()'</Item>
+                 <Item>'int.Parse(string, IFormatProvider)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionDataAdapter">
+          <Members>
+           <Member Name="#Dispose()">
+            <Messages>
+             <Message TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063" Created="2010-04-06 19:05:53Z">
+              <Issue Name="DisposeSignature">
+               <Item>'TrafodionDataAdapter.Dispose()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetBatchedParameter(System.Int32,System.Int32)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'TrafodionDataAdapter.GetBatchedParameter(int, int)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="commandIdentifier" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'commandIdentifier'</Item>
+               <Item>'TrafodionDataAdapter.GetBatchedParameter(int, int)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="parameterIndex" TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'parameterIndex'</Item>
+               <Item>'TrafodionDataAdapter.GetBatchedParameter(int, int)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetFillParameters()">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="DependsOnFix">
+              <Issue>
+               <Item>'TrafodionDataAdapter.GetFillParameters()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionDataReader">
+          <Messages>
+           <Message TypeName="CollectionsShouldImplementGenericInterface" Category="Microsoft.Design" CheckId="CA1010" Created="2010-04-06 19:05:53Z">
+            <Issue Certainty="60">
+             <Item>'TrafodionDataReader'</Item>
+             <Item>IEnumerable</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="IdentifiersShouldHaveCorrectSuffix" Category="Microsoft.Naming" CheckId="CA1710" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionDataReader'</Item>
+             <Item>Collection</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063" Created="2010-04-06 19:05:53Z">
+            <Issue Name="IDisposableReimplementation">
+             <Item>'TrafodionDataReader'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.ctor(HP.Data.TrafodionCommand)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionDataReader.TrafodionDataReader(TrafodionCommand)'</Item>
+               <Item>'TrafodionDataReader._fieldCount'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionDataReader.TrafodionDataReader(TrafodionCommand)'</Item>
+               <Item>'TrafodionDataReader._isClosed'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionDataReader.TrafodionDataReader(TrafodionCommand)'</Item>
+               <Item>'TrafodionDataReader._rowCount'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#.ctor(HP.Data.TrafodionCommand,HP.Data.PrepareReply,HP.Data.ExecuteReply)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionDataReader.TrafodionDataReader(TrafodionCommand, PrepareReply, ExecuteReply)'</Item>
+               <Item>'TrafodionDataReader._currentResult'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CheckBounds(System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="Reserved">
+               <Item>'TrafodionDataReader.CheckBounds(int)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.CheckBounds(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.CheckBounds(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CheckDBNull(System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.CheckDBNull(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ConvertBigNumToString(System.Byte[],System.Int32)">
+            <Messages>
+             <Message Id="negative" TypeName="RemoveUnusedLocals" Category="Microsoft.Performance" CheckId="CA1804" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionDataReader.ConvertBigNumToString(byte[], int)'</Item>
+               <Item>'negative'</Item>
+               <Item>'bool'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Dispose()">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionDataReader.Dispose()'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#FetchSize">
+            <Accessors>
+             <Accessor Name="#set_FetchSize(System.Int32)">
+              <Messages>
+               <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+                <Issue Name="TooGeneric">
+                 <Item>'TrafodionDataReader.FetchSize.set(int)'</Item>
+                 <Item>'Exception'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#GetDecimal(System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.GetDecimal(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.Decimal.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'decimal.Parse(string)'</Item>
+               <Item>'TrafodionDataReader.GetDecimal(int)'</Item>
+               <Item>'decimal.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetFieldType(System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.GetFieldType(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetOrdinal(System.String)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="Reserved">
+               <Item>'TrafodionDataReader.GetOrdinal(string)'</Item>
+               <Item>'IndexOutOfRangeException'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.ToLower" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToLower()'</Item>
+               <Item>'TrafodionDataReader.GetOrdinal(string)'</Item>
+               <Item>'string.ToLower(CultureInfo)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'string.ToLower()'</Item>
+               <Item>'TrafodionDataReader.GetOrdinal(string)'</Item>
+               <Item>'string.ToLower(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetSchemaTable()">
+            <Messages>
+             <Message TypeName="SetLocaleForDataTypes" Category="Microsoft.Globalization" CheckId="CA1306" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>DataTable</Item>
+               <Item>'TrafodionDataReader.GetSchemaTable()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetValue(System.Int32)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionDataReader.GetValue(int)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionDbType">
+          <Messages>
+           <Message TypeName="EnumsShouldHaveZeroValue" Category="Microsoft.Design" CheckId="CA1008" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+            <Issue Name="NotFlagsNoZeroValue">
+             <Item>'TrafodionDbType'</Item>
+            </Issue>
+           </Message>
+           <Message Id="Db" TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709" Created="2010-04-06 19:05:53Z">
+            <Issue Name="Type">
+             <Item>Db</Item>
+             <Item>'TrafodionDbType'</Item>
+             <Item>DB</Item>
+            </Issue>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="TrafodionEncoder">
+          <Members>
+           <Member Name="#.ctor(HP.Data.ByteOrder)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionEncoder.TrafodionEncoder(ByteOrder)'</Item>
+               <Item>'TrafodionEncoder._enforceIso'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ByteOrder">
+            <Accessors>
+             <Accessor Name="#get_ByteOrder()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionEncoder.ByteOrder.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#EnforceIso">
+            <Accessors>
+             <Accessor Name="#get_EnforceIso()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionEncoder.EnforceIso.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+             <Accessor Name="#set_EnforceIso(System.Boolean)">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionEncoder.EnforceIso.set(bool)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionErrorCollection">
+          <Messages>
+           <Message TypeName="ICollectionImplementationsHaveStronglyTypedMembers" Category="Microsoft.Design" CheckId="CA1035" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionErrorCollection'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="TrafodionException">
+          <Messages>
+           <Message TypeName="ImplementStandardExceptionConstructors" Category="Microsoft.Design" CheckId="CA1032" Created="2010-04-06 19:05:53Z">
+            <Issue Name="MissingConstructor">
+             <Item>'TrafodionException'</Item>
+             <Item>private TrafodionException(SerializationInfo, StreamingContext)</Item>
+            </Issue>
+            <Issue Name="MissingConstructor">
+             <Item>'TrafodionException'</Item>
+             <Item>public TrafodionException()</Item>
+            </Issue>
+            <Issue Name="MissingConstructor">
+             <Item>'TrafodionException'</Item>
+             <Item>public TrafodionException(String)</Item>
+            </Issue>
+            <Issue Name="MissingConstructor">
+             <Item>'TrafodionException'</Item>
+             <Item>public TrafodionException(String, Exception)</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="MarkISerializableTypesWithSerializable" Category="Microsoft.Usage" CheckId="CA2237" Created="2010-04-06 19:05:53Z">
+            <Issue Certainty="95" Level="Error">
+             <Item>'TrafodionException'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.ctor(HP.Data.TrafodionMessage,System.Exception,System.Object[])">
+            <Messages>
+             <Message Id="System.Int32.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'int.Parse(string)'</Item>
+               <Item>'TrafodionException.TrafodionException(TrafodionMessage, Exception, params object[])'</Item>
+               <Item>'int.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+              <Issue>
+               <Item>'int.Parse(string)'</Item>
+               <Item>'TrafodionException.TrafodionException(TrafodionMessage, Exception, params object[])'</Item>
+               <Item>'int.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.Format(System.String,System.Object,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object, object)'</Item>
+               <Item>'TrafodionException.TrafodionException(TrafodionMessage, Exception, params object[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.Format(System.String,System.Object,System.Object,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object, object, object)'</Item>
+               <Item>'TrafodionException.TrafodionException(TrafodionMessage, Exception, params object[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionException.TrafodionException(TrafodionMessage, Exception, params object[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionFactory">
+          <Members>
+           <Member Name="#CreatePermission(System.Security.Permissions.PermissionState)">
+            <Messages>
+             <Message TypeName="ReviewImperativeSecurity" Category="Microsoft.Security" CheckId="CA2103" Created="2010-04-06 19:05:53Z">
+              <Issue Name="Parameter">
+               <Item>'state'</Item>
+               <Item>'TrafodionFactory.CreatePermission(PermissionState)'</Item>
+               <Item>'TrafodionCodeAccessPermission'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Instance">
+            <Messages>
+             <Message TypeName="DoNotDeclareReadOnlyMutableReferenceTypes" Category="Microsoft.Security" CheckId="CA2104" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionFactory.Instance'</Item>
+               <Item>'TrafodionFactory'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionInfoMessageEventHandler">
+          <Messages>
+           <Message TypeName="UseGenericEventHandlerInstances" Category="Microsoft.Design" CheckId="CA1003" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionInfoMessageEventHandler'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="TrafodionMetaData">
+          <Members>
+           <Member Name="#.ctor(HP.Data.TrafodionConnection)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionMetaData.TrafodionMetaData(TrafodionConnection)'</Item>
+               <Item>'TrafodionMetaData._dataset'</Item>
+               <Item>'DataSet'</Item>
+               <Item>null</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CopyGenericRestrictions(System.String[],System.Int32,System.Object[],System.Int32,System.Int32)">
+            <Messages>
+             <Message TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822" Created="2010-04-06 19:05:53Z" FixCategory="NonBreaking">
+              <Issue>
+               <Item>'TrafodionMetaData.CopyGenericRestrictions(string[], int, object[], int, int)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ExecuteQuery(System.String)">
+            <Messages>
+             <Message TypeName="SetLocaleForDataTypes" Category="Microsoft.Globalization" CheckId="CA1306" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>DataTable</Item>
+               <Item>'TrafodionMetaData.ExecuteQuery(string)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ForeignKeyQuery">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionMetaData.ForeignKeyQuery'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetCatalogs(System.String[])">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionMetaData.GetCatalogs(string[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetColumns(System.String[])">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionMetaData.GetColumns(string[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetObjects(System.String[],System.String)">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionMetaData.GetObjects(string[], string)'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetSchema(System.String,System.String[])">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionMetaData.GetSchema(string, string[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="RethrowToPreserveStackDetails" Category="Microsoft.Usage" CheckId="CA2200" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionMetaData.GetSchema(string, string[])'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'TrafodionMetaData.GetSchema(string, string[])'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetSchemas(System.String[])">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionMetaData.GetSchemas(string[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Init()">
+            <Messages>
+             <Message TypeName="SetLocaleForDataTypes" Category="Microsoft.Globalization" CheckId="CA1306" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>DataSet</Item>
+               <Item>'TrafodionMetaData.Init()'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#PrimaryKeyQuery">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionMetaData.PrimaryKeyQuery'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionNetwork">
+          <Members>
+           <Member Name="#.ctor(HP.Data.TrafodionConnection)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionNetwork.TrafodionNetwork(TrafodionConnection)'</Item>
+               <Item>'TrafodionNetwork._dialogueId'</Item>
+               <Item>'int'</Item>
+               <Item>0</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Cancel(System.String,System.Int32,HP.Data.CancelMessage)">
+            <Messages>
+             <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionNetwork.Cancel(string, int, CancelMessage)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Dispose()">
+            <Messages>
+             <Message TypeName="CallGCSuppressFinalizeCorrectly" Category="Microsoft.Usage" CheckId="CA1816" Created="2010-04-06 19:05:53Z">
+              <Issue Name="NotCalled">
+               <Item>'TrafodionNetwork.Dispose()'</Item>
+               <Item>'GC.SuppressFinalize(object)'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionNetwork.Dispose()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionNetwork.Dispose()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#DoIO(HP.Data.INetworkMessage,HP.Data.INetworkReply,HP.Data.OperationId)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionNetwork.DoIO(INetworkMessage, INetworkReply, OperationId)'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Encoder">
+            <Accessors>
+             <Accessor Name="#set_Encoder(HP.Data.TrafodionEncoder)">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionNetwork.Encoder.set(TrafodionEncoder)'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#IsClosed">
+            <Accessors>
+             <Accessor Name="#get_IsClosed()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionNetwork.IsClosed.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionParameter">
+          <Members>
+           <Member Name="#.ctor()">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionParameter.TrafodionParameter()'</Item>
+               <Item>'TrafodionParameter._verified'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#.ctor(System.String,HP.Data.TrafodionDbType)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionParameter.TrafodionParameter(string, TrafodionDbType)'</Item>
+               <Item>'TrafodionParameter._verified'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#.ctor(System.String,System.Object)">
+            <Messages>
+             <Message TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionParameter.TrafodionParameter(string, object)'</Item>
+               <Item>'TrafodionParameter._verified'</Item>
+               <Item>'bool'</Item>
+               <Item>false</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionParameterCollection">
+          <Messages>
+           <Message TypeName="CollectionsShouldImplementGenericInterface" Category="Microsoft.Design" CheckId="CA1010" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionParameterCollection'</Item>
+             <Item>IList</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="ICollectionImplementationsHaveStronglyTypedMembers" Category="Microsoft.Design" CheckId="CA1035" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionParameterCollection'</Item>
+            </Issue>
+           </Message>
+           <Message TypeName="ListsAreStronglyTyped" Category="Microsoft.Design" CheckId="CA1039" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionParameterCollection'</Item>
+             <Item>Add</Item>
+            </Issue>
+            <Issue>
+             <Item>'TrafodionParameterCollection'</Item>
+             <Item>Insert</Item>
+            </Issue>
+            <Issue>
+             <Item>'TrafodionParameterCollection'</Item>
+             <Item>Remove</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#Parameters">
+            <Accessors>
+             <Accessor Name="#get_Parameters()">
+              <Messages>
+               <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+                <Issue>
+                 <Item>'TrafodionParameterCollection.Parameters.get()'</Item>
+                </Issue>
+               </Message>
+              </Messages>
+             </Accessor>
+            </Accessors>
+           </Member>
+           <Member Name="#Prepare(HP.Data.Descriptor[])">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionParameterCollection.Prepare(Descriptor[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionRowUpdatingEventHandler">
+          <Messages>
+           <Message TypeName="UseGenericEventHandlerInstances" Category="Microsoft.Design" CheckId="CA1003" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionRowUpdatingEventHandler'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="TrafodionSecurity">
+          <Members>
+           <Member Name="#.ctor(HP.Data.TrafodionConnection,System.String,System.String,System.String,System.String,System.Int16,System.Int16,System.Byte[])">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionSecurity.TrafodionSecurity(TrafodionConnection, string, string, string, string, short, short, byte[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'TrafodionSecurity.TrafodionSecurity(TrafodionConnection, string, string, string, string, short, short, byte[])'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#_nonceSeq">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionSecurity._nonceSeq'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#EncryptData(System.Byte[])">
+            <Messages>
+             <Message TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionSecurity.EncryptData(byte[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#EncryptPassword(System.Byte[],System.Byte[],System.Byte[]&amp;)">
+            <Messages>
+             <Message TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201" Created="2010-04-06 19:05:53Z">
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionSecurity.EncryptPassword(byte[], byte[], out byte[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionSecurity.EncryptPassword(byte[], byte[], out byte[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+              <Issue Name="TooGeneric">
+               <Item>'TrafodionSecurity.EncryptPassword(byte[], byte[], out byte[])'</Item>
+               <Item>'Exception'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#GetCertExpDate()">
+            <Messages>
+             <Message Id="System.DateTime.Parse(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DateTime.Parse(string)'</Item>
+               <Item>'TrafodionSecurity.GetCertExpDate()'</Item>
+               <Item>'DateTime.Parse(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+             <Message Id="System.DateTime.ToString(System.String)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'DateTime.ToString(string)'</Item>
+               <Item>'TrafodionSecurity.GetCertExpDate()'</Item>
+               <Item>'DateTime.ToString(string, IFormatProvider)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#SwitchCertificate(System.Byte[])">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionSecurity.SwitchCertificate(byte[])'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionTrace">
+          <Messages>
+           <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionTrace'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#.cctor()">
+            <Messages>
+             <Message TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionTrace.TrafodionTrace()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionTrace.TrafodionTrace()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+              <Issue>
+               <Item>'TrafodionTrace.TrafodionTrace()'</Item>
+               <Item>'object'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="InitializeReferenceTypeStaticFieldsInline" Category="Microsoft.Performance" CheckId="CA1810" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionTrace'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#CreateParamString(System.Object[])">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object,System.Object)" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, object, object)'</Item>
+               <Item>'TrafodionTrace.CreateParamString(params object[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#IsDetailEnabled">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionTrace.IsDetailEnabled'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#IsNetworkEnabled">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionTrace.IsNetworkEnabled'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#IsWarningEnabled">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionTrace.IsWarningEnabled'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#Trace(HP.Data.TrafodionConnection,HP.Data.TraceLevel,System.Object[])">
+            <Messages>
+             <Message Id="System.String.Format(System.String,System.Object[])" TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.Format(string, params object[])'</Item>
+               <Item>'TrafodionTrace.Trace(TrafodionConnection, TraceLevel, params object[])'</Item>
+               <Item>'string.Format(IFormatProvider, string, params object[])'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TrafodionTransaction">
+          <Messages>
+           <Message TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063" Created="2010-04-06 19:05:53Z">
+            <Issue Name="IDisposableReimplementation">
+             <Item>'TrafodionTransaction'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+         </Type>
+         <Type Name="TrafodionUtility">
+          <Messages>
+           <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'TrafodionUtility'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#TrimNumericString">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TrafodionUtility.TrimNumericString'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="OutConnectionContext">
+          <Members>
+           <Member Name="#catalog">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.catalog'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#computerName">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.computerName'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#DecodeExtraOptions(System.String)">
+            <Messages>
+             <Message Id="System.String.ToUpper" TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'string.ToUpper()'</Item>
+               <Item>'OutConnectionContext.DecodeExtraOptions(string)'</Item>
+               <Item>'string.ToUpper(CultureInfo)'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#enforceIso">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.enforceIso'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ignoreCancel">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.ignoreCancel'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#nodeId">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.nodeId'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#optionFlags2">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.optionFlags2'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#processId">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.processId'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#roleName">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.roleName'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#schema">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.schema'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#serverVersion">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'OutConnectionContext.serverVersion'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="PrepareReply">
+          <Members>
+           <Member Name="#estimatedCost">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'PrepareReply.estimatedCost'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="PwdKey">
+          <Members>
+           <Member Name="#digest">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'PwdKey.digest'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#rolename">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'PwdKey.rolename'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#ts">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'PwdKey.ts'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+         <Type Name="TermDialogueReply">
+          <Members>
+           <Member Name="#error">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TermDialogueReply.error'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#errorDetail">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'TermDialogueReply.errorDetail'</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+       <Namespace Name="HP.Data.Integration">
+        <Types>
+         <Type Name="GuidList">
+          <Messages>
+           <Message TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812" Created="2010-04-06 19:05:53Z">
+            <Issue>
+             <Item>'GuidList'</Item>
+            </Issue>
+           </Message>
+          </Messages>
+          <Members>
+           <Member Name="#TrafodionDataPackage">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionDataPackage'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="UseLiteralsWhereAppropriate" Category="Microsoft.Performance" CheckId="CA1802" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionDataPackage'</Item>
+               <Item>{8B9F9718-B634-4457-81A4-48D28CA75341}</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#TrafodionDatasource">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionDatasource'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="UseLiteralsWhereAppropriate" Category="Microsoft.Performance" CheckId="CA1802" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionDatasource'</Item>
+               <Item>{3B714106-8D76-491c-9250-2075A9E6B104}</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#TrafodionProvider">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionProvider'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="UseLiteralsWhereAppropriate" Category="Microsoft.Performance" CheckId="CA1802" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionProvider'</Item>
+               <Item>{BC895E6F-237C-43f7-BD77-49DFC386A5AC}</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+           <Member Name="#TrafodionProviderObjectFactory">
+            <Messages>
+             <Message TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionProviderObjectFactory'</Item>
+              </Issue>
+             </Message>
+             <Message TypeName="UseLiteralsWhereAppropriate" Category="Microsoft.Performance" CheckId="CA1802" Created="2010-04-06 19:05:53Z">
+              <Issue>
+               <Item>'GuidList.TrafodionProviderObjectFactory'</Item>
+               <Item>{37FFA9B6-6AB5-4a47-96A4-979D867AAD35}</Item>
+              </Issue>
+             </Message>
+            </Messages>
+           </Member>
+          </Members>
+         </Type>
+        </Types>
+       </Namespace>
+      </Namespaces>
+      <Resources>
+       <Resource Name="HP.Data.Properties.Resources.resources">
+        <Messages>
+         <Message Id="Username" TypeName="ResourceStringCompoundWordsShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1701" Created="2010-04-06 19:05:53Z">
+          <Issue Name="StringResourceShouldBeCompoundWord">
+           <Item>'HP.Data.Properties.Resources.resx'</Item>
+           <Item>DisplayName_UserID</Item>
+           <Item>Username</Item>
+           <Item>Username</Item>
+           <Item>UserName</Item>
+          </Issue>
+         </Message>
+         <Message Id="hostname" TypeName="ResourceStringCompoundWordsShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1701" Created="2010-04-06 19:05:53Z">
+          <Issue Name="StringResourceShouldBeCompoundWord">
+           <Item>'HP.Data.Properties.Resources.resx'</Item>
+           <Item>Description_Server</Item>
+           <Item>hostname</Item>
+           <Item>The MySQL server IP or hostname.</Item>
+           <Item>hostName</Item>
+          </Issue>
+         </Message>
+         <Message Id="pathname" TypeName="ResourceStringCompoundWordsShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1701" Created="2010-04-06 19:05:53Z">
+          <Issue Name="StringResourceShouldBeCompoundWord">
+           <Item>'HP.Data.Properties.Resources.resx'</Item>
+           <Item>Description_Table_DataDirectory_Option</Item>
+           <Item>pathname</Item>
+           <Item>By using this option you can specify where the MyISAM storage engine should put a table's data file. The directory must be the full pathname to the directory, not a relative path.</Item>
+           <Item>pathName</Item>
+          </Issue>
+          <Issue Name="StringResourceShouldBeCompoundWord">
+           <Item>'HP.Data.Properties.Resources.resx'</Item>
+           <Item>Description_Table_IndexDirectory_Option</Item>
+           <Item>pathname</Item>
+           <Item>By using this option you can specify where the MyISAM storage engine should put a table's index file. The directory must be the full pathname to the directory, not a relative path.</Item>
+           <Item>pathName</Item>
+          </Issue>
+         </Message>
+        </Messages>
+       </Resource>
+      </Resources>
+     </Module>
+    </Modules>
+   </Target>
+  </Targets>
+  <Rules>
+   <Rule TypeName="AvoidUncalledPrivateCode" Category="Microsoft.Performance" CheckId="CA1811">
+    <Resolution Name="Default">{0} appears to have no upstream public or protected callers.</Resolution>
+   </Rule>
+   <Rule TypeName="AvoidUninstantiatedInternalClasses" Category="Microsoft.Performance" CheckId="CA1812">
+    <Resolution Name="Default">{0} is an internal class that is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static methods, consider adding a private constructor to prevent the compiler from generating a default constructor.</Resolution>
+   </Rule>
+   <Rule TypeName="AvoidUnusedPrivateFields" Category="Microsoft.Performance" CheckId="CA1823">
+    <Resolution Name="Default">It appears that field {0} is never used or is only ever assigned to. Use this field or remove it.</Resolution>
+   </Rule>
+   <Rule TypeName="CallGCSuppressFinalizeCorrectly" Category="Microsoft.Usage" CheckId="CA1816">
+    <Resolution Name="NotCalled">Change {0} to call {1}. This will prevent unnecessary finalization of the object once it has been disposed and it has fallen out of scope.</Resolution>
+   </Rule>
+   <Rule TypeName="CollectionsShouldImplementGenericInterface" Category="Microsoft.Design" CheckId="CA1010">
+    <Resolution Name="Default">{0} appears to be a non-generic, strongly typed collection. Add an implementation to the instance of {1}&lt;T&gt; where T is the underlying element type of {0}.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotCastUnnecessarily" Category="Microsoft.Performance" CheckId="CA1800">
+    <Resolution Name="Parameter">{0}, a parameter, is cast to type {1} multiple times in method {2}. Cache the result of the 'as' operator or direct cast in order to eliminate the redundant {3} instruction.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotCatchGeneralExceptionTypes" Category="Microsoft.Design" CheckId="CA1031">
+    <Resolution Name="Default">Modify {0} to catch a more specific exception than {1} or rethrow the exception.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotDeclareReadOnlyMutableReferenceTypes" Category="Microsoft.Security" CheckId="CA2104">
+    <Resolution Name="Default">Remove the read-only designation from {0} or change the field to one that is an immutable reference type. If the reference type {1} is, in fact, immutable, exclude this message.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotInitializeUnnecessarily" Category="Microsoft.Performance" CheckId="CA1805">
+    <Resolution Name="Default">{0} initializes field {1} of type {2} to {3}. Remove this initialization because it will be done automatically by the runtime.</Resolution>
+   </Rule>
+   <Rule TypeName="DoNotRaiseReservedExceptionTypes" Category="Microsoft.Usage" CheckId="CA2201">
+    <Resolution Name="Reserved">{0} creates an exception of type {1}, an exception type that is reserved by the runtime and should never be raised by managed code. If this exception instance might be thrown, use a different exception type.</Resolution>
+    <Resolution Name="TooGeneric">{0} creates an exception of type {1}, an exception type that is not sufficiently specific and should never be raised by user code. If this exception instance might be thrown, use a different exception type.</Resolution>
+   </Rule>
+   <Rule TypeName="EnumsShouldHaveZeroValue" Category="Microsoft.Design" CheckId="CA1008">
+    <Resolution Name="NotFlagsNoZeroValue">Add a member to {0} that has a value of zero with a suggested name of 'None'.</Resolution>
+   </Rule>
+   <Rule TypeName="ICollectionImplementationsHaveStronglyTypedMembers" Category="Microsoft.Design" CheckId="CA1035">
+    <Resolution Name="Default">{0} should provide a strongly typed implementation of ICollection.CopyTo.</Resolution>
+   </Rule>
+   <Rule TypeName="IdentifiersShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1709">
+    <Resolution Name="Type">Correct the casing of '{0}' in type name {1} by changing it to '{2}'.</Resolution>
+   </Rule>
+   <Rule TypeName="IdentifiersShouldHaveCorrectSuffix" Category="Microsoft.Naming" CheckId="CA1710">
+    <Resolution Name="Default">Rename {0} to end in '{1}'.</Resolution>
+   </Rule>
+   <Rule TypeName="ImplementIDisposableCorrectly" Category="Microsoft.Design" CheckId="CA1063">
+    <Resolution Name="DisposeSignature">Ensure that {0} is declared as public and sealed.</Resolution>
+    <Resolution Name="IDisposableReimplementation">Remove IDisposable from the list of interfaces implemented by {0} and override the base class Dispose implementation instead.</Resolution>
+   </Rule>
+   <Rule TypeName="ImplementStandardExceptionConstructors" Category="Microsoft.Design" CheckId="CA1032">
+    <Resolution Name="MissingConstructor">Add the following constructor to {0}: {1}.</Resolution>
+   </Rule>
+   <Rule TypeName="InitializeReferenceTypeStaticFieldsInline" Category="Microsoft.Performance" CheckId="CA1810">
+    <Resolution Name="Default">Initialize all static fields in {0} when those fields are declared and remove the explicit static constructor.</Resolution>
+   </Rule>
+   <Rule TypeName="ListsAreStronglyTyped" Category="Microsoft.Design" CheckId="CA1039">
+    <Resolution Name="Default">{0} should provide a strongly typed implementation of IList.{1}.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkAssembliesWithClsCompliant" Category="Microsoft.Design" CheckId="CA1014">
+    <Resolution Name="Default">Mark {0} with CLSCompliant(true) because it exposes externally visible types.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkAssembliesWithNeutralResourcesLanguage" Category="Microsoft.Performance" CheckId="CA1824">
+    <Resolution Name="Default">Because assembly {0} contains a ResX-based resource file, mark it with the NeutralResourcesLanguage attribute, specifying the language of the resources within the assembly. This could improve lookup performance the first time a resource is retrieved.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkISerializableTypesWithSerializable" Category="Microsoft.Usage" CheckId="CA2237">
+    <Resolution Name="Default">Add [Serializable] to {0} as this type implements ISerializable.</Resolution>
+   </Rule>
+   <Rule TypeName="MarkMembersAsStatic" Category="Microsoft.Performance" CheckId="CA1822">
+    <Resolution Name="Default">The 'this' parameter (or 'Me' in Visual Basic) of {0} is never used. Mark the member as static (or Shared in Visual Basic) or use 'this'/'Me' in the method body or at least one property accessor, if appropriate.</Resolution>
+   </Rule>
+   <Rule TypeName="RemoveUnusedLocals" Category="Microsoft.Performance" CheckId="CA1804">
+    <Resolution Name="Default">{0} declares a variable, {1}, of type {2}, which is never used or is only assigned to. Use this variable or remove it.</Resolution>
+   </Rule>
+   <Rule TypeName="ResourceStringCompoundWordsShouldBeCasedCorrectly" Category="Microsoft.Naming" CheckId="CA1701">
+    <Resolution Name="StringResourceShouldBeCompoundWord">In resource {0}, referenced by name '{1}' the discrete term '{2}' in string value '{3}' should be expressed as a compound word. If '{2}' refers to an API identifier, case it as '{4}', otherwise split it into two words separated by a space.</Resolution>
+   </Rule>
+   <Rule TypeName="RethrowToPreserveStackDetails" Category="Microsoft.Usage" CheckId="CA2200">
+    <Resolution Name="Default">{0} rethrows a caught exception and specifies it explicitly as an argument. Use 'throw' without an argument instead, in order to preserve the stack location where the exception was initially raised.</Resolution>
+   </Rule>
+   <Rule TypeName="ReviewImperativeSecurity" Category="Microsoft.Security" CheckId="CA2103">
+    <Resolution Name="Parameter">Review the following for a possible security vulnerability: Parameter {0} of {1} is being passed to a {2} constructor.</Resolution>
+   </Rule>
+   <Rule TypeName="ReviewUnusedParameters" Category="Microsoft.Usage" CheckId="CA1801">
+    <Resolution Name="Default">Parameter {0} of {1} is never used. Remove the parameter or use it in the method body.</Resolution>
+   </Rule>
+   <Rule TypeName="SetLocaleForDataTypes" Category="Microsoft.Globalization" CheckId="CA1306">
+    <Resolution Name="Default">Be sure to set the {0} Locale property wherever {1} creates an instance of that type.</Resolution>
+   </Rule>
+   <Rule TypeName="SpecifyCultureInfo" Category="Microsoft.Globalization" CheckId="CA1304">
+    <Resolution Name="Default">Because the behavior of {0} could vary based on the current user's locale settings, replace this call in {1} with a call to {2}. If the result of {2} will be displayed to the user, specify 'CultureInfo.CurrentCulture' as the 'CultureInfo' parameter. Otherwise, if the result will be stored and accessed by software, such as when it is persisted to disk or to a database, specify 'CultureInfo.InvariantCulture'.</Resolution>
+   </Rule>
+   <Rule TypeName="SpecifyIFormatProvider" Category="Microsoft.Globalization" CheckId="CA1305">
+    <Resolution Name="Default">Because the behavior of {0} could vary based on the current user's locale settings, replace this call in {1} with a call to {2}. If the result of {2} will be displayed to the user, specify 'CultureInfo.CurrentCulture' as the 'IFormatProvider' parameter. Otherwise, if the result will be stored and accessed by software, such as when it is persisted to disk or to a database, specify 'CultureInfo.InvariantCulture'.</Resolution>
+   </Rule>
+   <Rule TypeName="SpecifyStringComparison" Category="Microsoft.Globalization" CheckId="CA1307">
+    <Resolution Name="Default">{0} makes a call to {1} that does not explicitly provide a StringComparison. This should be replaced with a call to {2}.</Resolution>
+   </Rule>
+   <Rule TypeName="UseGenericEventHandlerInstances" Category="Microsoft.Design" CheckId="CA1003">
+    <Resolution Name="Default">Remove {0} and replace its usage with EventHandler&lt;T&gt;</Resolution>
+   </Rule>
+   <Rule TypeName="UseLiteralsWhereAppropriate" Category="Microsoft.Performance" CheckId="CA1802">
+    <Resolution Name="Default">Field {0} is declared as 'static readonly' but is initialized with a constant value '{1}'. Mark this field as 'const' instead.</Resolution>
+   </Rule>
+   <Rule TypeName="UsePreferredTerms" Category="Microsoft.Naming" CheckId="CA1726">
+    <Resolution Name="Member">Replace the term '{0}' in member name {1} with the preferred alternate '{2}'.</Resolution>
+   </Rule>
+  </Rules>
+ </FxCopReport>
+</FxCopProject>
