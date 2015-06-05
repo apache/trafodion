@@ -237,13 +237,14 @@ public class SsccTransactionState extends TransactionState{
             */
             if(thisTs > startId)  //only for debug checking, like an assert
             {
-            	//check whether has mt_ family , if has ,doesn't display, if not, displays
+                //check whether has mt_ family , if has ,doesn't display, if not, displays
                 if(versionList==null && statusList==null){
-                if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
-                return true;
-                }else {
-              	    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
-              	    return false;
+                   if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                   return true;
+                }
+                else {
+                   if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
+                   return false;
                 }
             }
 
@@ -296,7 +297,7 @@ public class SsccTransactionState extends TransactionState{
                         {
                             boolean isit = SsccConst.isSelfUpdate(statusValList,startId);
                             if(LOG.isTraceEnabled()) LOG.trace("handleResult this is updated by me " + isit);
-                            return isit;  
+                            return isit;
                         }
                         else
                         {

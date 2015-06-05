@@ -23,9 +23,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.codec.binary.Hex;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * Holds client-side transaction information. Client's use them as opaque objects passed around to transaction
@@ -65,7 +68,7 @@ public class TransactionState {
     /**
      * Regions to ignore in the twoPase commit protocol. They were read only, or already said to abort.
      */
-    private Set<TransactionRegionLocation> regionsToIgnore = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
+    public Set<TransactionRegionLocation> regionsToIgnore = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
     private Set<TransactionRegionLocation> retryRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
 
     private native void registerRegion(long transid, long startId, int port, byte[] hostname, long startcode, byte[] regionInfo);
@@ -247,7 +250,7 @@ public class TransactionState {
         }
     }
 
-      public void registerLocation(final HRegionLocation location) throws IOException {
+      public void registerLocation(final TransactionRegionLocation location) throws IOException {
         byte [] lv_hostname = location.getHostname().getBytes();
         int lv_port = location.getPort();
         long lv_startcode = location.getServerName().getStartcode();
@@ -257,26 +260,32 @@ public class TransactionState {
         location.getRegionInfo().write(lv_dos);
         lv_dos.flush(); */
         byte [] lv_byte_region_info = location.getRegionInfo().toByteArray();
-        if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation: [" + location.getRegionInfo().getRegionNameAsString() + 
-          "], transaction [" + transactionId + "]");
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation: [" + location.getRegionInfo().getEncodedName() +
+          "], endKey: " + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " transaction [" + transactionId + "]");
 
         if (islocalTransaction()) {
           if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation local transaction not sending registerRegion.");
         }
         else {
-          if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation global transaction registering region.");
+          if (LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation global transaction registering region for ts: " + transactionId + " and startId: " + startId);
           registerRegion(transactionId, startId, lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
         }
       }
 
     public boolean addRegion(final TransactionRegionLocation trRegion) {
+        if (LOG.isTraceEnabled()) LOG.trace("addRegion ENTRY with trRegion [" + trRegion.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
 
-// Save hregion for now
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + trRegion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
-                    + transactionId + "]");
+            if (LOG.isTraceEnabled()) LOG.trace("Added new trRegion to participatingRegions [" + trRegion.getRegionInfo().getRegionNameAsString() + "], endKey: "
+                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
+
+        }
+        else {
+            if (LOG.isTraceEnabled()) LOG.trace("trRegion already present in participatinRegions [" + trRegion.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
         }
 
         return added;
@@ -284,13 +293,15 @@ public class TransactionState {
 
     public boolean addRegion(final HRegionLocation hregion) {
 
-        TransactionRegionLocation trRegion   = new TransactionRegionLocation(hregion.getRegionInfo(), 
+        if (LOG.isTraceEnabled()) LOG.trace("Creating new TransactionRegionLocation from HRegionLocation [" + hregion.getRegionInfo().getRegionNameAsString() +
+                              " endKey: " + Hex.encodeHexString(hregion.getRegionInfo().getEndKey()) + " for transaction [" + transactionId + "]");
+        TransactionRegionLocation trRegion = new TransactionRegionLocation(hregion.getRegionInfo(),
                                                                              hregion.getServerName());
 // Save hregion for now
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + trRegion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
+            if (LOG.isTraceEnabled()) LOG.trace("Added new HRegion to participatingRegions [" + trRegion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
                     + transactionId + "]");
         }
         else {
