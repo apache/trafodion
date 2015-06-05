@@ -4516,9 +4516,23 @@ RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
           maxDoP = resourceDoP;
        }
       else {
-        maxDoP = dDoP;
-        if (resourceDoP > dDoP)
-          while ( (maxDoP < resourceDoP) && (maxDoP * 2 <= numCPUs) ) maxDoP *= 2;
+
+        // Adjust the resourceDoP so that it is either equal to or a factor 
+        // of numCPUs. 
+
+        if (resourceDoP < dDoP) 
+           maxDoP = 1;
+        else if (resourceDoP > numCPUs) 
+          maxDoP = numCPUs;
+        else
+          for ( maxDoP=resourceDoP; maxDoP<=numCPUs; maxDoP++ ) {
+             if ( numCPUs % maxDoP == 0 )
+                break;
+          }
+
+        //maxDoP = dDoP;
+        //if (resourceDoP > dDoP)
+        //  while ( (maxDoP < resourceDoP) && (maxDoP * 2 <= numCPUs) ) maxDoP *= 2;
       }
   
       // Adjust max degree of parallelism to make sure that no plan will have
