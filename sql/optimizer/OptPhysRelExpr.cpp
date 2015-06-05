@@ -14898,6 +14898,17 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
              if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
                 minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
              }
+
+           }
+
+           if ( getDefaultAsLong(AFFINITY_VALUE) != -2 && ixDescPartFunc ) {
+              Int32 numOfUniqueNodes = 
+                  ixDescPartFunc->getNodeMap()->getNumberOfUniqueNodes();
+
+              // #ESPs performing reading from HBase tables is capped at by 
+              // the # of unique nodes or region servers.
+              if ( numOfUniqueNodes > 0 )
+                 minESPs = MINOF(minESPs, numOfUniqueNodes);
            }
         }
         else  {

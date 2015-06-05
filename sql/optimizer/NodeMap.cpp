@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2840,6 +2840,37 @@ NodeMap::resetCachedValues()
   numEstActivePartitionsAtRuntime_   = -1;
   numOfDP2Volumes_       = -1;
   numOfActiveDP2Volumes_ = -1;
+}
+
+Int32 NodeMap::getNumberOfUniqueNodes() const
+{
+
+  int maxNodeNum = 0;
+  for (Int32 i=0; i<getNumEntries(); i++ ) {
+     Int32 nodeNum = getNodeMapEntry(i)->getNodeNumber();
+     if (nodeNum != ANY_NODE) {
+        if ( maxNodeNum < nodeNum )
+           maxNodeNum = nodeNum;
+     }
+  }
+        
+  NAArray<Int32> na(maxNodeNum+1); // 0-based
+
+  for (Int32 i=0; i<maxNodeNum+1; i++ ) 
+     na.insertAt(i, 0);
+
+  for (Int32 i=0; i<getNumEntries(); i++ ) {
+     Int32 nodeNum = getNodeMapEntry(i)->getNodeNumber();
+
+     if (nodeNum != ANY_NODE)
+        na.insertAt(nodeNum, 1);
+  }
+
+  Int32 count = 0;
+  for (Int32 i=0; i<maxNodeNum+1; i++ ) 
+     count += na.at(i);
+
+  return count;
 }
 
 void
