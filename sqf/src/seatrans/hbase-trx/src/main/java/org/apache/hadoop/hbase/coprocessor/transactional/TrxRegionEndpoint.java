@@ -631,7 +631,7 @@ CoprocessorService, Coprocessor {
       try {
         commit(transactionId, request.getIgnoreUnknownTransactionException());
       } catch (Throwable e) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Caught exception after internal commit call "
+        LOG.error("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Caught exception after internal commit call "
                      + e.getMessage() + " " + stackTraceToString(e));
         t = e;
       }
@@ -695,7 +695,7 @@ CoprocessorService, Coprocessor {
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitMultiple ends");
              //commit(transactionId, request.getIgnoreUnknownTransactionException());
          } catch (Throwable e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitMultiple - txId " + transactionId + ", Caught exception after internal commit call "
+              LOG.error("TrxRegionEndpoint coprocessor: commitMultiple - txId " + transactionId + ", Caught exception after internal commit call "
                      + e.getMessage() + " " + stackTraceToString(e));
               t = e;
          }
@@ -1034,7 +1034,7 @@ CoprocessorService, Coprocessor {
                request.getValue().toByteArray(),
                delete);
            } catch (Throwable e) {
-             if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: checkAndDelete - txId " + transactionId + ", Caught exception after internal checkAndDelete call - "+ e.getMessage() + " " + stackTraceToString(e));
+             LOG.warn("TrxRegionEndpoint coprocessor: checkAndDelete - txId " + transactionId + ", Caught exception after internal checkAndDelete call - "+ e.getMessage() + " " + stackTraceToString(e));
              t = e;
            }
          }
@@ -1167,7 +1167,7 @@ CoprocessorService, Coprocessor {
                request.getValue().toByteArray(),
                put);
            } catch (Throwable e) {
-             if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: checkAndPut - txId " + transactionId + ", Caught exception after internal checkAndPut call - "
+             LOG.warn("TrxRegionEndpoint coprocessor: checkAndPut - txId " + transactionId + ", Caught exception after internal checkAndPut call - "
                           + e.getMessage() + " " + stackTraceToString(e));
              t = e;
            }
@@ -3321,7 +3321,7 @@ CoprocessorService, Coprocessor {
     long transactionId = state.getTransactionId();
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit - txId " + transactionId + ", region " + m_Region.getRegionInfo().getRegionNameAsString() + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
-     
+
     if (state.isReinstated() && !this.configuredConflictReinstate) {
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit Trafodion Recovery: commit reinstated indoubt transactions " + transactionId + 
                               " in region " + m_Region.getRegionInfo().getRegionNameAsString());
@@ -3373,7 +3373,7 @@ CoprocessorService, Coprocessor {
     else { // either non-reinstated transaction, or reinstate transaction with conflict reinstate TRUE (write from TS write ordering)
       // Perform write operations timestamped to right now
       // maybe we can turn off WAL here for HLOG since THLOG has contained required edits in phase 1
-        
+
       ListIterator<WriteAction> writeOrderIter = null;
       for (writeOrderIter = state.getWriteOrderingIter();
              writeOrderIter.hasNext();) {
@@ -4195,13 +4195,15 @@ CoprocessorService, Coprocessor {
       LOG.fatal("TrxRegionEndpoint coprocessor: Asked to commit unknown transaction: " + transactionId
                 + " in region "
                 + m_Region.getRegionInfo().getRegionNameAsString());
-      throw new IOException("UnknownTransactionException");
+      throw new IOException("UnknownTransactionException, transId: " + transactionId);
     }
 
     if (!state.getStatus().equals(Status.COMMIT_PENDING)) {
-      LOG.fatal("TrxRegionEndpoint coprocessor: commit - Asked to commit a non pending transaction ");
+      LOG.fatal("TrxRegionEndpoint coprocessor: commit - Asked to commit a non pending transaction, transid: " + transactionId +
+                                " state: " + state.getStatus());
 
-      throw new IOException("Asked to commit a non-pending transaction");
+      throw new IOException("Asked to commit a non-pending transaction, transid: " + transactionId +
+                                " state: " + state.getStatus());
     }
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit(txId) -- EXIT txId: " + transactionId);
 
@@ -4645,7 +4647,7 @@ CoprocessorService, Coprocessor {
          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK");
          return true;
        } catch (Throwable e) {
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
+         LOG.error("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
                     + e.getMessage() + " " + stackTraceToString(e));
         throw new IOException(e.toString());
        }

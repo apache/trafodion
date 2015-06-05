@@ -28,6 +28,8 @@ import java.util.Map;
 import java.io.InterruptedIOException;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
+import org.apache.commons.codec.binary.Hex;
+
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -154,8 +156,10 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
 
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
       if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
-      if (transactionState.addRegion(location))
-         if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.recordServer added region to TS. Beginning txn " + transactionState + " on server");
+      if (transactionState.addRegion(location)){
+          if (LOG.isTraceEnabled()) LOG.trace("addLocation added region [" + location.getRegionInfo().getRegionNameAsString() + " endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " to TS. Beginning txn " + transactionState.getTransactionId() + " on server");
+      }
       if (LOG.isTraceEnabled()) LOG.trace("addLocation EXIT");
     }
 

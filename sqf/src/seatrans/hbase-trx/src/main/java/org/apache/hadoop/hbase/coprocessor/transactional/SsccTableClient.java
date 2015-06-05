@@ -68,6 +68,7 @@ public class SsccTableClient {
   static long startId = 0L;
   static long commitId = 0L;
   static long scannerId = 0L;
+  static long nextCallSeq = 0L;
   static int returnStatus = 0;
   static boolean checkResult = false;
   static boolean hasMore = false;
@@ -1704,7 +1705,7 @@ public class SsccTableClient {
         builder.setScannerId(scannerId);
         builder.setNumberOfRows(3);
         builder.setCloseScanner(false);
-        builder.setNextCallSeq(0);
+        builder.setNextCallSeq(nextCallSeq);
 
         instance.performScan(controller, builder.build(), rpcCallback);
         return rpcCallback.get();
@@ -1735,6 +1736,8 @@ public class SsccTableClient {
       }
       else
       {
+        System.out.println("testSsccPerformScanResponse setting nextCallSeq to " + presponse.getNextCallSeq());
+        nextCallSeq = presponse.getNextCallSeq();
         count = presponse.getResultCount();
         results = new org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result[count];
         System.out.println("  testSsccPerformScan response count " + count + " rows ");
@@ -1790,6 +1793,7 @@ public class SsccTableClient {
 
       for (SsccOpenScannerResponse oresponse : result.values())
       {
+        System.out.println("  testSsccOpenScannerResponse: " + oresponse );
         scannerId = oresponse.getScannerId();
         String exception = oresponse.getException();
         boolean hasException = oresponse.getHasException();
@@ -2037,6 +2041,7 @@ public class SsccTableClient {
 
       System.out.println("testSsccOpenScanner open a new scanner");
       testSsccOpenScanner();
+      nextCallSeq = 0L;
       System.out.println("TestSsccPerformScan get rows 1 through 3");
       testSsccPerformScan();  // Get the first three
       System.out.println("TestSsccPerformScan get rows 4 through 6");
@@ -2147,6 +2152,7 @@ public class SsccTableClient {
 
       System.out.println("testSsccOpenScanner open a new scanner");
       testSsccOpenScanner();
+      nextCallSeq = 0L;
       System.out.println("TestSsccPerformScan get rows 1 through 3");
       testSsccPerformScan();  // Get the first three
       System.out.println("TestSsccPerformScan get rows 4 through 6");

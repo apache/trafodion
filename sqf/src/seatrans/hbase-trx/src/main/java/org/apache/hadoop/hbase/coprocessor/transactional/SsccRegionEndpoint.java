@@ -1233,12 +1233,12 @@ CoprocessorService, Coprocessor {
 
         if (scanner != null)
         {
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + scannerId+ ", scanner is not null");
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + scannerId + ", scanner is not null");
           boolean firstCell=true;
 
           while (shouldContinue) {
             hasMore = scanner.next(cellResults);
-            if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan hasMore is: " + hasMore);
+            if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan hasMore is: " + hasMore + " cellResults: " + cellResults);
             firstCell=true;
             Result verResult = null;
             Result statusResult = null;
@@ -1248,6 +1248,7 @@ CoprocessorService, Coprocessor {
             ListIterator<Cell> cellIter = null;
             for (cellIter = cellResults.listIterator(); cellIter.hasNext();) {
                Cell c = cellIter.next();
+               if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan Cell is: " + c);
                if(firstCell == true){
                     if(CellUtil.cloneFamily(c) != DtmConst.TRANSACTION_META_FAMILY){
                     //get the statusList
@@ -1303,7 +1304,8 @@ CoprocessorService, Coprocessor {
 
             if (count == numberOfRows || !hasMore)
               shouldContinue = false;
-            if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty() + ", row " + result.getRow());
+            if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + scannerId + ", count is " + count + ", hasMore is " + hasMore +
+                      ", result.isEmpty: " + result.isEmpty() + ", row " + result.getRow() + ", shouldContinue: " + shouldContinue);
           }
         }
         else

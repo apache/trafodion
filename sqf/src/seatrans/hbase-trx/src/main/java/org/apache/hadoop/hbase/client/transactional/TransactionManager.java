@@ -34,6 +34,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 
+import org.apache.commons.codec.binary.Hex;
+
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -222,8 +224,7 @@ public class TransactionManager {
         }
         startKey = location.getRegionInfo().getStartKey();
         endKey_orig = location.getRegionInfo().getEndKey();
-    endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
-
+        endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
     }
 
     /**
@@ -304,8 +305,7 @@ public class TransactionManager {
              }
           }
           catch (UnknownTransactionException ute) {
-              LOG.error("exception in doCommitX for transaction: " + transactionId + " " + ute);
-              LOG.info("Got unknown exception during commit. Transaction: [" + transactionId + "]");
+              LOG.error("Got unknown exception in doCommitX for transaction: " + transactionId + " " + ute);
               transactionState.requestPendingCountDec(true);
               throw new UnknownTransactionException();
           }
@@ -321,6 +321,8 @@ public class TransactionManager {
              String          lv_node = lv_hrl.getHostname();
              int             lv_length = lv_node.indexOf('.');
 
+             if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + " endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
              if(retryCount == RETRY_ATTEMPTS) {
                 LOG.error("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId);
                 // We have received our reply in the form of an exception,
@@ -421,8 +423,7 @@ public class TransactionManager {
              }
           }
           catch (UnknownTransactionException ute) {
-              LOG.error("exception in doCommitX for transaction: " + transactionId + " " + ute);
-              LOG.info("Got unknown exception during commit. Transaction: [" + transactionId + "]");
+              LOG.error("Got unknown exception in doCommitX for transaction: " + transactionId + " " + ute);
               transactionState.requestPendingCountDec(true);
               throw new UnknownTransactionException();
           }
@@ -438,6 +439,8 @@ public class TransactionManager {
              String          lv_node = lv_hrl.getHostname();
              int             lv_length = lv_node.indexOf('.');
 
+             if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
              if(retryCount == RETRY_ATTEMPTS) {
                 LOG.error("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId);
                 // We have received our reply in the form of an exception,
@@ -583,6 +586,8 @@ public class TransactionManager {
              String          lv_node = lv_hrl.getHostname();
              int             lv_length = lv_node.indexOf('.');
 
+             if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
              if(retryCount == RETRY_ATTEMPTS){
                 LOG.error("Exceeded retry attempts in doPrepareX: " + retryCount);
                 // We have received our reply in the form of an exception,
@@ -682,6 +687,8 @@ public class TransactionManager {
              String          lv_node = lv_hrl.getHostname();
              int             lv_length = lv_node.indexOf('.');
 
+             if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
              if(retryCount == RETRY_ATTEMPTS){
                 LOG.error("Exceeded retry attempts in doPrepareX: " + retryCount);
                 // We have received our reply in the form of an exception,
@@ -839,6 +846,8 @@ public class TransactionManager {
                  String          lv_node = lv_hrl.getHostname();
                  int             lv_length = lv_node.indexOf('.');
 
+                 if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
                  if(retryCount == RETRY_ATTEMPTS){
                     LOG.error("Exceeded retry attempts in doAbortX: " + retryCount + " (ingoring)");
                  }
@@ -934,6 +943,8 @@ public class TransactionManager {
                  String          lv_node = lv_hrl.getHostname();
                  int             lv_length = lv_node.indexOf('.');
 
+                 if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
                  if(retryCount == RETRY_ATTEMPTS){
                     LOG.error("Exceeded retry attempts in doAbortX: " + retryCount + " (ingoring)");
                  }
@@ -1015,9 +1026,8 @@ public class TransactionManager {
            }
         }
         catch (UnknownTransactionException ute) {
-            String errMsg = "exception in doCommitX for transaction: " + transactionId + " " + ute;
+            String errMsg = "Got unknown exception in doCommitX for transaction: " + transactionId + " " + ute;
             LOG.error(errMsg);
-            LOG.info("Got unknown exception during commit. Transaction: [" + transactionId + "]");
             transactionState.requestPendingCountDec(true);
             throw new UnknownTransactionException(errMsg);
         }
@@ -1033,6 +1043,8 @@ public class TransactionManager {
            String          lv_node = lv_hrl.getHostname();
            int             lv_length = lv_node.indexOf('.');
 
+           if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                   + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
            if(retryCount == RETRY_ATTEMPTS) {
               LOG.error("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId);
               transactionState.requestPendingCountDec(true);
@@ -1112,6 +1124,8 @@ public class TransactionManager {
          String          lv_node = lv_hrl.getHostname();
          int             lv_length = lv_node.indexOf('.');
 
+         if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                  + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
          if(retryCount == RETRY_ATTEMPTS){
             LOG.error("Exceeded retry attempts in doPrepareX: " + retryCount);
             // We have received our reply in the form of an exception,
@@ -1240,6 +1254,8 @@ public class TransactionManager {
             String          lv_node = lv_hrl.getHostname();
             int             lv_length = lv_node.indexOf('.');
 
+            if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
             if(retryCount == RETRY_ATTEMPTS){
                LOG.error("Exceeded retry attempts in doAbortX: " + retryCount + " (ingoring)");
             }
@@ -1856,7 +1872,8 @@ public class TransactionManager {
 
         if (LOG.isTraceEnabled()) LOG.trace("sending commits for ts: " + transactionState);
         try {
-
+           int participants = transactionState.participatingRegions.size() - transactionState.regionsToIgnore.size();
+           if (LOG.isTraceEnabled()) LOG.trace("Committing [" + transactionState.getTransactionId() + "] with " + participants + " participants" );
            // (Asynchronously send commit
            for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
               if (LOG.isTraceEnabled()) LOG.trace("sending commits ... [" + transactionState.getTransactionId() + "]");
@@ -2417,7 +2434,12 @@ public class TransactionManager {
     public void registerRegion(final TransactionState transactionState, TransactionRegionLocation location)throws IOException{
         if (LOG.isTraceEnabled()) LOG.trace("registerRegion ENTRY, transactioState:" + transactionState);
         if(transactionState.addRegion(location)){
-           if (LOG.isTraceEnabled()) LOG.trace("registerRegion -- adding region: " + location.getRegionInfo().getRegionNameAsString());
+           if (LOG.isTraceEnabled()) LOG.trace("registerRegion -- added region: " + location.getRegionInfo().getRegionNameAsString() + " with endKey: "
+                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " to tx " + transactionState.getTransactionId());
+        }
+        else {
+           if (LOG.isTraceEnabled()) LOG.trace("registerRegion -- region previously added: " + location.getRegionInfo().getRegionNameAsString() + " with endKey: "
+                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()));
         }
         if (LOG.isTraceEnabled()) LOG.trace("registerRegion EXIT");
     }
