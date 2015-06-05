@@ -4438,6 +4438,10 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
       for (Lng32 i = 0; i < naFsList.entries(); i++)
         {
           naFS = naFsList[i];
+          
+          // skip clustering index
+          if (naFS->getKeytag() == 0)
+            continue;
 
           const NAColumnArray &naIndexColArr = naFS->getAllColumns();
           if (naIndexColArr.getColumn(colName))
@@ -4524,6 +4528,40 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
           
           goto label_return;
         }
+
+      // keys for indexes refer to base table column number.
+      // modify it so they now refer to new column numbers.
+      if (naTable->hasSecondaryIndexes())
+        {
+          const NAFileSetList &naFsList = naTable->getIndexList();
+          
+          for (Lng32 i = 0; i < naFsList.entries(); i++)
+            {
+              naFS = naFsList[i];
+              
+              // skip clustering index
+              if (naFS->getKeytag() == 0)
+                continue;
+              
+              const QualifiedName &indexName = naFS->getFileSetName();
+
+              str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1  where column_number >=  %d and object_uid = (select object_uid from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = 'IX') ",
+                          getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
+                          colNumber,
+                          getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                          indexName.getCatalogName().data(),
+                          indexName.getSchemaName().data(),
+                          indexName.getObjectName().data());
+              cliRC = cliInterface.executeImmediate(buf);
+              if (cliRC < 0)
+                {
+                  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                  
+                  goto label_return;
+                }
+
+            } // for
+        } // secondary indexes present
       
       // remove column from all rows of the base table
       HbaseStr hbaseTable;

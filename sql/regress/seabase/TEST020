@@ -718,3 +718,17 @@ alter table test020t40 drop constraint test020tc2;
 alter table test020t40 drop constraint test020tc1;
 drop table test020t40;
 
+-- test for drop column
+set parserflags 1;
+create table test020t40 (a int not null primary key, b int not null, c int not null);
+create index test020t40i1 on test020t40(c);
+insert into test020t40 values (1,1,1), (2,2,2);
+select * from test020t40;
+select * from table(index_table test020t40i1);
+alter table test020t40 drop column b;
+select * from test020t40;
+insert into test020t40 values (3,3,3);
+insert into test020t40 values (3,3);
+select * from test020t40;
+select * from table(index_table test020t40i1);
+
