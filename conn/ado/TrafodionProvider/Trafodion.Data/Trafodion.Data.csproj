@@ -1,0 +1,198 @@
+﻿<!--
+
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+-->
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Data</RootNamespace>
+    <AssemblyName>Trafodion.Data</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Trafodion.Data.snk</AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>C:\Build\TrafodionAdo\</OutputPath>
+    <BaseIntermediateOutputPath>C:\Build\TrafodionAdo\temp\</BaseIntermediateOutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\Release\Trafodion.Data.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Internal\ConnectionPool.cs" />
+    <Compile Include="Internal\TrafodionEncoder.cs" />
+    <Compile Include="Internal\TrafodionResources.cs" />
+    <Compile Include="Internal\TrafodionSecurity.cs" />
+    <Compile Include="Network\General\CLZF.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Public\DisplayVersion.cs" />
+    <Compile Include="Public\ProductVersion.cs" />
+    <Compile Include="Public\TrafodionCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Public\TrafodionCommandBuilder.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Public\TrafodionConnection.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Public\TrafodionConnectionStringBuilder.cs" />
+    <Compile Include="Public\TrafodionDataAdapter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Public\TrafodionDbType.cs" />
+    <Compile Include="Public\TrafodionEvents.cs" />
+    <Compile Include="Public\TrafodionParameterCollection.cs" />
+    <Compile Include="Public\TrafodionFactory.cs" />
+    <Compile Include="Internal\TrafodionTrace.cs" />
+    <Compile Include="Public\TrafodionParameter.cs" />
+    <Compile Include="Public\TrafodionDataReader.cs" />
+    <Compile Include="Public\TrafodionTransaction.cs" />
+    <Compile Include="Public\TrafodionErrors.cs" />
+    <Compile Include="Internal\TrafodionMessage.cs" />
+    <Compile Include="Public\TrafodionException.cs" />
+    <Compile Include="Internal\TrafodionMetaData.cs" />
+    <Compile Include="Internal\TrafodionUtility.cs" />
+    <Compile Include="Network\General\DataStream.cs" />
+    <Compile Include="Internal\TrafodionEnums.cs" />
+    <Compile Include="Network\Messages\CancelMessage.cs" />
+    <Compile Include="Network\Messages\CancelReply.cs" />
+    <Compile Include="Network\Messages\CloseMessage.cs" />
+    <Compile Include="Network\Messages\CloseReply.cs" />
+    <Compile Include="Network\Messages\EndTransactionMessage.cs" />
+    <Compile Include="Network\Messages\EndTransactionReply.cs" />
+    <Compile Include="Network\Messages\ExecuteMessage.cs" />
+    <Compile Include="Network\Messages\ExecuteReply.cs" />
+    <Compile Include="Network\Messages\FetchMessage.cs" />
+    <Compile Include="Network\Messages\FetchReply.cs" />
+    <Compile Include="Network\Messages\GetObjRefMessage.cs" />
+    <Compile Include="Network\Messages\GetObjRefReply.cs" />
+    <Compile Include="Network\General\NetworkInterfaces.cs" />
+    <Compile Include="Network\Messages\MetaDataMessage.cs" />
+    <Compile Include="Network\Messages\MetaDataReply.cs" />
+    <Compile Include="Network\Messages\PrepareMessage.cs" />
+    <Compile Include="Network\Messages\PrepareReply.cs" />
+    <Compile Include="Network\Messages\SetConnectionOptMessage.cs" />
+    <Compile Include="Network\Messages\SetConnectionOptReply.cs" />
+    <Compile Include="Network\Messages\TermDialogueMessage.cs" />
+    <Compile Include="Network\Messages\TermDialogueReply.cs" />
+    <Compile Include="Network\Structures\Descriptor.cs" />
+    <Compile Include="Network\Structures\ErrorDesc.cs" />
+    <Compile Include="Network\Structures\Header.cs" />
+    <Compile Include="Network\General\TrafodionNetwork.cs" />
+    <Compile Include="Network\Messages\InitDialogueMessage.cs" />
+    <Compile Include="Network\Messages\InitDialogueReply.cs" />
+    <Compile Include="Network\Structures\SqlWarningOrError.cs" />
+    <Compile Include="Network\Structures\ConnectionContext.cs" />
+    <Compile Include="Network\Structures\OutConnectionContext.cs" />
+    <Compile Include="Network\Structures\UserDescription.cs" />
+    <Compile Include="Network\Structures\Version.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Messages.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Messages.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Trafodion.Data.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Metadata.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\PackageIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\PLK.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

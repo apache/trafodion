@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickTest", "QuickTest\QuickTest.csproj", "{5254EFE2-D591-479A-8698-EAFCDCFED48E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Data", "Trafodion.Data\Trafodion.Data.csproj", "{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Data.Installation", "Trafodion.Data.Installation\Trafodion.Data.Installation.csproj", "{6BB4BEFC-5B77-4753-9888-13A6B32531D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Data.VisualStudio", "Trafodion.Data.VisualStudio\Trafodion.Data.VisualStudio.csproj", "{0BF65755-E115-4B55-905F-EE9AC1097353}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Deploy", "Deploy\Deploy.vdproj", "{A21649CB-0669-41D2-8E22-C98E1C34A3EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Data.Tests", "Trafodion.Data.Tests\Trafodion.Data.Tests.csproj", "{0A5A6A5C-6976-43EF-95DA-D6CEE93968A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Data.ETL", "Trafodion.Data.ETL\Trafodion.Data.ETL.csproj", "{D01A6BE8-6E10-484B-A1EC-93EA0D3174CC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{728F73D6-5290-4420-9CD6-3261170B874F}"
+	ProjectSection(SolutionItems) = preProject
+		Local.testsettings = Local.testsettings
+		TrafodionProvider.vsmdi = TrafodionProvider.vsmdi
+		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = TrafodionProvider.vsmdi
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5254EFE2-D591-479A-8698-EAFCDCFED48E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5254EFE2-D591-479A-8698-EAFCDCFED48E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5254EFE2-D591-479A-8698-EAFCDCFED48E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5254EFE2-D591-479A-8698-EAFCDCFED48E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51D6429C-E66A-4EC0-8502-DEAA1C667F1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BB4BEFC-5B77-4753-9888-13A6B32531D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BB4BEFC-5B77-4753-9888-13A6B32531D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BB4BEFC-5B77-4753-9888-13A6B32531D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BB4BEFC-5B77-4753-9888-13A6B32531D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BF65755-E115-4B55-905F-EE9AC1097353}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BF65755-E115-4B55-905F-EE9AC1097353}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BF65755-E115-4B55-905F-EE9AC1097353}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BF65755-E115-4B55-905F-EE9AC1097353}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A21649CB-0669-41D2-8E22-C98E1C34A3EC}.Debug|Any CPU.ActiveCfg = Debug
+		{A21649CB-0669-41D2-8E22-C98E1C34A3EC}.Debug|Any CPU.Build.0 = Debug
+		{A21649CB-0669-41D2-8E22-C98E1C34A3EC}.Release|Any CPU.ActiveCfg = Release
+		{A21649CB-0669-41D2-8E22-C98E1C34A3EC}.Release|Any CPU.Build.0 = Release
+		{0A5A6A5C-6976-43EF-95DA-D6CEE93968A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A5A6A5C-6976-43EF-95DA-D6CEE93968A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A5A6A5C-6976-43EF-95DA-D6CEE93968A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A5A6A5C-6976-43EF-95DA-D6CEE93968A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D01A6BE8-6E10-484B-A1EC-93EA0D3174CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D01A6BE8-6E10-484B-A1EC-93EA0D3174CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D01A6BE8-6E10-484B-A1EC-93EA0D3174CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D01A6BE8-6E10-484B-A1EC-93EA0D3174CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

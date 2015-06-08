@@ -1,0 +1,92 @@
+﻿<!--
+
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+-->
+<?xml version="1.0" encoding="utf-8"?>
+<VSDataViewSupport xmlns="http://tempuri.org/VSDataViewSupport.xsd">
+  <DataViews>
+    <DataView name="Trafodion-ADO">
+      <DisplayName>Traodion-ADO</DisplayName>
+      <StaticConnectionNode>
+        <InitialDisplayName>{Root.Server}</InitialDisplayName>
+        <Children>
+          <StaticNode nid="Catalogs">
+            <DisplayName>Catalogs</DisplayName>
+            <Children>
+              <Selection type="Catalog">
+                <SelectionNode nid="Catalog">
+                  <Icon name="Table"/>
+                  <Children>
+                    <StaticNode nid="Schemas">
+                      <DisplayName>Schemas</DisplayName>
+                      <Children>
+                        <Selection type="Schema" restrictions="{Catalog.Name}">
+                          <SelectionNode nid="Schema">
+                            <Icon name="Table"/>
+                            <Children>
+                              <StaticNode nid="Tables">
+                                <DisplayName>Tables</DisplayName>
+                                <Children>
+                                  <Selection type="Table" restrictions="{Schema.Catalog},{Schema.Name}">
+                                    <SelectionNode nid="Table">
+                                      <Icon name="Table"/>
+                                      <Children>
+                                        <Selection type="Column" restrictions="{Table.Catalog},{Table.Schema},{Table.Name}">
+                                          <SelectionNode>
+                                            <Icon name="Column"/>
+                                          </SelectionNode>
+                                        </Selection>
+                                      </Children>
+                                    </SelectionNode>
+                                  </Selection>
+                                </Children>
+                              </StaticNode>
+                              <StaticNode nid="Views">
+                                <DisplayName>Views</DisplayName>
+                                <Children>
+                                  <Selection type="View" restrictions="{Schema.Catalog},{Schema.Name}">
+                                    <SelectionNode nid="View">
+                                      <Icon name="Table"/>
+                                      <Children>
+                                        <Selection type="ViewColumn" restrictions="{View.Catalog},{View.Schema},{View.Name}">
+                                          <SelectionNode>
+                                            <Icon name="Column"/>
+                                          </SelectionNode>
+                                        </Selection>
+                                      </Children>
+                                    </SelectionNode>
+                                  </Selection>
+                                </Children>
+                              </StaticNode>
+                            </Children>
+                          </SelectionNode>
+                        </Selection>
+                      </Children>
+                    </StaticNode>
+                  </Children>
+                </SelectionNode>
+              </Selection>
+            </Children>
+          </StaticNode>
+        </Children>
+      </StaticConnectionNode>
+    </DataView>
+  </DataViews> 
+  <Resources baseName="Trafodion.Data.VisualStudio.Properties.Resources" />
+</VSDataViewSupport>
