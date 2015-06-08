@@ -203,7 +203,7 @@ private:
   short initializeInfoList(Queue* &infoList, NABoolean infoListIsOutputInfo);
 
   short fetchAllRows(Queue * &infoList,
-		     char * query,
+		     const char * query,
 		     Lng32 numOutputEntries = 0,
 		     NABoolean varcharFormat = FALSE,
 		     NABoolean monitorThis = FALSE,

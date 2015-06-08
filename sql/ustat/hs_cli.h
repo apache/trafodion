@@ -639,8 +639,8 @@ class HSinsertHist
                   const Int64 v2 = 0,
                   const Int64 v3 = 0,
                   const Int64 v4 = 0,
-                  const HSDataBuffer &v5 = HSDataBuffer(),
-                  const HSDataBuffer &v6 = HSDataBuffer()
+                  const HSDataBuffer &v5 = HSDataBuffer(L"empty"),
+                  const HSDataBuffer &v6 = HSDataBuffer(L"empty")
                   );
       Lng32 flush();                       //writes all data rows into table
       void print();
@@ -726,8 +726,8 @@ class HSinsertHistint
                   const Int64 interval_MFV2_rowcount = 0,
                   const Int64 v3 = 0,
                   const Int64 v4 = 0,
-                  const HSDataBuffer &mostFreqVal = HSDataBuffer(),
-                  const HSDataBuffer &v6 = HSDataBuffer()
+                  const HSDataBuffer &mostFreqVal = HSDataBuffer(L"empty"),
+                  const HSDataBuffer &v6 = HSDataBuffer(L"empty")
                   );
       Lng32 flush();                           //writes all data rows into table
       void print();

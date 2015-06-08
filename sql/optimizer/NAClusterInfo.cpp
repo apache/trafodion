@@ -80,6 +80,7 @@
 
 #include "seabed/ms.h"
 #include <cstdlib>
+#include <sys/stat.h>
 
 ULng32 dp2DescHashFunc(const DP2name& name);
 
@@ -95,8 +96,6 @@ NABoolean IsStaticCompiler()
   return gIsStaticCompiler;
 } 
 // LCOV_EXCL_STOP
-
-NABoolean fileExists(const char *filename, NABoolean & isDir);
 
 //------------------------------------------------------------------------
 // Global pointer to cluster information is initially null and remains so
@@ -118,8 +117,7 @@ THREAD_P NAClusterInfo* gpClusterInfo = NULL;
 //  none
 //
 //==============================================================================
-void
-setUpClusterInfo(CollHeap* heap)
+void setUpClusterInfo(CollHeap* heap)
 {
   #ifndef NDEBUG
   // LCOV_EXCL_START
@@ -128,40 +126,35 @@ setUpClusterInfo(CollHeap* heap)
   // LCOV_EXCL_STOP
   #endif
 
-  //-------------------------------------------
-  // Return now if cluster info already set up.
-  //-------------------------------------------
-  if (gpClusterInfo)
-    return;
 
   //-------------------------------------------------------
   // Set up cluster information based on hardware platform.
   //-------------------------------------------------------
-  if (OSIM_runningSimulation())
+  if (OSIM_runningSimulation() && !OSIM_SysParamsInitialized())
   {
     switch (CURRCONTEXT_OPTSIMULATOR->getCaptureSysType())
     {
-    case OptimizerSimulator::OSIM_LINUX:
-      gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
-      break;
-    case OptimizerSimulator::OSIM_WINNT:
-      // Until OSIM captures are implemented on NT, the
-      // creation of NAClusterInfoNT objects on other
-      // platforms is not possible.
-      CMPASSERT(0);
-      break;
-    case OptimizerSimulator::OSIM_NSK:
-      gpClusterInfo = new (heap) NAClusterInfoNSK (heap);
-      break;
-    case OptimizerSimulator::OSIM_UNKNOWN_SYSTYPE:
-    default:
-      CMPASSERT(0); // Case not handled
-      break;
+        case OptimizerSimulator::OSIM_LINUX:
+            if(gpClusterInfo) NADELETEBASIC(gpClusterInfo, heap);
+            gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
+            break;
+        default:
+            CMPASSERT(0); // Case not handled
+            break;
     }
+  } 
+  else if(OSIM_runningInCaptureMode() && !OSIM_SysParamsInitialized())
+  {
+      if(gpClusterInfo) NADELETEBASIC(gpClusterInfo, heap);
+      gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
   }
   else
   {
-    gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
+    //-------------------------------------------
+    // Return now if cluster info already set up.
+    //-------------------------------------------
+    if (!gpClusterInfo)
+        gpClusterInfo = new (heap) NAClusterInfoLinux (heap);
   }
 }
 //<pb>
@@ -288,13 +281,15 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
 {
   OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
 
-  if(!CURRCONTEXT_OPTSIMULATOR->isCallDisabled(9))
+  if(CURRCONTEXT_OPTSIMULATOR && 
+     !CURRCONTEXT_OPTSIMULATOR->isCallDisabled(9))
     mode = CURRCONTEXT_OPTSIMULATOR->getOsimMode();
 
   // Check for OSIM mode
   switch (mode)
   {
     case OptimizerSimulator::OFF:
+    case OptimizerSimulator::LOAD:
     case OptimizerSimulator::CAPTURE:
     {
       dp2NameToInfoMap_ = new(heap) NAHashDictionary<DP2name,DP2info>
@@ -308,15 +303,6 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       smpCount_ = -1;
 
       NADefaults::getNodeAndClusterNumbers(localSMP_ , localCluster_);
-
-
-#if 0 // pre SQF SQF_0_6_1_02Mar10, get info about physical nodes 
-      MS_Mon_Node_Info_Type nodeInfo;
-      memset(&nodeInfo, 0, sizeof(nodeInfo));
-
-      Int32 error = msg_mon_get_node_info_all(&nodeInfo);
-      CMPASSERT(error == 0);
-#endif
 
       Int32 nodeCount = 0;
       Int32 nodeMax = 0;
@@ -465,7 +451,7 @@ NAClusterInfo::~NAClusterInfo()
 // This method writes the information related to the NAClusterInfo class to a
 // logfile called "NAClusterInfo.txt".
 //============================================================================
-void NAClusterInfo::captureNAClusterInfo()
+void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
 {
   CollIndex i, ci;
   char filepath[OSIM_PATHMAX];
@@ -478,12 +464,6 @@ void NAClusterInfo::captureNAClusterInfo()
   // * tableToClusterMap_;
   // * activeClusters_;
   //
-
-  // Construct an absolute pathname for output file.
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  ofstream naclfile(filepath);
 
   naclfile << "localCluster_: " << localCluster_ << endl
            << "localSMP_: " << localSMP_ << endl;
@@ -542,10 +522,9 @@ void NAClusterInfo::captureNAClusterInfo()
     }
   }
   naclfile << "discsOnCluster_: " << discsOnCluster_  << endl;
-  naclfile.close();
 
   // Now save the OS-specific information to the NAClusterInfo.txt file
-  captureOSInfo();
+  captureOSInfo(naclfile);
 }
 
 //============================================================================
@@ -557,8 +536,8 @@ void NAClusterInfo::simulateNAClusterInfo()
 {
   Int32 i, ci;
   char var[256];
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
+
+  const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
 
   // initialize stuff that is not read from the log file
   // this info is calculated during query compilation  
@@ -568,23 +547,15 @@ void NAClusterInfo::simulateNAClusterInfo()
   activeClusters_= NULL;
   smpCount_ = -1;
 
-  // Construct an absolute pathname for input file.
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  NABoolean isDir;
-
-  if(!fileExists(filepath,isDir))
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
-    // LCOV_EXCL_START
-    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.", filepath);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-    // LCOV_EXCL_STOP
-  }
-
   ifstream naclfile(filepath);
 
+  if(!naclfile.good())
+  {
+    char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
+    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.", filepath);
+    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
+  }
+  
   while(naclfile.good())
   {
     // Read the variable name from the file.
@@ -870,150 +841,9 @@ NAClusterInfo::createActiveClusterList()
   activeClusters_ = new(CmpCommon::statementHeap()) 
     NAList<CollIndex>(CmpCommon::statementHeap());
 
-  if(OSIM_isNSKbehavior())
-  {
-  NADefaults & defs = ActiveSchemaDB()->getDefaults();
-  NAString allocationChoice;
-  defs.getValue(REMOTE_ESP_ALLOCATION,allocationChoice);
-  NAString::caseCompare cmp = NAString::ignoreCase;
-  
-  // Look up clusters with table identifiers in tableToClusterMap_
-
-  const NATableDB *tableDB = ActiveSchemaDB()->getNATableDB();
-  // get a list of table identifiers allocated on statement heap.
-  const LIST(CollIndex) & tableIdList = 
-    tableDB->getStmtTableIdList(CmpCommon::statementHeap());
-
-    CollIndex i = 0;
-// LCOV_EXCL_START
-  if(allocationChoice.compareTo("ON")==0)
-  {
-    //selects all the target clusters as active. 
-    //checks for duplication
-      for(i = 0; i < tableIdList.entries(); i++)
-    {
-      CollIndex tableIdent = tableIdList[i];
-      maps *clusterList = tableToClusterMap_->getFirstValue(&tableIdent);
-      CMPASSERT(clusterList);
-      for(CollIndex j = 0; j < clusterList->list->entries(); j++)
-      {
-	if(  NOT activeClusters_->contains( (*(clusterList->list))[j] )  )
-	{
-	  activeClusters_->insert( (*(clusterList->list))[j] );
-	}
-      }
-
-    }
-  }
-// LCOV_EXCL_STOP
-  else if(allocationChoice.compareTo("SYSTEM")==0)
-  {
-    //Only one table in the query every target cluster is active
-    if(tableIdList.entries() == 1) 
-    {
-      CollIndex tableIdent = tableIdList[0];
-      maps *clusterList = tableToClusterMap_->getFirstValue(&tableIdent);
-      activeClusters_->insert(*(clusterList->list));
-    }
-    else
-    {
-      //Psuedo code 
-      //iterate through every table's clusterlist
-      //{ 
-      //  insert the cluster into a list and maintain a corresponding 
-      //  counter for the list .
-      // ex. list 1  list2 
-      //      
-      //      156     1
-      //      188     2
-      //      192     1
-      //   This means cluster 188 appeared twice among the tables whereas other
-      //  appeared only once
-      //}
-      // iterate through every table's clusterlist
-      // {
-      //   if a cluster from a table has counter of 2 or more then we know that 
-      //   the cluster is common among two tables. In this case add all the clusters 
-      //   from the table under consideration. and so on. 
-      // }
-      //
-      
-      
-      NAList<CollIndex> * targetClusters = new (CmpCommon::statementHeap())
-                                NAList<CollIndex> (CmpCommon::statementHeap());
-
-      NAList<CollIndex> * clusterCount = new (CmpCommon::statementHeap())
-                                NAList<CollIndex> (CmpCommon::statementHeap());
-
-        for(i = 0; i < tableIdList.entries(); i++)
-      {
-	CollIndex tableIdent = tableIdList[i];
-	maps *clusterList = tableToClusterMap_->getFirstValue(&tableIdent);
-	CMPASSERT(clusterList);
-	for(CollIndex j = 0; j < clusterList->list->entries(); j++)
-        {
-          Int32 index = targetClusters->index((*(clusterList->list))[j]);
-          if(index != NULL_COLL_INDEX)
-          {
-            (*clusterCount)[index]++;
-          }
-          else
-          {
-            targetClusters->insertAt(targetClusters->entries(),
-				     (*(clusterList->list))[j]);
-            clusterCount->insertAt(clusterCount->entries(),1);
-          }
-        }
-      }
-      
-      for(CollIndex i = 0; i < tableIdList.entries(); i++)
-      {
-	CollIndex tableIdent = tableIdList[i];
-	maps *clusterList = tableToClusterMap_->getFirstValue(&tableIdent);
-	CMPASSERT(clusterList);
-	NABoolean includeClusterListForThisTable = FALSE;
-	for(CollIndex j = 0; j < clusterList->list->entries(); j++)
-        {
-	  Int32 index = targetClusters->index( (*(clusterList->list))[j] );
-	  CMPASSERT(index != NULL_COLL_INDEX);
-          if( (*clusterCount)[index] >1 )
-	  {
-	    includeClusterListForThisTable = TRUE;
-            break;
-	  }
-        }
-        
-	if(includeClusterListForThisTable) 
-	{
-	  for(CollIndex j = 0; j < clusterList->list->entries(); j++)
-	    {
-	      if( NOT activeClusters_->contains( (*(clusterList->list))[j] ) )
-	      {
-		activeClusters_->insert( (*(clusterList->list))[j] );
-	      }
-	    }
-	}
-      } // for
-      
-    } // else
-  } // else if
-
-// LCOV_EXCL_START
-  //No active cluster was found so local cluster is active
-  if( NOT activeClusters_->entries() ) 
-  {
-    // This needs to be done because for some statements we will
-    // come over here although there is no tables in the query
-    // It also covers the REMOTE_ESP_PARALLELISM is 'OFF' case
-    activeClusters_->insert(localCluster_);
-  }
-// LCOV_EXCL_STOP
-  }
-  else{
-    // Linux and NT behavior
-    activeClusters_->insert(localCluster_);
-  }
-  
+  // Linux and NT behavior
+  activeClusters_->insert(localCluster_);
+ 
 }
 #pragma warn(262)  // warning elimination
 #pragma warn(1506)  // warning elimination 
@@ -1106,49 +936,7 @@ NAClusterInfo::numOfSMPs()
 void 
 NAClusterInfo::getProcessorStatus(maps* &outcpuList,short clusterNum)
 {
-  if( OSIM_isNSKbehavior() )
-  {
-    maps * cpuList = new(heap_) maps(heap_);
-    CollIndex *ptrClusterNum = new(heap_) CollIndex(clusterNum);
-
-    Lng32 status = OSIM_REMOTEPROCESSORSTATUS(clusterNum);
-
-    // We fill out smpStatus, which tells us which SMPs are alive at
-    // compilation time.
-    //--------------------------------------------------------------
-    Lng32 numSMPs = MAX_NUM_SMPS_NSK;
-
-    Lng32 numActiveSMPs = 0;
-    
-    Int32 i = 0;
-    for (i = 0; i < numSMPs; i++)
-    {
-      if(status & (0x8000 >> i))
-        numActiveSMPs = i + 1;
-    }
-
-    numSMPs = 1;
-    while(numActiveSMPs > numSMPs)
-      numSMPs = numSMPs << 1;
-
-    for (i = 0; i < numSMPs; i++)
-    {
-      //if(status & (0x8000 >> i))
-      //  cpuList->list->insert(CollIndex(i)); 
-      //
-      // Create plans that assume all CPUs are available, 
-      // even when one is down.
-      //
-      cpuList->list->insert(CollIndex(i));
-    }
-  
-    CollIndex *cluster=clusterToCPUMap_->insert(ptrClusterNum,cpuList);
-    outcpuList = new(HEAP) maps(HEAP);
-    *(outcpuList->list)  = *(cpuList->list);
-  }
-  else {
-    CMPASSERT(0);
-  }
+  CMPASSERT(0);
 }
 
 
@@ -1370,61 +1158,14 @@ NAClusterInfo::whichSMPANDCLUSTER(const char * dp2Name,Int32& cluster, Int32& pr
   DP2info *dp2info = NULL;
   DP2name *check = NULL;
 
-  if( !OSIM_isNSKbehavior() )
-  {
-    // The behavior of NT and Linux could execute this code
-    cluster = 0;
-    primary=-1;
-    secondary=-1;
-    dp2info = new(heap_) DP2info(cluster,primary,-1);
-    check =dp2NameToInfoMap_->insert(ptrDp2Name,dp2info);
+  // The behavior of NT and Linux could execute this code
+  cluster = 0;
+  primary=-1;
+  secondary=-1;
+  dp2info = new(heap_) DP2info(cluster,primary,-1);
+  check =dp2NameToInfoMap_->insert(ptrDp2Name,dp2info);
 
-    if(!check) return FALSE;
-  }
-  else
-  {
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
-    short processhandle[32];
-#else
-    short processhandle[10];
-#endif // NA_LINUX
-    short pin,cpu;
-    short error;
-
-    error = OSIM_FILENAME_TO_PROCESSHANDLE_((char *)dp2Name,
-                        (short)strlen(dp2Name),processhandle);
-
-    if(!error) {
-      error = OSIM_PROCESSHANDLE_DECOMPOSE_(processhandle, &cpu, &pin, &cluster);
-    }
-
-    // LCOV_EXCL_START
-    if(IsRemoteNodeDown(error)){
-      // Use the local cluster and cpu and generate warning
-      cluster = localCluster_;
-      cpu = 0;
-      char buffer[256];
-      const char *nodeName = GetNodeName(dp2Name, buffer, sizeof(buffer));
-
-      // Dont issue the warning for phantom objects that were created by OSIM.
-      if ((CmpCommon::getDefault(CREATE_OBJECTS_IN_METADATA_ONLY) == DF_OFF) &&
-           !OSIM_runningSimulation())
-      *CmpCommon::diags() << DgSqlCode(arkcmpRemoteNodeDownWarning)
-	<< DgString0(nodeName) << DgInt0(error);
-    }
-    else if(error) {
-      *CmpCommon::diags() << DgSqlCode(arkcmpFileSystemError) 
-			  << DgInt0(error);
-      return FALSE;
-    }
-    // LCOV_EXCL_STOP
-
-    primary = cpu; 
-    dp2info = new(heap_) DP2info(cluster,primary,-1);
-    check =dp2NameToInfoMap_->insert(ptrDp2Name,dp2info);
-
-    if(!check) return FALSE;
-  }
+  if(!check) return FALSE;
 
   return insertIntoTableToClusterMap(tableIdent,cluster);
 } // NAClusterInfo::whichSMP()
@@ -1516,7 +1257,7 @@ void NAClusterInfo::initializeForOSIMCapture()
   short actualNodeNameLen = 0;
   Int32 guardianRC;
 
-  guardianRC = OSIM_NODENUMBER_TO_NODENAME_(-1,
+  guardianRC = OSIM_NODENUMBER_TO_NODENAME(-1,
                                             localNodeName,
                                             9-1, // leave room for NUL
                                             &actualNodeNameLen);
@@ -1577,271 +1318,13 @@ void NAClusterInfo::initializeForOSIMCapture()
   }
 }
 
-//<pb>
-//******************************************************************************
-// Platform specific cluster information.
-//******************************************************************************
-
-NAClusterInfoNSK::NAClusterInfoNSK(CollHeap * heap) : NAClusterInfo(heap),
-  pageSize_(4096UL)
-{
-  OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
-
-  if(!CURRCONTEXT_OPTSIMULATOR->isCallDisabled(9))
-    mode = CURRCONTEXT_OPTSIMULATOR->getOsimMode();
-
-  // Check for OSIM mode
-  switch (mode)
-  {
-    // LCOV_EXCL_START
-    case OptimizerSimulator::OFF:
-    case OptimizerSimulator::CAPTURE:
-      frequency_            = findFrequency();
-      iorate_               = findIORate();
-      pageSize_             = findPageSize();
-      totalMemoryAvailable_ = findTotalMemoryAvailable();
-      // For CAPTURE mode, the data will be captured later in CmpMain::compile()
-      break;
-    // LCOV_EXCL_STOP
-    case OptimizerSimulator::SIMULATE:
-      // Simulate the NAClusterInfo.
-      simulateNAClusterInfoNSK();
-      break;
-    // LCOV_EXCL_START
-    default:
-      // The OSIM must run under OFF (normal), CAPTURE or SIMULATE mode.
-      OSIM_errorMessage("Invalid OSIM mode - It must be OFF or CAPTURE or SIMULATE.");
-      break;
-    // LCOV_EXCL_STOP
-  }
-}
-
-// LCOV_EXCL_START
-NAClusterInfoNSK::~NAClusterInfoNSK()
-{
-}
-// LCOV_EXCL_STOP
-//============================================================================
-// This method writes the information related to the NAClusterInfoNSK class
-// to a logfile called "NAClusterInfo.txt".
-//============================================================================
-
-// LCOV_EXCL_START
-void NAClusterInfoNSK::captureOSInfo() const
-{
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
-
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  ofstream naclnskfile(filepath, ios::app);
-
-  naclnskfile << "frequency_: " << frequency_ << endl
-              << "iorate_: " << iorate_ << endl
-              << "seekTime_: "<< seekTime_ << endl
-              << "pageSize_: " << pageSize_ << endl
-              << "totalMemoryAvailable_: " << totalMemoryAvailable_ << endl;
-  naclnskfile.close();
-}
-// LCOV_EXCL_STOP
-
-
-//============================================================================
-// This method reads the information specific to NAClusterInfoNSK class from
-// a logfile called "NAClusterInfo.txt" and then populates the variables
-// accordigly.
-//============================================================================
-void NAClusterInfoNSK::simulateNAClusterInfoNSK()
-{
-  char var[256];
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
-
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  NABoolean isDir;
-
-  if(!fileExists(filepath,isDir))
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
-// LCOV_EXCL_START
-    snprintf(errMsg,sizeof(errMsg), "Unable to open %s file for reading data.", filepath);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-// LCOV_EXCL_STOP
-  }
-
-  ifstream naclnskfile(filepath);
-
-  while(naclnskfile.good())
-  {
-    // Read the variable name from the file
-    naclnskfile.getline(var, sizeof(var), ':');
-    if(!strcmp(var, "frequency_"))
-    {
-      naclnskfile >> frequency_; naclnskfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "iorate_"))
-    {
-      naclnskfile >> iorate_; naclnskfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "seekTime_"))
-    {
-      naclnskfile >> seekTime_; naclnskfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "pageSize_"))
-    {
-      naclnskfile >> pageSize_; naclnskfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "totalMemoryAvailable_"))
-    {
-      naclnskfile >> totalMemoryAvailable_; naclnskfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else
-    {
-      // This variable either may have been read in simulateNAClusterInfo()
-      // method of NAClusterInfo class or is not the one that we want to
-      // read here in this method. So discard it.
-      naclnskfile.ignore(OSIM_LINEMAX, '\n');
-      while (naclnskfile.peek() == ' ')
-      {
-        // The main variables are listed at the beginning of a line
-        // with additional information indented. If one or more spaces
-        // are seen at the beginning of the line upon the entry to this
-        // while loop, it is because of that additional information.
-        // So, ignore this line since the variable is being ignored.
-        naclnskfile.ignore(OSIM_LINEMAX, '\n');
-      }
-    }
-  }
-}
-
-// LCOV_EXCL_START
-Int32 NAClusterInfoNSK::findFrequency()
-{
-  // should not come here on other platforms
-  CMPASSERT(FALSE);
-  return 0;
-
-}
-
-float NAClusterInfoNSK::findIORate()
-{
-  // should not come here on other platforms
-  CMPASSERT(FALSE);
-  return 0;
-}
-// LCOV_EXCL_STOP
-
-
-//---------------------------------------------------------------------
-// Returns the procesor frequency, in Megahertz, of this SMP
-//---------------------------------------------------------------------
-Int32 NAClusterInfoNSK::processorFrequency() const
-{
-  return frequency_;
-}
-
-//---------------------------------------------------------------------
-// Returns the io transfer rate, in Megabytes/seconds of $SYSTEM.
-//---------------------------------------------------------------------
-float NAClusterInfoNSK::ioTransferRate() const
-{
-  return iorate_;
-}
-
-//---------------------------------------------------------------------
-// Returns the average seek time of a disk device in milli seconds. 
-//---------------------------------------------------------------------
-float NAClusterInfoNSK::seekTime() const
-{
-  return seekTime_;
-}
-
-//--------------------------------------------------------------------
-// Returns the procesor architecture in the current SMP
-//--------------------------------------------------------------------
-Int32 NAClusterInfoNSK::cpuArchitecture() const
-{
-  return CPU_ARCH_MIPS;
-}
-
-//---------------------------------------------------------------------
-// Tells how many CPU's there are in the SMP
-//---------------------------------------------------------------------
-size_t NAClusterInfoNSK::numberOfCpusPerSMP() const
-{
-   return 1;
-}
-
-//---------------------------------------------------------------------
-// Find the page size of the current SMP.
-//---------------------------------------------------------------------
-// LCOV_EXCL_START
-size_t NAClusterInfoNSK::findPageSize()
-{
-  // should not come here on other platforms
-  CMPASSERT(FALSE);
-  return 0;
-}
-// LCOV_EXCL_STOP
-
-//---------------------------------------------------------------------
-// Returns the page size of the current SMP
-//---------------------------------------------------------------------
-size_t NAClusterInfoNSK::pageSize() const
-{
-   return pageSize_;
-}
-
-//---------------------------------------------------------------------
-// Tells how much physical memory is available to our application
-//---------------------------------------------------------------------
-size_t NAClusterInfoNSK::physicalMemoryAvailable() const
-{
-   // Assumes the amount of physical memory is the same as that of total memory.
-   return totalMemoryAvailable();
-}
-
-//---------------------------------------------------------------------
-// Find out how much total memory exists on our machine.
-//---------------------------------------------------------------------
-// LCOV_EXCL_START
-size_t NAClusterInfoNSK::findTotalMemoryAvailable()
-{
-  // should not come here on other platforms
-  CMPASSERT(FALSE);
-  return 0;
-
-}
-// LCOV_EXCL_STOP
-
-//---------------------------------------------------------------------
-// Tells how much physical memory exists on our machine
-//---------------------------------------------------------------------
-size_t NAClusterInfoNSK::totalMemoryAvailable() const
-{
-   return totalMemoryAvailable_;
-}
-
-
-//---------------------------------------------------------------------
-// Tells how much virtual memory is available to our application
-//---------------------------------------------------------------------
-size_t NAClusterInfoNSK::virtualMemoryAvailable()
-{
-  return 128000000/1024;
-}
-
-
-
 NAClusterInfoLinux::NAClusterInfoLinux(CollHeap * heap) : NAClusterInfo(heap)
 , numTSEs_(0), tseInfo_(NULL), nid_(0), pid_(0)
 {
   OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
 
-  if(!CURRCONTEXT_OPTSIMULATOR->isCallDisabled(9))
+  if(CURRCONTEXT_OPTSIMULATOR && 
+     !CURRCONTEXT_OPTSIMULATOR->isCallDisabled(9))
     mode = CURRCONTEXT_OPTSIMULATOR->getOsimMode();
 
   // Check for OSIM mode
@@ -1849,6 +1332,7 @@ NAClusterInfoLinux::NAClusterInfoLinux(CollHeap * heap) : NAClusterInfo(heap)
   {
     case OptimizerSimulator::OFF:
     case OptimizerSimulator::CAPTURE:
+    case OptimizerSimulator::LOAD:
       determineLinuxSysInfo();
 
       // For CAPTURE mode, the data will be captured later in CmpMain::compile()
@@ -1977,15 +1461,8 @@ void NAClusterInfoLinux::determineLinuxSysInfo()
 // This method writes the information related to the NAClusterInfoLinux class
 // to a logfile called "NAClusterInfo.txt".
 //============================================================================
-void NAClusterInfoLinux::captureOSInfo() const
+void NAClusterInfoLinux::captureOSInfo(ofstream & nacllinuxfile) const
 {
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
-
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  ofstream nacllinuxfile(filepath, ios::app);
 
   nacllinuxfile << "frequency_: " << frequency_ << endl
                 << "iorate_: " << iorate_ << endl
@@ -1993,21 +1470,17 @@ void NAClusterInfoLinux::captureOSInfo() const
                 << "pageSize_: " << pageSize_ << endl
                 << "totalMemoryAvailable_: " << totalMemoryAvailable_ << endl
                 << "numCPUcoresPerNode_: " << numCPUcoresPerNode_ << endl;
-  nacllinuxfile.close();
 }
 
 void NAClusterInfoLinux::simulateNAClusterInfoLinux()
 {
   char var[256];
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
+  
+  const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
 
-  strcpy(filepath, CURRCONTEXT_OPTSIMULATOR->getOsimLogdir());
-  strcpy(filename, "/NAClusterInfo.txt");
-  strcat(filepath, filename);
-  NABoolean isDir;
+  ifstream nacllinuxfile(filepath);
 
-  if(!fileExists(filepath,isDir))
+  if(!nacllinuxfile.good())
   {
     char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
    // LCOV_EXCL_START
@@ -2015,8 +1488,6 @@ void NAClusterInfoLinux::simulateNAClusterInfoLinux()
     OsimLogException(errMsg, __FILE__, __LINE__).throwException();
    // LCOV_EXCL_STOP
   }
-
-  ifstream nacllinuxfile(filepath);
 
   while(nacllinuxfile.good())
   {

@@ -141,18 +141,6 @@ NodeMapEntry::NodeMapEntry(char* fullName, char* givenName, CollHeap* heap,
 	  length = 6;   // KSKSKS
 	  strcpy(name, "\\NOSER.$SYSTEM");  // KSKSKS
   }  // KSKSKS
-  
-  else  // KSKSKS 
-  {
-    error = OSIM_FILENAME_DECOMPOSE_(fullName,
-                              strlen(fullName),
-                              name,
-                              nameBufferSize,
-                              &length,
-                              0,
-                              2);
-     CMPASSERT(error == 0);
-  }
 
   //------------------------------------------
   // Put trailing null at end of cluster name.
@@ -428,7 +416,7 @@ NodeMapEntry::getText() const
   Int32 guardianRetcode;
   char buffer[50];
 
-  guardianRetcode = OSIM_NODENUMBER_TO_NODENAME_(getClusterNumber(),
+  guardianRetcode = OSIM_NODENUMBER_TO_NODENAME(getClusterNumber(),
                                             buffer,
                                             9-1, // leave room for NUL
                                             &actualClusterNameLen);
@@ -929,253 +917,6 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
           }
         }
       }
-    }
-  }
-  else {
-// LCOV_EXCL_START
-    if(OSIM_isNSKbehavior())
-    {
-      // consumers <= producers
-      // notion of grouping applies. co-locating consumers with producers
-      // can reduce producer-to-consumer messaging costs. do it the old
-      // expensive complicated grouping way.
-
-      //---------------------------------------------------------------------------
-      //  Keep track of which logical groups have been assigned nodes and also keep
-      // track of where those groups start (within the physical node map) and the
-      // size of those groups.
-      //---------------------------------------------------------------------------
-      NABoolean* assignedGroups = new HEAP NABoolean[logicalNumEntries];
-      NABoolean* assignedCluster= new HEAP NABoolean[logicalNumEntries];
-      CollIndexPointer groupStart;
-      CollIndexPointer groupSize;
-      deriveGrouping(logicalNumEntries,
-                     groupStart,
-                     groupSize);
-
-      //---------------------------------------------------------------------------
-      //  Initially mark each group as unassigned and determine whether or not each
-      // group is active.Also keep track of groups that has found best cluster.
-      //---------------------------------------------------------------------------
-      CollIndex lMapIdx = 0;
-      for (; lMapIdx < logicalNumEntries; lMapIdx++)
-      {
-
-        //------------------------------------------
-        //  Initially mark each group as unassigned.
-        //  None of the groups have cluster assigned
-        //------------------------------------------
-        assignedGroups[lMapIdx] = FALSE;
-        assignedCluster[lMapIdx]= FALSE;
-
-        //-------------------------------------------------------------------
-        //  If any physical partition within the logical group is active, the
-        // group itself is considered active.
-        //-------------------------------------------------------------------
-        for (CollIndex pMapIdx = groupStart[lMapIdx];
-             pMapIdx < groupStart[lMapIdx] + groupSize[lMapIdx];
-             pMapIdx++)
-        {
-          if (isActive(pMapIdx))
-          {
-            logicalMap
-              ->setPartitionState(lMapIdx,
-                                  NodeMapEntry::ACTIVE);
-            break;
-          }
-        }
-      }
-  
-      //Cannot assign more ESPs to a CPU then allowed. The way we can
-      //accomplish that is by creating a duplicate cpuList--> cpuCount
-      //but have multiple entries of each CPU depending on the maximum
-      //ESP allowed per CPU. Then remove a entry as it gets assigned. 
-      //In this way if a particular CPU is not available we know it has
-      //maximum ESPs already assigned.
- 
-      const CollIndex entries = clusterList->entries();
-      CollIndex *availNodesPerCluster = new HEAP CollIndex[entries];
-      NAArray<NAList<CollIndex>*> * cpuCount = new HEAP NAArray<NAList<CollIndex>*> (HEAP,cpuList->entries());
-      CollIndex i;
-      for( i=0;i<cpuList->entries();i++)
-      {
-        NAList<CollIndex> * ptrCpuForCluster = new(HEAP) NAList<CollIndex>(*((*cpuList)[i]),HEAP);
-        cpuCount->insertAt(i,ptrCpuForCluster);
-      }
-
-      CollIndex numESPsPerNode = defs.getNumOfESPsPerNode();
-
-      //easy way of keeping track if a cluster is available
-      for( i=0;i<clusterList->entries();i++)
-      {
-        availNodesPerCluster[i]= ((*cpuList)[i])->entries() * numESPsPerNode;
-      }
-
-      //Need to keep count of CPUs available
-      for(CollIndex j=0;j<cpuList->entries();j++)
-      {
-        for(CollIndex k=0;k<(*cpuList)[j]->entries();k++)
-        {
-          for(CollIndex m=0;m<(numESPsPerNode)-1;m++)
-          {
-            (*cpuCount)[j]->insertAt((*cpuCount)[j]->entries(),(*((*cpuList)[j]))[k]);
-          }
-        }
-      }
-
-      //psuedo code
-      //iterate through the logical nodemap group
-      //{
-      //  for each group that has not been assigned yet again iterate through the logical nodemap groups
-      //  {
-      //    for each group iterate through each cluster it has available CPUs
-      //    {
-      //      for each cluster compute the number of references in the group by iterating
-      //      through each physical nodemapentry         
-      //    }
-      //    select the best cluster for the group
-      //  }
-      //    compare the best clusters for the all the groups and assign the 
-      //    group with its cluster and CPU which has the best count
-      //}
-
-
-
-      for(CollIndex clusterAssigned =0; clusterAssigned<logicalNumEntries;
-          clusterAssigned++)
-      {
-    
-    
-        Lng32 bestInAGroup = -1;
-        Lng32 maxPartInAGroup =-1;
-        CollIndex clustNum;
-        CollIndex bestNode;
-        CollIndex allGroups;
-        CollIndex bestGroup = 0;
-
-        for(allGroups =0; allGroups < logicalNumEntries; allGroups++)
-        {
-      
-          if(NOT assignedCluster[allGroups])
-          {
-        
-            for(clustNum =0;clustNum  < clusterList->entries();clustNum++)
-            {
-              Lng32 count =0;
-              CollIndex *nodeCount = new HEAP CollIndex[(*cpuList)[clustNum]->entries()];
-
-              for(CollIndex m=0;m<(*cpuList)[clustNum]->entries();m++)
-              {
-                nodeCount[m]=0;
-              }
-              if(availNodesPerCluster[clustNum])
-              {
-                for(CollIndex pmap=groupStart[allGroups]; pmap<groupStart[allGroups]+groupSize[allGroups];
-                     pmap++)
-                {
-                  Lng32 clusterNumber = getClusterNumber(pmap);
-                  Lng32 nodeNumber    = getNodeNumber(pmap);
-                  if(isActive(pmap) &&
-                     clusterNumber >= 0 &&
-                     clusterNumber <= 255 &&
-                     (CollIndex)clusterNumber == (*clusterList)[clustNum])
-                  {
-                    //this count is for this cluster, for this group
-                    count++;
-
-                    if((*cpuCount)[clustNum]->contains(nodeNumber))
-                    {
-                      nodeCount[(*cpuList)[clustNum]->index(nodeNumber)]++;
-                    }
-                
-                  }
-              
-                }
-
-                //is this cluster better than other clusters for this group
-                if(count > maxPartInAGroup)
-                {
-                  bestInAGroup = (Lng32)(*clusterList)[clustNum];
-                  maxPartInAGroup = count;
-                  bestGroup = allGroups;
-                  CollIndex tempCount = NULL_COLL_INDEX;
-                  //assign the CPUs from the end by default. 0,1 are always busy
-                  for(Lng32 index = (Lng32)((*cpuList)[clustNum]->entries()-1);index>=0;index--)
-                  {
-                    if((*cpuCount)[clustNum]->contains((*(*cpuList)[clustNum])[index]))
-                    {
-                      tempCount=nodeCount[index];
-                      bestNode= (*(*cpuList)[clustNum])[index];
-                      break;
-                    }              
-                  }
-                  //find the best CPU in the cluster
-                  for(Lng32 n=(Lng32)((*cpuList)[clustNum]->entries()-2); n>=0; n--)
-                  {
-                    if(nodeCount[n]>tempCount)
-                    {
-                      bestNode  = (*(*cpuList)[clustNum])[n];
-                      tempCount = nodeCount[n];
-                    }
-                  }
-                }
-              }
-              
-              NADELETEBASIC(nodeCount,HEAP);
-            }
-            if(bestInAGroup == -1) break;
-          }  
-        }
-        //does this cluster assignment better than other cluster assignments
-        //we want to find the best match for a group to the best cluster
-       
-        if(bestInAGroup == -1)
-        {
-          for(CollIndex extraGroup = 0;extraGroup < logicalNumEntries; extraGroup++)
-          {
-            if(NOT assignedCluster[extraGroup])
-            {
-              logicalMap->setNodeNumber(bestGroup, -1);
-              logicalMap->setClusterNumber(bestGroup,-1);
-            }
-          }
-          break;
-        }
-        else 
-        {
-          availNodesPerCluster[clusterList->find(bestInAGroup)]-=1;
-          (*cpuCount)[clusterList->find(bestInAGroup)]->remove(bestNode);
-          logicalMap->setNodeNumber(bestGroup, (Lng32)bestNode);
-          logicalMap->setClusterNumber(bestGroup,bestInAGroup);
-          assignedCluster[bestGroup]=TRUE;
-        }
-       
-      }
-  
-  
-      //---------------------------------------
-      //  Deallocate storage allocated earlier.
-      //---------------------------------------
-  
-      NADELETEBASIC(assignedGroups,HEAP);
-      NADELETEBASIC(assignedCluster,HEAP);
-      NADELETEBASIC(groupStart,HEAP);
-      NADELETEBASIC(groupSize,HEAP);
-      NADELETEBASIC(availNodesPerCluster,HEAP);
-      for(CollIndex m=0;m<cpuList->entries();m++)
-      {
-        delete (*cpuList)[m];
-        delete (*cpuCount)[m];
-      }
-    }
-// LCOV_EXCL_STOP
-    else{
-      // Linux porting (BGZ451):  
-      // this is a piece of old code for allocating node map entries, with 
-      // properly poor performance. We no longer use the code in the ELSE 
-      // branch any mode. As a result, we CMPASSERT here on a Linux/nt platform.
-      //
-      // CMPASSERT(0);
     }
   }
   //--------------------------------------
@@ -2149,7 +1890,7 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
       short actualClusterNameLen = 0;
       char *clusterName;
 
-      guardianRetcode = OSIM_NODENUMBER_TO_NODENAME_(ne->getClusterNumber(),
+      guardianRetcode = OSIM_NODENUMBER_TO_NODENAME(ne->getClusterNumber(),
 						clusterNameTemp,
 						9-1, // leave room for NUL
 						&actualClusterNameLen);

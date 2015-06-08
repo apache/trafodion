@@ -16553,3 +16553,30 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
   
 }// ControlRunningQuery::isUserAuthorized()
 
+RelExpr * OSIMControl::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+  //Create OptimizerSimulator if this is called first time.
+  if(!CURRCONTEXT_OPTSIMULATOR)
+      CURRCONTEXT_OPTSIMULATOR = new(CTXTHEAP) OptimizerSimulator(CTXTHEAP);
+      
+  //in respond to force option of osim load, 
+  //e.g. osim load from '/xxx/xxx/osim-dir', force
+  //if true, when loading osim tables/views/indexes
+  //existing objects with same qualified name 
+  //will be droped first
+  CURRCONTEXT_OPTSIMULATOR->setForceLoad(isForceLoad());
+  //Set OSIM mode
+  if(!CURRCONTEXT_OPTSIMULATOR->setOsimModeAndLogDir(targetMode_, osimLocalDir_.data()))
+  {
+      bindWA->setErrStatus();
+      return this;
+  }
+
+  return ControlAbstractClass::bindNode(bindWA);
+}
+

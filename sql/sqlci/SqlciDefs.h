@@ -54,7 +54,8 @@ enum dml_type
   // $$$$ SPJ RS THROWAWAY
   DML_CALL_STMT_TYPE, // $$$$ Might not even need this one
   DML_CALL_STMT_RS_TYPE,
-  DML_UNLOAD_TYPE
+  DML_UNLOAD_TYPE,
+  DML_OSIM_TYPE
 };
 
   #ifdef ERROR

@@ -46,8 +46,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataOutputStream;
 
-public class HiveClient {
+import java.sql.SQLException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.DriverManager;
 
+
+public class HiveClient {
     static Logger logger = Logger.getLogger(HiveClient.class.getName());
     static String ddlTimeConst = null;
     String lastError;
@@ -263,5 +269,30 @@ public class HiveClient {
       throw e;
     }
     return true;
+  }
+  
+  public void executeHiveSQL(String ddl) throws ClassNotFoundException, SQLException
+  {
+      try
+      {
+          Class.forName("org.apache.hive.jdbc.HiveDriver");
+      }
+ 
+      catch(ClassNotFoundException e) 
+      {
+          throw e;
+      }
+
+      try 
+      {
+          Connection con = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+          Statement stmt = con.createStatement();
+          stmt.execute(ddl);
+      }
+ 
+      catch(SQLException e)
+      {
+	  throw e;
+      }
   }
 }

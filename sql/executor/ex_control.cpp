@@ -548,7 +548,8 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CALL_EMBEDDED_ARKCMP") != 0) &&
       (strcmp(defaultName, "RECLAIM_FREE_PFS_RATIO") != 0) && 
       (strcmp(defaultName, "EXSM_TRACE_FILE_PREFIX") != 0) &&
-      (strcmp(defaultName, "EXSM_TRACE_LEVEL") != 0)
+      (strcmp(defaultName, "EXSM_TRACE_LEVEL") != 0) &&
+      (strcmp(defaultName, "OSIM") != 0)
       )
     {
       ExHandleErrors(qparent_,
@@ -584,7 +585,8 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CALL_EMBEDDED_ARKCMP") == 0) ||
       (strcmp(defaultName, "STATISTICS_VIEW_TYPE") == 0) ||
       (strcmp(defaultName, "EXSM_TRACE_LEVEL") == 0) ||
-      (strcmp(defaultName, "EXSM_TRACE_FILE_PREFIX") == 0)
+      (strcmp(defaultName, "EXSM_TRACE_FILE_PREFIX") == 0) ||
+      (strcmp(defaultName, "OSIM") == 0)
       )
     computeDefValAsLong = FALSE;
   if (computeDefValAsLong)

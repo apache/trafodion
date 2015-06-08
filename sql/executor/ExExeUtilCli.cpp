@@ -1179,7 +1179,7 @@ short ExeCliInterface::initializeInfoList(Queue* &infoList,
 }
 
 short ExeCliInterface::fetchAllRows(Queue * &infoList, 
-				    char * query,
+				    const char * query,
 				    Lng32 inNumOutputEntries,
 				    NABoolean varcharFormat,
 				    NABoolean monitorThis,

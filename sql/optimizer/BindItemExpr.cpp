@@ -1972,20 +1972,6 @@ ItemExpr *MonadicUSERFunction::bindNode(BindWA *bindWA)
   bindSelf(bindWA);
   if (bindWA->errStatus()) return this;
 
-  if(OSIM_isNSKbehavior())
-  {
-    // Convert my child to INT, if not already an INT.
-    if (child(0)->castToItemExpr()->getValueId().getType().getTypeName()
-        != LiteralInteger)
-    {
-      ItemExpr * newChild =
-	      new (bindWA->wHeap()) Cast(child(0),
-	           new (bindWA->wHeap())
-	           SQLInt(TRUE));
-      setChild(0, newChild);
-    }
-  }
-
   unBind();
 
   return ItemExpr::bindNode(bindWA);
@@ -11410,35 +11396,25 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_USER:
     case ITM_AUTHNAME:
     case ITM_AUTHTYPE:
-      {
+    {
 	ItemExpr * tempBoundTree =
 	  child(0)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus())
 	  return this;
 
-	if ( OSIM_isNTbehavior() )
-	  {
-	    // don't do this transformation on NT. On NT, the child operand
-	    // of a USER function is in string format and contains the SID value.
-	    buf[0] = 0;
-	    parseTree = child(0);
-	  }
-	else
-	  {
-	    if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
+	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
 		NA_NUMERIC_TYPE)
-	      {
+	{
 		strcpy(buf,
 		       "cast(substring(@A1, 1, position(',' in @A1)-1) as smallint) * 256 + cast(substring(@A1, position(',' in @A1)+1, char_length(@A1) - position(',' in @A1)) as smallint)");
-	      }
-	    else
-	      {
+	}
+	else
+	{
 		buf[0] = 0;
 		parseTree = child(0);
-	      }
-	  }
+	}
 	
-      }
+    }
     break;
 
     case ITM_WEEK:

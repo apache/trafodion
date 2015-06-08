@@ -3568,17 +3568,24 @@ HybridQCache::~HybridQCache()
    delete HQCLogFile_;
 }
 
+void HybridQCache::invalidateLogging()
+{
+    delete HQCLogFile_;
+    HQCLogFile_ = NULL;
+}
 
 void HybridQCache::initLogging()
 {
-   if ( HQCLogFile_ ) {
-     delete HQCLogFile_;
-     HQCLogFile_ = NULL;
-   }
+   NAString logFile = ActiveSchemaDB()->getDefaults().getValue(HQC_LOG_FILE);
+   DefaultToken DF = CmpCommon::getDefault(HQC_LOG);
 
-   if(CmpCommon::getDefault(HQC_LOG) == DF_ON) {
-      NAString logFile = ActiveSchemaDB()->getDefaults().getValue(HQC_LOG_FILE);
-      HQCLogFile_ = new ofstream(logFile, ios::app);
+   if(HQCLogFile_ == NULL &&  DF == DF_ON) {
+       HQCLogFile_ = new ofstream(logFile, std::ofstream::app);
+   }
+   else if(HQCLogFile_ && DF == DF_ON) 
+   {//re-open everytime for logging
+       HQCLogFile_->close();
+       HQCLogFile_->open(logFile, std::ofstream::app);
    }
 }
 

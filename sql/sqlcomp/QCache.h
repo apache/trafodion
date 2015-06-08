@@ -568,7 +568,7 @@ class HQCParams : public NABasicObject
    NAList <hqcDynParam * > DynParamList_;
    NAList <NAString> NPLiterals_;
    NAList <hqcConstant* > * tmpList_;
-   //disable operator=() for this class
+   //disable operator= for this class
    HQCParams & operator=(const HQCParams & other);
    //disable standard copy constructor
    HQCParams (const HQCParams & other);
@@ -781,6 +781,8 @@ public:
   ostream* getHQCLogFile() { return HQCLogFile_; };
 
   void initLogging();
+  
+  void invalidateLogging();
 
   HybridQCache* resizeCache(ULng32 numBuckets);
 
@@ -814,7 +816,7 @@ private:
   HQCHashTbl* hashTbl_;
   ULng32  maxValuesPerKey_;
   HQCParseKey * currentKey_;
-  ostream* HQCLogFile_;
+  ofstream* HQCLogFile_;
   //if the plan is found in cache but AQR disabled, or accessing Hive
   //set true, do not use the plan and  do not lookup cache after bind, 
   //and do not add to cache again
@@ -1890,6 +1892,8 @@ class QueryCache {
 
   ostream* getHQCLogFile(){  hqc_->initLogging(); return hqc_->getHQCLogFile(); }
 
+  void invalidateHQCLogging() { hqc_->invalidateLogging(); }
+  
   NABoolean HQCLookUp(
   	 HQCParseKey      *hkey,  // (IN) : a cachable sql statement
      CacheKey* & ckey)  // (OUT): stmt's template cache data

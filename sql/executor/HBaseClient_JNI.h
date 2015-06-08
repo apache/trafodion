@@ -680,6 +680,7 @@ public:
   HVC_RetCode hdfsCreateFile(const char* path);
   HVC_RetCode hdfsWrite(const char* data, Int64 len);
   HVC_RetCode hdfsClose();
+  HVC_RetCode executeHiveSQL(const char* hiveSQL);
   // Get the error description.
   virtual char* getErrorText(HVC_RetCode errEnum);
   
@@ -709,6 +710,7 @@ private:
    ,JM_HDFS_CREATE_FILE
    ,JM_HDFS_WRITE
    ,JM_HDFS_CLOSE
+   ,JM_EXEC_HIVE_SQL
    ,JM_LAST
   };
   static jclass          javaClass_; 

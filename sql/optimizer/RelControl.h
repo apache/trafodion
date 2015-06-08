@@ -40,6 +40,7 @@
 #include "RelExpr.h"
 #include "StmtCompilationMode.h"
 #include "charinfo.h"
+#include "OptimizerSimulator.h"
 
 class ControlAbstractClass : public RelExpr
 {
@@ -316,6 +317,39 @@ public:
   
 private:
   
+};
+
+class OSIMControl : public ControlAbstractClass
+{
+public:
+
+    OSIMControl(OptimizerSimulator::osimMode mode,
+                                       NAString & localDir,
+                                       NABoolean force,
+                                       CollHeap * oHeap);
+
+	 void setForceLoad(NABoolean b) { forceLoad_ = b;}
+    NABoolean isForceLoad() const { return forceLoad_; }
+     
+    virtual RelExpr * bindNode(BindWA *bindWAPtr);
+    virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL, CollHeap *h = NULL);
+
+private:
+     // copy ctor
+    OSIMControl (const OSIMControl &orig, 
+		                               CollHeap *h=CmpCommon::statementHeap()); // not written, not used
+		                               
+    OptimizerSimulator::osimMode targetMode_;
+
+    NAString osimLocalDir_;
+
+    //in respond to force option of osim load, 
+    //e.g. osim load from '/xxx/xxx/osim-dir', force
+    //if true, when loading osim tables/views/indexes
+    //existing objects with same qualified name 
+    //will be droped first
+    NABoolean forceLoad_;
+
 };
 
 #endif /* REL_CONTROL_H */
