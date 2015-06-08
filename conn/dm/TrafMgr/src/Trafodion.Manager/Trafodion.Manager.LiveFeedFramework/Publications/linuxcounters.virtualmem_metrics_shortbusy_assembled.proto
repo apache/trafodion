@@ -1,0 +1,83 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// High-freq Assembled Message for virtual memory (swap) stats
+//
+//  UNDER CONSTRUCTION
+//
+// Includes swapped in, swapped out, and major and minor page faults
+// These are DELTA counters:  /proc stores cumulative since boot and Provider deltas
+// Repeated groups are in logical node order with holes with 0
+//  values for missing nodes
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and non-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=none
+//!!BLOCK:HEADER=END
+
+message virtualmem_metrics_shortbusy_assembled { 
+
+message aggregate_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Logical Node identifier 
+   required int32 node_id  = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Pages Swapped IN  since last interval
+   optional int32 swap_in   = 2;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Pages Swapped OUT since last interval
+   optional int32 swap_out  = 3;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Minor page fault count since last interval
+   required int32 minor_page_faults = 4;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Major page fault count  since last interval
+   required int32 major_page_faults = 5;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: pages swapped in from last interval report
+   required int64 contextswitches   = 6;
+
+ }
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each node
+ repeated aggregate_buffer aggregate = 2; 
+
+}

@@ -1,0 +1,378 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.OverviewArea</RootNamespace>
+    <AssemblyName>Trafodion.Manager.OverviewArea</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Bin\Debug\Plugins\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.OverviewArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Bin\Release\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.OverviewArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\build\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\..\protobuf-net\protobuf-net_r480\net35\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid, Version=2.50.0.0, Culture=neutral, PublicKeyToken=9d47002745f2416c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ZedGraph, Version=5.0.2.29399, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\build\ZedGraph.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\AMQPEventsFilterPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AMQPEventsFilterPanel.Designer.cs">
+      <DependentUpon>AMQPEventsFilterPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AuditLogFilterPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AuditLogFilterPanel.designer.cs">
+      <DependentUpon>AuditLogFilterPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AuditLoggingConfiguration.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\AuditLoggingConfiguration.designer.cs">
+      <DependentUpon>AuditLoggingConfiguration.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AuditLogUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AuditLogUserControl.designer.cs">
+      <DependentUpon>AuditLogUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConfigAttributeSettingControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConfigAttributeSettingControl.designer.cs">
+      <DependentUpon>ConfigAttributeSettingControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DcsSessionsMonitor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DcsSessionsMonitor.designer.cs">
+      <DependentUpon>DcsSessionsMonitor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DcsConnectionOptionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\DcsConnectionOptionsDialog.Designer.cs">
+      <DependentUpon>DcsConnectionOptionsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\LDAPConnectionConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\LDAPConnectionConfigDialog.Designer.cs">
+      <DependentUpon>LDAPConnectionConfigDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\OSIMDataDownloadUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\OSIMDataDownloadUserControl.Designer.cs">
+      <DependentUpon>OSIMDataDownloadUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\OSIMDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Models\AuditLogsConfigModel.cs" />
+    <Compile Include="Models\AuditLogFilterModel.cs" />
+    <Compile Include="Models\AuditLogsDataHandler.cs" />
+    <Compile Include="Models\AuditLogsDataProvider.cs" />
+    <Compile Include="Models\DcsConnectionOptions.cs" />
+    <Compile Include="Models\LDAPConfigFileHandler.cs" />
+    <Compile Include="Models\LDAPConfigObject.cs" />
+    <Compile Include="Models\LDAPConfigDefaultSection.cs" />
+    <Compile Include="Models\FileHandler.cs" />
+    <Compile Include="Models\LDAPConfigSection.cs" />
+    <Compile Include="Models\DcsSessionsDataProvider.cs" />
+    <Compile Include="Models\Queries.cs" />
+    <Compile Include="Controls\ConnectionFolderFactory.cs" />
+    <Compile Include="Controls\OverviewRightPaneControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\OverviewRightPaneControl.designer.cs">
+      <DependentUpon>OverviewRightPaneControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\OverviewNavigationControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\OverviewNavigationControl.designer.cs">
+      <DependentUpon>OverviewNavigationControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TextEventUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TextEventUserControl.Designer.cs">
+      <DependentUpon>TextEventUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\OverviewTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\OverviewTreeViewUserControl.designer.cs">
+      <DependentUpon>OverviewTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\OverviewTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\OverviewSystemFolder.cs" />
+    <Compile Include="HelpTopics.cs" />
+    <Compile Include="Models\EventFilterModel.cs" />
+    <Compile Include="Models\TarHandler.cs" />
+    <Compile Include="Models\TextEventsDataHandler.cs" />
+    <Compile Include="Models\TextEventsDataProvider.cs" />
+    <Compile Include="Models\TimeRangesHandler.cs" />
+    <Compile Include="OverviewAreaMain.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Controls\SystemsNavigator.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SystemsNavigator.Designer.cs">
+      <DependentUpon>SystemsNavigator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\AMQPEventsFilterPanel.resx">
+      <DependentUpon>AMQPEventsFilterPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AuditLogFilterPanel.resx">
+      <DependentUpon>AuditLogFilterPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AuditLoggingConfiguration.resx">
+      <DependentUpon>AuditLoggingConfiguration.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AuditLogUserControl.resx">
+      <DependentUpon>AuditLogUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConfigAttributeSettingControl.resx">
+      <DependentUpon>ConfigAttributeSettingControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DcsSessionsMonitor.resx">
+      <DependentUpon>DcsSessionsMonitor.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DcsConnectionOptionsDialog.resx">
+      <DependentUpon>DcsConnectionOptionsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LDAPConnectionConfigDialog.resx">
+      <DependentUpon>LDAPConnectionConfigDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\OSIMDataDownloadUserControl.resx">
+      <DependentUpon>OSIMDataDownloadUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\OverviewNavigationControl.resx">
+      <DependentUpon>OverviewNavigationControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\OverviewRightPaneControl.resx">
+      <DependentUpon>OverviewRightPaneControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SystemsNavigator.resx">
+      <DependentUpon>SystemsNavigator.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TextEventUserControl.resx">
+      <DependentUpon>TextEventUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj">
+      <Project>{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}</Project>
+      <Name>Trafodion.Manager.DatabaseArea</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager.WorkloadArea\Trafodion.Manager.WorkloadArea.csproj">
+      <Project>{0d24fcf3-1260-4e46-b0c6-4a449ffadb86}</Project>
+      <Name>Trafodion.Manager.WorkloadArea</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj">
+      <Project>{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}</Project>
+      <Name>Trafodion.Manager.UniversalWidget</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</Project>
+      <Name>Trafodion.Manager</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\configure.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\color_line.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\apply.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\history.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\memory.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cpu.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\wms_command.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\querystates.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\alert_error.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\alert_warning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\alerts_info.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\fileopen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DownArrowIcon.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

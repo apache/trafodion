@@ -1,0 +1,1095 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   --><Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager</RootNamespace>
+    <AssemblyName>Trafodion.Manager</AssemblyName>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\log4net\log4net-1.2.11\bin\net\3.5\release\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid, Version=3.0.0.0, Culture=neutral, PublicKeyToken=9d47002745f2416c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CanvasModel.cs" />
+    <Compile Include="ClientRuleOptions.cs" />
+    <Compile Include="Connections\ConnectionRegistry.cs" />
+    <Compile Include="Connections\Controls\ChangePasswordDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ChangePasswordDialog.Designer.cs">
+      <DependentUpon>ChangePasswordDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\ChangePasswordUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ChangePasswordUserControl.Designer.cs">
+      <DependentUpon>ChangePasswordUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\EditPasswordPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\FixConnectionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\FixConnectionsDialog.designer.cs">
+      <DependentUpon>FixConnectionsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\BackgroundConnectDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\BackgroundConnectDialog.Designer.cs">
+      <DependentUpon>BackgroundConnectDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\NSMConnection.cs" />
+    <Compile Include="Connections\OdbcAccess.cs" />
+    <Compile Include="Connections\SQLWarningHandler.cs" />
+    <Compile Include="ControlChangeTracker.cs" />
+    <Compile Include="Controls\DelayedPopulateTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionCheckGroupBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionFilterSelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionFilterSelection.designer.cs">
+      <DependentUpon>TrafodionFilterSelection.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionHelpButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDisplayMessageUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDisplayMessageUserControl.designer.cs">
+      <DependentUpon>TrafodionDisplayMessageUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridGroupRowCountManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionProgressDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionProgressDialog.Designer.cs">
+      <DependentUpon>TrafodionProgressDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionBannerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionBannerControl.Designer.cs">
+      <DependentUpon>TrafodionBannerControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionHybridGraphUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionHybridGraphUserControl.Designer.cs">
+      <DependentUpon>TrafodionHybridGraphUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionLineGraphUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionLineGraphUserControl.Designer.cs">
+      <DependentUpon>TrafodionLineGraphUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionAdvancedStatusLightUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionAdvancedStatusLightUserControl.Designer.cs">
+      <DependentUpon>TrafodionAdvancedStatusLightUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionBarGraphUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionBarGraphUserControl.Designer.cs">
+      <DependentUpon>TrafodionBarGraphUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridFilter.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridFilter.designer.cs">
+      <DependentUpon>TrafodionIGridFilter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionConfirmationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionConfirmationDialog.Designer.cs">
+      <DependentUpon>TrafodionConfirmationDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionGraphArray.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionGraphArray.Designer.cs">
+      <DependentUpon>TrafodionGraphArray.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridRowDisplay.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridRowDisplay.Designer.cs">
+      <DependentUpon>TrafodionIGridRowDisplay.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionMessagePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMessagePanel.Designer.cs">
+      <DependentUpon>TrafodionMessagePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionProgressUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionProgressUserControl.Designer.cs">
+      <DependentUpon>TrafodionProgressUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionPropertyGridUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionPropertyGridUserControl.designer.cs">
+      <DependentUpon>TrafodionPropertyGridUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionRealTimeLineGraph.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionRequiredFieldLabel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionRequiredFieldLabel.Designer.cs">
+      <DependentUpon>TrafodionRequiredFieldLabel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionStatusLightUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionStatusLightUserControl.Designer.cs">
+      <DependentUpon>TrafodionStatusLightUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridHyperlinkCellManager.cs">
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridCountUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\IConnectionDefinitionSelector.cs" />
+    <Compile Include="Controls\ITrafodionMenuItem.cs" />
+    <Compile Include="Controls\TrafodionIGridCountUserControl.Designer.cs">
+      <DependentUpon>TrafodionIGridCountUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridButtonsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridButtonsUserControl.Designer.cs">
+      <DependentUpon>TrafodionIGridButtonsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGrid.cs" />
+    <Compile Include="Controls\TrafodionButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionCheckBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionCheckedListBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionContextMenuStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDataGrid.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDataGridBoolColumn.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDataGridTableStyle.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDataGridTextBoxColumn.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDomainUpDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionGraphicsUtility.cs" />
+    <Compile Include="Controls\TrafodionGroupBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridToolStripMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionIGridUtils.cs" />
+    <Compile Include="Controls\TrafodionLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionLinkLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionListBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMaskedTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMenuStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionNumericUpDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionPictureBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionProgressBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionRadioButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionRealTimeBarGraph.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionRichTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSplitContainer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSplitter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionStatusBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionStatusStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabGraphic.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabGraphic.Designer.cs">
+      <DependentUpon>TrafodionTabGraphic.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolStripMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolStripRadioButtonMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolStripRenderer.cs" />
+    <Compile Include="Controls\TrafodionToolStripSeparator.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionToolTip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTrackBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTriStateUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTriStateUserControl.Designer.cs">
+      <DependentUpon>TrafodionTriStateUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BrowserUtilities.cs" />
+    <Compile Include="Controls\TrafodionMultipleErrorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMultipleErrorDialog.Designer.cs">
+      <DependentUpon>TrafodionMultipleErrorDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionMultipleMessageDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionMultipleMessageDialog.Designer.cs">
+      <DependentUpon>TrafodionMultipleMessageDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionSystemStatusPopup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSystemStatusPopup.Designer.cs">
+      <DependentUpon>TrafodionSystemStatusPopup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionColorTable.cs" />
+    <Compile Include="Controls\TrafodionVerticalProgressBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="GridConfig.cs" />
+    <Compile Include="DefaultChangeEventFiringModel.cs" />
+    <Compile Include="DisplayAreasDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DisplayAreasDialog.Designer.cs">
+      <DependentUpon>DisplayAreasDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DisplayFormatter.cs" />
+    <Compile Include="EventHandlerForAttribute.cs" />
+    <Compile Include="GeneralOptions.cs" />
+    <Compile Include="GridConstraint.cs" />
+    <Compile Include="GridLayoutManager.cs" />
+    <Compile Include="IMainToolBarConsumer.cs" />
+    <Compile Include="IMenuProvider.cs" />
+    <Compile Include="ImmutableMenuStripWrapper.cs" />
+    <Compile Include="ImmutableToolStripWrapper.cs" />
+    <Compile Include="IOptionControl.cs" />
+    <Compile Include="IOptionObject.cs" />
+    <Compile Include="IOptionsProvider.cs" />
+    <Compile Include="IPendingChange.cs" />
+    <Compile Include="IToolBarProvider.cs" />
+    <Compile Include="IUseXMLSerializable.cs" />
+    <Compile Include="LastSavedLocation.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="LogOptions.cs" />
+    <Compile Include="MainMenu.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MainMenu.Designer.cs">
+      <DependentUpon>MainMenu.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainToolBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MainToolBar.Designer.cs">
+      <DependentUpon>MainToolBar.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MenuManager.cs" />
+    <Compile Include="Navigation\DummyTreeNode.cs" />
+    <Compile Include="Navigation\NavigationHelperUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Navigation\NavigationHelperUserControl.Designer.cs">
+      <DependentUpon>NavigationHelperUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Navigation\NavigationUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Navigation\NavigationUserControl.Designer.cs">
+      <DependentUpon>NavigationUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Navigation\TrafodionRightPaneControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Navigation\TrafodionRightPaneControl.designer.cs">
+      <DependentUpon>TrafodionRightPaneControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TrafodionContext.cs" />
+    <Compile Include="TrafodionDateTimeFormatProvider.cs" />
+    <Compile Include="TrafodionDictionary.cs" />
+    <Compile Include="TrafodionHelpProvider.cs" />
+    <Compile Include="TrafodionLookAndFeelChangeHandler.cs" />
+    <Compile Include="ILayoutManager.cs" />
+    <Compile Include="LookAndFeelManager.cs" />
+    <Compile Include="LockManager.cs" />
+    <Compile Include="TrafodionAboutBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TrafodionAboutBox.Designer.cs">
+      <DependentUpon>TrafodionAboutBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Connection.cs" />
+    <Compile Include="Connections\ConnectionDefinition.cs" />
+    <Compile Include="Connections\Controls\EditSystemTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionDefinitionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionDefinitionDialog.Designer.cs">
+      <DependentUpon>ConnectionDefinitionDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionDefinitionUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionDefinitionUserControl.Designer.cs">
+      <DependentUpon>ConnectionDefinitionUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionsTool.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\ConnectionsTool.Designer.cs">
+      <DependentUpon>ConnectionsTool.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\EditSystemUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\EditSystemUserControl.Designer.cs">
+      <DependentUpon>EditSystemUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\FixSystemTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\FixSystemUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\FixSystemUserControl.Designer.cs">
+      <DependentUpon>FixSystemUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\MySystemsComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\MySystemsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\MySystemsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\MySystemsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\MySystemsUserControl.Designer.cs">
+      <DependentUpon>MySystemsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\NoHpOdbcDriversDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\NoHpOdbcDriversDialog.Designer.cs">
+      <DependentUpon>NoHpOdbcDriversDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Connections\Controls\NoSystemsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Connections\Controls\NoSystemsUserControl.Designer.cs">
+      <DependentUpon>NoSystemsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ClonablePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DataGridViewButtonsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DataGridViewButtonsUserControl.Designer.cs">
+      <DependentUpon>DataGridViewButtonsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DataGridViewCountUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DataGridViewCountUserControl.Designer.cs">
+      <DependentUpon>DataGridViewCountUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DelayedPopulateClonableTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\GetStringDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\GetStringDialog.Designer.cs">
+      <DependentUpon>GetStringDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ICloneToWindow.cs" />
+    <Compile Include="Controls\ManagedWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ManagedWindow.Designer.cs">
+      <DependentUpon>ManagedWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ManagedWindowsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionForm.Designer.cs">
+      <DependentUpon>TrafodionForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabControlUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabControlUserControl.Designer.cs">
+      <DependentUpon>TrafodionTabControlUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\WindowsManager.cs" />
+    <Compile Include="Controls\WindowsManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WindowsManagerForm.Designer.cs">
+      <DependentUpon>WindowsManagerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Favorites\FavoritesFolderPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Favorites\Favorite.cs" />
+    <Compile Include="Favorites\FavoriteNameDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Favorites\FavoritesFolder.cs" />
+    <Compile Include="Favorites\FavoritesFolderDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Favorites\FavoritesTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Favorites\FavoritesTreeViewReflection.cs" />
+    <Compile Include="Favorites\FavoritesTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Favorites\FavoritesTreeViewUserControl.Designer.cs">
+      <DependentUpon>FavoritesTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Favorites\FavoriteTreeNode.cs" />
+    <Compile Include="GlobalRegistry.cs" />
+    <Compile Include="Controls\ICanBePrinted.cs" />
+    <Compile Include="Controls\IIsWidget.cs" />
+    <Compile Include="GuardianUsers.cs" />
+    <Compile Include="ITrafodionArea.cs" />
+    <Compile Include="ITrafodionMain.cs" />
+    <Compile Include="Navigation\NavigationTreeConnectionFolder.cs" />
+    <Compile Include="Navigation\NavigationTreeConnectionsFolder.cs" />
+    <Compile Include="Navigation\NavigationTreeFolder.cs" />
+    <Compile Include="Navigation\NavigationTreeNode.cs" />
+    <Compile Include="Navigation\NavigationTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Navigation\NavigationTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Navigation\NavigationTreeViewUserControl.Designer.cs">
+      <DependentUpon>NavigationTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TrafodionProgressHelper.cs" />
+    <Compile Include="TrafodionTimestamp.cs" />
+    <Compile Include="OptionStore.cs" />
+    <Compile Include="PendingChangeObject.cs" />
+    <Compile Include="Persistence.cs" />
+    <Compile Include="PersistenceStore.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Queries\Manageability.cs" />
+    <Compile Include="Queries\ReportParameterProcessorBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Queries\TimeRangeInputBase.cs" />
+    <Compile Include="StatementDefinition.cs" />
+    <Compile Include="SystemCatalogNameGetter.cs" />
+    <Compile Include="TrafodionToolBarManager.cs" />
+    <Compile Include="TraceOptions.cs" />
+    <Compile Include="Utilities.cs" />
+    <Compile Include="WidgetCanvas.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="WidgetCanvas.designer.cs">
+      <DependentUpon>WidgetCanvas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WidgetCanvasModel.cs" />
+    <Compile Include="WidgetContainerEventArgs.cs" />
+    <Compile Include="WidgetModel.cs" />
+    <Compile Include="WigdetContainer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WigdetContainer.designer.cs">
+      <DependentUpon>WigdetContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WorkerThread.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Connections\Controls\ChangePasswordDialog.resx">
+      <DependentUpon>ChangePasswordDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\ChangePasswordUserControl.resx">
+      <DependentUpon>ChangePasswordUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\EditPasswordPanel.resx">
+      <DependentUpon>EditPasswordPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\FixConnectionsDialog.resx">
+      <DependentUpon>FixConnectionsDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\BackgroundConnectDialog.resx">
+      <DependentUpon>BackgroundConnectDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionDisplayMessageUserControl.resx">
+      <DependentUpon>TrafodionDisplayMessageUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionFilterSelection.resx">
+      <DependentUpon>TrafodionFilterSelection.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionProgressDialog.resx">
+      <DependentUpon>TrafodionProgressDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionBannerControl.resx">
+      <DependentUpon>TrafodionBannerControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionHybridGraphUserControl.resx">
+      <DependentUpon>TrafodionHybridGraphUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionLineGraphUserControl.resx">
+      <DependentUpon>TrafodionLineGraphUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionAdvancedStatusLightUserControl.resx">
+      <DependentUpon>TrafodionAdvancedStatusLightUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionBarGraphUserControl.resx">
+      <DependentUpon>TrafodionBarGraphUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionIGridFilter.resx">
+      <DependentUpon>TrafodionIGridFilter.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionConfirmationDialog.resx">
+      <DependentUpon>TrafodionConfirmationDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionGraphArray.resx">
+      <DependentUpon>TrafodionGraphArray.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionIGridCountUserControl.resx">
+      <DependentUpon>TrafodionIGridCountUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionIGridButtonsUserControl.resx">
+      <DependentUpon>TrafodionIGridButtonsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionIGridRowDisplay.resx">
+      <DependentUpon>TrafodionIGridRowDisplay.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionMessagePanel.resx">
+      <DependentUpon>TrafodionMessagePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionMultipleErrorDialog.resx">
+      <DependentUpon>TrafodionMultipleErrorDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionMultipleMessageDialog.resx">
+      <DependentUpon>TrafodionMultipleMessageDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionProgressUserControl.resx">
+      <DependentUpon>TrafodionProgressUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionPropertyGridUserControl.resx">
+      <DependentUpon>TrafodionPropertyGridUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionRealTimeBarGraph.resx">
+      <DependentUpon>TrafodionRealTimeBarGraph.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionRequiredFieldLabel.resx">
+      <DependentUpon>TrafodionRequiredFieldLabel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionStatusLightUserControl.resx">
+      <DependentUpon>TrafodionStatusLightUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionTreeView.resx">
+      <DependentUpon>TrafodionTreeView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionTriStateUserControl.resx">
+      <DependentUpon>TrafodionTriStateUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionSystemStatusPopup.resx">
+      <DependentUpon>TrafodionSystemStatusPopup.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DisplayAreasDialog.resx">
+      <DependentUpon>DisplayAreasDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainMenu.resx">
+      <DependentUpon>MainMenu.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainToolBar.resx">
+      <DependentUpon>MainToolBar.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Navigation\NavigationHelperUserControl.resx">
+      <DependentUpon>NavigationHelperUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Navigation\NavigationUserControl.resx">
+      <DependentUpon>NavigationUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Navigation\TrafodionRightPaneControl.resx">
+      <DependentUpon>TrafodionRightPaneControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TrafodionAboutBox.resx">
+      <DependentUpon>TrafodionAboutBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\ConnectionDefinitionDialog.resx">
+      <DependentUpon>ConnectionDefinitionDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\ConnectionDefinitionUserControl.resx">
+      <DependentUpon>ConnectionDefinitionUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\ConnectionsTool.resx">
+      <DependentUpon>ConnectionsTool.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\EditSystemUserControl.resx">
+      <DependentUpon>EditSystemUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\FixSystemUserControl.resx">
+      <DependentUpon>FixSystemUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\MySystemsUserControl.resx">
+      <DependentUpon>MySystemsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\NoHpOdbcDriversDialog.resx">
+      <DependentUpon>NoHpOdbcDriversDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Connections\Controls\NoSystemsUserControl.resx">
+      <DependentUpon>NoSystemsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DataGridViewButtonsUserControl.resx">
+      <DependentUpon>DataGridViewButtonsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DataGridViewCountUserControl.resx">
+      <DependentUpon>DataGridViewCountUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\GetStringDialog.resx">
+      <DependentUpon>GetStringDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ManagedWindow.resx">
+      <DependentUpon>ManagedWindow.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionDataGridView.resx">
+      <DependentUpon>TrafodionDataGridView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionForm.resx">
+      <DependentUpon>TrafodionForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionTabControlUserControl.resx">
+      <DependentUpon>TrafodionTabControlUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionTabPage.resx">
+      <DependentUpon>TrafodionTabPage.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WindowsManagerForm.resx">
+      <DependentUpon>WindowsManagerForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Favorites\FavoritesTreeView.resx">
+      <DependentUpon>FavoritesTreeView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Favorites\FavoritesTreeViewUserControl.resx">
+      <DependentUpon>FavoritesTreeViewUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Navigation\NavigationTreeView.resx">
+      <DependentUpon>NavigationTreeView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Navigation\NavigationTreeViewUserControl.resx">
+      <DependentUpon>NavigationTreeViewUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WidgetCanvas.resx">
+      <DependentUpon>WidgetCanvas.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="TrafodionFrameworkClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\UnknownIcon.png" />
+    <None Include="Resources\unlock.png" />
+    <None Include="Resources\SaveFormDesignHS.png" />
+    <None Include="Resources\Designer.png" />
+    <None Include="Resources\revert.png" />
+    <None Include="Resources\showhidden.png" />
+    <None Include="Resources\Bottom.png" />
+    <None Include="Resources\down.png" />
+    <None Include="Resources\querystates.png" />
+    <None Include="Resources\lock.png" />
+    <None Include="Resources\DBSPJIcon1.png" />
+    <None Include="Resources\Question.png" />
+    <Content Include="Resources\auditlog.jpg" />
+    <None Include="Resources\download.png" />
+    <None Include="Resources\config.png" />
+    <Content Include="Resources\ServerLFConnectedIcon.png" />
+    <Content Include="Resources\SqlPlanButton.png" />
+    <None Include="Resources\DatabaseIcon.png" />
+    <None Include="Resources\FolderOpenIcon.png" />
+    <None Include="Resources\FolderClosedIcon.png" />
+    <None Include="Resources\BlankDocumentIcon.png" />
+    <None Include="Resources\DBCatalogIcon.png" />
+    <None Include="Resources\DataSourceIcon.png" />
+    <None Include="Resources\DBRoleIcon.png" />
+    <None Include="Resources\ClassIcon.png" />
+    <None Include="Resources\CommandWindowIcon.png" />
+    <None Include="Resources\DisconnectIcon.png" />
+    <None Include="Resources\ConnectIcon.png" />
+    <None Include="Resources\BlankIcon.png" />
+    <None Include="Resources\font_bitmap.png" />
+    <None Include="Resources\folder_blue.png" />
+    <None Include="Resources\folder_blue_open.png" />
+    <None Include="Resources\2downarrow.png" />
+    <None Include="Resources\Book_StackOfReportsHS.png" />
+    <None Include="Resources\book_reportHS.png" />
+    <None Include="Resources\cache.png" />
+    <None Include="Resources\3floppy_unmount.png" />
+    <None Include="Resources\2uparrow.png" />
+    <None Include="Resources\filesaveas.png" />
+    <None Include="Resources\export.bmp" />
+    <None Include="Resources\Checkbox_Checked.png" />
+    <None Include="Resources\Checkbox_UnChecked.png" />
+    <None Include="Resources\AddIcon.png" />
+    <None Include="Resources\apply.png" />
+    <None Include="Resources\CancelIcon.png" />
+    <None Include="Resources\AlterIcon.png" />
+    <None Include="Resources\DeleteIcon.png" />
+    <None Include="Resources\ConfigureIcon.png" />
+    <None Include="Resources\Flag_redHS.png" />
+    <None Include="Resources\edit_add.png" />
+    <None Include="Resources\edit_remove.png" />
+    <Content Include="Resources\Filter2HS.png" />
+    <Content Include="Resources\fullscreen.png" />
+    <None Include="Resources\GrayIcon.png" />
+    <None Include="Resources\hpdm_form_icon.png" />
+    <None Include="Resources\GreenIcon.png" />
+    <None Include="Resources\graphhs.png" />
+    <None Include="Resources\history.png" />
+    <None Include="Resources\Help.png" />
+    <None Include="Resources\HPDM_Logo.png" />
+    <None Include="Resources\HPDM_BannerLogo.png" />
+    <Content Include="Resources\indesign.png" />
+    <None Include="Resources\Left4.png" />
+    <None Include="Resources\Left.png" />
+    <None Include="Resources\ConnectivityIcon.png" />
+    <None Include="Resources\DBIndexIcon.png" />
+    <None Include="Resources\DBTriggerIcon.png" />
+    <None Include="Resources\DBSynonymIcon.png" />
+    <None Include="Resources\JarIcon.png" />
+    <None Include="Resources\MultipleServersIcon.png" />
+    <None Include="Resources\LeftArrowIcon.png" />
+    <None Include="Resources\kpager.png" />
+    <None Include="Resources\Library.png" />
+    <None Include="Resources\NewReportHS.png" />
+    <None Include="Resources\MetricMinerIcon.png" />
+    <None Include="Resources\log.png" />
+    <None Include="Resources\kcontrol.png" />
+    <None Include="Resources\LogIcon.png" />
+    <None Include="Resources\MultiUserIcon.png" />
+    <Content Include="Resources\nofullscreen.png" />
+    <None Include="Resources\StopIcon.png" />
+    <None Include="Resources\ReleaseIcon.png" />
+    <None Include="Resources\PlayIcon.png" />
+    <None Include="Resources\PauseIcon.png" />
+    <None Include="Resources\OKIcon.png" />
+    <None Include="Resources\RefreshIcon.png" />
+    <None Include="Resources\TwoLeftArrowIcon.png" />
+    <None Include="Resources\TowRightArrowIcon.png" />
+    <None Include="Resources\OneUpArrow.png" />
+    <None Include="Resources\OneRightArrowIcon.png" />
+    <None Include="Resources\OneLeftArrowIcon.png" />
+    <None Include="Resources\OneDownArrowIcon.png" />
+    <None Include="Resources\SecurityIcon.png" />
+    <None Include="Resources\SQL.png" />
+    <None Include="Resources\view_fullscreen.png" />
+    <None Include="Resources\PrimaryKeyIcon.png" />
+    <None Include="Resources\WorkloadIcon.png" />
+    <None Include="Resources\RightArrowIcon.png" />
+    <None Include="Resources\UpArrowIcon.png" />
+    <None Include="Resources\ServerConnectedIcon.png" />
+    <None Include="Resources\WindowsManagerIcon.png" />
+    <None Include="Resources\PropertiesIcon.png" />
+    <None Include="Resources\WhiteBoardIcon.png" />
+    <None Include="Resources\OrganizerHS.png" />
+    <None Include="Resources\tab_remove.png" />
+    <None Include="Resources\SingleUserIcon.png" />
+    <None Include="Resources\ServicesIcon.png" />
+    <None Include="Resources\DBSPJIcon.png" />
+    <None Include="Resources\DBTableIcon.png" />
+    <None Include="Resources\DBSchemaIcon.png" />
+    <None Include="Resources\DBViewIcon.png" />
+    <None Include="Resources\ServerIcon.png" />
+    <None Include="Resources\MonitoringIcon.png" />
+    <None Include="Resources\TopTop2.png" />
+    <None Include="Resources\TopRight22.png" />
+    <None Include="Resources\TopRight2.png" />
+    <None Include="Resources\TopLeft22.png" />
+    <None Include="Resources\TopLeft2.png" />
+    <None Include="Resources\SplitterBar.png" />
+    <None Include="Resources\Right.png" />
+    <None Include="Resources\Right1.png" />
+    <None Include="Resources\TopTop22.png" />
+    <None Include="Resources\RedIcon.png" />
+    <None Include="Resources\YellowIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,58 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package problem_management;
+
+// A symptom identified by the Problem Management software.
+// Symptoms connect problems and events in many-to-many fashion.
+// The set of fields {problem_creation_time_ts_lct, problem_creator_process_id, 
+// problem_creator_host_id} uniquely identifies a problem. The set of
+// fields {event_generation_time_ts_lct, event_process_id, 
+// event_host_id, event_sequence_number} uniquely identifies an event.
+message symptom
+{
+    required common.info_header header            =  1; // common header for all messages
+    
+    required int64  problem_creation_time_ts_utc  =  2; // time when problem was created, in UTC, 
+                                                        // microseconds since Jan. 1, 1970, 00:00
+
+    required int64  problem_creation_time_ts_lct  =  3; // time when problem was created, in LCT, 
+                                                        // microseconds since Jan. 1, 1970, 00:00
+
+    required int32  problem_creator_process_id    =  4; // process id of the Problem Management  
+                                                        // process that created the problem
+    
+    required uint32 problem_creator_host_id       =  5; // host id associated with the Problem Management  
+                                                        // process that created the problem    
+    
+    required int64  event_generation_time_ts_utc  =  6; // time when event was generated, in UTC, 
+                                                        // microseconds since Jan. 1, 1970, 00:00
+
+    required int64  event_generation_time_ts_lct  =  7; // time when event was generated, in LCT, 
+                                                        // microseconds since Jan. 1, 1970, 00:00
+       
+    required int32  event_process_id              =  8; // process id associated with the event
+    
+    required uint32 event_host_id                 =  9; // host id associated with the event
+    
+    required uint32 event_sequence_number         = 10; // producer-generated sequence number 
+                                                        // associated with the event    
+}
+

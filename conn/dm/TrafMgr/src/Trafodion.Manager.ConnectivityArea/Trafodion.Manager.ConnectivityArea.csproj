@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   --><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{DC592A94-EF38-4D4F-A226-4BCF22D243A6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.ConnectivityArea</RootNamespace>
+    <AssemblyName>Trafodion.Manager.ConnectivityArea</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <StartupObject>
+    </StartupObject>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Bin\Debug\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.ConnectivityArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Bin\Release\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.ConnectivityArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid, Version=3.0.0.0, Culture=neutral, PublicKeyToken=9d47002745f2416c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConnectivityAreaMain.cs" />
+    <Compile Include="Controls\EditNDCSUserDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\EditNDCSUserDialog.Designer.cs">
+      <DependentUpon>EditNDCSUserDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddDialog.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectionFolderFactory.cs" />
+    <Compile Include="Controls\ConnectivityActiveSystemsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityActiveSystemsUserControl.Designer.cs">
+      <DependentUpon>ConnectivityActiveSystemsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceMonitorSessionsSubTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourcesSummarySubTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaMonitoringTopTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaMonitoringUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaMonitoringUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaMonitoringUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigGeneralUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigGeneralUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceConfigGeneralUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorDSStatusSubTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorDSStatusUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorDSStatusUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaNDCSMonitorDSStatusUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorServicesStatusSubTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorServicesStatusUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorServicesStatusUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaNDCSMonitorServicesStatusUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorSessionsSubTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorSessionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaNDCSMonitorSessionsUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaNDCSMonitorSessionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaSystemsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaSystemsUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaSystemsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityFavoritesFolderPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityNavigationControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityNavigationControl.designer.cs">
+      <DependentUpon>ConnectivityNavigationControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityObjectsIGrid.cs" />
+    <Compile Include="Controls\ConnectivityRightPaneControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityRightPaneControl.designer.cs">
+      <DependentUpon>ConnectivityRightPaneControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigurationUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigurationUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaConfigurationUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivitySystemSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivitySystemSummaryUserControl.designer.cs">
+      <DependentUpon>ConnectivitySystemSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigDefineSetUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigDefineSetUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceConfigDefineSetUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigCQDUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigCQDUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceConfigCQDUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigControlledTablesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigControlledTablesUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceConfigControlledTablesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceMonitorStatusUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceMonitorStatusUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceMonitorStatusUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceMonitorSessionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceMonitorSessionsUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceMonitorSessionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceSummaryUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourcesConfigPermissionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourcesConfigPermissionsUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourcesConfigPermissionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigurationUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaDatasourceConfigurationUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaDatasourceConfigurationUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigBasicAddDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigBasicAddDialog.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigBasicAddDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigBasicAddUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigBasicAddUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigBasicAddUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigManagementAddDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigManagementAddDialog.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigManagementAddDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigManagementAddUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigManagementAddUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigManagementAddUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigCQDAddDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigCQDAddDialog.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigCQDAddDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigCQDAddUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigCQDAddUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigCQDAddUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseDialog.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddBrowseDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddBrowseUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaErrorUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaErrorUserControl.designer.cs">
+      <DependentUpon>ConnectivityAreaErrorUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaErrorTabUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConnectivityAreaErrorTabUserControl.Designer.cs">
+      <DependentUpon>ConnectivityAreaErrorTabUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\NDCSPermissionsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\NDCSPermissionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\NDCSPermissionsUserControl.designer.cs">
+      <DependentUpon>NDCSPermissionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\StopDatasourceDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\StopDatasourceDialog.designer.cs">
+      <DependentUpon>StopDatasourceDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\StopNDCSServerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\StopNDCSServerDialog.designer.cs">
+      <DependentUpon>StopNDCSServerDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\StopNDCSServiceDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\StopNDCSServiceDialog.designer.cs">
+      <DependentUpon>StopNDCSServiceDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\ConnectivityFavorite.cs" />
+    <Compile Include="Controls\Tree\ConnectivityFavoritesTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\ConnectivityFavoritesTreeViewUserControl.designer.cs">
+      <DependentUpon>ConnectivityFavoritesTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\ConnectivityFavoriteTreeNode.cs" />
+    <Compile Include="Controls\Tree\ConnectivityTreeFolder.cs" />
+    <Compile Include="Controls\Tree\ConnectivityTreeNode.cs" />
+    <Compile Include="Controls\Tree\ConnectivityTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\ConnectivityTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\ConnectivityTreeViewUserControl.designer.cs">
+      <DependentUpon>ConnectivityTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\DataSourceFolder.cs" />
+    <Compile Include="Controls\Tree\DataSourcesFolder.cs" />
+    <Compile Include="Controls\Tree\NDCSServiceFolder.cs" />
+    <Compile Include="Controls\Tree\NDCSServicesFolder.cs" />
+    <Compile Include="Controls\Tree\ConnectivitySystemFolder.cs" />
+    <Compile Include="Model\ControlledTable.cs" />
+    <Compile Include="Model\CQD.cs" />
+    <Compile Include="Model\Define.cs" />
+    <Compile Include="Model\NDCSDataSource.cs" />
+    <Compile Include="Model\NDCSName.cs" />
+    <Compile Include="Model\NDCSObject.cs" />
+    <Compile Include="Model\NDCSResource.cs" />
+    <Compile Include="Model\NDCSServer.cs" />
+    <Compile Include="Model\NDCSService.cs" />
+    <Compile Include="Model\NDCSSession.cs" />
+    <Compile Include="Model\NDCSSessionHelp.cs" />
+    <Compile Include="Model\NDCSSystem.cs" />
+    <Compile Include="Model\NDCSUser.cs" />
+    <Compile Include="Model\Queries.cs" />
+    <Compile Include="Model\ResourceStatistics.cs" />
+    <Compile Include="Model\Set.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\ConnectivityAreaSystemsUserControl.resx">
+      <DependentUpon>ConnectivityAreaSystemsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityNavigationControl.resx">
+      <DependentUpon>ConnectivityNavigationControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\EditNDCSUserDialog.resx">
+      <DependentUpon>EditNDCSUserDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigControlledTablesAddDialog.resx">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigControlledTablesAddUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigurationUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigurationUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceConfigControlledTablesUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceConfigControlledTablesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceConfigCQDUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceConfigCQDUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceConfigDefineSetUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceConfigDefineSetUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceConfigGeneralUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceConfigGeneralUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaErrorUserControl.resx">
+      <DependentUpon>ConnectivityAreaErrorUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaMonitoringUserControl.resx">
+      <DependentUpon>ConnectivityAreaMonitoringUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaNDCSMonitorDSStatusUserControl.resx">
+      <DependentUpon>ConnectivityAreaNDCSMonitorDSStatusUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaNDCSMonitorServicesStatusUserControl.resx">
+      <DependentUpon>ConnectivityAreaNDCSMonitorServicesStatusUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaNDCSMonitorSessionsUserControl.resx">
+      <DependentUpon>ConnectivityAreaNDCSMonitorSessionsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityRightPaneControl.resx">
+      <DependentUpon>ConnectivityRightPaneControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivitySystemSummaryUserControl.resx">
+      <DependentUpon>ConnectivitySystemSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceMonitorStatusUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceMonitorStatusUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceMonitorSessionsUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceMonitorSessionsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceSummaryUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourcesConfigPermissionsUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourcesConfigPermissionsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaDatasourceConfigurationUserControl.resx">
+      <DependentUpon>ConnectivityAreaDatasourceConfigurationUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigBasicAddDialog.resx">
+      <DependentUpon>ConnectivityAreaConfigBasicAddDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigBasicAddUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigBasicAddUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigManagementAddDialog.resx">
+      <DependentUpon>ConnectivityAreaConfigManagementAddDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigManagementAddUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigManagementAddUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigCQDAddDialog.resx">
+      <DependentUpon>ConnectivityAreaConfigCQDAddDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigCQDAddUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigCQDAddUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseDialog.resx">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddBrowseDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaConfigControlledTablesAddBrowseUserControl.resx">
+      <DependentUpon>ConnectivityAreaConfigControlledTablesAddBrowseUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConnectivityAreaErrorTabUserControl.resx">
+      <DependentUpon>ConnectivityAreaErrorTabUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\NDCSPermissionsUserControl.resx">
+      <DependentUpon>NDCSPermissionsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\StopDatasourceDialog.resx">
+      <DependentUpon>StopDatasourceDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\StopNDCSServerDialog.resx">
+      <DependentUpon>StopNDCSServerDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\StopNDCSServiceDialog.resx">
+      <DependentUpon>StopNDCSServiceDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj">
+      <Project>{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}</Project>
+      <Name>Trafodion.Manager.DatabaseArea</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</Project>
+      <Name>Trafodion.Manager</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

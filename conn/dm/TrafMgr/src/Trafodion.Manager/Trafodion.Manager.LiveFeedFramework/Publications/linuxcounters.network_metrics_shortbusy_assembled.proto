@@ -1,0 +1,113 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// Assembled Message for the network metrics publication
+//
+//  This publication is sent by the provider (node level provider or UNA) once every two seconds.
+// 
+//  This data is collected from /proc/net/dev (as is the data from the netstats command.  Same data). 
+//     In a later release, it might be provided by the monitor. This data is not
+//     provided for spare nodes.
+//	
+//  The values supplied reflect the network utilization for this node.  Network is shared
+//     among cores, and transmits here show up as receives elsewhere, especially once the instance
+//     hits a steady state.  The counters are expressed as deltas from their accumulating counter
+//     /proc/net/dev roots.  Due to timing issues, there may be inconsistencies between any 2 nodes,
+//     as far as network traffic goes.  This is normal and not cause for alarm.
+//
+//  The raw data for this publication is available in the metric_network_1 table, at 1 minute
+//     intervals.
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and non-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=none
+//!!BLOCK:HEADER=END
+
+message network_metrics_shortbusy_assembled { 
+
+message aggregate_network_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Logical Node identifier within the instance
+   required int32 node_id         = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: interface name (IB, ETh,etc, and number) for this node on this network
+   //!!SQL: TYPE = varchar (32)   
+   required string interfacename  = 2;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: received bytes for this device since last interval
+   required int32 rcv_packets = 3;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: dropped received packets for this device since last interval
+   required int32 rcv_drops = 4;
+	
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: received packet errors for this device since last interval
+   required int32 rcv_errs = 5;	
+
+  //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: xmit pkts for this device since last interval
+   required int32 txn_packets = 6;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: dropped transmitted packets for this device since last interval
+   required int32 txn_drops = 7;
+	
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: transmitted packet errors for this device since last interval
+   required int32 txn_errs = 8;	
+}
+
+message aggregate_network_count {
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Number of interesting networks found on this particular *logical* node at this time. The order of entries in this array MUST be the same as what's sent for reporting the actual network data.
+   required int32 num_file_systems  = 1;
+ }
+
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+   //!!SQL:SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: A count of the number of networks with statistics for each node. It's possible that the number might vary, especially with spare nodes.
+ repeated aggregate_network_count filesystem_count_aggr = 2;
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each network on each node
+ repeated aggregate_network_buffer aggregate = 3; 
+
+}
+

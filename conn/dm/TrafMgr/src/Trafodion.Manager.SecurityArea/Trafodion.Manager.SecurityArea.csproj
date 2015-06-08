@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   --><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{54B21FFC-33F7-4E00-9398-00B41DD45F1E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.SecurityArea</RootNamespace>
+    <AssemblyName>Trafodion.Manager.SecurityArea</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Bin\Debug\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>HP.OneGui.SecurityArea.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Bin\Release\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>HP.OneGui.SecurityArea.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid, Version=2.50.0.0, Culture=neutral, PublicKeyToken=9d47002745f2416c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\AddRoleDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\AddRoleDialog.Designer.cs">
+      <DependentUpon>AddRoleDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AlterUserRole.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AlterUserRole.Designer.cs">
+      <DependentUpon>AlterUserRole.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConfigureActiveDirectoryServerUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConfigureActiveDirectoryServerUserControl.designer.cs">
+      <DependentUpon>ConfigureActiveDirectoryServerUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DirectoryServerParametersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DirectoryServerParametersUserControl.Designer.cs">
+      <DependentUpon>DirectoryServerParametersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\GrantRoleToUsersDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\GrantRoleToUsersDialog.Designer.cs">
+      <DependentUpon>GrantRoleToUsersDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlatformUserRolePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlatformUserRolePanel.Designer.cs">
+      <DependentUpon>PlatformUserRolePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\LongOperationStatusDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\LongOperationStatusDialog.Designer.cs">
+      <DependentUpon>LongOperationStatusDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ChangeRolePasswordDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ChangeRolePasswordDialog.Designer.cs">
+      <DependentUpon>ChangeRolePasswordDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CredentialsOverviewControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\CredentialsOverviewControl.Designer.cs">
+      <DependentUpon>CredentialsOverviewControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MultilineTextUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MultilineTextUserControl.Designer.cs">
+      <DependentUpon>MultilineTextUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoleSQLPrivilegesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\RoleSQLPrivilegesUserControl.Designer.cs">
+      <DependentUpon>RoleSQLPrivilegesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesLoggingUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesLoggingUserControl.Designer.cs">
+      <DependentUpon>SecurityPoliciesLoggingUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesPasswordUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesPasswordUserControl.Designer.cs">
+      <DependentUpon>SecurityPoliciesPasswordUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesPowerRoleMgmtUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesPowerRoleMgmtUserControl.Designer.cs">
+      <DependentUpon>SecurityPoliciesPowerRoleMgmtUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesSystemUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesSystemUserControl.Designer.cs">
+      <DependentUpon>SecurityPoliciesSystemUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesTabControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityPoliciesTabControl.Designer.cs">
+      <DependentUpon>SecurityPoliciesTabControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityShowExceptionUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityShowExceptionUserControl.Designer.cs">
+      <DependentUpon>SecurityShowExceptionUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\UserSelectionPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\UserSelectionPanel.Designer.cs">
+      <DependentUpon>UserSelectionPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\UsersForRoleControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\UsersForRoleControl.Designer.cs">
+      <DependentUpon>UsersForRoleControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoleDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\RoleDetailsDialog.Designer.cs">
+      <DependentUpon>RoleDetailsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PasswordExpirationPolicyControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PasswordExpirationPolicyControl.Designer.cs">
+      <DependentUpon>PasswordExpirationPolicyControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RolesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\RolesUserControl.Designer.cs">
+      <DependentUpon>RolesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlatformUsersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlatformUsersUserControl.Designer.cs">
+      <DependentUpon>PlatformUsersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DatabaseUsersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseUsersUserControl.Designer.cs">
+      <DependentUpon>DatabaseUsersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DatabaseUserPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseUserPanel.Designer.cs">
+      <DependentUpon>DatabaseUserPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AddUsersPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AddUsersPanel.Designer.cs">
+      <DependentUpon>AddUsersPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CACertificateUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\CACertificateUserControl.Designer.cs">
+      <DependentUpon>CACertificateUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConfigureDirectoryServerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ConfigureDirectoryServerDialog.Designer.cs">
+      <DependentUpon>ConfigureDirectoryServerDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConfigureDirectoryServerUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ConfigureDirectoryServerUserControl.Designer.cs">
+      <DependentUpon>ConfigureDirectoryServerUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DirectoryServersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DirectoryServersUserControl.Designer.cs">
+      <DependentUpon>DirectoryServersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ManageUserDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ManageUserDialog.Designer.cs">
+      <DependentUpon>ManageUserDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlatformUserPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlatformUserPanel.Designer.cs">
+      <DependentUpon>PlatformUserPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlatformUserPropertyPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlatformUserPropertyPanel.Designer.cs">
+      <DependentUpon>PlatformUserPropertyPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoleSelectionPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\RoleSelectionPanel.Designer.cs">
+      <DependentUpon>RoleSelectionPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RolesIntillisense.cs" />
+    <Compile Include="Controls\RolesListBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityNavigator.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityNavigator.Designer.cs">
+      <DependentUpon>SecurityNavigator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectionFolderFactory.cs" />
+    <Compile Include="Controls\SecurityObjectsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityObjectsControl.Designer.cs">
+      <DependentUpon>SecurityObjectsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SecurityOverviewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SecurityOverviewUserControl.Designer.cs">
+      <DependentUpon>SecurityOverviewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SelfSignedCertificateUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SelfSignedCertificateUserControl.Designer.cs">
+      <DependentUpon>SelfSignedCertificateUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\CACertificateFolder.cs">
+    </Compile>
+    <Compile Include="Controls\Tree\PlatformUsersFolder.cs" />
+    <Compile Include="Controls\Tree\DatabaseUsersFolder.cs" />
+    <Compile Include="Controls\Tree\RolesFolder.cs" />
+    <Compile Include="Controls\Tree\CredentialsFolder.cs" />
+    <Compile Include="Controls\Tree\DirectoryServerFolder.cs" />
+    <Compile Include="Controls\Tree\SecurityPolicyFolder.cs" />
+    <Compile Include="Controls\Tree\SecurityTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\SelfSignedCertificateFolder.cs">
+    </Compile>
+    <Compile Include="Controls\Tree\SystemConnectionFolder.cs" />
+    <Compile Include="Controls\UserRolePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\UserRolePanel.Designer.cs">
+      <DependentUpon>UserRolePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="IsValidateable.cs" />
+    <Compile Include="Model\Credentials.cs" />
+    <Compile Include="Model\DirectoryServer.cs" />
+    <Compile Include="Model\Policies.cs" />
+    <Compile Include="Model\Queries.cs" />
+    <Compile Include="Model\Role.cs" />
+    <Compile Include="Model\SecurityAreaOptions.cs" />
+    <Compile Include="Model\SecurityObject.cs" />
+    <Compile Include="Model\SystemSecurity.cs" />
+    <Compile Include="Model\User.cs" />
+    <Compile Include="SecurityAreaMain.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\AddRoleDialog.resx">
+      <DependentUpon>AddRoleDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AlterUserRole.resx">
+      <DependentUpon>AlterUserRole.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConfigureActiveDirectoryServerUserControl.resx">
+      <DependentUpon>ConfigureActiveDirectoryServerUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DirectoryServerParametersUserControl.resx">
+      <DependentUpon>DirectoryServerParametersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\GrantRoleToUsersDialog.resx">
+      <DependentUpon>GrantRoleToUsersDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlatformUserRolePanel.resx">
+      <DependentUpon>PlatformUserRolePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LongOperationStatusDialog.resx">
+      <DependentUpon>LongOperationStatusDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ChangeRolePasswordDialog.resx">
+      <DependentUpon>ChangeRolePasswordDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\CredentialsOverviewControl.resx">
+      <DependentUpon>CredentialsOverviewControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MultilineTextUserControl.resx">
+      <DependentUpon>MultilineTextUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RoleSQLPrivilegesUserControl.resx">
+      <DependentUpon>RoleSQLPrivilegesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityPoliciesLoggingUserControl.resx">
+      <DependentUpon>SecurityPoliciesLoggingUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityPoliciesPasswordUserControl.resx">
+      <DependentUpon>SecurityPoliciesPasswordUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityPoliciesPowerRoleMgmtUserControl.resx">
+      <DependentUpon>SecurityPoliciesPowerRoleMgmtUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityPoliciesSystemUserControl.resx">
+      <DependentUpon>SecurityPoliciesSystemUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityPoliciesTabControl.resx">
+      <DependentUpon>SecurityPoliciesTabControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityShowExceptionUserControl.resx">
+      <DependentUpon>SecurityShowExceptionUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\UserSelectionPanel.resx">
+      <DependentUpon>UserSelectionPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\UsersForRoleControl.resx">
+      <DependentUpon>UsersForRoleControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RoleDetailsDialog.resx">
+      <DependentUpon>RoleDetailsDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PasswordExpirationPolicyControl.resx">
+      <DependentUpon>PasswordExpirationPolicyControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RolesUserControl.resx">
+      <DependentUpon>RolesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlatformUsersUserControl.resx">
+      <DependentUpon>PlatformUsersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DatabaseUsersUserControl.resx">
+      <DependentUpon>DatabaseUsersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DatabaseUserPanel.resx">
+      <DependentUpon>DatabaseUserPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AddUsersPanel.resx">
+      <DependentUpon>AddUsersPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\CACertificateUserControl.resx">
+      <DependentUpon>CACertificateUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConfigureDirectoryServerDialog.resx">
+      <DependentUpon>ConfigureDirectoryServerDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ConfigureDirectoryServerUserControl.resx">
+      <DependentUpon>ConfigureDirectoryServerUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DirectoryServersUserControl.resx">
+      <DependentUpon>DirectoryServersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ManageUserDialog.resx">
+      <DependentUpon>ManageUserDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlatformUserPanel.resx">
+      <DependentUpon>PlatformUserPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlatformUserPropertyPanel.resx">
+      <DependentUpon>PlatformUserPropertyPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RoleSelectionPanel.resx">
+      <DependentUpon>RoleSelectionPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityNavigator.resx">
+      <DependentUpon>SecurityNavigator.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityObjectsControl.resx">
+      <DependentUpon>SecurityObjectsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SecurityOverviewUserControl.resx">
+      <DependentUpon>SecurityOverviewUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SelfSignedCertificateUserControl.resx">
+      <DependentUpon>SelfSignedCertificateUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\UserRolePanel.resx">
+      <DependentUpon>UserRolePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\edit_add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\edit_remove.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\compfile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HPDMSecSchema.XSD">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Resources\fileopen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1uparrow.png" />
+    <None Include="Resources\1downarrow.png" />
+    <None Include="Resources\filesave.png" />
+    <Content Include="SampleHPDMSecPolicyDefaultSetting.XML" />
+    <Content Include="SampleHPDMSecPolicySetting.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj">
+      <Project>{ef7b9b77-77ac-4a0b-af42-0dfd9df6e402}</Project>
+      <Name>Trafodion.Manager.DatabaseArea</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj">
+      <Project>{a8d47305-df6e-443b-8f4e-32fdb9e8857f}</Project>
+      <Name>Trafodion.Manager.UniversalWidget</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6cc5fa95-df73-4a3b-a86e-010b7a5159a2}</Project>
+      <Name>Trafodion.Manager</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(ProjectDir)\TrafodionSecSchema.XSD" $(ProjectDir)\..\..\Bin\$(ConfigurationName)</PostBuildEvent>
+  </PropertyGroup>
+</Project>

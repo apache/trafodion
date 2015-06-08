@@ -1,0 +1,92 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// Assembled Message for the physical disk publication
+//
+//  This publication is sent by the provider (node level provider or UNA) once every two seconds.
+// 
+//  The data is collected from /proc/diskstats, and incorporates all disk stat configurations 
+//    reported, including SSD.  In a subsequent release, the data might come from the monitor
+//    itself.  This data is not provided for spare nodes.
+//	
+//
+//  These are DELTA counters.  /proc contains cumulative; provider does addition 
+//    and delta subtraction.
+//
+//  DATA IS ONLY REPORTED FOR STORAGE THAT INSTANCES ACTIVELY USE/MANAGE:
+//              - Storage Engines primaried in the same name
+//              - Overflow storage used for query execution
+//
+//  There is currently no table backing up this information
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and non-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=none
+//!!BLOCK:HEADER=END
+
+message disk_metrics_shortbusy_assembled { 
+
+message aggregate_diskios_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Node identifier:  Logical Node Identifier 
+   required int32 node_id         = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: device name:  SE name if known, local dev, if not an MSA. SE name is developed from information here plus live feed work integrated with lunmgr.
+   //!!SQL: TYPE = varchar (32)   
+   optional string interface_name  = 2;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Interval reads+writes since previous report
+   required int32 reads_plus_writes = 3;
+
+ }
+message aggregate_device_count {
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Number of interesting devices found on this particular *logical* node at this time. The order of entries in this array MUST be the same as what's sent for reporting the actual file system data.
+   optional int32 num_storage_devices  = 1;
+ }
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+//!!SQL:SKIP; XML-MIB: SKIP; DOC: INCLUDE
+//!!BLOCK: FIELD DESCRIPTION: A count of the number of devices, with one entry for each node contained in this publication. It's possible that the number might vary for a given logical node from message to message, with replacement nodes.
+ repeated aggregate_device_count device_count_aggregate = 2; 
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each node and device
+ repeated aggregate_diskios_buffer aggregate = 3; 
+
+}

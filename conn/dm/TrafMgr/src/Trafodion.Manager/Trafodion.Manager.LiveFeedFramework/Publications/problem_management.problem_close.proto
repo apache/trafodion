@@ -1,0 +1,80 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package problem_management;
+
+// The Problem Management software detected that a problem has been resolved.
+message problem_close
+{
+    required common.info_header header    =  1; // common header for all messages
+
+    required int64  creation_time_ts_utc  =  2; // time when problem was created, in UTC, 
+                                                // microseconds since Jan. 1, 1970, 00:00
+
+    required int64  creation_time_ts_lct  =  3; // time when problem was created, in LCT, 
+                                                // microseconds since Jan. 1, 1970, 00:00
+
+    required int32  creator_process_id    =  4; // process id of the Problem Management  
+                                                // process that created the problem
+    
+    required uint32 creator_host_id       =  5; // host id associated with the Problem Management  
+                                                // process that created the problem   
+
+    optional uint32 problem_instance_id   =  6; // instance id associated with the problem    
+
+    optional uint32 problem_tenant_id     =  7; // tenant id associated with the problem
+    
+    optional uint32 problem_component_id  =  8; // component id associated with the problem
+                                                // see SQEVL* defines in sqf/export/include/sqevlog/evl_sqlog_writer.h
+    
+    optional uint32 problem_thread_id     =  9; // thread id associated with the problem    
+    
+    optional int32  problem_process_id    = 10; // process id associated with the problem
+
+    optional string problem_process_name  = 11; // process name associated with the problem
+
+    optional uint32 problem_node_id       = 12; // virtual node id associated with the problem
+
+    optional uint32 problem_pnid_id       = 13; // physical node id associated with the problem
+
+    optional uint32 problem_host_id       = 14; // host id associated with the problem
+
+    optional string problem_ip_address_id = 15; // ip address associated with the problem
+
+    required string resource_name         = 16; // name of resource associated with the problem, e.g., $DB0116, 
+                                                // MXID0101203229821216323635247568000000000010000_607_682, 
+                                                // MANAGEABILITY.INSTANCE_REPOSITORY.QUERY_SQL_TEXT
+
+    required string resource_type         = 17; // type of resource associated with the problem, e.g., disk, query, table
+
+    required int32  severity              = 18; // severity of the problem
+                                                // this is a subset of values in the event_severity field in the common.event_header, 
+                                                // which come from SQ_LOG* defines in sqf/export/include/sqevlog/evl_sqlog_writer.h
+                                                // specifically: 0 = Emergency, 1 = Immediate, 2 = Critical
+
+    required string status                = 19; // status of the problem
+                                                // currently only the value AUTOCLOSED is expected
+    
+    optional string description           = 20; // descriptive text specific to the problem
+
+    required int32  type                  = 21; // a unique identifier of the problem type
+                                                // see sqf/seapilot/export/conf/defines.lua
+}
+

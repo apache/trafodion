@@ -1,0 +1,84 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// High-freq Assembled Message for process load average for each node
+//  This publication is sent by the provider (node level provider or UNA) once every two seconds.
+// 
+//  The data is collected from /proc/loadavg. This data is not provided for spare nodes.
+//	
+//  The values supplied reflect the Linux one, five, and fifteen minute load averages.
+//     These averages indicate how many processes are waiting for execution, including
+//     the actual runnable processes.  The actual load value needs to be interpreted based
+//     on the number of cores in the node, and its meaning can be skewed by process affinity,
+//     directing particular processes to run on particular cores.  The averages are accurate to
+//     two decimal places and so are multiplied by 100 for ease of packaging.
+//
+//  The values supplied are snapshot counters, in that the averaging is done by operating 
+//     system and the values in the publication reflect the values read from /proc/loadaverage
+//     at the time the provider built the publication.
+//
+//  Data in this publication is not currently available in the repository at any interval.
+//
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and nonf-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=NONE
+//!!BLOCK:HEADER=END
+
+message loadavg_metrics_shortbusy_assembled { 
+message aggregate_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Logical node number within the instance 
+   required int32 node_id  = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: One Minute Load Average times 100
+   required int32 one_min_avg   = 2;
+ 
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Five Minute Load Average times 100
+   required int32 five_min_avg   = 3;
+ 
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Ten Minute Load Average times 100
+   required int32 fifteen_min_avg   = 4;
+ 
+ }
+
+//!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each node
+ repeated aggregate_buffer aggregate = 2; 
+
+}

@@ -1,0 +1,757 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AreaName" xml:space="preserve">
+    <value>Connectivity</value>
+    <comment>The Name used in GUI to represent this DLL</comment>
+  </data>
+  <data name="AvailServerCount" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="ConfigurationTabName" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="CurrentServerConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="CurrentServerRegistered" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="DSAutomation" xml:space="preserve">
+    <value>Start Mode</value>
+  </data>
+  <data name="DSName" xml:space="preserve">
+    <value>Data Source Name</value>
+  </data>
+  <data name="DSState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="InitServerCount" xml:space="preserve">
+    <value>Initial</value>
+  </data>
+  <data name="IsDefaultFlag" xml:space="preserve">
+    <value>Default Data Source </value>
+  </data>
+  <data name="MaxServerCount" xml:space="preserve">
+    <value>Maximum</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Parent" xml:space="preserve">
+    <value>Parent</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="ServiceNotFound" xml:space="preserve">
+    <value>Service {0} not found in system.</value>
+  </data>
+  <data name="TabPageLabel_Services" xml:space="preserve">
+    <value>HPDCS Services</value>
+  </data>
+  <data name="ServiceState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="StartAheadCount" xml:space="preserve">
+    <value>Start Ahead</value>
+  </data>
+  <data name="StartAutomatically" xml:space="preserve">
+    <value>Start Automatically</value>
+  </data>
+  <data name="StartManually" xml:space="preserve">
+    <value>Start Manually</value>
+  </data>
+  <data name="StateChangeTime" xml:space="preserve">
+    <value>Last State Changed</value>
+  </data>
+  <data name="SystemName" xml:space="preserve">
+    <value>System Name</value>
+  </data>
+  <data name="MyActiveSystems" xml:space="preserve">
+    <value>My Active Systems</value>
+  </data>
+  <data name="ActiveSystemSummary" xml:space="preserve">
+    <value>Connectivity Summary</value>
+  </data>
+  <data name="MyActiveSystemDefaultSchema" xml:space="preserve">
+    <value>Default Schema</value>
+  </data>
+  <data name="MyActiveSystemDriverString" xml:space="preserve">
+    <value>Driver String</value>
+  </data>
+  <data name="MyActiveSystemHost" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="MyActiveSystemName" xml:space="preserve">
+    <value>System Name</value>
+  </data>
+  <data name="MyActiveSystemOdbcServerVersion" xml:space="preserve">
+    <value>Server Version</value>
+  </data>
+  <data name="MyActiveSystemPortNumber" xml:space="preserve">
+    <value>Port Number</value>
+  </data>
+  <data name="MyActiveSystemServerDataSource" xml:space="preserve">
+    <value>Server Data Source</value>
+  </data>
+  <data name="MyActiveSystemState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="MyActiveSystemUserName" xml:space="preserve">
+    <value>User Name</value>
+  </data>
+  <data name="NDCSServicesStatus" xml:space="preserve">
+    <value>HPDCS Services Status</value>
+    <comment>NDCS Services 1st Tab name</comment>
+  </data>
+  <data name="LabelSummaryListViewItem0" xml:space="preserve">
+    <value>HPDCS Services</value>
+  </data>
+  <data name="LabelSummaryListViewItem1" xml:space="preserve">
+    <value>Data Sources </value>
+  </data>
+  <data name="LabelSummaryListViewItem2" xml:space="preserve">
+    <value>HPDCS Servers Connected</value>
+  </data>
+  <data name="LabelSummaryListViewItem3" xml:space="preserve">
+    <value>Data Source Connected</value>
+  </data>
+  <data name="LabelSummaryListViewItem4" xml:space="preserve">
+    <value>Client Computers Connected</value>
+  </data>
+  <data name="LabelSummaryListViewItem5" xml:space="preserve">
+    <value>Client Applications Connected</value>
+  </data>
+  <data name="LabelSummaryListViewItem6" xml:space="preserve">
+    <value>User Accounts Connected</value>
+  </data>
+  <data name="LabelSummaryListViewItem7" xml:space="preserve">
+    <value />
+  </data>
+  <data name="MonitoringTabName" xml:space="preserve">
+    <value>Monitoring</value>
+  </data>
+  <data name="SystemTabName" xml:space="preserve">
+    <value>Systems</value>
+  </data>
+  <data name="NDCSDSStatus" xml:space="preserve">
+    <value>Data Source Status</value>
+    <comment>NDCS Services 2nd Tab name</comment>
+  </data>
+  <data name="TabPageLabel_NDCSServerStatus" xml:space="preserve">
+    <value>HPDCS Server Status</value>
+    <comment>NDCS Services 3rd Tab name</comment>
+  </data>
+  <data name="ContextMenu_AddDataSource" xml:space="preserve">
+    <value>Create New Data Source...</value>
+    <comment>Context Menu for Data Sources Folder node</comment>
+  </data>
+  <data name="ContextMenu_AddDataSourceLike" xml:space="preserve">
+    <value>Create New Data Source Like...</value>
+    <comment>Context Menu for Data Sources and Data Source Folder node</comment>
+  </data>
+  <data name="ContextMenu_Delete" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Context Menu for Data Source node</comment>
+  </data>
+  <data name="ContextMenu_Reload" xml:space="preserve">
+    <value>Reload</value>
+    <comment>Context Menu for Data Source node</comment>
+  </data>
+  <data name="ContextMenu_Start" xml:space="preserve">
+    <value>Start</value>
+    <comment>Context Menu for NDCS Service node</comment>
+  </data>
+  <data name="ContextMenu_Stop" xml:space="preserve">
+    <value>Stop...</value>
+    <comment>Context Menu for NDCS Service node</comment>
+  </data>
+  <data name="NDCSPrivileges" xml:space="preserve">
+    <value>Privileges</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="FavoritesErrorHeader" xml:space="preserve">
+    <value>Cannot Resolve Connectivity Favorite</value>
+  </data>
+  <data name="FavoritesErrorMessage" xml:space="preserve">
+    <value>{0} refers to {1} which cannot be found in the navigator.{2}It could be that you are not connected to the system or the node might have been removed.</value>
+  </data>
+  <data name="NewNodeNamePrefix" xml:space="preserve">
+    <value>New_Datasource_</value>
+    <comment>Part of the default name of the new node</comment>
+  </data>
+  <data name="DSTracing" xml:space="preserve">
+    <value>Tracing</value>
+  </data>
+  <data name="ServiceName" xml:space="preserve">
+    <value>Service Name</value>
+  </data>
+  <data name="ApplicationName" xml:space="preserve">
+    <value>Application Name</value>
+  </data>
+  <data name="ComputerName" xml:space="preserve">
+    <value>Computer Name</value>
+  </data>
+  <data name="LastUpdatedTime" xml:space="preserve">
+    <value>Last Updated Time</value>
+  </data>
+  <data name="Node" xml:space="preserve">
+    <value>Node</value>
+  </data>
+  <data name="PIDClient" xml:space="preserve">
+    <value>PID Client</value>
+  </data>
+  <data name="Port" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="ProcessName" xml:space="preserve">
+    <value>Process Name</value>
+  </data>
+  <data name="ServerPIN" xml:space="preserve">
+    <value>Server PIN</value>
+  </data>
+  <data name="ServerState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="UserName" xml:space="preserve">
+    <value>Directory-Service User Name</value>
+  </data>
+  <data name="ODBCError" xml:space="preserve">
+    <value>ODBC Error</value>
+    <comment>For Error Message box titile</comment>
+  </data>
+  <data name="SystemError" xml:space="preserve">
+    <value>System Error</value>
+    <comment>For Error Message box title</comment>
+  </data>
+  <data name="TabPageTitle_Monitoring" xml:space="preserve">
+    <value>Monitoring</value>
+  </data>
+  <data name="TabPageLabel_ControlledTables" xml:space="preserve">
+    <value>Controlled Tables</value>
+  </data>
+  <data name="TabPageLabel_CQD" xml:space="preserve">
+    <value>Control Query Defaults</value>
+  </data>
+  <data name="TabPageLabel_DefinesSets" xml:space="preserve">
+    <value>DEFINEs and SETs</value>
+  </data>
+  <data name="TabPageLabel_GeneralProperties" xml:space="preserve">
+    <value>General Properties</value>
+  </data>
+  <data name="TabPageTitle_Configuration" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="AssociationServer" xml:space="preserve">
+    <value>Association Server</value>
+  </data>
+  <data name="ConfigurationServer" xml:space="preserve">
+    <value>Configuration Server</value>
+  </data>
+  <data name="ServiceType" xml:space="preserve">
+    <value>Service Type</value>
+  </data>
+  <data name="TabPageLabel_Datasources" xml:space="preserve">
+    <value>Data Sources</value>
+    <comment>For Data Sources Sub Tab </comment>
+  </data>
+  <data name="ContextMenu_Edit" xml:space="preserve">
+    <value>Edit...</value>
+    <comment>Context Menu for Data Source node</comment>
+  </data>
+  <data name="RefreshTimestampCaption" xml:space="preserve">
+    <value>Status on {0} : </value>
+    <comment>It is used in the timestamp/status panel of the Connectivity IGrid.</comment>
+  </data>
+  <data name="ActiveSystemsCount" xml:space="preserve">
+    <value>There are {0} active systems</value>
+    <comment>For the timestamp panel in the active systems tab</comment>
+  </data>
+  <data name="DatasourceCount" xml:space="preserve">
+    <value>The system has {0} Data Sources</value>
+    <comment>For the timestamp panel in the Data Source summary user control</comment>
+  </data>
+  <data name="InService" xml:space="preserve">
+    <value>in Service</value>
+    <comment>For the timestamp panel in the NDCS Monitor Data Source Status User Control.</comment>
+  </data>
+  <data name="NDCSService" xml:space="preserve">
+    <value>HPDCS Service</value>
+  </data>
+  <data name="NDCSServiceCountInSystem" xml:space="preserve">
+    <value>The system has {0} HPDCS Services</value>
+    <comment>For the timestamp panel in the NDCS Monitor Services Status User Control.</comment>
+  </data>
+  <data name="NDCSServiceProcessCount" xml:space="preserve">
+    <value>The system has {0} HPDCS Servers</value>
+    <comment>For the timestamp panel in the NDCS Monitor sessions User Control.</comment>
+  </data>
+  <data name="NDCSServiceStatus" xml:space="preserve">
+    <value>Status of HPDCS Service {0}</value>
+    <comment>For the timestamp panel in the NDCS Monitor Services Status User Control.</comment>
+  </data>
+  <data name="Tooltip_Btn_Datasource_Apply" xml:space="preserve">
+    <value>To enable or disable data Source tracing.</value>
+    <comment>At Data Source Status Sub Tab</comment>
+  </data>
+  <data name="Tooltip_Btn_Datasource_Refresh" xml:space="preserve">
+    <value>To get latest status</value>
+    <comment>At Data Source Status Sub Tab</comment>
+  </data>
+  <data name="Tooltip_Btn_Datasource_Stop" xml:space="preserve">
+    <value>To stop the selected data source</value>
+    <comment>At NDCS Server Status Sub Tab</comment>
+  </data>
+  <data name="Label_Datasource" xml:space="preserve">
+    <value>Data Source</value>
+    <comment>for the top of the panel display</comment>
+  </data>
+  <data name="DatasourceStatus" xml:space="preserve">
+    <value>Status of Data Source {0} for {1} HPDCS Services</value>
+  </data>
+  <data name="DatasourceStatusForService" xml:space="preserve">
+    <value>HPDCS Service {0} has {1} Data Sources</value>
+  </data>
+  <data name="ServerStatusForDatasource" xml:space="preserve">
+    <value>Data Source {0} has {1} HPDCS servers</value>
+  </data>
+  <data name="DatasourceStatusForSystem" xml:space="preserve">
+    <value>The system has {0} HPDCS Services and {1} Data Sources</value>
+  </data>
+  <data name="ServerStatusForService" xml:space="preserve">
+    <value>HPDCS Service {0} has {1} HPDCS Servers</value>
+  </data>
+  <data name="DialogTitle_ConfirmDSDeletion" xml:space="preserve">
+    <value>Confirm Data Source Deletion</value>
+  </data>
+  <data name="Message_ConfirmDSDeletion" xml:space="preserve">
+    <value>Are you sure you want to delete "{0}" ?</value>
+    <comment>Confirm Data Source deletion</comment>
+  </data>
+  <data name="DatasourceListCouldNotBeObtainedException" xml:space="preserve">
+    <value>Data Source list could not be obtained for {0}. Error: {1}</value>
+  </data>
+  <data name="ServiceListCouldNotBeObtainedException" xml:space="preserve">
+    <value>Service list could not be obtained for {0}. Error: {1}</value>
+  </data>
+  <data name="StoppingServerException" xml:space="preserve">
+    <value>Error encountered while stopping server {0}. Error: {1}</value>
+  </data>
+  <data name="TraceChangeException" xml:space="preserve">
+    <value>Enable/Disable trace failed for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="AddCQDException" xml:space="preserve">
+    <value>Error encountered while adding Control tables or CQDs for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="AddDsException" xml:space="preserve">
+    <value>Error encountered while adding Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="AddResourceToDsException" xml:space="preserve">
+    <value>Error encountered while adding Resources to Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="ConnectivityNotSupportedException" xml:space="preserve">
+    <value>The connectivity management function is currently not available on system {0}.{1}Please contact your system administrator.</value>
+    <comment>The third argment should contains a new line at the end.</comment>
+  </data>
+  <data name="DeleteCQDException" xml:space="preserve">
+    <value>Error encountered while deleting Control tables or CQDs for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="DeleteDefineException" xml:space="preserve">
+    <value>Error encountered while deleting DEFINE statments for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="DeleteEnvironmentVariablesException" xml:space="preserve">
+    <value>Error encountered while deleting Environment Variables from Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="DeleteResourceException" xml:space="preserve">
+    <value>Error encountered while deleting Resources for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="DeleteSetException" xml:space="preserve">
+    <value>Error encountered while deleting SET statments for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="ErrorStartingDsForServiceException" xml:space="preserve">
+    <value>Error encountered while starting Data Source {0} for Service {1}. Error: {2}</value>
+  </data>
+  <data name="ErrorStartingServiceException" xml:space="preserve">
+    <value>Error encountered while starting service {0}. Error: {1}</value>
+  </data>
+  <data name="ErrorStoppingDsForServiceException" xml:space="preserve">
+    <value>Error encountered while stopping Data Source {0} for Service {1}. Error: {2}</value>
+  </data>
+  <data name="ErrorStoppingServiceException" xml:space="preserve">
+    <value>Error encountered while stopping service {0}. Error: {1}</value>
+  </data>
+  <data name="GetDsStatusForServiceException" xml:space="preserve">
+    <value>Error encountered while obtaining Data Source status for service {0}. Error: {1}</value>
+  </data>
+  <data name="GetServerForServiceException" xml:space="preserve">
+    <value>Error encountered while getting HPDCS servers for Data Source {0} and Service {1}. Error: {2}</value>
+  </data>
+  <data name="GetServerStatusForServiceException" xml:space="preserve">
+    <value>Error encountered while obtaining server status for HPDCS Service {0} and Data Source {1}. Error: {2}</value>
+  </data>
+  <data name="GetStatusForDsAndServiceException" xml:space="preserve">
+    <value>Error encountered while getting status for Data Source {0} and Service {1}. Error: {2}</value>
+  </data>
+  <data name="InvalidIfLockedException" xml:space="preserve">
+    <value>Invalid IfLocked value: {0}</value>
+  </data>
+  <data name="InvalidMDAMValueException" xml:space="preserve">
+    <value>Invalid MDAM value: {0}</value>
+  </data>
+  <data name="InvalidPriorityException" xml:space="preserve">
+    <value>Invalid priority value: {0}</value>
+  </data>
+  <data name="InvalidSimilarityCheckException" xml:space="preserve">
+    <value>Invalid Similarity check value: {0}</value>
+  </data>
+  <data name="InvalidTablelockException" xml:space="preserve">
+    <value>Invalid Tablelock value: {0}</value>
+  </data>
+  <data name="InvalidTimeoutException" xml:space="preserve">
+    <value>Invalid Timeout value: {0}</value>
+  </data>
+  <data name="UnknownParameterInControlTableException" xml:space="preserve">
+    <value>Unknown parameter found in Control Table Statement: {0}</value>
+  </data>
+  <data name="UpdateCPUListException" xml:space="preserve">
+    <value>Error encountered while updating CPU list for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateCQDException" xml:space="preserve">
+    <value>Error encountered while updating Control tables or CQDs for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateDefineException" xml:space="preserve">
+    <value>Error encountered while updating DEFINE statments for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateDsException" xml:space="preserve">
+    <value>Error encountered while updating Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateProcessPriorityException" xml:space="preserve">
+    <value>Error encountered while updating process priority for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateResourceException" xml:space="preserve">
+    <value>Error encountered while updating Resources for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateSetException" xml:space="preserve">
+    <value>Error encountered while updating SET statments for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateStatsException" xml:space="preserve">
+    <value>Error encountered while updating statistics for Data Source {0}. Error: {1}</value>
+  </data>
+  <data name="UpdateTraceException" xml:space="preserve">
+    <value>Error encountered while updating trace for Data Source {0} and Service {1}. Error: {2}</value>
+  </data>
+  <data name="DataSources" xml:space="preserve">
+    <value>Data Sources</value>
+  </data>
+  <data name="DelimitedNameNotAllSpecialChars" xml:space="preserve">
+    <value>A delimited identifier must not consist entirely of special characters.</value>
+  </data>
+  <data name="DelimitedNameStartingChar" xml:space="preserve">
+    <value>Delimited name may not begin with backslash or dollar sign.</value>
+  </data>
+  <data name="DoubledEmbeddedQuotes" xml:space="preserve">
+    <value>Embedded double quotes in delimited name must be doubled.</value>
+  </data>
+  <data name="EmbedDoubleQuotesInString" xml:space="preserve">
+    <value>Embedded single quotes in {0} must be doubled.</value>
+  </data>
+  <data name="EmbedStringInQuotes" xml:space="preserve">
+    <value>The {0} must be enclosed in single quotes.</value>
+  </data>
+  <data name="NameCanContainCharacters" xml:space="preserve">
+    <value>The name may contain only letters, digits, and underscores.</value>
+  </data>
+  <data name="NameCannotBeEmpty" xml:space="preserve">
+    <value>Please specify a name.</value>
+  </data>
+  <data name="NameCannotExceedLength" xml:space="preserve">
+    <value>NameCannotExceedLength</value>
+  </data>
+  <data name="NameNoReserverdWord" xml:space="preserve">
+    <value>The name may not be a reserved word.</value>
+  </data>
+  <data name="NameShouldBeginWithLetter" xml:space="preserve">
+    <value>The name must begin with a letter.</value>
+  </data>
+  <data name="NonBlankCharinDelimitedName" xml:space="preserve">
+    <value>A delimited identifier must contain at least one non-blank character.</value>
+  </data>
+  <data name="NoTrailingSpaceinDelimitedName" xml:space="preserve">
+    <value>A delimited identifier may not contain trailing spaces.</value>
+  </data>
+  <data name="ValidSpecialCharacters" xml:space="preserve">
+    <value>Special characters are limited to blank and {0}.</value>
+  </data>
+  <data name="StopDatasourceMessage1" xml:space="preserve">
+    <value>A reason is needed before a stop operation can be performed.</value>
+    <comment>For the stop datasource name confirmation message box</comment>
+  </data>
+  <data name="StopDatasourceMessage2" xml:space="preserve">
+    <value>Please provide one in the box below then click the desired stop operation.</value>
+    <comment>For the stop datasource name confirmation message box</comment>
+  </data>
+  <data name="AddPrivilegeException" xml:space="preserve">
+    <value>Error encountered while adding privilege {0}. Error: {1}</value>
+  </data>
+  <data name="FailedToListPrivileges" xml:space="preserve">
+    <value>Cannot obtain privileges list for {0}. Error: {1}</value>
+  </data>
+  <data name="NDCSPrivilegeCountInSystem" xml:space="preserve">
+    <value>The system has {0} privilege(s)</value>
+  </data>
+  <data name="Grantee" xml:space="preserve">
+    <value>Grantee</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AlterButtonText" xml:space="preserve">
+    <value>&amp;Alter</value>
+  </data>
+  <data name="GrantNDCSPrivilege" xml:space="preserve">
+    <value>Grant Operator Privilege</value>
+  </data>
+  <data name="AlterNDCSPrivilege" xml:space="preserve">
+    <value>Alter HPDCS Privilege</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="ConfirmRevokePrivilege" xml:space="preserve">
+    <value>Are you sure you want to revoke the operator privilege for the selected role(s) ?</value>
+  </data>
+  <data name="FailedGrantPrivilege" xml:space="preserve">
+    <value>Error granting privilege</value>
+  </data>
+  <data name="FailedRevokePrivilege" xml:space="preserve">
+    <value>Error revoking privilege(s)</value>
+  </data>
+  <data name="GrantButtonText" xml:space="preserve">
+    <value>&amp;Grant</value>
+  </data>
+  <data name="Revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="DeleteMoreThan20Users" xml:space="preserve">
+    <value>...  and {0}  more ...</value>
+  </data>
+  <data name="ClientUserName" xml:space="preserve">
+    <value>Client User Name</value>
+  </data>
+  <data name="NDCSOperator" xml:space="preserve">
+    <value>HPDCS Operator</value>
+  </data>
+  <data name="OperatorPrivilegeCount" xml:space="preserve">
+    <value>The system has {0} roles with operator privileges</value>
+  </data>
+  <data name="Grantor" xml:space="preserve">
+    <value>Grantor</value>
+  </data>
+  <data name="TabPageLabel_Sets" xml:space="preserve">
+    <value>SETs</value>
+  </data>
+  <data name="ConnectivityNotSupportedWarning" xml:space="preserve">
+    <value>WARNING:Connectivity management is only supported on Trafodion R2.5 and later.</value>
+  </data>
+  <data name="ConnectionIdleCustom_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to use the custom timeout value.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ConnectionIdleNone_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to have no Connection idle timeout.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ConnectionIdleSysDefault_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to use the System's connection idle timeout.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="nodeUtilizationOrder_TrafodionTextBox" xml:space="preserve">
+    <value>Enter a comma seperated list of numbers and ranges.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="NumericUpDown_Tooltip" xml:space="preserve">
+    <value>Please enter an integer from {0} to {1:N0}.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ProcessPriorityDefault_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to use the service's priority value for servers started by this  data source.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ProcessPriorityInitial_TrafodionRadioButton" xml:space="preserve">
+    <value>The process priority for servers started by this data source.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerAvail_TrafodionLabel" xml:space="preserve">
+    <value>The number of servers that this data source will keep available for connections.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerIdleCustom_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to use the custom timeout value.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerIdleNone_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to have no server idle timeout.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerIdleSysDefault_TrafodionRadioButton" xml:space="preserve">
+    <value>Select to use the System's server idle timeout.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerMax_TrafodionLabel" xml:space="preserve">
+    <value>The maximum number of servers this data source can run.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="ServerStartAhead_TrafodionLabel" xml:space="preserve">
+    <value>The minimum number of initial servers that this data source will start in anticipation of connections.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="StartModeAutomatic_TrafodionRadioButton" xml:space="preserve">
+    <value>Automatically starts the data source when a service is started.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="StartModeManual_TrafodionRadioButton" xml:space="preserve">
+    <value>Requires the data source to be manually started for a service.</value>
+    <comment>Tooltip</comment>
+  </data>
+  <data name="StopConnectedDSError" xml:space="preserve">
+    <value>Your current TrafodionManager session is using this datasource {0} and so stopping this datasource is not allowed. 
+Please login using another datasource to stop this datasource {0}.</value>
+    <comment> Error Message </comment>
+  </data>
+</root>

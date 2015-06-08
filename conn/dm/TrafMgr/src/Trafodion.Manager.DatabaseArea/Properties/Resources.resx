@@ -1,0 +1,1827 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ErrorSelectingProcedureMethod" xml:space="preserve">
+    <value>Error selecting method for procedure. {0} {1}</value>
+  </data>
+  <data name="FileSaveFailure" xml:space="preserve">
+    <value>Failed to save file</value>
+  </data>
+  <data name="ExecuteMode" xml:space="preserve">
+    <value>Execute Mode</value>
+  </data>
+  <data name="CreateMV" xml:space="preserve">
+    <value>Create MV</value>
+  </data>
+  <data name="ProcedureCreateSuccess" xml:space="preserve">
+    <value>Procedure {0} created successfully</value>
+  </data>
+  <data name="Signature" xml:space="preserve">
+    <value>Signature</value>
+  </data>
+  <data name="True" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="NormalCUPCost" xml:space="preserve">
+    <value>Normal CUP Cost</value>
+  </data>
+  <data name="WhiteboardOutOfMemoryUpdateResultsMessage" xml:space="preserve">
+    <value>There was insufficient memory to load the results into the execution results control. 
+To free up memory the results of earlier statements have been cleared.</value>
+  </data>
+  <data name="NameShouldBeginWithLetter" xml:space="preserve">
+    <value>The name must begin with a letter.</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Ascending" xml:space="preserve">
+    <value>Ascending</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="FileReadFailure" xml:space="preserve">
+    <value>Failed to read file</value>
+  </data>
+  <data name="SQLAccess" xml:space="preserve">
+    <value>SQL Access</value>
+  </data>
+  <data name="ObjectRecreated" xml:space="preserve">
+    <value>Object {0} has changed. It may have been recreated  in another session or by an external process.</value>
+  </data>
+  <data name="TableSampledStatisticsTitle" xml:space="preserve">
+    <value>Sampled Statistics for {0} in {1}</value>
+  </data>
+  <data name="Routine" xml:space="preserve">
+    <value>Routine</value>
+  </data>
+  <data name="TotalRowsAffected" xml:space="preserve">
+    <value>Total rows affected {0}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="After" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="NotApplicableExecutionTime" xml:space="preserve">
+    <value>Execution Time: N/A</value>
+  </data>
+  <data name="Indexes" xml:space="preserve">
+    <value>Indexes</value>
+    <comment>Display name for SQL index objects. If you change this entry also change the entry for the singular version "Index"</comment>
+  </data>
+  <data name="CreateProcedure" xml:space="preserve">
+    <value>Create Procedure</value>
+  </data>
+  <data name="NoHashKey" xml:space="preserve">
+    <value>This table has no hash keys</value>
+  </data>
+  <data name="CatalogNumSchemas" xml:space="preserve">
+    <value>This catalog has {0} schemas</value>
+  </data>
+  <data name="HighlightSyntax" xml:space="preserve">
+    <value>Highlight Syntax</value>
+  </data>
+  <data name="UniversalFunction" xml:space="preserve">
+    <value>Universal Function</value>
+  </data>
+  <data name="ErrorGettingListOfMethods" xml:space="preserve">
+    <value>Error encountered while getting the list of methods for class : {0} {1}Error : {2}</value>
+  </data>
+  <data name="ErrorDuplicateStatementName" xml:space="preserve">
+    <value>The statement name already exists, please choose a different name.</value>
+  </data>
+  <data name="Insert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="ForeignTable" xml:space="preserve">
+    <value>Foreign Table</value>
+  </data>
+  <data name="DropTable" xml:space="preserve">
+    <value>Drop Table</value>
+  </data>
+  <data name="CodeFileDate" xml:space="preserve">
+    <value>File Last Modified</value>
+  </data>
+  <data name="PCF_FILE_OVERWRITE_MESSAGE2" xml:space="preserve">
+    <value>Press Yes to overwrite these files, No to skip these file(s) or Cancel to abort the operation.</value>
+  </data>
+  <data name="Droppable" xml:space="preserve">
+    <value>Droppable</value>
+  </data>
+  <data name="ThisTableHasNObjects" xml:space="preserve">
+    <value>This table has {0} </value>
+  </data>
+  <data name="MinBoundary" xml:space="preserve">
+    <value>Min Boundary</value>
+    <comment>Histogram boundary</comment>
+  </data>
+  <data name="CancelBatch" xml:space="preserve">
+    <value>Ca&amp;ncel Batch</value>
+  </data>
+  <data name="AlterView" xml:space="preserve">
+    <value>Alter View</value>
+  </data>
+  <data name="Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="NoSQL" xml:space="preserve">
+    <value>No SQL</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>&amp;Cancel</value>
+  </data>
+  <data name="ColumnsLoadFailed" xml:space="preserve">
+    <value>Error loading columns for {0} {1} {2}</value>
+  </data>
+  <data name="CreateFunctionAction" xml:space="preserve">
+    <value>Create Function Action</value>
+  </data>
+  <data name="AggregateReportTime" xml:space="preserve">
+    <value>Total SQL Space Usage as of : {0}</value>
+  </data>
+  <data name="PrecisionError" xml:space="preserve">
+    <value>Precision must be between {0} and {1}.</value>
+  </data>
+  <data name="ProcedureCodeFileTool" xml:space="preserve">
+    <value>Procedure Code File Tool</value>
+  </data>
+  <data name="SchemaPrivilegeLoadFailureMessage" xml:space="preserve">
+    <value>Failed to load schema privileges</value>
+  </data>
+  <data name="Error_PrivilegeIsNotSupportedForSchemaVersion" xml:space="preserve">
+    <value>Privilege information is only supported for schema objects that are of version 2000 or greater.</value>
+  </data>
+  <data name="PCFDownloadComplete" xml:space="preserve">
+    <value>Download completed successfully.</value>
+  </data>
+  <data name="Synonym" xml:space="preserve">
+    <value>Synonym</value>
+    <comment>Display name for SQL Synonym object. If you change this entry also change the plural version "Synonyms"</comment>
+  </data>
+  <data name="NoTrailingSpaceinDelimitedName" xml:space="preserve">
+    <value>A delimited identifier may not contain trailing spaces.</value>
+  </data>
+  <data name="Procedure" xml:space="preserve">
+    <value>Procedure</value>
+    <comment>Display name for SQL procedure object. If you change this entry also change the entry for the plural version "Procedures"</comment>
+  </data>
+  <data name="ParameterNameAlreadyInUse" xml:space="preserve">
+    <value>The parameter name is already in use.</value>
+  </data>
+  <data name="ShowDDLOverwriteMessage" xml:space="preserve">
+    <value>Do you want to overwrite the existing DDL output ?</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="EditColumnFailed" xml:space="preserve">
+    <value>Error editing parameter {0} {1} {2}</value>
+  </data>
+  <data name="LastExecutedControlStatements" xml:space="preserve">
+    <value>Executed Control Statements</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Create All Objects</value>
+  </data>
+  <data name="AlterFunction" xml:space="preserve">
+    <value>Alter Function</value>
+  </data>
+  <data name="MVGroups" xml:space="preserve">
+    <value>MV Groups</value>
+  </data>
+  <data name="SampledAtTimeStamp" xml:space="preserve">
+    <value>Sample taken on {0}</value>
+  </data>
+  <data name="ExternalSecurity" xml:space="preserve">
+    <value>External Security</value>
+  </data>
+  <data name="AlterTrigger" xml:space="preserve">
+    <value>Alter Trigger</value>
+  </data>
+  <data name="SelectTargetFolderForJars" xml:space="preserve">
+    <value>Select a target folder to save the downloaded code file(s).</value>
+  </data>
+  <data name="QueryExecutionSuccess" xml:space="preserve">
+    <value>Executed successfully</value>
+  </data>
+  <data name="RefreshedAtTimestamp" xml:space="preserve">
+    <value>Refreshed At Timestamp</value>
+  </data>
+  <data name="ColumnCountHeader" xml:space="preserve">
+    <value>There are {0} columns</value>
+  </data>
+  <data name="SampleStatsButtonToolTip" xml:space="preserve">
+    <value>Compute and display column statistics by sampling the table data</value>
+  </data>
+  <data name="TriggerProcedureUsage" xml:space="preserve">
+    <value>This trigger uses {0} Procedures</value>
+    <comment>Display name for SQL trigger objects. If you change this entry also change the entry for the singular version "Trigger"</comment>
+  </data>
+  <data name="ErrorDownloadingFile" xml:space="preserve">
+    <value>Error encountered while downloading file : {0} {1}Error : {2}</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="saveHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\saveHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Owner" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="InitializatonType" xml:space="preserve">
+    <value>Initialization Type</value>
+  </data>
+  <data name="DDL" xml:space="preserve">
+    <value>DDL</value>
+    <comment>DDLtab name</comment>
+  </data>
+  <data name="IntervalNumber" xml:space="preserve">
+    <value>Interval Number</value>
+    <comment>Histogram interval number</comment>
+  </data>
+  <data name="SampledTableName" xml:space="preserve">
+    <value>Table Name : {0}</value>
+  </data>
+  <data name="AlterTable" xml:space="preserve">
+    <value>Alter Table</value>
+  </data>
+  <data name="ODBCException" xml:space="preserve">
+    <value>ODBC Exception</value>
+  </data>
+  <data name="CallOnNull" xml:space="preserve">
+    <value>Call On Null</value>
+  </data>
+  <data name="NameNoReserverdWord" xml:space="preserve">
+    <value>The name may not be a reserved word.</value>
+  </data>
+  <data name="Attributes" xml:space="preserve">
+    <value>Attributes</value>
+  </data>
+  <data name="MVViewUsage" xml:space="preserve">
+    <value>This materialized view is used by {0}  Views</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="UsageObjectName" xml:space="preserve">
+    <value>Related Object Name</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="TableColumnNotFound" xml:space="preserve">
+    <value>Column {1} not found in table {3}.</value>
+    <comment>Display name for SQL table objects. If you change this entry also change the entry for the singular version "Table"</comment>
+  </data>
+  <data name="AddedBy" xml:space="preserve">
+    <value>Added By</value>
+  </data>
+  <data name="ViewUsedByMVsCountMessage" xml:space="preserve">
+    <value>This view uses {0} Materialized Views</value>
+  </data>
+  <data name="IsUniversal" xml:space="preserve">
+    <value>Is Universal</value>
+  </data>
+  <data name="DataType" xml:space="preserve">
+    <value>Data Type</value>
+  </data>
+  <data name="DropProcedure" xml:space="preserve">
+    <value>Drop Procedure</value>
+  </data>
+  <data name="SourceObject" xml:space="preserve">
+    <value>Source Object</value>
+  </data>
+  <data name="UpdateStats" xml:space="preserve">
+    <value>Update Stats</value>
+  </data>
+  <data name="ValidSpecialCharacters" xml:space="preserve">
+    <value>Special characters are limited to blank and {0}.</value>
+  </data>
+  <data name="MVHistogramStatsCardinalityHeader" xml:space="preserve">
+    <value>Materialized View Cardinality : {0:N0}</value>
+  </data>
+  <data name="DeterminedBySystem" xml:space="preserve">
+    <value>Determined by system</value>
+  </data>
+  <data name="NumberOfNulls" xml:space="preserve">
+    <value># Nulls</value>
+  </data>
+  <data name="ProcedureCodeFileName" xml:space="preserve">
+    <value>File Name</value>
+    <comment>Column Name</comment>
+  </data>
+  <data name="Evaluating" xml:space="preserve">
+    <value>Evaluating...</value>
+  </data>
+  <data name="PCF_FILE_DELETE_MESSAGE" xml:space="preserve">
+    <value>Are you sure you want to delete the following file(s) ?</value>
+  </data>
+  <data name="SelectSystemPrompt" xml:space="preserve">
+    <value>Please select a system</value>
+  </data>
+  <data name="Unique" xml:space="preserve">
+    <value>Unique</value>
+  </data>
+  <data name="SQLWhiteboard" xml:space="preserve">
+    <value>SQL Whiteboard</value>
+  </data>
+  <data name="SortOrder" xml:space="preserve">
+    <value>Sort Order</value>
+  </data>
+  <data name="Procedures" xml:space="preserve">
+    <value>Procedures</value>
+    <comment>Display name for SQL procedure objects. If you change this entry also change the entry for the singular version "Procedure"</comment>
+  </data>
+  <data name="StatusFetchingClassNames" xml:space="preserve">
+    <value>Fetching class details for code file {0} ...</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="BatchExecute" xml:space="preserve">
+    <value>Batch Exec&amp;ute</value>
+  </data>
+  <data name="HistogramCardinality" xml:space="preserve">
+    <value>Stats Cardinality</value>
+  </data>
+  <data name="TotalMaximumSize" xml:space="preserve">
+    <value>Total Maximum Size</value>
+  </data>
+  <data name="QueryDiscardOptionMessage" xml:space="preserve">
+    <value>Choose a Discard option for the selected statements, then click OK:</value>
+  </data>
+  <data name="TableMappingFunctions" xml:space="preserve">
+    <value>Table Mapping Functions</value>
+  </data>
+  <data name="SampledUEC" xml:space="preserve">
+    <value>Sampled UEC</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Password Required</value>
+  </data>
+  <data name="SystemCreated" xml:space="preserve">
+    <value>System Created</value>
+  </data>
+  <data name="WithGrant" xml:space="preserve">
+    <value>With Grant</value>
+  </data>
+  <data name="TableSynonymUsage" xml:space="preserve">
+    <value>This table has {0} Synonyms</value>
+  </data>
+  <data name="LoadSqlTitle" xml:space="preserve">
+    <value>Trafodion Database Manager - Load SQL Statement</value>
+  </data>
+  <data name="ThisSchemaHasNObjects" xml:space="preserve">
+    <value>This schema has {0} </value>
+  </data>
+  <data name="QueryAlreadyExecutingMessage" xml:space="preserve">
+    <value>A statement is currently executing. Please wait and try again.</value>
+  </data>
+  <data name="UDRType" xml:space="preserve">
+    <value>UDRType</value>
+  </data>
+  <data name="DropSynonym" xml:space="preserve">
+    <value>Drop Synonym</value>
+  </data>
+  <data name="InitialCUPCost" xml:space="preserve">
+    <value>Initial CUP Cost</value>
+  </data>
+  <data name="BlockSize" xml:space="preserve">
+    <value>Block Size</value>
+  </data>
+  <data name="Isolate" xml:space="preserve">
+    <value>Isolate</value>
+  </data>
+  <data name="ActionPosition" xml:space="preserve">
+    <value>Action Position</value>
+  </data>
+  <data name="InvalidCharactersInCodeFileName" xml:space="preserve">
+    <value>Code file name cannot contain special characters other than . or _ </value>
+  </data>
+  <data name="DelimitedNameStartingChar" xml:space="preserve">
+    <value>Delimited name may not begin with backslash or dollar sign.</value>
+  </data>
+  <data name="MaxValue" xml:space="preserve">
+    <value>Max Value</value>
+  </data>
+  <data name="JarClassName" xml:space="preserve">
+    <value>Class Name</value>
+    <comment>For Procedure Code File Tool</comment>
+  </data>
+  <data name="TotalCurrentSize" xml:space="preserve">
+    <value>Total Current Size</value>
+  </data>
+  <data name="Heading" xml:space="preserve">
+    <value>Heading</value>
+  </data>
+  <data name="ClearOnPurge" xml:space="preserve">
+    <value>Clear On Purge</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Nullable" xml:space="preserve">
+    <value>Nullable</value>
+  </data>
+  <data name="ThereAreNIndexes" xml:space="preserve">
+    <value>There are {0} Indexes</value>
+  </data>
+  <data name="FunctionType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="StatusUploading" xml:space="preserve">
+    <value>Uploading code file {0} ...</value>
+  </data>
+  <data name="Column" xml:space="preserve">
+    <value>Column</value>
+  </data>
+  <data name="UserDefinedFunctions" xml:space="preserve">
+    <value>Functions</value>
+  </data>
+  <data name="Java" xml:space="preserve">
+    <value>Java</value>
+  </data>
+  <data name="ContainsSQL" xml:space="preserve">
+    <value>Contains SQL</value>
+  </data>
+  <data name="ThisTableMappingFunctionasNParameters" xml:space="preserve">
+    <value>This Table Mapping Function has {0} Parameters</value>
+  </data>
+  <data name="DropProcedureConfirm" xml:space="preserve">
+    <value>Are you sure you want to drop procedure {0}?</value>
+  </data>
+  <data name="CodeFileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>View</value>
+    <comment>Display name for SQL view objects. If you change this entry also change the entry for the plural version "Views"</comment>
+  </data>
+  <data name="InitialIOCost" xml:space="preserve">
+    <value>Initial IO Cost</value>
+  </data>
+  <data name="ReorgEnabled" xml:space="preserve">
+    <value>Reorganize Enabled</value>
+  </data>
+  <data name="SystemNumSchemas" xml:space="preserve">
+    <value>This system has {0} schemas</value>
+  </data>
+  <data name="DropProcedureError" xml:space="preserve">
+    <value>Error Dropping Procedure</value>
+  </data>
+  <data name="deleteHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DeleteHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Reference" xml:space="preserve">
+    <value>Reference</value>
+  </data>
+  <data name="QueryReturnedRows" xml:space="preserve">
+    <value>This statement returned {0} rows</value>
+  </data>
+  <data name="UpdateStatisticsEnabled" xml:space="preserve">
+    <value>Update Statistics Enabled</value>
+  </data>
+  <data name="ScalarFunction" xml:space="preserve">
+    <value>Scalar Function</value>
+  </data>
+  <data name="CommitRefreshEachRows" xml:space="preserve">
+    <value>Rows</value>
+  </data>
+  <data name="ParameterStyle" xml:space="preserve">
+    <value>Parameter Style</value>
+  </data>
+  <data name="HashPartitioned" xml:space="preserve">
+    <value>Hash Partitioned</value>
+  </data>
+  <data name="ErrorRenamingFile" xml:space="preserve">
+    <value>Error encountered while renaming file {0} to {1}{2}Error : {3}</value>
+  </data>
+  <data name="MVMVUsed" xml:space="preserve">
+    <value>This materialized view is used by {0} Materialized Views</value>
+  </data>
+  <data name="TriggerTableUsage" xml:space="preserve">
+    <value>This trigger uses {0} Tables</value>
+  </data>
+  <data name="TriggerViewUsage" xml:space="preserve">
+    <value>This trigger uses {0} Views</value>
+  </data>
+  <data name="LocalColumn" xml:space="preserve">
+    <value>Local Column</value>
+  </data>
+  <data name="MetadataUID" xml:space="preserve">
+    <value>Metadata UID</value>
+  </data>
+  <data name="DynamicResultSets" xml:space="preserve">
+    <value>Dynamic Result Sets</value>
+  </data>
+  <data name="Views" xml:space="preserve">
+    <value>Views</value>
+    <comment>Display name for SQL view objects. If you change this entry also change the entry for the singular version "View"</comment>
+  </data>
+  <data name="QueryExecutionCancelled" xml:space="preserve">
+    <value>Execution cancelled by user</value>
+  </data>
+  <data name="MaterializedViewGroup" xml:space="preserve">
+    <value>Materalized View Group</value>
+    <comment>Display name for SQL Mv Group object. If you change this entry also change the entry for the plural version "MaterializedViewGroups"</comment>
+  </data>
+  <data name="StatisticsLastUpdated" xml:space="preserve">
+    <value>Statistics Last Updated</value>
+  </data>
+  <data name="ErrorCheckingFileExistance" xml:space="preserve">
+    <value>Error encountered while checking if file : {0} exists{1}Error : {2}</value>
+  </data>
+  <data name="DropTrigger" xml:space="preserve">
+    <value>Drop Trigger</value>
+  </data>
+  <data name="DoubledEmbeddedQuotes" xml:space="preserve">
+    <value>Embedded double quotes in delimited name must be doubled.</value>
+  </data>
+  <data name="Row" xml:space="preserve">
+    <value>Row</value>
+  </data>
+  <data name="AlterFunctionAction" xml:space="preserve">
+    <value>Alter Function Action</value>
+  </data>
+  <data name="OnRequest" xml:space="preserve">
+    <value>On Request</value>
+  </data>
+  <data name="NormalMSGCost" xml:space="preserve">
+    <value>Normal MSG Cost</value>
+  </data>
+  <data name="CreationTime" xml:space="preserve">
+    <value>Creation Time</value>
+  </data>
+  <data name="SummaryLoadingMessage" xml:space="preserve">
+    <value>The summary information is being loaded. It could take several minutes.</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Before" xml:space="preserve">
+    <value>Before</value>
+  </data>
+  <data name="MaterializedViewGroups" xml:space="preserve">
+    <value>Materialized View Groups</value>
+    <comment>Display name for SQL MV group objects. If you change this entry also change the entry for the singular version "MaterializedViewGroup"</comment>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="FormatStatement" xml:space="preserve">
+    <value>Format Statement</value>
+  </data>
+  <data name="PlanError" xml:space="preserve">
+    <value>Plan Error</value>
+  </data>
+  <data name="UserVersion" xml:space="preserve">
+    <value>User Version</value>
+  </data>
+  <data name="LogInsertsOnly" xml:space="preserve">
+    <value>Log Inserts Only</value>
+  </data>
+  <data name="ExternalFile" xml:space="preserve">
+    <value>External File</value>
+  </data>
+  <data name="LastExecutionStatus" xml:space="preserve">
+    <value>Status: {0}</value>
+  </data>
+  <data name="Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="CreateTable" xml:space="preserve">
+    <value>Create Table</value>
+  </data>
+  <data name="MVTableUsage" xml:space="preserve">
+    <value>This materialized view uses {0} Tables</value>
+  </data>
+  <data name="ColumnName" xml:space="preserve">
+    <value>Column Name</value>
+  </data>
+  <data name="DropFunction" xml:space="preserve">
+    <value>Drop Function</value>
+  </data>
+  <data name="MultiCatalogSelectedInShowDDLMessage" xml:space="preserve">
+    <value>You can only select objects from one catalog</value>
+    <comment>You can only select objects from one catalog</comment>
+  </data>
+  <data name="LoadingCurrentPageMessage" xml:space="preserve">
+    <value>Loading current result page into grid...</value>
+  </data>
+  <data name="TableViewUsage" xml:space="preserve">
+    <value>This table is used by {0}  Views</value>
+  </data>
+  <data name="SQLDataType" xml:space="preserve">
+    <value>SQL Data Type</value>
+  </data>
+  <data name="UserDefinedFunction" xml:space="preserve">
+    <value>Function</value>
+  </data>
+  <data name="CreateTrigger" xml:space="preserve">
+    <value>Create Trigger</value>
+  </data>
+  <data name="HelpCatalogRegistrations" xml:space="preserve">
+    <value>CatRegistrations.htm</value>
+  </data>
+  <data name="Alter" xml:space="preserve">
+    <value>Alter All Objects</value>
+  </data>
+  <data name="MaxBoundary" xml:space="preserve">
+    <value>Max Boundary</value>
+    <comment>Histogram boundary</comment>
+  </data>
+  <data name="Recompute" xml:space="preserve">
+    <value>Recompute</value>
+  </data>
+  <data name="Statement" xml:space="preserve">
+    <value>Statement</value>
+  </data>
+  <data name="CommitRefreshEach" xml:space="preserve">
+    <value>Refresh Commit Each</value>
+  </data>
+  <data name="PersistenceFile" xml:space="preserve">
+    <value>Persistence File</value>
+  </data>
+  <data name="TimeElapsed" xml:space="preserve">
+    <value>Time Elapsed: {0} seconds</value>
+  </data>
+  <data name="DropFunctionAction" xml:space="preserve">
+    <value>Drop Function Action</value>
+  </data>
+  <data name="ModifyControls" xml:space="preserve">
+    <value>Modify Controls</value>
+  </data>
+  <data name="LowMemoryPaginationMessage" xml:space="preserve">
+    <value>Application is running low on system resources. You can try discarding results of other statements. The current results shall be displayed in pages and the number of rows displayed may be less than the Rows/Page threshold.</value>
+  </data>
+  <data name="CreationRefreshType" xml:space="preserve">
+    <value>Refresh Type</value>
+  </data>
+  <data name="HashKey" xml:space="preserve">
+    <value>Hash Key</value>
+  </data>
+  <data name="ShowDDLToolPleaseSelectMessage" xml:space="preserve">
+    <value>Please select one or more objects within any one given schema</value>
+  </data>
+  <data name="Granularity" xml:space="preserve">
+    <value>Granularity</value>
+  </data>
+  <data name="ForeignKeyConstraintName" xml:space="preserve">
+    <value>Foreign Key Constraint Name</value>
+  </data>
+  <data name="PCF_FILE_OVERWRITE_MESSAGE1" xml:space="preserve">
+    <value>The following file(s) exist on the system already.</value>
+  </data>
+  <data name="StatsDataGridHeader" xml:space="preserve">
+    <value>This table has {0} statistics records</value>
+  </data>
+  <data name="SchemaLevelShowDDLMessage" xml:space="preserve">
+    <value>You can only select a schema or any objects contained in a schema</value>
+    <comment>You can only select a schema or any objects contained in a schema</comment>
+  </data>
+  <data name="CreateSynonym" xml:space="preserve">
+    <value>Create Synonym</value>
+  </data>
+  <data name="Cardinality" xml:space="preserve">
+    <value>Cardinality</value>
+  </data>
+  <data name="FileSizeLabel" xml:space="preserve">
+    <value>File Size (KBytes)</value>
+  </data>
+  <data name="SaveSqlTitle" xml:space="preserve">
+    <value>Trafodion Database Manager - Save SQL Statement</value>
+  </data>
+  <data name="UniqueConstraintsHeader" xml:space="preserve">
+    <value>This table has {0} unique constraints</value>
+  </data>
+  <data name="FunctionActions" xml:space="preserve">
+    <value>Function Actions</value>
+  </data>
+  <data name="ViewUsingViewsCountMessage" xml:space="preserve">
+    <value>This view uses  {0}  Views</value>
+  </data>
+  <data name="Enforced" xml:space="preserve">
+    <value>Enforced</value>
+  </data>
+  <data name="ExternalName" xml:space="preserve">
+    <value>External Name</value>
+  </data>
+  <data name="SummaryCountMessage" xml:space="preserve">
+    <value>The {0} has {1} {2}</value>
+  </data>
+  <data name="WhiteboardDatafileLoadError" xml:space="preserve">
+    <value>SQL Whiteboard Datafile Load Error</value>
+  </data>
+  <data name="ControlSettings" xml:space="preserve">
+    <value>Statement Control Settings</value>
+  </data>
+  <data name="ErrorGettingListOfClasses" xml:space="preserve">
+    <value>Error encountered while getting the list of classes for code file : {0} {1}Error : {2}</value>
+  </data>
+  <data name="Synonyms" xml:space="preserve">
+    <value>Synonyms</value>
+    <comment>Display name for SQL synonyms. If you change this entry also change the entry for the singular version "Synonym"</comment>
+  </data>
+  <data name="ShowDDLToolRequestSummaryMessage1" xml:space="preserve">
+    <value>Processed DDL for {0} of {1} object(s)</value>
+  </data>
+  <data name="SampleProgress" xml:space="preserve">
+    <value>Sampling in progress...</value>
+  </data>
+  <data name="Parent" xml:space="preserve">
+    <value>Parent</value>
+    <comment>Button in DatabaseObjectsControl</comment>
+  </data>
+  <data name="AggregateLoadingHeader" xml:space="preserve">
+    <value>Computing space usage ...</value>
+  </data>
+  <data name="Catalogs" xml:space="preserve">
+    <value>Catalogs</value>
+  </data>
+  <data name="LengthError" xml:space="preserve">
+    <value>Length must be between 1 and 32708.</value>
+  </data>
+  <data name="SQLRow" xml:space="preserve">
+    <value>SR</value>
+  </data>
+  <data name="Reorg" xml:space="preserve">
+    <value>Reorg</value>
+  </data>
+  <data name="ColumnPosition" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="ViewUsedByViewsCountMessage" xml:space="preserve">
+    <value>This view is used  by {0}  Views</value>
+  </data>
+  <data name="On" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="Usage" xml:space="preserve">
+    <value>Usage</value>
+  </data>
+  <data name="Has" xml:space="preserve">
+    <value>Has</value>
+    <comment>The "Has" relationship displayed in the usage tab.</comment>
+  </data>
+  <data name="Execute" xml:space="preserve">
+    <value>E&amp;xecute</value>
+  </data>
+  <data name="ObjectNotAvailable" xml:space="preserve">
+    <value>Object {0} is not accessible anymore. It may have been removed in another session or by an external process.</value>
+  </data>
+  <data name="ViewUsedByTablesCountMessage" xml:space="preserve">
+    <value>This view  uses  {0} Tables</value>
+  </data>
+  <data name="ThisProcedureasNParameters" xml:space="preserve">
+    <value>This Procedure has {0} Parameters</value>
+  </data>
+  <data name="PercentAllocated" xml:space="preserve">
+    <value>Percent Allocated</value>
+  </data>
+  <data name="HistogramUEC" xml:space="preserve">
+    <value>Stats UEC</value>
+  </data>
+  <data name="ReadsSQL" xml:space="preserve">
+    <value>Reads SQL Data</value>
+  </data>
+  <data name="ThisFunctionasNParameters" xml:space="preserve">
+    <value>This Function has {0} Parameters</value>
+  </data>
+  <data name="Privileges" xml:space="preserve">
+    <value>Privileges</value>
+  </data>
+  <data name="LastRefreshedTimestamp" xml:space="preserve">
+    <value>Last Refreshed Timestamp</value>
+  </data>
+  <data name="UDF" xml:space="preserve">
+    <value>UDF</value>
+  </data>
+  <data name="HelpCatalogAttributes" xml:space="preserve">
+    <value>CatAttributes.htm</value>
+  </data>
+  <data name="AggregateTotalSize" xml:space="preserve">
+    <value>Total SQL Space Usage : {0}</value>
+  </data>
+  <data name="MVGroupMembersCount" xml:space="preserve">
+    <value>This MV Group has {0} members</value>
+  </data>
+  <data name="UsageGridHeader" xml:space="preserve">
+    <value>Has {0} usage relationship(s)</value>
+  </data>
+  <data name="StatusDownloading" xml:space="preserve">
+    <value>Downloading code file {0} ...</value>
+  </data>
+  <data name="ThisFunctionActionasNParameters" xml:space="preserve">
+    <value>This Function Action has {0} Parameters</value>
+  </data>
+  <data name="HideSystemViewsMenuText" xml:space="preserve">
+    <value>Hide System Views</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="SynonymUsage" xml:space="preserve">
+    <value>This synonym references this object</value>
+  </data>
+  <data name="ReorganizeEnabled" xml:space="preserve">
+    <value>Reorganize Enabled</value>
+  </data>
+  <data name="AuditCompressed" xml:space="preserve">
+    <value>Audit Compressed</value>
+  </data>
+  <data name="DropView" xml:space="preserve">
+    <value>Drop View</value>
+  </data>
+  <data name="RedefinitionTime" xml:space="preserve">
+    <value>Redefinition Time</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Columns" xml:space="preserve">
+    <value>Columns</value>
+  </data>
+  <data name="Explain" xml:space="preserve">
+    <value>Ex&amp;plain</value>
+  </data>
+  <data name="NotApplicable" xml:space="preserve">
+    <value>N/A</value>
+  </data>
+  <data name="PCFOperationFailed" xml:space="preserve">
+    <value>{0} failed.</value>
+  </data>
+  <data name="openHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\openHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SummaryLoadingHeader" xml:space="preserve">
+    <value>Getting summary information...</value>
+  </data>
+  <data name="ShowDDL" xml:space="preserve">
+    <value>Show DDL</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Registrations" xml:space="preserve">
+    <value>Registrations</value>
+  </data>
+  <data name="InitialMSGCost" xml:space="preserve">
+    <value>Initial MSG Cost</value>
+  </data>
+  <data name="Exception" xml:space="preserve">
+    <value>Exception</value>
+  </data>
+  <data name="TableMappingFunction" xml:space="preserve">
+    <value>Table Mapping Function</value>
+  </data>
+  <data name="NonBlankCharinDelimitedName" xml:space="preserve">
+    <value>A delimited identifier must contain at least one non-blank character.</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="GeneralStyle" xml:space="preserve">
+    <value>General Style</value>
+  </data>
+  <data name="AlterSynonym" xml:space="preserve">
+    <value>Alter Synonym</value>
+  </data>
+  <data name="CodeFileSize" xml:space="preserve">
+    <value>File Size</value>
+  </data>
+  <data name="HashBy" xml:space="preserve">
+    <value>Hash Partition By: Specified Columns</value>
+  </data>
+  <data name="OnStatement" xml:space="preserve">
+    <value>On Statement</value>
+  </data>
+  <data name="Schema" xml:space="preserve">
+    <value>Schema</value>
+    <comment>Top panel in  right pane.Display name for schema. If you change this entry also change the entry for the plural version "Schemas"</comment>
+  </data>
+  <data name="MinValue" xml:space="preserve">
+    <value>Min Value</value>
+  </data>
+  <data name="AndMore" xml:space="preserve">
+    <value>and {0} more ..</value>
+  </data>
+  <data name="SummaryReportTime" xml:space="preserve">
+    <value>Details as of : {0}</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="PrimaryKey" xml:space="preserve">
+    <value>Primary Key</value>
+  </data>
+  <data name="ThisMVHasNObjects" xml:space="preserve">
+    <value>This materialized view has {0} </value>
+  </data>
+  <data name="ExecutionCancelled" xml:space="preserve">
+    <value>Execution Cancelled!</value>
+  </data>
+  <data name="Members" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="PrimaryKeyName" xml:space="preserve">
+    <value>Primary Key Constraint Name</value>
+  </data>
+  <data name="ForeignKeys" xml:space="preserve">
+    <value>Foreign Keys</value>
+  </data>
+  <data name="ErrorWhileSampling" xml:space="preserve">
+    <value>Error while sampling table {0}</value>
+  </data>
+  <data name="ErrorUploadingFiles" xml:space="preserve">
+    <value>Error encountered while uploading file : {0} {1}Error : {2}</value>
+  </data>
+  <data name="SaveSqlFile" xml:space="preserve">
+    <value>Save SQL Statement...</value>
+  </data>
+  <data name="ExecutionError" xml:space="preserve">
+    <value>Execution Error</value>
+  </data>
+  <data name="IsEnabled" xml:space="preserve">
+    <value>Is Enabled</value>
+  </data>
+  <data name="foo" xml:space="preserve">
+    <value>foo</value>
+  </data>
+  <data name="Direction" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="StatusFetchingMethods" xml:space="preserve">
+    <value>Fetching method details for class {0} ...</value>
+  </data>
+  <data name="EmbedStringInQuotes" xml:space="preserve">
+    <value>The {0} must be enclosed in single quotes.</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="TransactionRequired" xml:space="preserve">
+    <value>Transaction Required</value>
+  </data>
+  <data name="TransactionAttributes" xml:space="preserve">
+    <value>Transaction Attributes</value>
+  </data>
+  <data name="SampledPrecentTableText" xml:space="preserve">
+    <value>Sampled {0} % of rows from table {1}</value>
+  </data>
+  <data name="Operation" xml:space="preserve">
+    <value>Operation</value>
+  </data>
+  <data name="SamplingCancelled" xml:space="preserve">
+    <value>Sampling Cancelled ...</value>
+  </data>
+  <data name="Uses" xml:space="preserve">
+    <value>Uses</value>
+    <comment>The "uses" relationship displayed in the usage tab. </comment>
+  </data>
+  <data name="NameCanContainCharacters" xml:space="preserve">
+    <value>The name may contain only letters, digits, and underscores.</value>
+  </data>
+  <data name="JavaDataType" xml:space="preserve">
+    <value>Java Data Type</value>
+  </data>
+  <data name="MaterializedView" xml:space="preserve">
+    <value>Materialized View</value>
+    <comment>Display name for SQL materialized view object. If you change this entry also change the entry for the plural version "MaterializedViews"</comment>
+  </data>
+  <data name="PCF_FILE_DOWNLOAD_OVERWRITE_MESSAGE" xml:space="preserve">
+    <value>The following file(s) already exist in the target folder {0}</value>
+  </data>
+  <data name="Descending" xml:space="preserve">
+    <value>Descending</value>
+  </data>
+  <data name="EmbedDoubleQuotesInString" xml:space="preserve">
+    <value>Embedded single quotes in {0} must be doubled.</value>
+  </data>
+  <data name="False" xml:space="preserve">
+    <value>False</value>
+  </data>
+  <data name="Grantor" xml:space="preserve">
+    <value>Grantor</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Previous</value>
+    <comment>Button in DatabaseObjectsControl</comment>
+  </data>
+  <data name="MVMVUsage" xml:space="preserve">
+    <value>This materialized view uses {0} Materialized Views</value>
+  </data>
+  <data name="CheckConstraintsCountHeader" xml:space="preserve">
+    <value>This table has {0} check constraints</value>
+  </data>
+  <data name="LastUpdateStatistics" xml:space="preserve">
+    <value>Last Updated Statistics</value>
+  </data>
+  <data name="Object" xml:space="preserve">
+    <value>Object</value>
+  </data>
+  <data name="Tables" xml:space="preserve">
+    <value>Tables</value>
+  </data>
+  <data name="LastEvaluated" xml:space="preserve">
+    <value>Last Evaluated: {0}</value>
+  </data>
+  <data name="StatusDeleting" xml:space="preserve">
+    <value>Deleting code file {0} ...</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+    <comment>Title for message box displaying error messages</comment>
+  </data>
+  <data name="ScaleCannotExceedPrecision" xml:space="preserve">
+    <value>The scale cannot exceed the precision.</value>
+  </data>
+  <data name="WhiteboardOutOfMemoryNoRetryMessage" xml:space="preserve">
+    <value>Application has run out of system memory. Please reduce the Max Rows count or specify a suitable Rows/Page threshold and retry your statement.
+
+If the problem persists, please restart Trafodion Database Manager.</value>
+  </data>
+  <data name="HistogramStatsCardinalityHeader" xml:space="preserve">
+    <value>Table Cardinality : {0:N0}</value>
+  </data>
+  <data name="ActionName" xml:space="preserve">
+    <value>Action Name</value>
+  </data>
+  <data name="SPJ_Not_Supported_System" xml:space="preserve">
+    <value>The server component for SPJ management is not available on system {0}.</value>
+  </data>
+  <data name="ConnectionTestFailed" xml:space="preserve">
+    <value>Connection Test Failed</value>
+  </data>
+  <data name="ThereAreNFunctionActions" xml:space="preserve">
+    <value>There are {0} Function Actions</value>
+  </data>
+  <data name="BatchExplain" xml:space="preserve">
+    <value>Batch Exp&amp;lain</value>
+  </data>
+  <data name="WhiteboardDatafileSaveError" xml:space="preserve">
+    <value>SQL Whiteboard Datafile Save Error</value>
+  </data>
+  <data name="ExecutionTime" xml:space="preserve">
+    <value>Execution Time: {0} seconds</value>
+  </data>
+  <data name="AllPrivileges" xml:space="preserve">
+    <value>All Privileges</value>
+  </data>
+  <data name="PCFRefreshCancelledMessage" xml:space="preserve">
+    <value>A refresh operation has been cancelled. The panel may not display the correct list of code files. Another refresh operation is recommended.</value>
+  </data>
+  <data name="NoTransaction" xml:space="preserve">
+    <value>No Transaction Required</value>
+  </data>
+  <data name="SqlStatementExecuteSuccess" xml:space="preserve">
+    <value>The sql statement executed successfully</value>
+  </data>
+  <data name="CanCollapse" xml:space="preserve">
+    <value>Can Collapse</value>
+  </data>
+  <data name="ExecutedStatement" xml:space="preserve">
+    <value>Executed Statement</value>
+  </data>
+  <data name="ExecutionResults" xml:space="preserve">
+    <value>Execution Results</value>
+  </data>
+  <data name="PCF_ZERO_SIZE_MESSAGE" xml:space="preserve">
+    <value>File is empty</value>
+  </data>
+  <data name="ExternalPath" xml:space="preserve">
+    <value>External Path</value>
+  </data>
+  <data name="AlterMV" xml:space="preserve">
+    <value>Alter MV</value>
+  </data>
+  <data name="OnRefresh" xml:space="preserve">
+    <value>On Refresh</value>
+  </data>
+  <data name="FunctionAction" xml:space="preserve">
+    <value>Function Action</value>
+  </data>
+  <data name="ConstraintName" xml:space="preserve">
+    <value>Constraint Name</value>
+  </data>
+  <data name="PCF_FILE_RENAME_MESSAGE" xml:space="preserve">
+    <value>Renaming of the selected code file 
+
+{0} 
+
+may leave dangling stored procedure references. 
+
+Would you like to rename the code file?</value>
+  </data>
+  <data name="ShowDDLToolRequestSummaryMessage" xml:space="preserve">
+    <value>DDL requested for {0} objects in schema {1}</value>
+  </data>
+  <data name="CreateFunction" xml:space="preserve">
+    <value>Create Function</value>
+  </data>
+  <data name="PCF_IGNORE_FILES_MESSAGE" xml:space="preserve">
+    <value>The following file(s) are not supported and shall be ignored.</value>
+  </data>
+  <data name="CreateView" xml:space="preserve">
+    <value>Create View</value>
+  </data>
+  <data name="SampledMVName" xml:space="preserve">
+    <value>Materialized View Name : {0}</value>
+  </data>
+  <data name="ErrorGettingListOfFiles" xml:space="preserve">
+    <value>Error encountered while getting list of code files for user {0}Error : {1}</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Grantee" xml:space="preserve">
+    <value>Grantee</value>
+  </data>
+  <data name="LastStatsTimestamp" xml:space="preserve">
+    <value>Last Stats Timestamp</value>
+  </data>
+  <data name="TableMVUsage" xml:space="preserve">
+    <value>This table is used by {0} Materialized Views</value>
+  </data>
+  <data name="StatusRenaming" xml:space="preserve">
+    <value>Renaming code file {0} to {1} ...</value>
+  </data>
+  <data name="WhiteboardOutOfMemoryReduceRowCountMessage" xml:space="preserve">
+    <value>There is insufficient memory to load the results into the execution results control. 
+Even after clearing the results of all the other statements, there is not enough memory.
+
+Please reduce the  Max Rows count or specify a suitable Rows/Page threshold and retry your statement.
+
+If the problem persists, please restart Trafodion Database Manager.</value>
+  </data>
+  <data name="PCF_NOT_JAR_MESSAGE" xml:space="preserve">
+    <value>Not a jar file</value>
+  </data>
+  <data name="ViewSampledStatistics" xml:space="preserve">
+    <value>View Sampled Statistics</value>
+  </data>
+  <data name="OnCreate" xml:space="preserve">
+    <value>On Create</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+    <comment>Button in DatabaseObjectsControl</comment>
+  </data>
+  <data name="DropMV" xml:space="preserve">
+    <value>Drop MV</value>
+  </data>
+  <data name="MaximumSize" xml:space="preserve">
+    <value>Maximum Size</value>
+  </data>
+  <data name="FinalEvaluationStatusMessage" xml:space="preserve">
+    <value>{0} on system : {1}</value>
+  </data>
+  <data name="RecordSize" xml:space="preserve">
+    <value>RecordSize</value>
+  </data>
+  <data name="Database" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="ModifiesSQL" xml:space="preserve">
+    <value>Modifies SQL Data</value>
+  </data>
+  <data name="LoadSqlFile" xml:space="preserve">
+    <value>Load SQL Statement...</value>
+  </data>
+  <data name="Triggers" xml:space="preserve">
+    <value>Triggers</value>
+  </data>
+  <data name="UpdateStatsEnabled" xml:space="preserve">
+    <value>Update Statistics Enabled</value>
+  </data>
+  <data name="MVStatsDataGridHeader" xml:space="preserve">
+    <value>This materialized view has {0} statistics records</value>
+  </data>
+  <data name="TableForeignKeyCountHeader" xml:space="preserve">
+    <value>This table has {0} foreign keys</value>
+  </data>
+  <data name="UsageType" xml:space="preserve">
+    <value>Relationship</value>
+  </data>
+  <data name="RowsFetched" xml:space="preserve">
+    <value>Rows fetched : {0}</value>
+  </data>
+  <data name="StatusRefreshCodeFilesList" xml:space="preserve">
+    <value>Refreshing code files list...</value>
+  </data>
+  <data name="Index" xml:space="preserve">
+    <value>Index</value>
+    <comment>Display name for SQL index object. If you change this entry also change the entry for the plural version "Indexes"</comment>
+  </data>
+  <data name="SelectProcedureCodeFile" xml:space="preserve">
+    <value>Please select a method from a procedure code file.</value>
+  </data>
+  <data name="NormalIOCost" xml:space="preserve">
+    <value>Normal IO Cost</value>
+  </data>
+  <data name="Maintain" xml:space="preserve">
+    <value>Maintain</value>
+  </data>
+  <data name="ActivationTime" xml:space="preserve">
+    <value>Activation Time</value>
+  </data>
+  <data name="UsedBy" xml:space="preserve">
+    <value>Used By</value>
+    <comment>The "used by" relationship displayed in the usage tab.</comment>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="UniqueConstraints" xml:space="preserve">
+    <value>Unique Constraints</value>
+  </data>
+  <data name="Deterministic" xml:space="preserve">
+    <value>Deterministic</value>
+  </data>
+  <data name="ParamStyleVersion" xml:space="preserve">
+    <value>Param Style Version</value>
+  </data>
+  <data name="SampledPercentMVText" xml:space="preserve">
+    <value>Sampled {0} % of rows from materialized view {1}</value>
+  </data>
+  <data name="Table" xml:space="preserve">
+    <value>Table</value>
+    <comment>Display name for SQL table objects. If you change this entry also change the entry for the plural version "Tables"</comment>
+  </data>
+  <data name="ShowDDLButtonCancelText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="MaterializedViews" xml:space="preserve">
+    <value>Materialized Views</value>
+    <comment>Display name for SQL MV objects. If you change this entry also change the entry for the singular version "MaterializedView"</comment>
+  </data>
+  <data name="Skew" xml:space="preserve">
+    <value>Skew</value>
+  </data>
+  <data name="ForeignColumn" xml:space="preserve">
+    <value>Foreign Column</value>
+  </data>
+  <data name="Drop" xml:space="preserve">
+    <value>Drop All Objects</value>
+  </data>
+  <data name="IsSubject" xml:space="preserve">
+    <value>Is Subject Table</value>
+  </data>
+  <data name="InvalidExtensionForCodeFile" xml:space="preserve">
+    <value>Code file name must have .jar extension</value>
+  </data>
+  <data name="Catalog" xml:space="preserve">
+    <value>Catalog</value>
+  </data>
+  <data name="DelimitedNameNotAllSpecialChars" xml:space="preserve">
+    <value>A delimited identifier must not consist entirely of special characters.</value>
+  </data>
+  <data name="SampledCardinality" xml:space="preserve">
+    <value>Sampled Cardinality</value>
+  </data>
+  <data name="MVSynonymUsage" xml:space="preserve">
+    <value>This materialized view has {0} Synonyms</value>
+  </data>
+  <data name="StoreBy" xml:space="preserve">
+    <value>Store By</value>
+  </data>
+  <data name="ShowDDLSaveFailedMessage" xml:space="preserve">
+    <value>Failed to save DDL to file</value>
+    <comment>Title for error message when trying to save ddl to file</comment>
+  </data>
+  <data name="NameCannotBeEmpty" xml:space="preserve">
+    <value>Please specify a name.</value>
+  </data>
+  <data name="QueryExecutionFailed" xml:space="preserve">
+    <value>Failed with errors</value>
+  </data>
+  <data name="ShowDDLButtonDoneText" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="UsageObjectType" xml:space="preserve">
+    <value>Related Object Type</value>
+  </data>
+  <data name="SQL" xml:space="preserve">
+    <value>SQL</value>
+  </data>
+  <data name="WhiteboardOutOfMemoryMessage" xml:space="preserve">
+    <value>Application has run out of system memory. 
+
+The application can try to free up memory by clearing the results of all the other statements
+and auto retry the statement execution Or you can cancel and retry after reducing the Max Rows count or specifying a suitable Rows/Page threshold.
+
+Press 'Yes' to auto retry or 'No' to cancel.
+
+If the problem persists, please restart Trafodion Database Manager.</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="UEC" xml:space="preserve">
+    <value>UEC</value>
+  </data>
+  <data name="Schemas" xml:space="preserve">
+    <value>Schemas</value>
+    <comment>Display name for schemas. If you change this entry also change the entry for the singular version "Schema"</comment>
+  </data>
+  <data name="PCF_FILE_DELETE_MESSAGE_1" xml:space="preserve">
+    <value>Press Yes to delete these files, or No to abort the delete.</value>
+  </data>
+  <data name="WhiteboardConnectionDisappearedMessage" xml:space="preserve">
+    <value>[ERROR] The connection to the server has been closed. Any session attributes that might have been explicitly set on the connection are now lost. Please set session attributes as needed and execute again.</value>
+  </data>
+  <data name="ShowSystemViewsMenuText" xml:space="preserve">
+    <value>Show System Views</value>
+  </data>
+  <data name="NameCannotExceedLength" xml:space="preserve">
+    <value>The name cannot exceed {0} characters.</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="AggregateLoadingMessage" xml:space="preserve">
+    <value>This operation may take several minutes.</value>
+  </data>
+  <data name="Parallelism" xml:space="preserve">
+    <value>Parallelism</value>
+  </data>
+  <data name="ErrorDeletingFile" xml:space="preserve">
+    <value>Error encountered while deleting file : {0} {1}Error : {2}</value>
+  </data>
+  <data name="PCF_SIZE_EXCEEDS_MESSAGE" xml:space="preserve">
+    <value>File size exceeds the threshold of {0}</value>
+  </data>
+  <data name="MetaUID" xml:space="preserve">
+    <value>Metadata UID</value>
+  </data>
+  <data name="ThereIsNothingIn" xml:space="preserve">
+    <value>There is nothing in   </value>
+  </data>
+  <data name="StoreOrder" xml:space="preserve">
+    <value>Store Order</value>
+  </data>
+  <data name="CheckConstraints" xml:space="preserve">
+    <value>Check Constraints</value>
+  </data>
+  <data name="ViewSynonymCountMessage" xml:space="preserve">
+    <value>This view has {0} synonyms</value>
+  </data>
+  <data name="TreeRefreshNeeded" xml:space="preserve">
+    <value>Please refresh the tree to get list updated.</value>
+  </data>
+  <data name="Trigger" xml:space="preserve">
+    <value>Trigger</value>
+    <comment>Display name for SQL trigger object. If you change this entry also change the entry for the plural version "Triggers"</comment>
+  </data>
+  <data name="GrantLevel" xml:space="preserve">
+    <value>Grant Level</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value>Not Available</value>
+  </data>
+  <data name="TotalCurrentRowCount" xml:space="preserve">
+    <value>Total Current Row Count</value>
+  </data>
+  <data name="Populated" xml:space="preserve">
+    <value>Populated</value>
+  </data>
+  <data name="AddControls" xml:space="preserve">
+    <value>Add Controls</value>
+  </data>
+  <data name="MoveToFolderHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MoveToFolderHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="WhiteboardOpenFileDialogTitle" xml:space="preserve">
+    <value>Load Whiteboard Query Data File/SQL Statements</value>
+  </data>
+  <data name="WhiteboardSaveFileDialogTitle" xml:space="preserve">
+    <value>Save Selected Statements</value>
+  </data>
+  <data name="WhiteboardSaveResultSummaryMessagePural" xml:space="preserve">
+    <value>Total {0} statements have been saved.</value>
+  </data>
+  <data name="WhiteboardSaveResultSummaryMessageSingular" xml:space="preserve">
+    <value>Total {0} statement has been saved.</value>
+  </data>
+  <data name="ErrorBlankQueryIdOrText" xml:space="preserve">
+    <value>The following statements failed to load due to its query Id or text contains only blanks:</value>
+  </data>
+  <data name="ErrorBlankStatementNameOrText" xml:space="preserve">
+    <value>Statement name or statement text contains only blanks. </value>
+  </data>
+  <data name="SQLWhiteboardErrorMessageTitle" xml:space="preserve">
+    <value>SQL Whiteboard Error</value>
+  </data>
+  <data name="SQLWhiteboardMessageFileHasBeenLoaded" xml:space="preserve">
+    <value>The selected file {0} was previously loaded.  Are you sure you want to remove all of the statements from this file and reload them from the file again? </value>
+  </data>
+  <data name="SQLWhiteboardStatementNamePrefix" xml:space="preserve">
+    <value>statement_</value>
+  </data>
+  <data name="WarningTitle" xml:space="preserve">
+    <value>{0} {1} - Warning</value>
+  </data>
+  <data name="MultiSystemSelectedInShowDDLMessage" xml:space="preserve">
+    <value>You can only select objects in a single catalog from a single system</value>
+  </data>
+  <data name="AlterMVGroup" xml:space="preserve">
+    <value>Alter MV Group</value>
+  </data>
+  <data name="CreateMVGroup" xml:space="preserve">
+    <value>Create MV Group</value>
+  </data>
+  <data name="DropMVGroup" xml:space="preserve">
+    <value>Drop MV Group</value>
+  </data>
+  <data name="ExecutePrivilege" xml:space="preserve">
+    <value>Execute</value>
+  </data>
+  <data name="GrantRevokeDialogTitle" xml:space="preserve">
+    <value>Grant / Revoke Privileges</value>
+  </data>
+  <data name="FetchDatabaseUsersMessage" xml:space="preserve">
+    <value>Fetching list of database users and roles...</value>
+  </data>
+  <data name="FetDatabaseUsersFailureMessage" xml:space="preserve">
+    <value>Error fetching database users list</value>
+  </data>
+  <data name="GrantButtonText" xml:space="preserve">
+    <value>&amp;Grant</value>
+  </data>
+  <data name="GrantConfirmationMessage" xml:space="preserve">
+    <value>Are you sure you want to grant the selected privilege(s) to the {0} ?</value>
+  </data>
+  <data name="GrantRevokeConflictingObjectTypes" xml:space="preserve">
+    <value>You have selected multiple objects which have conflicting privilege types.</value>
+  </data>
+  <data name="GrantRevokeNoObjectSelected" xml:space="preserve">
+    <value>
+
+To display the appropriate privilege options, select one or more of the following objects: 
+Schema
+Table
+Materialized View
+View
+Library
+Procedure</value>
+  </data>
+  <data name="MultiGrantFailureMessage" xml:space="preserve">
+    <value>Grant failed for one or more objects</value>
+  </data>
+  <data name="MultiRevokeFailureMessage" xml:space="preserve">
+    <value>Revoke failed for one or more objects</value>
+  </data>
+  <data name="RevokeButtonText" xml:space="preserve">
+    <value>&amp;Revoke</value>
+  </data>
+  <data name="RevokeConfirmationMessage" xml:space="preserve">
+    <value>Are you sure you want to revoke the privilege(s) from the {0} ?</value>
+  </data>
+  <data name="SingleGrantFailureMessage" xml:space="preserve">
+    <value>Grant failed on</value>
+  </data>
+  <data name="SingleRevokeFailureMessage" xml:space="preserve">
+    <value>Revoke failed on </value>
+  </data>
+  <data name="NoObjectPrivilegesSelectedMessage" xml:space="preserve">
+    <value>Select one or more object privileges</value>
+  </data>
+  <data name="NoReferenceColSelectedMessage" xml:space="preserve">
+    <value>Select one or more column names for the column reference privileges or choose the All columns or No Columns option.</value>
+  </data>
+  <data name="NoUpdateColSelectedMessage" xml:space="preserve">
+    <value>Select one or more column names for the column update privileges or choose the All columns or No Columns option.</value>
+  </data>
+  <data name="NoSchemaPrivilegeSelectedMessage" xml:space="preserve">
+    <value>Select one or more schema privileges</value>
+  </data>
+  <data name="SpaceUsage" xml:space="preserve">
+    <value>SQL Space Usage</value>
+  </data>
+  <data name="ApplyComPrivilegesConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to apply all of the changes? </value>
+  </data>
+  <data name="ResetComPrivilegesConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to reset all component privileges?</value>
+  </data>
+  <data name="RevokeGranteeConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want revoke all privileges for the selected grantee(s)?</value>
+  </data>
+  <data name="ApplyChangesProcessingMessage" xml:space="preserve">
+    <value>Applying changes to the server...</value>
+  </data>
+  <data name="OperationCompleted" xml:space="preserve">
+    <value>{0} succeeded. For details, see the message(s) below.</value>
+  </data>
+  <data name="OperationFailed" xml:space="preserve">
+    <value>{0} failed. For details, see the message(s) below.</value>
+  </data>
+  <data name="SomeOperationsFailded" xml:space="preserve">
+    <value>Some operations on {0} are failed.</value>
+  </data>
+  <data name="DivisionByKey" xml:space="preserve">
+    <value>Division By Key</value>
+  </data>
+  <data name="DivisionByKeyHeader" xml:space="preserve">
+    <value>There are {0} Division By Key columns</value>
+  </data>
+  <data name="CommitChangesWarningMessage" xml:space="preserve">
+    <value>You have some unapplied changes. Do you want to commit the changes?</value>
+  </data>
+  <data name="Libraries" xml:space="preserve">
+    <value>Libraries</value>
+    <comment>Display name for SQL library objects. If you change this entry also change the entry for the singular version "Library"</comment>
+  </data>
+  <data name="ExternalSecurityDefiner" xml:space="preserve">
+    <value>Definer</value>
+  </data>
+  <data name="ExternalSecurityInvoker" xml:space="preserve">
+    <value>Invoker</value>
+  </data>
+  <data name="BrowseLibraryTool" xml:space="preserve">
+    <value>Browse Library</value>
+  </data>
+  <data name="FileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
+  <data name="CreateLibrary" xml:space="preserve">
+    <value>Create Library</value>
+  </data>
+  <data name="DropLibrary" xml:space="preserve">
+    <value>Drop Library</value>
+  </data>
+  <data name="DropLibraryConfirm" xml:space="preserve">
+    <value>Are you sure you want to drop library {0}?</value>
+  </data>
+  <data name="DropLibraryError" xml:space="preserve">
+    <value>Error Dropping Library</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="AlterLibrary" xml:space="preserve">
+    <value>Alter Library</value>
+  </data>
+  <data name="ErrorNoPrivilgesOnShowDDL" xml:space="preserve">
+    <value>You don't have privileges on showing Library {0} DDL information, because you are not the owner of {0}.</value>
+  </data>
+  <data name="SelectJarFile" xml:space="preserve">
+    <value>Please select a code file.</value>
+  </data>
+  <data name="ClientFileName" xml:space="preserve">
+    <value>Client File Name</value>
+  </data>
+  <data name="ClientName" xml:space="preserve">
+    <value>Client Name</value>
+  </data>
+  <data name="JarMethodName" xml:space="preserve">
+    <value>Method Name</value>
+  </data>
+  <data name="JarMethodSignature" xml:space="preserve">
+    <value>Method Signature</value>
+  </data>
+  <data name="CreateLibraryProcessMsg" xml:space="preserve">
+    <value>Creating the library {0}.</value>
+  </data>
+  <data name="LibraryCreateSuccess" xml:space="preserve">
+    <value>Library {0} created successfully.</value>
+  </data>
+  <data name="UpdateLibraryProcessMsg" xml:space="preserve">
+    <value>Updating the library {0}.</value>
+  </data>
+  <data name="LibraryUpdateSuccess" xml:space="preserve">
+    <value>Library {0} has been altered successfully.</value>
+  </data>
+  <data name="DropLibraryOptionDescription" xml:space="preserve">
+    <value>Drop all procedures and routines using this library.</value>
+  </data>
+  <data name="DeleteDownloadedFileFailMsg" xml:space="preserve">
+    <value>Download operation is cancelled, but failed to delete one or more file(s) which already downloaded.</value>
+  </data>
+  <data name="DeleteDownloadedFileOKMsg" xml:space="preserve">
+    <value>Download operation is cancelled.</value>
+  </data>
+  <data name="AllUtility" xml:space="preserve">
+    <value>ALL UTILITY Privileges</value>
+  </data>
+  <data name="Replicate" xml:space="preserve">
+    <value>Replicate</value>
+  </data>
+  <data name="AllDDL" xml:space="preserve">
+    <value>ALL DDL Privileges</value>
+  </data>
+  <data name="AllDML" xml:space="preserve">
+    <value>ALL DML Privileges</value>
+  </data>
+  <data name="SelectJarFileDialogCaption" xml:space="preserve">
+    <value>Select a code file</value>
+  </data>
+  <data name="ClientJarFileExistsErrorMsg" xml:space="preserve">
+    <value>This code file is already being used by another library. Please select a different code file.</value>
+  </data>
+  <data name="StatusValidatingJarFileMsg" xml:space="preserve">
+    <value>Validating code file...</value>
+  </data>
+  <data name="SelectJarFileDoesExistedErrorMsg" xml:space="preserve">
+    <value>The code file does not exist.</value>
+  </data>
+  <data name="ToolTipsCloseButton" xml:space="preserve">
+    <value>Close this dialog.</value>
+  </data>
+  <data name="ToolTipsCreateButton" xml:space="preserve">
+    <value>Create a new library.</value>
+  </data>
+  <data name="ToolTipsDownloadButton" xml:space="preserve">
+    <value>Download the code file from selected libraries.</value>
+  </data>
+  <data name="ToolTipsDropButton" xml:space="preserve">
+    <value>Drop a selected library.</value>
+  </data>
+  <data name="ToolTipsOKButton" xml:space="preserve">
+    <value>Select and save a method name,close this dialog.</value>
+  </data>
+  <data name="ToolTipsRefreshButton" xml:space="preserve">
+    <value>Refresh library tree</value>
+  </data>
+  <data name="CompareTimeRangeErrorMsg" xml:space="preserve">
+    <value>The From time should be earlier than the To time.</value>
+  </data>
+  <data name="ValidateView" xml:space="preserve">
+    <value>Validate View</value>
+  </data>
+  <data name="ValidDef" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="ValidateViewConfirmation" xml:space="preserve">
+    <value>Do you want to validate the view(s)?</value>
+  </data>
+  <data name="ValidateViewConfirmationNote" xml:space="preserve">
+    <value>Note: Please verify that the view’s underlying table or view has been recreated before validating the view.</value>
+  </data>
+  <data name="AlterLibraryWarningMessage" xml:space="preserve">
+    <value>Altering the library might affect stored procedures that use the library.
+Do you want to continue?</value>
+  </data>
+  <data name="CannotAlterLibrary" xml:space="preserve">
+    <value>You cannot alter a system library.</value>
+  </data>
+  <data name="TotalCompressedSize" xml:space="preserve">
+    <value>Total Compressed Size</value>
+  </data>
+  <data name="RunScriptTooltipsStandardOut" xml:space="preserve">
+    <value>If checked,both standard out and standard error is returned 
+otherwise only information from standard out is returned</value>
+  </data>
+  <data name="RunScriptDialogTitle" xml:space="preserve">
+    <value>Run Script </value>
+  </data>
+  <data name="RunScriptDisconnectedError" xml:space="preserve">
+    <value>The system has not connected.</value>
+  </data>
+  <data name="Sequence" xml:space="preserve">
+    <value>Sequence</value>
+  </data>
+  <data name="Sequences" xml:space="preserve">
+    <value>Sequences</value>
+  </data>
+</root>

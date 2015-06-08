@@ -1,0 +1,92 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// Assembled Summary message for the cpu_metrics publications
+//
+//  This publication is sent by the provider (either a node) 
+//   once every 2 seconds.
+//
+// The data from this source is collected from /proc/cpuinfo in M6.
+//  In a subsequent release, it may be collected via the monitor 
+//  This data is not published for spare nodes.
+//
+// Similar data is collected in the instance repository less
+//  frequently but with more detail.  This data can be accessed via
+//  the metric_node_1 view family.  The interval on this data is once
+//  per minute.
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and non-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=none
+//!!BLOCK:HEADER=END
+
+message core_metrics_shortbusy_assembled { 
+message aggregate_core_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: The logical node identifier for this node in this instance
+   required int32 node_id  = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Unique processor identifier from /proc
+   optional int32 processor   = 2;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Unique core identifier from /proc
+   optional int32 core_id = 3;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Avg_core_total is the average core busy level over the 2 second livefeed interval.  At any moment the core is either busy or not; this tells you the percent of time it was busy or idle
+   //It is computed by SUM(avg_core_total)/core_number
+   required int32 avg_core_total = 4;
+ }
+
+message aggregate_core_count {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Number of cores found on this particular logical node at this time.  The order of entries in this array MUST be the same as what's sent for reporting the actual core busy time.
+   optional int32 numcores  = 1;
+
+}
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated core count, one entry for each node
+ repeated aggregate_core_count aggregate_count = 2; 
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each node and core
+ repeated aggregate_core_buffer aggregate = 3; 
+
+
+}

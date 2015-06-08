@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+   <xs:schema xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="" id="TrafodionManagerSec">
+      <xs:element name="TrafodionManagerSec" msdata:IsDataSet="true" msdata:UseCurrentLocale="true">
+         <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+
+               <xs:element name="Logging">
+                  <xs:complexType>
+                     <xs:sequence>
+                        <xs:element name="LogUserMgmt" 			type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="IsUserMgmtLoggingRequired" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogPwdChange" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="IsPwdChangeLoggingRequired" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogPFLogonFailure" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogDBLogonFailure" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogPFLogonSuccess" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogDBLogonSuccess" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="IsPFLogonLoggingRequired" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="IsDBLogonLoggingRequired" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="LogFileAgingInDays" 		type="xs:int" 	  minOccurs="0"/> 
+                     </xs:sequence>
+                  </xs:complexType>
+              </xs:element>
+
+              <xs:element name="RolePassword">
+                  <xs:complexType>
+                     <xs:sequence>
+                        <xs:element name="RolePwdForPlatform" 	type="xs:string" minOccurs="0"/>
+                        <xs:element name="RolePwdForDB"		type="xs:boolean" minOccurs="0"/>
+                     </xs:sequence>
+                  </xs:complexType>
+               </xs:element>
+
+               <xs:element name="PasswordQuality">
+                  <xs:complexType>
+                     <xs:sequence>
+                        <xs:element name="PwdQualMinLen" 		type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdQualReqCriteria" 		type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdQualReqSpecChar" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdQualReqUpper" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdQualReqLower" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdQualReqDigit" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdReqForPowerRoleReset" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdReqForSuperReset" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdQualNoUserName" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="PwdQualNoRepeatChars" 	type="xs:boolean" minOccurs="0"/>
+                     </xs:sequence>
+                  </xs:complexType>
+               </xs:element>
+
+               <xs:element name="PasswordControl">
+                  <xs:complexType>
+                     <xs:sequence>
+                        <xs:element name="PwdCtrlGracePeriod" 		type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdCtrlDefaultExprDate" 	type="xs:string" minOccurs="0"/>
+                        <xs:element name="PwdCtrlDefaultExprDays" 	type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdHistory" 			type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdCanChangeWithin" 		type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdAuthFailsBeforeDelay"	type="xs:int" minOccurs="0"/>
+                        <xs:element name="PwdAuthFailDelayInSecs" 	type="xs:int" minOccurs="0"/>
+                     </xs:sequence>
+                  </xs:complexType>
+               </xs:element>
+
+               <xs:element name="Compatibility">
+                  <xs:complexType>
+                     <xs:sequence>
+                        <xs:element name="R2_93_CompatibilityMode" 	type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="AllowPreR25Drivers" 		type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="OptimizeForLocalAccess" 	type="xs:boolean" minOccurs="0"/>
+                     </xs:sequence>
+                  </xs:complexType>
+               </xs:element>
+            </xs:choice>
+         </xs:complexType>
+      </xs:element>
+   </xs:schema>

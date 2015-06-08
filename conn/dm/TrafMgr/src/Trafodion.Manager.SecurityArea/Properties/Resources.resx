@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddServer" xml:space="preserve">
+    <value>Add Directory Server</value>
+  </data>
+  <data name="AddServerLike" xml:space="preserve">
+    <value>Add Directory Server Like</value>
+  </data>
+  <data name="CACertificate" xml:space="preserve">
+    <value>CA Signed Certificate</value>
+  </data>
+  <data name="CertificateTextBox" xml:space="preserve">
+    <value>Directory Server Certificate</value>
+  </data>
+  <data name="ConfigTextBox" xml:space="preserve">
+    <value>Directory Server Config Text</value>
+  </data>
+  <data name="Credentials" xml:space="preserve">
+    <value>Credentials</value>
+  </data>
+  <data name="DatabaseUsers" xml:space="preserve">
+    <value>Database Users</value>
+  </data>
+  <data name="DropServer" xml:space="preserve">
+    <value>Delete Directory Server</value>
+  </data>
+  <data name="DirectoryServers" xml:space="preserve">
+    <value>Directory Servers</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="fileopen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\fileopen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ImportFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\compfile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MultipleDirectoryServerCount" xml:space="preserve">
+    <value>{0} directory server entries configured</value>
+  </data>
+  <data name="PlatformUsers" xml:space="preserve">
+    <value>Platform Users</value>
+  </data>
+  <data name="Policies" xml:space="preserve">
+    <value>Policies</value>
+  </data>
+  <data name="Roles" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="SecurityWindowTitle" xml:space="preserve">
+    <value>HP Database Manager - {0}</value>
+  </data>
+  <data name="SelfSignedCertificate" xml:space="preserve">
+    <value>Self-Signed Certificate</value>
+  </data>
+  <data name="SingleDirectoryServerCount" xml:space="preserve">
+    <value>{0} directory server entry configued</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="DirectoryServerCertificateToolTipText" xml:space="preserve">
+    <value>Import certificate from a file</value>
+  </data>
+  <data name="DirectoryServerConfigTextToolTipText" xml:space="preserve">
+    <value>Import configuration parameters from a file</value>
+  </data>
+  <data name="PolicyChangePendingWarning" xml:space="preserve">
+    <value>You have made unsaved policy changes. Would you like to discard these changes ?</value>
+  </data>
+  <data name="ErrorOperationFailed" xml:space="preserve">
+    <value>{0} failed with exception:  {1}</value>
+  </data>
+  <data name="ChangeSecurityPolicy" xml:space="preserve">
+    <value>Change Security Policies</value>
+  </data>
+  <data name="ChangePolicyWarningMessage" xml:space="preserve">
+    <value>Are you sure you want to apply the security policy changes?</value>
+  </data>
+  <data name="OperationWarningTitle" xml:space="preserve">
+    <value>{0} Warning</value>
+  </data>
+  <data name="LoggingPolicyTitle" xml:space="preserve">
+    <value>Logging</value>
+  </data>
+  <data name="PasswordPolicyTitle" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="SystemPolicyTitle" xml:space="preserve">
+    <value>Certificate &amp; Connection</value>
+  </data>
+  <data name="CreateDirectoryServer" xml:space="preserve">
+    <value>Create Directory Server</value>
+  </data>
+  <data name="EditServer" xml:space="preserve">
+    <value>Edit Directory Server</value>
+  </data>
+  <data name="ErrorMissingRequiredField" xml:space="preserve">
+    <value>Please enter {0}</value>
+  </data>
+  <data name="ErrorNumericValueOnly" xml:space="preserve">
+    <value>{0} must be a numeric value</value>
+  </data>
+  <data name="ErrorPasswordsDonotMatch" xml:space="preserve">
+    <value>Passwords do not match, please re-confirm the password</value>
+  </data>
+  <data name="OperationErrorTitle" xml:space="preserve">
+    <value>{0} Error</value>
+  </data>
+  <data name="PortNumber" xml:space="preserve">
+    <value>Port Number</value>
+  </data>
+  <data name="UsagePriority" xml:space="preserve">
+    <value>Usage Priority</value>
+  </data>
+  <data name="DirectoryServer" xml:space="preserve">
+    <value>directory server</value>
+  </data>
+  <data name="Dropped" xml:space="preserve">
+    <value>deleted</value>
+  </data>
+  <data name="DropServerWarning" xml:space="preserve">
+    <value>Are you sure you want to delete the selected directory server?</value>
+  </data>
+  <data name="Edited" xml:space="preserve">
+    <value>edited</value>
+  </data>
+  <data name="ErrorNoEntryIsSelected" xml:space="preserve">
+    <value>No {0} is selected, please try again.</value>
+  </data>
+  <data name="ErrorOnlyOneServerPlease" xml:space="preserve">
+    <value>Only one directory server can be {0} at a time, please try again.</value>
+  </data>
+  <data name="RemoveLastServerWarning" xml:space="preserve">
+    <value>Removing the last directory server will disable all remote authentications. Are you sure you want to continue?</value>
+  </data>
+  <data name="SelectedServerMessage" xml:space="preserve">
+    <value>Domain Name:  {0} Usage Priority:  {1} Host:  {2}:{3}</value>
+  </data>
+  <data name="CACertFileEmpty" xml:space="preserve">
+    <value>Intermediate Certificate file is empty</value>
+  </data>
+  <data name="CertFileEmpty" xml:space="preserve">
+    <value>Root Certificate File is empty</value>
+  </data>
+  <data name="DeployCACertProgressTitle" xml:space="preserve">
+    <value>Deploying CA Signed Certificate ...</value>
+  </data>
+  <data name="ErrorMessageTitle" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="GenCSRProgressTitle" xml:space="preserve">
+    <value>Generating CSR ...</value>
+  </data>
+  <data name="InvalidCSRFromServer" xml:space="preserve">
+    <value>Received an empty CSR string from server</value>
+  </data>
+  <data name="GenSelfProgressTitle" xml:space="preserve">
+    <value>Generating Self-Signed Certificate ...</value>
+  </data>
+  <data name="CACertDeploySuccessMessage" xml:space="preserve">
+    <value>CA Signed Certificate deployed successfully.</value>
+  </data>
+  <data name="SelectCACertificate" xml:space="preserve">
+    <value>Select CA Certificate File</value>
+  </data>
+  <data name="SelectCertFile" xml:space="preserve">
+    <value>Select Certificate File</value>
+  </data>
+  <data name="CACertLinkDescription" xml:space="preserve">
+    <value>:   Generate a certificate signing request and deploy the certificate signed by the Certificate Authority</value>
+  </data>
+  <data name="CertHeaderLabelText" xml:space="preserve">
+    <value>You have the option to use either a self-signed certificate or a certificate signed by a Certificate Authority (CA) of your choice.</value>
+  </data>
+  <data name="ChangeRolePasswordTitle" xml:space="preserve">
+    <value>Change Role Password</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="ConfirmRoleDeleteMessage" xml:space="preserve">
+    <value>Do you really want to delete the selected role(s) ?</value>
+  </data>
+  <data name="DeleteRoleErrorHeaderText" xml:space="preserve">
+    <value>The following roles could not be deleted.</value>
+  </data>
+  <data name="LookPasswordPrivProgressText" xml:space="preserve">
+    <value>Looking up password change privileges for current logon role...</value>
+  </data>
+  <data name="PasswordDontMatch" xml:space="preserve">
+    <value>New Password and Confirm New Password entries do not match</value>
+  </data>
+  <data name="RolesRowHeaderText" xml:space="preserve">
+    <value>There are {0} Roles</value>
+  </data>
+  <data name="SelfCertLinkDescription" xml:space="preserve">
+    <value>:   Replace the self-signed certificate on the platfom</value>
+  </data>
+  <data name="UsersForRoleHeaderText" xml:space="preserve">
+    <value>There are {0} users for the role</value>
+  </data>
+  <data name="ViewRoleDetailsMenuText" xml:space="preserve">
+    <value>View Role Details...</value>
+  </data>
+  <data name="LookupSecConfigPrivProgressText" xml:space="preserve">
+    <value>Looking up security configuration privileges for current logon role...</value>
+  </data>
+  <data name="PowerRoleMgmtTitle" xml:space="preserve">
+    <value>Power Role Management</value>
+  </data>
+  <data name="LoadingMessage" xml:space="preserve">
+    <value>Loading {0} ...</value>
+  </data>
+  <data name="TrafodionSecurityPolicies" xml:space="preserve">
+    <value>Trafodion security policies</value>
+  </data>
+  <data name="RetrieveDefaultSecurityPolicies" xml:space="preserve">
+    <value>Retrieving factory default security policies</value>
+  </data>
+  <data name="RetrieveSecurityPolicies" xml:space="preserve">
+    <value>Retrieving security policies</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="RetrieveMostStrongSecurityPolicies" xml:space="preserve">
+    <value>Retrieving most strong security policies</value>
+  </data>
+  <data name="UpdateSecurityPolicies" xml:space="preserve">
+    <value>Update security policies</value>
+  </data>
+  <data name="DeployCACertSuccess" xml:space="preserve">
+    <value />
+  </data>
+  <data name="LoadingXSDFile" xml:space="preserve">
+    <value>Loading TrafodionSecSchema.XSD from {0}</value>
+  </data>
+  <data name="CACertToolTip" xml:space="preserve">
+    <value>Path to the intermediate certificate file identifying the Certificate Authority</value>
+  </data>
+  <data name="SignedCertToolTip" xml:space="preserve">
+    <value>Path to the Root certificate file signed by the Certificate Authority</value>
+  </data>
+  <data name="LookupSQLPrivilegesForRole" xml:space="preserve">
+    <value>Looking up SQL privileges for selected role...</value>
+  </data>
+  <data name="NoValidRoleNamesErrorText" xml:space="preserve">
+    <value>No valid role names have been entered</value>
+  </data>
+  <data name="OneOrMorInvalidRoleNames" xml:space="preserve">
+    <value>One or more role names are invalid</value>
+  </data>
+  <data name="RoleAddMultipleFailureText" xml:space="preserve">
+    <value>Failed to add one or more roles</value>
+  </data>
+  <data name="RoleAddSuccessText" xml:space="preserve">
+    <value>Role added successfully</value>
+  </data>
+  <data name="RoleNameExceedsLengthErrorText" xml:space="preserve">
+    <value>Length exceeds the max length of {0}</value>
+  </data>
+  <data name="RoleSQLPrivileges" xml:space="preserve">
+    <value>SQL Privileges</value>
+  </data>
+  <data name="LookupPasswordAttributesForRoleText" xml:space="preserve">
+    <value>Retrieving password attributes of role...</value>
+  </data>
+  <data name="SecurityAreaName" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="ErrorPortNumberRange" xml:space="preserve">
+    <value>Host Port Number must be within the range of 1 - 65535</value>
+  </data>
+  <data name="downarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1downarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="uparrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1uparrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="filesave" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\filesave.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OldPasswordRequiredText" xml:space="preserve">
+    <value>Old password is required to change password</value>
+  </data>
+  <data name="RolePasswordExpirationLoadFailure" xml:space="preserve">
+    <value>Failed to load password expiry information for the role.
+
+{0}</value>
+  </data>
+  <data name="ChangeRolesPasswordSuccessText" xml:space="preserve">
+    <value>Password attributes of the role were changed successfully.</value>
+  </data>
+  <data name="RolePasswordNoChangeDetected" xml:space="preserve">
+    <value>No changes were detected.</value>
+  </data>
+  <data name="RolePasswordPolicyLoadFailure" xml:space="preserve">
+    <value>Failed to load the password policies. 
+
+{0}</value>
+  </data>
+  <data name="RoleAddOneFailureText" xml:space="preserve">
+    <value>Error adding role {0}.
+
+{1}</value>
+  </data>
+  <data name="ErrorLoadingSecurityConfigPrivileges" xml:space="preserve">
+    <value>Error looking up the security configuration privileges for the current role.</value>
+  </data>
+  <data name="SecurityFunctionsOnlyOnR25Text" xml:space="preserve">
+    <value>WARNING : Security functions are currently supported on Trafodion Release 2.5 only.</value>
+  </data>
+  <data name="RemovingServer" xml:space="preserve">
+    <value>Removing diretory server </value>
+  </data>
+  <data name="DSPropertyCertificate" xml:space="preserve">
+    <value>Certificate</value>
+  </data>
+  <data name="DSPropertyConfirmPassword" xml:space="preserve">
+    <value>Confirm Search User Password</value>
+  </data>
+  <data name="DSPropertyDomainName" xml:space="preserve">
+    <value>Domain Name</value>
+  </data>
+  <data name="DSPropertyHostName" xml:space="preserve">
+    <value>Host Name</value>
+  </data>
+  <data name="DSPropertyHostPortNumber" xml:space="preserve">
+    <value>Host Port Number</value>
+  </data>
+  <data name="DSPropertyPassword" xml:space="preserve">
+    <value>Search User Password</value>
+  </data>
+  <data name="DSPropertySearchUserDN" xml:space="preserve">
+    <value>Search User DN</value>
+  </data>
+  <data name="DSPropertyUsagePriority" xml:space="preserve">
+    <value>Usage Priority</value>
+  </data>
+  <data name="ErrorCertificateRange" xml:space="preserve">
+    <value>Certificate length exceeds maximum of 4096 characters</value>
+  </data>
+  <data name="ErrorConfirmSearchUserPassword" xml:space="preserve">
+    <value>Please confirm the Search User Password</value>
+  </data>
+  <data name="ErrorUsagePriorityRange" xml:space="preserve">
+    <value>Usage priority must be within the range of 0 - 32767</value>
+  </data>
+  <data name="ImportCertificate" xml:space="preserve">
+    <value>Import Certificate</value>
+  </data>
+  <data name="LookupServer" xml:space="preserve">
+    <value>Looking up Directory Server</value>
+  </data>
+  <data name="RefreshDirectoryServer" xml:space="preserve">
+    <value>Refresh Directory Server</value>
+  </data>
+  <data name="RetrieveCommonParameters" xml:space="preserve">
+    <value>Retrieve common parameters</value>
+  </data>
+</root>

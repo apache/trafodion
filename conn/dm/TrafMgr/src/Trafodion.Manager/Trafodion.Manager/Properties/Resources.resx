@@ -1,0 +1,1117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="MenuFile" xml:space="preserve">
+    <value>&amp;File</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="SecurityIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SecurityIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuMainWindow" xml:space="preserve">
+    <value>Main Window</value>
+  </data>
+  <data name="DisconnectIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DisconnectIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuShowAreas" xml:space="preserve">
+    <value>Show Areas</value>
+  </data>
+  <data name="WindowsManager" xml:space="preserve">
+    <value>Windows Manager </value>
+  </data>
+  <data name="EditAddIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\edit_add.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ChangePasswordFailedTitle" xml:space="preserve">
+    <value>Change Password Failure</value>
+  </data>
+  <data name="MenuPerformanceMonitor" xml:space="preserve">
+    <value>Performance Monitor</value>
+  </data>
+  <data name="GreenIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\GreenIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Trafodion_BannerLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Trafodion_BannerLogo.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ClonedWindowsStillOpenForSystemsMessage" xml:space="preserve">
+    <value>Choosing Yes, will also close all cloned windows for the selected system(s).</value>
+  </data>
+  <data name="MenuPrintPreview" xml:space="preserve">
+    <value>Print Pre&amp;view</value>
+  </data>
+  <data name="UnknownIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UnknownIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCI" xml:space="preserve">
+    <value>Trafodion Command Interface</value>
+  </data>
+  <data name="TrafodionMenuStrip" xml:space="preserve">
+    <value>TrafodionMenuStrip</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>Import Persistence</value>
+  </data>
+  <data name="trafodion_form_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\trafodion_form_icon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NewReportIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NewReportHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuEdit" xml:space="preserve">
+    <value>&amp;Edit</value>
+  </data>
+  <data name="DBTableIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBTableIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="download" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\download.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SQLWhiteboard" xml:space="preserve">
+    <value>SQL Whiteboard</value>
+  </data>
+  <data name="DBSPJIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBSPJIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConnectAndEditSystem" xml:space="preserve">
+    <value>Connect / Edit System</value>
+  </data>
+  <data name="SecurityAuditLogsConfig" xml:space="preserve">
+    <value>Configure Audit Logging</value>
+  </data>
+  <data name="DefaultSchemaLabel" xml:space="preserve">
+    <value> | Default Schema: </value>
+    <comment>Must have one leading and one trailing space</comment>
+  </data>
+  <data name="MultipleServersIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MultipleServersIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DataToSpreadsheet" xml:space="preserve">
+    <value>Data to &amp;Spreadsheet ...</value>
+    <comment>Button text</comment>
+  </data>
+  <data name="AdhocReportIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\font_bitmap.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConnectedServiceLabel" xml:space="preserve">
+    <value>| WMS Service: </value>
+  </data>
+  <data name="EditRemoveIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\edit_remove.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="JarIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\JarIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Checkbox_UnChecked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Checkbox_UnChecked.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DBViewIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBViewIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuOptions" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="RemoveSystemMessage" xml:space="preserve">
+    <value>Do you really want to remove {0}  system?</value>
+  </data>
+  <data name="ProductName" xml:space="preserve">
+    <value>Trafodion Database Manager</value>
+  </data>
+  <data name="auditlog" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\auditlog.jpg;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCIStartupError" xml:space="preserve">
+    <value>Currently Used Values</value>
+  </data>
+  <data name="DBSynonymIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBSynonymIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ClassIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ClassIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SecurityAuditLogsConfigCaption" xml:space="preserve">
+    <value>Security Audit Logging Configuration</value>
+  </data>
+  <data name="ShowHideAreaOptions" xml:space="preserve">
+    <value>Show/Hide Area Options</value>
+  </data>
+  <data name="System_name_can_only_contain" xml:space="preserve">
+    <value>System name can only contain alpha numeric characters and underscore character.</value>
+    <comment>error message</comment>
+  </data>
+  <data name="DefaultTrafodionOdbcDriverString" xml:space="preserve">
+    <value>TRAF ODBC 1.0</value>
+  </data>
+  <data name="OneUpArrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OneUpArrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DefaultPersistenceFileExtension" xml:space="preserve">
+    <value>config.xml</value>
+  </data>
+  <data name="MenuCut" xml:space="preserve">
+    <value>Cu&amp;t</value>
+  </data>
+  <data name="NCIPromptSchema" xml:space="preserve">
+    <value>False</value>
+  </data>
+  <data name="FileFilter" xml:space="preserve">
+    <value>TRAFCI file(*.cmd)|*.cmd|Other runnable(*.exe,*.bat)|*.exe;*.bat|All files(*.*)|*.*</value>
+    <comment>File types to filter in a file dialog box</comment>
+  </data>
+  <data name="GetSessionIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\GetSessionIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuWordWrap" xml:space="preserve">
+    <value>Word Wrap</value>
+  </data>
+  <data name="NCIPromptHost" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="MenuUndo" xml:space="preserve">
+    <value>&amp;Undo</value>
+  </data>
+  <data name="NCIPromptUser" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="Trafodion_Logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Trafodion_Logo.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DBCatalogIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBCatalogIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuTools" xml:space="preserve">
+    <value>&amp;Tools</value>
+  </data>
+  <data name="CommandWindowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CommandWindowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuWindowsManager" xml:space="preserve">
+    <value>Windows Manager ...</value>
+  </data>
+  <data name="RepositoryEvents" xml:space="preserve">
+    <value>Repository Events</value>
+  </data>
+  <data name="QuestionDialog" xml:space="preserve">
+    <value>QuestionDialog</value>
+  </data>
+  <data name="BlankDocumentIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BlankDocumentIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DBSchemaIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBSchemaIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LibraryFolderIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Library.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>&amp;View</value>
+  </data>
+  <data name="LoadRule" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LoadRule.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EventViewerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Flag_redHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCIFilename64" xml:space="preserve">
+    <value>C:\Program Files (x86)\Hewlett-Packard\HP Database Command Interface 3.0\bin\hpdci.cmd</value>
+  </data>
+  <data name="ClearMultiplePasswordsMessage" xml:space="preserve">
+    <value>Do you really want to disconnect the selected system(s)?</value>
+  </data>
+  <data name="AvailableValues" xml:space="preserve">
+    <value>Available Values</value>
+  </data>
+  <data name="GrayIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\GrayIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UnappliedChangesConfirmMessage" xml:space="preserve">
+    <value>You have unapplied changes. Would you like to apply the changes?</value>
+  </data>
+  <data name="DefaultPersistenceFileExtensionPriorVersion" xml:space="preserve">
+    <value>config</value>
+  </data>
+  <data name="AddToFavoritesMenuText" xml:space="preserve">
+    <value>Add To Favorites</value>
+  </data>
+  <data name="GrantedByToolTip" xml:space="preserve">
+    <value>If not selected, the privileges will be granted or revoked on behalf of your current user name.</value>
+  </data>
+  <data name="MenuCommandInterpreter" xml:space="preserve">
+    <value>Command Interpreter</value>
+  </data>
+  <data name="StopIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\StopIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Error_ChangePasswordFailed" xml:space="preserve">
+    <value>Change password failed with the following exception: {0}</value>
+  </data>
+  <data name="OneDownArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OneDownArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SqlIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SQL.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ActiveSystemEditWarning" xml:space="preserve">
+    <value>You cannot edit an active (connected) system. If the system must be edited, you must disconnect and then retry the edit.</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>&amp;Help</value>
+  </data>
+  <data name="EditSystemMessage" xml:space="preserve">
+    <value>Do you really want edit {0}  system?</value>
+  </data>
+  <data name="NavigationTreeMyActiveSystemsFolderText" xml:space="preserve">
+    <value>My Active Systems</value>
+  </data>
+  <data name="ErrorLogStartMessage" xml:space="preserve">
+    <value>@@@ TrafodionManager 3 Error Log file started at {0}</value>
+  </data>
+  <data name="You_must_specify_a_numeric_ODBC_port_number" xml:space="preserve">
+    <value>You must specify a numeric ODBC port number</value>
+  </data>
+  <data name="Designer" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Designer.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ViewAuditLogs" xml:space="preserve">
+    <value>View Audit Logs</value>
+  </data>
+  <data name="MenuCloneThisWindow" xml:space="preserve">
+    <value>Clone This Window</value>
+  </data>
+  <data name="You_must_specify_a_live_feed_port_number_in_the_range_0_to_1" xml:space="preserve">
+    <value>You must specify a live feed port number in the range {0} to {1}</value>
+  </data>
+  <data name="PropertiesIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PropertiesIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MySystemsText" xml:space="preserve">
+    <value>My Systems</value>
+  </data>
+  <data name="DialOutEvents" xml:space="preserve">
+    <value>Dial Out Events</value>
+  </data>
+  <data name="DefaultLogFileExtension" xml:space="preserve">
+    <value>log</value>
+  </data>
+  <data name="PersistenceSaveFailure" xml:space="preserve">
+    <value>Error saving persistence file. The recent changes may not be persisted.</value>
+  </data>
+  <data name="DefaultPersistenceFolder" xml:space="preserve">
+    <value>TrafodionManager1.0</value>
+    <comment>Set to empty string at this time</comment>
+  </data>
+  <data name="UpArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UpArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DBIndexIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBIndexIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="WindowsManagerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WindowsManagerIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TowRightArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TowRightArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Left" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Left.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DownIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\down.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SaveAsIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\filesaveas.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuCloseAllWindowsExceptMainWindow" xml:space="preserve">
+    <value>Close All Windows Except Main Window</value>
+  </data>
+  <data name="SecurityAuditLogsViewer" xml:space="preserve">
+    <value>View Audit Logs</value>
+  </data>
+  <data name="MenuJumpTo" xml:space="preserve">
+    <value>&amp;Jump to</value>
+  </data>
+  <data name="DataSourceIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DataSourceIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TestLiveFeedFailMessage" xml:space="preserve">
+    <value>Failed to connect to the Live Feed Server. Please provide a valid user name and password and the correct Live Feed Port Number.</value>
+  </data>
+  <data name="ConfigureLDAP" xml:space="preserve">
+    <value>Update LDAP Configuration</value>
+  </data>
+  <data name="AddSystemMenuText" xml:space="preserve">
+    <value>Add System ...</value>
+  </data>
+  <data name="ErrorOpeningWritingToFile" xml:space="preserve">
+    <value>Error in  opening or writing to file: {0}    Exception:   {1}</value>
+  </data>
+  <data name="DataToClipboard" xml:space="preserve">
+    <value>Data to &amp;Clipboard </value>
+    <comment>Button  text</comment>
+  </data>
+  <data name="AddSystemLikeMenuText" xml:space="preserve">
+    <value>Add System Like This...</value>
+  </data>
+  <data name="DatabaseIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DatabaseIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RedIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RedIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="PrimaryKeyIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PrimaryKeyIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AlterIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AlterIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="PersistenceLoadFailure" xml:space="preserve">
+    <value>Error loading persistence file {0}. 
+
+It could be that the persistence file is not compatible with the current TrafodionManager version or it could be corrupted. 
+
+A new persistence file has been created and the old persistence has been saved as
+ {1} .
+
+A detail error log has been written to {2}.</value>
+  </data>
+  <data name="DataToBrowser" xml:space="preserve">
+    <value>Data to &amp;Browser ...</value>
+    <comment>Button Text</comment>
+  </data>
+  <data name="ServicesIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ServicesIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ChangePasswordCompletedTitle" xml:space="preserve">
+    <value>Change Password Completed</value>
+  </data>
+  <data name="ManagedWindowMenuStrip" xml:space="preserve">
+    <value>ManagedWindowMenuStrip</value>
+  </data>
+  <data name="TopTop22" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopTop22.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConnectIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ConnectIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuFormat" xml:space="preserve">
+    <value>F&amp;ormat</value>
+  </data>
+  <data name="MenuIndex" xml:space="preserve">
+    <value>&amp;Index</value>
+  </data>
+  <data name="Persistence_Load_Overwrite" xml:space="preserve">
+    <value>Do you want to replace your current state of Trafodion Database Manager ? This will disconnect all open connections.</value>
+  </data>
+  <data name="DefaultClientRuleFolder" xml:space="preserve">
+    <value>ClientRules</value>
+  </data>
+  <data name="Program" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="DefaultDataSourceConnectedWarning" xml:space="preserve">
+    <value>WARNING: Data Source {0} does not exist. {1} Connected to Data Source : {2}</value>
+  </data>
+  <data name="FolderOpenIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FolderOpenIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuCopy" xml:space="preserve">
+    <value>&amp;Copy</value>
+  </data>
+  <data name="TwoLeftArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TwoLeftArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RemoveMultipleSystemsMessage" xml:space="preserve">
+    <value>Do you really want to remove the selected system(s)?</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="NCI1" xml:space="preserve">
+    <value>Trafodion Command Interface</value>
+  </data>
+  <data name="NoSuitableDriverInstalled" xml:space="preserve">
+    <value>This version of Trafodion Database Manager requires TRAF ODBC 1.0 driver.
+
+Try again after you install the TRAF ODBC 1.0 driver.</value>
+  </data>
+  <data name="ClearPasswordMessage" xml:space="preserve">
+    <value>Do you really want to disconnect from {0} system?</value>
+  </data>
+  <data name="A_port_number_in_the_range_0_to_1_the_default_is_2" xml:space="preserve">
+    <value>A port number in the range {0} to {1} ... the default is {2}</value>
+  </data>
+  <data name="ShowHideGridColumns" xml:space="preserve">
+    <value>Show / Hide Grid Columns</value>
+  </data>
+  <data name="FullScreenIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\view_fullscreen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCIUseCustomPrompt" xml:space="preserve">
+    <value>False</value>
+  </data>
+  <data name="UnappliedChangesOfAddNewGranteeConfirmMessage" xml:space="preserve">
+    <value>You have added a new grantee but have not granted any privileges for the grantee, Would you like to discard changes?</value>
+  </data>
+  <data name="Right1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Right1.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_specify_a_numeric_live_feed_port_number" xml:space="preserve">
+    <value>You must specify a numeric live feed port number</value>
+  </data>
+  <data name="WarningTitle" xml:space="preserve">
+    <value>{0} {1} - Warning</value>
+    <comment>product name and area or component name</comment>
+  </data>
+  <data name="RunIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\cache.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UndoIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UndoIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConnectSystemMenuText" xml:space="preserve">
+    <value>Connect ...</value>
+  </data>
+  <data name="You_must_specify_a_port_number_in_the_range_0_to_1" xml:space="preserve">
+    <value>You must specify a port number in the range {0} to {1}</value>
+  </data>
+  <data name="PlayIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PlayIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SecurityAuditLogsViewerCaption" xml:space="preserve">
+    <value>Security Audit Log Viewer</value>
+  </data>
+  <data name="MenuEventViewer" xml:space="preserve">
+    <value>Event Viewer</value>
+  </data>
+  <data name="MenuWindows" xml:space="preserve">
+    <value>&amp;Windows</value>
+  </data>
+  <data name="ConnectivityIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ConnectivityIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UnappliedChangesOfAddNewGranteeConfirmCaption" xml:space="preserve">
+    <value>Unapplied Change</value>
+  </data>
+  <data name="HistoryIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\history.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CurrentlyUsedValues" xml:space="preserve">
+    <value>Currently Used Values</value>
+  </data>
+  <data name="Folder" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\folder_blue.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CancelIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CancelIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TopRight2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopRight2.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ReleaseIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ReleaseIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="apply" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\apply.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DefaultErrorLogFile" xml:space="preserve">
+    <value>TrafodionError</value>
+  </data>
+  <data name="You_must_specify_a_live_feed_port_number" xml:space="preserve">
+    <value>You must specify a live feed port number</value>
+  </data>
+  <data name="Error_NewPasswordsDonotMatch" xml:space="preserve">
+    <value>*** Error: New passwords do not match.</value>
+  </data>
+  <data name="WhiteBoardIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WhiteBoardIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Right" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Right.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AuthenticationError" xml:space="preserve">
+    <value>Authentication Failed</value>
+  </data>
+  <data name="ShowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\2uparrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CountUserControlFormat" xml:space="preserve">
+    <value>&lt;This  Schema has&gt;  {0}</value>
+    <comment>Language dependent string e.g.  The schema has  2  Tables</comment>
+  </data>
+  <data name="PauseIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PauseIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AllowedExportFileTypes" xml:space="preserve">
+    <value>File type must be CSV or HTML</value>
+  </data>
+  <data name="MultiUserIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MultiUserIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCIArgumentErrorText" xml:space="preserve">
+    <value>Failed to launch HP Database Command Interface.
+It is possible that one of the autologon attributes has a special character.
+
+Do you want to try again without autologon?</value>
+  </data>
+  <data name="ErrorLogFileSwitchMessage" xml:space="preserve">
+    <value>@@@ TrafodionManager 3 Error Log file switched at {0}</value>
+  </data>
+  <data name="DefaultClientRuleFileExtention" xml:space="preserve">
+    <value>xml</value>
+  </data>
+  <data name="SaveSystemButtonText" xml:space="preserve">
+    <value>&amp;Save</value>
+  </data>
+  <data name="NCIOptions" xml:space="preserve">
+    <value>Trafodion Command Interface (TRAFCI) Options</value>
+  </data>
+  <data name="NCIFilename32" xml:space="preserve">
+    <value>C:\Program Files\Hewlett-Packard\HP Database Command Interface 3.0\bin\hpdci.cmd</value>
+  </data>
+  <data name="Locked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\lock.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_specify_a_name_that_is_not_already_in_use" xml:space="preserve">
+    <value>You must specify a name that is not already in use.</value>
+  </data>
+  <data name="MenuSearch" xml:space="preserve">
+    <value>&amp;Search</value>
+  </data>
+  <data name="MenuSystemTool" xml:space="preserve">
+    <value>Systems Tool</value>
+  </data>
+  <data name="Checkbox_Checked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Checkbox_Checked.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DefaultTraceLogFile" xml:space="preserve">
+    <value>TrafodionTrace</value>
+  </data>
+  <data name="WorkloadIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WorkloadIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TestSystemMenuText" xml:space="preserve">
+    <value>Test System</value>
+  </data>
+  <data name="FolderOpen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\folder_blue_open.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NoPermission" xml:space="preserve">
+    <value>You do not have permission to open this file</value>
+  </data>
+  <data name="MenuSave" xml:space="preserve">
+    <value>Save Persistence</value>
+  </data>
+  <data name="SecurityAuditLogsTooltips" xml:space="preserve">
+    <value>Security Audit Log Viewer</value>
+  </data>
+  <data name="MenuPaste" xml:space="preserve">
+    <value>&amp;Paste</value>
+  </data>
+  <data name="Question" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Question.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DBTriggerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBTriggerIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuContents" xml:space="preserve">
+    <value>&amp;Contents</value>
+  </data>
+  <data name="fullscreen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\fullscreen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DrillDownIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\kpager.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RefreshMenuText" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="AuthenticationErrorMessage" xml:space="preserve">
+    <value>Authentication failed. Please provide a valid user name and password and try again.</value>
+  </data>
+  <data name="ErrorMustInstalledLiveFeedDriver" xml:space="preserve">
+    <value>The Live Feed driver cannot be found. Please install HP Live Feed {0}.</value>
+  </data>
+  <data name="RightArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RightArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+    <comment>The caption used for message box displaying error messages</comment>
+  </data>
+  <data name="ErrorLogNewFileMessage" xml:space="preserve">
+    <value>@@@ TrafodionManager 3 New log file is {0}</value>
+  </data>
+  <data name="ConnectionElapseTimeMessage" xml:space="preserve">
+    <value>Elapsed time (secs) : {0}</value>
+  </data>
+  <data name="Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="LeftArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LeftArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Filter2HS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Filter2HS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnterPassword" xml:space="preserve">
+    <value>Enter Password</value>
+  </data>
+  <data name="HelpIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Help.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Please_select_at_least_one_area_to_display" xml:space="preserve">
+    <value>Please select at least one area to display.</value>
+  </data>
+  <data name="MenuPrint" xml:space="preserve">
+    <value>&amp;Print</value>
+  </data>
+  <data name="MenuPerformanceAnalysis" xml:space="preserve">
+    <value>Performance Analysis</value>
+  </data>
+  <data name="ServerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ServerIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DatabaseEvents" xml:space="preserve">
+    <value>Database Events</value>
+  </data>
+  <data name="You_must_specify_a_port_number" xml:space="preserve">
+    <value>You must specify a ODBC port number</value>
+  </data>
+  <data name="ClipboardExceptionMessage" xml:space="preserve">
+    <value>Runtime Interoperability Services Exception: The system Clipboard could not be accessed</value>
+    <comment>Error message</comment>
+  </data>
+  <data name="MenuSaveAs" xml:space="preserve">
+    <value>Export Persistence</value>
+  </data>
+  <data name="ConfigureIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ConfigureIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ProductOptions" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Error_BlankPasswordNotAllowed" xml:space="preserve">
+    <value>*** Error: Blank password is not allowed.</value>
+  </data>
+  <data name="Unlocked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\unlock.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuSelectAll" xml:space="preserve">
+    <value>Select &amp;All</value>
+  </data>
+  <data name="PieChartIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\querystates.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinkedReportIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Book_StackOfReportsHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OneLeftArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OneLeftArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ReportRootFolderIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OrganizerHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ErrorOpeningBrowser" xml:space="preserve">
+    <value>Error Opening Browser: </value>
+  </data>
+  <data name="UserLabel" xml:space="preserve">
+    <value> |  User: </value>
+    <comment>Must have one leading and one trailing space</comment>
+  </data>
+  <data name="FixConnectionsDialog" xml:space="preserve">
+    <value>FixConnectionsDialog</value>
+  </data>
+  <data name="TopTop2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopTop2.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="nofullscreen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\nofullscreen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ChartReportIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\graphhs.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DefaultServerDataSourceName" xml:space="preserve">
+    <value>Admin_Load_DataSource</value>
+    <comment>Default server side data source name to be used in connections</comment>
+  </data>
+  <data name="PasswordExpiredMessage" xml:space="preserve">
+    <value>*** Password expired but it's in grace period. Please change your password.</value>
+  </data>
+  <data name="TopLeft22" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopLeft22.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ShowHidden" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ShowHidden.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LogIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LogIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>&amp;About...</value>
+  </data>
+  <data name="PortLabel" xml:space="preserve">
+    <value> | Port: </value>
+    <comment>Must have one leading and one trailing space</comment>
+  </data>
+  <data name="LiveEvents" xml:space="preserve">
+    <value>Live Events</value>
+  </data>
+  <data name="EditSystemMenuText" xml:space="preserve">
+    <value>Edit ...</value>
+  </data>
+  <data name="EditIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\EditIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="HostLabel" xml:space="preserve">
+    <value> - [ Host: </value>
+    <comment>Must have one leading and one trailing space</comment>
+  </data>
+  <data name="MetricMinerIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MetricMinerIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UnappliedChangesConfirmMessageCaption" xml:space="preserve">
+    <value>Unapplied Change</value>
+  </data>
+  <data name="FavoritesErrorMessage" xml:space="preserve">
+    <value>{0} refers to {1} which cannot be found in the navigator.{2}It could be that the system connection state has changed or the node might have been removed.</value>
+  </data>
+  <data name="RedoIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RedoIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_select_one_column" xml:space="preserve">
+    <value>None of the columns have been selected. Please select at least one column</value>
+  </data>
+  <data name="FavoritesNotFoundError" xml:space="preserve">
+    <value>{0} refers to {1} which cannot be found in the navigator.{2}It could be that the node might have been removed.</value>
+  </data>
+  <data name="ChangePasswordMenuText" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="MenuWorkspaceDesigner" xml:space="preserve">
+    <value>Workspace Designer</value>
+  </data>
+  <data name="NCIAutoLogon" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="Left4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Left4.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MetricMiner" xml:space="preserve">
+    <value>Metric Miner</value>
+  </data>
+  <data name="DownloadOSIMDataFileTitle" xml:space="preserve">
+    <value>Download OSIM Data Files</value>
+  </data>
+  <data name="TextEvents" xml:space="preserve">
+    <value>View Events</value>
+  </data>
+  <data name="DataToFile" xml:space="preserve">
+    <value>Data to F&amp;ile ...</value>
+    <comment>Button text</comment>
+  </data>
+  <data name="DBLibraryIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBLibraryIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OKIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OKIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_specify_a_user_name" xml:space="preserve">
+    <value>You must specify a user name</value>
+  </data>
+  <data name="MenuUnlock" xml:space="preserve">
+    <value>&amp;Unlock</value>
+  </data>
+  <data name="DefaultPersistenceFile" xml:space="preserve">
+    <value>TrafodionManagerSettings</value>
+  </data>
+  <data name="ChangePasswordSucceeded" xml:space="preserve">
+    <value>Password has been successfully changed.</value>
+  </data>
+  <data name="ReportIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\book_reportHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuRedo" xml:space="preserve">
+    <value>&amp;Redo</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>{0} not found</value>
+  </data>
+  <data name="ClonedWindowsStillOpenMessage" xml:space="preserve">
+    <value>Choosing Yes, will also close all cloned windows for this system.</value>
+  </data>
+  <data name="DBRoleIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DBRoleIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SqlPlanIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SqlPlanButton.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RoleLabel" xml:space="preserve">
+    <value> | Role: </value>
+    <comment>Must have one leading and one trailing space</comment>
+  </data>
+  <data name="MenuResetLayout" xml:space="preserve">
+    <value>Reset Layout</value>
+  </data>
+  <data name="FolderClosedIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FolderClosedIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="HideIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\2downarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="add" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AddIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SplitterBar" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SplitterBar.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LiveFeedAuthenticationError" xml:space="preserve">
+    <value>Live Feed Error</value>
+  </data>
+  <data name="RefreshIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RefreshIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_specify_a_name" xml:space="preserve">
+    <value>You must specify a name.</value>
+  </data>
+  <data name="ClearPasswordMenuText" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="MenuNew" xml:space="preserve">
+    <value>&amp;New</value>
+  </data>
+  <data name="LoadTriageIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LoadTriageIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>E&amp;xit</value>
+  </data>
+  <data name="FavoritesErrorHeader" xml:space="preserve">
+    <value>Cannot Resolve Favorite</value>
+  </data>
+  <data name="TopLeft2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopLeft2.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SingleUserIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SingleUserIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="You_must_input_the_password" xml:space="preserve">
+    <value>You must input the password</value>
+  </data>
+  <data name="DatasourceLabel" xml:space="preserve">
+    <value> | Data Source: </value>
+  </data>
+  <data name="DeleteIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DeleteIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RemoveSystemMenuText" xml:space="preserve">
+    <value>Remove System</value>
+  </data>
+  <data name="TopRight22" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TopRight22.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OneRightArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OneRightArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SecurityAuditLogs" xml:space="preserve">
+    <value>Security Audit Logs</value>
+  </data>
+  <data name="YellowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\YellowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NCICustomPrompt" xml:space="preserve">
+    <value />
+  </data>
+  <data name="You_must_specify_a_numeric_value" xml:space="preserve">
+    <value>You must specify a numeric value for {0}</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>{0} {1} - Error</value>
+    <comment>product name and area or component name</comment>
+  </data>
+  <data name="AccessDenied" xml:space="preserve">
+    <value>Access Denied</value>
+  </data>
+  <data name="ExportToFile" xml:space="preserve">
+    <value>Export to File... </value>
+    <comment>Button Text</comment>
+  </data>
+  <data name="MonitoringIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MonitoringIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ToolstripMenuCopy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="ConfirmTitle" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="SaveIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\3floppy_unmount.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ServerLFConnectedIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ServerLFConnectedIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuLock" xml:space="preserve">
+    <value>&amp;Lock</value>
+  </data>
+  <data name="indesign" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\indesign.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Export" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\export.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="BrowseForFile" xml:space="preserve">
+    <value>Browse for {0} file?</value>
+  </data>
+  <data name="BlankIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BlankIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ServerConnectedIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ServerConnectedIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CloseIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\tab_remove.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="config" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\config.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Cant_use_same_port_number" xml:space="preserve">
+    <value>ODBC Port Number and Live Feed Port Number cannot be the same.</value>
+  </data>
+</root>

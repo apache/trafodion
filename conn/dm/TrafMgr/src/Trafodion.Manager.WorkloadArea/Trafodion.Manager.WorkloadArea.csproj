@@ -1,0 +1,932 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   --><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.WorkloadArea</RootNamespace>
+    <AssemblyName>Trafodion.Manager.WorkloadArea</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Bin\Debug\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.WorkloadArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Bin\Release\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.WorkloadArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid, Version=3.0.0.0, Culture=neutral, PublicKeyToken=9d47002745f2416c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+    </Reference>
+    <Reference Include="ZedGraph, Version=5.0.2.29399, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\build\ZedGraph.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\AddRuleDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\AddRuleDialog.designer.cs">
+      <DependentUpon>AddRuleDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AssociateRuleDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\AssociateRuleDialog.designer.cs">
+      <DependentUpon>AssociateRuleDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ClientRuleManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ClientRuleManager.Designer.cs">
+      <DependentUpon>ClientRuleManager.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ClientRuleViolators.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ClientRuleViolators.Designer.cs">
+      <DependentUpon>ClientRuleViolators.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ClientRuleValue.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ClientRuleValue.Designer.cs">
+      <DependentUpon>ClientRuleValue.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ClientRuleWizard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ClientRuleWizard.Designer.cs">
+      <DependentUpon>ClientRuleWizard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectionFolderFactory.cs" />
+    <Compile Include="Controls\TriageChartControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TriageChartControl.Designer.cs">
+      <DependentUpon>TriageChartControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SQLOffenderCanvas.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SQLOffenderCanvas.Designer.cs">
+      <DependentUpon>SQLOffenderCanvas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SQLOffenderWidget.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SQLOffenderWidget.Designer.cs">
+      <DependentUpon>SQLOffenderWidget.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MaintainScript.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MaintainScript.Designer.cs">
+      <DependentUpon>MaintainScript.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ReorgProgressUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ReorgProgressUserControl.Designer.cs">
+      <DependentUpon>ReorgProgressUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TransactionQueriesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TransactionQueriesUserControl.designer.cs">
+      <DependentUpon>TransactionQueriesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TransactionUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TransactionUserControl.designer.cs">
+      <DependentUpon>TransactionUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\GenericDataDisplayControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\GenericDataDisplayControl.Designer.cs">
+      <DependentUpon>GenericDataDisplayControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorSQLCommand.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorSQLCommand.Designer.cs">
+      <DependentUpon>MonitorSQLCommand.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadCanvas.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadCanvas.Designer.cs">
+      <DependentUpon>MonitorWorkloadCanvas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadFilter.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadFilter.Designer.cs">
+      <DependentUpon>MonitorWorkloadFilter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadQueryStats.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorWorkloadQueryStats.Designer.cs">
+      <DependentUpon>MonitorWorkloadQueryStats.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ParentChildQueriesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ParentChildQueriesUserControl.designer.cs">
+      <DependentUpon>ParentChildQueriesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ServiceStatusMonitorControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ServiceStatusMonitorControl.Designer.cs">
+      <DependentUpon>ServiceStatusMonitorControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\StatementCounterDetailsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\StatementCounterDetailsForm.Designer.cs">
+      <DependentUpon>StatementCounterDetailsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\StatsInGridControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\StatsInGridControl.Designer.cs">
+      <DependentUpon>StatsInGridControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TriageFilterSelectionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSChildrenProcessesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSChildrenProcessesUserControl.Designer.cs">
+      <DependentUpon>WMSChildrenProcessesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSProcessDetailsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSPStateUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSQueryMetricsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSQueryTextOrPlanUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSRepositoryInfoUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSRepositoryInfoUserControl.Designer.cs">
+      <DependentUpon>WMSRepositoryInfoUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSQueryWarningUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSQueryWarningUserControl.Designer.cs">
+      <DependentUpon>WMSQueryWarningUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSRulesAssociatedUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSRulesAssociatedUserControl.Designer.cs">
+      <DependentUpon>WMSRulesAssociatedUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSPerTableStatsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSPerTableStatsUserControl.Designer.cs">
+      <DependentUpon>WMSPerTableStatsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSPlatformCounterHistory.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSPlatformCounterHistory.Designer.cs">
+      <DependentUpon>WMSPlatformCounterHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSQueryDetailUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSQueryDetailUserControl.Designer.cs">
+      <DependentUpon>WMSQueryDetailUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSTextBoxUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSTextBoxUserControl.designer.cs">
+      <DependentUpon>WMSTextBoxUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadHistoryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadHistoryControl.Designer.cs">
+      <DependentUpon>WorkloadHistoryControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadOption.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadOption.designer.cs">
+      <DependentUpon>WorkloadOption.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TriageCustomDateTimeEntry.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TriageCustomDateTimeEntry.designer.cs">
+      <DependentUpon>TriageCustomDateTimeEntry.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TriageFilterPropertyGrid.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TriageFilterPropertyGrid.designer.cs">
+      <DependentUpon>TriageFilterPropertyGrid.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\OffenderWorkloadCanvas.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\OffenderWorkloadCanvas.Designer.cs">
+      <DependentUpon>OffenderWorkloadCanvas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RulesSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\RulesSummaryUserControl.Designer.cs">
+      <DependentUpon>RulesSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TabbedWorkloadUserControlWrapper.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TabbedWorkloadUserControlWrapper.Designer.cs">
+      <DependentUpon>TabbedWorkloadUserControlWrapper.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TriageGridUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TriageGridUserControl.Designer.cs">
+      <DependentUpon>TriageGridUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TriageSpaceUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TriageSpaceUserControl.Designer.cs">
+      <DependentUpon>TriageSpaceUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSAlterRuleDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSAlterRuleDialog.Designer.cs">
+      <DependentUpon>WMSAlterRuleDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSAlterRuleUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSAlterRuleUserControl.Designer.cs">
+      <DependentUpon>WMSAlterRuleUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSCommandStopConfirmationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSCommandStopConfirmationDialog.Designer.cs">
+      <DependentUpon>WMSCommandStopConfirmationDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSEditServiceDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSEditServiceDialog.Designer.cs">
+      <DependentUpon>WMSEditServiceDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSEditServiceUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSEditServiceUserControl.Designer.cs">
+      <DependentUpon>WMSEditServiceUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSHistory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSHistory.designer.cs">
+      <DependentUpon>WMSHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderAlterParams.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderAlterParams.designer.cs">
+      <DependentUpon>WMSOffenderAlterParams.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderIndicator.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderIndicator.Designer.cs">
+      <DependentUpon>WMSOffenderIndicator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderStatusCommand.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSOffenderStatusCommand.designer.cs">
+      <DependentUpon>WMSOffenderStatusCommand.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSWorkloadCanvas.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSWorkloadCanvas.Designer.cs">
+      <DependentUpon>WMSWorkloadCanvas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadPlanControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadPlanControl.Designer.cs">
+      <DependentUpon>WorkloadPlanControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadQueryStatsChart.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadQueryStatsChart.Designer.cs">
+      <DependentUpon>WorkloadQueryStatsChart.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadsUserControl.Designer.cs">
+      <DependentUpon>WorkloadsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlatformCountersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlatformCountersUserControl.Designer.cs">
+      <DependentUpon>PlatformCountersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ServicesCountersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ServicesCountersUserControl.Designer.cs">
+      <DependentUpon>ServicesCountersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\EditSystemConfigurationUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\EditSystemConfigurationUserControl.Designer.cs">
+      <DependentUpon>EditSystemConfigurationUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ServicesSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ServicesSummaryUserControl.Designer.cs">
+      <DependentUpon>ServicesSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ExportConfigControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ExportConfigControl.Designer.cs">
+      <DependentUpon>ExportConfigControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\ActiveWorkloadsFolder.cs" />
+    <Compile Include="Controls\Tree\CompRulesFolder.cs" />
+    <Compile Include="Controls\Tree\ConfigurationFolder.cs" />
+    <Compile Include="Controls\Tree\ConnRulesFolder.cs" />
+    <Compile Include="Controls\Tree\AdminRolesFolder.cs" />
+    <Compile Include="Controls\Tree\ExecRulesFolder.cs" />
+    <Compile Include="Controls\Tree\RulesFolder.cs" />
+    <Compile Include="Controls\Tree\RulesSubFolder.cs" />
+    <Compile Include="Controls\Tree\ServiceFolder.cs" />
+    <Compile Include="Controls\Tree\ServicesFolder.cs" />
+    <Compile Include="Controls\Tree\SystemFolder.cs" />
+    <Compile Include="Controls\Tree\WmsTreeFolder.cs" />
+    <Compile Include="Controls\Tree\WmsTreeNode.cs" />
+    <Compile Include="Controls\Tree\WMSTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\WMSTreeViewUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\WMSTreeViewUserControl.Designer.cs">
+      <DependentUpon>WMSTreeViewUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WmsObjectsIGrid.cs" />
+    <Compile Include="Controls\WMSSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSSummaryUserControl.Designer.cs">
+      <DependentUpon>WMSSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkloadCountersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WorkloadCountersUserControl.Designer.cs">
+      <DependentUpon>WorkloadCountersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelpTopics.cs" />
+    <Compile Include="Model\ClientQueryRuler.cs" />
+    <Compile Include="Model\ClientRule.cs" />
+    <Compile Include="Model\ClientRuleAlert.cs" />
+    <Compile Include="Model\ClientRuleCondition.cs" />
+    <Compile Include="Model\SummaryCountsDataProvider.cs" />
+    <Compile Include="Model\TransactionQueryDataProvider.cs" />
+    <Compile Include="Model\MonitorWorkloadDataProvider.cs" />
+    <Compile Include="Model\MonitorWorkloadOptions.cs" />
+    <Compile Include="Model\WMSQueryDetailInfoUtils.cs" />
+    <Compile Include="Model\WorkloadOptionModel.cs" />
+    <Compile Include="Model\TriageFilterQueryData.cs" />
+    <Compile Include="Model\TriageDataProvider.cs" />
+    <Compile Include="Controls\TriageHelper.cs" />
+    <Compile Include="Model\WorkloadEnumConverter.cs" />
+    <Compile Include="Model\TriageFilterInfo.cs" />
+    <Compile Include="Controls\TriageFilterSelectionEditor.cs" />
+    <Compile Include="Model\Queries.cs" />
+    <Compile Include="Controls\WMSNavigationControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSNavigationControl.Designer.cs">
+      <DependentUpon>WMSNavigationControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WMSRightPaneControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\WMSRightPaneControl.Designer.cs">
+      <DependentUpon>WMSRightPaneControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Model\WmsAdminRole.cs" />
+    <Compile Include="Model\WmsCommand.cs" />
+    <Compile Include="Model\WMSHistoryModel.cs" />
+    <Compile Include="Model\WmsObject.cs" />
+    <Compile Include="Model\WMSOdbcAccess.cs" />
+    <Compile Include="Model\WMSOffenderDatabaseDataProvider.cs" />
+    <Compile Include="Model\WMSOffenderOptions.cs" />
+    <Compile Include="Model\WMSOffenderStatusOptions.cs" />
+    <Compile Include="Model\WmsRule.cs" />
+    <Compile Include="Model\WmsService.cs" />
+    <Compile Include="Model\WmsSystem.cs" />
+    <Compile Include="Model\WMSUtils.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WorkloadAreaMain.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\ClientRuleManager.resx">
+      <DependentUpon>ClientRuleManager.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ClientRuleValue.resx">
+      <DependentUpon>ClientRuleValue.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ClientRuleViolators.resx">
+      <DependentUpon>ClientRuleViolators.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ClientRuleWizard.resx">
+      <DependentUpon>ClientRuleWizard.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageChartControl.resx">
+      <DependentUpon>TriageChartControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SQLOffenderCanvas.resx">
+      <DependentUpon>SQLOffenderCanvas.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SQLOffenderWidget.resx">
+      <DependentUpon>SQLOffenderWidget.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MaintainScript.resx">
+      <DependentUpon>MaintainScript.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ReorgProgressUserControl.resx">
+      <DependentUpon>ReorgProgressUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TransactionQueriesUserControl.resx">
+      <DependentUpon>TransactionQueriesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TransactionUserControl.resx">
+      <DependentUpon>TransactionUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ParentChildQueriesUserControl.resx">
+      <DependentUpon>ParentChildQueriesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadHistoryControl.resx">
+      <DependentUpon>WorkloadHistoryControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadPlanControl.resx">
+      <DependentUpon>WorkloadPlanControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\AddRuleDialog.resx">
+      <DependentUpon>AddRuleDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\AssociateRuleDialog.resx">
+      <DependentUpon>AssociateRuleDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\GenericDataDisplayControl.resx">
+      <DependentUpon>GenericDataDisplayControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorSQLCommand.resx">
+      <DependentUpon>MonitorSQLCommand.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorWorkloadCanvas.resx">
+      <DependentUpon>MonitorWorkloadCanvas.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorWorkloadFilter.resx">
+      <DependentUpon>MonitorWorkloadFilter.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorWorkloadQueryStats.resx">
+      <DependentUpon>MonitorWorkloadQueryStats.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ServiceStatusMonitorControl.resx">
+      <DependentUpon>ServiceStatusMonitorControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\StatementCounterDetailsForm.resx">
+      <DependentUpon>StatementCounterDetailsForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\StatsInGridControl.resx">
+      <DependentUpon>StatsInGridControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageFilterSelectionDialog.resx">
+      <DependentUpon>TriageFilterSelectionDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSChildrenProcessesUserControl.resx">
+      <DependentUpon>WMSChildrenProcessesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSRepositoryInfoUserControl.resx">
+      <DependentUpon>WMSRepositoryInfoUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSQueryWarningUserControl.resx">
+      <DependentUpon>WMSQueryWarningUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSRulesAssociatedUserControl.resx">
+      <DependentUpon>WMSRulesAssociatedUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSPerTableStatsUserControl.resx">
+      <DependentUpon>WMSPerTableStatsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSPlatformCounterHistory.resx">
+      <DependentUpon>WMSPlatformCounterHistory.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSQueryDetailUserControl.resx">
+      <DependentUpon>WMSQueryDetailUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSTextBoxUserControl.resx">
+      <DependentUpon>WMSTextBoxUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadOption.resx">
+      <DependentUpon>WorkloadOption.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageCustomDateTimeEntry.resx">
+      <DependentUpon>TriageCustomDateTimeEntry.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageFilterPropertyGrid.resx">
+      <DependentUpon>TriageFilterPropertyGrid.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\OffenderWorkloadCanvas.resx">
+      <DependentUpon>OffenderWorkloadCanvas.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RulesSummaryUserControl.resx">
+      <DependentUpon>RulesSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TabbedWorkloadUserControlWrapper.resx">
+      <DependentUpon>TabbedWorkloadUserControlWrapper.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageGridUserControl.resx">
+      <DependentUpon>TriageGridUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TriageSpaceUserControl.resx">
+      <DependentUpon>TriageSpaceUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSAlterRuleDialog.resx">
+      <DependentUpon>WMSAlterRuleDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSAlterRuleUserControl.resx">
+      <DependentUpon>WMSAlterRuleUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSCommandStopConfirmationDialog.resx">
+      <DependentUpon>WMSCommandStopConfirmationDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSEditServiceDialog.resx">
+      <DependentUpon>WMSEditServiceDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSEditServiceUserControl.resx">
+      <DependentUpon>WMSEditServiceUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSHistory.resx">
+      <DependentUpon>WMSHistory.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSOffenderAlterParams.resx">
+      <DependentUpon>WMSOffenderAlterParams.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSOffenderIndicator.resx">
+      <DependentUpon>WMSOffenderIndicator.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSOffenderStatusCommand.resx">
+      <DependentUpon>WMSOffenderStatusCommand.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSWorkloadCanvas.resx">
+      <DependentUpon>WMSWorkloadCanvas.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadQueryStatsChart.resx">
+      <DependentUpon>WorkloadQueryStatsChart.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadsUserControl.resx">
+      <DependentUpon>WorkloadsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlatformCountersUserControl.resx">
+      <DependentUpon>PlatformCountersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ServicesCountersUserControl.resx">
+      <DependentUpon>ServicesCountersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\EditSystemConfigurationUserControl.resx">
+      <DependentUpon>EditSystemConfigurationUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ServicesSummaryUserControl.resx">
+      <DependentUpon>ServicesSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ExportConfigControl.resx">
+      <DependentUpon>ExportConfigControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSNavigationControl.resx">
+      <DependentUpon>WMSNavigationControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSRightPaneControl.resx">
+      <DependentUpon>WMSRightPaneControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WMSSummaryUserControl.resx">
+      <DependentUpon>WMSSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\WorkloadCountersUserControl.resx">
+      <DependentUpon>WorkloadCountersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj">
+      <Project>{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}</Project>
+      <Name>Trafodion.Manager.DatabaseArea</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj">
+      <Project>{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}</Project>
+      <Name>Trafodion.Manager.UniversalWidget</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</Project>
+      <Name>Trafodion.Manager</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\color_line.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\configure1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\history.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\querystates.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MagnifyingGlass.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\apply.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\configure.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cautionIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\edit_add1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DeleteHS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\play.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\stop.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pause.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\run.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\attach.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cancel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\openHS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\saveHS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1downarrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1leftarrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1rightarrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1uparrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\2leftarrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\2rightarrow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\custom.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\hidestatements.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\showhidden.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\bookcase.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\resetTriage.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\GetTrans.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MaintainScript.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

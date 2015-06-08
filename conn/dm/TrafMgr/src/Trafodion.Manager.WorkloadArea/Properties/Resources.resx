@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ActiveTime" xml:space="preserve">
+    <value>Active Time</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="AreaName" xml:space="preserve">
+    <value>Workloads</value>
+  </data>
+  <data name="Comment" xml:space="preserve">
+    <value>Comment</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="EditSystemConfig" xml:space="preserve">
+    <value>Edit System Configuration</value>
+  </data>
+  <data name="ExecTimeout" xml:space="preserve">
+    <value>Exec Timeout (mins.)</value>
+  </data>
+  <data name="MaxCPUBusy" xml:space="preserve">
+    <value>Max CPU Busy (%)</value>
+  </data>
+  <data name="MaxMemoryUsage" xml:space="preserve">
+    <value>Max Memory Usage (%)</value>
+  </data>
+  <data name="MyActiveSystems" xml:space="preserve">
+    <value>My Active Systems</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Parent" xml:space="preserve">
+    <value>Parent</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="ServiceName" xml:space="preserve">
+    <value>Service Name</value>
+  </data>
+  <data name="ServicePriority" xml:space="preserve">
+    <value>Service Priority</value>
+  </data>
+  <data name="ServiceState" xml:space="preserve">
+    <value>Service State</value>
+  </data>
+  <data name="SqlDefaults" xml:space="preserve">
+    <value>SQL Defaults</value>
+  </data>
+  <data name="SaveSqlPlan" xml:space="preserve">
+    <value>Save Query Plan</value>
+  </data>
+  <data name="SaveSqlText" xml:space="preserve">
+    <value>Save Query Text</value>
+  </data>
+  <data name="SQL_NO_PLAN" xml:space="preserve">
+    <value>NO_PLAN</value>
+    <comment>Value indicating SQL_PLAN is disabled</comment>
+  </data>
+  <data name="SQL_NO_TEXT" xml:space="preserve">
+    <value>NO_TEXT</value>
+    <comment>Value indicating if SQL_PLAN is disabled</comment>
+  </data>
+  <data name="SQL_PLAN" xml:space="preserve">
+    <value>PLAN</value>
+    <comment>Value indicating SQL_PLAN is enabled</comment>
+  </data>
+  <data name="SQL_TEXT" xml:space="preserve">
+    <value>TEXT</value>
+    <comment>Value indicating SQL_TEXT is enabled</comment>
+  </data>
+  <data name="StatsInterval" xml:space="preserve">
+    <value>Stats Interval (sec.)</value>
+  </data>
+  <data name="SystemName" xml:space="preserve">
+    <value>System Name</value>
+  </data>
+  <data name="TraceFileName" xml:space="preserve">
+    <value>Trace File Name</value>
+  </data>
+  <data name="TraceFilePath" xml:space="preserve">
+    <value>Trace File Path</value>
+  </data>
+  <data name="TraceObject" xml:space="preserve">
+    <value>Trace Object</value>
+  </data>
+  <data name="WaitTimeout" xml:space="preserve">
+    <value>Wait Timeout (mins.)</value>
+  </data>
+  <data name="AddService" xml:space="preserve">
+    <value>Add Service</value>
+  </data>
+  <data name="AlterService" xml:space="preserve">
+    <value>Alter Service</value>
+  </data>
+  <data name="DeleteService" xml:space="preserve">
+    <value>Delete Service</value>
+  </data>
+  <data name="HoldService" xml:space="preserve">
+    <value>Hold Service</value>
+  </data>
+  <data name="ReleaseService" xml:space="preserve">
+    <value>Release Service</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="HoldAllServices" xml:space="preserve">
+    <value>Hold All Services</value>
+  </data>
+  <data name="ReleaseAllServices" xml:space="preserve">
+    <value>Release All Services</value>
+  </data>
+  <data name="ConfirmTitle" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="ConfirmAlterWMS" xml:space="preserve">
+    <value>Are you sure you want to alter this service?</value>
+  </data>
+  <data name="ODBCError" xml:space="preserve">
+    <value>ODBC Error</value>
+  </data>
+  <data name="SystemError" xml:space="preserve">
+    <value>System Error</value>
+  </data>
+  <data name="ConfirmDeleteWMS" xml:space="preserve">
+    <value>Do you really want to delete this service?</value>
+  </data>
+  <data name="ServiceNameError" xml:space="preserve">
+    <value>Error: Service name is null.</value>
+  </data>
+  <data name="TimeFromError" xml:space="preserve">
+    <value>Error: Invalid From time format. Specify time in HH:mm format.</value>
+  </data>
+  <data name="TimeToError" xml:space="preserve">
+    <value>Error: Invalid To time format. Specify time in HH:mm format.</value>
+  </data>
+  <data name="ServiceNotFound" xml:space="preserve">
+    <value>Service {0} not found in system.</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="HoldTimeout" xml:space="preserve">
+    <value>Hold Timeout (mins.)</value>
+  </data>
+  <data name="MaxRowsFetched" xml:space="preserve">
+    <value>Max. Rows Fetched</value>
+  </data>
+  <data name="RuleInterval" xml:space="preserve">
+    <value>Rule Interval (sec.)</value>
+  </data>
+  <data name="ServerVersion" xml:space="preserve">
+    <value>Server Version</value>
+  </data>
+  <data name="FetchSystemFailed" xml:space="preserve">
+    <value>Failed to load system configuration</value>
+  </data>
+  <data name="InvalidMaxRowsFetched" xml:space="preserve">
+    <value>Invalid value for Max Rows Fetched</value>
+  </data>
+  <data name="TraceFileRequired" xml:space="preserve">
+    <value>Trace File Name and/or Trace File Path cannot be empty.</value>
+  </data>
+  <data name="StartService" xml:space="preserve">
+    <value>Start Service</value>
+  </data>
+  <data name="StopService" xml:space="preserve">
+    <value>Stop Service</value>
+  </data>
+  <data name="ExportConfiiguration" xml:space="preserve">
+    <value>Export Configuration</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="DLLFetchProgressMessage" xml:space="preserve">
+    <value>Fetched DDL for {0} of {1} objects</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="DDLHeader" xml:space="preserve">
+    <value>DDL for </value>
+  </data>
+  <data name="DDLStartMessage" xml:space="preserve">
+    <value>Generating script for system {0} started at {1}</value>
+  </data>
+  <data name="OperationAborted" xml:space="preserve">
+    <value>Operation Aborted at {0}</value>
+  </data>
+  <data name="OperationSuccess" xml:space="preserve">
+    <value>Operation Completed at {0}</value>
+  </data>
+  <data name="ServicesHeader" xml:space="preserve">
+    <value>There are {0} services</value>
+  </data>
+  <data name="FileSaveFailure" xml:space="preserve">
+    <value>Failed to save file</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="AlterIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\color_line.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="History" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\history.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MultipleWorkLoadCount" xml:space="preserve">
+    <value>There are {0} queries</value>
+  </data>
+  <data name="SingleWorkLoadCount" xml:space="preserve">
+    <value>There is {0} query</value>
+  </data>
+  <data name="QueryStats" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\querystates.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MagnifyingGlass" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MagnifyingGlass.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AlterRule" xml:space="preserve">
+    <value>Alter Rule</value>
+  </data>
+  <data name="CompilationRules" xml:space="preserve">
+    <value>Compilation Rules</value>
+  </data>
+  <data name="ConnectionRules" xml:space="preserve">
+    <value>Connection Rules</value>
+  </data>
+  <data name="ExecutionRules" xml:space="preserve">
+    <value>Execution Rules</value>
+  </data>
+  <data name="Rules" xml:space="preserve">
+    <value>Rules</value>
+  </data>
+  <data name="ApplyIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\apply.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConfigureIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\configure.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="immediateStopCheckBoxToolTip" xml:space="preserve">
+    <value>Stopping a WMS service will gracefully shutdown the service - allowing all executing queries to complete.
+The "Stop Immediately" option brings down down the service(s) immediately and all executing queries are cancelled.
+Please note that in either case, all waiting queries will be rejected and no new query requests will be allowed into the service(s).</value>
+  </data>
+  <data name="DeleteRule" xml:space="preserve">
+    <value>Delete Rule</value>
+  </data>
+  <data name="DeleteRuleConfirmationMessage" xml:space="preserve">
+    <value>Please confirm that you wish to delete the following rules(s)?</value>
+  </data>
+  <data name="DeleteRuleFailureHeader" xml:space="preserve">
+    <value>Unable to delete the following rule(s).</value>
+  </data>
+  <data name="RulesSummaryHeader" xml:space="preserve">
+    <value>There are {0} {1} rules</value>
+  </data>
+  <data name="SystemRuleDeleteIgnoreMessage" xml:space="preserve">
+    <value>System generated rule(s) cannot be deleted. Ignoring delete request for these rule(s).</value>
+  </data>
+  <data name="SystemRuleDeleteInfoMessage" xml:space="preserve">
+    <value>System generated rules cannot be deleted.</value>
+  </data>
+  <data name="AddRule" xml:space="preserve">
+    <value>Add Rule</value>
+  </data>
+  <data name="AssociateRule" xml:space="preserve">
+    <value>Associate Rule</value>
+  </data>
+  <data name="attach" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\attach.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="cancelImage" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\cancel.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="openHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\openHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="saveHS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\saveHS.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_1downarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1downarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_1leftarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1leftarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_1rightarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1rightarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_1uparrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1uparrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_2leftarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\2leftarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="_2rightarrow" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\2rightarrow.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="bookcase" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\bookcase.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="hidestatements" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\hidestatements.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="resetTriage" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\resetTriage.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="showhidden" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\showhidden.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MaxGraphPointsToolTipText" xml:space="preserve">
+    <value>The maximum number of points to graph for statement, service and platform status indicators in live monitoring mode</value>
+  </data>
+  <data name="TriageFetchLimitToolTipText" xml:space="preserve">
+    <value>The maximum number of rows to fetch when loading the Triage Space</value>
+  </data>
+  <data name="TitleQueryDetails" xml:space="preserve">
+    <value>Workload Details - {0}</value>
+  </data>
+  <data name="TitleQueryPlan" xml:space="preserve">
+    <value>Query Plan - {0}</value>
+  </data>
+  <data name="TitleRepositoryInfo" xml:space="preserve">
+    <value>Repository Info - {0}</value>
+  </data>
+  <data name="TitleSessionStats" xml:space="preserve">
+    <value>Session Stats - {0}</value>
+  </data>
+  <data name="TitlePerTableStats" xml:space="preserve">
+    <value>Per-Table Stats - {0}</value>
+  </data>
+  <data name="TitleWarningInfo" xml:space="preserve">
+    <value>Warning - {0}</value>
+  </data>
+  <data name="TitleMonitorWorkload" xml:space="preserve">
+    <value>Monitor Workload</value>
+  </data>
+  <data name="TitleWMSOffender" xml:space="preserve">
+    <value>System Offender</value>
+  </data>
+  <data name="TitleQueryText" xml:space="preserve">
+    <value>Query Text - {0}</value>
+  </data>
+  <data name="TitleCompileTimeMetrics" xml:space="preserve">
+    <value>Compile-Time Metrics</value>
+  </data>
+  <data name="TitleConnectionMetrics" xml:space="preserve">
+    <value>Connection Metrics</value>
+  </data>
+  <data name="TitleFullQueryText" xml:space="preserve">
+    <value>Full Query Text</value>
+  </data>
+  <data name="TitlePreviewQueryText" xml:space="preserve">
+    <value>Preview Query Text</value>
+  </data>
+  <data name="TitleRunTimeMetrics" xml:space="preserve">
+    <value>Run-Time Metrics</value>
+  </data>
+  <data name="TitleTimeBasedMetrics" xml:space="preserve">
+    <value>Time-Based Metrics</value>
+  </data>
+  <data name="AvailableMetrics" xml:space="preserve">
+    <value>Available Metrics</value>
+  </data>
+  <data name="CurrentlyUsedMetrics" xml:space="preserve">
+    <value>Currently Used Metrics</value>
+  </data>
+  <data name="MasterPstate" xml:space="preserve">
+    <value>Master Pstate</value>
+  </data>
+  <data name="ProcessID" xml:space="preserve">
+    <value>Process ID</value>
+  </data>
+  <data name="ProcessName" xml:space="preserve">
+    <value>Process Name</value>
+  </data>
+  <data name="Pstate" xml:space="preserve">
+    <value>Pstate</value>
+  </data>
+  <data name="QueryStatistics" xml:space="preserve">
+    <value>Query Statistics</value>
+  </data>
+  <data name="SessionStatistics" xml:space="preserve">
+    <value>Session Statisitcs</value>
+  </data>
+  <data name="TitleMasterPstate" xml:space="preserve">
+    <value>Master Pstate - {0}</value>
+  </data>
+  <data name="TitlePstate" xml:space="preserve">
+    <value>Pstate - {0}</value>
+  </data>
+  <data name="WarningInfo" xml:space="preserve">
+    <value>Warning Info</value>
+  </data>
+  <data name="QueryID" xml:space="preserve">
+    <value>Query ID</value>
+  </data>
+  <data name="NonAdminUserErrorText" xml:space="preserve">
+    <value>WARNING : Only database users with DB__USERADMIN role can view and manage WMS configuration.</value>
+  </data>
+  <data name="ParentProcessDetails" xml:space="preserve">
+    <value>Parent Process Details</value>
+  </data>
+  <data name="ParentPstate" xml:space="preserve">
+    <value>Parent Pstate</value>
+  </data>
+  <data name="ProcessDetails" xml:space="preserve">
+    <value>Process Details</value>
+  </data>
+  <data name="TitleMasterProcessDetails" xml:space="preserve">
+    <value>Master Process Details - {0}</value>
+  </data>
+  <data name="TitleParentProcessDetails" xml:space="preserve">
+    <value>Parent Process Details - {0}</value>
+  </data>
+  <data name="TitleParentPstate" xml:space="preserve">
+    <value>Parent Pstate - {0}</value>
+  </data>
+  <data name="TitleProcessDetails" xml:space="preserve">
+    <value>Process Details - {0}</value>
+  </data>
+  <data name="WarningReposNotAvail" xml:space="preserve">
+    <value>Repository data is not yet available. Please try again later.</value>
+  </data>
+  <data name="ChildCount" xml:space="preserve">
+    <value>There is {0} child process. </value>
+  </data>
+  <data name="ChildrenCount" xml:space="preserve">
+    <value>There are {0} children processes.</value>
+  </data>
+  <data name="InitialChildrenCount" xml:space="preserve">
+    <value>There are {0} children processes. </value>
+  </data>
+  <data name="TitleChildrenProcesses" xml:space="preserve">
+    <value>Children Processes - {0}</value>
+  </data>
+  <data name="TitleLiveView" xml:space="preserve">
+    <value>Workload Monitor</value>
+  </data>
+  <data name="TitleRulesAssociated" xml:space="preserve">
+    <value>Rules Associated With Service - {0}</value>
+  </data>
+  <data name="TitleSystemOffender" xml:space="preserve">
+    <value>System Offender</value>
+  </data>
+  <data name="LiveWorkloads" xml:space="preserve">
+    <value>Workload Monitor</value>
+  </data>
+  <data name="SystemOffender" xml:space="preserve">
+    <value>System Offender</value>
+  </data>
+  <data name="TriageSpace" xml:space="preserve">
+    <value>Triage Space</value>
+  </data>
+  <data name="WarningPerTableStatsNotAvail" xml:space="preserve">
+    <value>Per-Table statistics are not available at this time.</value>
+  </data>
+  <data name="NonWMSPrivilegeErrorText" xml:space="preserve">
+    <value>WARNING : You do not have the required component privilege to view and manage the WMS configuration. Please contact your administrator.</value>
+  </data>
+  <data name="ConfirmHoldWMS" xml:space="preserve">
+    <value>Are you sure you want to put WMS on hold?</value>
+  </data>
+  <data name="ConfirmReleaseWMS" xml:space="preserve">
+    <value>Are you sure you want to release WMS from hold?</value>
+  </data>
+  <data name="ConfirmStopWMS" xml:space="preserve">
+    <value>Are you sure you want to stop WMS?</value>
+  </data>
+  <data name="HoldWMS" xml:space="preserve">
+    <value>Hold WMS</value>
+  </data>
+  <data name="ReleaseWMS" xml:space="preserve">
+    <value>Release WMS</value>
+  </data>
+  <data name="StartWMS" xml:space="preserve">
+    <value>Start WMS</value>
+  </data>
+  <data name="StopWMS" xml:space="preserve">
+    <value>Stop WMS</value>
+  </data>
+  <data name="TitleReorgProgress" xml:space="preserve">
+    <value>Reorg progress - {0}</value>
+  </data>
+  <data name="ReorgProgressMenuItemText" xml:space="preserve">
+    <value>Display Reorg Progress...</value>
+  </data>
+  <data name="TitleParentChildQueries" xml:space="preserve">
+    <value>Parent/Child Queries - {0}</value>
+  </data>
+  <data name="GetTrans" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\GetTrans.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="GetTransactionToolTip" xml:space="preserve">
+    <value>Get transactions of all nodes</value>
+  </data>
+  <data name="TitleTransactionsOfAllNodes" xml:space="preserve">
+    <value>Transactions - All Nodes</value>
+  </data>
+  <data name="ShowQueryWorkloadDetailProgressMessage" xml:space="preserve">
+    <value>Getting queries for transaction {0} ...</value>
+  </data>
+  <data name="TitleQueriessOfSpecifiedNode" xml:space="preserve">
+    <value>Queries - Transaction {0}</value>
+  </data>
+  <data name="TitleMaintainScript" xml:space="preserve">
+    <value>Maintain Script - {0}</value>
+  </data>
+  <data name="MaintainScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MaintainScript.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MaintainScript_TableNotFound" xml:space="preserve">
+    <value>Maintain script cannot be generated. The query does not reference any tables.</value>
+  </data>
+  <data name="MaintainScript_ExecuteFailedCaptionMulti" xml:space="preserve">
+    <value>Failed to execute the commands</value>
+  </data>
+  <data name="MaintainScript_ExecuteSuccessfully" xml:space="preserve">
+    <value>The Maintain commands executed successfully.</value>
+  </data>
+  <data name="MaintainScript_TableNotFoundCaption" xml:space="preserve">
+    <value>Generate Maintain Script</value>
+  </data>
+  <data name="MaintainScript_ExecutionCaption" xml:space="preserve">
+    <value>Maintain Script Execution</value>
+  </data>
+  <data name="MaintainScript_ExecutionResult" xml:space="preserve">
+    <value>The Maintain commands execution result: {0} failed, {1} cancelled, {2} successful</value>
+  </data>
+  <data name="MaintainScript_ExecutionResultCaption" xml:space="preserve">
+    <value>Execution Results</value>
+  </data>
+  <data name="SQLOffender" xml:space="preserve">
+    <value>SQL Offender</value>
+  </data>
+</root>

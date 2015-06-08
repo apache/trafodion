@@ -1,0 +1,40 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package se;
+
+message perf_stats_delta_assembled {
+  message device_delta_data {
+    optional int32  node_id                     = 1;
+    optional string volume_name                 = 2;
+    optional int32  primary                     = 3;
+    optional int64  requests                    = 4;
+    optional int64  service_time                = 5;
+    optional int64  ase_service_time            = 6;
+    optional int64  request_io_wait_time        = 7;
+    optional int32  ready_list_count            = 8;
+  }
+  message aggregate_device_count {
+    optional int32 num_storage_devices  = 1;
+  }
+  required common.info_header header = 1;
+  repeated device_delta_data  data   = 2;
+  repeated aggregate_device_count device_count_aggregate = 3;
+}

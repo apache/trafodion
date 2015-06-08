@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AlterRole" xml:space="preserve">
+    <value>Alter Role</value>
+  </data>
+  <data name="AlterRolesLoadingMsg" xml:space="preserve">
+    <value>Looking for possible  roles, component privileges, and primary role for user…</value>
+  </data>
+  <data name="AlterUser" xml:space="preserve">
+    <value>Alter...</value>
+  </data>
+  <data name="AlterUserProcessing" xml:space="preserve">
+    <value>Alter user in process...</value>
+  </data>
+  <data name="CreateRole" xml:space="preserve">
+    <value>Create Role</value>
+  </data>
+  <data name="CreateRoleMsg1" xml:space="preserve">
+    <value>Creating Role in Progress...</value>
+  </data>
+  <data name="DatabaseUsers" xml:space="preserve">
+    <value>Database Users</value>
+  </data>
+  <data name="DatabaseUsersTitle" xml:space="preserve">
+    <value>Database Users</value>
+  </data>
+  <data name="DropRole" xml:space="preserve">
+    <value>Drop Role(s)...</value>
+  </data>
+  <data name="DropRoleMsg1" xml:space="preserve">
+    <value>Are you sure you want to drop {0} role(s)?</value>
+  </data>
+  <data name="DropRoleMsg2" xml:space="preserve">
+    <value>Drop role in Progress...</value>
+  </data>
+  <data name="GrantRoleErrorHeaderText" xml:space="preserve">
+    <value>Grant Role to User(s) error</value>
+  </data>
+  <data name="GrantRoleToUsersMsg" xml:space="preserve">
+    <value>Granting role to selected users...</value>
+  </data>
+  <data name="LoadingRoleDetailsDialogMsg" xml:space="preserve">
+    <value>Looking up all users and component privileges for role...</value>
+  </data>
+  <data name="NonAdminUserErrorText" xml:space="preserve">
+    <value>WARNING : Only database users with DB__USERADMIN role can view and manage other database users.</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="RegisterMsg1" xml:space="preserve">
+    <value>Register User in Progress...</value>
+  </data>
+  <data name="RevokeRoleFromUserMsg1" xml:space="preserve">
+    <value>Do you really want to revoke the role for the selected {0} user(s) ?</value>
+  </data>
+  <data name="RevokeRoleFromUserMsg2" xml:space="preserve">
+    <value>Revoke roles from user(s) in Progress...</value>
+  </data>
+  <data name="RoleGridTitle" xml:space="preserve">
+    <value>{0} roles configured.</value>
+  </data>
+  <data name="Roles" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="RolesTitle" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="ShowSQLPrivilegesDialogTitle" xml:space="preserve">
+    <value>Show SQL Privileges</value>
+  </data>
+  <data name="ShowSQLPrivilegesDialogMessageforRole" xml:space="preserve">
+    <value>Select a role name from the drop-down list to view the associated SQL privileges</value>
+  </data>
+  <data name="ShowSQLPrivilegesDialogMessageforUser" xml:space="preserve">
+    <value>Select a user name from the drop-down list to view the associated SQL privileges</value>
+  </data>
+  <data name="ShowSQLPrivilegesDialogObjectLabelforRole" xml:space="preserve">
+    <value>Role Name</value>
+  </data>
+  <data name="ShowSQLPrivilegesDialogObjectLabelforUser" xml:space="preserve">
+    <value>User Name</value>
+  </data>
+  <data name="UnRegister" xml:space="preserve">
+    <value>Un-Register</value>
+  </data>
+  <data name="UnRegisterMsg1" xml:space="preserve">
+    <value>Are you sure you want to un-register {0} user(s)?</value>
+  </data>
+  <data name="UnRegisterMsg2" xml:space="preserve">
+    <value>Un-Register user in Progress...</value>
+  </data>
+  <data name="UserGridTitle" xml:space="preserve">
+    <value>{0} Database users configured</value>
+  </data>
+  <data name="UserMgmtAreaName" xml:space="preserve">
+    <value>User Management</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="UsersForRoleHeaderText" xml:space="preserve">
+    <value>There are {0} users for the role</value>
+  </data>
+  <data name="ViewRoleDetailsMenuText" xml:space="preserve">
+    <value>Alter Role ...</value>
+  </data>
+  <data name="OperationCompleted" xml:space="preserve">
+    <value>{0} succeeded. For details, see the message(s) below.</value>
+  </data>
+  <data name="OperationFailed" xml:space="preserve">
+    <value>{0} failed. For details, see the message(s) below.</value>
+  </data>
+  <data name="SomeOperationsFailded" xml:space="preserve">
+    <value>Some operations on {0} are failed.</value>
+  </data>
+  <data name="AlterPrimaryRoleWarningMsg" xml:space="preserve">
+    <value>Because no role name was specified at login time, TrafodionManager has used the primary role that was defined when the user was registered. To change the primary role name, TrafodionManager must disconnect and reconnect you to the system. Do you want to proceed?</value>
+  </data>
+  <data name="DropRoleCascadeMsg" xml:space="preserve">
+    <value>Are you sure you want to drop {0} role(s) CASCADING?</value>
+  </data>
+  <data name="AlterRoleProcessing" xml:space="preserve">
+    <value>Alter role in process...</value>
+  </data>
+  <data name="ImmutableUserTooltips" xml:space="preserve">
+    <value>The user cannot be altered or unregistered.</value>
+  </data>
+</root>

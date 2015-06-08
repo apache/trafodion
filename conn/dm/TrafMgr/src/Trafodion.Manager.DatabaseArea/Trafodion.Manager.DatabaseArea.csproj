@@ -1,0 +1,1656 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.DatabaseArea</RootNamespace>
+    <AssemblyName>Trafodion.Manager.DatabaseArea</AssemblyName>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Bin\Debug\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.DatabaseArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Bin\Release\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.DatabaseArea.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TenTec.Windows.iGridLib.iGrid">
+      <HintPath>..\..\iGrid\TenTec.Windows.iGridLib.iGrid.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\AlterComponentPrivilegesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AlterComponentPrivilegesUserControl.Designer.cs">
+      <DependentUpon>AlterComponentPrivilegesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CatalogsComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogSpaceUsagesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogsSpaceUsagesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ColumnPrivilegesOptionControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ColumnPrivilegesOptionControl.Designer.cs">
+      <DependentUpon>ColumnPrivilegesOptionControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ComponentPrivilegesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ComponentPrivilegesUserControl.Designer.cs">
+      <DependentUpon>ComponentPrivilegesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ConnectionFolderFactory.cs" />
+    <Compile Include="Controls\CatalogSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BrowseLibraryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\BrowseLibraryDialog.Designer.cs">
+      <DependentUpon>BrowseLibraryDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CreateSPJFromLibrary.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\CreateSPJFromLibrary.Designer.cs">
+      <DependentUpon>CreateSPJFromLibrary.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DropConfirmDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\DropConfirmDialog.Designer.cs">
+      <DependentUpon>DropConfirmDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\FunctionActionAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FunctionAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FunctionTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryPrivilegeOptionsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryPrivilegeOptionsControl.Designer.cs">
+      <DependentUpon>LibraryPrivilegeOptionsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\BrowseLibraryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BrowseLibraryUserControl.designer.cs">
+      <DependentUpon>BrowseLibraryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CreateLibraryUserControl.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\CreateLibraryUserControl.Designer.cs">
+      <DependentUpon>CreateLibraryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoutineAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutinePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineParametersDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineParametersPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineParametersTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RunScriptDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\RunScriptDialog.Designer.cs">
+      <DependentUpon>RunScriptDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionLibraryListPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\GranteeSelectionPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\GranteeSelectionPanel.Designer.cs">
+      <DependentUpon>GranteeSelectionPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\IndexesSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexesSpaceUsageSummaryTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibrariesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LibraryUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ManageGranteeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\ManageGranteeDialog.Designer.cs">
+      <DependentUpon>ManageGranteeDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MVsSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MVsSpaceUsageSummaryTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SequenceTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SequencesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SequenceAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SequenceAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SequenceAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SystemSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TableMappingFunctionAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableMappingFunctionTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TablesSpaceUsageSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TablesSpaceUsageSummaryTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SpaceUsageSummaryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SpaceUsageSummaryUserControl.Designer.cs">
+      <DependentUpon>SpaceUsageSummaryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DivisionByKeyDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DivisionByKeyPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DivisionByKeyTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\GrantRevokeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\GrantRevokeControl.Designer.cs">
+      <DependentUpon>GrantRevokeControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MVHistogramStatsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MVHistogramStatsControl.Designer.cs">
+      <DependentUpon>MVHistogramStatsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MVHistogramStatsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MVStatisticsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MVStatisticsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsFreqValuesControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsFreqValuesControl.Designer.cs">
+      <DependentUpon>MVSampledStatsFreqValuesControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsIntervalControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsIntervalControl.Designer.cs">
+      <DependentUpon>MVSampledStatsIntervalControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MVSampledStatsSummaryControl.Designer.cs">
+      <DependentUpon>MVSampledStatsSummaryControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\FloatingMVSampledStatsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\FloatingMVSampledStatsControl.Designer.cs">
+      <DependentUpon>FloatingMVSampledStatsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewColumnsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewColumnsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FunctionActionsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FunctionActionsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FunctionActionTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewColumnsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PartitionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PartitionsUserControl.Designer.cs">
+      <DependentUpon>PartitionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoutinePrivilegeOptionsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutinePrivilegeOptionsControl.Designer.cs">
+      <DependentUpon>RoutinePrivilegeOptionsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\RoutineUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RoutineUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaPrivilegeOptionsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaPrivilegeOptionsControl.Designer.cs">
+      <DependentUpon>SchemaPrivilegeOptionsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SchemaSpaceUsagesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SpaceUsagesUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SpaceUsagesUserControl.Designer.cs">
+      <DependentUpon>SpaceUsagesUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionFunctionActionsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionPrivilegeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionPrivilegeControl.Designer.cs">
+      <DependentUpon>TrafodionPrivilegeControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionViewListPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableMappingFunctionsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TablePrivilegesOptionControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TablePrivilegesOptionControl.Designer.cs">
+      <DependentUpon>TablePrivilegesOptionControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TimeDataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TimeDataTypePanel.Designer.cs">
+      <DependentUpon>TimeDataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\FloatDataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\FloatDataTypePanel.Designer.cs">
+      <DependentUpon>FloatDataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DecimalDataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DecimalDataTypePanel.Designer.cs">
+      <DependentUpon>DecimalDataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TimestampDataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TimestampDataTypePanel.Designer.cs">
+      <DependentUpon>TimestampDataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DataTypePanel.Designer.cs">
+      <DependentUpon>DataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\EditParameterDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\EditParameterDialog.Designer.cs">
+      <DependentUpon>EditParameterDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\HashKeyDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\HashKeyPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\HashKeyTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SPJParameterUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SPJParameterUserControl.Designer.cs">
+      <DependentUpon>SPJParameterUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CharDataTypePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\CharDataTypePanel.Designer.cs">
+      <DependentUpon>CharDataTypePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Tree\BrowseLibraryTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\ClassLeaf.cs" />
+    <Compile Include="Controls\Tree\LibraryFolder.cs" />
+    <Compile Include="Controls\Tree\GrantRevokeTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\ClassFileTreeNode.cs" />
+    <Compile Include="Controls\Tree\ClassTreeNode.cs" />
+    <Compile Include="Controls\Tree\FunctionActionLeaf.cs" />
+    <Compile Include="Controls\Tree\FunctionActionsFolder.cs" />
+    <Compile Include="Controls\Tree\FunctionLeaf.cs" />
+    <Compile Include="Controls\Tree\FunctionsFolder.cs" />
+    <Compile Include="Controls\Tree\JarTreeFolder.cs" />
+    <Compile Include="Controls\Tree\LibrariesFolder.cs" />
+    <Compile Include="Controls\Tree\LibraryLeaf.cs" />
+    <Compile Include="Controls\Tree\PCFRolesFolder.cs" />
+    <Compile Include="Controls\Tree\PCFTreeFolder.cs" />
+    <Compile Include="Controls\Tree\PCFTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\PCFUserFolder.cs" />
+    <Compile Include="Controls\Tree\ShowDDLTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\SequenceLeaf.cs" />
+    <Compile Include="Controls\Tree\SequencesFolder.cs" />
+    <Compile Include="Controls\Tree\TableMappingFunctionLeaf.cs" />
+    <Compile Include="Controls\Tree\TableMappingFunctionsFolder.cs" />
+    <Compile Include="Controls\Tree\UniversalFunctionFolder.cs" />
+    <Compile Include="Controls\UniqueConstraintsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\UniqueConstraintsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\UniqueConstraintsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PercentAllocated.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PercentAllocated.Designer.cs">
+      <DependentUpon>PercentAllocated.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewColumnsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewColumnsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewColumnsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureParametersTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureParametersPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureParametersDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedurePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SampledStatsFreqValuesControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SampledStatsFreqValuesControl.Designer.cs">
+      <DependentUpon>SampledStatsFreqValuesControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SampledStatsGraphControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SampledStatsGraphControl.Designer.cs">
+      <DependentUpon>SampledStatsGraphControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SampledStatsIntervalControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SampledStatsIntervalControl.Designer.cs">
+      <DependentUpon>SampledStatsIntervalControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SampledStatsSummaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\SampledStatsSummaryControl.Designer.cs">
+      <DependentUpon>SampledStatsSummaryControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\SchemasComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FloatingTableSampledStatsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\FloatingTableSampledStatsControl.Designer.cs">
+      <DependentUpon>FloatingTableSampledStatsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TableHistogramStatsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TableHistogramStatsControl.Designer.cs">
+      <DependentUpon>TableHistogramStatsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TableHistogramStatsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ShowDDLControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ShowDDLControl.Designer.cs">
+      <DependentUpon>ShowDDLControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionUsageDataGridViewT.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionUsagePanelT.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSchemaObjectsDataGridViewT.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSchemaObjectListPanelT.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableStatisticsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableStatisticsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\SchemaIndexesFolder.cs" />
+    <Compile Include="Controls\TriggerUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggerAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TriggersTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionObjectDDLTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionObjectDDLPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CheckConstraintsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CheckConstraintsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CheckConstraintsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ForeignKeyDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ForeignKeyPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ForeignKeyTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSchemaObjectAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\StoreOrderDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\StoreOrderPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\StoreOrderTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseAreaObjectsVisibleAnsiLink.cs" />
+    <Compile Include="Controls\CatalogAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupMembersDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupMembersPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupMembersTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaObjectPrivilegeDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaObjectPrivilegesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaPrivilegeDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaPrivilegesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemasPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionUsageDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\CatalogAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseAreaObjectsDataGridViewLink.cs" />
+    <Compile Include="Controls\DatabaseAreaObjectsDataGridViewLinkColumn.cs" />
+    <Compile Include="Controls\DatabaseNavigator.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseNavigator.Designer.cs">
+      <DependentUpon>DatabaseNavigator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DatabaseObjectsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseObjectsControl.Designer.cs">
+      <DependentUpon>DatabaseObjectsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DatabaseObjectsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DatabaseObjectTabControl.cs">
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewGroupTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MaterializedViewTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PartitionsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PartitionsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PartitionsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PrimaryKeyAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PrimaryKeyColumnsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PrimaryKeyPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PrimaryKeyTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProceduresTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProcedureTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaLevelObjectListTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemasDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemasTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SchemaTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionObjectAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionObjectPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSchemaObjectListPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TrafodionSchemaObjectsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\SynonymTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableColumnsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableColumnsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableColumnsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexColumnsDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexColumnsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexColumnsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\IndexTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TablePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TablesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TableUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ToDoTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\CatalogFolder.cs" />
+    <Compile Include="Controls\Tree\CatalogsFolder.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewsIndexleaf.cs" />
+    <Compile Include="Controls\Tree\TableTriggerLeaf.cs" />
+    <Compile Include="Controls\Tree\TableTriggersFolder.cs" />
+    <Compile Include="Controls\Tree\DatabaseTreeFolder.cs" />
+    <Compile Include="Controls\Tree\DatabaseTreeNode.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewIndexesFolder.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewItemsFolder.cs" />
+    <Compile Include="Controls\Tree\TableItemsFolder.cs" />
+    <Compile Include="Controls\Tree\IndexLeaf.cs" />
+    <Compile Include="Controls\Tree\TableIndexesFolder.cs" />
+    <Compile Include="Controls\Tree\TableIndexLeaf.cs" />
+    <Compile Include="Controls\Tree\DatabaseTreeView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Tree\MaterializedViewFolder.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewGroupLeaf.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewsFolder.cs" />
+    <Compile Include="Controls\Tree\MaterializedViewsGroupFolder.cs" />
+    <Compile Include="Controls\Tree\ProcedureLeaf.cs" />
+    <Compile Include="Controls\Tree\ProceduresFolder.cs" />
+    <Compile Include="Controls\Tree\SchemaFolder.cs" />
+    <Compile Include="Controls\Tree\SchemaItemsFolder.cs" />
+    <Compile Include="Controls\Tree\SchemasFolder.cs" />
+    <Compile Include="Controls\Tree\SynonymLeaf.cs" />
+    <Compile Include="Controls\Tree\SynonymsFolder.cs" />
+    <Compile Include="Controls\Tree\TableFolder.cs" />
+    <Compile Include="Controls\Tree\TablesFolder.cs" />
+    <Compile Include="Controls\Tree\ViewLeaf.cs" />
+    <Compile Include="Controls\Tree\ViewsFolder.cs" />
+    <Compile Include="Controls\ViewAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewAttributesPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewAttributesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewUsagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ViewUsageTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="DatabaseAreaMain.cs" />
+    <Compile Include="DatabaseDataProvider.cs" />
+    <Compile Include="HelpTopics.cs" />
+    <Compile Include="IPrivilegeOptionsProvider.cs" />
+    <Compile Include="Controls\LibraryAttributesDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Model\CodeFile.cs" />
+    <Compile Include="Model\ColumnPrivilege.cs" />
+    <Compile Include="Model\ComponentModel.cs" />
+    <Compile Include="Model\ComponentPrivilege.cs" />
+    <Compile Include="Model\ComponentPrivilegeModel.cs" />
+    <Compile Include="Model\ComponentPrivilegesDataProvider.cs" />
+    <Compile Include="Model\ComponentPrivilegeUsage.cs" />
+    <Compile Include="Model\ComponentPrivilegesGranteeDataProvider.cs" />
+    <Compile Include="Model\JarClass.cs" />
+    <Compile Include="Model\IHasTrafodionPrivileges.cs" />
+    <Compile Include="Model\MVColumnHistogramStats.cs" />
+    <Compile Include="Model\MVColumnSampledStats.cs" />
+    <Compile Include="Model\MVColumnStats.cs" />
+    <Compile Include="Model\DatabaseAreaOptions.cs" />
+    <Compile Include="Model\DataTypeHelper.cs" />
+    <Compile Include="Model\JavaMethod.cs" />
+    <Compile Include="Model\JavaParameter.cs" />
+    <Compile Include="Model\PCFModel.cs" />
+    <Compile Include="Model\TrafodionDivisionByColumnDef.cs" />
+    <Compile Include="Model\TrafodionFunctionAction.cs" />
+    <Compile Include="Model\TrafodionHashKeyColumnDef.cs" />
+    <Compile Include="Model\TrafodionLibrary.cs" />
+    <Compile Include="Model\TrafodionMaterializedViewColumn.cs" />
+    <Compile Include="Model\TrafodionPrivilegeTypeHelper.cs" />
+    <Compile Include="Model\TrafodionProcedureColumn.cs" />
+    <Compile Include="Model\TrafodionRoutine.cs" />
+    <Compile Include="Model\TrafodionTableMappingFunction.cs" />
+    <Compile Include="Model\TrafodionUDFunction.cs" />
+    <Compile Include="Model\TrafodionUniqueConstraint.cs" />
+    <Compile Include="Model\TrafodionSchemaObjectSummary.cs" />
+    <Compile Include="Model\TrafodionSequence.cs" />
+    <Compile Include="Model\TrafodionViewColumn.cs" />
+    <Compile Include="Model\DefaultHasTrafodionColumns.cs" />
+    <Compile Include="Model\IHasTrafodionColumns.cs" />
+    <Compile Include="Controls\TrafodionIndexesTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Model\IndexList.cs" />
+    <Compile Include="Model\TrafodionCheckConstraint.cs" />
+    <Compile Include="Model\TrafodionForeignKey.cs" />
+    <Compile Include="Model\TrafodionStoreOrderColumnDef.cs" />
+    <Compile Include="Model\TrafodionTriggerUsage.cs" />
+    <Compile Include="Model\TrafodionTrigger.cs" />
+    <Compile Include="Model\IHasTrafodionMaterializedView.cs" />
+    <Compile Include="Model\IHasTrafodionMaterializedViewGroup.cs" />
+    <Compile Include="Model\IHasTrafodionTable.cs" />
+    <Compile Include="Model\SchemaObjectPrivilege.cs" />
+    <Compile Include="Model\Privilege.cs" />
+    <Compile Include="Model\PrivilegesLoader.cs" />
+    <Compile Include="Model\SchemaPrivilege.cs" />
+    <Compile Include="Model\TrafodionIndexColumn.cs" />
+    <Compile Include="Model\TrafodionTableColumn.cs" />
+    <Compile Include="Model\TrafodionObjectDDLLoader.cs" />
+    <Compile Include="Model\IndexedSchemaObject.cs" />
+    <Compile Include="Model\TrafodionIndex.cs" />
+    <Compile Include="Model\IHasTrafodionCatalog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\IHasTrafodionSchema.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\PartitionedSchemaObject.cs" />
+    <Compile Include="Model\Queries.cs" />
+    <Compile Include="Model\ReservedWords.cs" />
+    <Compile Include="Model\TrafodionObjectsLoader.cs" />
+    <Compile Include="Model\TrafodionCatalog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionCatalogRegistration.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionColumn.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionMaterializedView.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionMaterializedViewGroup.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionName.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionObject.cs">
+    </Compile>
+    <Compile Include="Model\TrafodionPrimaryKey.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionPrimaryKeyColumnDef.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionProcedure.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionSchema.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionSchemaObject.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionSynonym.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionSystem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionTable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\TrafodionTableConstraint.cs" />
+    <Compile Include="Model\TrafodionView.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model\SystemSpaceDataProvider.cs" />
+    <Compile Include="Model\TableColumnHistogramStats.cs" />
+    <Compile Include="Model\TableColumnSampledStats.cs" />
+    <Compile Include="Model\TableColumnStats.cs" />
+    <Compile Include="NCC\NCCCQSettingControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="NCC\NCCCQSettingControl.designer.cs">
+      <DependentUpon>NCCCQSettingControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NCC\NCCQueryPlan.cs" />
+    <Compile Include="NCC\NCCQueryPlanControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="NCC\NCCQueryPlanControl.designer.cs">
+      <DependentUpon>NCCQueryPlanControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NCC\NCCUtils.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NCC\NCCWorkbenchQueryData.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Queries\Controls\CQSettingControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\CQSettingControl.Designer.cs">
+      <DependentUpon>CQSettingControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\DefaultReportParameterInput.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\DefaultReportParameterInput.designer.cs">
+      <DependentUpon>DefaultReportParameterInput.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryControlStatementsDisplayUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryControlStatementsDisplayUserControl.designer.cs">
+      <DependentUpon>QueryControlStatementsDisplayUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryControlStatementsTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryDiscardOptionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryDiscardOptionDialog.Designer.cs">
+      <DependentUpon>QueryDiscardOptionDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryListDataGridView.Designer.cs">
+      <DependentUpon>QueryListDataGridView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanContainer.designer.cs">
+      <DependentUpon>QueryPlanContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanControl.designer.cs">
+      <DependentUpon>QueryPlanControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanDataDisplayControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanDataDisplayControl.Designer.cs">
+      <DependentUpon>QueryPlanDataDisplayControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryResultContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryResultContainer.designer.cs">
+      <DependentUpon>QueryResultContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\FloatingQueryWhiteboardControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\FloatingQueryWhiteboardControl.Designer.cs">
+      <DependentUpon>FloatingQueryWhiteboardControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\NonQueryResultControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\NonQueryResultControl.designer.cs">
+      <DependentUpon>NonQueryResultControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryDetailsTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryDetailsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryDetailsUserControl.Designer.cs">
+      <DependentUpon>QueryDetailsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryInputControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryInputControl.designer.cs">
+      <DependentUpon>QueryInputControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryListDataGridView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryListUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryListUserControl.Designer.cs">
+      <DependentUpon>QueryListUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryParametersDisplayUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryParametersDisplayUserControl.Designer.cs">
+      <DependentUpon>QueryParametersDisplayUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryParametersTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryParametersUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryParametersUserControl.Designer.cs">
+      <DependentUpon>QueryParametersUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryPlanTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryResultControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryResultControl.designer.cs">
+      <DependentUpon>QueryResultControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryResultTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryTabControl.cs">
+    </Compile>
+    <Compile Include="Queries\Controls\ReportDefinitionChangedByUserDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\ReportDefinitionChangedByUserDialog.Designer.cs">
+      <DependentUpon>ReportDefinitionChangedByUserDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\ReportParamDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\ReportParamDialog.designer.cs">
+      <DependentUpon>ReportParamDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\SqlStatementTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryTextTabPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\QueryUserControl.Designer.cs">
+      <DependentUpon>QueryUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TrafodionObjectsComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeRangeInput.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeRangeInput.designer.cs">
+      <DependentUpon>TimeRangeInput.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeReportParameterInput.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeReportParameterInput.designer.cs">
+      <DependentUpon>TimeReportParameterInput.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeSelector.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Queries\Controls\TimeSelector.Designer.cs">
+      <DependentUpon>TimeSelector.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Queries\DocumentationObject.cs" />
+    <Compile Include="Queries\ParameterDocumentationReader.cs" />
+    <Compile Include="Queries\ReportControlStatement.cs" />
+    <Compile Include="Queries\ReportDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Queries\ReportParameter.cs" />
+    <Compile Include="Queries\ReportParameterInput.cs" />
+    <Compile Include="Queries\ReportParameterProcessor.cs" />
+    <Compile Include="Queries\SimpleReportDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Queries\SqlCommandObject.cs" />
+    <Compile Include="Queries\IQueryResultControl.cs" />
+    <Compile Include="Queries\LocalStore.cs" />
+    <Compile Include="Queries\SQLWhiteboardOptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QueryStringsPersistence.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\AlterComponentPrivilegesUserControl.resx">
+      <DependentUpon>AlterComponentPrivilegesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ColumnPrivilegesOptionControl.resx">
+      <DependentUpon>ColumnPrivilegesOptionControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ComponentPrivilegesUserControl.resx">
+      <DependentUpon>ComponentPrivilegesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\BrowseLibraryDialog.resx">
+      <DependentUpon>BrowseLibraryDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\CreateSPJFromLibrary.resx">
+      <DependentUpon>CreateSPJFromLibrary.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DropConfirmDialog.resx">
+      <DependentUpon>DropConfirmDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LibraryPrivilegeOptionsControl.resx">
+      <DependentUpon>LibraryPrivilegeOptionsControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\BrowseLibraryUserControl.resx">
+      <DependentUpon>BrowseLibraryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\CreateLibraryUserControl.resx">
+      <DependentUpon>CreateLibraryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\GranteeSelectionPanel.resx">
+      <DependentUpon>GranteeSelectionPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ManageGranteeDialog.resx">
+      <DependentUpon>ManageGranteeDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PartitionsPanel.resx">
+      <DependentUpon>PartitionsPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RunScriptDialog.resx">
+      <DependentUpon>RunScriptDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SpaceUsageSummaryUserControl.resx">
+      <DependentUpon>SpaceUsageSummaryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\GrantRevokeControl.resx">
+      <DependentUpon>GrantRevokeControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MVHistogramStatsControl.resx">
+      <DependentUpon>MVHistogramStatsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MVHistogramStatsDataGridView.resx">
+      <DependentUpon>MVHistogramStatsDataGridView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MVSampledStatsFreqValuesControl.resx">
+      <DependentUpon>MVSampledStatsFreqValuesControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MVSampledStatsIntervalControl.resx">
+      <DependentUpon>MVSampledStatsIntervalControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MVSampledStatsSummaryControl.resx">
+      <DependentUpon>MVSampledStatsSummaryControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\FloatingMVSampledStatsControl.resx">
+      <DependentUpon>FloatingMVSampledStatsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PartitionsUserControl.resx">
+      <DependentUpon>PartitionsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\RoutinePrivilegeOptionsControl.resx">
+      <DependentUpon>RoutinePrivilegeOptionsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SchemaPrivilegeOptionsControl.resx">
+      <DependentUpon>SchemaPrivilegeOptionsControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SpaceUsagesUserControl.resx">
+      <DependentUpon>SpaceUsagesUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionPrivilegeControl.resx">
+      <DependentUpon>TrafodionPrivilegeControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TablePrivilegesOptionControl.resx">
+      <DependentUpon>TablePrivilegesOptionControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TimeDataTypePanel.resx">
+      <DependentUpon>TimeDataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\FloatDataTypePanel.resx">
+      <DependentUpon>FloatDataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DecimalDataTypePanel.resx">
+      <DependentUpon>DecimalDataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TimestampDataTypePanel.resx">
+      <DependentUpon>TimestampDataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DatabaseNavigator.resx">
+      <DependentUpon>DatabaseNavigator.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DatabaseObjectsControl.resx">
+      <DependentUpon>DatabaseObjectsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\DataTypePanel.resx">
+      <DependentUpon>DataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\EditParameterDialog.resx">
+      <DependentUpon>EditParameterDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PercentAllocated.resx">
+      <DependentUpon>PercentAllocated.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SampledStatsFreqValuesControl.resx">
+      <DependentUpon>SampledStatsFreqValuesControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SampledStatsGraphControl.resx">
+      <DependentUpon>SampledStatsGraphControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SampledStatsIntervalControl.resx">
+      <DependentUpon>SampledStatsIntervalControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SampledStatsSummaryControl.resx">
+      <DependentUpon>SampledStatsSummaryControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ShowDDLControl.resx">
+      <DependentUpon>ShowDDLControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SPJParameterUserControl.resx">
+      <DependentUpon>SPJParameterUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TrafodionObjectDDLPanel.resx">
+      <DependentUpon>TrafodionObjectDDLPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\FloatingTableSampledStatsControl.resx">
+      <DependentUpon>FloatingTableSampledStatsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TableHistogramStatsControl.resx">
+      <DependentUpon>TableHistogramStatsControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TableHistogramStatsDataGridView.resx">
+      <DependentUpon>TableHistogramStatsDataGridView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\CharDataTypePanel.resx">
+      <DependentUpon>CharDataTypePanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\Tree\DatabaseTreeView.resx">
+      <DependentUpon>DatabaseTreeView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NCC\NCCCQSettingControl.resx">
+      <DependentUpon>NCCCQSettingControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NCC\NCCQueryPlanControl.resx">
+      <DependentUpon>NCCQueryPlanControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\CQSettingControl.resx">
+      <DependentUpon>CQSettingControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\DefaultReportParameterInput.resx">
+      <DependentUpon>DefaultReportParameterInput.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryControlStatementsDisplayUserControl.resx">
+      <DependentUpon>QueryControlStatementsDisplayUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryDiscardOptionDialog.resx">
+      <DependentUpon>QueryDiscardOptionDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryListDataGridView.resx">
+      <DependentUpon>QueryListDataGridView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryPlanContainer.resx">
+      <DependentUpon>QueryPlanContainer.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryPlanControl.resx">
+      <DependentUpon>QueryPlanControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryPlanDataDisplayControl.resx">
+      <DependentUpon>QueryPlanDataDisplayControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryResultContainer.resx">
+      <DependentUpon>QueryResultContainer.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\FloatingQueryWhiteboardControl.resx">
+      <DependentUpon>FloatingQueryWhiteboardControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\NonQueryResultControl.resx">
+      <DependentUpon>NonQueryResultControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryDetailsUserControl.resx">
+      <DependentUpon>QueryDetailsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryInputControl.resx">
+      <DependentUpon>QueryInputControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryListUserControl.resx">
+      <DependentUpon>QueryListUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryParametersDisplayUserControl.resx">
+      <DependentUpon>QueryParametersDisplayUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryParametersUserControl.resx">
+      <DependentUpon>QueryParametersUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryResultControl.resx">
+      <DependentUpon>QueryResultControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\QueryUserControl.resx">
+      <DependentUpon>QueryUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\ReportDefinitionChangedByUserDialog.resx">
+      <DependentUpon>ReportDefinitionChangedByUserDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\ReportParamDialog.resx">
+      <DependentUpon>ReportParamDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\TimeRangeInput.resx">
+      <DependentUpon>TimeRangeInput.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\TimeReportParameterInput.resx">
+      <DependentUpon>TimeReportParameterInput.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Queries\Controls\TimeSelector.resx">
+      <DependentUpon>TimeSelector.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TrafodionSPJ.XSD">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MoveToFolderHS.png" />
+    <None Include="Resources\saveHS.png" />
+    <None Include="Resources\openHS.png" />
+    <None Include="Resources\DeleteHS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj">
+      <Project>{a8d47305-df6e-443b-8f4e-32fdb9e8857f}</Project>
+      <Name>Trafodion.Manager.UniversalWidget</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6cc5fa95-df73-4a3b-a86e-010b7a5159a2}</Project>
+      <Name>Trafodion.Manager</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(ProjectDir)\TrafodionSPJ.XSD" $(ProjectDir)\..\..\Bin\$(ConfigurationName)</PostBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+</Project>

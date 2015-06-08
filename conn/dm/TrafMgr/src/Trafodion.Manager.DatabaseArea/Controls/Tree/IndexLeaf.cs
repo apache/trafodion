@@ -1,0 +1,85 @@
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+
+using Trafodion.Manager.DatabaseArea.Model;
+using Trafodion.Manager.Framework.Navigation;
+
+namespace Trafodion.Manager.DatabaseArea.Controls.Tree
+{
+	/// <summary>
+	/// Summary description for IndexLeaf.
+	/// </summary>
+    public class IndexLeaf : DatabaseTreeNode
+    {
+        /// <summary>
+        /// Constructor for Index Leaf
+        /// </summary>
+        /// <param name="aTrafodionIndex"></param>
+        public IndexLeaf(TrafodionIndex aTrafodionIndex)
+            :base(aTrafodionIndex)
+        {
+            ImageKey = DatabaseTreeView.DB_INDEX_ICON;
+            SelectedImageKey = DatabaseTreeView.DB_INDEX_ICON;
+        }
+
+        /// <summary>
+        /// Accessor for the TrafodionIndex object
+        /// </summary>
+        public TrafodionIndex TrafodionIndex
+        {
+            get { return (TrafodionIndex)this.TrafodionObject; }
+        }
+
+        /// <summary>
+        /// Returns the longer description of the index leaf
+        /// </summary>
+        override public string LongerDescription
+        {
+            get
+            {
+                return Properties.Resources.Index + "   " +
+                    TrafodionIndex.VisibleAnsiName + "  " + Properties.Resources.On.ToLower() + "  " ;
+            }
+        }
+
+        /// <summary>
+        /// Returns the Table or MV name.
+        /// </summary>
+        public override string LongerDescriptionLink
+        {
+            get
+            {
+                return TrafodionIndex.IndexedSchemaObject.VisibleAnsiName;
+            }
+        }
+
+        /// <summary>
+        /// returns the IndexSchemaObject so that the navigation tree can use it later.
+        /// </summary>
+        public override object LongerDescriptionLinkTag
+        {
+            get
+            {
+                return TrafodionIndex.IndexedSchemaObject;
+            }
+        }
+
+    }
+}

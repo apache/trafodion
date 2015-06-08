@@ -1,0 +1,133 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager", "Trafodion.Manager\Trafodion.Manager.csproj", "{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.Main", "Trafodion.Manager.Main\Trafodion.Manager.Main.csproj", "{742956CF-1E7A-4A9D-B094-6C782E7D514D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F} = {A8D47305-DF6E-443B-8F4E-32FDB9E8857F}
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2} = {6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}
+		{3BB777BB-5A17-4119-8FA0-49CDFEDD3853} = {3BB777BB-5A17-4119-8FA0-49CDFEDD3853}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.DatabaseArea", "..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj", "{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F} = {A8D47305-DF6E-443B-8F4E-32FDB9E8857F}
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2} = {6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.OverviewArea", "..\Trafodion.Manager.Overview\Trafodion.Manager.OverviewArea.csproj", "{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F} = {A8D47305-DF6E-443B-8F4E-32FDB9E8857F}
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402} = {EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginLoader", "PluginLoader\PluginLoader.csproj", "{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.WorkloadArea", "..\Trafodion.Manager.WorkloadArea\Trafodion.Manager.WorkloadArea.csproj", "{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.ConnectivityArea", "..\Trafodion.Manager.ConnectivityArea\Trafodion.Manager.ConnectivityArea.csproj", "{DC592A94-EF38-4D4F-A226-4BCF22D243A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.UniversalWidget", "Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj", "{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.MetricMiner", "Trafodion.Manager.MetricMiner\Trafodion.Manager.MetricMiner.csproj", "{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F} = {A8D47305-DF6E-443B-8F4E-32FDB9E8857F}
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402} = {EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.UserManagement", "..\Trafodion.Manager.UserManagement\Trafodion.Manager.UserManagement.csproj", "{91FC86CC-3407-46F0-AB33-AA07BD37C27E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{70BCB618-03EB-4E88-88FC-E0DE0133E17C}"
+	ProjectSection(SolutionItems) = preProject
+		Local.testsettings = Local.testsettings
+		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
+		Trafodion.Manager.vsmdi = Trafodion.Manager.vsmdi
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.BDRArea", "..\Trafodion.Manager.BDRArea\Trafodion.Manager.BDRArea.csproj", "{EC1A48E2-6F3E-467D-B1D9-67D35CE2050C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.LiveFeedMonitoringArea", "..\Trafodion.Manager.LiveFeedMonitoringArea\Trafodion.Manager.LiveFeedMonitoringArea.csproj", "{10A5BDC9-8669-4393-B722-33E3D0A9C691}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.LiveFeedFramework", "Trafodion.Manager.LiveFeedFramework\Trafodion.Manager.LiveFeedFramework.csproj", "{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trafodion.Manager.SecurityArea", "..\Trafodion.Manager.SecurityArea\Trafodion.Manager.SecurityArea.csproj", "{54B21FFC-33F7-4E00-9398-00B41DD45F1E}"
+EndProject
+Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{742956CF-1E7A-4A9D-B094-6C782E7D514D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{742956CF-1E7A-4A9D-B094-6C782E7D514D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{742956CF-1E7A-4A9D-B094-6C782E7D514D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{742956CF-1E7A-4A9D-B094-6C782E7D514D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90BF5E27-2B21-4C6A-9740-6DFBB0E7FBC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D24FCF3-1260-4E46-B0C6-4A449FFADB86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC592A94-EF38-4D4F-A226-4BCF22D243A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC592A94-EF38-4D4F-A226-4BCF22D243A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC592A94-EF38-4D4F-A226-4BCF22D243A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC592A94-EF38-4D4F-A226-4BCF22D243A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8D47305-DF6E-443B-8F4E-32FDB9E8857F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91FC86CC-3407-46F0-AB33-AA07BD37C27E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91FC86CC-3407-46F0-AB33-AA07BD37C27E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91FC86CC-3407-46F0-AB33-AA07BD37C27E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91FC86CC-3407-46F0-AB33-AA07BD37C27E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC1A48E2-6F3E-467D-B1D9-67D35CE2050C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC1A48E2-6F3E-467D-B1D9-67D35CE2050C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC1A48E2-6F3E-467D-B1D9-67D35CE2050C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC1A48E2-6F3E-467D-B1D9-67D35CE2050C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10A5BDC9-8669-4393-B722-33E3D0A9C691}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10A5BDC9-8669-4393-B722-33E3D0A9C691}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10A5BDC9-8669-4393-B722-33E3D0A9C691}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10A5BDC9-8669-4393-B722-33E3D0A9C691}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54B21FFC-33F7-4E00-9398-00B41DD45F1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54B21FFC-33F7-4E00-9398-00B41DD45F1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54B21FFC-33F7-4E00-9398-00B41DD45F1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54B21FFC-33F7-4E00-9398-00B41DD45F1E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = Trafodion.Manager.vsmdi
+	EndGlobalSection
+	GlobalSection(RationalClearCase) = preSolution
+		SourceControlProvider = RationalClearCase
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="InfoAlertIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\alerts_info.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TitleTransactionsOfSpecifiedNode" xml:space="preserve">
+    <value>Transactions - Node {0}</value>
+  </data>
+  <data name="FileNoPermission" xml:space="preserve">
+    <value>You do not have permission to access file {0}.</value>
+  </data>
+  <data name="AuditLogSpaceUsageNotifyTooltip" xml:space="preserve">
+    <value>Specifying percentage of space used when an event notification should be posted.  
+Must set to a value from 0 to 100.</value>
+  </data>
+  <data name="HealthDrillDown" xml:space="preserve">
+    <value>Health/State Drill Down</value>
+  </data>
+  <data name="AlertNoteAudit" xml:space="preserve">
+    <value>Status updated by user {0} on {1}</value>
+  </data>
+  <data name="DrillDownHealthStateAllDetailMenu" xml:space="preserve">
+    <value>Display All Details</value>
+  </data>
+  <data name="FileNoExist" xml:space="preserve">
+    <value>File {0} does not exist on the server.</value>
+  </data>
+  <data name="SelectNonexistentSection" xml:space="preserve">
+    <value>You cannot select a nonexistent configuration to be the default configuration.</value>
+  </data>
+  <data name="SystemOffender" xml:space="preserve">
+    <value>System Offender</value>
+  </data>
+  <data name="FileDrillDownWarning" xml:space="preserve">
+    <value>TrafodionManager currently supports the file detail drill down for a specific node only. Please double-click on a specific node.</value>
+  </data>
+  <data name="DownloadingOSIMFiles" xml:space="preserve">
+    <value>Downloading OSIM data files...</value>
+  </data>
+  <data name="CoreBusyDrillDownWarning" xml:space="preserve">
+    <value>TrafodionManager currently supports the core busy detail drill down for a specific node only. Please double-click on a specific node.</value>
+  </data>
+  <data name="HostnameInvalid" xml:space="preserve">
+    <value>LDAP Host Name contains an invalid value.</value>
+  </data>
+  <data name="CancelRequestDownload" xml:space="preserve">
+    <value>Cancelling the request to download OSIM data files...</value>
+  </data>
+  <data name="SystemMessageTitle" xml:space="preserve">
+    <value>Trafodion Database Manager - {0} System Message</value>
+  </data>
+  <data name="CerLocationInvalid" xml:space="preserve">
+    <value>CA Certificate File is invalid.</value>
+  </data>
+  <data name="DirNoExist" xml:space="preserve">
+    <value>Directory {0} does not exist on the server.</value>
+  </data>
+  <data name="DownloadOSIMFiles" xml:space="preserve">
+    <value>Download OSIM Data Files</value>
+  </data>
+  <data name="UnableToRetrieveSystemMessage" xml:space="preserve">
+    <value>Unable to retrieve the system message.</value>
+  </data>
+  <data name="ConfigureIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\configure.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AuditLogSpaceUsageWarnTooltip" xml:space="preserve">
+    <value>Specifying percentage of space used when an event warning should be posted.  
+Must set to a value from 0 to 100.</value>
+  </data>
+  <data name="AlertsFunctionNotSupported" xml:space="preserve">
+    <value>Unable to access the view MANAGEABILITY.INSTANCE_REPOSITORY.PROBLEM_INSTANCE_1. 
+Alerts monitoring is not supported on this system.
+Please contact your system administrator.</value>
+  </data>
+  <data name="DetailsNotYetAvailable" xml:space="preserve">
+    <value>Details are not yet available.</value>
+  </data>
+  <data name="CloseWindow" xml:space="preserve">
+    <value>Are you sure you want to discard your changes and close the window?</value>
+  </data>
+  <data name="FileExistedWarning" xml:space="preserve">
+    <value>6 or more files already exist in the folder. Do you want to overwrite the files?
+
+Select Yes to overwrite, No to skip these files or Cancel to abort the operation.</value>
+  </data>
+  <data name="LoseUnsavedChangesConfirmation" xml:space="preserve">
+    <value>There were local changes made to the System Message. Do you want to lose your unsaved changes?</value>
+  </data>
+  <data name="EmptyAlert" xml:space="preserve">
+    <value>The {0} cannot be empty.</value>
+  </data>
+  <data name="UnsavedChanges" xml:space="preserve">
+    <value>Unsaved Changes</value>
+  </data>
+  <data name="CerFileDialogueTitle" xml:space="preserve">
+    <value>Select a certificate file</value>
+  </data>
+  <data name="HealthStateDrillDownLabel" xml:space="preserve">
+    <value>Health/State {0} Details for</value>
+  </data>
+  <data name="AuditLogAlternateSARLabel" xml:space="preserve">
+    <value>Log event to the syslog box</value>
+  </data>
+  <data name="MonitorWorkload" xml:space="preserve">
+    <value>Workload Monitor</value>
+  </data>
+  <data name="LiveFeedInfrastructureHealthCheckProgressMsg_Failure" xml:space="preserve">
+    <value>Checking and repairing Live Feed Infrastructure... 
+Only failure details will be reported.
+This check may take up to 30 minutes to complete if many repairs are needed.</value>
+  </data>
+  <data name="Undefined" xml:space="preserve">
+    <value>Undefined</value>
+  </data>
+  <data name="HealthStateDrillDownNoFailure" xml:space="preserve">
+    <value>No Failures in the {0} subject area.</value>
+  </data>
+  <data name="AuditLogSpaceUsageValidateMessage" xml:space="preserve">
+    <value>Space usage value should follow below validation:
+       Notify% &lt;= Warning% &lt;= Dialout%</value>
+  </data>
+  <data name="AuditLogsConfigUpdateSuccessfullyMsg" xml:space="preserve">
+    <value>The security audit configuration has been updated successfully.</value>
+  </data>
+  <data name="RemoveSectionWithDB__ROOT" xml:space="preserve">
+    <value>You cannot remove the section containing the DB__ROOT user</value>
+  </data>
+  <data name="HasDuplicateValue" xml:space="preserve">
+    <value> has a duplicate value.</value>
+  </data>
+  <data name="UpdateAlertsMenu" xml:space="preserve">
+    <value>Update Alert(s)</value>
+  </data>
+  <data name="TitleTransactionsOfAllNodes" xml:space="preserve">
+    <value>Transactions - All Nodes</value>
+  </data>
+  <data name="DownloadedCountMessage" xml:space="preserve">
+    <value>Successfully downloaded {0} OSIM data file(s) to {1}</value>
+  </data>
+  <data name="NoPrivilegeToViewAlerts" xml:space="preserve">
+    <value>You do not have the required privileges to view the alert details. Please contact your system administrator</value>
+  </data>
+  <data name="LiveFeedInfrastructureDetailsConfirm" xml:space="preserve">
+    <value>Do you want to display the health check details?</value>
+  </data>
+  <data name="SearchDNNull" xml:space="preserve">
+    <value>Search DN is required when Password is set.</value>
+  </data>
+  <data name="HealthStatesDrillDownProgressMessage_Failure" xml:space="preserve">
+    <value>Getting {0} Details for {1} ...</value>
+  </data>
+  <data name="PasswordDifferent" xml:space="preserve">
+    <value>Password and Confirm Password don't match.</value>
+  </data>
+  <data name="ConfigLoading" xml:space="preserve">
+    <value>Loading configuration...</value>
+  </data>
+  <data name="AuditLogRefreshTooltip" xml:space="preserve">
+    <value>Specifying the seconds of refresh configuration data after the last time an audit function was called. 
+Must set to a value from 0 to 86400 (one day).</value>
+  </data>
+  <data name="AlertsWaiting" xml:space="preserve">
+    <value>Waiting for alerts from the server...</value>
+  </data>
+  <data name="CerLocationEmpty" xml:space="preserve">
+    <value>CA Certificate File cannot be empty.</value>
+  </data>
+  <data name="AlertsNoActionRequiredNote" xml:space="preserve">
+    <value>Alert does not require action.</value>
+  </data>
+  <data name="MultipleWorkLoadCount" xml:space="preserve">
+    <value>There are {0} queries</value>
+  </data>
+  <data name="DiscardChange" xml:space="preserve">
+    <value>Are you sure you want to discard your changes and continue?</value>
+  </data>
+  <data name="LoadCertificate" xml:space="preserve">
+    <value>Loading CA Certificate ...</value>
+  </data>
+  <data name="UnknownSystemIndicator" xml:space="preserve">
+    <value>[Unknown System]</value>
+  </data>
+  <data name="AuditLogCommitChangesWarningMessage" xml:space="preserve">
+    <value>You have some unapplied changes. Do you want to commit the changes?</value>
+  </data>
+  <data name="StatusCommand" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\wms_command.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="OperationFailed" xml:space="preserve">
+    <value>{0} failed.</value>
+  </data>
+  <data name="UnconnectedAlertsToolTip" xml:space="preserve">
+    <value>User must be logged on to the system for Alert monitoring. Click to logon.</value>
+  </data>
+  <data name="Memory" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\memory.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="fileopen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\fileopen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FetchOSIMFiles" xml:space="preserve">
+    <value>Fetching OSIM data files...</value>
+  </data>
+  <data name="DuplicateAlertNote" xml:space="preserve">
+    <value>Duplicate alert</value>
+  </data>
+  <data name="HealthDrillDownConfirm" xml:space="preserve">
+    <value>Do you want to display the health/state details?</value>
+  </data>
+  <data name="AuditLogTableAgingTooltip" xml:space="preserve">
+    <value>Specifying the days of data is aged out of the audit repository, 
+Must be set to a value from 0 to 366 (one year).</value>
+  </data>
+  <data name="SectionRemove" xml:space="preserve">
+    <value>Are you sure you want to remove the {0} configuration?</value>
+  </data>
+  <data name="Alerts" xml:space="preserve">
+    <value>Alerts</value>
+  </data>
+  <data name="HostnameEmpty" xml:space="preserve">
+    <value>LDAP Host Name cannot be empty. You must identify at least one host name.</value>
+  </data>
+  <data name="AreaName" xml:space="preserve">
+    <value>Monitoring</value>
+  </data>
+  <data name="AlertsOptionTooltip" xml:space="preserve">
+    <value>Alter Alerts configuration</value>
+  </data>
+  <data name="FalseAlertNote" xml:space="preserve">
+    <value>False alert</value>
+  </data>
+  <data name="HealthStatesDrillDownProgressMessage_All" xml:space="preserve">
+    <value>Getting {0} Health/State Details for {1} ...</value>
+  </data>
+  <data name="AlertsCountAfterFetch" xml:space="preserve">
+    <value>There are {0} open alerts {1}</value>
+  </data>
+  <data name="AuditLogsTypeFilterMissingMsg" xml:space="preserve">
+    <value>Please select at least one Audit Type.</value>
+  </data>
+  <data name="TriageSpace" xml:space="preserve">
+    <value>Triage Space</value>
+  </data>
+  <data name="WarningAlertIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\alert_warning.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LiveFeedInfrastructureDetails" xml:space="preserve">
+    <value>Health Check Details</value>
+  </data>
+  <data name="PortInvalid" xml:space="preserve">
+    <value>LDAP Port contains an invalid value.</value>
+  </data>
+  <data name="DrillDownHealthStateFailureDetailMenu" xml:space="preserve">
+    <value>Display Failure Details</value>
+  </data>
+  <data name="TarExt" xml:space="preserve">
+    <value>*.tar.gz</value>
+  </data>
+  <data name="AlertsCountForStatusLight" xml:space="preserve">
+    <value>{0} Total Open Alerts ({1} Errors, {2} Warnings, {3} Informational)</value>
+  </data>
+  <data name="InitialAlertsCount" xml:space="preserve">
+    <value>There are {0} alerts</value>
+  </data>
+  <data name="AlertsUpdateRequested" xml:space="preserve">
+    <value>You have initiated an update. 
+
+To complete the update(s), click the Apply button. 
+To discard the update(s), click the Refresh icon.</value>
+  </data>
+  <data name="AlterIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\color_line.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CerFileFilter" xml:space="preserve">
+    <value>Certificate file (*.cer;*.pem)|*.cer;*.pem|All Files (*.*)|*.*</value>
+  </data>
+  <data name="ApplyIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\apply.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ConfigSaving" xml:space="preserve">
+    <value>Saving configuration...</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="DiskDrillDownWarning" xml:space="preserve">
+    <value>TrafodionManager currently supports the disk detail drill down for a specific node only. Please double-click on a specific node.</value>
+  </data>
+  <data name="UniqueIdentifierDuplicate" xml:space="preserve">
+    <value>UniqueIdentifier has a duplicate value.</value>
+  </data>
+  <data name="ConfigFileSaved" xml:space="preserve">
+    <value>The LDAP connection configuration has been saved successfully.</value>
+  </data>
+  <data name="ViewDrillDownMenu" xml:space="preserve">
+    <value>View Symptom Details</value>
+  </data>
+  <data name="RemoveLastSection" xml:space="preserve">
+    <value>You cannot remove the last remaining configuration.</value>
+  </data>
+  <data name="UnableToSaveSystemMessage" xml:space="preserve">
+    <value>Unable to save the system message.</value>
+  </data>
+  <data name="ContactingServer" xml:space="preserve">
+    <value>Contacting Server...</value>
+  </data>
+  <data name="ErrorAlertIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\alert_error.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LiveFeedInfrastructureHealthCheckProgressMsg_All" xml:space="preserve">
+    <value>Checking and repairing Live Feed Infrastructure... 
+All details will be reported.
+This check may take up to 30 minutes to complete if many repairs are needed.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SpecifyDefaultSection" xml:space="preserve">
+    <value>Please specify a default configuration.</value>
+  </data>
+  <data name="CertificateContentEmpty" xml:space="preserve">
+    <value>Certificate Content cannot be empty.</value>
+  </data>
+  <data name="LogonConfirmationForAlerts" xml:space="preserve">
+    <value>User must be logged on to the system for Alert monitoring to be active.  Do you want to log on now ?</value>
+  </data>
+  <data name="History" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\history.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UnknownIndicator" xml:space="preserve">
+    <value>[Unknown]</value>
+  </data>
+  <data name="AuditLogAlternateSyslogLabel" xml:space="preserve">
+    <value>Log event to the security audit repository</value>
+  </data>
+  <data name="ConfigFileSavedWarning" xml:space="preserve">
+    <value>The LDAP configuration has been saved successfully.
+
+Note that newly started connectivity servers will pick up the new configuration.
+
+Existing connectivity servers that have already connected at least once will pick up the new configuration when their refresh interval expires.</value>
+  </data>
+  <data name="AuditLogsRestoreWarningMsg" xml:space="preserve">
+    <value>Are you sure you want to restore the installed values?</value>
+  </data>
+  <data name="AuditLogsResetDefaultWarningMsg" xml:space="preserve">
+    <value>Are you sure you want to turn off all auditing and set the numeric values to defaults?</value>
+  </data>
+  <data name="SPJUnavailable" xml:space="preserve">
+    <value>An internal error occurred. The SPJs are not available now. Please try again later.</value>
+  </data>
+  <data name="AuditLogsConfigLoadingMsg" xml:space="preserve">
+    <value>Loading security audit log configuration...</value>
+  </data>
+  <data name="CancelDownload" xml:space="preserve">
+    <value>Download operation is cancelled.</value>
+  </data>
+  <data name="CPU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\cpu.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FileExistedWarningWithDetail" xml:space="preserve">
+    <value>{0} of the selected file(s) already exist in the destination folder: 
+{1}
+Do you want to overwrite the file(s)?
+
+Select Yes to overwrite, No to skip these files or Cancel to abort the operation.</value>
+  </data>
+  <data name="SelectTargetFolder" xml:space="preserve">
+    <value>Select a target folder for the OSIM data files</value>
+  </data>
+  <data name="CheckLiveFeedInfraMenuCaption" xml:space="preserve">
+    <value>&amp;Check and Repair Live Feed Infrastructure</value>
+  </data>
+  <data name="HostnameDuplicate" xml:space="preserve">
+    <value>LDAP Host Name has a duplicate value.</value>
+  </data>
+  <data name="ViewSymptomMenu" xml:space="preserve">
+    <value>View Symptoms</value>
+  </data>
+  <data name="HostNameSeparator" xml:space="preserve">
+    <value>Separate the host names with a comma, space, or line break.</value>
+  </data>
+  <data name="AuditLogSpaceUsageDialoutTooltip" xml:space="preserve">
+    <value>Specifying percentage of space used when an event dialout should be posted.  
+Must set to a value from 0 to 100.</value>
+  </data>
+  <data name="SystemMessage" xml:space="preserve">
+    <value>System Message</value>
+  </data>
+  <data name="SystemMonitor" xml:space="preserve">
+    <value>System Monitor</value>
+  </data>
+  <data name="QueryStats" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\querystates.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ODBCNeededForHealthDrillDown" xml:space="preserve">
+    <value>An ODBC connection is needed to display the health/state details.</value>
+  </data>
+  <data name="SingleWorkLoadCount" xml:space="preserve">
+    <value>There is {0} query</value>
+  </data>
+  <data name="AlertResolvedNote" xml:space="preserve">
+    <value>Alert resolved</value>
+  </data>
+  <data name="UniqueIdentifierRequired" xml:space="preserve">
+    <value>You must identify at least one UniqueIdentifier.</value>
+  </data>
+  <data name="DrillDownNotSupported" xml:space="preserve">
+    <value>Drilling down on a node is not supported for {0}. The server now aggregates the {1} metrics for each node and no longer publishes individual {1} metrics.</value>
+  </data>
+  <data name="DownArrowIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DownArrowIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ToolTipBrowseButton" xml:space="preserve">
+    <value>Load certificate file on your PC</value>
+  </data>
+  <data name="ToolTiploadServerCerButton" xml:space="preserve">
+    <value>Load CA certificate file</value>
+  </data>
+  <data name="DisableRefreshTime" xml:space="preserve">
+    <value>The refresh interval allows connectivity servers to periodically refresh and keep their LDAP configuration current.
+
+If you disable the refresh interval, connectivity servers that are already started will not pick up the change until the connectivity service is stopped and restarted. 
+
+Are you sure you want to disable the refresh interval?</value>
+  </data>
+  <data name="FailToReadConfigFile" xml:space="preserve">
+    <value>Failed to load the LDAP configuration:
+{0} 
+
+Please try again later.</value>
+  </data>
+  <data name="LoadLDAPConfiguration" xml:space="preserve">
+    <value>Load LDAP Configuration</value>
+  </data>
+  <data name="FailToSaveConfigFile" xml:space="preserve">
+    <value>Failed to save the LDAP configuration:
+{0} 
+
+Please try again later.</value>
+  </data>
+  <data name="WrongConfigFile" xml:space="preserve">
+    <value>The LDAP configuration file contained the following invalid value(s). They have been replaced with the default values.
+
+</value>
+  </data>
+  <data name="BrowseAlarmSoundFile" xml:space="preserve">
+    <value>Browse for new sound</value>
+  </data>
+  <data name="AlarmSoundFilter" xml:space="preserve">
+    <value>Wave Files ({0})|{0}</value>
+  </data>
+  <data name="SQLOffender" xml:space="preserve">
+    <value>SQL Offender</value>
+  </data>
+  <data name="TseDrillDownWarning" xml:space="preserve">
+    <value>TrafodionManager currently supports the TSE skew detail drill down for a specific node only. Please double-click on a specific node.</value>
+  </data>
+</root>

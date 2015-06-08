@@ -1,0 +1,129 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.qpid_header.proto";
+
+package common;
+
+//!!BLOCK:HEADER = BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION = BEGIN
+//
+//  info_header 
+//
+//  This is the standard header that we use for all information when using the
+//  Google protocol buffers serialization method. This header is intended to travel
+//  with data as it may be transformed through the Qpid network. It reflects the
+//  origins of the data itself. As an example, in a tokenized event, both the 
+//  qpid_header and info_header fields would identify the same process. When the
+//  tokenized event is transformed into a text event by the Universal Consumer (UNC),
+//  the generated text event would reflect the UNC's process ID etc. in its qpid_header,
+//  but the info_header would contain the process ID etc. from the tokenized event.
+//
+//  Put another way, the qpid_header information pertains to a specific message,
+//  while the info_header information pertains to a higher level abstraction concerning
+//  the data in the message. The nature of that abstraction will depend on the specific
+//  publications containing the info_header. 
+//
+//!!BLOCK:PUBLICATION DESCRIPTION = END
+//!!BLOCK:HEADER = END
+
+message info_header
+{
+     required qpid_header header = 1;
+
+     //!!BLOCK:FIELD DISCRIPTION = BEGIN
+     // time message was generated, in UTC, microseconds since Jan. 1, 1970, 00:00
+     //!!BLOCK:FIELD DISCRIPTION = END
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = gen_ts_utc
+     required int64       info_generation_time_ts_utc = 2;
+
+     //!!BLOCK:FIELD DISCRIPTION = BEGIN
+     // time message was generated, in LCT, microseconds since Jan. 1, 1970, 00:00
+     //!!BLOCK:FIELD DISCRIPTION = END
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = gen_ts_lct
+     //!!SQL: PRIMARY KEY
+     //!!SQL: HASH KEY
+     required int64       info_generation_time_ts_lct = 3;
+
+     //!!BLOCK:FIELD DISCRIPTION: for alpha, this is always 1
+     required uint32      info_version      = 4;
+
+     required uint32      info_cluster_id   = 5; 
+     required uint32      info_domain_id    = 6;  
+     required uint32      info_subdomain_id = 7; 
+
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = instance_id
+     required uint32      info_instance_id  = 8; 
+
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = tenant_id
+     required uint32      info_tenant_id    = 9; 
+
+     //!!BLOCK:FIELD DISCRIPTION = BEGIN
+     // see SQEVL* defines in ~/export/include/sqevlog/evl_sqlog_writer.h
+     //!!BLOCK:FIELD DISCRIPTION = END
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = component_id
+     required uint32      info_component_id = 10;
+
+     //!!BLOCK:FIELD DISCRIPTION: OS pid
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = process_id
+     required int32       info_process_id    = 11; 
+
+     //!!BLOCK:FIELD DISCRIPTION: OS thread id
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = thread_id
+     required uint32      info_thread_id     = 12;
+
+     //!!BLOCK:FIELD DISCRIPTION: virtual node id
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = node_id
+     optional uint32      info_node_id       = 13;
+
+     //!!BLOCK:FIELD DISCRIPTION: physical node id
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = pnid_id
+     optional uint32      info_pnid_id       = 14;
+
+     //!!BLOCK:FIELD DISCRIPTION: ip address
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = ip_address_id
+     //!!SQL: TYPE = char(32) character set ucs2 casespecific
+     required string      info_ip_address_id = 15;
+
+     //!!BLOCK:FIELD DISCRIPTION: producer-generated sequence number
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = sequence_number
+     required uint32      info_sequence_num  = 16;
+
+     //!!BLOCK:FIELD DISCRIPTION: sq process name
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = process_name
+     //!!SQL: TYPE = char(32) character set ucs2 casespecific
+     optional string      info_process_name  = 17;
+
+     //!!BLOCK:FIELD DISCRIPTION: host identifier
+     //!!SQL: INCLUDE
+     //!!SQL: COLUMN NAME = host_id
+     //!!SQL: PRIMARY KEY
+     required uint32      info_host_id       = 18;
+}

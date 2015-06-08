@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   --><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9E824CDB-0671-4C20-B38C-68B1C63F2AD2}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.LiveFeedFramework</RootNamespace>
+    <AssemblyName>Trafodion.Manager.LiveFeedFramework</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <DocumentationFile>HP.OneGui.LiveFeedFramework.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <DocumentationFile>HP.OneGui.LiveFeedFramework.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="externallistenermanaged, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\build\externallistenermanaged.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\..\..\protobuf-net\protobuf-net_r480\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\LiveFeedBrokerConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\LiveFeedBrokerConfigDialog.designer.cs">
+      <DependentUpon>LiveFeedBrokerConfigDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\LiveFeedUniversalWidget.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelpTopics.cs" />
+    <Compile Include="Models\CachedLiveFeedDataProvider.cs" />
+    <Compile Include="Models\CachedLiveFeedDataProviderConfig.cs" />
+    <Compile Include="Models\FilterManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Models\LiveFeedBrokerConfiguration.cs" />
+    <Compile Include="Models\LiveFeedConnection.cs" />
+    <Compile Include="Models\LiveFeedConnectionEventArgs.cs" />
+    <Compile Include="Models\LiveFeedConnectionRegistry.cs" />
+    <Compile Include="Models\LiveFeedDataProvider.cs" />
+    <Compile Include="Models\LiveFeedDataProviderConfig.cs" />
+    <Compile Include="Models\CachedLiveFeedProtoBufDataProvider.cs" />
+    <Compile Include="Models\LiveFeedMessageQueue.cs" />
+    <Compile Include="Models\LiveFeedRoutingKeyMapper.cs" />
+    <Compile Include="Models\LiveFeedStatsTransformer.cs" />
+    <Compile Include="Models\LiveFeedSubscription.cs" />
+    <Compile Include="Models\ReceivedPackage.cs" />
+    <Compile Include="Models\ReceiveQueue.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Publications\accesslayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>accesslayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\common.event_header.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>common.event_header.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\common.health_header.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>common.health_header.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\common.info_header.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>common.info_header.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\common.qpid_header.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>common.qpid_header.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\common.text_event.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>common.text_event.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\databaselayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>databaselayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\foundationlayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>foundationlayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\health.layer_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>health.layer_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.core_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.core_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.disk_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.disk_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.filesystem_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.filesystem_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.loadavg_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.loadavg_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.memory_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.memory_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.network_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.network_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\linuxcounters.virtualmem_metrics_shortbusy_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>linuxcounters.virtualmem_metrics_shortbusy_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\oslayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>oslayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\problem_management.events.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>problem_management.events.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\problem_management.problem_close.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>problem_management.problem_close.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\problem_management.problem_open.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>problem_management.problem_open.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\problem_management.symptom.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>problem_management.symptom.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\se.perf_stats_delta_assembled.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>se.perf_stats_delta_assembled.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\serverlayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>serverlayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Compile Include="Publications\storagelayer.level_1_check.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>storagelayer.level_1_check.proto</DependentUpon>
+    </Compile>
+    <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\LiveFeedBrokerConfigDialog.resx">
+      <DependentUpon>LiveFeedBrokerConfigDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Publications\accesslayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>accesslayer.level_1_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\common.event_header.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>common.event_header.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\common.health_header.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>common.health_header.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\common.info_header.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>common.info_header.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\common.qpid_header.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>common.qpid_header.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\common.text_event.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>common.text_event.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\databaselayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>databaselayer.level_1_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\foundationlayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>foundationlayer.level_1_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\health.layer_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>health.layer_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.core_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.core_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.disk_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.disk_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.filesystem_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.filesystem_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.loadavg_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.loadavg_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.memory_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.memory_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.network_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.network_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\linuxcounters.virtualmem_metrics_shortbusy_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>linuxcounters.virtualmem_metrics_shortbusy_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\oslayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>oslayer.level_1_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\problem_management.events.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>problem_management.events.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\problem_management.problem_close.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>problem_management.problem_close.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\problem_management.problem_open.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>problem_management.problem_open.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\problem_management.symptom.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>problem_management.symptom.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\se.perf_stats_delta_assembled.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>se.perf_stats_delta_assembled.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\serverlayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>serverlayer.level_1_check.cs</LastGenOutput>
+    </None>
+    <None Include="Publications\storagelayer.level_1_check.proto">
+      <Generator>ProtoBufTool</Generator>
+      <LastGenOutput>storagelayer.level_1_check.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trafodion.Manager.UniversalWidget\Trafodion.Manager.UniversalWidget.csproj">
+      <Project>{a8d47305-df6e-443b-8f4e-32fdb9e8857f}</Project>
+      <Name>Trafodion.Manager.UniversalWidget</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6cc5fa95-df73-4a3b-a86e-010b7a5159a2}</Project>
+      <Name>Trafodion.Manager</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>$(ProjectDir)\..\..\..\build\copyLiveFeedDll.vbs</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

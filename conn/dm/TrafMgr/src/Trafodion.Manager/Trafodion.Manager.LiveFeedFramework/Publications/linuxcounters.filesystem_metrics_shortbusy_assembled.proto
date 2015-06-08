@@ -1,0 +1,95 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+import "common.info_header.proto";
+
+package linuxcounters;
+//!!BLOCK:HEADER=BEGIN
+//!!BLOCK:PUBLICATION DESCRIPTION=BEGIN
+// Assembled message for the filesystem_metrics publications.  
+//
+//  This publication is sent by the provider (node level provider or UNA) once every two seconds.
+// 
+//  The data is collected from /proc/filesystems and /proc/mounts, and incorporates 
+//    all disk stat configurations reported, including SSD.  In a subsequent release, the 
+//    data might come from the monitor itself.  This data is not provided for spare nodes.
+//	
+//  These are PERCENT snapshot counters.  /proc contains cumulative; provider does percentage calculation.
+//    once per interval	
+//
+//  DATA IS ONLY REPORTED FOR STORAGE THAT INSTANCES ACTIVELY USE/MANAGE:
+//              - Storage Engines primaried in the same name
+//              - Overflow storage used for query execution
+//
+//  Data in this publication is currently accessible via the metric_filesystem_1 view in 1 minute
+//       intervals
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//  There are corresponding assembled and non-assembled publications.
+//  If you change one and not the other, you might see strange results.
+//  But it's possible you do want them to get out of sync, so we can't
+//  simply import a common definition into both. CAVEAT EMPTOR
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+//!!BLOCK:PUBLICATION DESCRIPTION=END
+//!!BLOCK:SQL:TABLENAME=filesystem_metrics_shortbusy
+//!!BLOCK:HEADER=END
+
+message filesystem_metrics_shortbusy_assembled { 
+message aggregate_filesystem_use_buffer {
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: The logical node identifier for this node within this instance. 
+   required int32 node_id         = 1;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: The logical name of the file system being described
+   //!!SQL: TYPE = varchar (32)	
+   required string mnt_fsname  = 2;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: The directory on which the file system is mounted for this node
+   //!!SQL: TYPE = varchar (64)
+   required string mnt_dir   = 3;
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Percentage used space, calculated as (TotalBocksAvailable-TotalBlocksFree) divided by TotalBlocksAvailable snapshots at the time the publication is constructed.  If one of the values in the calculation is invalid, percent_consumed is 0.
+   required int32 percent_consumed = 4;
+}
+
+message aggregate_filesystem_count {
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Number of interesting file systems found on this particular *logical* node at this time. The order of entries in this array MUST be the same as what's sent for reporting the actual file system data.
+   required int32 num_file_systems  = 1;
+ }
+
+ //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+ //!!BLOCK: FIELD DESCRIPTION: Informational Header for all messages
+ required common.info_header header = 1;
+
+   //!!SQL:SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: A count of the number of file systems for each node. It's possible that the number might vary, especially with spare nodes.
+ repeated aggregate_filesystem_count filesystem_count_aggr = 2; 
+
+   //!!SQL: SKIP; XML-MIB: SKIP; DOC: INCLUDE
+   //!!BLOCK: FIELD DESCRIPTION: Aggregated buffer, one entry for each node/file system
+ repeated aggregate_filesystem_use_buffer aggregate = 3; 
+
+}

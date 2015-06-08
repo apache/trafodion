@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{742956CF-1E7A-4A9D-B094-6C782E7D514D}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Trafodion.Manager.Main</RootNamespace>
+    <AssemblyName>Trafodion.Manager.Main</AssemblyName>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <StartupObject>Trafodion.Manager.Main.TrafodionMain</StartupObject>
+    <ApplicationIcon>trafodion.ico</ApplicationIcon>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.Main.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Trafodion.Manager.Main.XML</DocumentationFile>
+    <NoWarn>1591, 1572, 1573, 1587, 168, 169, 649, 414, 219</NoWarn>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="ZedGraph">
+      <HintPath>..\..\..\build\ZedGraph.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DisplayAreasPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DisplayAreasPanel.Designer.cs">
+      <DependentUpon>DisplayAreasPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainOptionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainOptionsDialog.Designer.cs">
+      <DependentUpon>MainOptionsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NCIHandler.cs" />
+    <Compile Include="NCIOptionControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="NCIOptionControl.Designer.cs">
+      <DependentUpon>NCIOptionControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NCIOptions.cs" />
+    <Compile Include="TrafodionMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TrafodionSplashScreen.cs" />
+    <Compile Include="TrafodionSplashScreenForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TrafodionSplashScreenForm.designer.cs">
+      <DependentUpon>TrafodionSplashScreenForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OptionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OptionsDialog.Designer.cs">
+      <DependentUpon>OptionsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OptionsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="OptionsPanel.Designer.cs">
+      <DependentUpon>OptionsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PluginErrorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PluginErrorDialog.Designer.cs">
+      <DependentUpon>PluginErrorDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="DisplayAreasPanel.resx">
+      <DependentUpon>DisplayAreasPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainOptionsDialog.resx">
+      <DependentUpon>MainOptionsDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NCIOptionControl.resx">
+      <DependentUpon>NCIOptionControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TrafodionMain.resx">
+      <DependentUpon>TrafodionMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TrafodionSplashScreenForm.resx">
+      <DependentUpon>TrafodionSplashScreenForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OptionsDialog.resx">
+      <DependentUpon>OptionsDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OptionsPanel.resx">
+      <DependentUpon>OptionsPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PluginErrorDialog.resx">
+      <DependentUpon>PluginErrorDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="app.config" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="SQLWhiteboardHandler.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Trafodion.Manager.DatabaseArea\Trafodion.Manager.DatabaseArea.csproj">
+      <Project>{EF7B9B77-77AC-4A0B-AF42-0DFD9DF6E402}</Project>
+      <Name>Trafodion.Manager.DatabaseArea</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Trafodion.Manager.LiveFeedMonitoringArea\Trafodion.Manager.LiveFeedMonitoringArea.csproj">
+      <Project>{10a5bdc9-8669-4393-b722-33e3d0a9c691}</Project>
+      <Name>Trafodion.Manager.LiveFeedMonitoringArea</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Trafodion.Manager.Overview\Trafodion.Manager.OverviewArea.csproj">
+      <Project>{90bf5e27-2b21-4c6a-9740-6dfbb0e7fbc0}</Project>
+      <Name>Trafodion.Manager.OverviewArea</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager.LiveFeedFramework\Trafodion.Manager.LiveFeedFramework.csproj">
+      <Project>{9e824cdb-0671-4c20-b38c-68b1c63f2ad2}</Project>
+      <Name>Trafodion.Manager.LiveFeedFramework</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager.MetricMiner\Trafodion.Manager.MetricMiner.csproj">
+      <Project>{3BB777BB-5A17-4119-8FA0-49CDFEDD3853}</Project>
+      <Name>Trafodion.Manager.MetricMiner</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</Project>
+      <Name>Trafodion.Manager</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Trafodion.Manager\Trafodion.Manager.csproj">
+      <Project>{6CC5FA95-DF73-4A3B-A86E-010B7A5159A2}</Project>
+      <Name>Trafodion.Manager</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PluginLoader\PluginLoader.csproj">
+      <Project>{25EFA450-53B6-4F58-A1DE-41A9D13CFB04}</Project>
+      <Name>PluginLoader</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="trafodion.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
