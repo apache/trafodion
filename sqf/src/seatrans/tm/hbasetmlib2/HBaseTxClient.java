@@ -876,7 +876,9 @@ public class HBaseTxClient {
       * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 10000; // Initially set to run every 10sec
+             final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
+             private int sleepTimeInt = 0;
+             private boolean skipSleep = false;
              private TmAuditTlog audit;
              private HBaseTmZK zookeeper;
              private TransactionManager txnManager;
@@ -918,6 +920,13 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
+
+                          String sleepTime = System.getenv("TMRECOV_SLEEP");
+                          if (sleepTime != null) {
+                                this.sleepTimeInt = Integer.parseInt(sleepTime);
+                                if(LOG.isDebugEnabled()) LOG.debug("Recovery thread sleep set to: " +
+                                                                   this.sleepTimeInt + "ms");
+                          }
              }
 
              public void stopThread() {
@@ -963,13 +972,10 @@ public class HBaseTxClient {
 
             @Override
              public void run() {
-                int sleepTimeInt = 0;
-                String sleepTime = System.getenv("TMRECOV_SLEEP");
-                if (sleepTime != null)
-                    sleepTimeInt = Integer.parseInt(sleepTime);
 
                 while (this.continueThread) {
                     try {
+                        skipSleep = false;
                         Map<String, byte[]> regions = null;
                         Map<Long, TransactionState> transactionStates =
                                 new HashMap<Long, TransactionState>();
@@ -986,6 +992,7 @@ public class HBaseTxClient {
                         }
 
                         if(regions != null) {
+                            skipSleep = true;
                             recoveryIterations++;
 
                             if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt region size " + regions.size());
@@ -1188,10 +1195,12 @@ public class HBaseTxClient {
                         }
                         try {
                             if(continueThread) {
-                                if (sleepTimeInt > 0)
-                                    Thread.sleep(sleepTimeInt);
-                                else
-                                    Thread.sleep(SLEEP_DELAY);
+                                if(!skipSleep) {
+                                    if (sleepTimeInt > 0)
+                                        Thread.sleep(sleepTimeInt);
+                                    else
+                                        Thread.sleep(SLEEP_DELAY);
+                                }
                             }
                             retryCount = 0;
                         } catch (Exception e) {
