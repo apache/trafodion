@@ -350,8 +350,25 @@ public String getCatalog() throws SQLException {
         debug[methodId_getCatalog].methodEntry();
         try {
             clearWarnings();
-//			return catalog_;
-            return this.t2props.getCatalog();
+            Statement s = null;
+            ResultSet rs = null;
+            String catalog = null;
+            
+            try {
+                s = this.createStatement();
+                rs = s.executeQuery("SHOWCONTROL DEFAULT CATALOG, match full, no header");
+                rs.next();
+                catalog = rs.getString(1);
+                catalog = catalog.substring(catalog.indexOf('.') + 1);
+            } catch (SQLException e) {
+                return this.t2props.getCatalog();
+            } finally {
+                if (rs != null)
+                    rs.close();
+                if (s != null)
+                    s.close();
+            }
+            return catalog;
         }finally {
             if (JdbcDebugCfg.entryActive)
             debug[methodId_getCatalog].methodExit();
@@ -3211,7 +3228,8 @@ private static int methodId_prepareInsLobDataStmt = 60;
 private static int methodId_prepareTrunLobDataStmt = 61;
 private static int methodId_prepareGetStrtDataLocStmt = 62;
 private static int methodId_getCharsetEncodingCached = 63;
-private static int totalMethodIds = 64;
+private static int methodId_getSchema = 64;
+private static int totalMethodIds = 65;
 private static JdbcDebug[] debug;
 
     static {
@@ -3453,7 +3471,36 @@ public int getNetworkTimeout() throws SQLException {
     }
 
 public String getSchema() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+    if (out_ != null)
+        out_.println(getTraceId() + "getSchema()");
+    if (JdbcDebugCfg.entryActive)
+        debug[methodId_getSchema].methodEntry();
+    try {
+        clearWarnings();
+        Statement s = null;
+        ResultSet rs = null;
+        String sch = null;
+
+        try {
+            s = this.createStatement();
+            rs = s.executeQuery("SHOWCONTROL DEFAULT SCHEMA, match full, no header");
+            rs.next();
+            sch = rs.getString(1);
+            if (sch.charAt(0) != '\"' && sch.indexOf('.') != -1) {
+                sch = sch.substring(sch.indexOf('.') + 1);
+            }
+        } catch (SQLException e) {
+            return schema_;
+        } finally {
+            if (rs != null)
+                rs.close();
+            if (s != null)
+                s.close();
+        }
+        return sch;
+    } finally {
+        if (JdbcDebugCfg.entryActive)
+            debug[methodId_getSchema].methodExit();
+    }
     }
 }
