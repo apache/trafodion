@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,16 +19,3 @@
 #######################################################################
 
 CPPSRC := feMain.cpp
-
-ifeq ($(TARGTYPE),nt)
-
-RESSRC := $(TOPDIR)/sqlfe/sqlfe.rc
-DEP_LIBS := tdm_sqlmxevents catman smdio arkcmplib cli common eh \
-	executor generator optimizer parser sqlmsg sort ustat \
-	tdm_arkfsddl tdm_arkfsdml lmcomp fepipe
-
-EXTERN_OBJS := $(YLIBDIR)/tdm_nonpriv.lib
-
-DEFS := -D_CONSOLE
-LDFLAGS := /stack:0x989680
-endif
