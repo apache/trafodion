@@ -133,6 +133,10 @@ extern long maxHeapPctExit;
 extern long initSessMemSize ;
 int fd = -1;
 bool heapSizeExit = false;
+int interval_count=0;
+int interval_max=1;
+int limit_count=0;
+int limit_max=-1;
 
 bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState);
 
@@ -1429,8 +1433,22 @@ ImplInit (
 	strncpy(srvrGlobal->m_ProcName, myProcName.c_str(), MS_MON_MAX_PROCESS_NAME);
 	srvrGlobal->m_statisticsPubType = statisticsPubType;
 	srvrGlobal->m_bStatisticsEnabled = bStatisticsEnabled;
+	
 	srvrGlobal->m_iAggrInterval = aggrInterval;
+	
+	interval_max=aggrInterval/MIN_INTERVAL;
+	if(aggrInterval%MIN_INTERVAL) 
+		interval_max+=1;
+	
 	srvrGlobal->m_iQueryPubThreshold = queryPubThreshold;
+
+	if(queryPubThreshold>=0) 
+	{
+		limit_max=queryPubThreshold/MIN_INTERVAL;
+		if(queryPubThreshold%MIN_INTERVAL) 
+			limit_max+=1;
+	}
+	
 	if (!srvrGlobal->m_bStatisticsEnabled)
 		bPlanEnabled = false;
 	srvrGlobal->sqlPlan = bPlanEnabled;
@@ -3688,16 +3706,16 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	if (resStatSession != NULL)
 	{
 		resStatSession->init();
-		resStatSession->start(&setinit);
-
-		if (srvrGlobal->m_bStatisticsEnabled)
+		resStatSession->start(&setinit);		
+		if ((srvrGlobal->m_bStatisticsEnabled)&&(srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED))
 		{
 			if (CEE_HANDLE_IS_NIL(&StatisticsTimerHandle) == IDL_FALSE)
 			{
 				CEE_TIMER_DESTROY(&StatisticsTimerHandle);
 				CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
-			}
-			CEE_TIMER_CREATE2(srvrGlobal->m_iAggrInterval, 0, StatisticsTimerExpired, (CEE_tag_def)NULL, &StatisticsTimerHandle, srvrGlobal->receiveThrId);
+			}		
+			interval_count=0;
+			CEE_TIMER_CREATE2(MIN_INTERVAL, 0, StatisticsTimerExpired, (CEE_tag_def)NULL, &StatisticsTimerHandle, srvrGlobal->receiveThrId);
 		}
 	}
 
@@ -9345,6 +9363,11 @@ short DO_WouldLikeToExecute(
 
 	pQueryStmt = pSrvrStmt;
 	pSrvrStmt->m_bDoneWouldLikeToExecute = true;
+	if ((srvrGlobal->m_bStatisticsEnabled)&&(srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED)&&(srvrGlobal->m_iQueryPubThreshold>=0))
+	{
+		limit_count=0;
+	}	
+	
 	return 0;
 }
 
@@ -9456,26 +9479,31 @@ void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUE
 
 void __cdecl StatisticsTimerExpired(CEE_tag_def timer_tag)
 {
-	long long timestamp = JULIANTIMESTAMP();
-	//static long long check_session_interval = timestamp;
-
-	if( resStatSession != NULL
-		&& srvrGlobal->m_statisticsPubType == STATISTICS_AGGREGATED )
-		//&& timestamp - check_session_interval >= aggrInterval * 1000000LL)
+    if (!(srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED))
+		return;
+	//update aggregation stats per interval
+	if(++interval_count >=interval_max)
 	{
-		resStatSession->update();
+	    if(resStatSession != NULL)
+			resStatSession->update();		
+		interval_count=0;	
 	}
-
-	if(resStatStatement != NULL
-		&& srvrGlobal->m_statisticsPubType != STATISTICS_SESSION
-		&& !resStatStatement->pubStarted
+	
+    //update query stats once longer than limit	    
+	if(limit_max>=0
+		&& resStatStatement != NULL
 		&& !resStatStatement->queryFinished
+		&& !resStatStatement->pubStarted
 		&& resStatStatement->wouldLikeToStart_ts > 0
-		&& pQueryStmt != NULL
-		&& timestamp - resStatStatement->wouldLikeToStart_ts >= srvrGlobal->m_iQueryPubThreshold * 1000000LL)
+		&& pQueryStmt!= NULL)			
 	{
-		resStatStatement->SendQueryStats(true, pQueryStmt);
-	}
+		if(limit_count++ >=limit_max)
+		{
+			resStatStatement->SendQueryStats(true, pQueryStmt);
+			limit_count=0;
+		}		
+	}	
+	
 }
 
 void SyncPublicationThread()
