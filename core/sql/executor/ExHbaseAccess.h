@@ -473,6 +473,9 @@ protected:
   ColValVec * colValVec_;
   Lng32 colValVecSize_;
   Lng32 colValEntry_;
+  Int16 asyncCompleteRetryCount_;
+  NABoolean *resultArray_;
+  Int32 asyncOperationTimeout_;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 
@@ -824,6 +827,7 @@ public:
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
+    , ASYNC_INSERT_COMPLETE
 
   } step_;
 
@@ -876,6 +880,7 @@ public:
 
   Lng32 rowsInserted_;
   int lastHandledStep_;
+  Lng32 numRowsInVsbbBuffer_;
 };
 
 
@@ -1128,6 +1133,7 @@ public:
     , CREATE_ROW
     , APPLY_PRED
     , RETURN_ROW
+    , ASYNC_INSERT_COMPLETE
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,
@@ -1143,8 +1149,8 @@ public:
   queue_index nextRequest_;    // next request in down queue
 
   Lng32 numRetries_;
-
-  ExHbaseGetSQTaskTcb * getSQTaskTcb_;
+  int lastHandledStep_;
+  Lng32 numRowsInVsbbBuffer_;
 };
 
 class ExHbaseAccessDDLTcb  : public ExHbaseAccessTcb

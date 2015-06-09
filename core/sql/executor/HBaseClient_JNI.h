@@ -199,6 +199,8 @@ typedef enum {
  ,HTC_NEXTCELL_EXCEPTION
  ,HTC_ERROR_GETROWS_PARAM
  ,HTC_ERROR_GETROWS_EXCEPTION
+ ,HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION
+ ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -281,13 +283,15 @@ public:
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       Int64 timestamp);
-  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush);
+       Int64 timestamp, bool asyncOperation);
+  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, 
+       bool autoFlush, bool asyncOperation);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp);
+  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp,
+                                                         bool asyncOperation);
   HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, bool asyncOperation);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -327,6 +331,7 @@ public:
                  HbaseStr &colName,
                  HbaseStr &colVal,
                  Int64 &timestamp);
+  HTC_RetCode completeAsyncOperation(int timeout, NABoolean *resultArray, short resultArrayLen);
 
   //  HTC_RetCode codeProcAggrGetResult();
 
@@ -391,6 +396,7 @@ private:
    ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
    ,JM_DIRECT_GET_ROWS
+   ,JM_COMPLETE_PUT
    ,JM_LAST
   };
   char *tableName_; 

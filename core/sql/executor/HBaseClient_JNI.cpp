@@ -2904,6 +2904,8 @@ static const char* const htcErrorEnumStr[] =
  ,"Java exception in nextCell()."
  ,"Preparing parameters for getRows()."
  ,"Java exception in getRows()."
+ ,"Java exception in completeAsyncOperation()."
+ ,"Async Hbase Operation not yet complete."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2981,7 +2983,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_CHECKANDDELETE     ].jm_name      = "checkAndDeleteRow";
     JavaMethods_[JM_CHECKANDDELETE     ].jm_signature = "(J[B[B[BJ)Z";
     JavaMethods_[JM_CHECKANDUPDATE     ].jm_name      = "checkAndUpdateRow";
-    JavaMethods_[JM_CHECKANDUPDATE     ].jm_signature = "(J[BLjava/lang/Object;[B[BJ)Z";
+    JavaMethods_[JM_CHECKANDUPDATE     ].jm_signature = "(J[BLjava/lang/Object;[B[BJZ)Z";
     JavaMethods_[JM_COPROC_AGGR     ].jm_name      = "coProcAggr";
     JavaMethods_[JM_COPROC_AGGR     ].jm_signature = "(JI[B[B[B[BZI)[B";
     JavaMethods_[JM_GET_NAME   ].jm_name      = "getTableName";
@@ -2997,17 +2999,19 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_SET_WRITE_TO_WAL ].jm_name      = "setWriteToWAL";
     JavaMethods_[JM_SET_WRITE_TO_WAL ].jm_signature = "(Z)Z";
     JavaMethods_[JM_DIRECT_INSERT ].jm_name      = "insertRow";
-    JavaMethods_[JM_DIRECT_INSERT ].jm_signature = "(J[BLjava/lang/Object;J)Z";
+    JavaMethods_[JM_DIRECT_INSERT ].jm_signature = "(J[BLjava/lang/Object;JZ)Z";
     JavaMethods_[JM_DIRECT_CHECKANDINSERT     ].jm_name      = "checkAndInsertRow";
-    JavaMethods_[JM_DIRECT_CHECKANDINSERT     ].jm_signature = "(J[BLjava/lang/Object;J)Z";
+    JavaMethods_[JM_DIRECT_CHECKANDINSERT     ].jm_signature = "(J[BLjava/lang/Object;JZ)Z";
     JavaMethods_[JM_DIRECT_INSERT_ROWS ].jm_name      = "putRows";
-    JavaMethods_[JM_DIRECT_INSERT_ROWS ].jm_signature = "(JSLjava/lang/Object;Ljava/lang/Object;JZ)Z";
+    JavaMethods_[JM_DIRECT_INSERT_ROWS ].jm_signature = "(JSLjava/lang/Object;Ljava/lang/Object;JZZ)Z";
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_name      = "deleteRows";
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_signature = "(JSLjava/lang/Object;J)Z";
     JavaMethods_[JM_FETCH_ROWS ].jm_name      = "fetchRows";
     JavaMethods_[JM_FETCH_ROWS ].jm_signature = "()I";
     JavaMethods_[JM_DIRECT_GET_ROWS ].jm_name      = "getRows";
     JavaMethods_[JM_DIRECT_GET_ROWS ].jm_signature = "(JSLjava/lang/Object;[Ljava/lang/Object;)I";
+    JavaMethods_[JM_COMPLETE_PUT ].jm_name      = "completeAsyncOperation";
+    JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -3613,7 +3617,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID, 
-     HbaseStr &row, Int64 timestamp)
+     HbaseStr &row, Int64 timestamp, bool asyncOperation)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::insertRow(%s) direct called.", rowID.val);
 
@@ -3640,11 +3644,12 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
 
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
-
+  jboolean j_asyncOperation = asyncOperation;
   if (hbs_)
     hbs_->getTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_DIRECT_INSERT].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT].methodID, j_tid, 
+                jba_rowID, jDirectBuffer, j_ts, j_asyncOperation);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
@@ -3690,7 +3695,7 @@ HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &r
   jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
   if (jRowIDs == NULL)
   {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROWS_PARAM));
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_GETROWS_PARAM));
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_GETROWS_PARAM;
   }
@@ -3703,7 +3708,7 @@ HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &r
      {
         getExceptionDetails();
         logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-        logError(CAT_SQL_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
+        logError(CAT_SQL_HBASE, "HTableClient_JNI::getRows()", getLastError());
         jenv_->DeleteLocalRef(jRowIDs);  
         jenv_->PopLocalFrame(NULL);
         return HTC_ERROR_GETROWS_PARAM;
@@ -3737,7 +3742,7 @@ HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &r
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "HTableClient_JNI::insertRows()", getLastError());
+    logError(CAT_SQL_HBASE, "HTableClient_JNI::getRows()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_GETROWS_EXCEPTION;
   }
@@ -3754,7 +3759,7 @@ HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &r
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, 
-      HbaseStr &rows, Int64 timestamp, bool autoFlush)
+      HbaseStr &rows, Int64 timestamp, bool autoFlush, bool asyncOperation)
 {
 
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
@@ -3780,11 +3785,13 @@ HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr
   jlong j_ts = timestamp;
   jshort j_rowIDLen = rowIDLen;
   jboolean j_af = autoFlush;
+  jboolean j_asyncOperation = asyncOperation;
  
   if (hbs_)
     hbs_->getTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_DIRECT_INSERT_ROWS].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT_ROWS].methodID, 
+               j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af, j_asyncOperation);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
@@ -3892,7 +3899,7 @@ HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 //   3-way return value!!!
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
-HbaseStr &row, Int64 timestamp)
+HbaseStr &row, Int64 timestamp, bool asyncOperation)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndInsertRow(%s) called.", rowID.val);
 
@@ -3919,11 +3926,13 @@ HbaseStr &row, Int64 timestamp)
 
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
+  jboolean j_asyncOperation = asyncOperation;
 
   if (hbs_)
     hbs_->getTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_DIRECT_CHECKANDINSERT].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_CHECKANDINSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_CHECKANDINSERT].methodID, 
+             j_tid, jba_rowID, jDirectBuffer, j_ts, j_asyncOperation);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
@@ -3956,7 +3965,8 @@ HbaseStr &row, Int64 timestamp)
 HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
             HbaseStr &row,
 	    const Text &columnToCheck, const Text &colValToCheck, 
-            Int64 timestamp)
+            Int64 timestamp,
+            bool asyncOperation)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndUpdateRow(%s) called.", rowID.val);
 
@@ -4005,6 +4015,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
  
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
+  jboolean j_asyncOperation  = asyncOperation;
 
   if (hbs_)
     hbs_->getTimer().start();
@@ -4012,7 +4023,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
                 JavaMethods_[JM_CHECKANDUPDATE].methodID, 
                 j_tid, jba_rowID, jDirectBuffer, 
-	        jba_columntocheck, jba_colvaltocheck, j_ts);
+	        jba_columntocheck, jba_colvaltocheck, j_ts, j_asyncOperation);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
@@ -5453,6 +5464,46 @@ HTC_RetCode HTableClient_JNI::nextCell(
       return retcode;
    currentRowCellNum_++;
    return HTC_OK;
+}
+
+HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *resultArray, Int16 resultArrayLen)
+{
+  HTC_RetCode retcode;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+    getExceptionDetails();
+    return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
+  }
+  jint jtimeout = timeout;
+  jbooleanArray jresultArray =  jenv_->NewBooleanArray(resultArrayLen);
+  if (jenv_->ExceptionCheck()) {
+      getExceptionDetails();
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
+      jenv_->PopLocalFrame(NULL);
+      return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
+   }
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_COMPLETE_PUT].methodID,
+                               jtimeout, jresultArray);
+
+  if (jenv_->ExceptionCheck()) {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
+  }
+  if (jresult == false) {
+     jenv_->PopLocalFrame(NULL);
+     return HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE;
+  }
+  jboolean *returnArray = jenv_->GetBooleanArrayElements(jresultArray, NULL);
+  for (int i = 0; i < resultArrayLen; i++) 
+      resultArray[i] = returnArray[i]; 
+  jenv_->ReleaseBooleanArrayElements(jresultArray, returnArray, JNI_ABORT);
+  jenv_->DeleteLocalRef(jresultArray);
+  jenv_->PopLocalFrame(NULL);
+  return HTC_OK;
 }
 
 jobjectArray convertToByteArrayObjectArray(const LIST(NAString) &vec)

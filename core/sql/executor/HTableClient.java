@@ -919,13 +919,14 @@ public class HTableClient {
 		return true;
 	}
 
-	public boolean putRow(long transID, byte[] rowID, Object row,
-		byte[] columnToCheck, byte[] colValToCheck,
-		boolean checkAndPut) throws IOException 	{
-
+	public boolean putRow(final long transID, final byte[] rowID, Object row,
+		byte[] columnToCheck, final byte[] colValToCheck,
+		final boolean checkAndPut, boolean asyncOperation) throws IOException, InterruptedException, 
+                          ExecutionException 
+	{
 		if (logger.isTraceEnabled()) logger.trace("Enter putRow() " + tableName);
 
-		Put put;
+	 	final Put put;
 		ByteBuffer bb;
 		short numCols;
 		short colNameLen;
@@ -955,37 +956,63 @@ public class HTableClient {
 			family = getFamily(columnToCheck);
 			qualifier = getName(columnToCheck);
 		}
-		boolean res = true;
-		if (checkAndPut)
-		{
-		    if (useTRex && (transID != 0)) 
-			res = table.checkAndPut(transID, rowID, 
-						family, qualifier, colValToCheck, put);
-		    else 
-			res = table.checkAndPut(rowID, 
-						family, qualifier, colValToCheck, put);
-		}
-		else
-		{
-		    if (useTRex && (transID != 0)) 
-			table.put(transID, put);
-		    else 
-			table.put(put);
-		}
-		return res;
+		final byte[] family1 = family;
+		final byte[] qualifier1 = qualifier;
+		if (asyncOperation) {
+			future = executorService.submit(new Callable() {
+				public Object call() throws Exception {
+					boolean res = true;
+
+					if (checkAndPut) {
+		    				if (useTRex && (transID != 0)) 
+							res = table.checkAndPut(transID, rowID, 
+								family1, qualifier1, colValToCheck, put);
+		    				else 
+							res = table.checkAndPut(rowID, 
+								family1, qualifier1, colValToCheck, put);
+					}
+					else {
+		    				if (useTRex && (transID != 0)) 
+							table.put(transID, put);
+		    				else 
+							table.put(put);
+					}
+					return new Boolean(res);
+				}
+			});
+			return true;
+		} else {
+		 	boolean result = true;
+			if (checkAndPut) {
+		    		if (useTRex && (transID != 0)) 
+					result = table.checkAndPut(transID, rowID, 
+						family1, qualifier1, colValToCheck, put);
+		   		else 
+					result = table.checkAndPut(rowID, 
+						family1, qualifier1, colValToCheck, put);
+			}
+			else {
+		    		if (useTRex && (transID != 0)) 
+					table.put(transID, put);
+		    		else 
+					table.put(put);
+			}
+			return result;
+		}	
 	}
 
 	public boolean insertRow(long transID, byte[] rowID, 
                          Object row, 
-			 long timestamp) throws IOException {
+			 long timestamp,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
 		return putRow(transID, rowID, row, null, null, 
-				false);
+				false, asyncOperation);
 	}
 
-	public boolean putRows(long transID, short rowIDLen, Object rowIDs, 
+	public boolean putRows(final long transID, short rowIDLen, Object rowIDs, 
                        Object rows,
-                       long timestamp, boolean autoFlush)
-			throws IOException {
+                       long timestamp, boolean autoFlush, boolean asyncOperation)
+			throws IOException, InterruptedException, ExecutionException  {
 
 		if (logger.isTraceEnabled()) logger.trace("Enter putRows() " + tableName);
 
@@ -1000,7 +1027,7 @@ public class HTableClient {
 		bbRowIDs = (ByteBuffer)rowIDs;
 		bbRows = (ByteBuffer)rows;
 
-		List<Put> listOfPuts = new ArrayList<Put>();
+		final List<Put> listOfPuts = new ArrayList<Put>();
 		numRows = bbRowIDs.getShort();
 		
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
@@ -1029,28 +1056,62 @@ public class HTableClient {
 		}
 		if (autoFlush == false)
 			table.setAutoFlush(false, true);
-
-		if (useTRex && (transID != 0)) {
-		    table.put(transID, listOfPuts);
-		} else {
-		    table.put(listOfPuts);
+		if (asyncOperation) {
+			future = executorService.submit(new Callable() {
+				public Object call() throws Exception {
+					boolean res = true;
+					if (useTRex && (transID != 0)) 
+						table.put(transID, listOfPuts);
+					else 
+						table.put(listOfPuts);
+					return new Boolean(res);
+				}
+			});
+		}
+		else {
+			if (useTRex && (transID != 0)) 
+				table.put(transID, listOfPuts);
+			else 
+				table.put(listOfPuts);
 		}
 		return true;
 	} 
 
+	public boolean completeAsyncOperation(int timeout, boolean resultArray[]) 
+			throws InterruptedException, ExecutionException
+	{
+		if (timeout == -1) {
+			if (! future.isDone()) 
+				return false;
+		}
+	 	try {			
+			Boolean result = (Boolean)future.get(timeout, TimeUnit.MILLISECONDS);
+                        // Need to enhance to return the result 
+                        // for each Put object
+			for (int i = 0; i < resultArray.length; i++)
+			    resultArray[i] = result.booleanValue();
+			future = null;
+ 		} catch(TimeoutException te) {
+			return false;
+		} 
+		return true;
+	}
+
 	public boolean checkAndInsertRow(long transID, byte[] rowID, 
                          Object row, 
-			 long timestamp) throws IOException {
+			 long timestamp,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException  {
 		return putRow(transID, rowID, row, null, null, 
-				true);
+				true, asyncOperation);
 	}
 
 	public boolean checkAndUpdateRow(long transID, byte[] rowID, 
              Object columns, byte[] columnToCheck, byte[] colValToCheck,
-             long timestamp) throws IOException, Throwable  {
+             long timestamp, boolean asyncOperation) throws IOException, InterruptedException, 
+                                    ExecutionException, Throwable  {
 		return putRow(transID, rowID, columns, columnToCheck, 
 			colValToCheck, 
-				true);
+				true, asyncOperation);
 	}
 
         public byte[] coProcAggr(long transID, int aggrType, 
@@ -1112,7 +1173,7 @@ public class HTableClient {
               try {
                  future.get(30, TimeUnit.SECONDS);
               } catch(TimeoutException | InterruptedException e) {
-		  logger.error("Pre-fetch Thread is Cancelled, " + e);
+		  logger.error("Asynchronos Thread is Cancelled, " + e);
                   retcode = true;
                   future.cancel(true); // Interrupt the thread
               } catch (ExecutionException ee)

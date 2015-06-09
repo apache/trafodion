@@ -697,6 +697,10 @@ public:
   {(v ? flags_ |= ALIGNED_FORMAT : flags_ &= ~ALIGNED_FORMAT); };
   NABoolean alignedFormat() { return (flags_ & ALIGNED_FORMAT) != 0; };
 
+  void setAsyncOperations(NABoolean v)
+  {(v ? flags_ |= ASYNC_OPERATIONS : flags_ &= ~ASYNC_OPERATIONS); };
+  NABoolean asyncOperations() { return (flags_ & ASYNC_OPERATIONS) != 0; };
+
   void setCanAdjustTrafParams(NABoolean v)
    {(v ? flags2_ |= TRAF_UPSERT_ADJUST_PARAMS : flags2_ &= ~TRAF_UPSERT_ADJUST_PARAMS); };
    NABoolean getCanAdjustTrafParams() { return (flags2_ & TRAF_UPSERT_ADJUST_PARAMS) != 0; };
@@ -849,7 +853,8 @@ public:
     READ_UNCOMMITTED_SCAN            = 0x0800,
     UPDEL_COLNAME_IS_STR             = 0x1000,
     USE_HBASE_XN                     = 0x2000,
-    ALIGNED_FORMAT                   = 0x4000
+    ALIGNED_FORMAT                   = 0x4000,
+    ASYNC_OPERATIONS                 = 0x8000
   };
 
   enum

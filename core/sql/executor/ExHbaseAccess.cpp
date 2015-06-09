@@ -444,6 +444,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   rows_.len = 0;
   colVal_.val = 0;
   colVal_.len = 0;
+  asyncCompleteRetryCount_ = 0;
+  asyncOperationTimeout_ = 2;
+  resultArray_ = NULL;
 }
     
 ExHbaseAccessTcb::~ExHbaseAccessTcb()

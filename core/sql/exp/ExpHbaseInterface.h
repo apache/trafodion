@@ -201,6 +201,8 @@ class ExpHbaseInterface : public NABasicObject
           HbaseStr &colVal,
           Int64 &timestamp) = 0;
 
+  virtual Lng32 completeAsyncOperation(Int32 timeout, NABoolean *resultArray, Int16 resultArrayLen) = 0;
+
   virtual Lng32 getColVal(int colNo, BYTE *colVal,
           Lng32 &colValLen, NABoolean nullable, BYTE &nullVal) = 0;
 
@@ -252,7 +254,8 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr& rowID, 
 		  HbaseStr& row,
 		  NABoolean noXn,
-		  const int64_t timestamp) = 0;
+		  const int64_t timestamp,
+                  NABoolean asyncOperation) = 0;
 
  virtual Lng32 getRows(
           short rowIDLen,
@@ -266,7 +269,8 @@ class ExpHbaseInterface : public NABasicObject
                   HbaseStr &rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE) = 0; // by default, flush rows after put
+		  NABoolean autoFlush = TRUE,
+                  NABoolean asyncOperation = FALSE) = 0; // by default, flush rows after put
  
  virtual Lng32 setWriteBufferSize(
                  HbaseStr &tblName,
@@ -314,7 +318,8 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
                                   NABoolean noXn,
-				  const int64_t timestamp) = 0;
+				  const int64_t timestamp,
+                                  NABoolean asyncOperation) = 0;
 
   
   virtual Lng32 checkAndUpdateRow(
@@ -325,7 +330,8 @@ class ExpHbaseInterface : public NABasicObject
 				  const Text& colValToCheck,
                                   NABoolean noXn,				
                                  
-				  const int64_t timestamp);
+				  const int64_t timestamp,
+                                  NABoolean asyncOperation);
 
  
   virtual Lng32 getClose() = 0;
@@ -498,6 +504,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
           HbaseStr &colName,
           HbaseStr &colVal,
           Int64 &timestamp);
+ 
+  virtual Lng32 completeAsyncOperation(Int32 timeout, NABoolean *resultArray, Int16 resultArrayLen);
 
   virtual Lng32 getColVal(int colNo, BYTE *colVal,
           Lng32 &colValLen, NABoolean nullable, BYTE &nullVal);
@@ -548,7 +556,9 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr& rowID, 
                   HbaseStr& row,
 		  NABoolean noXn,
-		  const int64_t timestamp);
+		  const int64_t timestamp,
+                  NABoolean asyncOperation);
+
  virtual Lng32 getRows(
           short rowIDLen,
           HbaseStr &rowIDs,
@@ -561,7 +571,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr &rows,
 		  NABoolean noXn,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE); // by default, flush rows after put
+		  NABoolean autoFlush = TRUE,
+                  NABoolean asyncOperation = FALSE); // by default, flush rows after put
   
   virtual Lng32 setWriteBufferSize(
                   HbaseStr &tblName,
@@ -608,7 +619,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
                                   NABoolean noXn,
-				  const int64_t timestamp);
+				  const int64_t timestamp,
+                  		  NABoolean asyncOperation);
 
 
 
@@ -619,7 +631,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
                                   NABoolean noXn,			
-				  const int64_t timestamp);
+				  const int64_t timestamp,
+                                  NABoolean asyncOperation);
 
 
 
@@ -673,6 +686,7 @@ private:
   HTableClient_JNI* htc_;
   HBulkLoadClient_JNI* hblc_;
   HiveClient_JNI* hive_;
+  HTableClient_JNI *asyncHtc_;
   Int32  retCode_;
 };
 

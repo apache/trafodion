@@ -36,17 +36,8 @@ TM_Transid::TM_Transid()
     iv_tx.data.id[3] = 0;
 }
 
-TM_Transid::TM_Transid(int i)
-{
-    iv_tx.data.id[0] = i;
-    iv_tx.data.id[1] = 0;
-    iv_tx.data.id[2] = 0;
-    iv_tx.data.id[3] = 0;
-}
-
-TM_Transid::TM_Transid (TM_Native_Type &tx)
+TM_Transid::TM_Transid (TM_Native_Type tx)
 { 
-    //TM_Txid_legacy *txid = (TM_Txid_legacy *) &tx;
     iv_tx.data.id[0] = tx;
     iv_tx.data.id[1] = 0;
     iv_tx.data.id[2] = 0;

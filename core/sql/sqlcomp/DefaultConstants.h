@@ -3734,6 +3734,7 @@ enum DefaultConstants
   // return a warning on truncation.
   TRAF_STRING_AUTO_TRUNCATE_WARNING,
   NCM_UDR_NANOSEC_FACTOR,
+  HBASE_ASYNC_OPERATIONS,
 
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,

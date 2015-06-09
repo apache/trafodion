@@ -1730,6 +1730,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_SQL_IUD_SEMANTICS:      Off: Don't check for existing rows for insert/update
 
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
+  DDkwd__(HBASE_ASYNC_OPERATIONS,		"OFF"),
  // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
  // SYSTEM => cache scans which take less than 1 RS block cache mem.
  DDui___(HBASE_BLOCK_SIZE,                      "65536"),
