@@ -389,7 +389,7 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
   const ParViewColTableColsUsageList &vctcul = vu.getViewColTableColsUsageList();
 
   // If DB__ROOT, no need to gather privileges
-  if (!ComUser::isRootUserID() &&
+  if (!ComUser::isRootUserID() && 
       !checkAccessPrivileges(vtul,vctcul,privilegesBitmap,grantableBitmap))
     return -1;
 
@@ -1408,23 +1408,25 @@ NAString extUsedObjName;
 // a side effect is to return an error if basic privileges are not granted
    for (CollIndex i = 0; i < vtul.entries(); i++)
    {
+      if (vtul[i].getSpecialType() == ExtendedQualName::SG_TABLE)
+         continue;
+         
       ComObjectName usedObjName(vtul[i].getQualifiedNameObj().getQualifiedNameAsAnsiString(),
                                 vtul[i].getAnsiNameSpace());
-
+      
       const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
       const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
       const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
       CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
-
-      // Grab privileges from the NATable structure
+ 
       NATable *naTable = bindWA.getNATable(cn);
       if (naTable == NULL)
       {
          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
          return false; 
       }
-
+      // Grab privileges from the NATable structure
       PrivMgrUserPrivs *privs = naTable->getPrivInfo();
       if (privs == NULL) 
       {         

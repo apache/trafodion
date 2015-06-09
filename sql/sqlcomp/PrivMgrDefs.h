@@ -128,7 +128,7 @@ inline bool isSequenceGeneratorPrivType(PrivType privType)
    
 }
      
-// Defines the list of privileges that are support for the 
+// Defines the list of privileges that are supported for the 
 // SQLOperation component
 enum class SQLOperation {
    ALTER = 2,
@@ -167,9 +167,11 @@ enum class SQLOperation {
    DROP_TABLE,
    DROP_TRIGGER,
    DROP_VIEW,
+   MANAGE,
    MANAGE_COMPONENTS,
    MANAGE_LIBRARY,
    MANAGE_LOAD,
+   MANAGE_PRIVILEGES,
    MANAGE_ROLES,
    MANAGE_STATISTICS,
    MANAGE_USERS,

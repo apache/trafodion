@@ -80,6 +80,7 @@ class PrivMgr
     static bool isSQLAlterOperation(SQLOperation operation);
     static bool isSQLCreateOperation(SQLOperation operation);
     static bool isSQLDropOperation(SQLOperation operation);
+    static bool isSQLManageOperation(SQLOperation operation);
     static const char * ObjectEnumToLit(ComObjectType objectType);
     static ComObjectType ObjectLitToEnum(const char *objectLiteral);    
     static bool isRoleID(int_32 authID){ return CmpSeabaseDDLauth::isRoleID(authID); }

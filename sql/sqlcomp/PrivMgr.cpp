@@ -301,9 +301,11 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "DROP_TABLE";
       case SQLOperation::DROP_TRIGGER: return "DROP_TRIGGER";
       case SQLOperation::DROP_VIEW: return "DROP_VIEW";
+      case SQLOperation::MANAGE: return "MANAGE";
       case SQLOperation::MANAGE_COMPONENTS: return "MANAGE_COMPONENTS";
       case SQLOperation::MANAGE_LIBRARY: return "MANAGE_LIBRARY";
       case SQLOperation::MANAGE_LOAD: return "MANAGE_LOAD";
+      case SQLOperation::MANAGE_PRIVILEGES: return "MANAGE_PRIVILEGES";
       case SQLOperation::MANAGE_ROLES: return "MANAGE_ROLES";
       case SQLOperation::MANAGE_STATISTICS: return "MANAGE_STATISTICS";
       case SQLOperation::MANAGE_USERS: return "MANAGE_USERS";
@@ -385,9 +387,11 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "DT";
       case SQLOperation::DROP_TRIGGER: return "DG";
       case SQLOperation::DROP_VIEW: return "DV";
+      case SQLOperation::MANAGE: return "M0";
       case SQLOperation::MANAGE_COMPONENTS: return "MC";
       case SQLOperation::MANAGE_LIBRARY: return "ML";
       case SQLOperation::MANAGE_LOAD: return "MT";
+      case SQLOperation::MANAGE_PRIVILEGES: return "MP";
       case SQLOperation::MANAGE_ROLES: return "MR";
       case SQLOperation::MANAGE_STATISTICS: return "MS";
       case SQLOperation::MANAGE_USERS: return "MU";
@@ -472,9 +476,11 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "Allow grantee to drop tables";
       case SQLOperation::DROP_TRIGGER: return "Allow grantee to drop triggers";
       case SQLOperation::DROP_VIEW: return "Allow grantee to drop views";
+      case SQLOperation::MANAGE: return "Allow grantee to manage all SQL Operations";
       case SQLOperation::MANAGE_COMPONENTS: return "Allow grantee to manage components";
       case SQLOperation::MANAGE_LIBRARY: return "Allow grantee to manage libraries";
       case SQLOperation::MANAGE_LOAD: return "Allow grantee to perform LOAD and UNLOAD commands";
+      case SQLOperation::MANAGE_PRIVILEGES: return "Allow grantee to manage privileges on SQL objects";
       case SQLOperation::MANAGE_ROLES: return "Allow grantee to manage roles";
       case SQLOperation::MANAGE_STATISTICS: return "Allow grantee to show and update statistics";
       case SQLOperation::MANAGE_USERS: return "Allow grantee to manage users";
@@ -715,6 +721,46 @@ bool PrivMgr::isSQLDropOperation(SQLOperation operation)
 
 }
 //******************** End of PrivMgr::isSQLDropOperation **********************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgr::isSQLManageOperation                                   *
+// *                                                                           *
+// *    Determines if a SQL operation is within the list of manage operations. *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <operation>                     SQLOperation                    In       *
+// *    is the operation.                                                      *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: operation is a manage operation.                                    *
+// * false: operation is not a manage operation.                               *
+// *                                                                           *
+// *****************************************************************************
+bool PrivMgr::isSQLManageOperation(SQLOperation operation)
+
+{
+
+   if (operation == SQLOperation::MANAGE_COMPONENTS ||
+       operation == SQLOperation::MANAGE_LIBRARY ||
+       operation == SQLOperation::MANAGE_LOAD ||
+       operation == SQLOperation::MANAGE_PRIVILEGES ||
+       operation == SQLOperation::MANAGE_ROLES ||
+       operation == SQLOperation::MANAGE_STATISTICS ||
+       operation == SQLOperation::MANAGE_USERS)
+      return true;
+      
+   return false;
+
+}
+//******************* End of PrivMgr::isSQLManageOperation *********************
 
 
 // *****************************************************************************
