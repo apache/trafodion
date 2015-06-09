@@ -51,6 +51,7 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/SQLMXDriver.o \
        $(OUTDIR)/ResStatistics.o \
        $(OUTDIR)/ResStatisticsSession.o \
+       $(OUTDIR)/ResStatisticsStatement.o \
        $(OUTDIR)/Vproc.o \
        $(OUTDIR)/type2version.o
 

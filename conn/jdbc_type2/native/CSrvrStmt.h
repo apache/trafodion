@@ -146,6 +146,28 @@ public:
     char m_con_rule_name[MAX_RULE_NAME_LEN + 1 + 3 + 1];
     char m_cmp_rule_name[MAX_RULE_NAME_LEN + 1 + 3 + 1];
     char m_exe_rule_name[MAX_RULE_NAME_LEN + 1 + 3 + 1];
+    NDCS_SUBSTATE   m_mxsrvr_substate;
+    bool            bLowCost;
+    char*           pSqlString;
+    UInt32          sqlStringLen;
+    bool            m_bNewQueryId;  // +++ Has to be set right after a prepare
+    char            m_shortQueryText[RMS_STORE_SQL_SOURCE_LEN + 1];
+    long            m_rmsSqlSourceLen;
+    short           stmtNameLen;
+    bool            m_need_21036_end_msg;
+    int64           m_lastQueryEndTime;
+    int64           m_lastQueryEndCpuTime;
+    bool            m_bqueryFinish;
+    Int32           inState;
+    Int32           sqlQueryType;
+    UInt32          m_maxMemUsed;
+    Int32           sqlUniqueQueryIDLen;
+
+    enum EX_PLAN_STATUS { UNAVAILABLE, COLLECT, COLLECTED, STORED };
+    EX_PLAN_STATUS exPlan;
+    char *sqlPlan;
+    UInt32 sqlPlanLen;
+
     // T2_REPO
 
     bool isISUD;
