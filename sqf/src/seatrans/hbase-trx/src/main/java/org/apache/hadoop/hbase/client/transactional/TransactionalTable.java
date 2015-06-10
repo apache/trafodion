@@ -518,9 +518,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
    	   Map<byte[], DeleteMultipleTransactionalResponse> result = null;
  	      try {
  	        result = super.coprocessorService(TrxRegionService.class, 
-                                      entry.getKey().getRegionInfo().getStartKey(), 
-                                      TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1),
-                                      callable);
+                                                  entry.getValue().get(0).getRow(),
+                                                  entry.getValue().get(0).getRow(),
+                                                  callable);
  	      } catch (Throwable e) {
  	        e.printStackTrace();
 	        throw new IOException("ERROR while calling coprocessor");
@@ -604,9 +604,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	    Map<byte[], PutMultipleTransactionalResponse> result = null;
       try {
         result = super.coprocessorService(TrxRegionService.class,
-        								  entry.getKey().getRegionInfo().getStartKey(), 
-        								  TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1), 
-        								  callable);
+                                          entry.getValue().get(0).getRow(),
+                                          entry.getValue().get(0).getRow(),
+                                          callable);
       } catch (Throwable e) {
         e.printStackTrace();
         throw new IOException("ERROR while calling coprocessor");
