@@ -1,3 +1,21 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
 Prerequisite:
 
 openssl >= 0.9.8
@@ -8,12 +26,12 @@ git > 1.9
 
 Build steps
 
-1. In order to make the build script be able to find these Prerequisite,
- some variables on the top of build_os.bat and pkg.bat need to be set accordingly.
+1. In order to make the build script able to find these prerequisites,
+   some variables on the top of build_os.bat and pkg.bat need to be set accordingly.
 
-set variable OPENSSL_PATH to point to openssl binary folder, for example:
+   Set variable OPENSSL_PATH to point to openssl binary folder, for example:
 	set OPENSSL_PATH=E:\OpenSSL101e_bin
-the folder should have structure like this:
+   The folder should have structure like this:
 	2013/10/31  18:13    <DIR>          .
 	2013/10/31  18:13    <DIR>          ..
 	2013/10/31  18:13    <DIR>          bin
@@ -33,31 +51,31 @@ the folder should have structure like this:
 	2013/10/31  18:11           715,038 unins000.exe
 
 
-set variable ODBCCP32_64_PATH point to Visual Studio 8 PlatformSDK libary amd64 folder, for example:
+   Set variable ODBCCP32_64_PATH point to Visual Studio 8 PlatformSDK library amd64 folder, for example:
 	set ODBCCP32_64_PATH="E:\Program Files (x86)\Microsoft Visual Studio 8\VC\PlatformSDK\Lib\amd64"
 
-set variable MSBUILD_PATH to point to msbuild system, for example:
+   Set variable MSBUILD_PATH to point to msbuild system, for example:
 	set MSBUILD_PATH=C:\Windows\Microsoft.NET\Framework64\v4.0.30319
 
-set variable BUILDDIR to point to parent directory of win-odbc64 folder(trafodion windows driver source directory). for example:
+   Set variable BUILDDIR to point to parent directory of win-odbc64 folder (Trafodion windows driver source directory).
+   For example:
 	set BUILDDIR=E:
 
-set variable GIT_BASH point to where git bash was installed.(from git install). for example:
+   Set variable GIT_BASH point to where git bash was installed.(from git install), for example:
 	set GIT_BASH="C:\Program Files (x86)\Git\bin\sh.exe"
-git need windows 
 
-the path for installshield need to be set in pkg.bat
+   The path for InstallShield needs to be set in pkg.bat
 
-set variable PACKDRIVER to conn folder of trafodion source tree. for example:
+   Set variable PACKDRIVER to conn folder of Trafodion source tree, for example:
 	set PACKDRIVER=E:
 
-set variable ISCMDBLD_PATH to Installshield install folder, for example:
+   Set variable ISCMDBLD_PATH to InstallShield install folder, for example:
 	set ISCMDBLD_PATH="E:\Program Files (x86)\Installshield\2012\System"
 
-2. to build, open a cmd window, and type
+2. To build, open a cmd window, and type
 
 	cd E:\win-odbc64\odbcclient
 	build_os.bat
 	pkg.bat
 
-the final Win ODBC driver installer package can be found at %PACKDRIVER%\lib\x64\Release
+The final Win ODBC driver installer package can be found at %PACKDRIVER%\lib\x64\Release
