@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -15,15 +15,7 @@
 --  limitations under the License.
 --
 -- @@@ END COPYRIGHT @@@
-/**********************************************************************
-// @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
-//
-// @@@ END COPYRIGHT @@@
-// +++ Copyright added on 2003/12/3
-// +++ Code modified on 2002/7/25
-**********************************************************************/
+
 create schema  NONSTOP_SQLMX_NSK.SCH;
 create catalog cat;
 create schema  cat.sch;
@@ -34,5 +26,3 @@ insert into NONSTOP_SQLMX_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
   (ATTRIBUTE, ATTR_VALUE, ATTR_COMMENT)
   values
   ('SCHEMA ', 'Cat.Sch', 'inserted by init_sql_dev');
-
-

@@ -1,38 +1,25 @@
--- @@@ START COPYRIGHT @@@
---
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
---
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
---
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
---
--- @@@ END COPYRIGHT @@@
 #! /bin/sh
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1994-2009 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
-#
-# +++ Copyright added on 2003/12/3
-# +++ Copyright modified on 2009/3/9
-#
-# +++ Code modified on 2003/11/23
-#
-#
 ######################################################################
-# This is the MVQR initialization script to be run on an NSK system after
-# installing SQL/MX [from the SUT] and T0725 product. It can be run by the 
+# This is the MVQR initialization script to be run after
+# installing SQL/MX [from the SUT] and T0725 product. It can be run by the
 # super ID only.
 #-----------------------------------------------------------------------
 #  Usage:
@@ -44,11 +31,6 @@
 #          uninstallMvqr droppubtab  -- peforms only A.1 and A.2 above.
 #          uninstallMvqr stopqmm     -- performs only B.1 above.
 #
-#   Modification History.
-# =====================
-#  04/02/2010   RN  A new initial script.
-#  11/05/2010   TBA port script to SQ.
-# 
 ####################################################################
 version=1.0
 
@@ -137,7 +119,7 @@ function stopQMM
     rm $qmmscr > /dev/null 2>&1
   fi
 }
-  
+
 function stop_qmm
 {
   echo "Stopping tdm_arkqmm persistent process. Please wait...."
@@ -146,7 +128,7 @@ function stop_qmm
   cat > $qmmscr << EOF
   sqshell -a <<eof
   set  {process \\\$$qmmName} PERSIST_RETRIES=0,60
-  kill \\\$$qmmName 
+  kill \\\$$qmmName
   exit
 eof
 EOF
@@ -189,7 +171,7 @@ function dropTable
 {
   #echo "Deleting previous log file $drTabLog."
   rm $drTabLog > /dev/null 2>&1
-  drTab; 
+  drTab;
   # Check to see if drop table was successful
   grep -i "Error" $drTabLog > /dev/null 2>&1
   result=$?
