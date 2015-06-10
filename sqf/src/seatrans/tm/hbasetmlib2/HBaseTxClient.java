@@ -868,6 +868,17 @@ public class HBaseTxClient {
           LOG.error("addControlPoint IOException " + e);
           throw e;
       }
+      Long lowestStartId = Long.MAX_VALUE;
+      for(ConcurrentHashMap.Entry<Long, TransactionState> entry : mapTransactionStates.entrySet()){
+          TransactionState value;
+          value = entry.getValue();
+          long ts = value.getStartId();
+          if( ts < lowestStartId) lowestStartId = ts;
+      }
+      if(lowestStartId < Long.MAX_VALUE)
+      {
+          tmZK.createGCzNode(Bytes.toBytes(lowestStartId));
+      }
       if (LOG.isTraceEnabled()) LOG.trace("Exit addControlPoint, returning: " + result);
       return result;
    }
