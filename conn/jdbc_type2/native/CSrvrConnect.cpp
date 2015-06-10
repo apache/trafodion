@@ -559,4 +559,22 @@ void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREG
     repos_queue.push_task(aggr_stats);
 */
 }
+
+void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info)
+{
+    REPOS_STATS query_stats;
+    query_stats.m_pQuery_stats = pQuery_info;
+    query_stats.m_pub_type = pub_type;
+
+/* +++ T2_REPO ToDo
+    if (record_session_done)
+    {
+        //boost::thread thrd(&SessionWatchDog);
+        pthread_t thrd;
+        pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+    }
+    repos_queue.push_task(query_stats);
+*/
+}
+
 // T2_REPO

@@ -24,7 +24,7 @@
  PURPOSE: Implements the member functions of ResAccountingSession class
  */
 #include "ResStatisticsSession.h"
-//#include "ResStatisticsStatement.h"   +++ T2_REPO
+#include "ResStatisticsStatement.h"
 
 // T2_REPO
 #include "SrvrCommon.h"
@@ -301,7 +301,6 @@ void ResStatisticsSession::accumulateStatistics(passSession *ps)
 }
 
 // +++ T2_REPO TODO
-/*
 void ResStatisticsSession::accumulateStatistics(const ResStatistics * const pResStats)
 {
     ResStatisticsStatement *pResStatsStmt = (ResStatisticsStatement *)pResStats;
@@ -364,7 +363,6 @@ void ResStatisticsSession::accumulateStatistics(const ResStatistics * const pRes
     sessWlStats.aggrStats.NumRowsIUD            = (totalInsertStatements+totalUpdateStatements+totalDeleteStatements);
 
 }
-*/
 
 void ResStatisticsSession::update()
 {

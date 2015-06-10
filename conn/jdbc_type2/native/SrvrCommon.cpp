@@ -94,6 +94,131 @@ void getCurrentTime(char* timestamp)
     TIME(currentTime);
     snprintf(timestamp,25,"%d/%d/%d %d:%d:%d.%d",currentTime[0],currentTime[1],currentTime[2],currentTime[3],currentTime[4],currentTime[5],currentTime[6]);
 }
+void translateToUTF8(Int32 inCharset, char* inStr, Int32 inStrLen, char* outStr, Int32 outStrMax)
+{
+    Int32 err=0;
+    Int32 charset = SQLCHARSETCODE_UNKNOWN;
+    Int32 length = _min (inStrLen, outStrMax);
+    Int32 outStrLen = 0;
+    void *firstUntranslatedChar = 0;
+    unsigned int translatedCharCnt = 0;
+    if (inStr == NULL || length <= 0)
+    {
+        if (outStr != NULL) outStr[0] = '\0';
+        return;
+    }
+    switch (inCharset)
+    {
+    case SQLCHARSETCODE_ISO88591:
+        charset = SQLCONVCHARSETCODE_ISO88591;
+        break;
+    case SQLCHARSETCODE_KSC5601:
+    case SQLCHARSETCODE_MB_KSC5601:
+        charset = SQLCONVCHARSETCODE_KSC;
+        break;
+    case SQLCHARSETCODE_SJIS:
+        charset = SQLCONVCHARSETCODE_SJIS;
+        break;
+    case SQLCHARSETCODE_UCS2:
+        charset = SQLCONVCHARSETCODE_UTF16;
+        break;
+    case SQLCHARSETCODE_EUCJP:
+        charset = SQLCONVCHARSETCODE_EUCJP;
+        break;
+    case SQLCHARSETCODE_BIG5:
+        charset = SQLCONVCHARSETCODE_BIG5;
+        break;
+    case SQLCHARSETCODE_GB18030:
+        charset = SQLCONVCHARSETCODE_GB18030;
+        break;
+    case SQLCHARSETCODE_UTF8:
+        charset = SQLCONVCHARSETCODE_UTF8;
+        break;
+    case SQLCHARSETCODE_GB2312:
+        charset = SQLCONVCHARSETCODE_BIG5;
+        break;
+    default:
+        charset = SQLCONVCHARSETCODE_UNKNOWN;
+        break;
+    };
+    if (charset != SQLCONVCHARSETCODE_UNKNOWN)
+    {
+        err = SQL_EXEC_LocaleToUTF8 (charset,
+                                     inStr,
+                                     inStrLen,
+                                     outStr,
+                                     outStrMax,
+                                     &firstUntranslatedChar,
+                                     &outStrLen,
+                                     TRUE,
+                                     (Int32*)&translatedCharCnt); //for 64-bit the Executor is going to change it to a int
+        if (err != 0)
+        {
+            if (err == -2 && outStrMax <= outStrLen) // CNV_ERR_BUFFER_OVERRUN
+            {
+                outStr[outStrMax-1]= '\0';
+            }
+            else
+            {
+                memcpy(outStr, inStr, length-1);
+                outStr[length-1] = '\0';
+            }
+        }
+    }
+    else
+    {
+        memcpy(outStr, inStr, length-1);
+        outStr[length-1] = '\0';
+    }
+    return;
+}
+
+char* _i64toa( long long n, char *buff, int base )
+{
+   char t[100], *c=t, *f=buff;
+   long d;
+    int bit;
+
+   if (base == 10) {
+     if (n < 0) {
+        *(f++) = '-';
+        n = -n;
+     }
+
+     while (n != 0) {
+        d = n % base;
+        if (d < 0) d = -d;
+        *(c++) = d + '0';
+        n = n / base;
+     }
+   }
+
+   else {
+     short bitlen = 64;
+
+     if (base == 2) bit = 1;
+     else if (base == 8) bit = 3;
+     else if (base == 16) bit = 4;
+     { base = 16; bit =4;} // printf("Base value unknown!\n");
+
+     while (bitlen != 0) {
+        d = (n  & (base-1));
+        *(c++) = d < 10 ? d + '0' : d - 10 + 'A';
+        n =  n >> bit;
+        bitlen -= bit;
+     }
+
+   }
+
+   c--;
+
+   while (c >= t) *(f++) = *(c--);
+
+   if (buff == f)
+       *(f++) = '0';
+   *f = '\0';
+   return buff;
+}
 //
 
 int initSqlCore(int argc, char *argv[])

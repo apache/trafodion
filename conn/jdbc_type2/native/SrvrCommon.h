@@ -283,6 +283,7 @@ extern short endTransaction (void);
 
 // +++ T2_REPO
 void getCurrentTime(char* timestamp);
+extern void translateToUTF8(Int32 inCharset, char* inStr, Int32 inStrLen, char* outStr, Int32 outStrMax);
 //
 
 #endif

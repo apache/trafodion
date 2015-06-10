@@ -417,8 +417,8 @@ public:
         void start(struct collect_info  *setInit);
         void end();
         void accumulateStatistics(passSession *ps);
-    void accumulateStatistics(const ResStatistics * const pResStats);
-    void update();
+        void accumulateStatistics(const ResStatistics * const pResStats);
+        void update();
         void init();
         std::tr1::shared_ptr<SESSION_AGGREGATION> getAggrStats();
         ResStatisticsSession();
