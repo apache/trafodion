@@ -2142,123 +2142,96 @@ PrivStatus PrivMgrPrivileges::getGrantorDetailsForObject(
    const int_32 objectOwner,
    int_32 &effectiveGrantorID,
    std::string &effectiveGrantorName)
+   
 {
-  int_32 currentUser = ComUser::isRootUserID() ? objectOwner : ComUser::getCurrentUser();
-  std::string grantorName;
-  int_32 grantorID = 0;
-  short retcode = 0;
 
-  if (isGrantedBySpecified)
+int_32 currentUser = ComUser::getCurrentUser();
+short retcode = 0;
+  
+  if (!isGrantedBySpecified)
   {
-    // set grantorName to name specified in the GRANTED BY clause
-    grantorName = grantedByName;
-
-    // Get the grantor ID from the grantorName
-    retcode = ComUser::getAuthIDFromAuthName(grantorName.c_str(), grantorID);
-
-    if (retcode == FENOTFOUND)
+    // If the user is DB__ROOT, a grant or revoke operation is implicitly on
+    // behalf of the object owner.  Otherwise, the grantor is the user.
+    if (!ComUser::isRootUserID())
     {
-      *pDiags_ << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
-                << DgString0(grantedByName.c_str());
-      return STATUS_ERROR;
+      effectiveGrantorName = ComUser::getCurrentUsername();
+      effectiveGrantorID = currentUser;
+      return STATUS_GOOD;
     }
-
-    if (retcode != FEOK)
-    {
-      *pDiags_ << DgSqlCode(-20235)
-              << DgInt0(retcode)
-              << DgInt1(objectOwner);
-      return STATUS_ERROR;
-    }
-
-    // user specified in the BY clause must be the same as the current user
-    if (isUserID(grantorID))
-    {
-      if (grantorID != currentUser && !ComUser::isRootUserID())
-      {
-        *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         return STATUS_ERROR;
-      }
-    }
-
-    // role specified in BY clause must be granted to the current user
-    if (isRoleID(grantorID))
-    {
-      if (!ComUser::isRootUserID())
-      {
-        PrivMgrRoles roles(trafMetadataLocation_,
-                           metadataLocation_,
-                           pDiags_);
-
-        if (!roles.hasRole(currentUser,grantorID))
-        {
-          *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
-           return STATUS_ERROR;
-        }
-
-        // Until WITH GRANT OPTION is fully supported, the current user
-        // must also have the MANAGE_ROLES privilege when granting with
-        // the GRANTED BY clause
-        PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
-        if (!componentPrivileges.hasSQLPriv(currentUser,
-                                            SQLOperation::MANAGE_ROLES,
-                                            true))
-        {
-          *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
-          return STATUS_ERROR;
-        }
-      }
-    }
-  }
-
-  // GRANTED BY clause not specified, get grantor info
-  else
-  {
-    // If the object owner is a role, check to see if the current user has the
-    // MANAGE_ROLE privilege.  Currently there is no support for the WITH
-    // GRANT OPTION so if privileges need to be propagated on objects owned
-    // by roles, the requesting user must have the MANAGE_ROLE privilege.
-    if (isRoleID(objectOwner))
-    {
-      if (!ComUser::isRootUserID())
-      {
-        PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
-        if (!componentPrivileges.hasSQLPriv(currentUser,
-                                            SQLOperation::MANAGE_ROLES,
-                                            true))
-        {
-          *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
-          return STATUS_ERROR;
-        }
-      }
-      grantorID = objectOwner;
-    }
-
-    // grantor is the currentUser
-    else
-      grantorID = currentUser;
-
-    // Get the effective grantor name
+    // User is DB__ROOT.  Get the effective grantor name.
     char authName[MAX_USERNAME_LEN+1];
     Int32 actualLen = 0;
-    retcode = ComUser::getAuthNameFromAuthID( grantorID
-                                            , (char *)&authName
-                                            , MAX_USERNAME_LEN
-                                            , actualLen );
+    retcode = ComUser::getAuthNameFromAuthID(objectOwner,authName,
+                                             MAX_USERNAME_LEN,actualLen);
     if (retcode != FEOK)
     {
       *pDiags_ << DgSqlCode(-20235)
-              << DgInt0(retcode)
-              << DgInt1(grantorID);
+               << DgInt0(retcode)
+               << DgInt1(objectOwner);
       return STATUS_ERROR;
     }
-    grantorName = authName;
+    effectiveGrantorID = objectOwner;
+    effectiveGrantorName = authName;
+    return STATUS_GOOD;
+  }
+  
+// GRANTED BY was specified, first see if authorization name is valid.  Then  
+// determine if user has authority to use the clause.
+
+// Get the grantor ID from the grantorName
+  retcode = ComUser::getAuthIDFromAuthName(grantedByName.c_str(),effectiveGrantorID);
+
+  if (retcode == FENOTFOUND)
+  {
+    *pDiags_ << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+             << DgString0(grantedByName.c_str());
+    return STATUS_ERROR;
   }
 
-  effectiveGrantorID = grantorID;
-  effectiveGrantorName = grantorName;
+  if (retcode != FEOK)
+  {
+    *pDiags_ << DgSqlCode(-20235)
+             << DgInt0(retcode)
+             << DgInt1(objectOwner);
+    return STATUS_ERROR;
+  }
+  effectiveGrantorName = grantedByName;
+  
+// Name exists, does user have authority?  
+// 
+// GRANTED BY is allowed if any of the following are true:
+//
+// 1) The user is DB__ROOT.
+// 2) The user is owner of the object.
+// 3) The user has been granted the MANAGE_PRIVILEGES component-level privilege.
+// 4) The grantor is a role and the user has been granted the role.
 
-  return STATUS_GOOD;
+  if (ComUser::isRootUserID() || currentUser == objectOwner)
+    return STATUS_GOOD;
+
+PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+
+  if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_PRIVILEGES,
+                                     true))
+    return STATUS_GOOD;
+
+// If the grantor is not a role, user does not have authority.    
+  if (!isRoleID(effectiveGrantorID))
+  {
+    *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+    return STATUS_ERROR;
+  }
+
+// Role specified in BY clause must be granted to the current user for user
+// to have authority.
+PrivMgrRoles roles(trafMetadataLocation_,metadataLocation_,pDiags_);
+
+  if (roles.hasRole(currentUser,effectiveGrantorID))
+    return STATUS_GOOD;
+
+  *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+  return STATUS_ERROR;
+    
 }
 
 // *****************************************************************************

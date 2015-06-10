@@ -8973,6 +8973,8 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
+      // GRANTED BY clause reserved for DB__ROOT and users with the MANAGE_ROLES
+      // component privilege.
       if (grantorID != ComUser::getRootUserID())
       {
          PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
@@ -8987,19 +8989,6 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      // Give that this is a GRANT of a COMPONENT PRIVILEGE, could be an issue
-      // if DB__ROOT is not automatic.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.   
-      
       //TODO: will need to update this if grant role to role is supported,
       // i.e., the granted by could be a role. getUserIDFromUserName() only
       // supports users.       
@@ -9013,11 +9002,11 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       grantorName = grantedByName.data();
    }  // grantedBy not null
    else
-      {
-         grantorName = ComUser::getCurrentUsername();
-         if (grantorID == ComUser::getRootUserID())
-            grantorIsRoot = true;
-      }
+   {
+      grantorName = ComUser::getCurrentUsername();
+      if (grantorID == ComUser::getRootUserID())
+         grantorIsRoot = true;
+   }
       
 // *****************************************************************************
 // *                                                                           *
@@ -9272,26 +9261,20 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    {
       if (grantorID != ComUser::getRootUserID())
       {
-         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         return;
+         PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+         if (!componentPrivileges.hasSQLPriv(grantorID,
+                                             SQLOperation::MANAGE_COMPONENTS,
+                                             true))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return;
+         }
       }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      // Give that this is a GRANT of a COMPONENT PRIVILEGE, could be an issue
-      // if DB__ROOT is not automatic.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.         
 
-      if (ComUser::getUserIDFromUserName(grantedByName.data(),grantorID) != 0)
+      if (ComUser::getAuthIDFromAuthName(grantedByName.data(),grantorID) != 0)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                              << DgString0(grantedByName.data());
@@ -9495,24 +9478,20 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    {
       if (grantorID != ComUser::getRootUserID())
       {
-         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         return;
+         PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+         if (!componentPrivileges.hasSQLPriv(grantorID,
+                                             SQLOperation::MANAGE_COMPONENTS,
+                                             true))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return;
+         }
       }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.         
 
-      if (ComUser::getUserIDFromUserName(grantedByName.data(),grantorID) != 0)
+      if (ComUser::getAuthIDFromAuthName(grantedByName.data(),grantorID) != 0)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                              << DgString0(grantedByName.data());
