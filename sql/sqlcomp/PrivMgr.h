@@ -114,12 +114,12 @@ class PrivMgr
     PrivMgr( 
        const std::string &metadataLocation,
        ComDiagsArea * pDiags = NULL,
-       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZED);
     PrivMgr( 
        const std::string &trafMetadataLocation,
        const std::string &metadataLocation,
        ComDiagsArea * pDiags = NULL,
-       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZED);
     PrivMgr(const PrivMgr &rhs);
     virtual ~PrivMgr(void);
     
