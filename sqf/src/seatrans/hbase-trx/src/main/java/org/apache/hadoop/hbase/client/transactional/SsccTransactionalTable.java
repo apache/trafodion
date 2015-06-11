@@ -567,9 +567,9 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
    	   Map<byte[], SsccDeleteMultipleTransactionalResponse> result = null;
  	      try {
                  result = super.coprocessorService(SsccRegionService.class,
-                                      entry.getKey().getRegionInfo().getStartKey(),
-                                      TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1),
-                                      callable);
+                                                   entry.getValue().get(0).getRow(),
+                                                   entry.getValue().get(0).getRow(),
+                                                   callable);
  	      } catch (Throwable e) {
  	        e.printStackTrace();
 	        throw new IOException("ERROR while calling coprocessor delete");
@@ -646,9 +646,9 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
 	    Map<byte[], SsccPutMultipleTransactionalResponse> result = null;
       try {
         result = super.coprocessorService(SsccRegionService.class, 
-        								  entry.getKey().getRegionInfo().getStartKey(), 
-        								  TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1), 
-        								  callable);
+                                          entry.getValue().get(0).getRow(),
+                                          entry.getValue().get(0).getRow(),
+                                          callable);
       } catch (Throwable e) {
         e.printStackTrace();
         throw new IOException("ERROR while calling coprocessor put");
