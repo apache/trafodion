@@ -297,6 +297,8 @@ static const char* const hbcErrorEnumStr[] =
  ,"java exception in createCounterTable()."
  ,"preparing parameters for incrCounter()."
  ,"java exception in incrCounter()."
+ ,"Preparing parameters for getRegionsNodeName()."
+ ,"Java exception in getRegionsNodeName()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -463,6 +465,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATE_COUNTER_TABLE ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_INCR_COUNTER         ].jm_name      = "incrCounter";
     JavaMethods_[JM_INCR_COUNTER         ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)J";
+    JavaMethods_[JM_GET_REGN_NODES].jm_name      = "getRegionsNodeName";
+    JavaMethods_[JM_GET_REGN_NODES].jm_signature = "(Ljava/lang/String;[Ljava/lang/String;)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -2720,6 +2724,70 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   return htc;
 }
 
+HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
+                                                Int32 partns,
+                                                ARRAY(const char *)& nodeNames)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionsNodeName(%s) called.", tblName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
+  }
+
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBTI_PARAM));
+    return HBC_ERROR_GET_HBTI_PARAM;
+  }
+
+  jobjectArray jNodeNames = jenv_->NewObjectArray(partns,
+                                                  jenv_->FindClass("java/lang/String"),
+                                                  jenv_->NewStringUTF(""));
+                              
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_REGN_NODES].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GET_REGN_NODES].methodID,
+                                              js_tblName, jNodeNames);
+  NAHeap *heap = getHeap();
+  if (jresult) {
+    jstring strObj = NULL;
+    char* node = NULL;
+    for(int i=0; i < partns; i++) {
+      strObj = (jstring) jenv_->GetObjectArrayElement(jNodeNames, i);
+      node = (char*)jenv_->GetStringUTFChars(strObj, NULL);
+      char* copyNode = new (heap) char[strlen(node)+1];
+      strcpy(copyNode, node);
+      nodeNames.insertAt(i, copyNode);
+    }
+    //jenv_->ReleaseObjectArrayElements(jNodeNames, strObj, JNI_ABORT);
+    jenv_->ReleaseStringUTFChars(strObj, node);
+    jenv_->DeleteLocalRef(strObj);
+  }
+
+  jenv_->DeleteLocalRef(jNodeNames);
+  jenv_->DeleteLocalRef(js_tblName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionsNodeName()", getLastError());
+    return HBC_ERROR_GET_HBTI_EXCEPTION;
+  }
+
+  if (jresult == false)
+  {
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionsNodeName()", getLastError());
+    return HBC_ERROR_GET_HBTI_EXCEPTION;
+  }
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;  // Table exists.
+
+}
 //////////////////////////////////////////////////////////////////////////////
 // Get Hbase Table information. Currently the following info is requested:
 // 1. index levels : This info is obtained from trailer block of Hfiles of randomly chosen region

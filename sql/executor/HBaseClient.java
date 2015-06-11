@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.NavigableMap;
+import java.util.Map;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -1083,6 +1085,51 @@ public class HBaseClient {
       if (logger.isDebugEnabled()) logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
       return true;
     }
+
+
+    /**
+    This method returns node names where Hbase Table regions reside
+    **/
+    public boolean getRegionsNodeName(String tblName, String[] nodeNames)
+                   throws IOException
+    {
+      if (logger.isDebugEnabled()) 
+        logger.debug("HBaseClient.getRegionsNodeName(" + tblName + ") called.");
+
+      HRegionInfo regInfo = null;
+
+
+      HTable htbl = new HTable(config, tblName);
+      if (logger.isDebugEnabled())
+         logger.debug("after HTable call in getRegionsNodeName");
+
+      try {
+        NavigableMap<HRegionInfo, ServerName> locations = htbl.getRegionLocations();
+        if (logger.isDebugEnabled())
+           logger.debug("after htable.getRegionLocations call in getRegionsNodeName");
+
+      
+        String hostName;
+        int regCount = 0;
+
+        for (Map.Entry<HRegionInfo, ServerName> entry: locations.entrySet()) {
+          if (logger.isDebugEnabled()) logger.debug("Entered for loop in getRegionsNodeName");
+          regInfo = entry.getKey();
+          hostName = entry.getValue().getHostname();
+          nodeNames[regCount] = hostName;
+          if (logger.isDebugEnabled()) logger.debug("Hostname for region " + regCount + " is " + hostName);
+          regCount++;
+        }
+      } catch (Exception ie) {
+        if (logger.isDebugEnabled())
+          logger.debug("getRegionLocations throws exception " + ie.getMessage());
+        return false;
+      }
+
+      return true;
+    }
+
+
 
     /**
     This method returns index levels and block size of Hbase Table.

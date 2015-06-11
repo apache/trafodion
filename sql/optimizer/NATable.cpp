@@ -2168,7 +2168,8 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
 
 static 
 PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, NAMemory* heap)
+createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+                                        NAMemory* heap)
 {
 
    desc_struct* hrk = desc;
@@ -2176,6 +2177,19 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, NAMemory* heap)
    NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
 
    Int32 partns = nodeMap->getNumEntries();
+
+   // get nodeNames of region servers by making a JNI call
+   // do it only for multiple partition table
+   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON)) {
+     ARRAY(const char *) nodeNames(heap, partns);
+     if (table->getRegionsNodeName(partns, nodeNames)) {
+       for (Int32 p=0; p < partns; p++) {
+         const NAString node (nodeNames[p], heap);
+         // populate NodeMape with region server node ids
+         nodeMap->setNodeNumber(p, nodeMap->mapNodeNameToNodeNum(node));
+       }
+     }
+   }
 
    PartitioningFunction* partFunc;
    if ( partns > 1 )
@@ -4008,6 +4022,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               if ( doHash2 && hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
+                      table,
 		      heap);
 
                    partitioningKeyColumns = hbaseSaltOnColumns;
@@ -7418,6 +7433,53 @@ Int64 NATable::estimateHBaseRowCount() const
     }
 
   return estRowCount;
+}
+
+// Method to get hbase regions servers node names
+NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+{
+  if (!isHbaseTable() || isSeabaseMDTable() ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
+      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
+    return FALSE;
+
+  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
+  const char* server = defs->getValue(HBASE_SERVER);
+  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+                           (STMTHEAP, server, zkPort);
+
+  Lng32 retcode = ehi->init(NULL);
+  if (retcode < 0)
+  {
+    *CmpCommon::diags()
+              << DgSqlCode(-8448)
+              << DgString0((char*)"ExpHbaseInterface::init()")
+              << DgString1(getHbaseErrStr(-retcode))
+              << DgInt0(-retcode)
+              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+    delete ehi;
+    return FALSE;
+  }
+  else
+  {
+    HbaseStr fqTblName;
+    NAString tblName = getTableName().getQualifiedNameAsString();
+    fqTblName.len = tblName.length();
+    fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+    strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+    fqTblName.val[fqTblName.len] = '\0';
+
+    retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
+
+    NADELETEBASIC(fqTblName.val, STMTHEAP);
+    delete ehi;
+    if (retcode < 0)
+      return FALSE;
+  }
+  return TRUE;
+
 }
 
 // Method to get hbase table index levels and block size

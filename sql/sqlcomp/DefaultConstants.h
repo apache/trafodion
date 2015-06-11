@@ -3714,6 +3714,8 @@ enum DefaultConstants
 
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
+  // enable ESP-RegionServer colocation logic
+  TRAF_ALLOW_ESP_COLOCATION,
 
   // if set, index population step is skipped for external and internal index creates.
   // Should be set as an opt when objects are being

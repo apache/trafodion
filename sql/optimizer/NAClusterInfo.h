@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -213,6 +213,7 @@ public:
 
   Int32 discsOnCluster() const;
   Lng32 getNumActiveCluster();
+  Lng32 mapNodeNameToNodeNum(const NAString &node) const;
   void cleanupPerStatement();
 
   NABoolean checkIfMixedVersion();
@@ -300,6 +301,9 @@ protected :
   // Stored on the statement heap.
   // ------------------------------------------------------------------------
   NAHashDictionary<CollIndex,maps> * tableToClusterMap_;
+
+  // hashdictionary that maps nodeName to nodeId.
+  NAHashDictionary<NAString, Int32> *nodeNameToNodeIdMap_;
 
   // ------------------------------------------------------------------------
   // Number of discs on local cluster, should get the total number of discs on

@@ -1304,6 +1304,32 @@ const NAList<CollIndex>* NodeMap::getTableNodeList() const
 {
   return gpClusterInfo->getTableNodeList ( tableIdent_ );
 }
+
+Lng32
+NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
+{
+  Lng32 numNodes = gpClusterInfo->numOfSMPs();
+  // an array of nodes in the cluster
+  Int64 *nodes = new(CmpCommon::statementHeap()) Int64[numNodes];
+
+  for (Lng32 index = beginPos; index < endPos; index++) {
+    CMPASSERT(map_.getUsage(index) != UNUSED_COLL_ENTRY);
+    Lng32 currNodeNum = getNodeNumber(index);
+    nodes[currNodeNum] += 1; // keep count regions node number
+  }
+
+  Lng32 nodeFrequency = 0; 
+  Lng32 popularNodeNumber = 0; // first node number is popular to start with
+  for (Lng32 index = 0; index < numNodes; index++) {
+    if (nodes[index] > nodeFrequency) {
+      nodeFrequency = nodes[index];
+      popularNodeNumber = index;
+    }
+  }
+  NADELETEBASIC(nodes, CmpCommon::statementHeap());
+  return popularNodeNumber;
+} // NodeMap::getNodeNum
+
 //<pb>
 //==============================================================================
 //  Return node number of node map entry at a specified position within the node
@@ -1327,6 +1353,12 @@ NodeMap::getNodeNumber(const CollIndex position) const
   return map_[position]->getNodeNumber();
 
 } // NodeMap::getNodeNum
+
+Lng32
+NodeMap::mapNodeNameToNodeNum(const NAString node) const
+{
+  return gpClusterInfo->mapNodeNameToNodeNum(node);
+} // NodeMap::getNodeNmber
 
 
 //==============================================================================

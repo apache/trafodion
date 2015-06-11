@@ -1588,6 +1588,22 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   return retCode_;
 }
 
+// get nodeNames of regions. this information will be used to co-locate ESPs
+Lng32 ExpHbaseInterface_JNI::getRegionsNodeName(const HbaseStr& tblName,
+                                                Int32 partns,
+                                                ARRAY(const char *)& nodeNames)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  retCode_ = client_->getRegionsNodeName(tblName.val, partns, nodeNames);
+  return retCode_;
+}
+
+
 // Get Hbase Table information. This will be generic function to get needed information
 // from Hbase layer. Currently index level and blocksize is being requested for use in
 // costing code, but can be extended in the future so that we only make one JNI call.

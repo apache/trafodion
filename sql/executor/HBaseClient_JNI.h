@@ -540,6 +540,7 @@ public:
   HBC_RetCode setArchivePermissions(const char * path);
   HBC_RetCode getBlockCacheFraction(float& frac);
   HBC_RetCode getHbaseTableInfo(const char* tblName, Int32& indexLevels, Int32& blockSize);
+  HBC_RetCode getRegionsNodeName(const char* tblName, Int32 partns, ARRAY(const char *)& nodeNames);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -603,6 +604,7 @@ private:
    ,JM_GET_HBTI
    ,JM_CREATE_COUNTER_TABLE  
    ,JM_INCR_COUNTER
+   ,JM_GET_REGN_NODES
    ,JM_LAST
   };
   static jclass          javaClass_; 

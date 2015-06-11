@@ -1441,7 +1441,9 @@ void Generator::remapESPAllocationRandomly()
 
        for (CollIndex j=0; j<nodeMap->getNumEntries(); j++) {
  
-         nodeMap->setNodeNumber(j, ANY_NODE);
+          // if ESP-RegionServer colocation logic is off, then assign any node
+         if (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_OFF)
+           nodeMap->setNodeNumber(j, ANY_NODE);
          nodeMap->setClusterNumber(j, 0);
 
        }

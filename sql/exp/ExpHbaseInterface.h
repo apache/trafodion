@@ -367,6 +367,11 @@ class ExpHbaseInterface : public NABasicObject
                                   Int32& indexLevels,
                                   Int32& blockSize) = 0;
 
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) = 0;
+
+
 protected:
   enum 
     {
@@ -655,6 +660,10 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   virtual Lng32 getHbaseTableInfo(const HbaseStr& tblName,
                                   Int32& indexLevels,
                                   Int32& blockSize) ;
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) ;
+
 
 private:
   bool  useTRex_;

@@ -314,6 +314,9 @@ public:
   }
   NABoolean isActive(const CollIndex position) const;
   Lng32      getNodeNumber(const CollIndex position) const;
+  Lng32      getPopularNodeNumber(const CollIndex beginPos, 
+                                  const CollIndex endPos) const;
+  Lng32      mapNodeNameToNodeNum(const NAString node) const;
   Lng32      getClusterNumber(const CollIndex position) const;
   Int32       getTableIdent(void) const  {return tableIdent_; }
   NABoolean isMultiCluster(CollIndex start, CollIndex end, 
