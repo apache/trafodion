@@ -1,0 +1,55 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+DEST=/designs/seaquest/$USER/traf
+
+mkdir -p $DEST/sqf/export/bin64
+mkdir -p $DEST/sqf/export/lib
+mkdir -p $DEST/sqf/export/lib64
+mkdir -p $DEST/sqf/src/seabed/test
+mkdir -p $DEST/sqf/sql/scripts
+mkdir -p $DEST/sqf/tools
+mkdir -p $DEST/sqf/trafci
+
+bin64list="hydra_pmi_proxy idtmsrv mondump monitor mpirun pstartd shell sqid sqinfo sqvers sqwatchdog"
+lib64list="liblog4cpp.so libsbfs.so libsblogalt.so libsbms.so libsbsautil.so libsbutil.so libsbztmsfsutil.so libsbztutilp.so libsbztutil.so"
+scriptslist="createConfigDb cstat pstat showConfigDb sqconfigdb.pm sqipcrm sqnodestatus sqnodes.pm sqpersist.pm sqsystem.pm"
+
+echo cp -pu  $MY_SQROOT/sq*sh $DEST/sqf
+cp -pu  $MY_SQROOT/sq*sh $DEST/sqf
+echo cp -pu  $MY_SQROOT/export/bin64/ $DEST/sqf/export/bin64
+for l in $bin64list; do
+	cp -pu  $MY_SQROOT/export/bin64/$l $DEST/sqf/export/bin64
+done
+echo cp -pru $MY_SQROOT/export/lib/ $DEST/sqf/export/lib
+cp -pru $MY_SQROOT/export/lib/* $DEST/sqf/export/lib
+echo cp -pu  $MY_SQROOT/export/lib64/ $DEST/sqf/export/lib64
+for l in $lib64list; do
+	cp -pu  $MY_SQROOT/export/lib64/$l $DEST/sqf/export/lib64
+done
+echo cp -pu  $MY_SQROOT/sql/scripts/ $DEST/sqf/sql/scripts
+for l in $scriptslist; do
+	cp -pu  $MY_SQROOT/sql/scripts/$l $DEST/sqf/sql/scripts
+done
+echo cp -pu  $MY_SQROOT/src/seabed/test/ $DEST/sqf/src/seabed/test
+cp -pu  $MY_SQROOT/src/seabed/test/* $DEST/sqf/src/seabed/test
+echo cp -pru $MY_SQROOT/tools/ $DEST/sqf/tools
+cp -pru $MY_SQROOT/tools/* $DEST/sqf/tools
+echo cp -pru $MY_SQROOT/trafci/ $DEST/sqf/trafci
+cp -pru $MY_SQROOT/trafci/* $DEST/sqf/trafci
