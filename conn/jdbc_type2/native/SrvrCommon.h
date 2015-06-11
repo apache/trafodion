@@ -74,7 +74,7 @@ struct SRVR_SESSION_HDL {
 #define TRANSACTION_EXCEPTION   7
 
 // Following are the global variables
-#define             NO_OF_DESC_ITEMS        15
+#define             NO_OF_DESC_ITEMS        16
 
 extern SRVR_GLOBAL_Def      *srvrGlobal;
 //extern ODBCMXEventMsg     *srvrEventLogger;
@@ -137,7 +137,7 @@ extern SRVR_STMT_HDL *createSpjrsSrvrStmt(SRVR_STMT_HDL *callpStmt,
                                           const char *RSstmtName = NULL,
                                           BOOL useDefaultDesc = FALSE
                                           );
-extern void getMemoryAllocInfo(long data_type, long char_set, long data_length, long curr_mem_offset,
+extern void getMemoryAllocInfo(long data_type, long char_set, long data_length, long vc_ind_length, long curr_mem_offset,
                                long *mem_align_offset, int *alloc_size, long *var_layout);
 extern void releaseCachedObject(BOOL internalStmt);
 

@@ -481,6 +481,7 @@ typedef struct tag {
     long maxLen;
     short precision;
     short scale;
+    long vc_ind_length;
     unsigned char nullInfo;
     char colNm[129];
     char colLabel[129];

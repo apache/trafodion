@@ -1155,7 +1155,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 					else
 						sqlValue.dataInd = 0;
 					sqlValue.dataValue._buffer = dataPtr;
-					getMemoryAllocInfo(sqlValue.dataType, sqlValue.dataCharset, IRD[i].length, 0,
+					getMemoryAllocInfo(sqlValue.dataType, sqlValue.dataCharset, IRD[i].length, IRD[i].vc_ind_length, 0,
 						NULL, (int *)&sqlValue.dataValue._length, NULL);
 					if (sqlValue.dataInd != -1)
 					{
@@ -1508,7 +1508,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 					dataType = IPD[paramNumber+paramOffset].dataType;
 					octetLength = IPD[paramNumber+paramOffset].length;
 					charSet = IPD[paramNumber+paramOffset].charSet;
-					getMemoryAllocInfo(dataType, charSet, octetLength, 0,
+					getMemoryAllocInfo(dataType, charSet, octetLength, IPD[paramNumber + paramOffset].vc_ind_length, 0,
 						NULL, &allocLength, NULL);
 					dataPtr = IPD[paramNumber+paramOffset].varPtr + row*allocLength;
 
@@ -1538,10 +1538,14 @@ static Charset_def CHARSET_INFORMATION[] = {
 
 						jint charSet			= IPD[paramNumber+paramOffset].charSet;
 						DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("charSet=%ld",charSet));
+
+						jint vcIndLength		= IPD[paramNumber+paramOffset].vc_ind_length;
+						DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("charSet=%ld",charSet));
+
 						// do the data Conversion
 						if (!convertJavaToSQL(jobj, paramNumber, &wrapperInfo, dataType, sqlDatetimeCode,
 							dataPtr, allocLength, precision, scale, FALSE,
-							FSDataType, charSet, iso88591Encoding))
+							FSDataType, charSet, iso88591Encoding, vcIndLength))
 						{
 							cleanupWrapperInfo(&wrapperInfo);
 							FUNCTION_RETURN_NUMERIC(row+1,("convertJavaToSQL() failed in row %ld",row+1));
@@ -1591,7 +1595,12 @@ static Charset_def CHARSET_INFORMATION[] = {
 						case SQLTYPECODE_VARCHAR_LONG:
 						case SQLTYPECODE_DATETIME:
 						case SQLTYPECODE_INTERVAL:
-							if (allocLength > dataLen+sizeof(short))
+							if ((IPD[paramNumber + paramOffset].vc_ind_length == 4) && (allocLength > dataLen + sizeof(int)))
+							{
+							    *(unsigned int *)dataPtr = (int)dataLen;
+							    memcpy(dataPtr + sizeof(int), (const void *)byteValue, dataLen);
+							}
+							else if (allocLength > dataLen + sizeof(short))
 							{
 								*(unsigned short *)dataPtr = (short)dataLen;
 								memcpy(dataPtr+sizeof(short), (const void *)byteValue, dataLen);
@@ -1673,7 +1682,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 	BOOL convertJavaToSQL(jobject jobj, jint paramNumber, struct WrapperInfoStruct *wrapperInfo, jint sqlDataType,
 		jint sqlDatetimeCode,
 		BYTE *targetDataPtr, jint targetLength, jint precision, jint scale,
-		jboolean isSigned, jint FSDataType, jint charSet, jstring iso88591Encoding)
+		jboolean isSigned, jint FSDataType, jint charSet, jstring iso88591Encoding, jint vcIndLength)
 	{
 		FUNCTION_ENTRY("convertJavaToSQL",
 			("... paramNumber=%ld, wrapper=0x%08x, sqlDataType=%s, charSet=%s, targetLength=%ld, precision=%ld, iso88591Encoding=%s ...",
@@ -2085,31 +2094,57 @@ static Charset_def CHARSET_INFORMATION[] = {
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_DATETIME:
 		case SQLTYPECODE_INTERVAL:
-			if (targetLength > dataLen+sizeof(short))
+			if (vcIndLength == 4 && targetLength > dataLen+sizeof(int))
 			{
-				*(unsigned short *)targetDataPtr = (unsigned short)dataLen;
-				memcpy(targetDataPtr+sizeof(short), nParamValue, dataLen);
+                            *(unsigned int *)targetDataPtr = (unsigned int)dataLen;
+                            memcpy(targetDataPtr+sizeof(int), nParamValue, dataLen);
 
-				switch(charSet)
-				{
-				case SQLCHARSETCODE_KANJI:
-				case SQLCHARSETCODE_KSC5601:
-					// Back fill target buffer with "special" double byte
-					// 'space' characters (i.e. 0x20 0x20)
-					// Note: This is a backward compatibility issue with SQL/MP Tables
-					memset(targetDataPtr+sizeof(short)+dataLen, ' ', targetLength-dataLen-sizeof(short));
-					break;
+                            switch(charSet)
+                            {
+                                case SQLCHARSETCODE_KANJI:
+                                case SQLCHARSETCODE_KSC5601:
+                                    // Back fill target buffer with "special" double byte
+                                    // 'space' characters (i.e. 0x20 0x20)
+                                    // Note: This is a backward compatibility issue with SQL/MP Tables
+                                    memset(targetDataPtr+sizeof(int)+dataLen, ' ', targetLength-dataLen-sizeof(int));
+                                    break;
 
-				case SQLCHARSETCODE_UCS2:
-					// Back fill target buffer with double byte 'space' characters (i.e. 0x00 0x20)
-					// by first setting entire buffer to spaces (0x20), then backfilling with 0x00
-					memset(targetDataPtr+sizeof(short)+dataLen, ' ', targetLength-dataLen-sizeof(short));
-					for (i = dataLen+sizeof(short); i < targetLength; i+=2)
-					{
-						*(targetDataPtr+i) = 0;
-					}
-					break;
-				}
+                                case SQLCHARSETCODE_UCS2:
+                                    // Back fill target buffer with double byte 'space' characters (i.e. 0x00 0x20)
+                                    // by first setting entire buffer to spaces (0x20), then backfilling with 0x00
+                                    memset(targetDataPtr+sizeof(int)+dataLen, ' ', targetLength-dataLen-sizeof(int));
+                                    for (i = dataLen+sizeof(int); i < targetLength; i+=2)
+                                    {
+                                        *(targetDataPtr+i) = 0;
+                                    }
+                                    break;
+                            }
+                        }
+			else if ( targetLength >= dataLen + sizeof(short))
+			{
+                            *(unsigned short *)targetDataPtr = (unsigned short) dataLen;
+                            memcpy(targetDataPtr + sizeof(short), nParamValue, dataLen);
+
+                            switch(charSet)
+                            {
+                                case SQLCHARSETCODE_KANJI:
+                                case SQLCHARSETCODE_KSC5601:
+                                    // Back fill target buffer with "special" double byte
+                                    // 'space' characters (i.e. 0x20 0x20)
+                                    // Note: This is a backward compatibility issue with SQL/MP Tables
+                                    memset(targetDataPtr + sizeof(short) + dataLen, ' ', targetLength - dataLen - sizeof(short));
+                                    break;
+
+                                case SQLCHARSETCODE_UCS2:
+                                    // Back fill target buffer with double byte 'space' characters (i.e. 0x00 0x20)
+                                    // by first setting entire buffer to spaces (0x20), then backfilling with 0x00
+                                    memset(targetDataPtr + sizeof(short) + dataLen, ' ', targetLength -dataLen - sizeof(short));
+                                    for (i = dataLen + sizeof(short); i < targetLength; i += 2)
+                                    {
+                                        *(targetDataPtr + i) = 0;
+                                    }
+                                    break;
+                            }
 			}
 			else
 			{
@@ -3276,8 +3311,16 @@ func_exit:
 
 			if (FSDataType != 151)
 			{
-				strDataPtr = (char *)SQLValue->dataValue._buffer + sizeof(short);
-				DataLen = *(short *)SQLValue->dataValue._buffer;
+				if ( pSrvrStmt->IRD[columnIndex].vc_ind_length == 4)
+				{
+					strDataPtr = (char *)SQLValue->dataValue._buffer + sizeof(int);
+					DataLen = *(int *)SQLValue->dataValue._buffer;
+				}
+				else
+				{
+					strDataPtr = (char *)SQLValue->dataValue._buffer + sizeof(short);
+					DataLen = *(short *)SQLValue->dataValue._buffer;
+				}
 				DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("varchar with length = %ld", DataLen));
 				usejchar = TRUE;
 			}

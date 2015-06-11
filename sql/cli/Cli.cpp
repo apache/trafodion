@@ -4568,6 +4568,7 @@ Lng32 SQLCLI_GetDescItems2(/*IN*/ CliGlobals * cliGlobals,
         case SQLDESC_PARAMETER_MODE:
         case SQLDESC_ORDINAL_POSITION:
         case SQLDESC_PARAMETER_INDEX:
+        case SQLDESC_VC_IND_LENGTH:
 	  {
 	    retcode = desc->getDescItem(entry,
 					desc_items[i].item_id,
