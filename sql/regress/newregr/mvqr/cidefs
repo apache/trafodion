@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ control query default SKIP_METADATA_VIEWS 'ON';
 control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT 'ON';
 #ifMX
 
-control query default DEF_NUM_SMP_CPUS 
+control query default DEF_NUM_SMP_CPUS
 #ifMX
 '2'
 #ifMX
@@ -76,23 +76,13 @@ set pattern $$TrigTempTablePartition$$ '''$DATA03:$DATA04,$DATA05:$DATA01''';
 --set pattern $$system_name$$ SYSTEM_NAME;
 #ifNSK
 
-#ifNT
-set pattern $$partition$$ $DATA;
-set pattern $$partition1$$ $DATA1;
-set pattern $$partition2$$ $DATA2;
-set pattern $$partition3$$ $SYSTEM;
-set pattern $$TrigTempTablePartition$$ '''$system:$data1,$data2:$data''';
-set pattern $$SYSTEM_NAME$$ NSK;
-
-#ifNT
-
--- This pattern is needed for both NSK and NT to handle the quote in Metadata
+-- This pattern is needed to handle the quote in Metadata
 -- queries
 set pattern $$quote$$ '''';
 
 set pattern $$REMOTE_SYSTEM_CATALOG$$ \NEVADA2.$DATA08.VICTEST;
 
--- This CQD is added for creating a table  with no 
+-- This CQD is added for creating a table with no
 -- partition or primary key when the POS is enabled.
 control query default POS_ALLOW_NON_PK_TABLES 'ON';
 --control query default detailed_statistics 'ALL';

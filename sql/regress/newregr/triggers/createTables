@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 ----------------------------------------------------
--- NOTE: the following commnads should all SUCCEED
+-- NOTE: the following commands should all SUCCEED
 
 -- This CQD is added for creating a table  with no
 -- partition or primary key when the POS is enabled on NSK and LINUX

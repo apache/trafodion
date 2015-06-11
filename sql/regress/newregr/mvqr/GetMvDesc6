@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 --  limitations under the License.
 --
 -- @@@ END COPYRIGHT @@@
+
 --set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
 set param ?mvDescSubId  -2;
 set param ?mvName 'SUMBY_DAY';
@@ -106,4 +107,3 @@ prepare getMVDescFromTEXT  from
 		           and t.object_sub_id = ?mvDescSubId
 		           and sequence_num = 5 ) as row5
 		 on uid0 = uid5;
-
