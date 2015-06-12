@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -45,8 +45,7 @@ HBASETMLIB   =  $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2
 #xarm
 LIBXARM		= -lxarm
 
-#log4cpp
-LIBLOG4CPP = $(SQ_HOME)/../log4cpp/$(LOG4CPP_VER)/include
+#log4cxx
 LIBCLOGGER = $(SQ_HOME)/commonLogger
 
 # seabed
@@ -91,7 +90,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LIBLOG4CPP) -I$(LIBCLOGGER)
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx -I$(LIBCLOGGER)
 #LIBSX		= -lpthread
 LIBSX		= -pthread
 ifeq ($(USE_THREADED_IO),1)

@@ -902,7 +902,7 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   MVQR_ALL_JBBS_IN_QD,            // add JBBs to query descriptor even if criteria
                                   //   not met. Used for testing descriptors.
-  MVQR_ENABLE_LOGGING,            // Use log files. Temporary until Log4CPP.
+  MVQR_ENABLE_LOGGING,            // Use log files. Temporary until Log4CXX.
   MVQR_FILENAME_PREFIX,           // path/prefix of files to dump descriptors to
   MVQR_LOG_QUERY_DESCRIPTORS,     // whether or not to log query descriptors
   MVQR_MAX_MV_JOIN_SIZE,          // max # joins for publishable MV

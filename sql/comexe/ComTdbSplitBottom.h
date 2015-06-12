@@ -275,7 +275,7 @@ public:
     INVALID_MEMORY,
     SLEEP180,
     INTERNAL_ERROR,
-    TEST_LOG4CPP
+    TEST_LOG4CXX
     };
 
   Int32 getAbendType(void) const { return abendType_; }

@@ -314,12 +314,12 @@ Int32 main (Int32 argc, char *argv[])
       sqlci->get_logfile()->setNoDisplay(TRUE);
     }
 
-  // setup log4cpp, need to be done here so initLog4cpp can have access to
+  // setup log4cxx, need to be done here so initLog4cxx can have access to
   // process information since it is needed to compose the log name
-  // the log4cpp log name for this master and all its subordinates will be
+  // the log4cxx log name for this master and all its subordinates will be
   // based on this process' node number and its pid
   QRLogger::instance().setModule(QRLogger::QRL_MXEXE);
-  QRLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config");
+  QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
 
   // run it -- this is where the action is!
   if (in_filename || input_string)

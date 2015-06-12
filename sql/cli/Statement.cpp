@@ -1593,7 +1593,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
       const char msgT[] = "SQL compiler: Optimization failed at pass two or higher. " 
                           "Execution will use the plan generated at pass one instead.";
 
-      SQLMXLoggingArea::logSQLMXPredefinedEvent(msgT, LL_ALERT);
+      SQLMXLoggingArea::logSQLMXPredefinedEvent(msgT, LL_WARN);
     }
  #endif
   

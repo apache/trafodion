@@ -26,15 +26,17 @@
 #include <string.h>
 #include <string>
 #include <stdexcept>
-#include <log4cpp/Category.hh>
-#include <log4cpp/RollingFileAppender.hh>
-#include <log4cpp/PatternLayout.hh>
-#include <log4cpp/PropertyConfigurator.hh>
-#include <log4cpp/Configurator.hh>
+
+#include <log4cxx/logger.h>
+#include <log4cxx/basicconfigurator.h>
+#include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/helpers/exception.h>
 
 #define SLASH_S "/"
 #define SLASH_C '/'
 
+using namespace log4cxx;
+using namespace log4cxx::helpers;
 
 // **************************************************************************
 // Reads configuration file, creates an appender, layout, and categories.
@@ -44,7 +46,7 @@
 // Return TRUE if all was well, or FALSE if the config file was not read
 // successfully.
 // **************************************************************************
-bool CommonLogger::initLog4cpp(const char* configFileName, const char* fileSuffix)
+bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffix)
 {
   std::string configPath;
 
@@ -85,10 +87,22 @@ bool CommonLogger::initLog4cpp(const char* configFileName, const char* fileSuffi
 
   try
   {
-    log4cpp::PropertyConfigurator::configure(configPath.data(), logFolder_.data(), fileSuffix);
+    if ( fileSuffix && fileSuffix[0] != '\0' )
+    {
+      setenv("TRAFODION_LOG_FILENAME_SUFFIX", fileSuffix, 1);
+    }
+    else
+    {
+      setenv("TRAFODION_LOG_FILENAME_SUFFIX", "", 1);
+    }
+
+    log4cxx::PropertyConfigurator::configure(configPath.data());
+
     return true;
+
   }
-  catch (log4cpp::ConfigureFailure e)
+  //catch (log4cxx::ConfigureFailure e)
+  catch (Exception e)
   {
     return false;
   }
@@ -107,9 +121,18 @@ CommonLogger& CommonLogger::instance()
 // **************************************************************************
 bool CommonLogger::isCategoryInDebug(std::string &cat)
 {
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  return (myCat.getPriority() != log4cpp::Priority::NOTSET &&
-           myCat.getPriority() >= log4cpp::Priority::DEBUG);
+    bool result = false;
+    log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(cat));
+    if ( myLogger )
+    {
+      log4cxx::LevelPtr myLevel = myLogger->getLevel();
+      if ( myLevel )
+      {
+          result = ( myLevel != log4cxx::Level::getOff() && myLevel->isGreaterOrEqual(log4cxx::Level::getDebug()) );
+      }
+    }
+    
+    return result;   
 }
 
 // **************************************************************************
@@ -130,34 +153,32 @@ void CommonLogger::log1(std::string &cat,
   switch(level)
   {
     case LL_FATAL:
-      log4cpp::Category::getInstance(cat).fatal(msg);
+       LOG4CXX_FATAL(log4cxx::Logger::getLogger(cat),msg);
       break;
-
-    // LCOV_EXCL_START :cnu
-    case LL_ALERT:
-      log4cpp::Category::getInstance(cat).alert(msg);
-      break;
-    // LCOV_EXCL_STOP
 
     case LL_ERROR:
-      log4cpp::Category::getInstance(cat).error(msg);
+      LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat),msg);
       break;
 
     case LL_MVQR_FAIL:
-      log4cpp::Category::getInstance(cat).error(msg);
+      LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat),msg);
       break;
 
     case LL_WARN:
-      log4cpp::Category::getInstance(cat).warn(msg);
+      LOG4CXX_WARN(log4cxx::Logger::getLogger(cat),msg);
       break;
 
     case LL_INFO:
-      log4cpp::Category::getInstance(cat).info(msg);
+      LOG4CXX_INFO(log4cxx::Logger::getLogger(cat),msg);
       break;
 
     case LL_DEBUG:
-      log4cpp::Category::getInstance(cat).debug(msg);
+      LOG4CXX_DEBUG(log4cxx::Logger::getLogger(cat),msg);
       break;
+
+    case LL_TRACE:
+      LOG4CXX_TRACE(log4cxx::Logger::getLogger(cat),msg);
+      break;      
   }
 }
 
@@ -203,11 +224,13 @@ char* CommonLogger::buildMsgBuffer(std::string &cat,
       	strcpy(smallBuff+SHORTSIZE, "...");
       }
 
-      log4cpp::Category::getInstance(cat).error("Cannot log full message, error %d returned from vsnprintf()", msgSize);
-      log4cpp::Category::getInstance(cat).error(smallBuff);
+      char errorMsg[100];
+      sprintf(errorMsg, "Cannot log full message, error %d returned from vsnprintf()", msgSize);
+      LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat),errorMsg);
+      LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat),smallBuff);
 
       return buffer;
-      // LCOV_EXCL_STOP
+      
     }
     else if (msgSize < bufferSize)
     {
@@ -236,10 +259,20 @@ void CommonLogger::log(std::string &cat,
                        const char* logMsgTemplate...)
 {
   // Don't do anything if this message will be ignored anyway.
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
-    return;
-
+  log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(cat));
+  if ( myLogger )
+  {
+    log4cxx::LevelPtr myLevel = myLogger->getLevel();
+    log4cxx::LevelPtr paramLevel = log4cxx::Level::toLevel(level);
+    if ( myLevel && paramLevel )
+    {
+        if ( myLevel == log4cxx::Level::getOff() || myLevel->toInt() < paramLevel->toInt() )
+        {
+          return;
+        }
+    }
+  }
+  
   va_list args ;
   va_start(args, logMsgTemplate);
 
@@ -247,4 +280,5 @@ void CommonLogger::log(std::string &cat,
   log1(cat, level, buffer);
 
   va_end(args);
+
 }

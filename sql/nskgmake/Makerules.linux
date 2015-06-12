@@ -131,8 +131,12 @@ THRIFT_INC=-I$(THRIFT_INC_DIR) -I$(THRIFT_INC_DIR)/thrift
 THRIFT_LIB=-lthrift
 THRIFT_SO=libthrift-*.so
 
+LOG4CXX_INC=-I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx
+LOG4CXX_LIB=-L$(LOG4CXX_LIB_DIR) -llog4cxx
+LOG4CXX_SO=liblog4cxx*.so
+
 # for now, include these libs (copied to our local lib dir) everywhere
-GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB)
+GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB) $(LOG4CXX_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
@@ -220,7 +224,7 @@ SYS_INCLUDES :=
    SYS_INCLUDES += -I$(NSK_SQ)/inc \
 	-I$(NSK_SQ)/export/include \
         -I$(PROTOBUFS_INC) \
-	$(LIBHDFS_INC) $(THRIFT_INC)				   \
+	$(LIBHDFS_INC) $(THRIFT_INC) $(LOG4CXX_INC)	   \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
 
@@ -229,7 +233,6 @@ OTHER_INCLUDES := -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT2) \
 	-I$(UDIS86_INC_ROOT) \
 	-I$(NSK_SQ)/../dbsecurity/auth/inc \
-	-I$(NSK_SQ)/../log4cpp/$(LOG4CPP_VER)/include \
 	-I$(NSK_SQ)/commonLogger
 
 LOC_LIBS := \

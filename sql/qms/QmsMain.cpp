@@ -108,7 +108,7 @@ Int32 main(Int32 argc, char *argv[])
 #endif
 
   QRLogger::instance().setModule(QRLogger::QRL_QMS);
-  QRLogger::instance().initLog4cpp("log4cpp.qms.config");
+  QRLogger::instance().initLog4cxx("log4cxx.qms.config");
  
   QRLogger::log(CAT_QMS_MAIN, LL_INFO, "=================================================");
   QRLogger::log(CAT_QMS_MAIN, LL_INFO, "=================================================");

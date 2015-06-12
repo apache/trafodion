@@ -54,8 +54,6 @@ SYS_LIBS :=	\
 		tdm_security.lib tdm_fs2.lib advapi32.lib pdh.lib wsock32.lib \
 		kernel32.lib user32.lib tdm_fs.lib tdm_tmfuser.lib tdm_sqlmxevents.lib
 
-EXTERN_OBJS := $(TOPDIR)/log4cpp/nt/log4cpp.lib
-
 DEP_LIBS += tdm_sqlcli 
 
 ifeq ($(FLAVOR),release)
@@ -134,6 +132,6 @@ endif
 
 ifeq ($(TARGTYPE),linux)
 TARGET := tdm_arkqms
-DEP_LIBS += tdm_sqlcli log4cpp
+DEP_LIBS += tdm_sqlcli
 
 endif

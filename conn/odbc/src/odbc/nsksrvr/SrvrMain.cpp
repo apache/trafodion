@@ -242,7 +242,7 @@ catch(SB_Fatal_Excep sbfe)
 
 	char logNameSuffix[32];
 	sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
-	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config", logNameSuffix);
+	CommonLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config", logNameSuffix);
 
     if(retcode == FALSE )
    {

@@ -1005,7 +1005,7 @@ static void* SessionWatchDog(void* arg)
 	}
 	catch(...)
 	{
-		//Write to Log4cpp the error message..
+		//Write to Log4cxx the error message..
 	}
 
 	if (pSrvrStmt != NULL)
