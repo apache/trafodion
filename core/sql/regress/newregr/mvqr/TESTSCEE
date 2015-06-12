@@ -1,0 +1,989 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TESTSCEE
+-- SCEE POC examples.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TESTSCEE(clean_up);
+obey TESTSCEE(clean_up_files);
+log LOGSCEE clear;
+obey TESTSCEE(set_up);
+obey TESTSCEE(create_mvs);
+obey TESTSCEE(match_Q1);
+obey TESTSCEE(match_Q1_bad);
+obey TESTSCEE(match_Q2);
+obey TESTSCEE(match_Q3);
+
+obey TESTSCEE(check_plan_Q1);
+obey TESTSCEE(check_plan_Q2);
+obey TESTSCEE(check_plan_Q3);
+
+obey TESTSCEE(clean_up);
+
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema scee cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm scee*;
+sh rm SCEE*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+obey GetMvDesc6;
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+--control query default QUERY_CACHE '0';
+control query default MVQR_PUBLISH_TO 'PRIVATE';
+control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+control query default MVQR_ALL_JBBS_IN_QD 'ON';
+control query default MVQR_USE_RI_FOR_EXTRA_HUB_TABLES 'ON';
+control query default MVQR_REWRITE_CANDIDATES 'CAT.SCEE.SCEE_MV1 ,:CAT.SCEE.SCEE_MV2';
+
+-- This is used to make sure the MV is used in the plan.
+prepare checkPlan from
+select operator, tname
+from table(explain(NULL, 'QUERYSTMT'))
+where operator like '%_SCAN%'
+order by tname;
+
+create schema scee;
+set schema scee;
+set pattern $$MVSchemaName$$ SCEE;
+
+CREATE TABLE DIM_COUNTRY_OUTRIGGER
+(
+	country_iso_code      CHAR(2)  NOT NULL ,
+	country_iso_name      VARCHAR(100) ,
+	country_name          VARCHAR(30)  NOT NULL ,
+	sce_region_code       CHAR(7)  NOT NULL ,
+	sce_marketing_region_code  CHAR(20)  NOT NULL ,
+	marketing_report_sort_order  SMALLINT  NOT NULL ,
+	sce_finance_region_code  CHAR(4)  NOT NULL ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+ PRIMARY KEY (country_iso_code)
+) no partition;
+
+CREATE TABLE DIM_ACCT
+(
+	acct_id               LARGEINT  NOT NULL ,
+	demographic_id        LARGEINT  NOT NULL ,
+	source_psn_acct_id    LARGEINT ,
+	source_psn_acct_hex   CHAR(16) ,
+	source_master_psn_acct_id  LARGEINT  NOT NULL ,
+	source_online_id      VARCHAR(20)  NOT NULL ,
+	vulgar_source_online_id_ind  VARCHAR(20)  NOT NULL ,
+	source_acct_jid_id    VARCHAR(20) ,
+	auto_deposit_ind      VARCHAR(20)  NOT NULL ,
+	adult_confirmed_ind   VARCHAR(20)  NOT NULL ,
+	account_suspend_ind   VARCHAR(20)  NOT NULL ,
+	email_confirmed_ind   VARCHAR(20)  NOT NULL ,
+	dob                   DATE ,
+	gender                VARCHAR(20)  NOT NULL ,
+	language_iso_code     VARCHAR(20)  NOT NULL ,
+	language_name         VARCHAR(20)  NOT NULL ,
+	country_iso_code      VARCHAR(20)  NOT NULL ,
+	country_name          VARCHAR(20)  NOT NULL ,
+	time_zone_iso_code    VARCHAR(20) ,
+	acct_creation_dt_id   INTEGER  NOT NULL ,
+	acct_creation_utc_dttm  DATE  NOT NULL ,
+	acct_updated_dt_id    INTEGER  NOT NULL ,
+	acct_updated_utc_dttm  DATE  NOT NULL ,
+	utc_offset            NUMERIC ,
+	acct_creation_local_time_id  INTEGER  NOT NULL ,
+	acct_updated_local_time_id  INTEGER  NOT NULL ,
+	optin_status_direct   VARCHAR(20)  NOT NULL ,
+	optin_status_3rd_party  VARCHAR(20)  NOT NULL ,
+	source_sce_region_code  VARCHAR(20) ,
+	sce_region_code       VARCHAR(20)  NOT NULL ,
+	signup_console_code   VARCHAR(64)  NOT NULL ,
+	eula_version          VARCHAR(10) ,
+	source_system_id      SMALLINT  NOT NULL ,
+	scd_start_dt          DATE ,
+	scd_end_dt            DATE ,
+	scd_current_ind       CHAR(1) ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	PRIMARY KEY (acct_id)
+)
+HASH PARTITION BY (acct_id)
+MAX TABLE SIZE 500 
+number of partitions 1;
+
+
+CREATE TABLE DIM_DEMOGRAPHIC
+(
+	demographic_id        SMALLINT  NOT NULL ,
+	country_iso_code      CHAR(2)  NOT NULL ,
+	language_iso_code     CHAR(2)  NOT NULL ,
+	language_name         VARCHAR(30)  NOT NULL ,
+	gender                CHAR(15)  NOT NULL ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (demographic_id)
+) no partition;
+
+alter table DIM_DEMOGRAPHIC add constraint dem_fk foreign key 
+  (country_iso_code) references DIM_COUNTRY_OUTRIGGER(COUNTRY_ISO_CODE) NOT ENFORCED;
+
+
+CREATE TABLE DIM_DT
+(
+	dt_hrchy_id           INTEGER  NOT NULL ,
+	aggr_level_code       VARCHAR(20)  NOT NULL ,
+	aggr_level_num        INTEGER  NOT NULL ,
+	calendar_dt           DATE  NOT NULL ,
+	day_of_week           INTEGER  NOT NULL ,
+	day_num_in_month      INTEGER  NOT NULL ,
+	day_num_overall       INTEGER  NOT NULL ,
+	day_name              VARCHAR(20)  NOT NULL ,
+	day_abrv              VARCHAR(20)  NOT NULL ,
+	quarter               INTEGER  NOT NULL ,
+	sply_day_id           INTEGER  NOT NULL ,
+	weekday_flag          CHAR(1)  NOT NULL ,
+	week_id               INTEGER  NOT NULL ,
+	week_num_in_year      INTEGER  NOT NULL ,
+	week_num_overall      INTEGER  NOT NULL ,
+	week_begin_dt         DATE  NOT NULL ,
+	week_begin_dt_id      INTEGER  NOT NULL ,
+	week_end_dt           DATE  NOT NULL ,
+	week_end_dt_id        INTEGER  NOT NULL ,
+	sply_week_id          INTEGER  NOT NULL ,
+	store_day_of_week     INTEGER  NOT NULL ,
+	store_week_id         INTEGER  NOT NULL ,
+	store_week_num_in_year  INTEGER  NOT NULL ,
+	store_week_num_overall  INTEGER  NOT NULL ,
+	store_week_begin_dt   DATE  NOT NULL ,
+	store_week_begin_dt_id  INTEGER  NOT NULL ,
+	store_week_end_dt     DATE  NOT NULL ,
+	store_week_end_dt_id  INTEGER  NOT NULL ,
+	month_id              INTEGER  NOT NULL ,
+	month_num             INTEGER  NOT NULL ,
+	month_num_overall     INTEGER  NOT NULL ,
+	month_name            VARCHAR(20)  NOT NULL ,
+	month_abrv            VARCHAR(20)  NOT NULL ,
+	sply_month_id         INTEGER  NOT NULL ,
+	year_id               INTEGER  NOT NULL ,
+	year_num              INTEGER  NOT NULL ,
+	year_month            CHAR(7)  NOT NULL ,
+	last_day_in_month_ind  CHAR(1)  NOT NULL ,
+	relative_day_num      INTEGER ,
+	relative_week_num     INTEGER ,
+	relative_month_num    INTEGER ,
+	relative_year_num     INTEGER ,
+	source_system_id      SMALLINT ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (dt_hrchy_id)
+) no partition;
+
+
+CREATE TABLE DIM_PRODUCT_SKU
+(
+	product_sku_id        INTEGER  NOT NULL ,
+	title_id              SMALLINT ,
+	publisher             VARCHAR(25) , -- VARCHAR(255)
+	service_provider      VARCHAR(25) , -- VARCHAR(255)
+	game_genre            CHAR(20)  NOT NULL ,
+	franchise             VARCHAR(25) , -- VARCHAR(255)
+	title_name            VARCHAR(25) , -- VARCHAR(255)
+	disk_title_name       VARCHAR(25) , -- VARCHAR(255)
+	product_group         VARCHAR(25) , -- VARCHAR(255)
+	product_name          VARCHAR(25) , -- VARCHAR(255)
+	sku_name              VARCHAR(25) , -- VARCHAR(255)
+	sku_type              CHAR(20)  NOT NULL ,
+	np_com_name           VARCHAR(25) , -- VARCHAR(255)
+	pmt_sku               CHAR(56)  NOT NULL ,
+	pmt_product_id        CHAR(48)  NOT NULL ,
+	pmt_revision_status   INTEGER  NOT NULL ,
+	pmt_revision          INTEGER  NOT NULL ,
+	pmt_service_provider_id  CHAR(8)  NOT NULL ,
+	pmt_creation_date     TIMESTAMP  NOT NULL ,
+	pmt_subscription_sku  CHAR(56)  NOT NULL ,
+	pmt_duration_months   INTEGER  NOT NULL ,
+	pmt_duration_days     INTEGER  NOT NULL ,
+	pmt_ordering_index    INTEGER  NOT NULL ,
+	pmt_title_id          CHAR(15)  NOT NULL ,
+	pmt_business_category  VARCHAR(32)  NOT NULL ,
+	pmt_sku_type          INTEGER  NOT NULL ,
+	pmt_content_url       VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_business_description  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_duration_seconds  LARGEINT  NOT NULL ,
+	pmt_base_sku          CHAR(56)  NOT NULL ,
+	pmt_video_type        VARCHAR(30)  NOT NULL ,
+	pmt_in_game_flag      CHAR(1)  NOT NULL ,
+	pmt_free_flag         CHAR(1)  NOT NULL ,
+	pmt_ps3_flag          CHAR(1)  NOT NULL ,
+	pmt_pc_flag           CHAR(1)  NOT NULL ,
+	pmt_service_provider_email  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_service_provider_type  VARCHAR(100)  NOT NULL ,
+	pmt_service_provider_language_code  CHAR(2)  NOT NULL ,
+	pmt_service_provider  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_service_provider_home_url  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_title_type        VARCHAR(100)  NOT NULL ,
+	pmt_title_type_description  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_title_language_code  CHAR(2)  NOT NULL ,
+	pmt_title_name        VARCHAR(100)  NOT NULL ,
+	pmt_title_image_url   VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_title_small_image_url  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_product_tax_code  INTEGER  NOT NULL ,
+	pmt_product_language_code  CHAR(2)  NOT NULL ,
+	pmt_product_name      VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_product_short_desc  VARCHAR(10)  NOT NULL ,  --VARCHAR(1000)
+	pmt_product_home_url  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_product_image_url  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_product_small_image_url  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_sku_language_code  CHAR(2)  NOT NULL ,
+	pmt_sku_name          VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	pmt_sku_creation_date  TIMESTAMP  NOT NULL ,
+	pmt_sku_modify_date   TIMESTAMP  NOT NULL ,
+	pmt_sku_description   VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_service_provider  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_franchise         VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_title_name        VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_title_description  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_product_description  VARCHAR(25)  NOT NULL , -- VARCHAR(255)
+	wws_type_level1       CHAR(15)  NOT NULL ,
+	wws_type_level2       CHAR(15)  NOT NULL ,
+	wws_type_level3       CHAR(15)  NOT NULL ,
+	sceecat_franchise     VARCHAR(100)  NOT NULL ,
+	sceecat_game          VARCHAR(100)  NOT NULL ,
+	sceecat_super_title   VARCHAR(100)  NOT NULL ,
+	sceecat_title_name    VARCHAR(100)  NOT NULL ,
+	sceecat_service_provider  VARCHAR(100)  NOT NULL ,
+	sceecat_generation    CHAR(15)  NOT NULL ,
+	sceecat_genre         CHAR(20)  NOT NULL ,
+	sceecat_foc_flag      CHAR(1)  NOT NULL ,
+	sceecat_profit_centre  INTEGER  NOT NULL ,
+	sceecat_publisher     VARCHAR(100)  NOT NULL ,
+	sceecat_party_type    CHAR(15)  NOT NULL ,
+	scd_current_ind       CHAR(1)  NOT NULL ,
+	scd_end_date          DATE  NOT NULL ,
+	scd_start_date        DATE  NOT NULL ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (product_sku_id)
+) no partition;
+
+
+CREATE TABLE DIM_TITLE
+(
+	title_id              SMALLINT  NOT NULL ,
+	title_name            CHAR(60) ,
+	publisher             VARCHAR(255) ,
+	service_provider      VARCHAR(255) ,
+	game_genre            CHAR(20) ,
+	franchise             VARCHAR(255) ,
+	disk_title_name       VARCHAR(255) ,
+	np_com_name           VARCHAR(255) ,
+	title_type            CHAR(15) ,
+	title_image_url       VARCHAR(255) ,
+	title_image_small_url  VARCHAR(255) ,
+	wws_title_name        VARCHAR(255) ,
+	wws_franchise         VARCHAR(255) ,
+	source_title_id       CHAR(15) ,
+	initial_release_dt    DATE ,
+	manually_updated_ind  CHAR(1) ,
+	pmt_service_provider  VARCHAR(255) ,
+	pmt_title_type        VARCHAR(100) ,
+	pmt_title_name        VARCHAR(100) ,
+	sceecat_franchise     VARCHAR(100) ,
+	sceecat_game          VARCHAR(100) ,
+	sceecat_super_title   VARCHAR(100) ,
+	sceecat_title_name    VARCHAR(100) ,
+	sceecat_service_provider  VARCHAR(100) ,
+	sceecat_generation    CHAR(15) ,
+	sceecat_genre         CHAR(20) ,
+	sceecat_publisher     VARCHAR(100) ,
+	sceecat_party_type    CHAR(15) ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (title_id)
+) no partition;
+
+
+CREATE TABLE DIM_TRANSACTION_TYPE
+(
+	transaction_type_id   SMALLINT  NOT NULL ,
+	transaction_type_code  CHAR(4)  NOT NULL ,
+	transaction_type_name  VARCHAR(50)  NOT NULL ,
+	transaction_group     CHAR(20) ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (transaction_type_id)
+) no partition;
+
+
+CREATE TABLE FCT_PSN_STORE_TRANSACTION
+(
+	transaction_local_dt_id  INTEGER  NOT NULL ,
+	device_type_id           INTEGER  NOT NULL ,
+	billable_demographic_id  SMALLINT NOT NULL ,
+	title_id                 SMALLINT NOT NULL ,
+	billable_acct_id         LARGEINT  NOT NULL ,
+	transaction_id           LARGEINT  NOT NULL ,
+	download_acct_id         LARGEINT ,
+	download_acct_age_id     INTEGER ,
+	billable_acct_age_id     LARGEINT NOT NULL ,
+	transaction_utc_dt_id    INTEGER  NOT NULL ,
+	associated_transaction_id  LARGEINT  NOT NULL ,
+	in_game_flag             CHAR(1)  NOT NULL ,
+	refunded_ind             CHAR(1)  NOT NULL ,
+	product_sku_id           INTEGER NOT NULL ,
+	transaction_local_time_id  INTEGER ,
+	transaction_time_id      INTEGER  NOT NULL ,
+	transaction_type_id      SMALLINT NOT NULL ,
+	refund_reason_id      INTEGER  NOT NULL ,
+	psn_tenure_id         INTEGER  NOT NULL ,
+	currency_iso_code     CHAR(3)  NOT NULL ,
+	country_iso_code      CHAR(2)  NOT NULL ,
+	quantity              INTEGER  NOT NULL ,
+	sales_inc_vat         NUMERIC(18,5) ,
+	sales_inc_vat_usd     NUMERIC(18,5) ,
+	sales_inc_vat_eur     NUMERIC(18,5) ,
+	sales_inc_vat_jpy     NUMERIC(18,5) ,
+	sales_vat             NUMERIC(18,5) ,
+	sales_vat_usd         NUMERIC(18,5) ,
+	sales_vat_eur         NUMERIC(18,5) ,
+	sales_vat_jpy         NUMERIC(18,5) ,
+	sales_exc_vat         NUMERIC(18,5) ,
+	sales_exc_vat_usd     NUMERIC(18,5) ,
+	sales_exc_vat_eur     NUMERIC(18,5) ,
+	sales_exc_vat_jpy     NUMERIC(18,5) ,
+	sp_wholesale_price    NUMERIC(18,5) ,
+	sp_wholesale_price_usd  NUMERIC(18,5) ,
+	sp_wholesale_price_eur  NUMERIC(18,5) ,
+	sp_wholesale_price_jpy  NUMERIC(18,5) ,
+	download_cogs         NUMERIC(18,5) ,
+	download_cogs_usd     NUMERIC(18,5) ,
+	download_cogs_eur     NUMERIC(18,5) ,
+	download_cogs_jpy     NUMERIC(18,5) ,
+	retail_margin         NUMERIC(18,5) ,
+	retail_margin_usd     NUMERIC(18,5) ,
+	retail_margin_eur     NUMERIC(18,5) ,
+	retail_margin_jpy     NUMERIC(18,5) ,
+	source_hdr_report_id  INTEGER  NOT NULL ,
+	source_report_id      LARGEINT  NOT NULL ,
+	source_sequence_id    INTEGER  NOT NULL ,
+	source_system_id      SMALLINT  NOT NULL ,
+	etl_id_inserted       LARGEINT  NOT NULL ,
+	etl_id_updated        LARGEINT  NOT NULL ,
+	PRIMARY KEY (transaction_local_dt_id, device_type_id, billable_demographic_id, title_id, billable_acct_id, transaction_id)
+) no partition;
+
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk1 foreign key (transaction_local_dt_id)  references DIM_DT(DT_HRCHY_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk2 foreign key (billable_demographic_id)  references DIM_DEMOGRAPHIC(DEMOGRAPHIC_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk3 foreign key (title_id)                 references DIM_TITLE(TITLE_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk4 foreign key (billable_acct_id)         references DIM_ACCT(ACCT_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk5 foreign key (billable_acct_age_id)     references DIM_ACCT(ACCT_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk6 foreign key (product_sku_id)           references DIM_PRODUCT_SKU(PRODUCT_SKU_ID) NOT ENFORCED;
+alter table FCT_PSN_STORE_TRANSACTION add constraint txn_fk7 foreign key (transaction_type_id)      references DIM_TRANSACTION_TYPE(TRANSACTION_TYPE_ID) NOT ENFORCED;
+
+?section create_mvs
+--===========================================
+-- MVs
+--===========================================
+
+-- Single table MAV with groupby on foreign key columns
+
+CREATE MV SCEE_MV1
+    REFRESH ON REQUEST
+    INITIALIZED ON CREATE
+    AS
+SELECT
+    TRANSACTION_LOCAL_DT_ID,
+    DEVICE_TYPE_ID,
+    BILLABLE_DEMOGRAPHIC_ID,
+    TITLE_ID,
+    BILLABLE_ACCT_AGE_ID,
+    IN_GAME_FLAG,
+    PRODUCT_SKU_ID,
+    TRANSACTION_TYPE_ID,
+    CURRENCY_ISO_CODE,
+    SUM(QUANTITY)               AS QUANTITY,
+    SUM(SALES_INC_VAT_USD)      AS SALES_INC_VAT_USD,
+    SUM(SALES_VAT_USD)          AS SALES_VAT_USD,
+    SUM(SALES_EXC_VAT_USD)      AS SALES_EXC_VAT_USD,
+    SUM(SP_WHOLESALE_PRICE_USD) AS SP_WHOLESALE_PRICE_USD,
+    SUM(DOWNLOAD_COGS_USD)      AS DOWNLOAD_COGS_USD,
+    SUM(RETAIL_MARGIN_USD)      AS RETAIL_MARGIN_USD
+FROM
+    FCT_PSN_STORE_TRANSACTION
+GROUP BY
+    TRANSACTION_LOCAL_DT_ID,
+    DEVICE_TYPE_ID,
+    BILLABLE_DEMOGRAPHIC_ID,
+    TITLE_ID,
+    BILLABLE_ACCT_AGE_ID,
+    IN_GAME_FLAG,
+    PRODUCT_SKU_ID,
+    TRANSACTION_TYPE_ID,    
+    CURRENCY_ISO_CODE
+;
+
+set pattern $$MVName$$ SCEE_MV1;
+obey TESTSCEE(dump_MV);
+
+-- Single table MAV with groupby on foreign key columns
+
+CREATE MV SCEE_MV2 
+    REFRESH ON REQUEST
+    INITIALIZED ON CREATE
+    AS
+SELECT
+    TRANSACTION_LOCAL_DT_ID,
+    DEVICE_TYPE_ID,
+    BILLABLE_DEMOGRAPHIC_ID,
+    TITLE_ID,
+    TRANSACTION_TYPE_ID,
+    CURRENCY_ISO_CODE,
+    SUM(QUANTITY)               AS QUANTITY,
+    SUM(SALES_INC_VAT_USD)      AS SALES_INC_VAT_USD,
+    SUM(SALES_VAT_USD)          AS SALES_VAT_USD,
+    SUM(SALES_EXC_VAT_USD)      AS SALES_EXC_VAT_USD,
+    SUM(SP_WHOLESALE_PRICE_USD) AS SP_WHOLESALE_PRICE_USD,
+    SUM(DOWNLOAD_COGS_USD)      AS DOWNLOAD_COGS_USD,
+    SUM(RETAIL_MARGIN_USD)      AS RETAIL_MARGIN_USD
+FROM
+    FCT_PSN_STORE_TRANSACTION
+GROUP BY
+    TRANSACTION_LOCAL_DT_ID,
+    DEVICE_TYPE_ID,
+    BILLABLE_DEMOGRAPHIC_ID,
+    TITLE_ID,
+    TRANSACTION_TYPE_ID,
+    CURRENCY_ISO_CODE
+;
+
+set pattern $$MVName$$ SCEE_MV2;
+obey TESTSCEE(dump_MV);
+
+?section match_Q1
+--===========================================
+--== Low Level Query
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+        --FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.day_of_week
+    )
+INNER JOIN DIM_TITLE
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TITLE_ID = DIM_TITLE.TITLE_ID
+    )
+INNER JOIN DIM_PRODUCT_SKU
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.PRODUCT_SKU_ID = DIM_PRODUCT_SKU.PRODUCT_SKU_ID
+    )
+INNER JOIN DIM_ACCT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.BILLABLE_ACCT_AGE_ID = DIM_ACCT.ACCT_ID
+    )
+WHERE
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE = 'SCEA'
+AND DIM_DT.RELATIVE_MONTH_NUM = -1
+AND DIM_TITLE.TITLE_NAME = 'SingStar'
+AND DIM_PRODUCT_SKU.PRODUCT_NAME = 'Song - Amy Winehouse, Rehab'
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC,
+    DIM_PRODUCT_SKU.PRODUCT_NAME ASC ;
+
+set pattern $$QueryName$$ SCEE_Q1;
+obey TESTSCEE(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE           >> scee_q1.in;
+sh echo PUBLISH SCEE_MV1.xml >> scee_q1.in;
+sh echo PUBLISH SCEE_MV2.xml >> scee_q1.in;
+sh echo MATCH SCEE_Q1.xml    >> scee_q1.in;
+
+sh sh -c "$QMS scee_q1.in scee.out";
+
+log;
+sh cat scee.out >> LOGSCEE;
+log LOGSCEE;
+
+?section match_Q1_bad
+--===========================================
+--== Low Level Query
+--== Disqualified because the query uses an 
+--== aggregate function on a dimension table.
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD) AS SALES_INC_VAT_USD,
+    sum(dim_dt.aggr_level_num) as extra_aggr
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+        --FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.day_of_week
+    )
+INNER JOIN DIM_TITLE
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TITLE_ID = DIM_TITLE.TITLE_ID
+    )
+INNER JOIN DIM_PRODUCT_SKU
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.PRODUCT_SKU_ID = DIM_PRODUCT_SKU.PRODUCT_SKU_ID
+    )
+INNER JOIN DIM_ACCT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.BILLABLE_ACCT_AGE_ID = DIM_ACCT.ACCT_ID
+    )
+WHERE
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE = 'SCEA'
+AND DIM_DT.RELATIVE_MONTH_NUM = -1
+AND DIM_TITLE.TITLE_NAME = 'SingStar'
+AND DIM_PRODUCT_SKU.PRODUCT_NAME = 'Song - Amy Winehouse, Rehab'
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC,
+    DIM_PRODUCT_SKU.PRODUCT_NAME ASC ;
+    
+set pattern $$QueryName$$ SCEE_Q1X;
+obey TESTSCEE(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE           >> scee_q1x.in;
+sh echo PUBLISH SCEE_MV1.xml >> scee_q1x.in;
+sh echo PUBLISH SCEE_MV2.xml >> scee_q1x.in;
+sh echo MATCH SCEE_Q1X.xml    >> scee_q1x.in;
+
+sh sh -c "$QMS scee_q1x.in scee.out";
+
+log;
+sh cat scee.out >> LOGSCEE;
+log LOGSCEE;
+
+?section match_Q2
+--===========================================
+--== Mid Level Query
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+    )
+INNER JOIN DIM_TITLE
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TITLE_ID = DIM_TITLE.TITLE_ID
+    )
+INNER JOIN DIM_PRODUCT_SKU
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.PRODUCT_SKU_ID = DIM_PRODUCT_SKU.PRODUCT_SKU_ID
+    )
+WHERE
+    DIM_DT.RELATIVE_MONTH_NUM = -1
+AND DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE = 'SCEA'
+AND DIM_TITLE.TITLE_NAME = 'SingStar'
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC,
+    DIM_PRODUCT_SKU.PRODUCT_NAME ASC 
+;
+    
+set pattern $$QueryName$$ SCEE_Q2;
+obey TESTSCEE(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE           >> scee_q2.in;
+sh echo PUBLISH SCEE_MV1.xml >> scee_q2.in;
+sh echo PUBLISH SCEE_MV2.xml >> scee_q2.in;
+sh echo MATCH SCEE_Q2.xml    >> scee_q2.in;
+
+sh sh -c "$QMS scee_q2.in scee.out";
+
+log;
+sh cat scee.out >> LOGSCEE;
+log LOGSCEE;
+
+?section match_Q3
+--===========================================
+--== High Level Query
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD ) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+    )
+WHERE
+    DIM_DT.RELATIVE_MONTH_NUM = -1
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC 
+;
+    
+set pattern $$QueryName$$ SCEE_Q3;
+obey TESTSCEE(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE           >> scee_q3.in;
+sh echo PUBLISH SCEE_MV1.xml >> scee_q3.in;
+sh echo PUBLISH SCEE_MV2.xml >> scee_q3.in;
+sh echo MATCH SCEE_Q3.xml    >> scee_q3.in;
+
+sh sh -c "$QMS scee_q3.in scee.out";
+
+log;
+sh cat scee.out >> LOGSCEE;
+log LOGSCEE;
+
+
+?section check_plan_Q1
+--===========================================
+--== Low Level Query
+--===========================================
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+        --FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.day_of_week
+    )
+INNER JOIN DIM_TITLE
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TITLE_ID = DIM_TITLE.TITLE_ID
+    )
+INNER JOIN DIM_PRODUCT_SKU
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.PRODUCT_SKU_ID = DIM_PRODUCT_SKU.PRODUCT_SKU_ID
+    )
+INNER JOIN DIM_ACCT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.BILLABLE_ACCT_AGE_ID = DIM_ACCT.ACCT_ID
+    )
+WHERE
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE = 'SCEA'
+AND DIM_DT.RELATIVE_MONTH_NUM = -1
+AND DIM_TITLE.TITLE_NAME = 'SingStar'
+AND DIM_PRODUCT_SKU.PRODUCT_NAME = 'Song - Amy Winehouse, Rehab'
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    DIM_ACCT.SOURCE_PSN_ACCT_ID
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC,
+    DIM_PRODUCT_SKU.PRODUCT_NAME ASC ;
+
+execute checkPlan;
+
+?section check_plan_Q2
+--===========================================
+--== Mid Level Query
+--===========================================
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+    )
+INNER JOIN DIM_TITLE
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TITLE_ID = DIM_TITLE.TITLE_ID
+    )
+INNER JOIN DIM_PRODUCT_SKU
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.PRODUCT_SKU_ID = DIM_PRODUCT_SKU.PRODUCT_SKU_ID
+    )
+WHERE
+    DIM_DT.RELATIVE_MONTH_NUM = -1
+AND DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE = 'SCEA'
+AND DIM_TITLE.TITLE_NAME = 'SingStar'
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    DIM_COUNTRY_OUTRIGGER.COUNTRY_NAME,
+    DIM_TITLE.TITLE_NAME,
+    DIM_PRODUCT_SKU.PRODUCT_NAME
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC,
+    DIM_PRODUCT_SKU.PRODUCT_NAME ASC 
+;
+    
+execute checkPlan;
+
+?section check_plan_Q3
+--===========================================
+--== High Level Query
+--===========================================
+
+prepare QueryStmt from
+SELECT
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT,
+    SUM(FCT_PSN_STORE_TRANSACTION.QUANTITY) AS QUANTITY,
+    SUM(FCT_PSN_STORE_TRANSACTION.SALES_INC_VAT_USD ) AS SALES_INC_VAT_USD
+FROM
+    DIM_COUNTRY_OUTRIGGER
+INNER JOIN DIM_DEMOGRAPHIC
+ON
+    (
+        DIM_COUNTRY_OUTRIGGER.COUNTRY_ISO_CODE = DIM_DEMOGRAPHIC.COUNTRY_ISO_CODE
+    )
+INNER JOIN FCT_PSN_STORE_TRANSACTION
+ON
+    (
+        DIM_DEMOGRAPHIC.DEMOGRAPHIC_ID = FCT_PSN_STORE_TRANSACTION.BILLABLE_DEMOGRAPHIC_ID
+    )
+INNER JOIN DIM_DT
+ON
+    (
+        FCT_PSN_STORE_TRANSACTION.TRANSACTION_LOCAL_DT_ID = DIM_DT.DT_HRCHY_ID
+    )
+WHERE
+    DIM_DT.RELATIVE_MONTH_NUM = -1
+GROUP BY
+    DIM_COUNTRY_OUTRIGGER.SCE_REGION_CODE,
+    DIM_DT.WEEK_END_DT
+ORDER BY
+    DIM_DT.WEEK_END_DT ASC 
+;
+    
+execute checkPlan;
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOGSCEE;
+log LOGSCEE;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOGSCEE;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+

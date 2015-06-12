@@ -1,0 +1,90 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- HL_R2_Triggers_Spec.doc: SPJ enhancements to Triggers
+-- Success: Row and Statement triggers without referencing clause
+
+
+obey TEST_SPJC_STX_003(clean_up);
+obey TEST_SPJC_STX_003(set_up);
+LOG LOG_SPJC_STX_003 clear;
+obey TEST_SPJC_STX_003(tests);
+LOG;
+obey TEST_SPJC_STX_003(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+drop trigger TRIG01_SPJC_STX_003;
+drop trigger TRIG02_SPJC_STX_003;
+
+drop table TAB01_SPJC_STX_003;
+drop table TAB02_SPJC_STX_003;
+drop table TAB03_SPJC_STX_003;
+drop table TAB04_SPJC_STX_003;
+
+?section set_up
+SET SCHEMA CAT1.SCHM;
+
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+create table TAB01_SPJC_STX_003(a int, b int, c int, d int);
+create table TAB02_SPJC_STX_003(x int, y int);
+
+create table TAB03_SPJC_STX_003(a int, b int, c int, d int);
+create table TAB04_SPJC_STX_003(x int, y int);
+
+insert into TAB01_SPJC_STX_003 values(1, 2, 3, 4),
+			(2, 3, 4, 5),
+			(3, 4, 5, 6),
+			(4, 5, 6, 7);
+
+insert into TAB03_SPJC_STX_003 select * from TAB01_SPJC_STX_003;
+?section tests
+
+------------------------------------------------------------------
+-- TEST CASE 01: Row trigger
+-- Result: Success
+------------------------------------------------------------------
+CREATE TRIGGER TRIG01_SPJC_STX_003 AFTER UPDATE ON
+TAB01_SPJC_STX_003
+FOR EACH ROW
+	INSERT INTO TAB02_SPJC_STX_003 VALUES (1, 2);
+------------------------------------------------------------------
+
+
+update TAB01_SPJC_STX_003 set a = a + 1;
+
+-- Result: 4
+select sum(x) from TAB02_SPJC_STX_003;
+
+
+------------------------------------------------------------------
+-- TEST CASE 02: Statement trigger
+-- Result: Success
+------------------------------------------------------------------
+CREATE TRIGGER TRIG02_SPJC_STX_003 AFTER UPDATE ON
+TAB03_SPJC_STX_003
+FOR EACH STATEMENT
+	INSERT INTO TAB04_SPJC_STX_003 VALUES(1, 2);
+
+update TAB03_SPJC_STX_003 set a = a + 1;
+
+-- Result: 1
+select sum(x) from TAB04_SPJC_STX_003;
+------------------------------------------------------------------

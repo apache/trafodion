@@ -1136,7 +1136,8 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
       {
         case OptimizerSimulator::OFF:
         case OptimizerSimulator::CAPTURE:
-
+        case OptimizerSimulator::LOAD:
+        
           if (tabDef->isInMemoryObjectDefn())
             {
               // not sure yet what to do about stats for in-memory definitions.

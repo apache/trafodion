@@ -1,0 +1,144 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+log LOGMV809 clear;
+log;
+sh sh runmxci.ksh -i "TESTMV809(clean_up_user7)" -u $$SQLUSER7X$$;
+sh sh runmxci.ksh -i "TESTMV809(clean_up_user8)" -u $$SQLUSER8X$$;
+sh sh runmxci.ksh -i "TESTMV809(set_up_user8)" -u $$SQLUSER8X$$;
+sh sh runmxci.ksh -i "TESTMV809(set_up_user7)" -u $$SQLUSER7X$$;
+sh sh runmxci.ksh -i "TESTMV809(test1)" -u $$SQLUSER8X$$;
+sh sh runmxci.ksh -i "TESTMV809(check_mv1)" -u $$SQLUSER7X$$;
+sh sh runmxci.ksh -i "TESTMV809(clean_up_user7)" -u $$SQLUSER7X$$;
+sh sh runmxci.ksh -i "TESTMV809(clean_up_user8)" -u $$SQLUSER8X$$;
+exit;
+
+---------------------------------------------------------
+?section set_up_user7
+#ifNSK
+-- This CQD is added for creating a table  with no
+-- partition or primary key when the POS is enabled.
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+#ifNSK
+#ifLINUX
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+#ifLINUX
+log LOGMV809;
+-- section: set_up_user7, active user: sql_user7
+set schema catmvs.t809_u7;
+
+create schema catmvs.t809_u7;
+
+create table T_809_T2 (a int not null not droppable,b int) attribute on statement mvs allowed;
+
+create mv T_809_MV1
+refresh on statement
+initialize on create
+as
+    select
+        a, d
+    from catmvs.t809_u8.T_809_T1,T_809_T2
+    where
+        catmvs.t809_u8.T_809_T1.c=T_809_T2.a
+;
+
+insert into T_809_T2 values(1,1),(2,2),(3,3),(4,4);
+
+---------------------------------------------------------
+?section set_up_user8
+#ifNSK
+-- This CQD is added for creating a table  with no
+-- partition or primary key when the POS is enabled.
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+#ifNSK
+#ifLINUX
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+#ifLINUX
+log LOGMV809;
+-- section: set_up_user8, active user: sql_user8
+set schema catmvs.t809_u8;
+
+create schema catmvs.t809_u8;
+create table T_809_T1 (c int not null not droppable,d int) attribute on statement mvs allowed;
+grant select on T_809_T1 to $$SQLUSER7Q$$;
+
+---------------------------------------------------------
+?section test1
+log LOGMV809;
+-- section: test1, active user: sql_user8
+set parserflags 3;
+
+set schema catmvs.t809_u8;
+
+-- insert: should NOT fail on security
+insert into T_809_T1 values(1,2),(2,3),(3,4);
+
+-- direct update: should NOT fail on security
+update T_809_T1 set d=5 where c=1;
+
+-- indirect update: should NOT fail on security
+update T_809_T1 set c=4 where d=3;
+
+-- delete: should NOT fail on security
+delete from T_809_T1 where c=3;
+
+-- select: should fail on security
+select * from catmvs.t809_u7.T_809_T2;
+
+-- insert: should fail on security
+insert into table(mv_table catmvs.t809_u7.T_809_MV1) values (1,1,1,1);
+
+-- update: should fail on security
+update table(mv_table catmvs.t809_u7.T_809_MV1) set a=4;
+
+-- delete: should fail on security
+delete from table(mv_table catmvs.t809_u7.T_809_MV1) where a=5;
+
+?section check_mv1
+log LOGMV809;
+-- section: check_mv1, active user: sql_user7
+set schema catmvs.t809_u7;
+
+prepare stat1 from
+    select
+        a, d
+    from catmvs.t809_u8.T_809_T1,T_809_T2
+    where
+        catmvs.t809_u8.T_809_T1.c=T_809_T2.a
+    order by a,d;
+prepare stat2 from
+    select
+        a, d
+    from T_809_MV1
+    order by a,d;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV809;
+log LOGMV809;
+
+---------------------------------------------------------
+?section clean_up_user7
+log LOGMV809;
+-- section: clean_up_user7, active user: sql_user7
+drop schema catmvs.t809_u7 cascade; 
+
+---------------------------------------------------------
+?section clean_up_user8
+log LOGMV809;
+-- section: clean_up_user8, active user: sql_user8
+drop schema catmvs.t809_u8 cascade;

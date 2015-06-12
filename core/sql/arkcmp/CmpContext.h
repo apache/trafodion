@@ -434,11 +434,9 @@ public :
 
   // context histogram cache
   HistogramCache* getHistogramCache() { return histogramCache_; }
-
   // Global pointer to the OptimizerSimulator that encapsulates
   // all of the OSIM related information.
-  OptimizerSimulator* getOptimizerSimulator()  { return optSimulator_; }
-  
+  OptimizerSimulator* & getOptimizerSimulator()  { return optSimulator_; }
   // used by stats caching logic
   Int64 getLastUpdateStatsTime() { return lastUpdateStatsTime_; }
   void setLastUpdateStatsTime(Int64 updateTime) { lastUpdateStatsTime_ = updateTime; }

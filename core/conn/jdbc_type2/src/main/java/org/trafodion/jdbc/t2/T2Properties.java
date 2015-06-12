@@ -19,6 +19,7 @@
 package org.trafodion.jdbc.t2;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -84,6 +85,7 @@ public class T2Properties {
 
     int loginTimeout_;
 
+    private Properties defaults_;
     private Properties inprops_;
     private final String propPrefix_ = "t2jdbc.";
 
@@ -964,9 +966,9 @@ public class T2Properties {
         ret = (String) inprops_.get(token);
         }
         // props file next
-//		if (ret == null && defaults_ != null) {
-//			ret = defaults_.getProperty(token);
-//		}
+		if (ret == null && defaults_ != null) {
+			ret = defaults_.getProperty(token);
+		}
         // system properties with the t4sqlmx prefix
         if (ret == null) {
             ret = System.getProperty(propPrefix_ + token);
@@ -980,6 +982,29 @@ public class T2Properties {
     private void setProperties() {
         // TODO Auto-generated method stub
 
+	defaults_ = null;
+	String propsFile = getProperty("properties");
+	if (propsFile != null) {
+	    propsFile = propsFile.trim();
+	    if (propsFile.length() != 0) {
+		FileInputStream fis = null;
+		try {
+		    fis = new FileInputStream(new File(propsFile));
+		    defaults_ = new Properties();
+		    defaults_.load(fis);
+		} catch (Exception ex) {
+		    fis = null;
+		} finally {
+		    try {
+			if (fis != null) {
+			    fis.close();
+			}
+		    }catch (IOException ioe) {
+			// ignore
+		    }
+		}
+	    }
+	}
         setCatalog(getProperty("catalog"));
         setSchema(getProperty("schema"));
         setBatchBinding(getProperty("batchBinding"));

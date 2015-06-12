@@ -1,0 +1,653 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+---------- create rewrite publish table ------------
+-- In the future this should be part of init sql  --
+----------------------------------------------------
+
+control query default MV_REWRITE '1';
+create catalog MANAGEABILITY;
+create schema MANAGEABILITY.MV_REWRITE;
+
+create table MANAGEABILITY.MV_REWRITE.rewrite_publish
+   ( operation_timestamp  largeint not null,
+     redef_time           largeint not null,
+     object_uid           largeint not null,
+     schema_uid           largeint not null,
+     catalog_uid          largeint not null,
+     object_name          char(499) not null,
+     object_new_name      char(499),
+     descriptor_index     int,
+     operation_type       char(2) not null,
+     ignore_changes_used  char(2),
+     primary key (operation_timestamp, redef_time));
+
+
+set pattern $$CURR_SCHEMA_VERSION$$ 2400;
+set param ?mvDescSubId  -2;
+set param ?mvName 'SUMBY_DAY';
+
+-- query the TEXT SMD table for the descriptor of an MV
+prepare getMVDescFromTEXT  from
+  SELECT substring(TEXT, 1, 3000) as mv_descriptor_text
+         from  definition_schema_version_$$CURR_SCHEMA_VERSION$$.TEXT t,
+               definition_schema_version_$$CURR_SCHEMA_VERSION$$.objects o
+         where o.object_name = ?mvName and
+               o.OBJECT_TYPE = 'MV' and
+               o.object_uid = t.object_uid and
+               t.object_sub_id = ?mvDescSubId;
+
+drop schema sumby cascade;
+create schema sumby;
+set schema sumby;
+
+drop table fact cascade;
+drop table dim;
+
+create table fact (
+	fday   int,
+	fmonth int,
+	fyear  int,
+	fitem  int,
+	fdep   int,
+	fstore int,
+	fstate int,
+	fprice numeric (8,2),
+	dimkey int);
+
+create table dim (dkey int, dimdata int);
+
+--===========================================
+-- Single dimention
+--===========================================
+
+create mv sumby_day
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear;
+
+create mv sumby_month
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear;
+
+create mv sumby_year
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear;
+
+create mv sumby_item
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fitem oitem, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fitem, fdep;
+
+create mv sumby_dep
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fdep;
+
+create mv sumby_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fstore, fstate;
+
+create mv sumby_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fstate;
+
+--===========================================
+-- Two dimentions
+--===========================================
+
+create mv sumby_day_item
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fitem oitem, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fitem, fdep;
+
+create mv sumby_month_item
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fitem oitem, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, fitem, fdep;
+
+create mv sumby_year_item
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fitem oitem, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, fitem, fdep;
+
+create mv sumby_day_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fstore, fstate;
+
+create mv sumby_month_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, fstore, fstate;
+
+create mv sumby_year_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, fstore, fstate;
+
+--===========================================
+
+create mv sumby_day_dep
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fdep;
+
+create mv sumby_month_dep
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, fdep;
+
+create mv sumby_year_dep
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fdep odep
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, fdep;
+
+create mv sumby_day_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, fstate;
+
+create mv sumby_month_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, fstate;
+
+create mv sumby_year_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, fstate;
+
+--===========================================
+-- Three dimentions
+--===========================================
+
+create mv sumby_day_item_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fitem, fdep, 
+	             fstore, fstate;
+
+create mv sumby_month_item_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear,
+	             fitem, fdep, 
+	             fstore, fstate;
+
+create mv sumby_year_item_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, 
+	             fitem, fdep, 
+	             fstore, fstate;	    
+
+--===========================================
+
+create mv sumby_day_item_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+create mv sumby_month_item_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+create mv sumby_year_item_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fitem oitem, fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, 
+	             fitem, fdep, 
+	             fstate;
+
+--===========================================
+
+create mv sumby_day_dep_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+create mv sumby_month_dep_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+create mv sumby_year_dep_store
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fdep odep, 
+	           fstore ostore, fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, 
+	             fdep, 
+	             fstore, fstate;
+
+--===========================================
+
+create mv sumby_day_dep_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fday oday, fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fday, fmonth, fyear, 
+	             fdep, 
+	             fstate;
+
+create mv sumby_month_dep_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fmonth omonth, fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fmonth, fyear, 
+	             fdep, 
+	             fstate;
+
+create mv sumby_year_dep_state
+	refresh on request
+	initialized on refresh
+	as  select sum(fprice) total_price, 
+		   sum(dimdata) sumdata,
+		   fyear oyear,
+	           fdep odep, 
+	           fstate ostate
+	    from fact, dim
+	    where dimkey=dkey
+	    group by fyear, 
+	             fdep, 
+	             fstate;
+
+--===========================================
+
+SELECT   substring(OBJECT_NAME,1,24) object_name,
+         DESCRIPTOR_INDEX D_I, OPERATION_TYPE O_T
+  FROM manageability.mv_rewrite.rewrite_publish;
+
+
+log SUMBY_DAY.xml clear;
+set param ?mvName SUMBY_DAY;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH.xml clear;
+set param ?mvName SUMBY_MONTH;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR.xml clear;
+set param ?mvName SUMBY_YEAR;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_ITEM.xml clear;
+set param ?mvName SUMBY_ITEM;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DEP.xml clear;
+set param ?mvName SUMBY_DEP;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_STORE.xml clear;
+set param ?mvName SUMBY_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_STATE.xml clear;
+set param ?mvName SUMBY_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_ITEM.xml clear;
+set param ?mvName SUMBY_DAY_ITEM;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_ITEM.xml clear;
+set param ?mvName SUMBY_MONTH_ITEM;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_ITEM.xml clear;
+set param ?mvName SUMBY_YEAR_ITEM;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_STORE.xml clear;
+set param ?mvName SUMBY_DAY_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_STORE.xml clear;
+set param ?mvName SUMBY_MONTH_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_STORE.xml clear;
+set param ?mvName SUMBY_YEAR_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_DEP.xml clear;
+set param ?mvName SUMBY_DAY_DEP;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_DEP.xml clear;
+set param ?mvName SUMBY_MONTH_DEP;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_DEP.xml clear;
+set param ?mvName SUMBY_YEAR_DEP;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_STATE.xml clear;
+set param ?mvName SUMBY_DAY_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_STATE.xml clear;
+set param ?mvName SUMBY_MONTH_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_STATE.xml clear;
+set param ?mvName SUMBY_YEAR_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_ITEM_STORE.xml clear;
+set param ?mvName SUMBY_DAY_ITEM_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_ITEM_STORE.xml clear;
+set param ?mvName SUMBY_MONTH_ITEM_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_ITEM_STORE.xml clear;
+set param ?mvName SUMBY_YEAR_ITEM_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_ITEM_STATE.xml clear;
+set param ?mvName SUMBY_DAY_ITEM_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_ITEM_STATE.xml clear;
+set param ?mvName SUMBY_MONTH_ITEM_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_ITEM_STATE.xml clear;
+set param ?mvName SUMBY_YEAR_ITEM_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_DEP_STORE.xml clear;
+set param ?mvName SUMBY_DAY_DEP_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_DEP_STORE.xml clear;
+set param ?mvName SUMBY_MONTH_DEP_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_DEP_STORE.xml clear;
+set param ?mvName SUMBY_YEAR_DEP_STORE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_DAY_DEP_STATE.xml clear;
+set param ?mvName SUMBY_DAY_DEP_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_MONTH_DEP_STATE.xml clear;
+set param ?mvName SUMBY_MONTH_DEP_STATE;
+execute getMVDescFromTEXT;
+log;
+
+log SUMBY_YEAR_DEP_STATE.xml clear;
+set param ?mvName SUMBY_YEAR_DEP_STATE;
+execute getMVDescFromTEXT;
+log;
+ 
+
+
+SELECT object_name
+  FROM definition_schema_version_$$CURR_SCHEMA_VERSION$$.objects
+ where OBJECT_TYPE = 'MV';
+               
+=================================================================================
+
+cccheckout qms/debug/sumby/SUMBY_DAY.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR.xml
+cccheckout qms/debug/sumby/SUMBY_ITEM.xml
+cccheckout qms/debug/sumby/SUMBY_DEP.xml
+cccheckout qms/debug/sumby/SUMBY_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_ITEM.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_ITEM.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_ITEM.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_DEP.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_DEP.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_DEP.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_ITEM_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_ITEM_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_ITEM_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_ITEM_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_ITEM_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_ITEM_STATE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_DEP_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_MONTH_DEP_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_YEAR_DEP_STORE.xml
+cccheckout qms/debug/sumby/SUMBY_DAY_DEP_STATE
+cccheckout qms/debug/sumby/SUMBY_MONTH_DEP_STATE
+cccheckout qms/debug/sumby/SUMBY_YEAR_DEP_STATE

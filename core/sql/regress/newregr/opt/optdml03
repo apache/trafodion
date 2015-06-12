@@ -1,0 +1,746 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--======================================================--
+--  This Test suite verifies that the optimizer chooses --
+-- expected plans for the TPCH100X schhp8 database.          --
+--======================================================--
+
+control query default query_cache '0';
+
+?section explainIt
+---------------------------------------------------------------
+--  Prepared query for displaying chosen plan using EXPLAIN. --
+---------------------------------------------------------------
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,        
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,        
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,        
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+         10
+        ) tab_name,        
+        cast(cardinality as char(11)) cardinal,        
+        'FUNKY_OPT_UNIQUE',
+         cast(operator_cost as char(11)) op_cost,
+         cast(total_cost as char(11)) tot_cost
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+
+?section setSCH
+-----------------------------------------
+-- Set fake schema for rest of script. --
+-----------------------------------------
+#ifMX
+set schema TPCH100X.SCHHP8;
+#ifMX
+
+?section startLog
+----------------------------
+--  Start logging output. --
+----------------------------
+LOG aoptdml03 clear;
+
+?section cdefs
+-------------------------------------------------
+--  Control query defaults for schhp8 test run. --
+-------------------------------------------------
+control query default ARKCMP_FAKE_HW 'ON';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+control query default HIST_ON_DEMAND_STATS_SIZE  '0';
+control query default DEF_NUM_SMP_CPUS '1';
+control query default MAX_ESPS_PER_CPU_PER_OP '1';
+control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '8';
+control query default OPTIMIZATION_LEVEL 'FULL';
+control query default ZIG_ZAG_TREES 'ON';
+
+control query default HIST_SAME_TABLE_PRED_REDUCTION '0.0';
+
+control query default fake_volume_assignments 'ON';
+
+control query default PREFERRED_PROBING_ORDER_FOR_NESTED_JOIN 'OFF';
+
+control query default target_code 'RELEASE';
+control query default MEMORY_UNITS_SIZE	 '20490';
+control query default MDAM_SCAN_METHOD 'ON';
+control query default CACHE_HISTOGRAMS 'ON';
+control query default HIST_DEFAULT_BASE_SEL_FOR_LIKE_WILDCARD '0.5';
+control query default HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+control query default MSCF_ET_CPU '0.000014';
+control query default TARGET_CPU_FREQUENCY '1600';
+control query default REFERENCE_CPU_FREQUENCY '199';
+
+control query default MSCF_ET_IO_TRANSFER '0.00002';
+control query default TARGET_IO_SEQ_READ_RATE '50.0';
+control query default REFERENCE_IO_SEQ_READ_RATE '50.0';
+
+control query default MSCF_ET_NUM_IO_SEEKS '.0038';
+control query default TARGET_IO_SEEK_TIME '.0038';
+control query default REFERENCE_IO_SEEK_TIME '.0038';
+
+-- disabling the inner table key scan hueristic for subquery unnesting
+-- This setting will allow queries 17 and 20 to be unnested.
+control query default COMP_BOOL_168 'ON' ;
+
+
+?section tests
+-- test new scan optimizer first
+obey optdml03(q01);
+explain options 'f' xx;
+obey optdml03(q02);
+explain options 'f' xx;
+obey optdml03(q03);
+explain options 'f' xx;
+obey optdml03(q04);
+explain options 'f' xx;
+obey optdml03(q05);
+explain options 'f' xx;
+obey optdml03(q06);
+explain options 'f' xx;
+obey optdml03(q07);
+explain options 'f' xx;
+obey optdml03(q08);
+explain options 'f' xx;
+obey optdml03(q09);
+explain options 'f' xx;
+obey optdml03(q10);
+explain options 'f' xx;
+obey optdml03(q11);
+explain options 'f' xx;
+obey optdml03(q12);
+explain options 'f' xx;
+obey optdml03(q13);
+explain options 'f' xx;
+obey optdml03(q14);
+explain options 'f' xx;
+obey optdml03(q15);
+explain options 'f' xx;
+obey optdml03(q16);
+explain options 'f' xx;
+obey optdml03(q17);
+explain options 'f' xx;
+obey optdml03(q18);
+explain options 'f' xx;
+obey optdml03(q19);
+explain options 'f' xx;
+obey optdml03(q20);
+explain options 'f' xx;
+obey optdml03(q21);
+explain options 'f' xx;
+obey optdml03(q22);
+explain options 'f' xx;
+
+-- now test old scan optimizer
+control query default fso_to_use '0';
+control query default query_cache '0';
+
+obey optdml03(q01);
+explain options 'f' xx;
+obey optdml03(q02);
+explain options 'f' xx;
+obey optdml03(q03);
+explain options 'f' xx;
+obey optdml03(q04);
+explain options 'f' xx;
+obey optdml03(q05);
+explain options 'f' xx;
+obey optdml03(q06);
+explain options 'f' xx;
+obey optdml03(q07);
+explain options 'f' xx;
+obey optdml03(q08);
+explain options 'f' xx;
+obey optdml03(q09);
+explain options 'f' xx;
+obey optdml03(q10);
+explain options 'f' xx;
+obey optdml03(q11);
+explain options 'f' xx;
+obey optdml03(q12);
+explain options 'f' xx;
+obey optdml03(q13);
+explain options 'f' xx;
+obey optdml03(q14);
+explain options 'f' xx;
+obey optdml03(q15);
+explain options 'f' xx;
+obey optdml03(q16);
+explain options 'f' xx;
+obey optdml03(q17);
+explain options 'f' xx;
+obey optdml03(q18);
+explain options 'f' xx;
+obey optdml03(q19);
+explain options 'f' xx;
+obey optdml03(q20);
+explain options 'f' xx;
+obey optdml03(q21);
+explain options 'f' xx;
+obey optdml03(q22);
+explain options 'f' xx;
+
+?section stopLog
+---------------------------
+--  Stop logging output. --
+---------------------------
+LOG;
+
+exit;
+
+?section q01
+--------------------
+--  TPCH Query 01 --
+--------------------
+prepare XX from
+SELECT l_returnflag, l_linestatus, SUM(l_quantity) AS sum_qty,
+       CAST(SUM(l_extendedprice) AS NUMERIC(18,2)) AS sum_base_price,
+       CAST(SUM(l_extendedprice * (1-l_discount)) AS NUMERIC(18,2)) AS sum_disc_price,
+       CAST(SUM(l_extendedprice * (1-l_discount) * (1 + l_tax))
+            AS NUMERIC(18,2)) AS sum_charge,
+       AVG(l_quantity) AS avg_qty,
+       AVG(l_extendedprice) AS avg_price,
+       AVG(CAST(l_discount AS NUMERIC (10,3))) AS avg_disc,
+       COUNT(*) AS count_order
+FROM lineitem
+WHERE l_shipdate <= DATE '1998-12-01' - INTERVAL '90' DAY
+GROUP BY l_returnflag, l_linestatus
+ORDER BY l_returnflag, l_linestatus;
+
+execute explainIt;
+
+?section q02
+--------------------
+--  TPCH Query 02 --
+--------------------
+prepare XX from
+SELECT [FIRST 100] s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address,
+       s_phone, s_comment
+FROM part,supplier,partsupp, nation, region
+WHERE p_partkey = ps_partkey
+      AND s_suppkey = ps_suppkey
+      AND p_size = 15
+      AND p_type like  '%BRASS'
+      AND s_nationkey = n_nationkey
+      AND n_regionkey = r_regionkey
+      AND r_name = 'EUROPE'
+      AND ps_supplycost = (SELECT MIN(ps_supplycost)
+                           FROM partsupp, supplier, nation, region
+                           WHERE p_partkey = ps_partkey
+                                 AND s_suppkey = ps_suppkey
+                                 AND s_nationkey = n_nationkey
+                                 AND n_regionkey = r_regionkey
+                                 AND r_name = 'EUROPE')
+ORDER BY s_acctbal desc, n_name, s_name, p_partkey;
+
+execute explainIt;
+
+
+?section q03
+--------------------
+--  TPCH Query 03 --
+--------------------
+prepare XX from
+SELECT [FIRST 10] l_orderkey, 
+       CAST(SUM(l_extendedprice*(1-l_discount))AS NUMERIC(18,2)) AS revenue,
+       o_orderdate, o_shippriority
+FROM customer,orders,lineitem
+WHERE c_mktsegment = 'BUILDING'
+      AND c_custkey = o_custkey
+      AND l_orderkey = o_orderkey
+      AND o_orderdate < DATE '1995-03-15'
+      AND l_shipdate > DATE '1995-03-15'
+GROUP BY l_orderkey, o_orderdate, o_shippriority
+ORDER BY revenue DESC, o_orderdate;
+
+execute explainIt;
+
+
+?section q04
+--------------------
+--  TPCH Query 04 --
+--------------------
+prepare XX from
+SELECT o_orderpriority, COUNT(*) as order_count
+FROM orders
+WHERE o_orderdate >= DATE '1993-07-01'
+      AND o_orderdate < DATE '1993-07-01' + INTERVAL '3' MONTH
+      AND EXISTS (SELECT *
+                  FROM lineitem
+                  WHERE l_orderkey = o_orderkey
+                        AND l_commitdate < l_receiptdate)
+GROUP BY o_orderpriority
+ORDER BY o_orderpriority;
+
+execute explainIt;
+
+
+
+?section q05
+--------------------
+--  TPCH Query 05 --
+--------------------
+prepare XX from
+SELECT n_name, 
+       CAST(SUM(l_extendedprice*(1-l_discount)) AS NUMERIC(18,2)) AS revenue
+FROM customer,orders,lineitem,supplier,nation, region
+WHERE c_custkey = o_custkey
+      AND o_orderkey = l_orderkey
+      AND l_suppkey = s_suppkey
+      AND c_nationkey= s_nationkey
+      AND s_nationkey = n_nationkey
+      AND n_regionkey = r_regionkey
+      AND r_name =  'ASIA'
+      AND o_orderdate >=  DATE '1994-01-01'
+      AND o_orderdate <  DATE '1994-01-01' + INTERVAL '1' YEAR
+GROUP BY n_name
+ORDER BY revenue desc;
+
+execute explainIt;
+
+
+
+?section q06
+--------------------
+--  TPCH Query 06 --
+--------------------
+prepare XX from
+SELECT CAST(SUM(l_extendedprice*l_discount) AS NUMERIC(18,2)) AS revenue
+FROM lineitem
+WHERE l_shipdate >= DATE '1994-01-01'
+      AND l_shipdate < DATE '1994-01-01' + INTERVAL '1' YEAR
+      AND l_discount BETWEEN .06 - 0.01 AND .06 + 0.01
+      AND l_quantity < 24;
+
+execute explainIt;
+
+
+?section q07
+--------------------
+--  TPCH Query 07 --
+--------------------
+prepare XX from
+SELECT supp_nation, cust_nation, yr, sum(volume) as revenue
+   FROM
+    (SELECT n1.n_name as supp_nation, n2.n_name as cust_nation,
+             extract(year from l_shipdate) as yr,
+       CAST(l_extendedprice*(1-l_discount) AS NUMERIC(18,2)) as volume
+     FROM supplier,lineitem,orders,customer, nation n1, nation n2
+     WHERE s_suppkey = l_suppkey
+      AND o_orderkey = l_orderkey
+      AND c_custkey = o_custkey
+      AND s_nationkey = n1.n_nationkey
+      AND c_nationkey = n2.n_nationkey
+      AND ((n1.n_name  = 'FRANCE' AND
+            n2.n_name = 'GERMANY')
+          OR (n1.n_name = 'GERMANY'  AND
+            n2.n_name = 'FRANCE'))
+      AND l_shipdate BETWEEN  DATE '1995-01-01' AND  DATE '1996-12-31') as shipping
+
+GROUP BY supp_nation, cust_nation, yr
+ORDER BY supp_nation, cust_nation, yr;
+
+execute explainIt;
+
+?section q08
+--------------------
+--  TPCH Query 08 --
+--------------------
+prepare XX from
+SELECT yr, sum(CASE when nation = 'BRAZIL'
+                  then volume
+                   else 0 end)
+              / sum(volume) as mkt_share
+  FROM
+    (SELECT extract(year from o_orderdate) as yr,
+       CAST(l_extendedprice*(1-l_discount) AS NUMERIC(16,2)) as volume,
+          n2.n_name as nation
+     FROM part,supplier,lineitem,orders,customer, nation n1, nation  n2,region
+     WHERE p_partkey = l_partkey
+      AND s_suppkey = l_suppkey
+      AND l_orderkey = o_orderkey
+      AND o_custkey = c_custkey
+      AND c_nationkey = n1.n_nationkey
+      AND n1.n_regionkey = r_regionkey
+      AND r_name = 'AMERICA'
+      AND s_nationkey = n2.n_nationkey
+      AND o_orderdate BETWEEN  DATE '1995-01-01' AND  DATE '1996-12-31'
+      AND p_type ='ECONOMY ANODIZED STEEL')  all_nations
+GROUP BY yr
+ORDER BY yr;
+
+execute explainIt;
+
+
+?section q09
+--------------------
+--  TPCH Query 09 --
+--------------------
+
+prepare XX from
+SELECT nation, yr, sum(amount) as sum_profit
+  from  (SELECT n_name as nation, EXTRACT (YEAR from o_orderdate) as yr,
+                l_extendedprice*(1-l_discount)-ps_supplycost*l_quantity as amount
+FROM part,supplier,lineitem,partsupp,orders, nation
+WHERE s_suppkey  = l_suppkey
+      AND ps_suppkey = l_suppkey
+      AND ps_partkey = l_partkey
+      AND p_partkey  = l_partkey
+      AND o_orderkey = l_orderkey
+      AND p_name like '%green%'
+      AND s_nationkey = n_nationkey) as profit
+GROUP BY nation, yr
+ORDER BY nation, yr DESC;
+
+execute explainIt;
+
+?section q10
+--------------------
+--  TPCH Query 10 --
+--------------------
+prepare XX from
+SELECT [FIRST 20] c_custkey, c_name,
+       CAST(SUM(l_extendedprice*(1-l_discount)) AS NUMERIC(18,2)) AS revenue,
+       c_acctbal,  n_name, c_address, c_phone, c_comment
+FROM customer,orders,lineitem, nation
+WHERE c_custkey = o_custkey
+      AND l_orderkey = o_orderkey
+      AND o_orderdate >=  DATE '1993-10-01'
+      AND o_orderdate <  DATE '1993-10-01' + INTERVAL '3' MONTH
+      AND l_returnflag = 'R'
+      AND c_nationkey = n_nationkey
+GROUP BY c_custkey, c_name, c_acctbal, c_phone, n_name,
+         c_address, c_comment
+ORDER BY revenue DESC;
+
+execute explainIt;
+
+?section q11
+--------------------
+--  TPCH Query 11 --
+--------------------
+prepare XX from
+SELECT ps_partkey, SUM(ps_supplycost * ps_availqty) AS ps_value
+FROM partsupp,supplier,nation
+WHERE ps_suppkey = s_suppkey
+      AND s_nationkey = n_nationkey
+      AND n_name = 'GERMANY'
+GROUP BY ps_partkey
+HAVING SUM(ps_supplycost*ps_availqty) >
+       (SELECT SUM(ps_supplycost*ps_availqty) * 0.000001
+        FROM partsupp,supplier,nation
+        WHERE ps_suppkey = s_suppkey
+              AND s_nationkey = n_nationkey
+              AND n_name = 'GERMANY')
+ORDER BY ps_value DESC;
+
+execute explainIt;
+
+?section q12
+--------------------
+--  TPCH Query 12 --
+--------------------
+prepare XX from
+SELECT l_shipmode,
+       SUM(CASE WHEN o_orderpriority ='1-URGENT'
+                     OR o_orderpriority ='2-HIGH'
+                THEN 1
+                ELSE 0
+           END) AS high_line_count,
+        SUM(CASE WHEN o_orderpriority <> '1-URGENT'
+                      AND o_orderpriority <> '2-HIGH'
+                 THEN 1
+                 ELSE 0
+            END) AS low_line_count
+FROM orders,lineitem
+where o_orderkey = l_orderkey
+      AND l_shipmode in ('MAIL','SHIP')
+      AND l_commitdate < l_receiptdate
+      AND l_shipdate < l_commitdate
+      AND l_receiptdate >=  DATE '1994-01-01'
+      AND l_receiptdate <  DATE '1994-01-01' + INTERVAL '1' YEAR
+GROUP BY l_shipmode
+ORDER BY l_shipmode;
+
+execute explainIt;
+
+?section q13
+--------------------
+--  TPCH Query 13 --
+--------------------
+prepare XX from
+
+SELECT yr, sum(revenue) as revenue
+  FROM
+    (SELECT extract(year from o_orderdate) as yr,
+       CAST(l_extendedprice * (1-l_discount) AS NUMERIC(18,2)) as revenue
+FROM lineitem, orders
+WHERE o_orderkey = l_orderkey
+      AND o_clerk = 'Clerk#000000088'
+      AND l_returnflag = 'R') as performance
+GROUP BY yr
+ORDER BY yr;
+
+execute explainIt;
+
+
+?section q13new
+---------------------------------
+--  TPCH Query 13, new version --
+---------------------------------
+prepare XX from
+SELECT c_count, count(*) AS custdist
+FROM (SELECT c_custkey, count(o_orderkey)
+      FROM customer left outer join orders ON
+                    c_custkey = o_custkey
+                    AND o_comment NOT LIKE '%special%requests%'
+      GROUP BY c_custkey) AS c_orders (c_custkey, c_count)
+GROUP BY c_count
+ORDER BY custdist DESC, c_count DESC;
+
+execute explainIt;
+
+
+?section q14
+--------------------
+--  TPCH Query 14 --
+--------------------
+prepare XX from
+SELECT 100.00 * SUM(CASE WHEN p_type = 'promo' -- p_type like 'PROMO%'
+                         THEN (l_extendedprice * (1-l_discount))
+                         ELSE 0
+                    END) / 
+        SUM((l_extendedprice*(1-l_discount))) AS promo_revenue
+FROM  lineitem, part
+WHERE l_partkey = p_partkey
+      AND l_shipdate >=  DATE '1995-09-01'
+      AND l_shipdate <  DATE '1995-09-01' + INTERVAL '1' MONTH;
+
+execute explainIt;
+
+?section q15
+--------------------
+--  TPCH Query 15 --
+--------------------
+create view revenue (supplier_no, total_revenue) AS
+     SELECT l_suppkey, SUM(l_extendedprice * (1-l_discount))
+     FROM lineitem
+     WHERE l_shipdate >= DATE '1996-01-01'
+       AND l_shipdate <  DATE '1996-01-01' + INTERVAL '3' MONTH
+     GROUP BY l_suppkey;
+
+prepare XX from
+SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+FROM  supplier, revenue
+WHERE s_suppkey = supplier_no
+  AND total_revenue = (SELECT MAX(total_revenue)
+                       FROM revenue)
+ORDER BY s_suppkey;
+
+execute explainIt;
+
+drop view revenue;
+
+--prepare XX from
+--SELECT s_suppkey,s_name,s_address,s_phone, total_revenue
+--FROM supplier, (SELECT l_suppkey, SUM(l_extendedprice * (1-l_discount))
+--                FROM lineitem
+--                WHERE l_shipdate >=  DATE '1996-01-01'
+--                      AND l_shipdate <  DATE '1996-01-01' + INTERVAL '3' MONTH
+--                GROUP BY l_suppkey) revenue(supplier_no, total_revenue)
+--WHERE s_suppkey = supplier_no
+--      AND total_revenue = (SELECT MAX(total_revenue)
+--                           FROM (SELECT l_suppkey,
+--                                        sum(l_extendedprice * (1-l_discount))
+--                                 FROM lineitem
+--                                 WHERE l_shipdate >=  DATE '1996-01-01'
+--                                 AND l_shipdate <  DATE '1996-01-01' + INTERVAL '3' MONTH
+--                                 GROUP BY l_suppkey)
+--                           revenue(supplier_no, total_revenue))
+--ORDER BY s_suppkey;
+
+?section q16
+--------------------
+--  TPCH Query 16 --
+--------------------
+prepare XX from
+SELECT p_brand, p_type, p_size, COUNT(DISTINCT ps_suppkey) AS supplier_cnt
+FROM partsupp, part
+WHERE p_partkey = ps_partkey
+      AND p_brand <> 'Brand#45'
+      AND p_type NOT LIKE 'MEDIUM POLISHED%'
+      AND p_size IN (49, 14, 23, 45, 19, 3, 36, 9)
+      AND ps_suppkey NOT IN (SELECT s_suppkey
+                             FROM supplier
+                             WHERE s_comment LIKE
+                                  '%Better Business Bureau%Complaints%')
+GROUP BY p_brand, p_type, p_size
+ORDER BY supplier_cnt DESC, p_brand, p_type, p_size;
+
+execute explainIt;
+
+?section q17
+--------------------
+--  TPCH Query 17 --
+--------------------
+prepare XX from
+SELECT CAST((SUM(l_extendedprice)/7.0) AS NUMERIC(18,2)) AS avg_yearly
+FROM lineitem, part
+WHERE p_partkey = l_partkey
+      AND p_brand = 'Brand#23'
+      AND p_container = 'MED BOX'
+      AND l_quantity < (SELECT 0.2*avg(l_quantity)
+                        FROM lineitem 
+                        WHERE l_partkey = p_partkey);
+
+execute explainIt;
+
+?section q18
+--------------------
+--  TPCH Query 18 --
+--------------------
+prepare XX from
+SELECT [FIRST 100] c_name, c_custkey, o_orderkey, o_orderdate, o_totalprice,
+                   SUM(l_quantity)
+FROM customer, orders, lineitem
+WHERE o_orderkey IN (SELECT l_orderkey
+                     FROM lineitem
+                     GROUP BY l_orderkey HAVING SUM(l_quantity) >  300)
+      AND c_custkey = o_custkey
+      AND o_orderkey = l_orderkey
+GROUP BY c_name, c_custkey, o_orderkey, o_orderdate, o_totalprice
+ORDER BY o_totalprice DESC, o_orderdate;
+
+execute explainIt;
+
+?section q19
+--------------------
+--  TPCH Query 19 --
+--------------------
+prepare XX from
+SELECT CAST(SUM(l_extendedprice*(1-l_discount)) AS NUMERIC(18,2)) AS revenue
+FROM lineitem, part
+WHERE 
+   (    p_partkey = l_partkey
+    AND p_brand = 'Brand#24'
+    AND p_container IN ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG' )
+    AND l_quantity >= 1 AND l_quantity <= 1 + 10
+    AND p_size BETWEEN 1 AND 5
+    AND l_shipmode IN ( 'AIR', 'AIR REG' )
+    AND l_shipinstruct = 'DELIVER IN PERSON' 
+   )
+ OR
+   (    p_partkey = l_partkey
+    AND p_brand = 'Brand#16'
+    AND p_container IN ( 'MED CASE', 'MED BOX', 'MED PACK', 'MED PKG' )
+    AND l_quantity >= 10 AND l_quantity <= 10 + 10
+    AND p_size BETWEEN 1 AND 10
+    AND l_shipmode IN ( 'AIR', 'AIR REG' )
+    AND l_shipinstruct = 'DELIVER IN PERSON' 
+   )
+ OR
+   (    p_partkey = l_partkey
+    AND p_brand = 'Brand#42'
+    AND p_container IN ( 'LG CASE', 'LG BOX', 'LG PACK', 'LG PKG' )
+    AND l_quantity >= 20 AND l_quantity <= 20 + 10
+    AND p_size BETWEEN 1 AND 15
+    AND l_shipmode IN ( 'AIR', 'AIR REG' )
+    AND l_shipinstruct = 'DELIVER IN PERSON' 
+   );
+
+execute explainIt;
+
+?section q20
+--------------------
+--  TPCH Query 20 --
+--------------------
+prepare XX from
+SELECT s_name, s_address
+FROM supplier, nation
+WHERE s_suppkey IN (SELECT ps_suppkey
+                    FROM partsupp
+                    WHERE ps_partkey IN (SELECT p_partkey
+                                         FROM part
+                                         WHERE p_name LIKE 'forest%')
+                      AND ps_availqty > (SELECT 0.5 * sum(l_quantity)
+                                         FROM lineitem
+                                         WHERE l_partkey = ps_partkey
+                                           AND l_suppkey = ps_suppkey
+                                           AND l_shipdate >= DATE '1994-01-01'
+                                           AND l_shipdate <  DATE '1994-01-01'
+                                                              + INTERVAL '1' YEAR)
+                     )
+  AND s_nationkey = n_nationkey
+  AND n_name = 'CANADA'
+ORDER by s_name;
+
+execute explainIt;
+
+?section q21
+--------------------
+--  TPCH Query 21 --
+--------------------
+prepare XX from
+SELECT [FIRST 100] s_name, count(*) as numwait
+FROM supplier, lineitem l1, part, orders, nation
+WHERE s_suppkey = l1.l_suppkey
+  AND l1.l_partkey = p_partkey
+  AND o_orderkey = l1.l_orderkey
+  AND o_orderstatus = 'F'
+  AND l1.l_receiptdate > l1.l_commitdate
+  AND EXISTS (SELECT *
+              FROM lineitem l2
+              WHERE l2.l_orderkey = l1.l_orderkey
+                AND l2.l_suppkey <> l1.l_suppkey)
+  AND NOT EXISTS (SELECT *
+                  FROM lineitem l3
+                  WHERE l3.l_orderkey = l1.l_orderkey
+                    AND l3.l_suppkey <> l1.l_suppkey
+                    AND l3.l_receiptdate > l3.l_commitdate)
+  AND s_nationkey = n_nationkey
+  AND n_name = 'SAUDI ARABIA'
+GROUP BY s_name
+ORDER BY numwait DESC, s_name;
+
+execute explainIt;
+
+?section q22
+--------------------
+--  TPCH Query 22 --
+--------------------
+prepare XX from
+SELECT cntrycode, count(*) AS numcust, sum(c_acctbal) AS totacctbal
+FROM (SELECT SUBSTRING(c_phone FROM 1 FOR 2) AS cntrycode, c_acctbal
+      FROM customer
+      WHERE SUBSTRING(c_phone FROM 1 FOR 2) IN ('13','17','18','23','29','30','31')
+        AND c_acctbal > (SELECT AVG(c_acctbal)
+                         FROM customer
+                         WHERE c_acctbal > 0.00
+                           AND SUBSTRING (c_phone FROM 1 FOR 2) IN
+                                               ('13','17','18','23','29','30','31'))
+        AND NOT EXISTS (SELECT *
+                        FROM orders
+                        WHERE o_custkey = c_custkey)
+       ) AS custsale
+GROUP BY cntrycode
+ORDER BY cntrycode;
+
+execute explainIt;

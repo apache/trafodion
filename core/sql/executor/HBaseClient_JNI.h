@@ -301,7 +301,7 @@ public:
         jintArray jKvFamLen, jintArray jKvFamOffset,
         jlongArray jTimestamp, 
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
-        jintArray jKvsPerRow, jint numCellsReturned);
+        jintArray jKvsPerRow, jint numCellsReturned, jint numRowsReturned);
   void getResultInfo();
   void cleanupResultInfo();
   HTC_RetCode fetchRows();
@@ -453,6 +453,8 @@ typedef enum {
  ,HBC_ERROR_REL_HTC_EXCEPTION
  ,HBC_ERROR_CREATE_PARAM
  ,HBC_ERROR_CREATE_EXCEPTION
+ ,HBC_ERROR_ALTER_PARAM
+ ,HBC_ERROR_ALTER_EXCEPTION
  ,HBC_ERROR_DROP_PARAM
  ,HBC_ERROR_DROP_EXCEPTION
  ,HBC_ERROR_LIST_PARAM
@@ -519,6 +521,7 @@ public:
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies, NABoolean isMVCC);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
                      int numSplits, int keyLength, const char** splitValues, Int64 transID, NABoolean isMVCC);
+  HBC_RetCode alter(const char* fileName, NAText*  hbaseOptions, Int64 transID);
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
@@ -537,6 +540,7 @@ public:
   HBC_RetCode setArchivePermissions(const char * path);
   HBC_RetCode getBlockCacheFraction(float& frac);
   HBC_RetCode getHbaseTableInfo(const char* tblName, Int32& indexLevels, Int32& blockSize);
+  HBC_RetCode getRegionsNodeName(const char* tblName, Int32 partns, ARRAY(const char *)& nodeNames);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -579,6 +583,7 @@ private:
    ,JM_CREATE
    ,JM_CREATEK
    ,JM_TRUNCABORT
+   ,JM_ALTER
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL
@@ -599,6 +604,7 @@ private:
    ,JM_GET_HBTI
    ,JM_CREATE_COUNTER_TABLE  
    ,JM_INCR_COUNTER
+   ,JM_GET_REGN_NODES
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -676,6 +682,7 @@ public:
   HVC_RetCode hdfsCreateFile(const char* path);
   HVC_RetCode hdfsWrite(const char* data, Int64 len);
   HVC_RetCode hdfsClose();
+  HVC_RetCode executeHiveSQL(const char* hiveSQL);
   // Get the error description.
   virtual char* getErrorText(HVC_RetCode errEnum);
   
@@ -705,6 +712,7 @@ private:
    ,JM_HDFS_CREATE_FILE
    ,JM_HDFS_WRITE
    ,JM_HDFS_CLOSE
+   ,JM_EXEC_HIVE_SQL
    ,JM_LAST
   };
   static jclass          javaClass_; 

@@ -1,0 +1,16 @@
+>>obey TEST_3_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>DROP TABLE tab1B;
+
+*** ERROR[11033] Object CAT1.SCHM.TAB1B cannot be dropped because it is being used by trigger CAT1.SCHM.TR.
+
+*** ERROR[1031] Object CAT1.SCHM.TAB1B could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------------------
+>>LOG;

@@ -1,0 +1,316 @@
+>>
+>>-- Run Tests
+>>  obey TESTMV519(TEST1);
+>>
+>>-- table with no rangelog, create and drop an on request MV on it
+>>
+>>create table t1 (a int) attribute no rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>create mv mv1 refresh on request 
++>initialized on refresh
++>as
++>select sum(a) 
++>as
++>sa from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>
+>>drop table t1;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------
+>>  obey TESTMV519(TEST2);
+>>
+>>-- table with manual rangelog, create and drop an on request MV on it
+>>
+>>create table t1 (a int) attribute manual rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>create mv mv1 refresh on request 
++>initialized on refresh
++>as
++>select sum(a) 
++>as
++>sa from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>drop table t1;
+
+--- SQL operation complete.
+>>----------------------------------------------------------------
+>>  obey TESTMV519(TEST3);
+>>
+>>-- table with automatic rangelog, create and drop an on request MV on it
+>>
+>>create table t1 (a int) attribute automatic rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>create mv mv1 refresh on request 
++>initialized on refresh
++>as
++>select sum(a) 
++>as
++>sa from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>drop table t1;
+
+--- SQL operation complete.
+>>----------------------------------------------------------------
+>>  obey TESTMV519(TEST4);
+>>
+>>-- table with mixed rangelog, create and drop an on request MV on it
+>>
+>>create table t1 (a int) attribute mixed rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>create mv mv1 refresh on request 
++>initialized on refresh
++>as
++>select sum(a) 
++>as
++>sa from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>insert into time_table (select redef_time
++>                        from HP_DEFINITION_SCHEMA.objects o,
++>		             HP_SYSTEM_CATALOG.system_schema.schemata s
++>		        where s.schema_uid = o.schema_uid
++>			      and s.schema_name = 'MVSCHM'
++>			      and object_name = 'T1'
++>			      and OBJECT_NAME_SPACE = 'TA');
+
+--- 1 row(s) inserted.
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>execute compare_timestamps ;
+
+(EXPR)                  
+------------------------
+
+Redef time performed    
+
+--- 1 row(s) selected.
+>>
+>>delete from time_table;
+
+--- 1 row(s) deleted.
+>>drop table t1;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Clean and Exit
+>>
+>>obey TESTMV519(CLEAN_UP);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop table time_table;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+

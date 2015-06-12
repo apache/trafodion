@@ -1,0 +1,93 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- tentative execution of before triggers
+
+
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+
+obey TEST_4_2_3(clean_up);
+obey TEST_4_2_3(set_up);
+log   LOG_4_2_3 clear;
+obey TEST_4_2_3(tests);
+LOG;
+obey TEST_4_2_3(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+DROP TRIGGER btrig5;
+DROP TRIGGER atrig51;
+DROP TRIGGER atrig52;
+------------------------------------------------------------------
+obey clearTables;
+
+?section set_up
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,5);
+INSERT INTO tab1A VALUES (3,4,5,6);
+
+---------------------------------
+-- DEFINE TRIGGER btrig5
+---------------------------------
+
+CREATE TRIGGER btrig5
+BEFORE UPDATE OF (b)
+ON tab1A
+REFERENCING NEW AS newR 
+FOR EACH ROW
+SET newR.c = newR.a + newR.b, newR.d = newR.c+1;
+
+---------------------------------
+-- DEFINE TRIGGER atrig51
+---------------------------------
+
+CREATE TRIGGER atrig51
+AFTER UPDATE OF (c) 
+ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+UPDATE tab1A SET d=newR.c where a= newR.a; 
+
+
+---------------------------------
+-- DEFINE TRIGGER atrig52
+---------------------------------
+
+CREATE TRIGGER atrig52
+AFTER UPDATE OF (b) 
+ON tab1A
+REFERENCING OLD AS oldR
+FOR EACH ROW
+UPDATE tab1A SET d=(oldR.d +1) where a= oldR.a;
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b=c+10 where a<3;
+
+SELECT * FROM tab1A; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

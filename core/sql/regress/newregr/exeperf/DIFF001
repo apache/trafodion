@@ -1,0 +1,71 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- First check the plan
+
+sh PLAN001.ksh;
+
+-- Get run time from the log file
+
+sh get_test_results.ksh;
+
+-- Insert the run time record to the imptimes table
+
+delete from querytimes;
+obey ins.dml;
+
+-- Compare and save the results
+delete from resultperf where operation like 'query%';
+insert into resultperf(Operation, res, expected, actual, pct)
+    select T1.operation,
+        CASE
+            when ((CAST(
+                         ((hour(T2.duration) * 60 + minute(T2.duration)) * 60
+                            + second(T2.duration)
+                         )
+                         as dec(8,3)
+                       ) - T1.duration)/T1.duration)
+                   < 0.05
+                then 'PASS'
+                else 'FAIL'
+        END,
+        T1.duration,
+        CAST(
+             ((hour(T2.duration) * 60 + minute(T2.duration)) * 60
+               + second(T2.duration)
+             )
+             as dec(8,3)),
+      ((CAST(
+             ((hour(T2.duration) * 60 + minute(T2.duration)) * 60
+               + second(T2.duration)
+             )
+             as dec(8,3)) - T1.duration)/T1.duration) * -100
+
+    from baseperf T1, querytimes T2
+    where T1.operation is not null
+        AND T1.operation = T2.query_name;
+
+-- Show the results for runregr to report PASS or FAILE
+--select '%% ' || CAST(Q.Run_Time as CHAR(24)),
+--        CAST(R.Operation as char(20)), R.res
+--    from resultperf R, querytimes Q
+--    where R.operation=Q.query_name order by 1;
+
+select '%% ' || R.Operation, R.res, R.expected, R.actual, R.pct
+ from resultperf R;
+
+sh cat PLAN001.LOG;

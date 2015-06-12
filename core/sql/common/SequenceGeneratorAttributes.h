@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public:
                               const ComSQLDataType            psgSQLDataType,
                               const ComFSDataType             psgFSDataType,
                               const NABoolean                 psgCycleOption,
+                              const NABoolean                 psgResetOption,
 			      const ComUID                    psgObjectUID,
 			      const Int64                         psgCache,
 			      const Int64                         psgNextValue,
@@ -72,6 +73,7 @@ public:
     sgSQLDataType_(psgSQLDataType),
     sgFSDataType_(psgFSDataType),
     sgCycleOption_(psgCycleOption),
+    sgResetOption_(psgResetOption),
     sgObjectUID_(psgObjectUID),
     sgCache_(psgCache),
     sgNextValue_(psgNextValue),
@@ -89,6 +91,7 @@ public:
     sgSQLDataType_(COM_UNKNOWN_SDT),
     sgFSDataType_(COM_UNKNOWN_FSDT),
     sgCycleOption_(FALSE),
+    sgResetOption_(FALSE),
     sgObjectUID_(0),
     sgCache_(0),
     sgNextValue_(0),
@@ -107,6 +110,7 @@ public:
     sgSQLDataType_(sga.sgSQLDataType_),
     sgFSDataType_(sga.sgFSDataType_),
     sgCycleOption_(sga.sgCycleOption_),
+    sgResetOption_(sga.sgResetOption_),
     sgObjectUID_(sga.sgObjectUID_),
     sgCache_(sga.sgCache_),
     sgNextValue_(sga.sgNextValue_),
@@ -126,6 +130,7 @@ public:
   const ComSQLDataType             &getSGSQLDataType()  const     { return sgSQLDataType_; }
   const ComFSDataType              &getSGFSDataType()   const     { return sgFSDataType_; }
   const NABoolean                   &getSGCycleOption()  const	  { return sgCycleOption_; }
+  const NABoolean                  &getSGResetOption() const           {return sgResetOption_;}
   const ComUID                     &getSGObjectUID()    const     { return sgObjectUID_; }
   const Int64                        &getSGCache()   const     { return sgCache_; }
   const Int64                      &getSGNextValue()   const     { return sgNextValue_; }
@@ -154,6 +159,9 @@ public:
 
  void  setSGCycleOption(const NABoolean psgCycleOption)
   { sgCycleOption_ = psgCycleOption; }
+
+ void  setSGResetOption(const NABoolean psgResetOption)
+  { sgResetOption_ = psgResetOption; }
 
  void setSGObjectUID(const ComUID psgObjectUID)
   { sgObjectUID_ = psgObjectUID; }
@@ -189,6 +197,7 @@ private:
   ComSQLDataType            sgSQLDataType_;
   ComFSDataType             sgFSDataType_;
   NABoolean                 sgCycleOption_;
+  NABoolean                 sgResetOption_;
   ComUID                    sgObjectUID_;
   Int64                        sgCache_;
   Int64                        sgNextValue_;

@@ -1,0 +1,29 @@
+>>obey TEST_SPJC_STX_002(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG01_SPJC_STX_002 AFTER UPDATE ON
++>TAB01_SPJC_STX_002
++>REFERENCING OLD TABLE AS OT, NEW TABLE AS NT
++>	INSERT INTO TAB02_SPJC_STX_002 values(1, 1);
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>update TAB01_SPJC_STX_002 set a = a + d;
+
+--- 4 row(s) updated.
+>>
+>>-- RESULT: 1
+>>select count(*) from TAB02_SPJC_STX_002;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

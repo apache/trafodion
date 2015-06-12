@@ -1,0 +1,78 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------------------
+-- The following procedures are required by SPJ triggers. They are
+-- created upfront so as to avoid repeated compiles of Java file
+-- containing these procedures
+-- SPJTriggers.java must be compiled in the directory $$QADIR$$ prior
+-- running this script.
+-------------------------------------------------------------------------
+
+set schema cat1.schm;
+
+-- NO SQL: Write the sum of four integers into given file.
+--
+CREATE PROCEDURE WriteSumOfFourIntsToFile(
+		IN outFileName VARCHAR(128),
+		IN val1 int, IN val2 int, IN val3 int, IN val4 int)
+EXTERNAL NAME 'SPJTriggers.WriteSumOfFourIntsToFile'
+EXTERNAL PATH $$REGRRUNDIR_Q$$
+LANGUAGE JAVA
+PARAMETER STYLE JAVA
+NO SQL;
+
+
+-- READ SQL DATA: SELECT SUM( colName ) FROM tabName
+-- and write result into outFileName.
+--
+CREATE PROCEDURE WriteSumOfOneColumnToFile(
+		IN outFileName VARCHAR(128),
+		IN colName VARCHAR(128),
+		IN tabName VARCHAR(128))
+EXTERNAL NAME 'SPJTriggers.WriteSumOfOneColumnToFile'
+EXTERNAL PATH $$REGRRUNDIR_Q$$
+LANGUAGE JAVA
+PARAMETER STYLE JAVA
+READS SQL DATA;
+
+
+-- MODIFIES SQL DATA: INSERT INTO destTabName SELECT col1, col2, col3, col4
+-- FROM srcTabName.
+--
+CREATE PROCEDURE InsertSelectOfSumOfFourColumns(
+		IN srcTabName VARCHAR(128),
+		IN destTabName VARCHAR(128),
+		IN col1 VARCHAR(32), IN col2 VARCHAR(32),
+		IN col3 VARCHAR(32), IN col4 VARCHAR(32))
+EXTERNAL NAME 'SPJTriggers.InsertSelectOfSumOfFourColumns'
+EXTERNAL PATH $$REGRRUNDIR_Q$$
+LANGUAGE JAVA
+PARAMETER STYLE JAVA
+MODIFIES SQL DATA;
+
+-- MODIFIES SQL DATA: INSERT INTO destTabName VALUES (val1, val2, val3,
+-- val4)
+--
+CREATE PROCEDURE InsertFourCoulmns(
+		IN destTabName VARCHAR(128),
+		IN col1 int, IN col2 int, IN col3 int, IN col4 int)
+EXTERNAL NAME 'SPJTriggers.InsertFourCoulmns'
+EXTERNAL PATH $$REGRRUNDIR_Q$$
+LANGUAGE JAVA
+PARAMETER STYLE JAVA
+MODIFIES SQL DATA;

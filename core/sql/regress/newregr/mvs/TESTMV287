@@ -1,0 +1,158 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+set PARSERFLAGS 3;
+set schema catmvs.mvschm;
+
+
+obey TESTMV287(CLEAN_UP);
+control query default HIST_MISSING_STATS_WARNING_LEVEL '0';
+log LOGMV287 clear;
+
+obey TESTMV287(SET_UP);
+-- Run Tests
+
+	obey TESTMV287(TEST1);
+	obey TESTMV287(TEST2); 
+	obey TESTMV287(TEST3);
+	obey TESTMV287(TEST4);
+
+obey TESTMV287(CLEAN_UP);
+log;
+exit;
+---------------------------------------------------------------
+?section SET_UP
+---------------------------------------------------------------
+
+Control Query Shape cut;
+
+create table t1_287 (a1 int, b1 int);
+ALTER TABLE t1_287 attribute all mvs allowed;
+create table t2_287 (a2 int, b2 int);
+ALTER TABLE t2_287 attribute all mvs allowed;
+
+insert into t2_287 values (1,1),(2,4),(2,3),(3,4);
+
+create mv mv1_287
+refresh on request
+ignore changes on t2_287
+initialize on create
+MVAttributes COMMIT Refresh EACH 2 
+as
+select a2 , sum (b1) sb from t1_287,t2_287
+where a1 = a2
+group by a2;
+ALTER MV mv1_287 attribute all mvs allowed;
+
+
+insert into t1_287 values (1,1),(2,3),(3,4);
+
+---------------------------------------------------------------
+?section TEST1
+---------------------------------------------------------------
+-- correct plan with nested_join
+-- expected that internal refresh succeed
+
+Control Query Shape join(join(groupby(nested_join(cut,cut)),cut),cut);
+begin work ;
+
+
+INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
+	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+	 COMMIT EACH 2 PHASE 0;
+
+rollback;
+
+Control Query Shape cut;
+
+---------------------------------------------------------------
+?section TEST2
+---------------------------------------------------------------
+-- incorrect plan with nested_join
+-- expected that internal refresh fails , no such plan
+
+update statistics for log table t1_287 on (a1);
+
+begin work;
+
+update histograms set rowcount = 1000000
+where  table_uid = 
+  ( select object_uid from HP_DEFINITION_SCHEMA.objects objects 
+    where  OBJECT_NAME = 'T1_287' and OBJECT_NAME_SPACE = 'IL' 
+    for read uncommitted access);
+
+Control Query Shape join(join(groupby(nested_join(cut,join(cut,cut))),cut),cut);
+
+-- expected - no such plan
+INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
+	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+	 COMMIT EACH 2 PHASE 0;
+
+rollback;
+
+
+Control Query Shape cut;
+
+---------------------------------------------------------------
+?section TEST3
+---------------------------------------------------------------
+-- plan with merge_join
+-- expected that internal refresh fail - no such plan 
+Control Query Shape join(join(groupby(merge_join(cut,cut)),cut),cut);
+
+
+begin work ;
+
+INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
+	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+	 COMMIT EACH 2 PHASE 0;
+
+rollback;
+
+---------------------------------------------------------------
+?section TEST4
+---------------------------------------------------------------
+-- plan with hybrid_hash_join
+-- expected that internal refresh succeed
+Control Query Shape join(join(groupby(hybrid_hash_join(cut,cut)),cut),cut);
+
+
+begin work ;
+
+INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
+	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+	 COMMIT EACH 2 PHASE 0;
+
+rollback;
+
+Control Query Shape cut;
+
+----------------------------------------------------------------
+?section CLEAN_UP
+----------------------------------------------------------------
+Control Query Shape cut;
+
+drop table t1_287 cascade;
+drop table t2_287 cascade;

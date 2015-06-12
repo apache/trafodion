@@ -1,0 +1,255 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+obey TEST013(clean_up);
+obey TEST013(clean_up_files);
+
+-- For NT ONLY
+create catalog NEO;
+
+log LOG013 clear;
+log LOG013;
+
+obey TEST013(set_up);
+obey TEST013(create_tables);
+obey TEST013(run_queries);
+obey TEST013(run_qms);
+obey TEST013(verify_queries);
+
+obey TEST013(clean_up);
+log;
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+set catalog neo;
+
+drop schema SCH013 cascade;
+drop schema mvqr_wa cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm t013*;
+sh rm T013*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '4';
+set catalog neo;
+create schema SCH013;
+set schema SCH013;
+
+--insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+--(attribute, attr_value) values ('MVQR_MAX_MV_JOIN_SIZE', '100');
+--cqd MVQR_MAX_MV_JOIN_SIZE '100';
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'STMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+------------------------------------------------------
+?section dump_MV
+------------------------------------------------------
+
+log T013_$$MVName$$.tmp clear;
+execute STMT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP T013_$$MVName$$.TMP > T013_$$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i T013_$$MVName$$.tmp.f -o T013_$$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i T013_$$MVName$$.tmp -o T013_$$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat T013_$$MVName$$.xml >> LOG013;
+log LOG013;
+-- Don't INITIALIZE -- test designed to run with only MV published here
+sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+
+------------------------------------------------------
+?section create_tables
+------------------------------------------------------
+create table OPPTY_CRM_CMPGN_A_F (
+  OPPTY_ID              CHAR(10) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL
+ ,CMPGN_NM              CHAR(10) CHARACTER SET UCS2  DEFAULT NULL
+ ,CRM_CMPGN_ID          LARGEINT NO DEFAULT  NOT NULL
+ ,INT_COL1              INT NOT NULL
+); -- store by (OPPTY_ID);
+
+CREATE TABLE OPPTY_A_D
+(
+  OPPTY_ID              CHAR(10) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL
+ ,SLS_MTHD_CD           CHAR(10) CHARACTER SET ISO88591  DEFAULT NULL
+ ,INT_COL2              INT NOT NULL
+ ,PRIMARY KEY (OPPTY_ID ASC)
+); -- store by (OPPTY_ID);
+
+------------------------------------------------------
+?section run_queries
+------------------------------------------------------
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP_MV';
+control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+obey TEST013(Q12259903);
+obey TEST013(dump_MV);
+
+obey TEST013(Q12259937);
+obey TEST013(dump_MV);
+
+obey TEST013(Q12260038);
+obey TEST013(dump_MV);
+
+obey TEST013(QGB_EXPR1);
+obey TEST013(dump_MV);
+
+obey TEST013(QGB_EXPR2);
+obey TEST013(dump_MV);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+------------------------------------------------------
+?section verify_queries
+------------------------------------------------------
+
+cqd mvqr_rewrite_candidates 'NEO.SCH013.ProposedMV1';
+
+obey TEST013(Q12259903);
+execute checkPlan;
+
+obey TEST013(Q12259937);
+execute checkPlan;
+
+obey TEST013(Q12260038);
+execute checkPlan;
+
+obey TEST013(QGB_EXPR1);
+execute checkPlan;
+
+obey TEST013(QGB_EXPR2);
+execute checkPlan;
+
+------------------------------------------------------
+?section Q12259903
+------------------------------------------------------
+set pattern $$MVName$$ Q12259903;
+control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259903';
+PREPARE STMT FROM SELECT
+'0' "Dummy"
+,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
+,  CCOCCAF_1.CMPGN_NM  "Col1"
+FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
+INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
+ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
+WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
+  AND  OOAD_1.OPPTY_ID  = _ISO88591'CRMAP1-6-1JIENX3')))
+GROUP BY 2, 3
+ORDER BY 2, 3;
+
+------------------------------------------------------
+?section Q12259937
+------------------------------------------------------
+set pattern $$MVName$$ Q12259937;
+control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259937';
+PREPARE STMT FROM SELECT
+'0' "Dummy"
+,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
+,  CCOCCAF_1.CMPGN_NM  "Col1"
+FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
+LEFT OUTER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
+        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
+WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
+  AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1C6XUBU'))))
+GROUP BY 2, 3
+ORDER BY 2, 3;
+
+------------------------------------------------------
+?section Q12260038
+------------------------------------------------------
+set pattern $$MVName$$ Q12260038;
+control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12260038';
+PREPARE STMT FROM SELECT
+'0' "Dummy"
+,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
+,  CCOCCAF_1.CMPGN_NM  "Col1"
+FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
+INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
+        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
+WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
+--AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1F700BJ'))))
+  AND  OOAD_1.OPPTY_ID  LIKE _ISO88591'%MEM1-2-%')))
+GROUP BY 2, 3
+ORDER BY 2, 3;
+
+------------------------------------------------------
+?section QGB_EXPR1
+------------------------------------------------------
+set pattern $$MVName$$ QGB_EXPR1;
+control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR1';
+PREPARE STMT FROM SELECT
+'0' "Dummy"
+,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
+,  CCOCCAF_1.CMPGN_NM  "Col1"
+,  INT_COL1 + INT_COL2 "Col2"
+--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
+FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
+INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
+ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
+WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') )
+GROUP BY 2, 3, 4
+ORDER BY 2, 3, 4;
+
+------------------------------------------------------
+?section QGB_EXPR2
+------------------------------------------------------
+set pattern $$MVName$$ QGB_EXPR2;
+control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR2';
+PREPARE STMT FROM SELECT
+'0' "Dummy"
+,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
+,  CCOCCAF_1.CMPGN_NM  "Col1"
+,  INT_COL1 + INT_COL2 "Col2"
+--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
+FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
+INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
+ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
+WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology',_ISO88591'AnotherOption') )
+GROUP BY 2, 3, 4
+ORDER BY 2, 3, 4;
+
+------------------------------------------------------
+?section run_qms
+------------------------------------------------------
+sh echo WORKLOAD 0 >> T013.in;
+
+sh sh -c "$QMS T013.in T013.out";
+
+log;
+sh cat T013.out >> LOG013;
+log LOG013;
+
+obey T013.out;

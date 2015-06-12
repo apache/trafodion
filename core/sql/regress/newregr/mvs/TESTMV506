@@ -1,0 +1,126 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--------------------------------------------------------------
+-- TestMV506
+-- ----------
+--
+-- Privileges on iud and range logs
+--------------------------------------------------------------
+
+obey TESTMV506(CLEAN_UP);
+log LOGMV506 clear;
+obey TESTMV506(SET_UP);
+
+
+
+-- Run Tests
+	obey TESTMV506(TEST1);
+	log LOGMV506;
+	obey TESTMV506(TEST2);
+	log LOGMV506;
+-- Clean and Exit
+
+obey TESTMV506(CLEAN_UP);
+log;
+exit;
+
+--------------------------------------------------------------
+?section TEST1
+-- one user creates an mv and another user tries to read from
+-- its iud log
+
+create table T_506_T1 ( a int, b int );
+ALTER TABLE T_506_T1 attribute all mvs allowed;
+create table T_506_T2 ( c int, d int );
+ALTER TABLE T_506_T2 attribute all mvs allowed;
+
+create mv T_506_MV1
+	refresh on request
+	initialize on create
+	as select a, b 
+	from T_506_T1, T_506_T2
+	where a = c 
+	and   b = d
+	group by a, b;
+ALTER MV T_506_MV1 attribute all mvs allowed;
+
+insert into T_506_T1 values (1, 2), (2, 3), (2, 4), (5, 34);
+insert into T_506_T2 values (1, 2), (2, 3), (2, 5), (5, 34);
+
+log;
+sh sh runmxci.ksh -i "TestMV506(User2Attempt1)" -u $$SQLUSER2X$$;
+
+--------------------------------------------------------------
+?section TEST2
+-- second user tries to read from range log
+
+log;
+sh sh runmxci.ksh -i "TestMV506(User2Attempt2)" -u $$SQLUSER2X$$;
+
+--------------------------------------------------------------
+?section USER2ATTEMPT1
+
+set PARSERFLAGS 1;
+set schema catmvs.mvschm;
+
+log LOGMV506;
+-- User 2 do : ( SHOULD PASS )
+select count(*) from table (iud_log_table T_506_T1);
+select count(*) from table (iud_log_table T_506_T2);
+log;
+exit;
+
+--------------------------------------------------------------
+?section USER2ATTEMPT2
+set PARSERFLAGS 1;
+set schema catmvs.mvschm;
+
+log LOGMV506;
+-- User 2 do : ( SHOULD PASS )
+select count(*) from table (range_log_table T_506_T1);
+select count(*) from table (range_log_table T_506_T2);
+log;
+
+exit;
+
+--------------------------------------------------------------
+?section SET_UP
+
+set PARSERFLAGS 1;
+
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+--------------------------------------------------------------
+?section CLEAN_UP
+
+drop mv T_506_MV1;
+drop table T_506_T2;
+drop table T_506_T1;
+
+set param ?schema_name 'MVSCHM';
+
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;
+

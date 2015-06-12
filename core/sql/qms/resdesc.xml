@@ -1,0 +1,132 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<Result>
+  <Version>1.0</Version>
+  <JbbResult ref="B1">
+    <JbbSubset/>
+  </JbbResult>
+  <JbbResult ref="B2">
+    <JbbSubset>
+      <TableList>
+        <Table id='T1' TS='2007-09-22 10:30:45'>cat.sch.tbl1</Table>
+        <Table id='T2' TS='2007-09-22 10:30:45'>cat.sch.tbl2</Table>
+      </TableList>
+      <GroupBy/>
+      <CandidateList>
+        <Candidate IsPreferredMatch='1' StatsOnly='1'>
+          <MV id="V1" TS="2007-09-19 12:00:00">cat.sch.mv1</MV>
+          <TableList>
+            <Table id='T1' TS='2007-09-22 10:30:45'>cat.sch.tbl1</Table>
+            <Table id='T2' TS='2007-09-22 10:30:45'>cat.sch.tbl2</Table>
+          </TableList>
+          <JoinPredList>
+            <JoinPred>
+              <Column id="C1" TableId="T1" SqlType="varchar(20)">cat.sch.tbl1.col1</Column>
+              <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+              <Expr>
+                round(x) + y * z
+                <BinaryOper id='S1' op='2042'>
+                  <BinaryOper id='S1' op='2040'>
+                    <Function id='S5' op='2210'>
+                      <Column id="C12" TableId="T4" SqlType="float">cat.sch.tbl4.c6</Column>
+                    </Function>
+                    <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+                  </BinaryOper>
+                  <Column ref="C5"/>
+                </BinaryOper>
+                <Input></Input>
+              </Expr>
+              <MVColumn MV='MV1' ref='C4'>coll1</MVColumn>
+              <MVColumn MV='MV1' ref='C5'>coll2</MVColumn>
+            </JoinPred>
+          </JoinPredList>
+          <RangePredList>
+            <Range>
+              <Column id="C1" TableId="T2" SqlType="char(20)">cat.sch.person.name</Column>
+              <OpEQ>
+                <StringVal>Barry</StringVal>
+                <StringVal>Joanne</StringVal>
+                <StringVal>Brian</StringVal>
+                <StringVal>Katie</StringVal>
+              </OpEQ>
+              <OpLS>
+                <StringVal>aardvark</StringVal>
+              </OpLS>
+              <OpGE>
+                <StringVal>zebra</StringVal>
+              </OpGE>
+              <OpBT>
+                <StringVal>m</StringVal>
+                <StringVal>n</StringVal>
+              </OpBT>
+              <OpBT>
+                <StringVal>pa</StringVal>
+                <StringVal>pe</StringVal>
+              </OpBT>
+            </Range>
+          </RangePredList>
+          <ResidualPredList>
+            <Residual id="D1" result="NotProvided">
+		      <PredicateText>COALESCE(UPPER(%1),'NONE') &lt; 'xyz'</PredicateText>
+              <Column id="C1" TableId="T4" SqlType="char(20)">cat.sch.product.name</Column>
+            </Residual>
+          </ResidualPredList>
+          <GroupBy>
+              <Column id="C1" TableId="T1" SqlType="varchar(20)">cat.sch.tbl1.col1</Column>
+              <Expr>
+                x + y * z
+                <BinaryOper>
+                  <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+                  <Function id='S2' op='2044'>
+                    <UnaryOper id='S3' op='2030'>
+                      <Column id="C3" TableId="T1" SqlType="int">cat.sch.tbl1.numval</Column>
+                    </UnaryOper>
+                    <Column id="C4" TableId="T1" SqlType="int">cat.sch.tbl1.anotherval</Column>
+                  </Function>
+                </BinaryOper>
+                <Input>
+                  <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+                  <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+                  <Column id="C2" TableId="T1" SqlType="int">cat.sch.tbl1.col2</Column>
+                </Input>
+              </Expr>
+              <MVColumn MV='MV1' ref='C4'>coll1</MVColumn>
+          </GroupBy>
+          <OutputList>
+            <Output ref="C1" result="Provided">
+              <MVColumn MV="MV1">A</MVColumn>
+            </Output>
+            <Output ref="S10" result="Provided">
+              <MVColumn MV="MV1">BC</MVColumn>
+            </Output>
+            <Output ref="S11" result="NotProvided">
+	            <MVColumn MV="MV1" ref="C4">D</MVColumn>
+	            <MVColumn MV="MV1" ref="C5">E</MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate></Candidate>
+      </CandidateList>
+    </JbbSubset>
+	  <Info>MV MVx was disqualified because it is missing an output column for T1.a</Info>
+	  <Info>MV MVy was disqualified because it is missing an output column for T1.b</Info>
+  </JbbResult>
+  <JbbResult ref="B3">
+  </JbbResult>
+</Result>
+

@@ -1,0 +1,148 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_4_1_3(set_up);
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER btrig2
+>>---------------------------------
+>>
+>>CREATE TRIGGER btrig2
++>BEFORE UPDATE
++>ON tab1A
++>REFERENCING OLD AS oldrow, NEW AS newrow 
++>FOR EACH ROW
++>WHEN (newrow.c <> oldrow.c)
++>SIGNAL SQLSTATE 'S1111' ('sorry, no can do');
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_1_3(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b=10, c=4;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S1111, Message: sorry, no can do.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            2            3            4  
+          2            3            4            5  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_4_1_3(clean_up);
+>>
+>>DROP TRIGGER btrig2;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 2 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_4_1_3(set_up);
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER btrig2
+>>---------------------------------
+>>
+>>CREATE TRIGGER btrig2
++>BEFORE UPDATE
++>ON tab1A
++>REFERENCING OLD AS oldrow, NEW AS newrow 
++>FOR EACH ROW
++>WHEN (newrow.c <> oldrow.c)
++>SIGNAL SQLSTATE 'S1111' ('sorry, no can do');
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_1_3(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b=10, c=4;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S1111, Message: sorry, no can do.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            2            3            4  
+          2            3            4            5  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

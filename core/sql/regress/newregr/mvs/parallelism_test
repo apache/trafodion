@@ -1,0 +1,1274 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+
+create catalog catmvs;
+create schema catmvs.mvschm;
+
+set schema catmvs.mvschm;
+
+obey PARALLELISM_TEST(CLEAN_UP);
+obey PARALLELISM_TEST(SET_UP_ENV);
+
+set envvar SQLPARSER_FLAG 3;
+
+delete from TANDEM_SYSTEM_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS;
+
+INSERT INTO
+TANDEM_SYSTEM_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(ATTRIBUTE, ATTR_VALUE)
+VALUES ('INSERT_VSBB', 'USER');
+
+INSERT INTO
+TANDEM_SYSTEM_NSK.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(ATTRIBUTE, ATTR_VALUE)
+VALUES ('ATTEMPT_ESP_PARALLELISM', 'OFF');
+
+sh sh fillupt1.ksh 10; -- create 100 initial inserts into t1
+sh cp exec_fillup_t1 exec_fillup_t1_small;
+
+sh sh fillupt1.ksh 100; -- create 10000 initial inserts into t1
+sh cp exec_fillup_t1 exec_fillup_t1_big;
+
+sh sh fillupt2.ksh 10;
+
+sh sh fillupt2.ksh;
+sh sh InsertIntoT1.ksh 15 5 1;
+sh sh InsertIntoT2.ksh 200 5 1;
+
+obey PARALLELISM_TEST(TEST_A_1);
+obey PARALLELISM_TEST(TEST_A_2);
+obey PARALLELISM_TEST(TEST_A_3);
+obey PARALLELISM_TEST(TEST_A_4);
+obey PARALLELISM_TEST(TEST_A_5);
+obey PARALLELISM_TEST(TEST_A_6);
+obey PARALLELISM_TEST(TEST_A_7);
+obey PARALLELISM_TEST(TEST_A_8);
+
+obey PARALLELISM_TEST(DROP_ENV);
+
+exit;
+
+--------------------------------------------------
+?section SET_UP_ENV
+
+create table RefreshControlTable 
+		(group_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 process_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 ordinal				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 sql_text				CHAR(1000) NOT NULL NOT DROPPABLE,
+		 number_of_executions	INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 number_of_retries		INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 auto_commit			INT UNSIGNED NOT NULL NOT DROPPABLE, -- 1 commit , 0 dont commit
+		 primary key (group_id,process_id,ordinal))
+		 store by primary key;
+
+create table RefreshOutputTable
+		(group_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 process_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 ordinal				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 try_number				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 line					INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 sql_error_code			INT NOT NULL NOT DROPPABLE,
+		 sql_error_text			CHAR(1000))
+		 ;
+
+create table RefreshTimeTable
+		(group_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 process_id				INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 after_sync 			INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 ts						TIMESTAMP NOT NULL NOT DROPPABLE);
+
+--------------------------------------------------
+?section DROP_ENV
+
+drop table RefreshControlTable;
+drop table RefreshOutputTable;
+drop table RefreshTimeTable;
+
+--------------------------------------------------
+?section SET_UP_A
+
+create table T1
+		(A1						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 A2						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 A3						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 A4						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 A5						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 A6						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 primary key (A1,A2))
+		 store by primary key
+		 attribute NO LOCKONREFRESH, MANUAL RANGELOG;
+
+create table T2
+		(B1						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 B2						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 B3						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 B4						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 B5						INT UNSIGNED NOT NULL NOT DROPPABLE,
+		 primary key (B1))
+		 store by primary key
+		 attribute MANUAL RANGELOG;
+
+
+--------------------------------------------------
+?section FILLUP_T1_SMALL
+-- fill up t1 with 100 rows 
+prepare fill_up_t1 from
+	insert into CATMVS.MVSCHM.T1 values (?,?,?,?,?,?);
+obey exec_fillup_t1_small;
+
+--------------------------------------------------
+?section FILLUP_T1_BIG
+-- fill up t1 with 10000 rows
+prepare fill_up_t1 from
+	insert into CATMVS.MVSCHM.T1 values (?,?,?,?,?,?);
+obey exec_fillup_t1_big;
+
+--------------------------------------------------
+?section FILLUP_T2
+prepare fill_up_t2 from
+	insert into CATMVS.MVSCHM.T2 values (?,?,?,?,?);
+obey exec_fillup_t2;
+
+--------------------------------------------------
+?section INSERT_INTO_T1
+obey exec_insertt1;
+
+--------------------------------------------------
+?section INSERT_INTO_T2
+obey exec_insertt2;
+
+--------------------------------------------------
+?section DELETE_DATA
+
+delete from RefreshControlTable;
+purgedata RefreshTimeTable;
+purgedata RefreshOutputTable;
+
+--------------------------------------------------
+?section CLEAN_UP
+
+drop mv MV1;
+drop table T1;
+drop table T2;
+
+--------------------------------------------------
+?section SHOW_TIME
+select RefreshControlTable.group_id,RefreshControlTable.process_id,SubString(sql_text,1,200) as sql_text,
+       startTable.ts as startTime,endTable.ts as endTime,(Second(endTable.ts - startTable.ts)) as dur
+from (select group_id,process_id,max(sql_text) as sql_text from RefreshControlTable group by group_id,process_id) RefreshControlTable,
+      LastTimeTable startTable,LastTimeTable endTable
+where RefreshControlTable.group_id = startTable.group_id and RefreshControlTable.group_id = endTable.group_id and
+	  RefreshControlTable.process_id = startTable.process_id and RefreshControlTable.process_id = endTable.process_id and
+	  endTable.after_sync = 1 and startTable.after_sync = 0 
+order by 1,2;
+
+--------------------------------------------------
+?section COMPARE_A_1
+
+prepare stat1 from
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1
+		order by A1
+		for browse access;
+
+prepare stat2 from
+		select A1, SUM_A3
+		from MV1
+		order by A1
+		for browse access; 
+log;
+obey compare;
+sh diff temp1 temp2 >> logparallelism ;
+log logparallelism;
+
+--------------------------------------------------
+?section COMPARE_A_2
+
+prepare stat1 from
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2 
+		from T1, T2
+		group by A1,B1
+		for browse access;
+
+prepare stat2 from
+		select A1, SUM_A3, B1, SUM_B2
+		from MV2
+		for browse access; 
+log;
+obey compare;
+sh diff temp1 temp2 >> logparallelism ;
+log logparallelism;
+
+
+--------------------------------------------------
+?section COMPARE_A_3
+
+prepare stat1 from
+		select A1, SUM_A3
+		from MV2
+		group by (A3)
+		for browse access;
+
+prepare stat2 from
+		select A1, SUM_A3
+		from MV3
+		for browse access;
+log;
+obey compare;
+sh diff temp1 temp2 >> logparallelism ;
+log logparallelism;
+
+
+
+--------------------------------------------------
+?section COMPARE_B_1
+
+prepare stat1 from
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2 
+		from T1, T2
+		where T1.A1=T2.B2
+		group by A1,B1
+		order by A1,B1
+		for browse access;
+
+prepare stat2 from
+		select A1, SUM_A3, B1, SUM_B2
+		from MV1
+		order by A1,B1
+		for browse access; 
+log;
+obey compare;
+sh diff temp1 temp2 >> logparallelism ;
+log logparallelism;
+
+
+--------------------------------------------------
+?section TestA_1
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP);
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV1
+	refresh on request
+	initialize on refresh
+	store by (A1)
+	mvattribute audit
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+alter table T1 attribute LOCKONREFRESH;
+refresh MV1;
+alter table T1 attribute NO LOCKONREFRESH;
+
+obey PARALLELISM_TEST(FILLUP_T1);
+
+-- Here starts the parallel part of the section
+
+insert into RefreshControlTable 
+values(0,1,1,'SET SCHEMA CATMVS.MVSCHM',1,1,1);
+
+insert into RefreshControlTable 
+values(0,2,1,'SET SCHEMA CATMVS.MVSCHM',1,1,1);
+
+-- Proccess 1
+obey PARALLELISM_TEST(INSERT_INTO_T1);
+
+-- uses 101 first ordinaly values 
+
+insert into RefreshControlTable values(1,1,102,'update T1 set A3 = A3 + 1',100,5,1);
+
+insert into RefreshControlTable values(1,1,103,'delete from T1 where A1 = 5',1,5,1);
+
+insert into RefreshControlTable values(1,1,104,'select * from table(iud_log_table t1__iud_log)',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable values(1,2,1,'refresh mv1 without log cleanup debug 51,52,54',1,5,0);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_1;
+
+--------------------------------------------------
+?section TestA_2
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV2
+	refresh on request
+	initialize on create
+	ignore changes on T2
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) AS SUM_B2
+		from T1, T2
+		where T1.A1 = T2.B2
+		group by (A1,B1);
+
+obey PARALLELISM_TEST(FILLUP_T1);
+obey PARALLELISM_TEST(FILLUP_T2);
+
+-- proccess 1
+sh sh InsertIntoT1.ksh 200 10 1; --uses 101 first ordinals values
+obey exec_insertt1;
+sh sh InsertIntoT2.ksh 300 100 102 1 --uses 101 ordinals values;
+obey exec_insertt2;
+
+insert into RefreshControlTable(0,1,203,'update T1 set A3 = A3 + 1 where A1=1',1,5,1);
+
+insert into RefreshControlTable(0,1,204,'update T2 set B2 = B2 + 1 where mod(B1,10)=0',1,5,1);
+
+insert into RefreshControlTable(0,1,205,'delete from T1 where T1 = 5',1,5,1);
+
+insert into RefreshControlTable(0,1,206,'delete from T2 where mod(B1,10)=2',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mv2',1,5,1);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_2;
+
+--------------------------------------------------
+?section TestA_3
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute commit each 1000 rows
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+obey PARALLELISM_TEST(FILLUP_T1);
+
+-- Here starts the parallel part of the section
+
+-- Proccess 1
+sh sh InsertIntoT1.ksh 200 10 1;
+obey exec insertt1;
+-- uses 101 first ordinaly values
+
+insert into RefreshControlTable(0,1,102,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,103,'delete from T1 where A1 = 5',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mv1',1,5,1);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_3;
+
+--------------------------------------------------
+?section TestA_4
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV2
+	refresh on request
+	initialize on create
+	ignore changes on T2
+	store by (A1,B1)
+	mvattribute commit each 1000 rows
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2 
+		from T1, T2
+		where T1.A1 = T2.B2
+		group by (A1,B1);
+
+obey PARALLELISM_TEST(FILLUP_T1);
+obey PARALLELISM_TEST(FILLUP_T2);
+
+-- proccess 1
+sh sh InsertIntoT1.ksh 200 10 1; --uses 101 first ordinals values
+obey exec_insertt1;
+sh sh InsertIntoT2.ksh 300 100 102 1 --uses 101 ordinals values;
+obey exec_insertt2;
+
+insert into RefreshControlTable(0,1,203,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,204,'update T2 set B2 = B2 + 1 where mod(B1,10)=0',1,5,1);
+
+insert into RefreshControlTable(0,1,205,'delete from T1 where T1 = 5',1,5,1);
+
+insert into RefreshControlTable(0,1,206,'delete from T2 where mod(B1,10)=2',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mv2',1,5,1);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_4;
+
+--------------------------------------------------
+?section TestA_5
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute commit each 1000 rows
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+obey PARALLELISM_TEST(FILLUP_T1);
+
+-- Here starts the parallel part of the section
+
+-- Proccess 1
+sh sh InsertIntoT1.ksh 200 10 1;
+obey exec insertt1;
+-- uses 101 first ordinaly values
+
+insert into RefreshControlTable(0,1,102,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,103,'delete from T1 where A1 = 5',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mv1',1,5,1);
+
+-- Proccess 3
+insert into RefreshControlTable(0,3,1,'select sum(SUM_A3) from MV1',15,1,);
+
+sh refresh_test 3 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_5;
+
+--------------------------------------------------
+?section TestA_6
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV2
+	refresh on request
+	initialize on create
+	ignore changes on T2
+	store by (A1,B1)
+	mvattribute commit each 1000 rows
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2 
+		from T1, T2
+		where T1.A1 = T2.B2
+		group by (A1,B1);
+
+obey PARALLELISM_TEST(FILLUP_T1);
+obey PARALLELISM_TEST(FILLUP_T2);
+
+-- proccess 1
+sh sh InsertIntoT1.ksh 200 10 1; --uses 101 first ordinals values
+obey exec_insertt1;
+sh sh InsertIntoT2.ksh 300 100 102 1 --uses 101 ordinals values;
+obey exec_insertt2;
+
+insert into RefreshControlTable(0,1,203,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,204,'update T2 set B2 = B2 + 1 where mod(B1,10)=0',1,5,1);
+
+insert into RefreshControlTable(0,1,205,'delete from T1 where T1 = 5',1,5,1);
+
+insert into RefreshControlTable(0,1,206,'delete from T2 where mod(B1,10)=2',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mv2',1,5,1);
+
+-- Proccess 3
+insert into RefreshControlTable(0,3,1,'select sum(SUM_A3) from MV2',15,1,);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_6;
+
+--------------------------------------------------
+?section TestA_7
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV2
+	refresh on request
+	initialize on create
+	ignore changes on T2
+	store by (A1,B1)
+	mvattribute commit each 1000 rows
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2 
+		from T1, T2
+		where T1.A1 = T2.B2
+		group by (A1,B1);
+
+create mv MV3
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute commit each 1000 rows
+	as 
+		select A1, SUM_A3
+		from MV2
+		group by (A3);
+
+-- Turn the pipeline on
+insert into tandem_system_nsk.system_defaults_schema.system_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '5');
+
+create MVGroup MVG;
+alter mvgroup MVG add MV2, MV3;
+
+obey PARALLELISM_TEST(FILLUP_T1);
+obey PARALLELISM_TEST(FILLUP_T2);
+
+-- proccess 1
+sh sh InsertIntoT1.ksh 200 10 1; --uses 101 first ordinals values
+obey exec_insertt1;
+sh sh InsertIntoT2.ksh 300 100 102 1 --uses 101 ordinals values;
+obey exec_insertt2;
+
+insert into RefreshControlTable(0,1,203,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,204,'update T2 set B2 = B2 + 1 where mod(B1,10)=0',1,5,1);
+
+insert into RefreshControlTable(0,1,205,'delete from T1 where T1 = 5',1,5,1);
+
+insert into RefreshControlTable(0,1,206,'delete from T2 where mod(B1,10)=2',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mvgroup MVG',1,5,1);
+
+-- Proccess 3
+insert into RefreshControlTable(0,3,1,'select sum(SUM_A3) from MV2',15,1,);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(COMPARE_A_3);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_7;
+
+--------------------------------------------------
+?section TestA_8
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute commit each 1000 rows
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+create mv MV3
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute commit each 1000 rows
+	as
+		select SUM_A3
+		from MV1;
+
+-- Turn the pipeline on
+insert into tandem_system_nsk.system_defaults_schema.system_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '5');
+
+create MVGroup MVG;
+alter mvgroup MVG add MV2, MV3;
+
+obey PARALLELISM_TEST(FILLUP_T1);
+
+-- Here starts the parallel part of the section
+
+-- Proccess 1
+sh sh InsertIntoT1.ksh 200 10 1;
+obey exec insertt1;
+-- uses 101 first ordinaly values
+
+insert into RefreshControlTable(0,1,102,'update T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable(0,1,103,'delete from T1 where A1 = 5',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh mvgroup MVG',1,5,1);
+
+-- Proccess 3
+insert into RefreshControlTable(0,3,1,'select sum(SUM_A3) from MV1',15,1,);
+
+sh refresh_test 3 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_A_8;
+
+--------------------------------------------------
+?section TestB_1
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP);
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+alter table T1 attribute NO RANGELOG;
+alter table T2 attribute NO RANGELOG;
+alter table T1 attribute LOCKONREFRESH;
+alter table T2 attribute LOCKONREFRESH;
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2.B2
+		group by A1,B1;
+
+obey PARALLELISM_TEST(FILLUP_T1_SMALL);
+obey PARALLELISM_TEST(FILLUP_T2);
+
+insert into RefreshControlTable 
+values(0,1,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+insert into RefreshControlTable 
+values(0,2,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+insert into RefreshControlTable 
+values(0,3,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+sh sh InsertIntoT1.ksh 200 20 2 10; -- key = NxN, where N=(200,..,220)
+obey exec_insertt1;
+
+sh sh InsertIntoT2 300 200 2 0 2 210; -- key = (300,..,500), join  - B2=210(=A1)
+obey exec_insertt2;
+
+sh sh InsertIntoT2 600 300 405 0 1 210; -- (600,..,900), join  - B2=210(=A1)
+obey exec_insertt2;
+
+insert into RefreshControlTable values(0,1,707,'update CATMVS.MVSCHM.T1 set A3 = A3 + 1 where A3>5',1,5,1);
+
+insert into RefreshControlTable values(0,3,2,'refresh CATMVS.MVSCHM.MV1 without log cleanup debug 51,52,54',1,5,1);
+
+sh refresh_test 3 sql_user8 ;
+
+refresh MV1;
+
+obey PARALLELISM_TEST(COMPARE_B_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_B_1;
+
+--------------------------------------------------
+?section TestB_2
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP);
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+alter table T1 attribute LOCKONREFRESH;
+alter table T1 attribute AUTOMATIC RANGELOG;
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute audit
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+obey PARALLELISM_TEST(FILLUP_T1_BIG);
+
+-- Here starts the parallel part of the section
+
+insert into RefreshControlTable 
+values(0,1,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+insert into RefreshControlTable 
+values(0,2,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+-- Proccess 1
+prepare insert_into_t1 from
+	insert into RefreshControlTable values(?,?,?,?,?,?,?);
+sh sh InsertIntoT1.ksh 230 50 2;
+
+obey exec_insert_into_t1;
+-- uses 101 first ordinaly values
+
+insert into RefreshControlTable values(0,1,2503,'update CATMVS.MVSCHM.T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable values(0,1,2504,'delete from CATMVS.MVSCHM.T1 where A1 = 5',1,5,1);
+
+insert into RefreshControlTable values(0,1,2505,'select * from CATMVS.MVSCHM.T1',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable values(0,2,2,'refresh CATMVS.MVSCHM.MV1 without log cleanup debug 51,52,54',1,5,1);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_B_2;
+
+--------------------------------------------------
+?section TestB_3
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+alter table T1 attribute LOCKONREFRESH;
+alter table T1 attribute MIXED RANGELOG;
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute audit
+	as
+		select A1,sum(A3) as SUM_A3
+		from T1
+		group by A1;
+
+obey PARALLELISM_TEST(FILLUP_T1_BIG);
+
+-- Here starts the parallel part of the section
+
+insert into RefreshControlTable 
+values(0,1,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+insert into RefreshControlTable 
+values(0,2,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+-- Proccess 1
+
+prepare insert_into_t1 from
+	insert into RefreshControlTable values(?,?,?,?,?,?,?);
+sh sh InsertIntoT1.ksh 230 50 2;
+
+obey exec_insert_into_t1;
+-- uses 101 first ordinaly values
+
+insert into RefreshControlTable values(0,1,2503,'update CATMVS.MVSCHM.T1 set A3 = A3 + 1 where A1=A2',1,5,1);
+
+insert into RefreshControlTable values(0,1,2504,'delete from CATMVS.MVSCHM.T1 where A1 = 5',1,5,1);
+
+insert into RefreshControlTable values(0,1,2505,'select * from CATMVS.MVSCHM.T1',1,5,1);
+
+-- Proccess 2
+insert into RefreshControlTable values(0,2,2,'refresh CATMVS.MVSCHM.MV1 without log cleanup debug 51,52,54',1,5,1);
+
+sh refresh_test 2 sql_user8 ;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_B_2;
+
+--------------------------------------------------
+?section TestC_1
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_A);
+alter table T1 attribute AUTOMATIC RANGELOG;
+alter table T2 attribute AUTOMATIC RANGELOG;
+
+create mv MV2
+	refresh on request
+	initialized on create
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2=A2
+		group by (A1,B1);
+
+insert into RefreshControlTable 
+values(0,1,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+insert into RefreshControlTable 
+values(0,2,1,'SET SCHEMA CATMVS.MVSCHM',1,1,0);
+
+-- max key value (30,30), mid value (100,100)
+sh sh InsertIntoT1.ksh 1 30 2;
+
+sh sh SpecialFillUpT1 100 200; -- max key value (200,200), mid value (100,100)
+obey exec_fillup_t1;
+sh sh SpecialFillUp 200 400; -- max key value (400), mid value (200)
+obey exec_fillup_t2;
+
+-- Proccess 1 : Insert into T1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+-- Proccess 2 : Insert into T2
+sh sh InsertIntoT2.ksh 201 198 1 2
+
+-- Proccess 3: Refresh MV2
+insert into RefreshControlTable(0,3,1,'refresh MV2',1,5,1);
+
+sh refresh_test 3 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_1;
+
+--------------------------------------------------
+?section TestC_2
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute MIXED RANGELOG;
+alter table T2 attribute MIXED RANGELOG;
+
+create mv MV2
+	refresh on request
+	initialized on create
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2=A2
+		group by (A1,B1);
+sh sh SpecialFillUpT1 100 200; -- max key value (200,200), mid value (100,100)
+obey exec_fillup_t1;
+sh sh SpecialFillUp 200 400; -- max key value (400), mid value (200)
+obey exec_fillup_t2;
+
+-- Proccess 1 : Insert into T1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+-- Proccess 2 : Insert into T2
+sh sh InsertIntoT2.ksh 201 198 1 2
+
+-- Proccess 3: Refresh MV2
+insert into RefreshControlTable(0,3,1,'refresh MV2',1,5,1);
+
+sh refresh_test 3 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_2;
+
+--------------------------------------------------
+?section TestC_3
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute AUTOMATIC RANGELOG;
+alter table T2 attribute AUTOMATIC RANGELOG;
+
+create mv MV2
+	refresh on request
+	initialized on create
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2=A2
+		group by (A1,B1);
+sh sh SpecialFillUpT1 100 200; -- max key value (200,200), mid value (100,100)
+obey exec_fillup_t1;
+sh sh SpecialFillUp 200 400; -- max key value (400), mid value (200)
+obey exec_fillup_t2;
+
+-- Proccess 1 : Insert into T1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+-- Proccess 2 : Insert into T2
+sh sh InsertIntoT2.ksh 201 198 1 2
+
+-- Proccess 3: Refresh MV2
+insert into RefreshControlTable(0,3,1,'refresh MV2 recompute',1,5,1);
+
+sh refresh_test 3 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_3;
+
+--------------------------------------------------
+?section TestC_4
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute MIXED RANGELOG;
+alter table T2 attribute MIXED RANGELOG;
+
+create mv MV2
+	refresh on request
+	initialized on create
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2=A2
+		group by (A1,B1);
+sh sh SpecialFillUpT1 100 200; -- max key value (200,200), mid value (100,100)
+obey exec_fillup_t1;
+sh sh SpecialFillUp 200 400; -- max key value (400), mid value (200)
+obey exec_fillup_t2;
+
+-- Proccess 1 : Insert into T1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+-- Proccess 2 : Insert into T2
+sh sh InsertIntoT2.ksh 201 198 1 2
+
+-- Proccess 3: Refresh MV2
+insert into RefreshControlTable(0,3,1,'refresh MV2 recompute',1,5,1);
+
+sh refresh_test 3 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_4;
+
+--------------------------------------------------
+?section TestC_5
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute NO RANGELOG;
+
+create mv MV1
+	refresh on request
+	initialize on refresh
+	store by (A1)
+	mvattribute audit
+	as 
+		select A1, sum(A3) as SUM_A3
+		from T1
+		group by (A1);
+
+sh sh sSpecialFillUpT1 100 200;
+obey exec_fillup_t1;
+
+-- Proccess 1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+--Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh MV1 recompute',1,5,1);
+
+sh sh refresh_test 2 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_5;
+
+--------------------------------------------------
+?section TestC_6
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute NO RANGELOG;
+
+create mv MV1
+	refresh on request
+	initialize on create
+	store by (A1)
+	mvattribute audit
+	as 
+		select A1, sum(A3) as SUM_A3
+		from T1
+		group by (A1);
+
+sh sh sSpecialFillUpT1 100 200;
+obey exec_fillup_t1;
+
+-- Proccess 1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+--Proccess 2
+insert into RefreshControlTable(0,2,1,'refresh MV1 recompute',1,5,1);
+
+sh sh refresh_test 2 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_1);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_6;
+
+--------------------------------------------------
+?section TestC_7
+
+log LOGPARALLELISM clear;
+
+obey PARALLELISM_TEST(CLEAN_UP):
+obey PARALLELISM_TEST(DELETE_DATA);
+obey PARALLELISM_TEST(SET_UP_C);
+alter table T1 attribute NO RANGELOG;
+alter table T2 attribute NO RANGELOG;
+
+create mv MV2
+	refresh on statement
+	initialized on refresh
+	store by (A1,B1)
+	mvattribute audit
+	as
+		select A1, sum(A3) as SUM_A3, B1, sum(B2) as SUM_B2
+		from T1, T2
+		where T1.A1=T2=A2
+		group by (A1,B1);
+sh sh SpecialFillUpT1 100 200; -- max key value (200,200), mid value (100,100)
+obey exec_fillup_t1;
+sh sh SpecialFillUp 200 400; -- max key value (400), mid value (200)
+obey exec_fillup_t2;
+
+-- Proccess 1 : Insert into T1
+sh sh InsertIntoT1.ksh 101 99 1;
+obey exec_insertt1;
+
+-- Proccess 2 : Insert into T2
+sh sh InsertIntoT2.ksh 201 198 1 2
+
+-- Proccess 3: Refresh MV2
+insert into RefreshControlTable(0,3,1,'refresh MV2 recompute',1,5,1);
+
+sh refresh_test 3 sql_user8;
+
+obey PARALLELISM_TEST(COMPARE_A_2);
+
+obey PARALLELISM_TEST(SHOW_TIME);
+
+log;
+
+obey PARALLELISM_TEST(DELETE_DATA);
+
+obey PARALLELISM_TEST(CLEAN_UP);
+
+sh cp LOGPARALLELISM LOGPARALLELISM_C_7;

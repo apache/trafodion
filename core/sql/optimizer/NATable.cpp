@@ -2168,7 +2168,8 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
 
 static 
 PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, NAMemory* heap)
+createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+                                        NAMemory* heap)
 {
 
    desc_struct* hrk = desc;
@@ -2176,6 +2177,19 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, NAMemory* heap)
    NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
 
    Int32 partns = nodeMap->getNumEntries();
+
+   // get nodeNames of region servers by making a JNI call
+   // do it only for multiple partition table
+   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON)) {
+     ARRAY(const char *) nodeNames(heap, partns);
+     if (table->getRegionsNodeName(partns, nodeNames)) {
+       for (Int32 p=0; p < partns; p++) {
+         const NAString node (nodeNames[p], heap);
+         // populate NodeMape with region server node ids
+         nodeMap->setNodeNumber(p, nodeMap->mapNodeNameToNodeNum(node));
+       }
+     }
+   }
 
    PartitioningFunction* partFunc;
    if ( partns > 1 )
@@ -2763,56 +2777,7 @@ static NABoolean checkRemote(desc_struct* part_desc_list,
 {
   if (!OSIM_isNSKbehavior())
     return TRUE;
-  desc_struct* partns_desc = part_desc_list;
-  char mySystem[9];
-  char *currPart;
-  short lengthCurrPart = 0;
-  mySystem[8] = '\0';
 
-  OSIM_GETSYSTEMNAME(OSIM_MYSYSTEMNUMBER(), (short *)mySystem);
-
-  short lengthMySys = 0;
-  while (lengthMySys < 8)
-  {
-    if (mySystem[lengthMySys] == ' ')
-       break;
-    lengthMySys++;
-  }
-
-  if(NOT partns_desc)
-  {
-    currPart = tableName;
-    while (lengthCurrPart < 8)
-    {
-       if (currPart[lengthCurrPart] == '.')
-          break;
-       lengthCurrPart++;
-    }
-    if ((lengthCurrPart != lengthMySys) ||
-        (str_cmp(currPart, mySystem, lengthMySys) != 0))
-       return TRUE;
-  }
-  else
-  {
-    while (partns_desc)
-    {
-      // ------------------------------------------------------------------
-      // Loop over all partitions
-      // ------------------------------------------------------------------
-      currPart = partns_desc->body.partns_desc.partitionname;
-      lengthCurrPart = 0;
-      while (lengthCurrPart < 8)
-      {
-         if (currPart[lengthCurrPart] == '.')
-            break;
-         lengthCurrPart++;
-      }
-      if ((lengthCurrPart != lengthMySys) ||
-          (str_cmp(currPart, mySystem, lengthMySys) != 0))
-         return TRUE;
-      partns_desc = partns_desc->header.next;
-    }
-  }
   return FALSE;
 }
 #pragma warn(262)  // warning elimination
@@ -3597,68 +3562,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 {
   if (!OSIM_isNSKbehavior())
     return;
-  // get index name
-  NAString *str=NULL;
-  Int32 *index=NULL;
-  NAFileSet *nfs=NULL;
-  NAFileSet *nfsRemote= NULL;
-  NAFileSet *nfsLocal=NULL;
-
-  NAFileSetList localIndexes(CmpCommon::statementHeap()),
-                remoteIndexes(CmpCommon::statementHeap());
-
-  // gather remote and local indexes
-  UInt32 i,j;
-  for (i=0; i<Iter.entries();i++)
-    {
-    Iter.getNext(str,index);
-    nfs=(NAFileSet *)index;
-
-    NAString  extFileName(nfs->getExtFileSetName().data(),
-                          CmpCommon::statementHeap());
-    char *str=(char *)extFileName.data();
-    char *pos=strchr(str, '.');
-    *pos='\0';
-
-    if (strcmp(str, localNodeName) == 0)
-      {
-       // all local indexes go into the indexes list to be considered
-       // by the optimizer
-       indexes.insert(nfs);
-
-       localIndexes.insert(nfs);
-      }
-    else
-       remoteIndexes.insert(nfs);
-    }
-
-  for (i=0; i<remoteIndexes.entries();i++)
-    {
-    nfsRemote=remoteIndexes[i];
-
-    for (j=0; j<localIndexes.entries();j++)
-      {
-      nfsLocal=localIndexes[j];
-      NABoolean partitionedSameWay = TRUE;
-
-      // check if both are partitioned....
-      if (nfsLocal->isPartitioned() != nfsRemote->isPartitioned() ||
-          (! (nfsLocal->getPartitioningKeyColumns() ==
-             nfsRemote->getPartitioningKeyColumns())))
-         partitionedSameWay=FALSE;
-
-      if (nfsLocal->getAllColumns() == nfsRemote->getAllColumns()&&
-          partitionedSameWay)
-        {
-
-        // nfsRemote goes away?
-        nfsRemote->setRemoteIndexGone();
-        break;
-        }
-      }
-      indexes.insert(nfsRemote);
-    }
-
 } // processDuplicateNames()
 // LCOV_EXCL_STOP
 
@@ -4119,6 +4022,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               if ( doHash2 && hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
+                      table,
 		      heap);
 
                    partitioningKeyColumns = hbaseSaltOnColumns;
@@ -5221,6 +5125,7 @@ NATable::NATable(BindWA *bindWA,
 						 sg_desc->sqlDataType,
 						 sg_desc->fsDataType,
 						 sg_desc->cycleOption,
+                                                 FALSE,
 						 sg_desc->objectUID,
 						 sg_desc->cache,
 						 sg_desc->nextValue,
@@ -5321,7 +5226,7 @@ NATable::NATable(BindWA *bindWA,
       primaryNodeNum=0;
 
       if(!OSIM_runningSimulation())
-        error = OSIM_NODENAME_TO_NODENUMBER_ (nodeName, nodeNameLen, &primaryNodeNum);
+        error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
     }
     else{
       //get qualified name of the clustering index which should
@@ -5373,7 +5278,7 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      error = OSIM_NODENAME_TO_NODENUMBER_ (nodeName, nodeNameLen, &primaryNodeNum);
+      error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
     }
   }
 
@@ -7528,6 +7433,53 @@ Int64 NATable::estimateHBaseRowCount() const
     }
 
   return estRowCount;
+}
+
+// Method to get hbase regions servers node names
+NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+{
+  if (!isHbaseTable() || isSeabaseMDTable() ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
+      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
+    return FALSE;
+
+  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
+  const char* server = defs->getValue(HBASE_SERVER);
+  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+                           (STMTHEAP, server, zkPort);
+
+  Lng32 retcode = ehi->init(NULL);
+  if (retcode < 0)
+  {
+    *CmpCommon::diags()
+              << DgSqlCode(-8448)
+              << DgString0((char*)"ExpHbaseInterface::init()")
+              << DgString1(getHbaseErrStr(-retcode))
+              << DgInt0(-retcode)
+              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+    delete ehi;
+    return FALSE;
+  }
+  else
+  {
+    HbaseStr fqTblName;
+    NAString tblName = getTableName().getQualifiedNameAsString();
+    fqTblName.len = tblName.length();
+    fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+    strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+    fqTblName.val[fqTblName.len] = '\0';
+
+    retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
+
+    NADELETEBASIC(fqTblName.val, STMTHEAP);
+    delete ehi;
+    if (retcode < 0)
+      return FALSE;
+  }
+  return TRUE;
+
 }
 
 // Method to get hbase table index levels and block size

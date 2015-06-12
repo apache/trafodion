@@ -1,0 +1,238 @@
+>>obey TESTMV071(SET_UP);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table catmvs.mvschm.Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE catmvs.mvschm.Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create table t1 ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2 ( b int );
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>-------------------------------------------------------
+>>
+>>-- Run Tests
+>>  obey TESTMV071(TEST1);
+>>-- revoking select after a recomputed mv was dropped
+>>
+>>create mv mv1 RECOMPUTE initialize on create as select * from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>  obey TESTMV071(TEST2);
+>>-- revoking select after an on request mv was dropped
+>>
+>>create mv mv1 REFRESH ON REQUEST initialize on create as select * from t1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.MV1_959493394_8658 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>  obey TESTMV071(TEST3);
+>>-- revoking select after an on statement mv was dropped
+>>
+>>create mv mv1 REFRESH ON STATEMENT initialize on create as select * from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>  obey TESTMV071(TEST4);
+>>-- revoking select after a recomputed MV was dropped (2 tables)
+>>
+>>create mv mv1 RECOMPUTE initialize on create as select a from t1, t2 where a = b;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on t2 to $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>revoke select on t2 from $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>  obey TESTMV071(TEST5);
+>>-- revoking select after an on request MV was dropped (2 tables)
+>>
+>>create mv mv1 REFRESH ON REQUEST initialize on create as select a from t1, t2 where a = b group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.MV1_351592535_8658 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on t2 to $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>revoke select on t2 from $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>  obey TESTMV071(TEST6);
+>>-- revoking select after an on statement MV was dropped (2 tables)
+>>
+>>create mv mv1 REFRESH ON STATEMENT initialize on create as select a from t1, t2 where a = b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.MV1_918575255_8658 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on t1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on t2 to $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>revoke select on t1 from $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>revoke select on t2 from $$SQLUSER5Q$$;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>
+>>obey TESTMV071(CLEAN_UP);
+>>
+>>drop mv mv1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv mv9;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.MV9 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.MV9 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1;
+
+--- SQL operation complete.
+>>drop table t2;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>
+>>log;

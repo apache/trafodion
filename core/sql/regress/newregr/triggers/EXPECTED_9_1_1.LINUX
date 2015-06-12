@@ -1,0 +1,91 @@
+>>obey TEST_9_1_1(set_up);
+>>set schema cat1.schm;
+
+--- SQL operation complete.
+>>create table t10
++>   (a int not null, 
++>    b int, 
++>    primary key (a) not droppable)
++>   LOCATION $$partition$$
++>   RANGE PARTITION (ADD FIRST KEY 2000 LOCATION $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>
+>>insert into t10 values (1,1), (1000,1000), (2000,2000), (3000,3000);
+
+--- 4 row(s) inserted.
+>>
+>>create trigger trig10
++>before delete on t10
++>for each row
++>SIGNAL sqlstate 'S0000'('delete') ;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>obey TEST_9_1_1(tests);
+>>set schema cat1.schm;
+
+--- SQL operation complete.
+>>
+>>delete from t10;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0000, Message: delete.
+
+--- 0 row(s) deleted.
+>>
+>>-- MODIFY adds a new second partition and should copy be triggers info
+>>-- to the Resource fork of the second partitiona, this is verified in
+>>-- the last delete
+>>modify table t10 add partition where first key  upto value(
++>        4000) to location $$partition1$$;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+modify table t10 add partition where first key  upto value(         4000) to lo
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>delete from t10;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0000, Message: delete.
+
+--- 0 row(s) deleted.
+>>
+>>-- Since this Modify deletes the first partition after moving the rows
+>>-- to the second partition, the second partition now becomes the primary
+>>-- which was added by the before MODIFY statement.
+>>modify table t10 move partition where first partition to next partition;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+modify table t10 move partition where first partition to next partition;
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- This should fail as there is delete trigger on the table. If the trigger
+>>-- info was not copied correctly when doing the FIRST MODIFY then we will 
+>>-- see a an assertion which means case 10-040603-3876 is broke.
+>>delete from t10;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0000, Message: delete.
+
+--- 0 row(s) deleted.
+>>
+>>select * from t10;
+
+A            B          
+-----------  -----------
+
+          1            1
+       1000         1000
+       2000         2000
+       3000         3000
+
+--- 4 row(s) selected.
+>>
+>>LOG;

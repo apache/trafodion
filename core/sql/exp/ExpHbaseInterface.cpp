@@ -535,6 +535,29 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 }
 
 //----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
+				   NAText * hbaseCreateOptionsArray,
+                                   NABoolean noXn)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+  
+  Int64 transID = 0;
+  if (!noXn)
+    transID = getTransactionIDFromContext();
+ 
+  retCode_ = client_->alter(tblName.val, hbaseCreateOptionsArray, transID);
+
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_ALTER_ERROR;
+}
+
+//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn)
 {
   if (client_ == NULL)
@@ -1215,6 +1238,32 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
  }
 */
 
+Lng32 ExpHbaseInterface_JNI::isEmpty(
+                                     HbaseStr &tblName)
+{
+  Lng32 retcode;
+
+  retcode = init(hbs_);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+  
+  LIST(HbaseStr) columns(heap_);
+
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, 
+       NULL, NULL, NULL);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+
+  retcode = nextRow();
+
+  scanClose();
+  if (retcode == HBASE_ACCESS_EOD)
+    return 1; // isEmpty
+  else if (retcode == HBASE_ACCESS_SUCCESS)
+    return 0; // not empty
+
+  return -HBASE_ACCESS_ERROR; // error
+}
 
 //----------------------------------------------------------------------------
 // Avoid messing up the class data members (like htc_)
@@ -1538,6 +1587,22 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, estRC);
   return retCode_;
 }
+
+// get nodeNames of regions. this information will be used to co-locate ESPs
+Lng32 ExpHbaseInterface_JNI::getRegionsNodeName(const HbaseStr& tblName,
+                                                Int32 partns,
+                                                ARRAY(const char *)& nodeNames)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  retCode_ = client_->getRegionsNodeName(tblName.val, partns, nodeNames);
+  return retCode_;
+}
+
 
 // Get Hbase Table information. This will be generic function to get needed information
 // from Hbase layer. Currently index level and blocksize is being requested for use in

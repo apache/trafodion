@@ -1,0 +1,590 @@
+>>
+>>----------------
+>>obey TESTMV511(SETUP);
+>>------------------------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>
+>>create mvgroup MVG1_511;
+
+--- SQL operation complete.
+>>
+>>
+>>create table T_511_T1
++>	(a         int not null not droppable, 
++>	 b         int not null not droppable,
++>	 long_str  CHARACTER (3000) ,
++>	 primary key (a,b))
++>	 attribute automatic rangelog
++>	 store by primary key 
++>	 location $$partition0$$
++>	 PARTITION (add first key (101,   1) location $$partition1$$,
++>	            add first key (201,1000) location $$partition2$$,
++>				add first key (300, 200) location $$partition2$$,
++>	            add first key (701,  10) location $$partition0$$);
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_511_T1_temp
++>	(a         int not null not droppable, 
++>	 b         int not null not droppable, 
++>	 long_str  CHARACTER (3000) ,
++>	 primary key (a,b));
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T1_temp attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv T_511_MV1
++>	refresh on request
++>	initialize on create
++>	as select b ,count (a) cnt  
++>	   from T_511_T1
++>	   group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_511_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER  mvgroup MVG1_511 ADD T_511_MV1 ;
+
+--- SQL operation complete.
+>>
+>>
+>>prepare select_iud_log from
++> select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT'
++>                                 when 1 then 'DELETE'
++>                                 when 2 then 'I-UPDATE'
++>                                 when 3 then 'D-UPDATE'
++>                                 when 4 then 'END-RANGE'
++>                                 when 12 then 'BEGIN-RANGE'
++>          end
++>        , "@RANGE_SIZE"
++>        , a, b
++> from table(iud_log_table T_511_T1)
++> order by a,b,"@TS" ;
+
+--- SQL command prepared.
+>>
+>>
+>>create table T_511_T3 (	a int not null not droppable,
++>			str char(50) not null not droppable,
++>		primary key(a  ASC , str DESC))
++>		attribute automatic rangelog
++>		store by primary key 
++>		location $$partition0$$
++>		PARTITION (add first key (101,'a')  location $$partition1$$,
++>			   add first key (201,'de') location $$partition2$$,
++>			   add first key (300,'b')  location $$partition2$$,
++>			   add first key (701,'e')  location $$partition0$$);
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_511_T3_temp (	a int not null not droppable,  
++>			str char(50) not null not droppable,
++>			primary key(a , str));
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T3_temp attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_511_MV3
++>	refresh on request
++>	initialize on create
++>	as  select a, count(str) cnt 
++>            from T_511_T3
++>            group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_511_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER  mvgroup MVG1_511 ADD T_511_MV3;
+
+--- SQL operation complete.
+>>
+>>prepare select_from_log_of_T3 from
++>	select "@EPOCH",
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>   					  else         '???'
++>		   end,
++>		   a,str
++>	from table (iud_log_table T_511_T3)
++>	order by a, "@TS";
+
+--- SQL command prepared.
+>>
+>>
+>>create table T_511_T4
++>	(a         int not null not droppable, 
++>	 b         int not null not droppable,
++>	 long_str  CHARACTER (3000) ,
++>	 primary key (a,b))
++>    attribute automatic rangelog
++>    store by primary key 
++>    location $$partition0$$
++>    PARTITION  (add first key (101,   1) location $$partition1$$,
++>		add first key (201,1000) location $$partition2$$,
++>		add first key (300, 200) location $$partition2$$,
++>		add first key (701,  10) location $$partition0$$);
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_511_T4_temp
++>	(a         int not null not droppable, 
++>	 b         int not null not droppable, 
++>	 long_str  CHARACTER (3000), 
++>	 primary key (a,b));
+
+--- SQL operation complete.
+>>ALTER TABLE T_511_T4_temp attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_511_MV4
++>	refresh on request
++>	initialize on create
++>	as select b , sum (a) sum_a 
++>           from T_511_T4
++>           group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_511_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER  mvgroup MVG1_511 ADD T_511_MV4;
+
+--- SQL operation complete.
+>>
+>>prepare select_from_log_of_T4 from
++>	select "@EPOCH",
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>   					  else         '???'
++>		   end,
++>		   a
++>	from table (iud_log_table T_511_T4)
++>	order by a, "@TS";
+
+--- SQL command prepared.
+>>
+>>----------------------------------------------------------------------------------
+>>
+>>
+>>-- insert using sideinserts into audited tables is not supported.
+>>--	obey TESTMV511(TEST1);
+>>
+>>	obey TESTMV511(TEST2);
+>>----------------------------------------------------------------------------------
+>>insert into T_511_T1_temp values 
++>	(1,1,'ahfsdh'),(2,1,'adfh'),(3,1,'yturiur'),(15,2,'erwy'),(16,7,'etywrt'),
++>	(17,7,'fdsgsd'),(20,7,'sdfgSDFH'),(50,7,'fgdhsfgj'),(51,12,'gfsgjmfjd'),(52,1,'sfgjsgsjgf'),
++>	(201,1001,'fdshfdsjgd'),(202,1004,'dfjdfj'),(203,1004,'dfhfhf'),(215,1200,'dfghkjhk'),(216,1007,'fsgjtr'),
++>	(217,1070,'YtfTRE'),(220,1070,'fgjRTD'),(250,1070,'REHSshgRD'),(251,1112,'weah'),(252,1111,'adfh'),
++>	(254,2103,'DHjhgfFGH'),(256,1405,'RASafdh'),(258,1406,'fds'),(259,1089,'uyk'),(260,1089,'hkj'),
++>	(261,1089,'fdsh'),(262,1046,'sadg'),(263,1047,'sdtrTr'),(264,48,'treR'),(265,1,'rtyhER'),
++>	(285,85,'dsfhg'),(286,1046,'sdf'),(287,1047,'dssd'),(288,1048,'sh'),(289,1049,'sdhf'),
++>	(290,1050,'asdg'),(291,1051,'dfhERdfg'),(292,1048,'dfsRE'),(293,1047,'sWsf'),(295,85,'sdag'),
++>	(295,1983,'dsf'),(295,1986,'ets32rf'),(295,1987,'sdj'),(295,3432,'sag'),(295,5656,'dhrewe'),
++>	(296,234,'dhn'),(298,23,'df'),(298,34,'weq'),(298,45,'fgad'),(298,98,'weqhhfds'),
++>	(705,235,'erh'),(705,237,'34rwer'),(705,56,'fgh'),(705,89,'dsag'),(705,789,'efw'),
++>	(719,346,'fgdhE'),(719,71,'ewt'),(735,68,'hgfdj'),(735,658,'fds'),(735,34,'dah'),
++>	(736,34,'DFggs'),(736,3245,'dsfhsdh'),(736,235,'sda'),(736,372,'dweqw'),(736,33,'erw'),
++>	(790,23,'asd'),(791,22,'dsfsd'),(792,23,'dfg'),(792,234,'fds'),(792,33,'asdg');
+
+--- 70 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T1 attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts into T_511_T1(a,b,long_str) select * from T_511_T1_temp order by a,b;
+
+--- 70 row(s) inserted.
+>>execute select_iud_log;
+
+@EPOCH       (EXPR)       @RANGE_SIZE  A            B          
+-----------  -----------  -----------  -----------  -----------
+
+       -101  BEGIN-RANGE            0            1            1
+       -101  END-RANGE             10           52            1
+       -101  BEGIN-RANGE            0          201         1001
+       -101  END-RANGE             40          298           98
+       -101  BEGIN-RANGE            0          705           56
+       -101  END-RANGE             20          792          234
+
+--- 6 row(s) selected.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T1 attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>select count(*) cnt from T_511_T1;
+
+CNT                 
+--------------------
+
+                  70
+
+--- 1 row(s) selected.
+>>
+>>----------------------------------------------------------------------------------
+>>
+>>	obey TESTMV511(TEST3);
+>>----------------------------------------------------------------------------------
+>>delete from T_511_T1_temp;
+
+--- 70 row(s) deleted.
+>>
+>>insert into T_511_T1_temp values 
++>	(101,1,'gdfs'),(102,1,'sadg'),(103,1,'asdg'),(115,2,'adsg'),(116,7,'asg'),
++>	(117,7,'asdg'),(120,7,'dsg'),(150,7,'dsa'),(151,12,'asd'),(152,1,'ag'),
++>	(154,23,'gds'),(156,45,'ag'),(158,46,'gaew'),(159,89,'DSffdsS'),(160,89,'THFfg'),
++>	(161,89,'gfddf'),(162,46,'sdg'),(163,47,'sdgS'),(164,48,'dfEfd'),(165,1,'sdgESfds'),
++>	(185,85,'sdfg'),(186,46,'dsfg'),(187,47,'sdfg'),(188,48,'dsfg'),(189,49,'sdfg'),
++>	(190,50,'sad'),(191,51,'asda'),(192,48,'dsaQWdsa'),(193,47,'sASda'),(195,85,'asSAas'),
++>	(301,1,'fdweEw'),(302,1,'SDFwa'),(303,1,'asF'),(315,2,'saSsd'),(316,7,'SsdfD'),
++>	(317,7,'FGcbnvc'),(320,7,'FdGfg'),(350,7,'sdfSA'),(551,12,'asdwq'),(552,1,'fdS'),
++>	(554,23,'asdf'),(556,45,'ASdfa'),(558,46,'jfg'),(559,89,'ghj'),(560,89,'ghj'),
++>	(561,89,'dfgh'),(562,46,'sdgj'),(563,47,'sdgj'),(564,48,'sdfh'),(565,1,'sdfh'),
++>	(585,85,'sdfh'),(586,46,'sdfh'),(587,47,'sdfh'),(588,48,'dfgh'),(589,49,'fgh'),
++>	(590,50,'fdgh'),(591,51,'dfgh'),(592,48,'ghDFfd'),(593,47,'hFGdg'),(595,85,'DHdas');
+
+--- 60 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T1 attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts into T_511_T1(a,b,long_str) select * from T_511_T1_temp order by a,b;
+
+--- 60 row(s) inserted.
+>>execute select_iud_log;
+
+@EPOCH       (EXPR)       @RANGE_SIZE  A            B          
+-----------  -----------  -----------  -----------  -----------
+
+       -101  BEGIN-RANGE            0            1            1
+       -101  END-RANGE             10           52            1
+       -101  BEGIN-RANGE            0          101            1
+       -101  END-RANGE             30          195           85
+       -101  BEGIN-RANGE            0          201         1001
+       -101  END-RANGE             40          298           98
+       -101  BEGIN-RANGE            0          301            1
+       -101  END-RANGE             30          595           85
+       -101  BEGIN-RANGE            0          705           56
+       -101  END-RANGE             20          792          234
+
+--- 10 row(s) selected.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T1 attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>select count(*) cnt from T_511_T1;
+
+CNT                 
+--------------------
+
+                 130
+
+--- 1 row(s) selected.
+>>
+>>refresh T_511_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_511_MV1 is being refreshed in a single transaction...
+
+USING THE FOLLOWING CONTROL STATMENTS :
+
+CONTROL TABLE CATMVS.MVSCHM.T_511_T1 MDAM  'ON'; 
+The materialized view CATMVS.MVSCHM.T_511_MV1 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_511_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_511_T1.
+
+
+>>
+>>PREPARE stat1 FROM
++>	select * from T_511_MV1
++>	order by b;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select b , count (a) cnt 
++>	from T_511_T1
++>	group by b
++>	order by b;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>----------------------------------------------------------------------------------
+>>	obey TESTMV511(TEST4);
+>>--------------------------------------------------------------------------------
+>>-- Expected :  hash partitioning and automatic or mixed rangelog cannot coexist
+>>create table T_511_T2 ( a int not null not droppable, 
++>			b int, 
++>			primary key(a))
++>                store by primary key
++>		attribute automatic rangelog
++>                hash PARTITION by (a)
++>                     (add location $$partition1$$,
++>                      add location $$partition2$$);
+
+*** ERROR[12083] Hash partitioning and an automatic or mixed range log cannot coexist.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------------------------------------------
+>>	obey TESTMV511(TEST5);
+>>--------------------------------------------------------------------------------
+>>
+>>insert into T_511_T3_temp values (101, 'b'),(1,'fdg'),(23,'dsga'),(300,'b'), (300,'a'),(350, 'gjhg'),(380, 'dghg');
+
+--- 7 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T3 attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>-- expected error or regular insert 
+>>insert using sideinserts into T_511_T3(a,str) 
++>	select * from T_511_T3_temp order by a,str;
+
+--- 7 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_511_T3 attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>select count(*) cnt from T_511_T3;
+
+CNT                 
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>
+>>execute select_from_log_of_T3;
+
+@EPOCH       (EXPR)       A            STR
+-----------  -----------  -----------  --------------------------------------------------
+
+       -101  BEGIN-RANGE            1  fdg                                               
+       -101  END-RANGE            101  b                                                 
+       -101  BEGIN-RANGE          300  a                                                 
+       -101  END-RANGE            380  dghg                                              
+
+--- 4 row(s) selected.
+>>
+>>refresh T_511_MV3 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_511_MV3 is being refreshed in a single transaction...
+
+USING THE FOLLOWING CONTROL STATMENTS :
+
+CONTROL TABLE CATMVS.MVSCHM.T_511_T3 MDAM  'ON'; 
+The materialized view CATMVS.MVSCHM.T_511_MV3 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_511_T3...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_511_T3.
+
+
+>>
+>>PREPARE stat1 FROM
++>	select * from T_511_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	   select a,count(str) cnt  
++>        from T_511_T3
++>        group by a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+10c10
+<         300                     1
+---
+>         300                     2
+>>
+>>------------------------------------------------------
+>>
+>>
+>>obey TESTMV511(CLEAN_UP);
+>>------------------------------------------------------
+>>
+>>refresh mvgroup MVG1_511 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>
+>> drop mv T_511_MV1;
+
+--- SQL operation complete.
+>> drop mv T_511_MV3;
+
+--- SQL operation complete.
+>> drop mv T_511_MV4;
+
+--- SQL operation complete.
+>> drop table T_511_T1_temp;
+
+--- SQL operation complete.
+>> drop table T_511_T1;
+
+--- SQL operation complete.
+>> drop table T_511_T3_temp;
+
+--- SQL operation complete.
+>> drop table T_511_T3;
+
+--- SQL operation complete.
+>> drop table T_511_T4_temp;
+
+--- SQL operation complete.
+>> drop table T_511_T4;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG1_511;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>log;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,68 +37,6 @@
 #define SFSOWARNING(x)
 #endif
 
-// Private inlined Methods for SimpleFileScanOptimizer.  These are
-// inlined, but only used in this file.
-
-// getRecordSizeInKb()
-// Return the cached value of the recordSizeinKB for this Scan.  Value
-// was initialized from the IndexDesc of the associated FileScan.
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getRecordSizeInKb() const
-{
-  return recordSizeInKb_;
-}
-
-// getBlockSizeInKb()
-// Return the cached value of the blockSizeinKB for this Scan.  Value
-// was initialized from the IndexDesc of the associated FileScan.
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getBlockSizeInKb() const
-{
-  return blockSizeInKb_;
-}
-
-// getEstimatedRecordsPerBlock()
-// Return the cached value of the estimatedRecordsPerBlock_ for this
-// Scan.  Value was initialized from the IndexDesc of the associated
-// FileScan.
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getEstimatedRecordsPerBlock() const
-{
-  return estimatedRecordsPerBlock_;
-
-}
-
-// Return the cached pointer to the single subset search key.
-// The value was cached in constructSearchKey()
-//
-inline const SearchKey *
-SimpleFileScanOptimizer::getSearchKey() const
-{
-  return searchKey_;
-}
-
-// Return the cached value of single subset size.
-// The value was cached in computeSingleSubsetSize()
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getSingleSubsetSize() const
-{
-  return singleSubsetSize_;
-}
-
-// Return the cached set of single subset predicates.
-// The value was cached in computeSingleSubsetSize()
-//
-inline const ValueIdSet &
-SimpleFileScanOptimizer::getSingleSubsetPreds() const
-{
-  return singleSubsetPreds_;
-}
-
 // Get any extra key predicates from the partitioning function.  The
 // partitioning function will provide extra key predicates when it
 // represents logical sub-partitioning.
@@ -123,7 +61,7 @@ SimpleFileScanOptimizer::getPartitioningKeyPredicates() const
 // underestimate the number of blocks by 1, if the subset starts
 // mid-block.
 //
-inline CostScalar
+CostScalar
 SimpleFileScanOptimizer::getNumBlocksForRows(const CostScalar &numRows) const
 {
 
@@ -139,7 +77,7 @@ SimpleFileScanOptimizer::getNumBlocksForRows(const CostScalar &numRows) const
 // based on the result set cardinality computed outside of the Scan
 // Optimizer and the number of active partitions for this Scan.
 //
-inline CostScalar 
+CostScalar 
 SimpleFileScanOptimizer::getResultSetCardinalityPerScan() const
 {
   return (getResultSetCardinality()/getEstNumActivePartitionsAtRuntime()).getCeiling();
@@ -148,7 +86,7 @@ SimpleFileScanOptimizer::getResultSetCardinalityPerScan() const
 // getRowsInDP2Buffer()
 // Compute the number of rows of this Scan that will fit in a DP2 Buffer.
 //
-inline CostScalar
+CostScalar
 SimpleFileScanOptimizer::getRowsInDP2Buffer() const
 {
   // Default size of a DP2 Message Buffer (in KBytes).
@@ -160,81 +98,6 @@ SimpleFileScanOptimizer::getRowsInDP2Buffer() const
   return
     (dp2MessageBufferSizeInKb / getRecordSizeInKb()).getFloor();
 }
-
-// Return the cached value of number of data rows.  This is the
-// number of rows produced by all successful probes.
-// The value was cached in categorizeMultiProbes().
-// 
-// For MultiProbe Scans
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getDataRows() const
-{
-  return dataRows_;
-}
-
-// Return the cached value of effective total row count.  This is the
-// size of the bounding subset of all probes.  Typically this will be
-// all the rows of the table, but if all probes are restricted to a
-// subset of rows (e.g. the key predicate contains leading constants)
-// then the effective row count will be less than the total row count.
-// The value was cached in computeCostVectorsMultiProbes().
-//
-//  For MultiProbe Scans
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getEffectiveTotalRowCount() const
-{
-  return effectiveTotalRowCount_;
-}
-
-// Return the cached value of real total row count.
-// The value was cached in computeCostVectorsMultiProbes().
-//
-//  For MultiProbe Scans
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getTotalRowCount() const
-{
-  return totalRowCount_;
-}
-
-// Return the cached value of the lower bound of the number of index
-// blocks for the table. This value is the estimate of the number of
-// blocks all probes touch in their way down in every level of the
-// B-tree. see IndexDesc::getEstimatedIndexBlocksLowerBound().
-// The value was cached in computeCostVectorsMultiProbes().
-//
-//  For MultiProbe Scans
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getIndexBlocksLowerBound() const
-{
-  return indexBlocksLowerBound_;
-}
-
-// Return the cached value of number of blocks for each successful
-// probe.  This is the estimated number of blocks produced by each
-// successful probe on average.
-// The value was cached in categorizeMultiProbes().
-// 
-// For MultiProbe Scans
-//
-inline const CostScalar &
-SimpleFileScanOptimizer::getBlksPerSuccProbe() const
-{
-  return blksPerSuccProbe_;
-}
-
-// Return the value of partialy order probes flag.
-// The value was cached in orderMatch().
-inline const NABoolean
-SimpleFileScanOptimizer::getPartialOrderProbesFlag() const
-{
-  return partialOrderProbes_;
-}
-
-// Methods for SimpleFileScanOptimizer
 
 SimpleFileScanOptimizer::SimpleFileScanOptimizer(
                         const FileScan& assocFileScan

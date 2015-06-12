@@ -1,0 +1,79 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+204a205,214
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_2_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6007] Multi-column statistics for columns (CUST_AMID_LVL_2_IND_VERT_CD, CUST_AMID_LVL_4_IND_VERT_CD, CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+> 
+214c224
+< 3     FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004
+---
+> 3     FILE_SCAN                       CUST_ACCT_HIER_  1.00E+000
+393a404,405
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+454a467,468
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+661a676,677
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+693a710,719
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_2_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6007] Multi-column statistics for columns (CUST_AMID_LVL_2_IND_VERT_CD, CUST_AMID_LVL_4_IND_VERT_CD, CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+> 
+704c730
+< 4     FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004
+---
+> 4     FILE_SCAN                       CUST_ACCT_HIER_  1.00E+000
+723a750,751
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+864a893,904
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_2_NM) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_2_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_IND_VERT_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6008] Statistics for column (CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.
+> 
+> *** WARNING[6007] Multi-column statistics for columns (CUST_AMID_LVL_2_IND_VERT_CD, CUST_AMID_LVL_4_IND_VERT_CD, CUST_AMID_LVL_4_CLS_1_CD) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+> 
+883c923
+< 12    FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004
+---
+> 12    FILE_SCAN                       CUST_ACCT_HIER_  1.00E+000
+915a956,957
+> 
+> *** WARNING[6008] Statistics for column (CUST_ACCT_HIER_KY) from table BENCH9X4.HPITD.CUST_ACCT_HIER_D were not available. As a result, the access path chosen might not be the best possible.

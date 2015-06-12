@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -116,8 +116,11 @@ class InterfaceStatement {
 		int nullValue = pstmt.inputDesc_[paramNumber].nullValue_;
 		int dataLength = pstmt.inputDesc_[paramNumber].maxLen_;
 
+                boolean shortLength = precision < Math.pow(2, 15);
+                int dataOffset = ((shortLength) ? 2 : 4);
+
 		if (dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH) {
-			dataLength += 2;
+			dataLength += dataOffset;
 
 			if (dataLength % 2 != 0)
 				dataLength++;
@@ -446,13 +449,15 @@ class InterfaceStatement {
 			}
 
 			dataLen = tmpBarray.length;
-			if (maxLength > (dataLen + 2)) { // size of short is 2
-				maxLength = dataLen + 2;
+			if (maxLength > (dataLen + dataOffset)) { 
+				maxLength = dataLen + dataOffset;
 
-				// TODO: should this be swapped?!
-				System.arraycopy(Bytes.createShortBytes((short) dataLen, this.ic_.getByteSwap()), 0, values,
-						noNullValue, 2);
-				System.arraycopy(tmpBarray, 0, values, (noNullValue + 2), dataLen);
+                                if (shortLength) {
+				   System.arraycopy(Bytes.createShortBytes((short) dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+                                } else {
+				   System.arraycopy(Bytes.createIntBytes((int) dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+                                }
+				System.arraycopy(tmpBarray, 0, values, (noNullValue + dataOffset), dataLen);
 			} else {
 				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
 						"VARCHAR data longer than column length: " + paramNumber);
@@ -753,7 +758,9 @@ class InterfaceStatement {
 					if (dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH
 							|| dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_LONG
 							|| dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR) {
-						colLength += 2;
+                                                boolean shortLength = colLength < Math.pow(2, 15);
+                                                int dataOffset = ((shortLength) ? 2 : 4);
+                                                colLength += dataOffset;
 
 						if (colLength % 2 != 0)
 							colLength++;
@@ -815,6 +822,9 @@ class InterfaceStatement {
 	// -------------------------------------------------------------
 	//TODO: this whole function needs to be rewritten
 	short getSqlStmtType(String str) {
+		str=str.replaceAll("\\n"," ");
+		str=str.replaceAll("\\s*/\\*.*?\\*/\\s*", " ").trim();
+
 		// 7708
 		stmtIsLock = false;
 
@@ -1214,6 +1224,7 @@ class InterfaceStatement {
 			} else {
 				inputRowCnt = paramRowCount - 1;
 			}
+
 		} else {
 			inputDataValue = fillInSQLValues2(ic_.getLocale(), stmt, inputRowCnt, paramCount, paramValues, clientErrors);
 
@@ -1275,7 +1286,6 @@ class InterfaceStatement {
 	    else if (er.returnCode == TRANSPORT.SQL_SUCCESS || er.returnCode == TRANSPORT.SQL_SUCCESS_WITH_INFO
 				|| er.returnCode == TRANSPORT.NO_DATA_FOUND) {
 			Arrays.fill(stmt.batchRowCount_, -2); // fill with success
-
 			if (er.errorList != null) // if we had errors with valid rowIds,
 			// update the array
 			{

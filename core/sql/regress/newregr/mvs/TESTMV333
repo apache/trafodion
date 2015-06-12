@@ -1,0 +1,484 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------
+-- TESTMV333:
+-- Showddl and invoke tests
+-------------------------------------------------------------
+set schema catmvs.mvschm;
+obey TESTMV333(clean_up);
+obey TESTMV333(set_up);
+log LOGMV333 clear;
+
+-- Run Tests
+  obey TESTMV333(Test1);
+  obey TESTMV333(Test2);
+  obey TESTMV333(Test3);
+  obey TESTMV333(Test4);
+  obey TESTMV333(Test5);
+  obey TESTMV333(Test6);
+  obey TESTMV333(Test7);
+  obey TESTMV333(Test8);
+  obey TESTMV333(Test9);
+  obey TESTMV333(Test10);
+  obey TESTMV333(Test11);
+  obey TESTMV333(Test12);
+  obey TESTMV333(Test13);
+  obey TESTMV333(Test14);
+  obey TESTMV333(Test15);
+  obey TESTMV333(Test16);
+  obey TESTMV333(Test17);
+  obey TESTMV333(Test18);
+  obey TESTMV333(Test19);
+  obey TESTMV333(Test20);
+  obey TESTMV333(Test21);
+  obey TESTMV333(Test22);
+  obey TESTMV333(Test23);
+
+-- Clean and Exit
+obey TESTMV333(clean_up);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+exit;
+
+------------------------------------------------------------
+?section Test1
+------------------------------------------------------------
+create mv T_333_MV1
+  refresh on request
+initialized on refresh
+  as select a, sum(b) as s_b
+  from T_333_T1 group by a;
+ALTER MV T_333_MV1 attribute all mvs allowed;
+
+showddl T_333_MV1;
+invoke T_333_MV1;
+------------------------------------------------------------
+?section Test2
+------------------------------------------------------------
+create mv T_333_MV2
+  refresh on request
+initialized on refresh
+  as select sum(a) as s_a, count(a) as c_a, count(*) as c_aa,
+            min(a) as m_a, max(a) as mm_a, variance(a) as v_a,
+            stddev(a) as ssa, b from T_333_T1
+  group by b;
+ALTER MV T_333_MV2 attribute all mvs allowed;
+
+showddl T_333_MV2;
+invoke T_333_MV2;
+
+refresh T_333_MV2;
+showddl T_333_MV2;
+invoke T_333_MV2;
+-----------------------------------------------------------
+?section Test3
+-----------------------------------------------------------
+create mv T_333_MV3(the_a, the_b)
+  refresh on request 
+initialized on refresh
+  as select a, b from T_333_T1
+  group by a, b;
+ALTER MV T_333_MV3 attribute all mvs allowed;
+
+showddl T_333_MV3;
+invoke T_333_MV3;
+----------------------------------------------------------
+?section Test4
+----------------------------------------------------------
+create mv T_333_MV4(the_a, the_b)
+  refresh on request
+initialized on refresh
+  as select a, sum(b) as bb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV4 attribute all mvs allowed;
+
+showddl T_333_MV4;
+invoke T_333_MV4;
+---------------------------------------------------------
+?section Test5
+---------------------------------------------------------
+create mv T_333_MV5
+  refresh on request
+initialized on refresh
+  as select a, count(b) as bb 
+  from T_333_T1, T_333_T2
+  where a = c
+  group by a;
+ALTER MV T_333_MV5 attribute all mvs allowed;
+
+showddl T_333_MV5;
+invoke T_333_MV5;
+---------------------------------------------------------
+?section Test6
+---------------------------------------------------------
+create mv T_333_MV6
+  refresh on statement
+initialized on refresh
+  as select a, sum(b) as bb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV6 attribute all mvs allowed;
+
+showddl T_333_MV6;
+invoke T_333_MV6;
+---------------------------------------------------------
+?section Test7
+---------------------------------------------------------
+create mv T_333_MV7
+  recompute
+initialized on refresh
+  as select a, sum(b) as bb 
+  from T_333_T1 group by a;
+ALTER MV T_333_MV7 attribute all mvs allowed;
+
+showddl T_333_MV7;
+invoke T_333_MV7;
+---------------------------------------------------------
+?section Test8
+---------------------------------------------------------
+create mv T_333_MV8
+  refresh on request
+initialized on refresh
+  mvattribute no audit
+  as select a, avg(b) as ab
+  from T_333_T1 group by a;
+ALTER MV T_333_MV8 attribute all mvs allowed;
+
+showddl T_333_MV8;
+invoke T_333_MV8;
+
+alter mv T_333_MV8 mvattribute no auditonrefresh;
+showddl T_333_MV8;
+invoke T_333_MV8;
+
+alter mv T_333_MV8 mvattribute audit;
+showddl T_333_MV8;
+invoke T_333_MV8;
+---------------------------------------------------------
+?section Test9
+---------------------------------------------------------
+create mv T_333_MV9
+  refresh on request
+initialized on refresh
+  mvattributes commit refresh each 1122
+  as select a, count(b) as bb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV9 attribute all mvs allowed;
+
+showddl T_333_MV9;
+invoke T_333_MV9;
+
+alter mv T_333_MV9 mvattribute commit refresh each 2211;
+
+showddl T_333_MV9;
+invoke T_333_MV9;
+---------------------------------------------------------
+?section Test10
+---------------------------------------------------------
+create mv T_333_MV10
+  refresh on request
+initialized on refresh
+  enable query rewrite
+  as select a, count(b) as cb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV10 attribute all mvs allowed;
+
+showddl T_333_MV10;
+invoke T_333_MV10;
+
+alter mv T_333_MV10 disable query rewrite;
+
+showddl T_333_MV10;
+invoke T_333_MV10;
+------------------------------------------------------------
+?section Test11
+------------------------------------------------------------
+alter table T_333_T2 attribute insertlog;
+create mv T_333_MV11
+  refresh on request 
+  no initialization
+  as select c from T_333_T2
+  group by c;
+ALTER MV T_333_MV11 attribute all mvs allowed;
+
+showddl T_333_MV11;
+invoke T_333_MV11;
+
+refresh T_333_MV11;
+showddl T_333_MV11;
+invoke T_333_MV11;
+------------------------------------------------------------
+?section Test12
+------------------------------------------------------------
+create mv T_333_MV12(c heading 'the c', d heading 'the d', e)
+  refresh on request 
+initialized on refresh
+  as select b, count(a) as aa, avg(a) as aaa
+  from T_333_T1 group by b;
+ALTER MV T_333_MV12 attribute all mvs allowed;
+
+showddl T_333_MV12;
+invoke T_333_MV12;
+------------------------------------------------------------
+?section Test13
+------------------------------------------------------------
+create mv T_333_MV13
+  refresh on request
+initialized on refresh
+  location $$partition0$$
+  as select a, count(b) as bb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV13 attribute all mvs allowed;
+
+showddl T_333_MV13;
+invoke T_333_MV13;
+------------------------------------------------------------
+?section Test14
+------------------------------------------------------------
+create mv T_333_MV14
+  refresh on request 
+  initialize on create
+  as select a, count(b) as cb
+  from T_333_T1 group by a;
+ALTER MV T_333_MV14 attribute all mvs allowed;
+
+showddl T_333_MV14;
+invoke T_333_MV14;
+showddl T_333_T1;
+invoke T_333_T1;
+
+------------------------------------------------------------
+?section Test15
+------------------------------------------------------------
+create mv T_333_MV15
+  refresh on request
+initialized on refresh
+  attribute no lockonrefresh
+  as select a, count(b) as cb 
+  from T_333_T1 group by a;
+ALTER MV T_333_MV15 attribute all mvs allowed;
+
+showddl T_333_MV15;
+alter mv T_333_MV15 attribute lockonrefresh;
+showddl T_333_MV15;
+alter mv T_333_MV15 attribute no lockonrefresh;
+showddl T_333_MV15;
+
+------------------------------------------------------------
+?section Test16
+------------------------------------------------------------
+CREATE MATERIALIZED VIEW T_333_MV16 (X, Y)
+	REFRESH ON REQUEST
+initialized on refresh
+	AS SELECT A, E
+		FROM T_333_TT1, T_333_TT2
+		WHERE A=D
+	group by a, e;
+
+showddl T_333_MV16;
+invoke T_333_MV16;
+------------------------------------------------------------
+?section Test17
+------------------------------------------------------------
+CREATE MATERIALIZED VIEW T_333_MV17 (X, Y, Z)
+	REFRESH ON REQUEST
+initialized on refresh
+	AS
+		SELECT A, D, E
+		FROM T_333_TT1, T_333_TT2
+		WHERE A=D
+	group by a, d, e;
+
+showddl T_333_MV17;
+invoke T_333_MV17;
+------------------------------------------------------------
+?section Test18
+------------------------------------------------------------
+set PARSERFLAGS 3;
+create mv T_333_MV18
+  refresh on request
+  initialize on create
+  as select a, sum(b) as aaa
+  from T_333_T1 group by a;
+ALTER MV T_333_MV18 attribute all mvs allowed;
+
+CREATE TANDEM_CAT_REQUEST&1 17 2 @CATMVS.MVSCHM.T_333_MV18@ @1@;
+
+showddl T_333_MV18;
+------------------------------------------------------------
+?section Test19
+------------------------------------------------------------
+create mv T_333_MV19 
+	refresh on request 
+initialized on refresh
+	store by (b)
+	location $$partition1$$ 
+	range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+		    ADD FIRST KEY 3000 LOCATION $$partition0$$)
+	MVATTRIBUTES NO AUDITONREFRESH
+	as select max(a) as max_a, b 
+	from T_333_T19 
+	group by b;
+ALTER MV T_333_MV19 attribute all mvs allowed;
+
+showddl T_333_MV19;
+invoke T_333_MV19;
+------------------------------------------------------------
+?section Test20
+------------------------------------------------------------
+create mv T_333_MV20A(x, y)
+  refresh on request
+initialized on refresh
+  as select sum(a), b
+  from T_333_T1
+  group by b;
+ALTER MV T_333_MV20A attribute all mvs allowed;
+
+create mv T_333_MV20B(x heading 'the x', y)
+  refresh on request
+initialized on refresh
+  as select sum(a), b
+  from T_333_T1
+  group by b;
+ALTER MV T_333_MV20B attribute all mvs allowed;
+
+showddl T_333_MV20A;
+invoke T_333_MV20A;
+showddl T_333_MV20B;
+invoke T_333_MV20B;
+------------------------------------------------------------
+?section Test21
+------------------------------------------------------------
+create mv T_333_MV21
+  refresh on request
+  ignore changes on T_333_T2
+initialized on refresh
+  as select a, c from T_333_T1, T_333_T2
+  where a = c
+  group by a, c;
+ALTER MV T_333_MV21 attribute all mvs allowed;
+
+showddl T_333_MV21;
+invoke T_333_MV21;
+------------------------------------------------------------
+?section Test22
+------------------------------------------------------------
+create mv T_333_MV22(c, d heading 'r')
+  refresh on request
+  ignore changes on T_333_T1, T_333_TT1
+initialized on refresh
+  as select T_333_T1.a, count(T_333_T1.b) as cb
+  from T_333_T1, T_333_T2, T_333_TT1
+  where T_333_T1.a = T_333_T2.c and T_333_T2.c = T_333_TT1.a
+  group by T_333_T1.a;
+ALTER MV T_333_MV22 attribute all mvs allowed;
+
+showddl T_333_MV22;
+invoke T_333_MV22;
+------------------------------------------------------------
+?section Test23
+------------------------------------------------------------
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition$$;
+create table T_333_T23(
+	a int not null not droppable, 
+	b int not null, 
+	c int not null,
+	d int,
+	e int,
+	constraint t231bplus check (b > 0), 
+	constraint t231ubc unique(b,c),
+	primary key(a) droppable)
+	store by (c)
+	location $$partition2$$	
+	range partition(add first key  (100) location $$partition1$$,
+		  add first key  (200) location $$partition1$$,
+		  add first key  (300) location $$partition2$$);
+
+alter table T_333_T23 attribute all mvs allowed;
+
+create mv T_333_MV23
+refresh on statement initialize on create
+as select d from T_333_T23;
+
+set PARSERFLAGS 3;
+
+showddl table (temp_table T_333_T23__temp);
+
+ 
+------------------------------------------------------------
+?section set_up
+------------------------------------------------------------
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+set schema catmvs.mvschm;
+create table T_333_T1 (a int, b int );
+ALTER TABLE T_333_T1 attribute all mvs allowed;
+
+create table T_333_T19 (a int, b int not null not droppable);
+ALTER TABLE T_333_T19 attribute all mvs allowed;
+
+create table T_333_T2 (c int, d int);
+ALTER TABLE T_333_T2 attribute all mvs allowed;
+CREATE TABLE T_333_TT1 (
+	A INT NOT NULL NOT DROPPABLE, 
+	B INT,
+	PRIMARY KEY (A)
+	) STORE BY PRIMARY KEY;
+ALTER TABLE T_333_TT1 attribute all mvs allowed;
+
+CREATE TABLE T_333_TT2 (
+	D INT NOT NULL NOT DROPPABLE, 
+	E INT,
+	PRIMARY KEY (D)
+	) STORE BY PRIMARY KEY;
+ALTER TABLE T_333_TT2 attribute all mvs allowed;
+
+------------------------------------------------------------
+?section clean_up
+------------------------------------------------------------
+drop mv T_333_MV23;
+drop mv T_333_MV22;
+drop mv T_333_MV21;
+drop mv T_333_MV20A;
+drop mv T_333_MV20B;
+drop mv T_333_MV19;
+drop mv T_333_MV18;
+drop mv T_333_MV17;
+drop mv T_333_MV16;
+drop mv T_333_MV15;
+drop mv T_333_MV14;
+drop mv T_333_MV13;
+drop mv T_333_MV12;
+drop mv T_333_MV11;
+drop mv T_333_MV10;
+drop mv T_333_MV9;
+drop mv T_333_MV8;
+drop mv T_333_MV7;
+drop mv T_333_MV6;
+drop mv T_333_MV5;
+drop mv T_333_MV4;
+drop mv T_333_MV3;
+drop mv T_333_MV2;
+drop mv T_333_MV1;
+drop table T_333_T23;
+drop table T_333_T2;
+drop table T_333_T1;
+drop table T_333_TT2;
+drop table T_333_TT1;
+
+drop table T_333_T19;
+
+
+

@@ -1,7 +1,7 @@
 -- Test: TEST022 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -185,6 +185,9 @@ select interval'1'second + time'11:59:59 pm' from t022t1;
 select time'11:59:59 pm' + interval'1'second from t022t1;
 select time'12:00:00 am' + interval-'1'second from t022t1;
 select time'12:00:00 am' - interval'1'second from t022t1;
+
+select timestamp '2015-05-31T10:11:12' from t022t1;
+select timestamp '2015-05-31T10:11:12Z' from t022t1;
 
 -- Prove these cases work since they're used in the succeeding negative tests.
 
@@ -580,6 +583,12 @@ select cast(1 as dec    (10) unsigned) from (values(0))x;
 create table t022t8 (c1 timestamp, c2 time);
 
 set param ?p '12/05/1998 03:15:08.123456 pm';
+insert into t022t8 (c1) values ( ?p );
+
+set param ?p '2015-05-31T14:15:16Z';
+insert into t022t8 (c1) values ( ?p );
+
+set param ?p '2015-05-31T14:15:16';
 insert into t022t8 (c1) values ( ?p );
 
 set param ?p '2100-01-01:00:00:47.250000';
@@ -1167,5 +1176,29 @@ select * from t022tg where ss<=iu;
 
 --Must return zero rows.
 select * from t022tg where ss>=iu;
+
+-- check for string truncation, with and without auto truncate
+delete from t022u2;
+insert into t022u2 (c) values (1);
+
+-- should return truncation error
+insert into t022u2 (a) values ('abcdefghijkl');
+update t022u2 set a = 'abcdefghijkl';
+
+-- should not return truncation errors.
+cqd traf_string_auto_truncate 'ON';
+delete from t022u2;
+insert into t022u2 (a) values ('abcdefghijkl');
+select * from t022u2;
+update t022u2 set a = 'lkjihgfedcba';
+select * from t022u2;
+
+-- return warnings if truncation occurs
+cqd traf_string_auto_truncate_warning 'ON';
+delete from t022u2;
+insert into t022u2 (a) values ('abcdefghijkl');
+select * from t022u2;
+update t022u2 set a = 'lkjihgfedcba';
+select * from t022u2;
 
 -- done

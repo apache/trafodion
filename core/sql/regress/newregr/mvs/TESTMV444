@@ -1,0 +1,158 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------------------------
+-- TestMV444
+-------------------------------------------------------------------------------
+-- update statistics name space support
+-------------------------------------------------------------------------------
+
+set schema catmvs.mvschm;
+
+obey TESTMV444(clean_up);
+obey TESTMV444(set_up);
+
+log LOGMV444 clear;
+
+-- Run Tests
+-- for Test1 please refer to comments in section Test1
+--  obey TESTMV444(Test1);
+  obey TESTMV444(Test2);
+--   obey TESTMV444(Test3); -- BUG 566
+
+-- Clean and Exit
+obey TESTMV444(clean_up);
+log;
+exit;
+
+------------------------------------------------------------------------------
+?section set_up
+
+set schema catmvs.mvschm;
+
+create table t444_t1 (a int, b int, c int, d int);
+ALTER TABLE t444_t1 attribute all mvs allowed;
+grant select on t444_t1 to PUBLIC;
+
+create table t444_t2 like t444_t1;
+ALTER TABLE t444_t2 attribute all mvs allowed;
+grant select on t444_t2 to PUBLIC;
+
+insert into t444_t1 values 	(1, 1, 1, 1), (2, 2, 2, 2), (3, 3, 3, 3), (4, 4, 4, 4), (5, 5, 5, 5), 
+			(6, 6, 6, 6), (7, 7, 7, 7), (8, 8, 8, 8), (9, 9, 9, 9), (0, 0, 0 ,0);
+
+set PARSERFLAGS 3;
+create table (iud_log_table t444_t1) (a int, b int, c int, d int);
+------------------------------------------------------------------------------
+?section clean_up
+
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+drop table (iud_log_table t444_t1);
+drop table t444_t2;
+drop table t444_t1;
+
+------------------------------------------------------------------------------
+?section Test1
+
+obey TESTMV444(add_some_rows);
+obey TESTMV444(add_some_rows);
+
+insert into table (iud_log_table t444_t1) select * from t444_t1;
+
+-- Should show an estimated number
+-- Before we changed row format to aligned, cardinality was 10240 on NSK,
+-- 10412 on NT. After we changed the format, cardinality changed to 11673
+-- on NSK, 10579 on NT. We should remove this section if it changes again.
+log;
+sh sh ./runmxci.ksh -i "TESTMV444(compare_cardinality)";
+log LOGMV444;
+
+update statistics for table t444_t1 on (a, b, c), (c, d);
+
+update statistics for log table t444_t1 on (a, b, c), (c, d);
+
+-- Should be 1.0240000E+004
+log;
+sh sh ./runmxci.ksh -i "TESTMV444(check_cardinality)";
+log LOGMV444;
+
+------------------------------------------------------------------------------
+?section Test2
+-- wrong syntax
+-- FAIL
+update statistics for table (iud_log_table t444_t1) on (a, b);
+
+-- FAIL
+update statistics for log table t444_t1 on every column;
+
+------------------------------------------------------------------------------
+?section Test3
+-- lots of data
+
+obey TESTMV444(add_some_rows);
+obey TESTMV444(add_data);
+
+insert into table (iud_log_table t444_t1) select * from t444_t1;
+insert into table (range_log_table t444_t1) select * from t444_t1;
+
+update statistics for table t444_t1 on (a, c, d);
+
+update statistics for log table t444_t1 on (d, c, a), (c);
+
+update statistics for table (range_log_table t444_t1) on (a, b);
+
+------------------------------------------------------------------------------
+?section check_cardinality
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+prepare s1 from select * from t444_t1;
+prepare s2 from select * from table (iud_log_table t444_t1);
+log LOGMV444;
+select cardinality from table (explain(NULL, 'S%'));
+log;
+
+------------------------------------------------------------------------------
+?section compare_cardinality
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+prepare s1 from select * from t444_t1;
+log TEMP1 clear;
+select cardinality from table (explain(NULL, 'S1'));
+log;
+
+prepare s2 from select * from table (iud_log_table t444_t1);
+log TEMP2 clear;
+select cardinality from table (explain(NULL, 'S2'));
+log;
+
+sh diff TEMP1 TEMP2 >> LOGMV444;
+
+------------------------------------------------------------------------------
+?section add_some_rows
+log;		
+obey TESTMV444(add_data);
+obey TESTMV444(add_data);
+obey TESTMV444(add_data);
+obey TESTMV444(add_data);
+obey TESTMV444(add_data);
+log LOGMV444;
+------------------------------------------------------------------------------
+?section add_data
+insert into t444_t2 select * from t444_t1;
+insert into t444_t1 select a + 1, b * 2, c + 2, d - 1 from t444_t2;
+delete from t444_t2;

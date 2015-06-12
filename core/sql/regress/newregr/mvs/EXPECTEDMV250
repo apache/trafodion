@@ -1,0 +1,966 @@
+>>
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>
+>>obey TESTMV250(SET_UP);
+>>------------------------------------------------------
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create mvgroup MVG250_cancel;
+
+--- SQL operation complete.
+>>
+>>PREPARE select_index FROM
++>  select  RUNNINGCOUNT(*) num,valid_data
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID <> table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    FOR READ UNCOMMITTED ACCESS)
++>SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>
+>>create table T_250_T1 (a int not null not droppable,b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_250_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_250_T2 (c int,d int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_250_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_250_T3 (e int,f int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_250_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_250_T4 (g int,h int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_250_T4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_250_T5 (c int,d int) attribute NO LOCKONREFRESH;
+
+--- SQL operation complete.
+>>ALTER TABLE T_250_T5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_250_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>create mv T_250_MV1 
++>	refresh on request 
++>	initialize on create
++>	as 
++>	select sum(a) as sum_a,b from T_250_T1, T_250_T2 
++>	where b=d group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_250_MV1_581422669_4889 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_250_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add T_250_MV1;
+
+--- SQL operation complete.
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>create mv T_250_MV17
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDIT
++>	as
++>	select b,sum(a) aa
++>	from T_250_T1
++>	group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_250_MV17_875422669_4889 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_250_MV17 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add  T_250_MV17;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV18
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDIT
++>	as
++>	select a,sum(b) bb
++>	from T_250_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV18 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add  T_250_MV18;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV20
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDIT
++>	as
++>	select a,sum(b) bb
++>	from T_250_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV20 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add  T_250_MV20;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV21
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDIT
++>	as
++>	select a,sum(b) bb
++>	from T_250_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV21 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add  T_250_MV21;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------
+>>
+>>
+>>	log;
+>>
+>>-- Privileges test should fail
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>log LOGMV250;
+>>
+>>refresh T_250_MV1 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20552] The current user does not have the refresh privilege for materialized view CATMVS.MVSCHM.T_250_MV1.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>	obey TESTMV250(TEST10_USER8);
+>>------------------------------------------------------
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>log LOGMV250;
+>>
+>>create mv T_250_MV_Priv10
++>	refresh on statement 
++>	initialize on refresh as select * from T_250_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV_Priv10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV_Priv_recompute1
++>	recompute 
++>	initialize on refresh 
++>	as select a,b from T_250_T1,T_250_T3 where e=f;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV_Priv_recompute1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add T_250_MV_Priv_recompute1;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV_Priv_recompute2
++>	recompute 
++>	initialize on refresh 
++>	as select a,b from T_250_MV_Priv_recompute1,T_250_T2 where a=d;
+
+--- SQL operation complete.
+>>ALTER MV T_250_MV_Priv_recompute2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG250_cancel add T_250_MV_Priv_recompute2;
+
+--- SQL operation complete.
+>>
+>>grant select,insert,delete on T_250_MV_Priv_recompute1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select,insert,delete on T_250_MV_Priv_recompute2 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant insert on T_250_MV1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select,insert,delete on T_250_MV_Priv10 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>grant select on  T_250_T1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on  T_250_T2 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on  T_250_T3 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>
+>>insert into T_250_T1 values(10,10);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T2 values(10,10);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T3 values(10,10);
+
+--- 1 row(s) inserted.
+>>insert into T_250_T5 values(10,10);
+
+--- 1 row(s) inserted.
+>>
+>>log;
+>>-- on request mv;
+>>
+>>refresh T_250_MV1  debug 56,52;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+1: Locking log CATMVS.MVSCHM.T_250_T2
+
+2: Locking log CATMVS.MVSCHM.T_250_T1
+
+
+3: Locking table CATMVS.MVSCHM.T_250_T2
+
+4: UnLocking log CATMVS.MVSCHM.T_250_T2
+
+
+5: Locking table CATMVS.MVSCHM.T_250_T1
+
+6: UnLocking log CATMVS.MVSCHM.T_250_T1
+
+
+
+
+The materialized view CATMVS.MVSCHM.T_250_MV1 is being refreshed in a single transaction...
+
+
+
+The materialized view CATMVS.MVSCHM.T_250_MV1 has been refreshed from 2 deltas in a single transaction.
+
+7: UnLocking table CATMVS.MVSCHM.T_250_T2
+
+8: UnLocking table CATMVS.MVSCHM.T_250_T1
+
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T2...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T2.
+
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>
+>>-- recompute mv;
+>>-- should pass 
+>>refresh T_250_MV_Priv_recompute2 cascade debug 56,52;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+1: Locking table CATMVS.MVSCHM.T_250_T3
+
+2: Locking table CATMVS.MVSCHM.T_250_T1
+
+3: Locking table CATMVS.MVSCHM.T_250_T2
+
+
+
+
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV_RECOMPUTE1 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV_RECOMPUTE1 has been refreshed (by recompute) in a single transaction.
+
+4: UnLocking table CATMVS.MVSCHM.T_250_T3
+
+5: UnLocking table CATMVS.MVSCHM.T_250_T1
+
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV_RECOMPUTE2 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV_RECOMPUTE2 has been refreshed (by recompute) in a single transaction.
+
+6: UnLocking table CATMVS.MVSCHM.T_250_T2
+
+
+>>
+>>-- On statement initialization;
+>>
+>>refresh T_250_MV_Priv10 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV10 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV_PRIV10 has been refreshed (by recompute) in a single transaction.
+
+
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>	obey TESTMV250(TEST11_1);
+>>------------------------------------------------------
+>>grant insert on T_250_MV17 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------
+>>	log;
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>-- Expected error : cannot populate index
+>>refresh T_250_MV17 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>
+>>log;
+
+*** ERROR[20558] The current user does not have the select and delete privileges for materialized view CATMVS.MVSCHM.T_250_MV17, and cannot purge data from it.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>		obey TESTMV250(TEST12_1);
+>>------------------------------------------------------
+>>grant insert on T_250_MV18 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>refresh T_250_MV18 debug 102;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV18 is being refreshed (by recompute) in a single transaction...
+
+*** ERROR[20516] Simulating a crash of the refresh utility at testpoint #102 !!!
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_250_MV18) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	log;
+>>-- Expected error : cannot performe purgedata
+>>refresh T_250_MV18 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV18 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV18 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>	obey TESTMV250(TEST13_1);
+>>------------------------------------------------------
+>>grant insert on T_250_MV20 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant delete on T_250_MV20 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>refresh T_250_MV20 debug 102;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV20 is being refreshed (by recompute) in a single transaction...
+
+*** ERROR[20516] Simulating a crash of the refresh utility at testpoint #102 !!!
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_250_MV20) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	log;
+>>-- Expected error : cannot performe purgedata
+>>refresh T_250_MV20 recompute outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>
+>>log;
+
+*** ERROR[20558] The current user does not have the select and delete privileges for materialized view CATMVS.MVSCHM.T_250_MV20, and cannot purge data from it.
+
+*** ERROR[20524] A DDL lock on materialized view CATMVS.MVSCHM.T_250_MV20 cannot be released. Try to perform Refresh with the CANCEL option.
+*** ERROR[20527] Failed to complete the task RR(CATMVS.MVSCHM.T_250_MV20) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>	obey TESTMV250(TEST14_1);
+>>------------------------------------------------------
+>>grant insert on T_250_MV21 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on T_250_MV21 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>refresh T_250_MV21 debug 102;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV21 is being refreshed (by recompute) in a single transaction...
+
+*** ERROR[20516] Simulating a crash of the refresh utility at testpoint #102 !!!
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_250_MV21) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	log;
+>>-- Expected error : cannot performe purgedata
+>>refresh T_250_MV21 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV21 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV21 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>
+>>	obey TESTMV250(TEST100_test1_user8);
+>>------------------------------------------------------
+>>log LOGMV250;
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table T_250_T100(a int,b int);
+
+--- SQL operation complete.
+>>ALTER table T_250_T100 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV1_test100
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDITONREFRESH
++>	as 
++>	select a, sum(b) sb
++>	from T_250_T100
++>	group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_250_MV1_TEST100_537842669_4889 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>create mv T_250_MV2_test100
++>	refresh on request
++>	initialize on refresh
++>	as 
++>	select a, sum(b) sb
++>	from T_250_T100
++>	group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_250_MV2_TEST100_949842669_4889 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>-- initialization
+>>refresh T_250_MV1_test100 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>refresh T_250_MV2_test100 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>
+>>grant select on  T_250_T100 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant insert on T_250_MV1_test100 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant insert on T_250_MV2_test100 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>insert into T_250_T100 values (1,2),(3,4),(5,6);
+
+--- 3 row(s) inserted.
+>>
+>>log;
+>>
+>>-- expected FAIL
+>>refresh T_250_MV1_test100  outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>-- expected PATH
+>>refresh T_250_MV2_test100  outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>
+>>-- expected FAIL
+>>refresh T_250_MV1_test100 recompute outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST100 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>
+>>-- expected PATH
+>>refresh T_250_MV2_test100 recompute outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV2_TEST100 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>
+>>------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>
+>>	obey TESTMV250(TEST100_test2_user8);
+>>------------------------------------------------------
+>>log LOGMV250;
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table T_250_T200(a int,b int);
+
+--- SQL operation complete.
+>>ALTER table T_250_T200 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_250_MV1_test200
++>	refresh on request
++>	initialize on refresh
++>	--MVAttributes NO AUDITONREFRESH
++>	as 
++>	select a, sum(b) sb
++>	from T_250_T100
++>	group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_250_MV1_TEST200_547262669_4889 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>-- initialization
+>>refresh T_250_MV1_test200 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>grant select on  T_250_T200 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant insert,delete,select on T_250_MV1_test200 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>insert into T_250_T200 values (1,2),(3,4),(5,6);
+
+--- 3 row(s) inserted.
+>>
+>>log;
+>>
+>>-- expected PATH
+>>refresh T_250_MV1_test200  outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 was found up to date.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>
+>>-- expected PATH
+>>refresh T_250_MV1_test200 recompute outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV1_TEST200 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T100...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T100.
+
+
+>>
+>>log;
+>>
+>>obey TESTMV250(CLEAN_UP);
+>>------------------------------------------------------
+>>drop table T_250_T200 cascade;
+
+--- SQL operation complete.
+>>drop table T_250_T100 cascade;
+
+--- SQL operation complete.
+>>
+>>refresh T_250_MV21 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV21 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV21 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>refresh T_250_MV20 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV20 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV20 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>refresh T_250_MV18 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV18 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV18 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>refresh T_250_MV17 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_250_MV17 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_250_MV17 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_250_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_250_T1.
+
+
+>>
+>>refresh mvgroup MVG250_cancel cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>
+>>drop table T_250_T1 cascade;
+
+--- SQL operation complete.
+>>drop table T_250_T2 cascade;
+
+--- SQL operation complete.
+>>drop table T_250_T3 cascade;
+
+--- SQL operation complete.
+>>drop table T_250_T4 cascade;
+
+--- SQL operation complete.
+>>drop table T_250_T5 cascade;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG250_cancel;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

@@ -1,0 +1,1224 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML13 (Cardinality)
+-- Functionality: Tests various outer join cardinalities.
+-- Expected Files: ETESTDML13.
+-- History: Created on 10/05/2009
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+control query default query_cache '0';
+control query default hist_rowcount_requiring_stats '1';
+control query default cache_histograms '0';
+
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)),
+                  cast(cardinality as char(10)),
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR
+                (operator like '%JOIN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+prepare explainJoinCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)),
+                  cast(cardinality as char(10)),
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%JOIN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+log ATESTDML13 clear;
+
+control query default nested_joins 'off';
+control query default merge_joins 'off';
+
+set schema cat.mcrand;
+
+-- Total RC of RC2 - 100,000
+-- Total RC of FACTS - 30,000
+
+-- 1
+-- actual RC - 30M
+
+prepare xx from
+select facts.z, rc2.z from facts left outer join RC2 on facts.z = rc2.z;
+
+execute explainCard;
+
+-- 2
+-- actual RC - 129K
+
+prepare xx from
+select facts.xyz, rc2.z from facts left outer join RC2 on facts.xyz = rc2.z;
+
+execute explainCard;
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.xyz = rc2.z;
+
+-- 3
+-- actual RC - 129K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.xyz = rc2.z;
+
+execute explainCard;
+
+-- 4
+-- actual RC - 668K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z;
+
+execute explainCard;
+
+-- 5
+-- actual RC - 683K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z;
+
+execute explainCard;
+
+-- 6
+-- actual RC - 633K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z and facts.fxyz1 > 10;
+
+execute explainCard;
+
+-- 7
+-- actual RC - 658K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z and facts.fxyz1 > 10;
+
+execute explainCard;
+
+-- 8
+-- actual RC - 5.8K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z where facts.fxyz1 = 10;
+
+execute explainCard;
+
+execute xx;
+
+-- 9
+-- actual RC - 5.8K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z where facts.fxyz1 = 10;
+
+execute explainCard;
+
+-- 10
+-- actual RC - 5.8K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z where rc2.z = 10;
+
+execute explainCard;
+
+-- 11
+-- actual RC - 691K
+
+prepare xx from 
+select count(*) from facts left join rc2 on facts.fxyz1 = rc2.z + 1;
+
+execute explainCard;
+
+-- 12
+-- actual RC - 706K
+-- Join on an expression. Estimated cardinality is as per the expected per 
+-- the design
+
+prepare xx from 
+select count(*) from facts full outer join rc2 on facts.fxyz1 = rc2.z + 1;
+
+execute explainCard;
+
+-- 13
+-- actual RC - 668K
+prepare xx from 
+select count(*) from facts left join rc2 on facts.fxyz1 = cast(rc2.z as real);
+
+execute explainCard;
+
+-- 14
+-- actual RC - 39.9K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.xy = rc2.z and facts.xy > 10 and facts.xy < 12;
+
+execute explainCard;
+
+-- 15
+-- actual RC - 138K
+
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.xy = rc2.z and facts.xy > 10 and facts.xy < 12;
+
+execute explainCard;
+
+-- 16
+-- actual RC - 49.6K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z and facts.fxy = 10;
+
+execute explainCard;
+
+-- 17
+-- Without MC stats OJ expected card = 347K. The cardinality is very high 
+-- right after the inner join is done between facts and rc2. It is estimated 
+-- as 665K, and this eventually leads to high OJ estimate
+-- actual RC - 348K
+
+prepare xx from
+select count(*) from facts left outer join RC2 on facts.x = rc2.x and facts.y = rc2.y;
+
+execute explainCard;
+
+-- 18
+prepare xx from
+select count(*) from facts full outer join RC2 on facts.x = rc2.x and facts.y = rc2.y;
+
+execute explainCard;
+
+-- 19
+prepare xx from
+select count(*) from (facts left join rc2 on facts.xy = rc2.z) left join randcols on rc2.y = randcols.y;
+
+execute explainCard;
+
+-- 20
+prepare xx from
+select count(*) from (facts full join rc2 on facts.fxyz1 = rc2.z), randcols where rc2.y = randcols.y;
+
+execute explainCard;
+
+------------------------------------------------
+
+set schema cat.hcube;
+
+cqd join_order_by_user reset;
+
+-- 21
+-- actual RC - 10K
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.b = T9.b;
+
+execute explainCard;
+
+-- 22
+-- actual RC - 10K
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.b;
+
+execute explainCard;
+
+-- first left join transformed to inner join
+-- 23
+-- actual RC - 1.9K
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a
+     LEFT JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+-- 24
+-- actual RC - 1.09K
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.a
+    LEFT JOIN T7 ON T8.a = T7.b;
+
+execute explainCard;
+
+-- 25
+-- actual RC - 19K
+
+prepare xx from
+select count(*) from 
+T8 LEFT JOIN T9 ON T8.a = T9.b
+    LEFT JOIN T7 ON T8.b = T7.b;
+
+execute explainCard;
+
+-- 26
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t5 natural full outer join t8;
+
+execute explainCard;
+
+-- 27
+-- actual RC - 10
+
+prepare xx from
+select T1.b from T1 left join T2 on t1.a = t2.a 
+left join T3 ON T1.B = T3.b;
+
+execute explainCard;
+
+-- 28
+-- actual RC - 10
+
+prepare xx from
+select count(*) from T1 left join T2 on t1.a = t2.a 
+left join T3 ON T1.B = T3.b;
+
+execute explainCard;
+
+-- 29
+-- actual RC - 10
+
+prepare xx from
+select T1.b from T2 left join T1 on t1.a = t2.a 
+left join T3 ON T1.B = T3.b;
+
+execute explainCard;
+
+-- 30
+-- actual RC - 10
+
+prepare xx from
+select count(*) from T2 left join T1 on t1.a = t2.a 
+left join T3 ON T1.B = T3.b;
+
+execute explainCard;
+
+-- 31
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t5 full outer join t8 on t5.b = 2;
+
+execute explainCard;
+
+-- 32
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t5 full outer join t8 on t5.a = 20;
+
+execute explainCard;
+
+-- 33
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t5 full outer join t8 on t5.b = t8.a;
+
+execute explainCard;
+
+-- 34
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t8 full outer join t5 on t5.b = t8.a;
+
+execute explainCard;
+
+-- 35
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t8 full outer join t5 on t5.b = t8.a
+      OR t5.b = 2;
+
+execute explainCard;
+
+-- 36
+-- actual RC - 10K
+
+prepare xx from
+select count(*) from t5 full outer join t8 on t5.b = t8.b
+      left outer join t9 on t8.b = t9.b;
+
+execute explainCard;
+
+-- 37
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from t5 full outer join t8 on t5.b = t8.b
+      and t8.c = t5.c;
+
+execute explainCard;
+
+-- 38
+-- actual RC - 1
+
+prepare xx from
+select count(*) from t5 left outer join t8 on t5.b = t8.b
+      and t8.c = t5.c;
+
+execute explainCard;
+
+-- 39
+-- actual RC - 10K
+
+prepare xx from
+select count(*) 
+from t4, (t5 left join t6 on t5.b = t6.b) left join t7 on t6.c = t7.c;
+
+execute explainCard;
+
+-- 40
+-- actual RC - 10K
+
+cqd join_order_by_user 'ON';
+prepare xx from
+select count(*) 
+from t4, (t5 left join t6 on t5.b = t6.b) full outer join t7 on t6.c = t7.c;
+cqd join_order_by_user reset;
+
+execute explainCard;
+
+-- 41
+-- actual RC - 10K
+
+cqd join_order_by_user 'ON';
+prepare xx from
+select count(*) 
+from t4, (t5 full outer join t6 on t5.b = t6.b) left join t7 on t6.c = t7.c;
+cqd join_order_by_user reset;
+
+execute explainCard;
+
+-- 42
+-- actual RC - 10K
+
+cqd join_order_by_user 'ON';
+prepare xx from
+select count(*) 
+from t4, (t5 full outer join t6 on t5.b = t6.b) full outer join t7 on t6.c = t7.c;
+cqd join_order_by_user reset;
+
+execute explainCard;
+
+-- 43
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from (Select b from T6) r1 left join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 44
+-- actual RC - 1K
+
+prepare xx from
+select count(*) from (Select b from T6) r1 full outer join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 45
+-- actual RC - 400
+
+prepare xx from
+select count(*) from (Select b from T6 where b > 5) r1 left join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 46
+-- actual RC - 460
+
+prepare xx from
+select count(*) from (Select b from T6 where b > 5) r1 full outer join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 47
+-- actual RC - 940
+
+prepare xx from
+select count(*) from (Select b from T6 where a > 5) r1 left join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 48
+-- actual RC - 940
+
+prepare xx from
+select count(*) from (Select b from T6 where a > 5) r1 full outer join t7 on r1.b = t7.b;
+
+execute explainCard;
+
+-- 49
+-- actual RC - 40
+
+prepare xx from
+select count(*) from (Select b from T6 where b > 5) r1 left join
+(select c from T7 where b = 20) r2 on r1.b = r2.c;
+
+execute explainCard;
+
+-- 50
+-- actual RC - 40
+
+prepare xx from
+select count(*) from (Select b from T6 where b > 5) r1 full outer join
+(select c from T7 where b = 20) r2 on r1.b = r2.c;
+
+execute explainCard;
+
+-- 51
+-- actual RC - 85
+
+prepare xx from
+select count(*) from (Select b from T6 where b+5 > c) r1 left join
+(select c from T7 where b = 3) r2 on r1.b = r2.c;
+
+execute explainCard;
+
+-- 52
+-- actual RC - 85
+
+prepare xx from
+select count(*) from (Select b from T6 where b+5 > c) r1 full outer join
+(select c from T7 where b = 3) r2 on r1.b = r2.c;
+
+
+execute explainCard;
+
+-- 53
+-- actual RC - 19
+
+prepare xx from
+select  count(*)
+  from t5 left join t6
+  on t5.b = t6.b and t5.b = (case when 10 = 10
+              then 5
+              else 6 end) ;
+
+execute explainCard;
+
+-- 54
+-- actual RC - 10
+
+prepare xx from
+select  count(*)
+  from t5 left join t6
+  on t5.b = t6.b and t5.c = (case when 10 = 10
+              then t6.c 
+              else 6 end) ;
+
+execute explainCard;
+
+-- 55
+-- actual RC - 1.9K
+
+prepare xx from
+select count(*)
+FROM
+(Select T8.b, T2.b
+From T8
+LEFT JOIN T2 on T8.b=T2.b
+) as T01(b, c)
+LEFT join
+T6
+on (T01.b=T6.b)
+;
+
+execute explainCard;
+
+-- 56
+-- actual RC - 1.9K
+
+prepare xx from
+select count(*)
+FROM
+(Select T8.b, T2.b
+From T8
+LEFT JOIN T2 on T8.b=T2.b
+) as T01(b, c)
+LEFT join
+T6
+on (T01.c=T6.c)
+;
+
+
+execute explainCard;
+
+-- 57
+-- actual RC - 1K
+
+prepare xx from
+select count(*)
+FROM
+(Select T6.b, T2.b
+From T6
+LEFT JOIN T2 on T6.b=T2.b
+) as T01(b, c)
+LEFT join
+(
+Select T8.b, T3.b
+From T8
+LEFT JOIN T3 on T8.b=T3.b
+) as T02(b, c)
+on (T01.C=T02.C)
+;
+
+
+execute explainCard;
+
+-- 58
+-- actual RC - 20
+
+prepare xx from
+select count(*) from t1 left join (select t2.a from t2 union all select t3.a from t3) t4(a) on t1.c=t4.a;
+
+execute explainCard;
+
+-- 59
+-- actual RC - 20
+
+prepare xx from
+select count(*) from t1 full outer join (select t2.a from t2 union all select t3.a from t3) t4(a) on t1.c=t4.a;
+
+execute explainCard;
+
+-- 60
+
+prepare xx from
+select count(*) from t7 full outer join t8 on t7.b = t8.b
+full outer join t9 on t7.b = t9.b full outer join
+t10 on t7.b = t10.b full outer join t2 on t7.b = t2.b;
+
+execute explainCard;
+
+-------------------------------------------------------------------
+set schema cat.qaschema;
+
+-- 61
+-- actual RC - 46.6K
+
+prepare xx from
+select count(*)
+From F01
+left join D01 on D01.pk=F01.fk_d01
+inner join D02 on D02.pk=F01.fk_d02
+inner join D03 on D03.pk=F01.fk_d03
+;
+
+execute explainCard;;
+
+-- 62
+-- actual RC - 23.3K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01) as TF01(val01,fk_d01,fk_d02,fk_d03)
+inner join
+  (select D01.val01,count(D01.pk)
+   from D01
+   group by D01.val01) as TD01(val01,pk) 
+on TD01.pk=TF01.fk_d01
+full outer join
+
+  (select D02.val01,count(D02.pk)
+  from D02
+  group by D02.val01) as TD02(val01,pk) 
+on TD02.pk=TF01.fk_d02
+full outer join
+  (select D03.val01,count(D03.pk)
+  from D03
+  group by D03.val01) as TD03(val01,pk) 
+on TD03.pk=TF01.fk_d03
+;
+
+execute explainCard;;
+
+-- 63
+-- actual RC - 43.4K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>2) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+full outer join
+
+  (select D02.val01,D02.pk
+  from D02
+  where D02.val01>2) as TD02(val01,pk) 
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>5 AND TF01.fk_d02>5)
+
+full outer join
+  (select D03.val01,D03.pk
+  from D03
+  where D03.val01>2) as TD03(val01,pk) 
+on (TD03.pk=TF01.fk_d03
+AND TD03.pk>5 AND TF01.fk_d03>5);
+
+execute explainCard;;
+
+-- 64
+-- actual RC - 6.5K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>2) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+full outer join
+
+  (select D02.val01,D02.pk
+  from D02
+  where D02.val01>2) as TD02(val01,pk) 
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>5 AND TF01.fk_d02>5)
+
+full outer join
+  (select D03.val01,D03.pk
+  from D03
+  where D03.val01>2) as TD03(val01,pk) 
+on (TD03.pk=TF01.fk_d03
+AND TD03.pk>5 AND TF01.fk_d03>5)
+
+where TF01.val01>3 
+and TD02.val01 >3 
+and TD03.val01>3
+;
+
+execute explainCard;;
+
+-- 65
+-- actual RC - 0
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+inner join
+  (select D01.val01,count(D01.pk)
+   from D01
+   where D01.val01>0
+   group by D01.val01) as TD01(val01,pk) 
+on (TD01.pk=TF01.fk_d01
+AND TD01.pk>0 AND TF01.fk_d01>0)
+
+left outer join
+
+  (select D02.val01,count(D02.pk)
+  from D02
+  where D02.val01>0
+  group by D02.val01) as TD02(val01,pk) 
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0)
+
+left outer join
+  (select D03.val01,count(D03.pk)
+  from D03
+  where D03.val01>0
+  group by D03.val01) as TD03(val01,pk) 
+on (TD03.pk=TF01.fk_d03
+AND TD03.pk>0 AND TF01.fk_d03>0)
+
+where TF01.val01>0 
+and TD01.val01 >0 
+and TD02.val01>0
+;
+
+execute explainCard;;
+
+-- 66
+-- actual RC - 51.8K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   ) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+   from D02
+   group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02)
+;
+
+execute explainCard;;
+
+-- 67
+-- actual RC - 5.2K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+   from D02
+   where D02.val01>0
+   group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02)
+
+where TF01.val01>0 
+and TD02.val01>0
+;
+
+execute explainCard;;
+
+-- 68
+-- actual RC - 5.2K
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+   from D02
+   where D02.val01>0
+   group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0)
+
+where TF01.val01>0 
+and TD02.val01>0
+;
+
+execute explainCard;;
+
+
+-- 69
+-- actual RC - 0
+
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+   From F01
+   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+
+inner join
+
+  (select D01.val01,count(D01.pk)
+   from D01
+   where D01.val01>0
+   group by D01.val01) as TD01(val01,pk)
+
+on (TD01.pk=TF01.fk_d01
+AND TD01.pk>0 AND TF01.fk_d01>0)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+   from D02
+   where D02.val01>0
+   group by D02.val01) as TD02(val01,pk)
+
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0)
+
+where TF01.val01>0
+and TD01.val01 >0
+and TD02.val01>0
+;
+
+execute explainCard;;
+
+-- 70
+-- expected card 5.44 E8
+
+prepare xx from
+select count(*)
+from
+(
+Select F01.val02, D01.val01
+From F01
+right join D01 on D01.pk=F01.fk_d01
+where D01.val01>0
+) as T01(val01,val02)
+right join
+(
+Select F02.val02, D02.val01
+From F02
+right join D02 on D02.pk=F02.fk_d02
+where D02.val01>0
+) as T02(val01,val02)
+on (T01.val02=T02.val02)
+where T02.val02>0
+
+;
+
+execute explainCard;;
+
+-- 71
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+  From F01
+  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+inner join
+  (select D01.val01,count(D01.pk)
+  from D01
+  where D01.val01>0
+  group by D01.val01) as TD01(val01,pk) 
+
+on (TD01.pk=TF01.fk_d01
+AND TD01.pk>0 AND TF01.fk_d01>0)
+
+full outer join
+  (select D02.val01,count(D02.pk)
+  from D02
+  where D02.val01>0
+  group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0);
+
+execute explainCard;;
+
+-- 72
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+  From F01
+  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+inner join
+  (select D01.val01,count(D01.pk)
+  from D01
+  where D01.val01>0
+  group by D01.val01) as TD01(val01,pk) 
+
+on (TD01.pk=TF01.fk_d01
+AND TD01.pk>0 AND TF01.fk_d01>0)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+  from D02
+  where D02.val01>0
+  group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0);
+
+execute explainCard;;
+
+-- 73
+prepare xx from
+select count(*)
+From
+  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
+  From F01
+  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
+inner join
+  (select D01.val01,count(D01.pk)
+  from D01
+  where D01.val01>0
+  group by D01.val01) as TD01(val01,pk) 
+
+on (TD01.pk=TF01.fk_d01
+AND TD01.pk>0 AND TF01.fk_d01>0)
+
+left outer join
+  (select D02.val01,count(D02.pk)
+  from D02
+  where D02.val01>0
+  group by D02.val01) as TD02(val01,pk) 
+
+on (TD02.pk=TF01.fk_d02
+AND TD02.pk>0 AND TF01.fk_d02>0);
+
+execute explainCard;;
+
+-- 74
+prepare xx from
+select count(*)
+From F01
+left outer join D01
+on F01.val01 = D01.val01
+and d01.val02 = mod(F01.val02, 5)
+
+inner join F02
+on F02.val01 = F01.val01
+and F02.val02 IN
+    (select val02 from D03 where val01 > 0)
+
+left outer join D03
+on F01.val01_d03 = D03.val01
+and F01.val02_d03 = D03.val02
+
+where
+F02.fk_d04 IN 
+   (SELECT pk                                    
+    FROM D04                            
+    where D04.val01 > 0)
+
+OR F02.fk_D05 IN 
+   (SELECT pk                                    
+    FROM D05                            
+    where D05.val01 > 0)
+;
+
+
+execute explainCard;;
+
+-- 75
+prepare xx from
+select count(*)
+From F01
+left outer join D01
+on F01.val01 = D01.val01
+and d01.val02 = F01.val02
+
+left outer join D03
+on F01.val01_d03 = D03.val01
+and F01.val02_d03 = D03.val02
+;
+
+execute explainCard;;
+
+-- 76
+prepare xx from
+select count(*)
+From F01
+left join D03
+on F01.val01_d03 = D03.val01
+and F01.val02_d03 = D03.val02
+;
+
+execute explainCard;;
+
+----------------------------------------------------------------------------
+-- Following queries test for left joins and IS NULL predicates on
+-- joining columns
+----------------------------------------------------------------------------
+set schema cat.hcube;
+
+-- 77
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c;
+
+execute explainJoinCard;
+
+-- 78
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where t6.c is null;
+
+execute explainJoinCard;
+
+
+-- 79
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where t6.c is not null;
+
+execute explainJoinCard;
+
+
+-- 80
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c and t6.c is null;
+
+execute explainJoinCard;
+
+
+-- 81
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c and t6.c is not null;
+
+execute explainJoinCard;
+
+
+-- 82
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where cube1.e is null;
+
+
+execute explainJoinCard;
+
+-- 83
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c and cube1.e is null;
+
+
+execute explainJoinCard;
+
+-- 84
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(t6.c as numeric(10)) is null;
+
+
+execute explainJoinCard;
+
+-- 85
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(t6.c as numeric(10)) is not null;
+
+
+execute explainJoinCard;
+
+-- 86
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c;
+
+
+execute explainJoinCard;
+
+-- 87
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c and cast(t6.c as numeric(10)) is null;
+
+
+execute explainJoinCard;
+
+-- 88
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c and cast(t6.c as numeric(10)) is not null;
+
+
+execute explainJoinCard;
+
+-- 89
+prepare xx from
+select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(cube1.e as numeric(10)) is null;
+
+
+execute explainJoinCard;
+
+-- 90
+prepare xx from
+select count(*) from cube1, t6 where cube1.e = t6.c and cast(t6.c as numeric(10)) is not null;
+
+
+-- execute explainJoinCard;
+
+-- 91
+prepare xx from
+select count(*) from cube1 where cast(cube1.e as numeric(10)) is null;
+
+
+execute explainJoinCard;
+
+-- 92
+prepare xx from
+select count(*) from t6 right join t8 on cast(t8.b as numeric(5)) = t6.c where
+t6.c is null;
+
+
+execute explainJoinCard;
+
+-- 93
+prepare xx from
+select count(*) from t6 left join t8 on cast(t8.b as numeric(5)) = t6.c where
+t8.b is null;
+
+execute explainJoinCard;
+
+-- 94
+prepare xx from
+select count(*)
+FROM
+(Select T8.b, T2.b
+From T8
+LEFT JOIN T2 on T8.b=T2.b
+) as T01(b, c)
+LEFT join
+T6
+on (T01.b=T6.b) where T6.b IS NULL;
+;
+
+execute explainJoinCard;
+
+-- 95
+prepare xx from
+select count(*) from t8 left outer join t7 
+on t7.b = t8.b 
+left outer join t6 
+on t7.b = t6.b 
+where t7.b is null and t6.b is null;
+
+execute explainJoinCard;
+
+-- 96
+prepare xx from
+select count(*) from t7 left join (Select b from T6) r1 
+on r1.b = t7.b
+where r1.b is null;
+
+execute explainJoinCard;
+
+-- 97
+prepare xx from
+select count(*) from (Select b from T8 where b > 5) r1 left join
+(select c from T7 where b = 20) r2 on r1.b = r2.c
+where r2.c IS NULL;
+
+execute explainJoinCard;
+
+log;
+-- we need to do this because other test cases will fail if they
+-- see schemas with 2400 version.
+-- temporary measure until we update the OSIM data.
+set envvar MX_SKIP_VCC 1;
+set parserflags 1; -- just to be sure
+--drop catalog cat cascade;
+sh sleep 15;
+create catalog cat;
+create schema cat.sch;
+
+exit;
+
+
+
+
+
+
+

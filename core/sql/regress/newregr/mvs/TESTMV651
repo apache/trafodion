@@ -1,0 +1,675 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--===================================================================
+-- TestMV651
+-- ---------
+-- Different types of tables
+-- known diff for NSK exists for bug 616 (delete after closing bug!)
+--===================================================================
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+control query default insert_vsbb 'USER';
+
+obey TESTMV651(CLEAN_UP);
+log LOGMV651 clear;
+
+obey TESTMV651(SET_UP);
+
+-- Run Tests
+
+	obey TESTMV651(VERTICAL);
+
+?ignore
+-- entry seq tables are not supported in sql/mx r2.
+-- Commenting out these tests.
+	obey TESTMV651(ENTRYSEQUENCE_SINGLE);
+	obey TESTMV651(ENTRYSEQUENCE_VSBB);       
+	obey TESTMV651(ENTRYSEQUENCE_SIDEINSERT); 
+	obey TESTMV651(ENTRYSEQUENCE_MANUAL);
+	obey TESTMV651(ENTRYSEQUENCE_MIXED);
+?ignore
+
+	obey TESTMV651(HASH_SINGLE); -- Bug 517 
+	obey TESTMV651(HASH_VSBB);
+	obey TESTMV651(HASH_MANUAL);
+	obey TESTMV651(HASH_MIXED);
+	obey TESTMV651(HASH_SIDEINSERT);
+
+
+obey TESTMV651(CLEAN_UP);
+log;
+exit;
+
+
+---------------------------------------------------------------
+?section SET_UP
+---------------------------------------------------------------
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+
+--create mvgroup MVG1_651;
+create mvgroup MVG2_651;
+create mvgroup MVG3_651;
+
+CREATE TABLE T_651_EntryOrder (a int, b int ,c int) 
+;
+ALTER TABLE T_651_EntryOrder attribute all mvs allowed;
+
+
+
+
+create table temp_651(a int ,b int,c int);
+ALTER TABLE temp_651 attribute all mvs allowed;
+
+
+
+
+
+
+create mv T_651_MV3
+	refresh on request
+	initialize on create
+	as
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b;
+ALTER MV T_651_MV3 attribute all mvs allowed;
+ALTER MVGroup MVG2_651 add T_651_MV3;
+
+create mv T_651_MV4 
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b;
+ALTER MV T_651_MV4 attribute all mvs allowed;
+ALTER MVGroup MVG2_651 add T_651_MV4;
+
+prepare select_from_log_of_T_EntryOrder from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+			"@SYSKEY"
+	from table (iud_log_table T_651_EntryOrder)
+	order by  "@TS";
+
+
+
+create table T_651_Hash ( a int not null not droppable, b int not null not droppable, 
+			primary key(a))
+			store by primary key
+			location $$partition2$$
+			hash PARTITION by (a)
+           (add location $$partition1$$);
+ALTER TABLE T_651_Hash attribute all mvs allowed;
+
+
+
+create mv T_651_MV5
+	refresh on request
+	initialize on create
+	as
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a;
+ALTER MV T_651_MV5 attribute all mvs allowed;
+
+ALTER MVGroup MVG3_651 add T_651_MV5;
+
+create mv T_651_MV6
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a;
+ALTER MV T_651_MV6 attribute all mvs allowed;
+ALTER MVGroup MVG3_651 add T_651_MV6;
+
+prepare select_from_log_of_T_Hash from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+			a
+	from table (iud_log_table T_651_Hash)
+	order by  a,"@TS";
+
+
+-------------------------------------------------------
+?section VERTICAL
+-------------------------------------------------------
+-- vertical partiotion
+create table T_651_Vertical( a int, b int , c int) 
+			location $$partition1$$ separate by column;
+ALTER TABLE T_651_Vertical attribute all mvs allowed;
+-- expected failure
+create mv T_651_MV1
+	refresh on request
+	initialize on create
+	as
+	select a,b,sum(c) sum_c
+	from T_651_Vertical
+	group by a,b;
+
+-------------------------------------------------------
+?section ENTRYSEQUENCE_SINGLE
+-------------------------------------------------------
+
+insert into T_651_EntryOrder values ( 1,1,1),(1,1,2),(1,1,3),(1,2,3),(1,2,4),
+		(1,2,5),(1,2,6),(1,2,7);
+		
+				
+refresh MVGroup MVG2_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV3
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV4
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+
+
+
+-------------------------------------------------------
+?section ENTRYSEQUENCE_VSBB
+-------------------------------------------------------
+alter table T_651_EntryOrder  Attributes automatic RANGELOG ;
+
+insert into T_651_EntryOrder values (1,1,6),(1,2,9),(1,3,4),(1,4,5),
+							(1,3,5),(1,4,6),(1,3,8),(1,3,9);
+
+execute select_from_log_of_T_EntryOrder;
+
+refresh MVGroup MVG2_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV3
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV4
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+-------------------------------------------------------
+?section ENTRYSEQUENCE_SIDEINSERT
+-------------------------------------------------------
+
+drop table T_651_EntryOrder cascade;
+
+
+CREATE TABLE T_651_EntryOrder (a int, b int ,c int);
+ALTER TABLE T_651_EntryOrder attribute all mvs allowed;
+
+
+create mv T_651_MV3
+	refresh on request
+	initialize on create
+	as
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b;
+ALTER MV T_651_MV3 attribute all mvs allowed;
+ALTER MVGroup MVG2_651 add T_651_MV3;
+
+create mv T_651_MV4 
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b;
+ALTER MV T_651_MV4 attribute all mvs allowed;
+ALTER MVGroup MVG2_651 add T_651_MV4;
+
+
+
+prepare select_from_log_of_T_EntryOrder from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+			"@SYSKEY"
+	from table (iud_log_table T_651_EntryOrder)
+	order by  "@TS";
+
+alter table T_651_EntryOrder  Attributes automatic RANGELOG ;
+
+insert into temp_651 values  (1,1,6),(1,2,9),(1,3,4),(1,4,5),
+							(1,3,5),(1,4,6),(1,3,8),(1,3,9);
+
+set parserflags 1024; -- allow no audit
+ALTER table T_651_EntryOrder attribute no audit;
+reset parserflags 1024;
+
+-- sidetree inserts into entry seq tables is not supported.
+-- Changing it to normal inserts. Later, we can take this section out.
+insert into T_651_EntryOrder(a,b,c) select * from temp_651 ;
+
+set parserflags 1024; -- allow no audit
+ALTER table T_651_EntryOrder attribute audit;
+reset parserflags 1024;
+
+execute select_from_log_of_T_EntryOrder;
+
+
+refresh MVGroup MVG2_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV3
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV4
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+-------------------------------------------------------
+?section ENTRYSEQUENCE_MANUAL
+-------------------------------------------------------
+
+alter table T_651_EntryOrder  Attributes manual RANGELOG ;
+
+insert  into T_651_EntryOrder values (2,2,3),(2,2,9),(2,3,4),(5,4,5),
+							(6,3,5),(6,4,6),(6,3,8),(6,3,9);
+
+MVLOG INTO RANGELOG OF T_651_EntryOrder ( SYSKEY ) BETWEEN (8) AND 	(15);
+execute select_from_log_of_T_EntryOrder;
+
+refresh MVGroup MVG2_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV3
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV4
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+-------------------------------------------------------
+?section ENTRYSEQUENCE_MIXED
+-------------------------------------------------------
+alter table T_651_EntryOrder  Attributes mixed RANGELOG ;
+
+insert  NOMVLOG into T_651_EntryOrder values (2,5,3),(2,5,9),(2,6,4),(5,5,5),
+							(6,6,5),(6,7,6),(6,6,8),(6,6,9);
+
+MVLOG INTO RANGELOG OF T_651_EntryOrder ( SYSKEY ) BETWEEN (16) AND 	(23);
+execute select_from_log_of_T_EntryOrder;
+
+refresh MVGroup MVG2_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV3
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,b,sum(c) sum_c
+	from T_651_EntryOrder
+	group by a,b
+	order by a,b;
+PREPARE stat2 FROM
+	select * from T_651_MV4
+	order by a,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+-------------------------------------------------------
+?section HASH_SINGLE
+-------------------------------------------------------
+
+insert into T_651_Hash values ( 1,1),(2,2),(3,3),(4,23),(5,4),
+		(6,5),(7,6),(8,7);
+		
+execute select_from_log_of_T_Hash;
+
+refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV5
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV6
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+-- Bug 517
+
+--delete from T_651_Hash where a = 2 ;
+--update T_651_Hash set b = 24 where a =4;
+
+--refresh MVGroup MVG3_651 ;
+--log;
+--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+--log LOGMV651;
+
+--PREPARE stat1 FROM 
+--	select a,sum(b) sum_b
+--	from T_651_Hash
+--	group by a
+--	order by a;
+--PREPARE stat2 FROM
+--	select * from T_651_MV5
+--	order by a;
+--obey COMPARE; 
+--sh diff TEMP1 TEMP2>> LOGMV651 ;
+--log LOGMV651;
+
+--PREPARE stat1 FROM 
+--	select a,sum(b) sum_b
+--	from T_651_Hash
+--	group by a
+--	order by a;
+--PREPARE stat2 FROM
+--	select * from T_651_MV6
+--	order by a;
+--obey COMPARE; 
+--sh diff TEMP1 TEMP2>> LOGMV651 ;
+--log LOGMV651;
+
+-------------------------------------------------------
+?section HASH_VSBB
+-------------------------------------------------------
+-- expected failure
+alter table T_651_Hash  Attributes automatic RANGELOG ;
+
+-------------------------------------------------------
+?section HASH_MANUAL
+-------------------------------------------------------
+-- expected success
+alter table T_651_Hash  Attributes manual RANGELOG ;
+
+insert  into T_651_Hash values (12,12),(13,14),(14,15),(16,36),(65,65);
+
+MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (12) AND 	(65);
+
+insert  into T_651_Hash values (71,12),(73,14),(74,15),(76,36),(78,65);
+
+MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (71) AND 	(78);
+
+execute select_from_log_of_T_Hash;
+
+refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV5
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV6
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+
+-- expected 2 (number of partitions of iud_log) 
+select count(*) cnt 
+  from HP_DEFINITION_SCHEMA.PARTITIONS
+  where OBJECT_UID = ( select  OBJECT_UID from HP_DEFINITION_SCHEMA.objects
+    where object_name = 'T_651_HASH' and OBJECT_NAME_SPACE = 'TA'
+    for read uncommitted access);
+
+
+-------------------------------------------------------
+?section HASH_MIXED
+-------------------------------------------------------
+-- expected failure
+alter table T_651_Hash  Attributes mixed RANGELOG ;
+
+-------------------------------------------------------
+?section HASH_SIDEINSERT
+-------------------------------------------------------
+delete from T_651_Hash;
+refresh MVGroup MVG3_651 recompute outfile REFRESH.LOG;
+
+set parserflags 1024; -- allow no audit
+ALTER table T_651_Hash attribute no audit;
+reset parserflags 1024;
+
+insert using sideinserts into T_651_Hash(a,b) values (20,21),(21,22),(23,21),(250,26),(270,24),(280,20);
+
+MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (20) AND 	(300);
+
+--insert using sideinserts into T_651_Hash(a,b) values (321,21),(323,22),(325,21),(351,26),(371,24),(381,20);
+
+--MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (321) AND 	(381);
+
+execute select_from_log_of_T_Hash;
+
+set parserflags 1024; -- allow no audit
+ALTER table T_651_Hash attribute audit;
+reset parserflags 1024;
+
+refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+log LOGMV651;
+
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV5
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+PREPARE stat1 FROM 
+	select a,sum(b) sum_b
+	from T_651_Hash
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_651_MV6
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV651 ;
+log LOGMV651;
+
+--------------------------------------------------------
+?section CLEAN_UP
+-------------------------------------------------------
+--refresh mvgroup MVG1_651 cancel;
+--log;
+--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV651;
+--log LOGMV651;
+
+refresh mvgroup MVG2_651 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV651;
+log LOGMV651;
+
+
+refresh mvgroup MVG3_651 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV651;
+log LOGMV651;
+
+
+drop mv T_651_MV6;
+drop mv T_651_MV5;
+drop mv T_651_MV4;
+drop mv T_651_MV3;
+drop mv T_651_MV2;
+drop mv T_651_MV1;
+
+drop table T_651_EntryOrder;
+drop table T_651_Hash;
+drop table  temp_651;
+--drop mvgroup MVG1_651;
+drop mvgroup MVG2_651;
+drop mvgroup MVG3_651;
+
+drop table T_651_Vertical;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;

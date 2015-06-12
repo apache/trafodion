@@ -1,0 +1,38 @@
+>>obey TEST_1_1_1_4(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- NOTE:  the following statement should NOT fire the trigger (no match)
+>>UPDATE tab1A SET b=2;
+
+--- 0 row(s) updated.
+>>
+>>-- NOTE:  the following statement SHOULD fire the trigger (any match)
+>>UPDATE tab1A SET b=2, c=2, d=2;
+
+--- 0 row(s) updated.
+>>
+>>-- NOTE:  the following statement SHOULD fire the trigger (any match)
+>>UPDATE tab1A SET d=3;
+
+--- 0 row(s) updated.
+>>
+>>-- NOTE:  the following statement SHOULD fire the trigger (exact match)
+>>UPDATE tab1A SET c=2, d=2;
+
+--- 0 row(s) updated.
+>>
+>>---------------------------------------------------------------------------------
+>>-- RESULT : tab1B has 3 row
+>>SELECT count(*) FROM tab1B;
+
+(EXPR)                
+--------------------  
+
+                   3  
+
+--- 1 row(s) selected.
+>>
+>>---------------------------------------------------------------------------------
+>>LOG;

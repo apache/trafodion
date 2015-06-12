@@ -1,0 +1,1277 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV215b
+--- 2.4.4.
+--- PURPOSE: Internal Refresh tests with TPCD database
+--- 	     Multidelta and RI between tables         
+------------------------------------------------------
+
+obey TESTMV215B(CLEAN_UP);
+
+obey TESTMV215B(SET_UP);
+log LOGMV215B clear;
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215B(TEST1);
+	obey TESTMV215B(TEST2);
+-- Clean and exit
+log;
+obey TESTMV215B(CLEAN_UP);
+
+obey ./TPCD/SHOW_OBJECTS_TPCD;
+exit;
+
+------------------------------------------------------
+?section SET_UP
+control query default insert_vsbb 'OFF';
+set PARSERFLAGS 1;
+--control query default attempt_esp_parallelism 'OFF';
+set schema cat.tpcd;
+
+obey ./TPCD/CREATEALL.OBEY(SET_UP);
+create schema cat.tpcdRI;
+set schema cat.tpcdRI;
+
+-- ******************************************************************
+-- * Create the tables                                              *
+-- ******************************************************************
+create table tpcdRI.t1 ( a int , b int );
+
+Create table customer  (
+   c_custkey           int                not null not droppable, 
+   c_nationkey         int                not null not droppable, 
+   c_acctbal           numeric(12,2)      not null not droppable, 
+   c_phone             char(15)           not null not droppable, 
+   c_mktsegment        char(10)           not null not droppable, 
+   c_name              varchar(25)        not null not droppable, 
+   c_address           varchar(40)        not null not droppable, 
+   c_comment           varchar(117)       not null not droppable, 
+primary key (c_custkey) not droppable)
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (           401) location $$partition2$$);
+
+Create table customertemp  (
+   c_custkey           int                not null not droppable, 
+   c_nationkey         int                not null not droppable, 
+   c_acctbal           numeric(12,2)      not null not droppable, 
+   c_phone             char(15)           not null not droppable, 
+   c_mktsegment        char(10)           not null not droppable, 
+   c_name              varchar(25)        not null not droppable, 
+   c_address           varchar(40)        not null not droppable, 
+   c_comment           varchar(117)       not null not droppable, 
+primary key (c_custkey) not droppable)
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (           401) location $$partition2$$);
+
+Create table supplier  (
+   s_suppkey           int                not null not droppable, 
+   s_nationkey         int                not null not droppable, 
+   s_acctbal           numeric(12,2)      not null not droppable, 
+   s_phone             char(15)           not null not droppable, 
+   s_name              char(25)           not null not droppable, 
+   s_address           varchar(40)        not null not droppable, 
+   s_comment           varchar(101)       not null not droppable, 
+primary key (s_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (            80) location $$partition2$$);
+
+Create table lineitem  (
+   l_orderkey          int                not null not droppable, 
+   l_linenumber        int                not null not droppable, 
+   l_partkey           int                not null not droppable, 
+   l_suppkey           int                not null not droppable, 
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (         5001) location $$partition2$$,
+   add first key (         10001) location $$partition0$$);
+
+Create table lineitemtemp  (
+   l_orderkey          int                not null not droppable, 
+   l_linenumber        int                not null not droppable, 
+   l_partkey           int                not null not droppable, 
+   l_suppkey           int                not null not droppable, 
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (         5001) location $$partition2$$,
+   add first key (         10001) location $$partition0$$);
+
+Create table orders  (
+   o_orderkey          int                not null not droppable, 
+   o_custkey           int                not null not droppable, 
+   o_shippriority      int                not null not droppable, 
+   o_totalprice        numeric(12,2)      not null not droppable, 
+   o_orderdate         date               not null not droppable, 
+   o_orderstatus       char(1)            not null not droppable, 
+   o_orderpriority     char(15)           not null not droppable, 
+   o_clerk             char(15)           not null not droppable, 
+   o_comment           varchar(79)        not null not droppable, 
+primary key (o_orderkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (         1001) location $$partition2$$,
+   add first key (         2001) location $$partition0$$);
+
+Create table part  (
+   p_partkey           int                not null not droppable, 
+   p_size              int                not null not droppable, 
+   p_retailprice       numeric(12,2)      not null not droppable, 
+   p_mfgr              char(25)           not null not droppable, 
+   p_brand             char(10)           not null not droppable, 
+   p_container         char(10)           not null not droppable, 
+   p_name              varchar(55)        not null not droppable, 
+   p_type              varchar(25)        not null not droppable, 
+   p_comment           varchar(23)        not null not droppable, 
+primary key (p_partkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (          1001) location $$partition2$$);
+
+Create table partsupp  (
+   ps_partkey          int                not null not droppable, 
+   ps_suppkey          int                not null not droppable, 
+   ps_availqty         int                not null not droppable, 
+   ps_supplycost       numeric(12,2)      not null not droppable, 
+   ps_comment          varchar(199)       not null not droppable, 
+primary key (ps_partkey,ps_suppkey) not droppable) 
+store by primary key 
+location $$partition1$$
+partition ( 
+   add first key (          501) location $$partition2$$,
+   add first key (          1001) location $$partition0$$);
+
+Create table nation  (
+   n_nationkey         int                not null not droppable, 
+   n_regionkey         int                not null not droppable, 
+   n_name              char(25)           not null not droppable, 
+   n_comment           varchar(152)       not null not droppable, 
+primary key (n_nationkey) not droppable) 
+store by primary key 
+location $$partition1$$;
+
+Create table region  (
+   r_regionkey         int                not null not droppable, 
+   r_name              char(25)           not null not droppable, 
+   r_comment           varchar(152)       not null not droppable, 
+primary key (r_regionkey) not droppable) 
+store by primary key 
+location $$partition1$$;
+
+-- Adding RIs between tables
+ALTER TABLE customer ADD 
+ foreign key (c_nationkey) references nation(n_nationkey);
+ALTER TABLE supplier ADD 
+ foreign key (s_nationkey) references nation(n_nationkey);
+ALTER TABLE nation ADD 
+ foreign key (n_regionkey) references region(r_regionkey);
+ALTER TABLE lineitem  ADD 
+ foreign key (l_partkey,l_suppkey) references partsupp(ps_partkey,ps_suppkey);
+ALTER TABLE lineitem  ADD 
+ foreign key (l_orderkey) references orders(o_orderkey);
+ALTER TABLE partsupp  ADD 
+ foreign key (ps_partkey) references part(p_partkey);
+ALTER TABLE partsupp  ADD 
+ foreign key (ps_suppkey) references supplier(s_suppkey);
+
+-- Copying some of the data to the tables
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=1500 
+								 -v upLimit1=999999999 
+									./tpcd/tpcdtemp/part.tbl > ./tpcd/tpcdtemp/part.tbl1 ;
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=80 
+                                 -v upLimit1=999999999 
+									./tpcd/tpcdtemp/supplier.tbl > ./tpcd/tpcdtemp/supplier.tbl1 ;
+sh awk -f ./TPCD/FILTER_2KEY.AWK -v downLimit1=1500 -v downLimit2=80 
+                                 -v upLimit1=999999999   -v upLimit2=999999999 
+									./tpcd/tpcdtemp/partsupp.tbl > ./tpcd/tpcdtemp/partsupp.tbl1 ;
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=800 
+                                 -v upLimit1=999999999 
+									./tpcd/tpcdtemp/customer.tbl > ./tpcd/tpcdtemp/customer.tbl1 ;
+sh awk -f ./TPCD/FILTER_2KEY.AWK -v downLimit1=12000 -v downLimit2=800 
+                                 -v upLimit1=999999999   -v upLimit2=999999999 
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+sh awk -f ./TPCD/FILTER_3KEY.AWK 
+								 -v downLimit1=10000 -v downLimit2=30 -v downLimit3=30 
+								 -v upLimit1=999999999   -v upLimit2=999999999   -v upLimit3=999999999 
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+cd ./tpcd/tpcdtemp/ ;
+sh import cat.tpcd.supplier -I supplier.tbl1 -U supplier.fmt  ;
+sh import cat.tpcd.part -I part.tbl1 -U part.fmt  ;
+sh import cat.tpcd.partsupp -I partsupp.tbl1 -U partsupp.fmt  ;
+sh import cat.tpcd.customer -I customer.tbl1 -U customer.fmt ;
+sh import cat.tpcd.orders -I orders.tbl1 -U orders.fmt ;
+sh import cat.tpcd.lineitem -I lineitem.tbl1 -U lineitem.fmt  ;
+cd ../.. ;
+
+--   Preparing DB ---------------------------
+set schema cat.tpcd;
+
+insert into tpcdRI.region
+select *
+from tpcd.region;
+
+
+insert into tpcdRI.nation
+select *
+from tpcd.nation;
+
+-- Making Deltas
+PREPARE insert_supplier FROM
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= ?supp_key_down and
+      s_suppkey < ?supp_key_up
+order by s_suppkey;
+
+PREPARE insert_part FROM
+insert into tpcdRI.part
+select *
+from tpcd.part 
+where p_partkey >= ?part_key_down and
+      p_partkey < ?part_key_up
+order by p_partkey;
+
+PREPARE insert_customer FROM
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= ?cust_key_down and
+      c_custkey < ?cust_key_up 
+order by c_custkey;
+
+PREPARE insert_orders FROM
+insert into tpcdRI.orders
+select *
+from tpcd.orders 
+where o_orderkey >= ?order_key_down and
+      o_orderkey < ?order_key_up and
+	  o_custkey not in (select a from tpcdRI.t1)
+order by o_orderkey;
+
+PREPARE insert_partsupp FROM
+insert into tpcdRI.partsupp
+select *
+from tpcd.partsupp
+where ps_partkey in ( select p_partkey from tpcdRI.part) and
+      ps_suppkey in ( select s_suppkey from tpcdRI.supplier) and
+      ps_partkey,ps_suppkey not in (select * from tpcdRI.t1)
+order by ps_partkey,ps_suppkey;
+
+
+PREPARE insert_lineitem FROM
+insert into tpcdRI.lineitem
+select *
+from tpcd.lineitem
+where l_partkey,l_suppkey in 
+           ( select ps_partkey,ps_suppkey from tpcdRI.partsupp) and
+	  l_orderkey in ( select o_orderkey from tpcdRI.orders) and
+	  l_orderkey,l_linenumber not in (select * from tpcdRI.t1)
+order by l_orderkey,l_linenumber;
+
+
+-- --------------------------------------------------
+-- Checking the Deltas (before any MV is created. This is same as insert)
+SET PARAM ?part_key_down  '0';
+SET PARAM ?part_key_up    '1000';
+
+SET PARAM ?supp_key_down  '0';
+SET PARAM ?supp_key_up    '40';
+
+SET PARAM ?cust_key_down  '0';
+SET PARAM ?cust_key_up    '300';
+
+SET PARAM ?order_key_down '0';
+SET PARAM ?order_key_up   '15000';
+
+obey TESTMV215B(LOAD_DELTA);
+-- --------------------------------------------------
+set schema cat.tpcdRI;
+
+--obey PREPARE_DDL_SELECTS;
+-- Creating MVs
+obey ./TPCD/CREATEMVS(MV5);
+obey ./TPCD/CREATEMVS(MV9);
+
+
+
+
+-----------------------------------------------------
+?section CLEAN_UP
+
+set schema cat.tpcdRI;
+-- ******************************************************************
+-- * Drop old tables                                                *
+-- ******************************************************************
+obey ./TPCD/CREATEMVS(DROPALL);
+drop table tpcdRI.t1;
+drop table lineitemtemp;
+drop table customertemp;
+drop table customer;
+drop table supplier;
+drop table lineitem;
+drop table orders;
+drop table part;
+drop table partsupp;
+drop table nation;
+drop table region;
+drop table customer;
+drop table supplier;
+drop table lineitem;
+drop table orders;
+drop table part;
+drop table partsupp;
+drop table nation;
+drop table region;
+
+drop schema cat.tpcdRI;
+set schema cat.tpcd;
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+
+------------------------------------------------------
+?section LOAD_DELTA
+-- This section performs the load of data specified by the Deltas
+-- while keeping RI
+
+set schema cat.tpcd;
+-- ---------------------
+execute insert_supplier;
+-- ---------------------
+execute insert_part;
+-- ---------------------
+execute insert_customer;
+-- ---------------------
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select c_custkey,0 from tpcdRI.customer;
+execute insert_orders;
+-- ---------------------
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select ps_partkey,ps_suppkey from tpcdRI.partsupp;
+execute insert_partsupp;
+-- ---------------------
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select l_orderkey,l_linenumber from tpcdRI.lineitem;
+execute insert_lineitem;
+-- ---------------------
+set schema cat.tpcdRI;
+
+
+
+
+
+--------------------------------------------------------------
+?section TEST1
+set schema cat.tpcdRI;
+log LOGMV215B;
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+-- Basic Q5
+-- for compare 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.supplier@ @0@ @200@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.customer@ @0@ @200@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.part@ @0@ @200@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.partsupp@ @0@ @200@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.lineitem@ @0@ @200@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.orders@ @0@ @200@ ;
+
+SET PARAM ?part_key_down  '1000';
+SET PARAM ?part_key_up    '1300';
+
+SET PARAM ?supp_key_down  '40';
+SET PARAM ?supp_key_up    '70';
+
+SET PARAM ?cust_key_down  '300';
+SET PARAM ?cust_key_up    '600';
+
+SET PARAM ?order_key_down '15000';
+SET PARAM ?order_key_up   '20000';
+
+-- *************************** Due to a bug in the prepare statement we copied the section ***************
+
+
+PREPARE insert_supplier FROM
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= ?supp_key_down and
+      s_suppkey < ?supp_key_up
+order by s_suppkey;
+
+
+PREPARE insert_part FROM
+insert into tpcdRI.part
+select *
+from tpcd.part 
+where p_partkey >= ?part_key_down and
+      p_partkey < ?part_key_up
+order by p_partkey;
+
+PREPARE insert_customer FROM
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= ?cust_key_down and
+      c_custkey < ?cust_key_up
+order by c_custkey;
+
+PREPARE insert_orders FROM
+insert into tpcdRI.orders
+select *
+from tpcd.orders 
+where o_orderkey >= ?order_key_down and
+      o_orderkey < ?order_key_up 
+order by o_orderkey;
+
+
+PREPARE insert_partsupp FROM
+insert into tpcdRI.partsupp
+select *
+from tpcd.partsupp
+where ps_partkey in ( select p_partkey from tpcdRI.part) and
+      ps_suppkey in ( select s_suppkey from tpcdRI.supplier) and
+      ps_partkey,ps_suppkey not in (select * from tpcdRI.t1)
+order by ps_partkey,ps_suppkey;
+
+
+PREPARE insert_lineitem FROM
+insert into tpcdRI.lineitem
+select *
+from tpcd.lineitem
+where l_partkey,l_suppkey in 
+           ( select ps_partkey,ps_suppkey from tpcdRI.partsupp) and
+	  l_orderkey in ( select o_orderkey from tpcdRI.orders) and
+	  l_orderkey,l_linenumber not in (select * from tpcdRI.t1)
+order by l_orderkey,l_linenumber;
+
+obey TESTMV215B(LOAD_DELTA);
+
+
+
+-----------------------------------------------  End preparation -----------------------------------------------
+
+-- Basic Q5
+-- internal refresh with insert delta for all tables
+
+refresh mv4q5 debug 51; 
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+PREPARE stat1 FROM 
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr
+	order by nation, yr;
+
+-- Basic Q9
+
+refresh mv4q9 debug 51; 
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+PREPARE stat2 FROM 
+	select nation, yr,sum_profit
+	from mv4q9 
+	order by nation, yr;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+
+
+?section TEST2
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.supplier@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.customer@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.part@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.partsupp@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.lineitem@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.orders@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.region@ @0@ @300@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.nation@ @0@ @300@ ;
+
+-------- BUG 508 -------------------------
+------------------------------------------
+-- unlocking log tables because of the bug
+log;
+select [first 10] * from table (iud_log_table supplier);
+select [first 10] * from table (iud_log_table part);
+select [first 10] * from table (iud_log_table customer);
+select [first 10] * from table (iud_log_table partsupp);
+select [first 10] * from table (iud_log_table lineitem);
+select [first 10] * from table (iud_log_table orders);
+log LOGMV215B;
+-----------------------------------------
+-----------------------------------------
+
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= 70 and
+      s_suppkey < 80
+order by s_suppkey;
+
+
+insert into tpcdRI.part
+select *
+from tpcd.part 
+where p_partkey >= 1300 and
+      p_partkey < 1400
+order by p_partkey;
+
+
+--- to check 
+select * from tpcdRI.customer
+where c_custkey >= 630 and
+      c_custkey < 650
+order by c_custkey;
+
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= 630 and
+      c_custkey < 650
+order by c_custkey;
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select c_custkey,0 from tpcdRI.customer;
+
+insert into tpcdRI.orders
+select *
+from tpcd.orders 
+where o_orderkey >= 20000 and
+      o_orderkey < 24000 
+order by o_orderkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select ps_partkey,ps_suppkey from tpcdRI.partsupp;
+
+insert into tpcdRI.partsupp
+select *
+from tpcd.partsupp
+where ps_partkey in ( select p_partkey from tpcdRI.part) and
+      ps_suppkey in ( select s_suppkey from tpcdRI.supplier) and
+      ps_partkey,ps_suppkey not in (select * from tpcdRI.t1)
+order by ps_partkey,ps_suppkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select l_orderkey,l_linenumber from tpcdri.lineitem;
+
+insert into tpcdRI.lineitemtemp
+select *
+from tpcd.lineitem
+where l_partkey,l_suppkey in 
+           ( select ps_partkey,ps_suppkey from tpcdRI.partsupp) and
+	  l_orderkey in ( select o_orderkey from tpcdRI.orders) and
+	  l_orderkey,l_linenumber not in (select * from tpcdRI.t1)
+order by l_orderkey,l_linenumber;
+
+insert into tpcdRI.lineitem select * from tpcdRI.lineitemtemp;
+
+insert into region
+values ( 700,'Moon','Space');
+
+insert into nation
+values (2000,700,'Mars People','A small village');
+-----------------------------------------------  End preparation -----------------------------------------------
+-- Basic Q5
+refresh mv4q5 debug 51; 
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+-- MVJoinGraph:
+-- Table no. 0: C.S.REGION,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  0  0  1  0  .
+--         Incoming RIs :  0  0  0  0  1  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- Table no. 1: C.S.NATION,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  1  1  0  1  .
+--         Incoming RIs :  0  0  1  1  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  1  .
+-- Table no. 2: C.S.SUPPLIER,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  1  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  1  0  .
+-- Table no. 3: C.S.CUSTOMER,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  1  0  .
+--         Incoming RIs :  0  1  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  1  0  .
+-- Table no. 4: C.S.ORDERS,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  0  0  .
+--         Incoming RIs :  1  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  1  0  0  0  .
+-- Table no. 5: C.S.LINEITEM,
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  0  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  1  0  0  0  0  .
+-- 
+-- MVJoinGraphSolution (Score: 4): 2, 5, 4, 3, 1, 0, .
+--   Product Matrix:
+--    Sign   0  1  2  3  4  5
+--     0 ) + d  T  T  T  T  T
+--     1 ) - d  d  T  T  T  T
+--     2 ) + T  d  T  T  T  T
+-- 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.supplier@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.customer@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.part@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.partsupp@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.lineitem@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.orders@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.region@ @0@ @310@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.nation@ @0@ @310@ ;
+
+-------- BUG 508 -------------------------
+------------------------------------------
+-- unlocking log tables because of the bug
+log;
+select [first 10] * from table (iud_log_table supplier);
+select [first 10] * from table (iud_log_table part);
+select [first 10] * from table (iud_log_table customer);
+select [first 10] * from table (iud_log_table partsupp);
+select [first 10] * from table (iud_log_table lineitem);
+select [first 10] * from table (iud_log_table orders);
+log LOGMV215B;
+-----------------------------------------
+-----------------------------------------
+
+
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= 85 and
+      s_suppkey < 90
+order by s_suppkey;
+
+
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= 650 and
+      c_custkey < 700
+order by c_custkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select l_orderkey,l_linenumber from tpcdri.lineitem;
+
+insert into region
+values ( 701,'Sun','Space');
+
+insert into nation
+values (2001,701,'Dark People','A small village');
+-----------------------------------------------  End preparation -----------------------------------------------
+
+refresh mv4q5 debug 51; 
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+-- MVJoinGraph:
+-- Table no. 0: C.S.REGION (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  0  0  1  0  .
+--         Incoming RIs :  0  0  0  0  1  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- Table no. 1: C.S.NATION (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  1  1  0  1  .
+--         Incoming RIs :  0  0  1  1  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  1  .
+-- Table no. 2: C.S.SUPPLIER (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  1  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  1  0  .
+-- Table no. 3: C.S.CUSTOMER (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  1  0  .
+--         Incoming RIs :  0  1  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  1  0  .
+-- Table no. 4: C.S.ORDERS (Empty Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  0  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  1  0  0  0  .
+-- Table no. 5: C.S.LINEITEM (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  0  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- 
+-- MVJoinGraphSolution (Score: 3): 2, 1, 0, 5, 4, 3, .
+--   Product Matrix:
+--    Sign   0  1  2  3  4  5
+--     0 ) + d  T  T  T  T  T
+--     1 ) - d  T  T  d  T  T
+--     2 ) + T  T  T  d  T  T
+-- 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.supplier@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.customer@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.part@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.partsupp@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.lineitem@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.orders@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.region@ @0@ @320@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.nation@ @0@ @320@ ;
+
+-------- BUG 508 -------------------------
+------------------------------------------
+-- unlocking log tables because of the bug
+log;
+select [first 10] * from table (iud_log_table supplier);
+select [first 10] * from table (iud_log_table part);
+select [first 10] * from table (iud_log_table customer);
+select [first 10] * from table (iud_log_table partsupp);
+select [first 10] * from table (iud_log_table lineitem);
+select [first 10] * from table (iud_log_table orders);
+log LOGMV215B;
+-----------------------------------------
+-----------------------------------------
+
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= 90 and
+      s_suppkey < 95
+order by s_suppkey;
+
+
+insert into tpcdRI.part
+select *
+from tpcd.part 
+where p_partkey >= 1400 and
+      p_partkey < 1600
+order by p_partkey;
+
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= 700 and
+      c_custkey < 900
+order by c_custkey;
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select c_custkey,0 from tpcdRI.customer;
+
+insert into tpcdRI.orders
+select *
+from tpcd.orders 
+where o_orderkey >= 24000 and
+      o_orderkey < 26000 
+order by o_orderkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select ps_partkey,ps_suppkey from tpcdRI.partsupp;
+
+insert into tpcdRI.partsupp
+select *
+from tpcd.partsupp
+where ps_partkey in ( select p_partkey from tpcdRI.part) and
+      ps_suppkey in ( select s_suppkey from tpcdRI.supplier) and
+      ps_partkey,ps_suppkey not in (select * from tpcdRI.t1)
+order by ps_partkey,ps_suppkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select l_orderkey,l_linenumber from tpcdri.lineitem;
+
+delete from tpcdRI.lineitemtemp;
+insert into tpcdRI.lineitemtemp
+select *
+from tpcd.lineitem
+where l_partkey,l_suppkey in 
+           ( select ps_partkey,ps_suppkey from tpcdRI.partsupp) and
+	  l_orderkey in ( select o_orderkey from tpcdRI.orders) and
+	  l_orderkey,l_linenumber not in (select * from tpcdRI.t1)
+order by l_orderkey,l_linenumber;
+
+insert into tpcdRI.lineitem select * from tpcdRI.lineitemtemp;
+
+
+insert into region
+values ( 702,'Saturn','Space');
+
+update nation
+set n_name = ' Updated '
+where n_nationkey < 2;
+-----------------------------------------------  End preparation -----------------------------------------------
+
+refresh mv4q5;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+-- MVJoinGraph:
+-- Table no. 0: C.S.REGION (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  0  0  1  0  .
+--         Incoming RIs :  0  0  0  0  1  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- Table no. 1: C.S.NATION (Nonempty Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  0  1  1  0  1  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  1  .
+-- Table no. 2: C.S.SUPPLIER (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  1  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- Table no. 3: C.S.CUSTOMER (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  1  0  .
+--         Incoming RIs :  0  1  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- Table no. 4: C.S.ORDERS (Empty Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  1  0  1  0  0  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  1  0  0  0  .
+-- Table no. 5: C.S.LINEITEM (ReadOnly Delta),
+--         TableIndices :  5, 4, 3, 2, 1, 0, .
+--         Predicates to:  0  1  0  1  0  0  .
+--         Incoming RIs :  0  0  0  0  0  0  .
+--         Outgoing RIs :  0  0  0  0  0  0  .
+-- 
+-- MVJoinGraphSolution (Score: 2): 1, 0, 2, 5, 4, 3, .
+--   Product Matrix:
+--    Sign   0  1  2  3  4  5
+--     0 ) + d  T  T  T  T  T
+--     1 ) - d  T  d  T  T  T
+--     2 ) + T  T  d  T  T  T
+--     3 ) - d  T  T  d  T  T
+--     4 ) + d  T  d  d  T  T
+--     5 ) - T  T  d  d  T  T
+--     6 ) + T  T  T  d  T  T
+-- 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.supplier@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.customer@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.part@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.partsupp@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.lineitem@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.orders@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.region@ @0@ @330@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcdRI.nation@ @0@ @330@ ;
+
+-------- BUG 508 -------------------------
+------------------------------------------
+-- unlocking log tables because of the bug
+log;
+select [first 10] * from table (iud_log_table supplier);
+select [first 10] * from table (iud_log_table part);
+select [first 10] * from table (iud_log_table customer);
+select [first 10] * from table (iud_log_table partsupp);
+select [first 10] * from table (iud_log_table lineitem);
+select [first 10] * from table (iud_log_table orders);
+log LOGMV215B;
+-----------------------------------------
+-----------------------------------------
+
+
+insert into tpcdRI.supplier
+select *
+from tpcd.supplier supplier
+where s_suppkey >= 95 and
+      s_suppkey < 100
+order by s_suppkey;
+
+insert into tpcdRI.customer
+select *
+from tpcd.customer
+where c_custkey >= 900 and
+      c_custkey < 950
+order by c_custkey;
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select c_custkey,0 from tpcdRI.customer;
+
+insert into tpcdRI.orders
+select *
+from tpcd.orders 
+where o_orderkey >= 26000 and
+      o_orderkey < 28000 
+order by o_orderkey;
+
+
+delete from tpcdRI.t1;
+insert into tpcdRI.t1
+  select l_orderkey,l_linenumber from tpcdri.lineitem;
+
+delete from tpcdRI.lineitemtemp;
+insert into tpcdRI.lineitemtemp
+select *
+from tpcd.lineitem
+where l_partkey,l_suppkey in 
+           ( select ps_partkey,ps_suppkey from tpcdRI.partsupp) and
+	  l_orderkey in ( select o_orderkey from tpcdRI.orders) and
+	  l_orderkey,l_linenumber not in (select * from tpcdRI.t1)
+order by l_orderkey,l_linenumber;
+
+insert into tpcdRI.lineitem select * from tpcdRI.lineitemtemp;
+
+
+
+insert into region
+values ( 703,'Volcan','Space');
+
+update nation
+set n_comment = 'UPD10'
+where n_nationkey = 10;
+
+delete from customertemp;
+insert into customertemp select * from customer;
+
+update tpcdRI.customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_custkey in (
+	select c_custkey
+	from customertemp,nation
+	where c_nationkey = n_nationkey 
+	      and c_acctbal < 4000
+	      and n_name = 'IRAN'
+	);
+
+delete from customertemp;
+insert into customertemp select * from customer;
+
+update tpcdRI.customer
+set c_nationkey = 10 -- 'IRAN'
+where c_custkey in (
+	select c_custkey
+	from customertemp,nation
+	where c_nationkey = n_nationkey 
+	      and c_acctbal > 3000
+	      and n_name = 'JAPAN'
+	);
+
+delete from customertemp;
+insert into customertemp select * from customer;
+
+update tpcdRI.customer
+set c_nationkey = 12 -- 'IRAN'
+where c_custkey in (
+	select c_custkey
+	from customertemp,nation
+	where c_nationkey = n_nationkey 
+	      and c_acctbal < 2500
+	      and n_name = 'JAPAN'
+	);
+
+-----------------------------------------------  End preparation -----------------------------------------------
+
+-- Q5, all deltas are non-empty (no RIs can be used).
+refresh mv4q5;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215B;
+log LOGMV215B;
+
+--internal refresh mv4q5 from multidelta
+--        customer between 10 and 10 no de,
+--        orders	 between 10 and 10 no de,
+--        lineitem between 10 and 10 no de,
+--        supplier between 10 and 10 no de,
+--        nation	 between 10 and 10 no de,
+--        region	 between 10 and 10 no de
+--        phase 1;
+
+--internal refresh mv4q5 from multidelta
+--        customer between 10 and 10 no de,
+--        orders	 between 10 and 10 no de,
+--        lineitem between 10 and 10 no de,
+--        supplier between 10 and 10 no de,
+--       nation	 between 10 and 10 no de,
+--        region	 between 10 and 10 no de
+--        phase 2;
+
+--internal refresh mv4q5 from multidelta
+--        customer between 10 and 10 no de,
+--        orders	 between 10 and 10 no de,
+--        lineitem between 10 and 10 no de,
+--        supplier between 10 and 10 no de,
+--        nation	 between 10 and 10 no de,
+--        region	 between 10 and 10 no de
+--        phase 3;
+
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215B ;
+log LOGMV215B;
+
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------

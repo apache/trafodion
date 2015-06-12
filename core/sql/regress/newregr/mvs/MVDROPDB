@@ -1,0 +1,99 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+?section ALL_SECTIONS
+	log MVDROPDB.LOG clear;
+--	obey MVDROPDB(SCHEMA_INVENT);
+--	obey MVDROPDB(SCHEMA_SALES);
+--	obey MVDROPDB(SCHEMA_PERSNL);
+	obey MVDROPDB(DROP_CATALOG);
+	log;
+	
+
+?section OBJECTS
+	log MVDROPDB.LOG clear;
+	obey MVDROPDB(SCHEMA_INVENT);
+	obey MVDROPDB(SCHEMA_SALES);
+	obey MVDROPDB(SCHEMA_PERSNL);
+	log;
+
+?section SCHEMA_INVENT
+-- Drop tables/views in schema INVENT
+
+SET SCHEMA MVTestEnv2.INVENT;
+
+DROP materialized view PartMinCost;
+DROP VIEW SumPartMin;
+DROP INDEX XSUPORD;
+DROP TABLE PARTSUPP;
+
+-- Drop table/views in schema SALES
+?section SCHEMA_SALES
+
+SET SCHEMA MVTestEnv.SALES;
+
+ALTER TABLE ORDERS DROP CONSTRAINT DATE_CONSTRNT;
+
+DROP materialized view MANAGERSALESORDER;
+DROP materialized view OrdersParts;
+DROP VIEW ODetailParts;
+DROP materialized view EmpSumSales;
+DROP VIEW DetailedOrders;
+DROP VIEW OrderSalesMan;
+DROP INDEX XORDREP;
+DROP INDEX XORDCUS;
+DROP VIEW ORDREP;
+DROP INDEX XCUSTNAM;
+DROP INDEX XPARTDES;
+
+DROP TABLE ORDERS;
+DROP TABLE CUSTOMER;
+DROP TABLE ODETAIL;
+DROP TABLE PARTS;
+
+?section SCHEMA_PERSNL
+-- Drop tables/views in schema PERSNL
+
+SET SCHEMA  MVTestEnv.PERSNL;
+DROP materialized view TopManagers;
+DROP materialized view ManagerList;
+DROP VIEW mgrlist;
+
+ALTER TABLE EMPLOYEE DROP CONSTRAINT EMPNUM_CONSTRNT;
+DROP INDEX XEMPNAME;
+DROP INDEX XEMP;
+ALTER TABLE dept DROP CONSTRAINT manager_fk;
+
+DROP TABLE EMPLOYEE;
+DROP TABLE JOB;
+DROP TABLE DEPT;
+DROP VIEW OrderSalesMan; 
+DROP VIEW DetailedOrders; 
+drop index xdeptmgr;
+drop index xdeptrpt;
+
+?section DROP_CATALOG
+-- DROP all schemas
+
+DROP SCHEMA MVTestEnv.persnl cascade;
+DROP SCHEMA MVTestEnv.sales cascade;
+DROP SCHEMA MVTestEnv2.invent cascade;
+
+-- Drop the catalog;
+
+DROP CATALOG MVTestEnv;
+DROP CATALOG MVTestEnv2;

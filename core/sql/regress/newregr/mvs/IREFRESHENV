@@ -1,0 +1,84 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+obey IREFRESHENV(DROPALL);
+obey IREFRESHENV(CREAT);
+exit;
+
+?section CREAT
+
+set PARSERFLAGS 1;
+obey CONTROL_ENV(SET_UP);
+
+set schema MVTestEnv2.INVENT;
+create materialized view MVTestEnv2.INVENT.PartMinCost
+	Recompute
+	as
+        SELECT PartSupp.partnum,partdesc,min(partcost) as min_partcost
+        FROM MVTestEnv.Sales.Parts parts,
+	     PartSupp
+        WHERE parts.partnum = PartSupp.partnum
+	Group by PartSupp.partnum,partdesc;
+
+set schema MVTestEnv.PERSNL;
+
+CREATE materialized view MVTestEnv.PERSNL.OrderSalesMan 
+     Refresh on request
+     initialized on refresh 
+     AS SELECT MVTestEnv.Persnl.employee.*,ordernum,order_date,deliv_date,custnum
+        FROM MVTestEnv.Persnl.employee Left Join MVTestEnv.Sales.orders on 
+                MVTestEnv.Sales.orders.salesrep = MVTestEnv.Persnl.employee.empnum;
+
+set schema MVTestEnv.SALES;
+
+CREATE materialized view MVTestEnv.SALES.SalesCalc
+     Refresh on request
+     initialized on refresh 
+     as
+     select partnum,sum(unit_price) as sum_price,
+                    avg(Unit_price) as avg_price,
+	     	    sum(qty_ordered) as sum_qty,
+                    avg(qty_ordered) as avg_qty
+     from ODetail
+     where OrderNum > 200000
+     group by partnum;
+	
+       
+CREATE materialized view MVTestEnv.SALES.SalesMaxMin
+     Refresh on request
+     initialized on refresh 
+     as
+     select partnum,Max(unit_price) as max_price,
+                    Min(Unit_price) as min_price,
+	     			Max(qty_ordered) as max_qty,
+                    Min(qty_ordered) as min_qty
+     from MVTestEnv.SALES.ODetail
+     where OrderNum > 200000
+     group by partnum;
+   
+--Refresh MVTestEnv.INVENT.PartMinCost;
+--Refresh MVTestEnv.PERSNL.OrderSalesMan;
+--Refresh MVTestEnv.SALES.SalesMaxMin;
+--Refresh MVTestEnv.SALES.SalesCalc;
+
+?section DROPALL
+
+drop mv MVTestEnv.SALES.SalesCalc;
+drop mv MVTestEnv.SALES.SalesMaxMin;
+drop mv MVTestEnv.PERSNL.OrderSalesMan;
+drop mv MVTestEnv2.INVENT.PartMinCost;
+obey CONTROL_ENV(CLEAN_UP);

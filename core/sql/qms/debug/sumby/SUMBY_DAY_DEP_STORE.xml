@@ -1,0 +1,119 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.SUMBY.SUMBY_DAY_DEP_STORE
+  </Table>
+  <Misc isolationLevel='READ_COMMITTED' isIncremental='1' isImmediate='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212088409427040889'>
+          CAT.SUMBY.DIM
+        </Table>
+        <Table id='T2' TS='212088409434603340'>
+          CAT.SUMBY.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J10'>
+          <Column id='C22' tableId='T1' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+            CAT.SUMBY.DIM.DKEY
+          </Column>
+          <Column id='C10' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+            CAT.SUMBY.FACT.DIMKEY
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <GroupBy>
+        <Column id='C2' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FDAY
+        </Column>
+        <Column id='C3' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FMONTH
+        </Column>
+        <Column id='C4' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FYEAR
+        </Column>
+        <Column id='C6' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FDEP
+        </Column>
+        <Column id='C7' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FSTORE
+        </Column>
+        <Column id='C8' tableId='T2' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+          CAT.SUMBY.FACT.FSTATE
+        </Column>
+      </GroupBy>
+    </Hub>
+    <ExtraHub>
+      <GroupBy>
+      </GroupBy>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O28' name='TOTAL_PRICE'>
+        <Expr id='X28'>
+          <![CDATA[sum(@A1)]]>
+          <Input>
+            <Column id='C9' tableId='T2' sqlType='NUMERIC(8,2) SIGNED ALLOWS NULLS' isKey='0'>
+              CAT.SUMBY.FACT.FPRICE
+            </Column>
+          </Input>
+        </Expr>
+      </Output>
+      <Output id='O29' name='SUMDATA'>
+        <Expr id='X29'>
+          <![CDATA[sum(@A1)]]>
+          <Input>
+            <Column id='C23' tableId='T1' sqlType='INTEGER SIGNED ALLOWS NULLS' isKey='0'>
+              CAT.SUMBY.DIM.DIMDATA
+            </Column>
+          </Input>
+        </Expr>
+      </Output>
+      <Output id='O34' name='ODAY'>
+        <Column ref='C2' isKey='0'>
+        </Column>
+      </Output>
+      <Output id='O37' name='OMONTH'>
+        <Column ref='C3' isKey='0'>
+        </Column>
+      </Output>
+      <Output id='O40' name='OYEAR'>
+        <Column ref='C4' isKey='0'>
+        </Column>
+      </Output>
+      <Output id='O46' name='ODEP'>
+        <Column ref='C6' isKey='0'>
+        </Column>
+      </Output>
+      <Output id='O49' name='OSTORE'>
+        <Column ref='C7' isKey='0'>
+        </Column>
+      </Output>
+      <Output id='O52' name='OSTATE'>
+        <Column ref='C8' isKey='0'>
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>

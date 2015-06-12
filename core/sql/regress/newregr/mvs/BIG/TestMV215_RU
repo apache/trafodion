@@ -1,0 +1,258 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV215_RU
+--- 2.4.4.
+--- PURPOSE: Refresh Utility tests with TPCD database         
+------------------------------------------------------
+
+obey TESTMV215(CLEAN_UP);
+log LOGMV215_RU clear;
+
+obey TESTMV215_RU(SET_UP);
+log LOGMV215_RU;
+
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215_RU(TEST1);
+	obey TESTMV215_RU(TEST2);
+
+-- Clean and exit
+obey TESTMV215(CLEAN_UP);
+log;
+exit;
+
+--------------------------------------------
+?section SET_UP
+----------------------------------------------
+control query default insert_vsbb 'OFF';
+set PARSERFLAGS 1;
+
+set schema cat.tpcd;
+
+obey ./TPCD/CREATEALL.OBEY(SET_UP);
+obey PREPARE_DDL_SELECTS;
+
+delete from lineitem;
+delete from supplier;
+delete from orders;
+delete from part;
+delete from partsupp;
+delete from customer;
+delete from nation;
+delete from region;
+
+cd tpcd/tpcdtemp;
+sh import cat.tpcd.nation -I nation.tbl -U nation.fmt;
+sh import cat.tpcd.region -I region.tbl -U region.fmt;
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -C 30;
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -C 17000;
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -C 4500;
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -C 600;
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -C 2400;
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -C 450;
+cd ../..;
+
+
+obey ./TPCD/CREATEMVS(CREATEALL);
+
+-----------------------------------------
+?section CLEAN_UP
+-----------------------------------------
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+
+
+-- ---------------------------------------------------------------------------
+
+?section TEST1
+-------------------------------------------------------
+-- Basic Q5
+-- for compare 
+
+
+refresh mv4q5;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215_RU;
+log LOGMV215_RU;
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU ;
+log LOGMV215_RU;
+
+SET PARAM ?table_name 'SUPPLIER';
+execute select_mvs_table_info;
+log;
+sh import cat.tpcd.supplier -I ./tpcd/tpcdtemp/supplier.tbl -U ./tpcd/tpcdtemp/supplier.fmt -r -F 31 -C 5 >>logmv215_RU;
+log LOGMV215_RU;
+
+-- should be equal to 5
+select count(*) from table(iud_log_table cat.tpcd.supplier);
+
+REFRESH mv4q5;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215_RU;
+log LOGMV215_RU;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU ;
+log LOGMV215_RU;
+
+log;
+sh import cat.tpcd.customer -I ./tpcd/tpcdtemp/customer.tbl -U ./tpcd/tpcdtemp/customer.fmt -r -F 450 -C 75 >>logmv215_RU;
+log LOGMV215_RU;
+
+update customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_nationkey = 10 and c_acctbal < 4000;
+
+
+update customer
+set c_nationkey = 10 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal > 3000;
+
+update customer
+set c_nationkey = 12 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal < 2500;
+
+
+Refresh mv4q5;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK;
+log LOGMV215_RU;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU ;
+delete from table (iud_log_table cat.tpcd.customer);
+log LOGMV215_RU;
+
+?section TEST2
+-- Basic Q9
+
+
+REFRESH mv4q9;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK;LOG LOGMV215_RU;
+log;
+PREPARE stat1 FROM 
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr
+	order by nation, yr;
+
+PREPARE stat2 FROM 
+	select nation, yr,sum_profit
+	from mv4q9 
+	order by nation, yr;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU;
+log LOGMV215_RU;
+
+--parts
+
+log;
+sh import cat.tpcd.part -I ./tpcd/tpcdtemp/part.tbl -U ./tpcd/tpcdtemp/part.fmt -r -F 600 -C 100 >>logmv215_RU;
+log LOGMV215_RU;
+
+--CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @1@ @0@ ;
+
+REFRESH mv4q9;
+log;sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK;LOG LOGMV215_RU;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU;
+log LOGMV215_RU;
+
+-- partsupp
+log;
+sh import cat.tpcd.partsupp -I ./tpcd/tpcdtemp/partsupp.tbl -U ./tpcd/tpcdtemp/partsupp.fmt -r -F 2400 -C 400 >>logmv215_RU;
+log LOGMV215_RU;
+
+REFRESH mv4q9;
+log;sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK;LOG LOGMV215_RU;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU;
+log LOGMV215_RU;
+
+-- lineitem
+log;
+sh import cat.tpcd.lineitem -I ./tpcd/tpcdtemp/lineitem.tbl -U ./tpcd/tpcdtemp/lineitem.fmt -r -F 17000 -C 2500 >>logmv215_RU;
+log LOGMV215_RU;
+
+
+REFRESH mv4q9;
+log;sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK;LOG LOGMV215_RU;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215_RU;
+log LOGMV215_RU;

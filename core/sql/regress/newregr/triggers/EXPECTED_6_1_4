@@ -1,0 +1,70 @@
+>>obey TEST_6_1_4(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+1, c=c+1, d=d+1 WHERE a<3;
+
+--- 2 row(s) updated.
+>>
+>>SELECT * FROM tab1A ORDER BY a;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            3            4            5  
+          2            4            5            6  
+          3            4            5            6  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+A            B            
+-----------  -----------  
+
+          1            3  
+          2            4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM cat2.schm.tab2A ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            5  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM cat2.schm.tab2B ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            5  
+          2            6  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM cat3.schm.tab3A ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          3            5  
+          4            6  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

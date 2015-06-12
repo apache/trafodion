@@ -1,0 +1,88 @@
+>>obey TEST_4_2_2(set_up);
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER btrig4
+>>---------------------------------
+>>
+>>CREATE TRIGGER btrig4
++>BEFORE UPDATE
++>ON tab1A
++>REFERENCING NEW AS newR 
++>FOR EACH ROW
++>SET newR.c = newR.a + newR.b;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig42
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig42
++>AFTER UPDATE OF (c)
++>ON tab1A
++>REFERENCING OLD AS oldR, NEW AS newR
++>FOR EACH ROW
++>WHEN (newR.c = newR.a + newR.b)
++>INSERT INTO tab1B VALUES (newR.a, oldR.d);
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig41
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig41
++>AFTER UPDATE ON tab1A
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>UPDATE tab1B SET b=newR.d;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>obey TEST_4_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b=10, d=4;
+
+--- 2 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1           10           11            4  
+          2           10           12            4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

@@ -719,12 +719,45 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
                    1
 
 --- 1 row(s) selected.
+>>create sequence test024seq9 no cache;
+
+--- SQL operation complete.
+>>prepare s from select seqnum(test024seq9) from (values (1)) x(a);
+
+--- SQL command prepared.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>alter sequence test024seq9 reset;
+
+--- SQL operation complete.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
 >>
 >>-- select from metadata sequences view
 >>invoke trafodion."_MD_".sequences_view;
 
 -- Definition of Trafodion view TRAFODION."_MD_".SEQUENCES_VIEW
--- Definition current  Mon Dec  1 13:28:27 2014
+-- Definition current  Sun May 31 00:41:24 2015
 
   (
     CATALOG_NAME                     VARCHAR(256 BYTES) CHARACTER SET UTF8
@@ -760,8 +793,9 @@ TRAFODION                                                                       
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ6                                                                                                                                                                                                                                                                          1                     2                     8                     1  N             Y                                3                     9
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ7                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             Y                               25                    26
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ8                                                                                                                                                                                                                                                                          1                     1                     2                     1  Y             Y                                5                     6
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ9                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             N                                0                     2
 
---- 8 row(s) selected.
+--- 9 row(s) selected.
 >>
 >>obey TEST024(error_cases);
 >>create sequence error_seq maxvalue -1;
@@ -834,6 +868,14 @@ TRAFODION                                                                       
 >>create sequence error_seq;
 
 --- SQL operation complete.
+>>create sequence error_seq reset;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create sequence error_seq reset;
+                              ^ (31 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>alter sequence error_seq start with 50;
 
 *** ERROR[1592] START WITH cannot be specified for ALTER SEQUENCE.
@@ -869,6 +911,9 @@ TRAFODION                                                                       
 
 --- SQL operation complete.
 >>drop sequence test024seq8;
+
+--- SQL operation complete.
+>>drop sequence test024seq9;
 
 --- SQL operation complete.
 >>drop sequence error_seq;

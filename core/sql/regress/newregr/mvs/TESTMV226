@@ -1,0 +1,471 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV226
+-- 2.11   MV’s that are based on on statement MV’s  
+------------------------------------------------------
+--obey ENVIRON;
+
+obey TESTMV226(CLEAN_UP);
+-- Disable automatic creation of MVGroup objects
+control query default MVGROUP_AUTOMATIC_CREATION 'OFF';
+obey TESTMV226(SETUP);
+--obey PREPARE_DDL_SELECTS;
+log LOGMV226 clear;
+
+-- Run Tests
+	set schema catmvs.mvschm;
+	obey TESTMV226(TEST1);
+	obey TESTMV226(TEST2);
+	obey TESTMV226(TEST3);
+	obey TESTMV226(TEST4);
+-- Check the drop statement on the way out
+
+obey TESTMV226(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+log;
+exit;
+
+---------------------------------------------------
+?section SETUP
+---------------------------------------------------
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG226_cancel;
+
+create table temp1 ( epoch INT UNSIGNED , table_name char(100));
+ALTER TABLE temp1 attribute all mvs allowed;
+prepare save_epoch from 
+insert into temp1 
+SELECT CURRENT_EPOCH,?table_name
+	FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	WHERE base_table_uid = (SELECT object_uid 
+	FROM HP_DEFINITION_SCHEMA.objects 
+	  WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA')
+	FOR READ UNCOMMITTED ACCESS;
+
+prepare if_bigger from 
+select 'BIGGER' as rel
+from temp1
+where  table_name = ?table_name and 
+       epoch
+	<
+	(SELECT CURRENT_EPOCH
+		FROM HP_DEFINITION_SCHEMA.mvs_table_info
+	 WHERE base_table_uid = (SELECT object_uid 
+	 FROM HP_DEFINITION_SCHEMA.objects 
+	   WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
+	 FOR READ UNCOMMITTED ACCESS)
+	)
+for read uncommitted access
+;
+
+create table test226_A (a numeric(2),b numeric(2));
+ALTER TABLE test226_A attribute all mvs allowed;
+create table test226_B (a numeric(2) ,b numeric(2));
+ALTER TABLE test226_B attribute all mvs allowed;
+create table test226_C (a numeric(2) ,b numeric(2));
+ALTER TABLE test226_C attribute all mvs allowed;
+
+create materialized view T_226_MV1
+	refresh on statement
+	initialize on create
+        as
+	select A.a ,B.b,Sum(A.b) as Sb
+	from test226_A A,test226_B B
+	where A.a = B.a
+        group by A.a,B.b;
+alter mv T_226_MV1 attribute all mvs allowed;
+ALTER mvgroup MVG226_cancel ADD T_226_MV1;
+
+create materialized view T_226_MV2
+	refresh on request
+	initialize on create
+        as
+	select sum(Sb) SSb,T_226_MV1.b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b;
+alter mv T_226_MV2 attribute all mvs allowed;
+
+ALTER mvgroup  MVG226_cancel ADD T_226_MV2;
+
+create materialized view T_226_MV3
+	Recompute
+initialized on refresh
+        as
+	select sum(Sb) as SSb,T_226_MV1.b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b;
+alter mv T_226_MV3 attribute all mvs allowed;
+
+ALTER mvgroup MVG226_cancel ADD T_226_MV3;
+
+create materialized view T_226_MV4
+	Refresh on request
+	initialize on create
+        as
+	select A.a ,B.b,Sum(A.b) as Sb
+	from test226_A A,test226_B B
+	where A.a = B.a
+        group by A.a,B.b;
+alter mv T_226_MV4 attribute all mvs allowed;
+
+ALTER mvgroup MVG226_cancel ADD T_226_MV4;
+-------------------------------------------------
+?section TEST1
+-------------------------------------------------
+INSERT INTO test226_A 
+   VALUES (   1,2 ),(  2,3);
+
+INSERT INTO test226_B
+   VALUES (   1,4 ),(  3,5);
+
+INSERT INTO test226_C
+   VALUES (   1,2 ),(  2,3);
+
+delete from test226_A
+where a=2;
+
+delete from test226_B
+where a=3;
+
+INSERT INTO test226_A 
+   VALUES (   11,4 ),
+          (  12,5);
+
+INSERT INTO test226_B
+   VALUES (   11,7 ),
+          (  13,8);
+
+Create MVGroup MVG1_226;
+Alter MVGroup MVG1_226
+  Add T_226_MV2,T_226_MV3;
+
+
+set param ?table_name 'T_226_MV1';
+execute save_epoch ;
+
+refresh MVGroup MVG1_226 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV226;
+log LOGMV226;
+
+-- Expected Epochs increased (Bigger)
+
+set param ?table_name 'T_226_MV1';
+execute if_bigger ;
+
+PREPARE stat1 FROM 
+	select sum(Sb) as SSb,T_226_MV1.b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b
+		order by T_226_MV1.b;
+	
+
+PREPARE stat2 FROM 
+	select * from T_226_MV2
+	order by b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+
+PREPARE stat2 FROM 
+	select * from T_226_MV3
+	order by b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+delete from temp1;
+-------------------------------------------------
+?section TEST2
+-------------------------------------------------
+
+delete from test226_A ;
+delete from test226_B ;
+delete from test226_C ;
+
+INSERT INTO test226_A 
+   VALUES (   1,2 ),(  2,3);
+
+INSERT INTO test226_B
+   VALUES (   1,4 ),(  3,5);
+
+INSERT INTO test226_C
+   VALUES (   1,2 ),(  2,3);
+
+delete from test226_A
+where a=2;
+
+delete from test226_B
+where a=3;
+
+INSERT INTO test226_A 
+   VALUES (   11,4 ),
+          (  12,5);
+
+INSERT INTO test226_B
+   VALUES (   11,7 ),
+          (  13,8);
+
+set param ?table_name 'T_226_MV1';
+execute save_epoch ;
+
+refresh T_226_MV2 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV226;
+log LOGMV226;
+
+refresh T_226_MV3 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV226;
+log LOGMV226;
+
+-- Expected Epochs increased (Bigger)
+
+set param ?table_name 'T_226_MV1';
+execute if_bigger ;
+
+PREPARE stat1 FROM 
+	select sum(Sb) as SSb,T_226_MV1.b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b
+		order by T_226_MV1.b;
+	
+
+PREPARE stat2 FROM 
+	select * from T_226_MV2
+	order by b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+PREPARE stat2 FROM 
+	select * from T_226_MV3
+	order by b;
+
+ 
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+delete from temp1;
+-------------------------------------------------
+?section TEST3
+-------------------------------------------------
+delete from test226_A ;
+delete from test226_B ;
+delete from test226_C ;
+
+INSERT INTO test226_A 
+   VALUES (   1,2 ),(  2,3);
+
+INSERT INTO test226_B
+   VALUES (   1,4 ),(  3,5);
+
+INSERT INTO test226_C
+   VALUES (   1,2 ),(  2,3);
+
+delete from test226_A
+where a=2;
+
+delete from test226_B
+where a=3;
+
+INSERT INTO test226_A 
+   VALUES (   11,4 ),
+          (  12,5);
+
+INSERT INTO test226_B
+   VALUES (   11,7 ),
+          (  13,8);
+
+set param ?table_name 'T_226_MV1';
+execute save_epoch ;
+
+refresh T_226_MV2 cascade outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK| sort >> LOGMV226;
+log LOGMV226;
+
+-- Expected Epochs increased (Bigger)
+set param ?table_name 'T_226_MV1';
+execute if_bigger ;
+
+PREPARE stat1 FROM 
+	select sum(Sb) as SSb,T_226_MV1.b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b
+		order by T_226_MV1.b;
+	
+
+PREPARE stat2 FROM 
+	select * from T_226_MV2
+	order by b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+delete from temp1;
+-------------------------------------------------
+?section TEST4
+-------------------------------------------------
+
+refresh T_226_MV4 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV226;
+log LOGMV226;
+
+delete from test226_A ;
+delete from test226_B ;
+delete from test226_C ;
+
+INSERT INTO test226_A 
+   VALUES (   1,2 ),(  2,3);
+
+INSERT INTO test226_B
+   VALUES (   1,4 ),(  3,5);
+
+INSERT INTO test226_C
+   VALUES (   1,2 ),(  2,3);
+
+delete from test226_A
+where a=2;
+
+delete from test226_B
+where a=3;
+
+INSERT INTO test226_A 
+   VALUES (   11,4 ),
+          (  12,5);
+
+INSERT INTO test226_B
+   VALUES (   11,7 ),
+          (  13,8);
+
+Create MVGroup MVG2_226;
+Alter MVGroup MVG2_226
+  Add T_226_MV2,T_226_MV4;
+
+set param ?table_name 'T_226_MV1';
+execute save_epoch ;
+
+set param ?table_name 'TEST226_A';
+execute save_epoch ;
+
+refresh MVGroup MVG2_226 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV226;
+log LOGMV226;
+
+-- Expected Epochs increased (Bigger)
+set param ?table_name 'T_226_MV1';
+execute if_bigger ;
+
+set param ?table_name 'TEST226_A';
+execute if_bigger ;
+
+
+PREPARE stat1 FROM 
+	select A.a ,B.b,Sum(A.b) as Sb
+	from test226_A A,test226_B B
+	where A.a = B.a
+        group by A.a,B.b
+		order by A.a,B.b;
+
+PREPARE stat2 FROM
+	select * from T_226_MV4
+	order by a,b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+PREPARE stat1 FROM
+	select sum(Sb) SSb,T_226_MV1.b b
+	from T_226_MV1,test226_C
+	where test226_C.a = T_226_MV1.a
+        group by T_226_MV1.b
+		order by b;
+
+PREPARE stat2 FROM
+	select * from T_226_MV2
+	order by b;
+
+obey COMPARE;  
+sh diff TEMP1 TEMP2 >> LOGMV226 ;
+log LOGMV226;
+
+
+
+-- ------------------------------------------------------------------------------
+?section CLEAN_UP
+set schema catmvs.mvschm;
+
+refresh mvgroup MVG226_cancel cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV226;
+log LOGMV226;
+
+drop materialized view T_226_MV4;
+drop materialized view T_226_MV3;
+drop materialized view T_226_MV2;
+drop materialized view T_226_MV1;
+drop MVGroup MVG1_226;
+drop MVGroup MVG2_226;
+drop table test226_A;
+drop table test226_B;
+drop table test226_C;
+drop table temp1;
+
+drop mvgroup  MVG226_cancel;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;
+
+
+
+
+
+
+
+
+
+
+
+
+

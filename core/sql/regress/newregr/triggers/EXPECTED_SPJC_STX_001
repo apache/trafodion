@@ -1,0 +1,57 @@
+>>obey TEST_SPJC_STX_001(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01
+>>-- Result: success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG01_SPJC_STX_001 AFTER UPDATE ON
++>TAB01_SPJC_STX_001
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_STX_001 values(O.A, O.D);
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>select * from TAB01_SPJC_STX_001;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            5
+          3            4            5            6
+          4            5            6            7
+
+--- 4 row(s) selected.
+>>
+>>update TAB01_SPJC_STX_001 set a = a + d;
+
+--- 4 row(s) updated.
+>>
+>>select * from TAB01_SPJC_STX_001;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          5            2            3            4
+          7            3            4            5
+          9            4            5            6
+         11            5            6            7
+
+--- 4 row(s) selected.
+>>
+>>-- RESULT: Four rows with a = {1, 2, 3, 4}
+>>select * from TAB02_SPJC_STX_001;
+
+X            Y          
+-----------  -----------
+
+          1            4
+          2            5
+          3            6
+          4            7
+
+--- 4 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

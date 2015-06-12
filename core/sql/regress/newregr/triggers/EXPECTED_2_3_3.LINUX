@@ -1,0 +1,644 @@
+>>obey TEST_2_3_3(test_create);
+>>
+>>create table t233A(
++>	a int not null not droppable,
++>	b int not null,
++>	c int not null,
++>	d int,
++>	e int,
++>	constraint t231bplus check (b > 0),
++>	constraint t231ubc unique(b,c),
++>	primary key(a) droppable)
++>	store by (c)
++>	location $$partition3$$
++>	range partition(add first key (100) location $$partition$$,
++>		 add first key (200) location $$partition1$$,
++>		 add first key (300) location $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>create table t233B (v int, w int, x int, y int, z int);
+
+--- SQL operation complete.
+>>
+>>insert into t233A values
++> (11,111,1111,11111,10),
++> (22,222,2222,22222,10),
++> (33,333,3333,33333,10),
++> (44,444,4444,44444,10),
++> (55,555,5555,55555,10),
++> (66,666,6666,66666,10),
++> (77,777,7777,77777,10),
++> (88,888,8888,88888,10),
++> (99,999,9999,99999,10),
++> (12,345,6789,12345,10);
+
+--- 10 row(s) inserted.
+>>
+>>obey TEST_2_3_3(tests);
+>>
+>>------------------------------------------------------------------
+>>-- First run: No default
+>>------------------------------------------------------------------
+>>-- The DEFAULTS table entry was removed in the clean_up section
+>>
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+--- SQL operation complete.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T233A__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , A INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , B INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , C INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , D INT DEFAULT NULL
+ , E INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+ NOT DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ RANGE PARTITION
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+ ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+--- SQL operation complete.
+>>drop trigger trg233d;
+
+--- SQL operation complete.
+>>drop trigger trg233b;
+
+--- SQL operation complete.
+>>
+>>-- Display the LOCATION line in "showddl"
+>>set envvar SQLMX_CMP_DESCRIBE_MORE_INFO 1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>-- Second run: A single default partition
+>>------------------------------------------------------------------
+>>
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition3$$;
+
+--- SQL operation complete.
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+--- SQL operation complete.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T233A__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , A INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , B INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , C INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , D INT DEFAULT NULL
+ , E INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+ NOT DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+ ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+--- SQL operation complete.
+>>drop trigger trg233d;
+
+--- SQL operation complete.
+>>drop trigger trg233b;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- Third run: Many partitions
+>>------------------------------------------------------------------
+>>
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition$$;
+
+--- SQL operation complete.
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+--- SQL operation complete.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T233A__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , A INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , B INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , C INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , D INT DEFAULT NULL
+ , E INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+ NOT DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+ ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+--- SQL operation complete.
+>>drop trigger trg233d;
+
+--- SQL operation complete.
+>>drop trigger trg233b;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- Fourth run: Many repeated same partition
+>>------------------------------------------------------------------
+>>
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition5$$;
+
+--- SQL operation complete.
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+--- SQL operation complete.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T233A__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , A INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , B INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , C INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , D INT DEFAULT NULL
+ , E INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+ NOT DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+ ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+--- SQL operation complete.
+>>drop trigger trg233d;
+
+--- SQL operation complete.
+>>drop trigger trg233b;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- Fifth run: Non-existing partition
+>>------------------------------------------------------------------
+>>
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition4$$;
+
+--- SQL operation complete.
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+*** ERROR[1057] SQL objects cannot be created on @system@.@volume@: File system error 14.
+
+*** ERROR[11041] Temporary table could not be created! Check default partitions.
+
+--- SQL operation failed with errors.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+*** ERROR[1057] SQL objects cannot be created on @system@.@volume@: File system error 14.
+
+*** ERROR[11041] Temporary table could not be created! Check default partitions.
+
+--- SQL operation failed with errors.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+*** ERROR[1057] SQL objects cannot be created on @system@.@volume@: File system error 14.
+
+*** ERROR[11041] Temporary table could not be created! Check default partitions.
+
+--- SQL operation failed with errors.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+*** ERROR[4082] Object CAT1.SCHM.T233A__TEMP (TrigTemp) does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TRG233E could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trg233d;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TRG233D could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trg233b;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TRG233B could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- Sixth run: Default has garbage
+>>------------------------------------------------------------------
+>>
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition6$$;
+
+*** ERROR[2055] The specified value 'XXXX64' for DEFAULTS attribute TEMPORARY_TABLE_HASH_PARTITIONS is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition2$$;
+
+--- SQL operation complete.
+>>
+>>obey TEST_2_3_3(subtest);
+>>
+>>-- Create a trigger, which would also create a new
+>>-- temporary table, which would use the defaults to set up a different
+>>-- partitioning scheme.
+>>
+>>-- Enable "showddl" to show TEMP TABLE
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>log LOG_2_3_3 ;
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>create trigger trg233b after update of (b) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set d=d+(select MAX(b) from myold)+(select MIN(b) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233d after update of (d) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> update t233A set e=e+(select MAX(d) from myold)+(select MIN(d) from mynew);
+
+--- SQL operation complete.
+>>
+>>create trigger trg233e after update of (e) on t233A
++> referencing old as myold, new as mynew
++> for each statement
++> insert into t233B select e,a,b,c,d from mynew
++> where mynew.e > (select MAX(e) from myold);
+
+--- SQL operation complete.
+>>
+>>-- remember to remove the suffix __TEMP when the code is changed
+>>showddl TABLE ( TEMP_TABLE t233A__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T233A__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , A INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , B INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , C INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , D INT DEFAULT NULL
+ , E INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+ NOT DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+ ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>update t233A set b=b+1;
+
+--- 10 row(s) updated.
+>>
+>>drop trigger trg233e;
+
+--- SQL operation complete.
+>>drop trigger trg233d;
+
+--- SQL operation complete.
+>>drop trigger trg233b;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>log LOG_2_3_3;
+>>
+>>-- Show the "results"
+>>select * from t233B order by v,w,x,y,z;
+
+V W X Y Z
+----------
+
+ 112231 11 112 1111 12222
+ 112231 12 346 6789 13456
+ 112231 22 223 2222 23333
+ 112231 33 334 3333 34444
+ 112231 44 445 4444 45555
+ 112231 55 556 5555 56666
+ 112231 66 667 6666 67777
+ 112231 77 778 7777 78888
+ 112231 88 889 8888 89999
+ 112231 99 1000 9999 101110
+ 226676 11 113 1111 13335
+ 226676 12 347 6789 14569
+ 226676 22 224 2222 24446
+ 226676 33 335 3333 35557
+ 226676 44 446 4444 46668
+ 226676 55 557 5555 57779
+ 226676 66 668 6666 68890
+ 226676 77 779 7777 80001
+ 226676 88 890 8888 91112
+ 226676 99 1001 9999 102223
+ 343349 11 114 1111 14450
+ 343349 12 348 6789 15684
+ 343349 22 225 2222 25561
+ 343349 33 336 3333 36672
+ 343349 44 447 4444 47783
+ 343349 55 558 5555 58894
+ 343349 66 669 6666 70005
+ 343349 77 780 7777 81116
+ 343349 88 891 8888 92227
+ 343349 99 1002 9999 103338
+ 462254 11 115 1111 15567
+ 462254 12 349 6789 16801
+ 462254 22 226 2222 26678
+ 462254 33 337 3333 37789
+ 462254 44 448 4444 48900
+ 462254 55 559 5555 60011
+ 462254 66 670 6666 71122
+ 462254 77 781 7777 82233
+ 462254 88 892 8888 93344
+ 462254 99 1003 9999 104455
+ 583397 11 117 1111 16688
+ 583397 12 351 6789 17922
+ 583397 22 228 2222 27799
+ 583397 33 339 3333 38910
+ 583397 44 450 4444 50021
+ 583397 55 561 5555 61132
+ 583397 66 672 6666 72243
+ 583397 77 783 7777 83354
+ 583397 88 894 8888 94465
+ 583397 99 1005 9999 105576
+
+--- 50 row(s) selected.
+>>
+>>LOG;

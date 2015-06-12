@@ -1,0 +1,24 @@
+>>obey TEST_1_1_4_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- NOTE:  the following statement should fire the trigger once 
+>>-- (the trigger default granularity is STATEMENT)
+>>UPDATE tab1A SET c=2, d=2;
+
+--- 3 row(s) updated.
+>>
+>>-- RESULT : tab1B has ONLY 1 row
+>>SELECT count(*) FROM tab1B;
+
+(EXPR)                
+--------------------  
+
+                   1  
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

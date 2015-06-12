@@ -1,7 +1,7 @@
 // ===============================================================================================
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,8 +37,7 @@ enum pub_struct_type
 enum statistics_type
 {
 	STATISTICS_AGGREGATED = 0,
-	STATISTICS_SESSION,
-	STATISTICS_QUERY,
+	STATISTICS_SESSION	
 };
 
 typedef struct _SESSION_END

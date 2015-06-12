@@ -1,0 +1,210 @@
+>>obey TEST_2_3_5(set_up);
+>>create table t1_2_3_5(olda int, oldb int, newa int, newb int, event char(20));
+
+--- SQL operation complete.
+>>
+>>create trigger TR_INS_2_3_5
++>after insert on T1
++>referencing new as newr
++>for each row
++>insert into t1_2_3_5 values (0, 0, newr.a, newr.b, 'inserted');
+
+--- SQL operation complete.
+>>
+>>create trigger TR_UPD_2_3_5
++>after update on T1
++>referencing old as oldr, new as newr
++>for each row
++>insert into t1_2_3_5 values (oldr.a, oldr.b, newr.a, newr.b, 'updated');
+
+--- SQL operation complete.
+>>
+>>create trigger TR_DEL_2_3_5
++>after delete on T1
++>referencing old as oldr
++>for each row
++>insert into t1_2_3_5 values (oldr.a, oldr.b, 0, 0, 'deleted');
+
+--- SQL operation complete.
+>>
+>>obey TEST_2_3_5(tests);
+>>showddl T1;
+
+CREATE TABLE CAT1.SCHM.T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA3.ZSDBN2KV.CPNVL800
+  NAME NSK_DATA3_ZSDBN2KV_CPNVL800
+  ;
+CREATE TRIGGER CAT1.SCHM.TR_INS_2_3_5 AFTER INSERT ON CAT1.SCHM.T1 REFERENCING
+  NEW AS NEWR FOR EACH ROW INSERT INTO CAT1.SCHM.T1_2_3_5 VALUES (0, 0, NEWR.A,
+  NEWR.B, 'inserted');
+CREATE TRIGGER CAT1.SCHM.TR_UPD_2_3_5 AFTER UPDATE ON CAT1.SCHM.T1 REFERENCING
+  OLD AS OLDR, NEW AS NEWR FOR EACH ROW INSERT INTO CAT1.SCHM.T1_2_3_5 VALUES
+  (OLDR.A, OLDR.B, NEWR.A, NEWR.B, 'updated');
+CREATE TRIGGER CAT1.SCHM.TR_DEL_2_3_5 AFTER DELETE ON CAT1.SCHM.T1 REFERENCING
+  OLD AS OLDR FOR EACH ROW INSERT INTO CAT1.SCHM.T1_2_3_5 VALUES (OLDR.A,
+  OLDR.B, 0, 0, 'deleted');
+
+--- SQL operation complete.
+>>showddl table(temp_table T1__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T1__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.T1__TEMP_692982783_9657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA3.ZSDBN2KV.Q31BDJ00
+  NAME NSK_DATA3_ZSDBN2KV_Q31BDJ00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into t1 values (1,1),(1,2),(1,3);
+
+--- 3 row(s) inserted.
+>>update t1 set b=-b where b=3;
+
+--- 1 row(s) updated.
+>>delete from t1 where b=1;
+
+--- 1 row(s) deleted.
+>>
+>>SELECT * FROM T1 ORDER BY SYSKEY;
+
+A            B          
+-----------  -----------
+
+          1            2
+          1           -3
+
+--- 2 row(s) selected.
+>>SELECT * FROM T1_2_3_5 ORDER BY SYSKEY;
+
+OLDA         OLDB         NEWA         NEWB         EVENT               
+-----------  -----------  -----------  -----------  --------------------
+
+          0            0            1            1  inserted            
+          0            0            1            2  inserted            
+          0            0            1            3  inserted            
+          1            3            1           -3  updated             
+          1            1            0            0  deleted             
+
+--- 5 row(s) selected.
+>>obey TEST_2_3_5(clean_up);
+>>DROP TRIGGER TR_INS_2_3_5;
+
+--- SQL operation complete.
+>>DROP TRIGGER TR_UPD_2_3_5;
+
+--- SQL operation complete.
+>>DROP TRIGGER TR_DEL_2_3_5;
+
+--- SQL operation complete.
+>>DROP TABLE T1_2_3_5;
+
+--- SQL operation complete.
+>>obey clearTables2;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T1;
+
+--- 2 row(s) deleted.
+>>DELETE FROM T2;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T3;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T4;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T5;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T6;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T7;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T8;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>-- delete from table (index_table tab1a_i2);
+>>-- delete from table (index_table tab1b_i1);
+>>-- delete from table (index_table cat3.schm.tab3a_i1);
+>>-- delete from table (index_table t1_i1);
+>>-- delete from table (index_table t1_i2);
+>>-- delete from table (index_table t3_i2);
+>>
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T1;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T2;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T3;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T4;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T5;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T6;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T7;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T8;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>log;

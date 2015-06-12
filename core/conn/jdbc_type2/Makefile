@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -49,12 +49,15 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/SrvrKds.o \
        $(OUTDIR)/SrvrOthers.o \
        $(OUTDIR)/SQLMXDriver.o \
+       $(OUTDIR)/ResStatistics.o \
+       $(OUTDIR)/ResStatisticsSession.o \
+       $(OUTDIR)/ResStatisticsStatement.o \
        $(OUTDIR)/Vproc.o \
        $(OUTDIR)/type2version.o
 
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
 
-INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/include -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc
+INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/include -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(SQ_HOME)/../log4cpp/$(LOG4CPP_VER)/include -I$(SQ_HOME)/commonLogger
 
 COMMON_DEFINES = -DTRAFODION_JDBCT2_VER_MAJOR=$(TRAFODION_VER_MAJOR) -DTRAFODION_JDBCT2_VER_MINOR=$(TRAFODION_VER_MINOR) -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
 

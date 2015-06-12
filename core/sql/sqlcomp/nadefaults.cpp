@@ -2463,6 +2463,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NCM_SKEW_COST_ADJ_FOR_PROBES,		"OFF"),
   DDkwd__(NCM_SORT_OVERFLOW_COSTING,		"ON"),
   DDflt__(NCM_TUPLES_ROWSIZE_FACTOR,		"0.5"),
+  DDflt__(NCM_UDR_NANOSEC_FACTOR,               "0.01"),
   DDkwd__(NCM_USE_HBASE_REGIONS,		"ON"),
 
   // NESTED_JOINS ON means do NESTED_JOINS
@@ -3265,11 +3266,15 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
+
  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
+
+ DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -3278,6 +3283,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
+
+  DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
 
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
@@ -3313,6 +3320,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+
+  DDkwd__(TRAF_STRING_AUTO_TRUNCATE,      "OFF"),
+  DDkwd__(TRAF_STRING_AUTO_TRUNCATE_WARNING,      "OFF"),
+
   //TRAF_TABLE_SNAPSHOT_SCAN CQD can be set to :
   //NONE-->    Snapshot scan is disabled and regular scan is used , 
   //SUFFIX --> Snapshot scan enabled for the bulk unload (bulk unload 
@@ -3450,6 +3461,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDflt0_(USTAT_FREQ_SIZE_PERCENT,              "0.5"),  // >100 effectively disables
   DDflt0_(USTAT_GAP_PERCENT,                    "10.0"),
   DDflt0_(USTAT_GAP_SIZE_MULTIPLIER,            "1.5"),
+  DDui___(USTAT_HBASE_SAMPLE_RETURN_INTERVAL,   "10000000"), // Avoid scanner timeout by including on average at
+                                                             //   least one row per this many when sampling within HBase.
   DDflt0_(USTAT_INCREMENTAL_FALSE_PROBABILITY,   "0.01"),
   DDkwd__(USTAT_INCREMENTAL_UPDATE_STATISTICS,   "ON"),
   DDkwd__(USTAT_INSERT_TO_NONAUDITED_TABLE,     "OFF"),  // Used internally to overcome problem in which insert

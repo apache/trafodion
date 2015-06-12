@@ -89,7 +89,6 @@
 #include "MvRefreshBuilder.h"
 #include "OptHints.h"
 #include "CmpStatement.h"
-#include "OptimizerSimulator.h"
 #include "charinfo.h"
 #include "SqlParserGlobals.h"		// must be last #include
 #include "ItmFlowControlFunction.h"

@@ -1,0 +1,19 @@
+>>obey TEST_1_1_3_2(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig32 AFTER UPDATE OF (c, e)
++>	ON tab1A
++>	REFERENCING NEW AS newTable, OLD AS oldTable
++>	FOR EACH STATEMENT
++>
++>		INSERT INTO tab1B VALUES (100000, 100000);
+
+*** ERROR[1009] Column E does not exist in the specified table.
+
+--- SQL operation completed with errors.
+>>
+>>--------------------------------------------------------
+>>LOG;

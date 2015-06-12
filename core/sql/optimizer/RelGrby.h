@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -785,7 +785,7 @@ public:
   virtual short codeGen(Generator*);
 
   // The method gets refined since HGB may be a BMO depending on its inputs.
-  virtual NABoolean isBigMemoryOperator(const Context* context,
+  virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
   virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);

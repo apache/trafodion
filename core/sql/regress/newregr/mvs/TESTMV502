@@ -1,0 +1,138 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------------------------------
+-- TestMV502 
+-- PURPOSE: check all default values and their boundries
+
+
+log LOGMV502 clear;
+-- Run Tests
+	obey TESTMV502(DEFAULTSTEST);
+log;
+exit;
+
+
+
+?section DEFAULTSTEST
+ 
+control query default SHOWCONTROL_SHOW_ALL 'ON';
+showcontrol query default MV_AGE;
+showcontrol query default MV_TRACE_INCONSISTENCY;
+showcontrol query default MV_REFRESH_MAX_PARALLELISM;
+showcontrol query default MV_REFRESH_MAX_PIPELINING;
+showcontrol query default MVQR_REWRITE_LEVEL;
+showcontrol query default MVQR_REWRITE_CANDIDATES;
+showcontrol query default MV_INTERNAL_IGNORE_UNAVAILABLE;
+
+-- MV_AGE should be formatted: <number> [DAYS | HOURS | MINUTES | SECONDS]
+control query default MV_AGE '60 seconds';
+control query default MV_AGE '30 minutes';
+control query default MV_AGE '3 HOURS';
+control query default MV_AGE '3.5 Days';
+
+-- FAIL
+control query default MV_AGE '3 and a half DAYS';
+control query default MV_AGE '42';
+control query default MV_AGE '10:30';
+
+
+control query default MV_TRACE_INCONSISTENCY 'OFF';
+
+-- this returns the value to the default initial one
+control query default MV_TRACE_INCONSISTENCY 'SYSTEM';
+showcontrol query default MV_TRACE_INCONSISTENCY;
+
+-- these are all SYNONYMs to ON and OFF
+control query default MV_TRACE_INCONSISTENCY 'TRUE';
+control query default MV_TRACE_INCONSISTENCY 'DISABLE';
+control query default MV_TRACE_INCONSISTENCY 'FALSE';
+
+-- FAIL
+control query default MV_TRACE_INCONSISTENCY 'FULL';
+
+
+
+control query default MV_REFRESH_MAX_PARALLELISM '10';
+-- FAIL
+control query default MV_REFRESH_MAX_PARALLELISM '-10';
+
+
+
+control query default MV_REFRESH_MAX_PIPELINING '10';
+-- FAIL
+control query default MV_REFRESH_MAX_PIPELINING '-10';
+
+
+control query default MVQR_REWRITE_LEVEL '3';
+-- ERROR
+control query default MVQR_REWRITE_LEVEL '8';
+
+
+control query default MVQR_REWRITE_CANDIDATES 'c.s.t1:c.s.t2';
+
+control query default MVQR_REWRITE_CANDIDATES 'c.s.t1:xxx';
+
+
+SET SCHEMA CATMVS.MVSCHM;
+set PARSERFLAGS 3;
+
+create table t1 (a int, b int);
+ALTER TABLE t1 attribute all mvs allowed;
+create mv mv1 refresh on request 
+initialize on refresh
+as select a, count(b) xb from t1 group by a;
+
+ALTER MV mv1 attribute all mvs allowed;
+
+insert into t1 values (3, 5);
+
+-- mvstatus : not initialized ---> initialized
+refresh mv1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV502;
+log LOGMV502;
+
+-- mvstatus : initialized ---> not available
+CREATE TANDEM_CAT_REQUEST&1 17 2 @CATMVS.MVSCHM.MV1@ @1@;
+-- U
+select mvstatus from HP_DEFINITION_SCHEMA.mvs;
+
+
+create index i1 on MV1(a) no populate;
+
+-- create ddl lock on mv
+CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.MV1_LOCK> <CATMVS.MVSCHM.MV1> <0> <3> ;
+
+------- simulating populate index:
+
+-- FAIL - mv unavailable
+INSERT USING SIDEINSERTS INTO TABLE(INDEX_TABLE I1)
+SELECT A, SYSKEY FROM CATMVS.MVSCHM.MV1 FOR READ UNCOMMITTED ACCESS;
+
+control query default MV_INTERNAL_IGNORE_UNAVAILABLE 'ON';
+
+-- PASS - ignore unavailable
+INSERT USING SIDEINSERTS INTO TABLE(INDEX_TABLE I1)
+SELECT A, SYSKEY FROM CATMVS.MVSCHM.MV1 FOR READ UNCOMMITTED ACCESS;
+
+-- drop ddl lock
+CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.MV1_LOCK>;
+
+DROP MV MV1;
+DROP TABLE T1;
+

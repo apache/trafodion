@@ -1,0 +1,338 @@
+>>obey TESTMV800(set_up);
+>>create table T800_T1 (
++>          id int no default not null
++>	, name char(30) no default not null
++>	, age smallint no default not null
++>	, primary key(id)
++>)
++>store by (id)
++>attribute all mvs allowed
++>;
+
+--- SQL operation complete.
+>>
+>>create table T800_T2 (
++>	  owner int no default not null
++>	, car char(30) no default not null
++>	, year_model smallint no default not null
++>)
++>attribute all mvs allowed
++>;
+
+--- SQL operation complete.
+>>
+>>-- logging of all triggers activated
+>>create table T800_T3 (
++>	  event char(50) no default not null
++>	, current_at timestamp default current 
++>)
++>;
+
+--- SQL operation complete.
+>>
+>>create materialized view T800_MV1
++>refresh on statement
++>initialize on create
++>as
++>select name, car
++>from T800_T1 a, T800_T2 b
++>where a.id = b.owner;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T800_MV1_104264149_0007 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>obey TESTMV800(setup_statements);
+>>prepare stat1 from
++>select name, car
++>from T800_MV1
++>order by name,car;
+
+--- SQL command prepared.
+>>
+>>prepare stat2 from
++>select name, car
++>from T800_T1 a, T800_T2 b
++>where a.id = b.owner
++>order by name,car;
+
+--- SQL command prepared.
+>>
+>>obey TESTMV800(test1);
+>>insert into T800_T1 values (1,'Mickey Mouse',5);
+
+--- 1 row(s) inserted.
+>>
+>>-- expected: MV still empty.
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>insert into T800_T2 values (1,'Mustang',1956);
+
+--- 1 row(s) inserted.
+>>
+>>-- expected: Now Mickey has a Mustang
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>insert into T800_T2 values (1,'Schevrolet Sunbird',2800);
+
+--- 1 row(s) inserted.
+>>
+>>-- expected: Mickey has both Mustang and Schevrolet Sunbird
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- Massive updates
+>>insert into T800_T1
++>values  (2,'Donald',3)
++>       ,(3,'Bugs Bunny',43)
++>       ,(4,'Roger Rabbit',21)
++>       ,(5,'Snow white',178)
++>       ,(6,'Sinderella',18)
++>       ,(7,'Homer Simpson',3)
++>       ;
+
+--- 6 row(s) inserted.
+>>
+>>insert into T800_T2
++>values  (2,'Mitzubishi',1986)
++>       ,(3,'Megan',2800)
++>       ,(4,'Subaru',2000)
++>       ,(5,'Honda Accord',1988)
++>       ,(6,'Rolls Roise',1972)
++>       ,(8,'Lantis',1968)
++>       ,(8,'Lada',2002)
++>       ,(3,'Suzuki Swift',1980)
++>       ,(4,'Opel Astra',1999)
++>       ,(8,'Ford Fiesta',1980)
++>       ;
+
+--- 10 row(s) inserted.
+>>
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey TESTMV800(test2);
+>>-- direct update of MV ('name' is not part of the join predicate)
+>>update T800_T1 set name = 'Donald Duck'
++>where id = 2;
+
+--- 1 row(s) updated.
+>>
+>>-- expected: 'Donald Duck' owns 'Mitzubishi'
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- direct update of MV ('car' is not part of the join predicate)
+>>update T800_T2 set car = 'Mazda 626'
++>where owner = 6;
+
+--- 1 row(s) updated.
+>>
+>>-- expected: 'Sinderella' owns 'Mazda 626'
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- direct update of MV. Only 'car' column should be updated in MV.
+>>-- 'year' column is not in use (irelevant).
+>>update T800_T2 set car = 'Rover', year_model = 2800
++>where owner = 4;
+
+--- 2 row(s) updated.
+>>
+>>-- expected: 'Roger Rabbit' owns 2 'Rover' cars
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey TESTMV800(test3);
+>>-- indirect update. owner is part of the join predicate.
+>>update T800_T2 set owner = 7
++>where owner = 8 and year_model = 1980;
+
+--- 1 row(s) updated.
+>>
+>>-- expected: 'Homer Simpson' owns now 'Ford Fiesta'
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey TESTMV800(test4);
+>>-- irrelevant update. MV not even accessed.
+>>
+>>prepare countIt from
++>  select count(*) as NUMBER_OF_MV_ACCESSES
++>  from table (explain(NULL, 'XX'))
++>  where tname like '%T800_MV1%';
+
+--- SQL command prepared.
+>>
+>>prepare XX from
++>update T800_T2 set year_model = 2002
++>where owner = 8 and car = 'Lantis';
+
+--- SQL command prepared.
+>>
+>>--expected: 0
+>>execute countIt;
+
+NUMBER_OF_MV_ACCESSES
+---------------------
+
+                    0
+
+--- 1 row(s) selected.
+>>
+>>obey TESTMV800(test5);
+>>-- delete records from base tables. MV updated accordingly.
+>>delete from T800_T2 where owner = 3 and car = 'Suzuki Swift';
+
+--- 1 row(s) deleted.
+>>
+>>-- expected: 'Bugs Bunny' sold his 'Suzuki Swift' (doesn't own it anymore)
+>>obey compare;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey TESTMV800(test6);
+>>-- ensure the histogram of the temp-table is not faked but copied from the
+>>-- subject table
+>>
+>>update statistics for table T800_T1 on every column;
+
+--- SQL operation complete.
+>>update statistics for table T800_T2 on every column;
+
+--- SQL operation complete.
+>>
+>>-- compareCardinality fetches only the two important rows from the query plan.
+>>-- We are interested only in the update on T800_T2 and on the scan from its
+>>-- temp-table. These two operations MUST have identical cardinality because
+>>-- the histogram used for the temp-table scan should be actually the histogram
+>>-- of the subject table.
+>>
+>>prepare compareCardinality from
++>  select operator,
++>         substring(tname,1,30) as Table_Name, 
++>         cast (cardinality as numeric(16,2)) as Cardinality
++>    from table (explain(NULL, 'STMT'))
++>    where (operator = 'SUBSET_UPDATE' and tname = 'CATMVS.MVSCHM.T800_T2') or
++>    	  (operator = 'FILE_SCAN' and tname = 'CATMVS.MVSCHM.T800_T2__TEMP')
++>    order by seq_num DESC;
+
+--- SQL command prepared.
+>>
+>>-- indirect-update the T800_MV1, so the temp-table is scanned.
+>>prepare STMT from
++>update T800_T2 set owner = 7;
+
+--- SQL command prepared.
+>>
+>>--expected: both scan from T800_T2 and scan from T800_T2's temp-table has
+>>-- same cardinality
+>>
+>>execute compareCardinality;
+
+OPERATOR                        TABLE_NAME                      CARDINALITY
+------------------------------  ------------------------------  ---------------------
+
+FILE_SCAN                       CATMVS.MVSCHM.T800_T2__TEMP                       11.00
+SUBSET_UPDATE                   CATMVS.MVSCHM.T800_T2                             11.00
+
+--- 2 row(s) selected.
+>>
+>>obey TESTMV800(test7);
+>>-- ensure the insert into the temp-table is optimized (inserts NEW values only)
+>>-- and doesn't use the merge-union with two tuples sub-tree.
+>>
+>>-- prepare an indirect-update statement - should use the optimized temp-table insert
+>>prepare STMT from update T800_T2 set owner = 7;
+
+--- SQL command prepared.
+>>
+>>prepare ensureOptimizedTempInsert from
++>  select count(*)
++>    from table (explain(NULL, 'STMT'))
++>    where operator = 'VALUES';
+
+--- SQL command prepared.
+>>
+>>-- expected: 0 rows
+>>execute ensureOptimizedTempInsert;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>obey TESTMV800(clean_up);
+>>drop materialized view T800_MV1;
+
+--- SQL operation complete.
+>>drop table T800_T1;
+
+--- SQL operation complete.
+>>drop table T800_T2;
+
+--- SQL operation complete.
+>>drop table T800_T3;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

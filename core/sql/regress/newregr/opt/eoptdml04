@@ -1,0 +1,124 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>execute explainIt;
+
+OPERATOR          OP_COST 
+----------------  --------
+
+ROOT              POSITIVE
+ESP_EXCHANGE      POSITIVE
+TUPLE_FLOW        POSITIVE
+SPLIT_TOP         POSITIVE
+
+--- 4 row(s) selected.
+>>-- q5b should get a parallel insert select plan with positive operator costs
+>>-- for all except root
+>>LOG;
+>>execute explainIt;
+
+OPERATOR          OP_COST 
+----------------  --------
+
+ROOT              POSITIVE
+SORT_PARTIAL_AGG  POSITIVE
+ESP_EXCHANGE      POSITIVE
+SORT_PARTIAL_AGG  POSITIVE
+
+--- 4 row(s) selected.
+>>-- Q8 expects a parallel plan. Exchange (node 19) collects into 1 the 
+>>-- parallel sort_partial_aggr nodes below.
+>>
+>>?section countNodeMaps
+>>log off;
+>>execute countExchBottomNodeMaps;
+
+(EXPR)
+------
+
+PASS  
+
+--- 1 row(s) selected.
+>>
+>>?section floatSequenceESPs
+>>control query default affinity_value '-4';
+
+--- SQL operation complete.
+>>obey optdml04(prepSequenceQuery);
+>>log off;
+>>execute countExchBottomNodeMaps;
+
+(EXPR)
+------
+
+PASS  
+
+--- 1 row(s) selected.
+>>
+>> -- should pass
+>>
+>>control query default affinity_value '-3';
+
+--- SQL operation complete.
+>>obey optdml04(prepSequenceQuery);
+>>log off;
+>>execute countExchBottomNodeMaps;
+
+(EXPR)
+------
+
+PASS  
+
+--- 1 row(s) selected.
+>>
+>> -- should pass
+>>
+>>control query default affinity_value '-2';
+
+--- SQL operation complete.
+>>obey optdml04(prepSequenceQuery);
+>>log off;
+>>execute countExchBottomNodeMaps;
+
+(EXPR)
+------
+
+PASS  
+
+--- 1 row(s) selected.
+>>
+>>
+>>control query default affinity_value '-1';
+
+--- SQL operation complete.
+>>obey optdml04(prepSequenceQuery);
+>>log off;
+>>execute countExchBottomNodeMaps;
+
+(EXPR)
+------
+
+PASS  
+
+--- 1 row(s) selected.
+>>
+>> -- should pass
+>>
+>>?section stopLog
+>>--  Stop logging output. --
+>>LOG;

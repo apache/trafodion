@@ -1,0 +1,134 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+-- TempTable - on statement Vs. Triggers
+
+
+prepare select_objects FROM  
+select SUBSTRING (OBJECT_NAME from 0 for 20 ) object_name, OBJECT_NAME_SPACE from HP_DEFINITION_SCHEMA.objects
+ where OBJECT_TYPE in ('BT', 'MV') and 
+ OBJECT_NAME_SPACE in ('TA', 'RL', 'IL', 'TT')
+ and OBJECT_SECURITY_CLASS = 'UT' 
+ order by OBJECT_NAME;
+
+
+create table t1 ( a int );
+ALTER TABLE t1 attribute all mvs allowed;
+create table t2 ( b int );
+ALTER TABLE t2 attribute all mvs allowed;
+
+
+execute select_objects;
+
+
+-- create tempTable
+create trigger trig1 
+AFTER INSERT ON t1
+FOR EACH ROW
+UPDATE t2 SET b = b+1;
+
+execute select_objects;
+
+
+-- drop tempTable
+drop trigger trig1;
+
+execute select_objects;
+
+
+-- create tempTable
+create mv mv1 refresh on statement initialize on refresh as select * from t1;
+ALTER MV mv1 attribute all mvs allowed;
+
+execute select_objects;
+
+
+-- drop tempTable
+drop mv mv1;
+
+execute select_objects;
+
+
+-- TRIGGERS AND ON STATEMENT
+
+create trigger trig1 
+AFTER INSERT ON t1
+FOR EACH ROW
+UPDATE t2 SET b = b+1;
+
+
+create mv mv1 refresh on statement initialize on refresh as select * from t1;
+ALTER MV mv1 attribute all mvs allowed;
+
+
+execute select_objects;
+
+
+drop mv mv1;
+
+-- the tempTable should remain
+execute select_objects;
+
+
+
+-- drop tempTable
+drop trigger trig1;
+execute select_objects;
+
+
+
+create trigger trig1 
+AFTER INSERT ON t1
+FOR EACH ROW
+UPDATE t2 SET b = b+1;
+
+
+create mv mv1 refresh on statement initialize on refresh as select * from t1;
+ALTER MV mv1 attribute all mvs allowed;
+
+
+execute select_objects;
+
+
+-- the tempTable should remain
+drop trigger trig1;
+execute select_objects;
+
+-- drop tempTable
+drop mv mv1;
+
+execute select_objects;
+
+drop table t2;
+drop table t1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

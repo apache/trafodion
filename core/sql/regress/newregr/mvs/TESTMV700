@@ -1,0 +1,483 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- ============================================================================
+-- Miscellaneous tests
+-- ============================================================================
+
+set PARSERFLAGS 3;
+set schema catmvs.mvschm;
+
+obey TESTMV700(CLEAN_UP);
+log LOGMV700 clear;
+set parserflags 3;
+obey TESTMV700(SET_UP);
+
+-- Run Tests
+    obey TESTMV700(TEST1);
+    obey TESTMV700(TEST2);
+    obey TESTMV700(TEST3);
+    obey TESTMV700(TEST4);
+    obey TESTMV700(TEST5);
+    obey TESTMV700(TEST6);
+    obey TESTMV700(TEST7);
+
+-- Clean and Exit
+obey TESTMV700(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+log;
+exit;
+
+-- ============================================================================
+?section SET_UP
+-- ============================================================================
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create table T_700_T1 (a int NOT NULL NOT DROPPABLE, 
+                       b char(2), 
+                       c numeric(4,2), 
+                       y int NOT NULL NOT DROPPABLE, 
+                       primary key (a asc, y desc) )
+                       STORE BY PRIMARY KEY;
+ALTER TABLE T_700_T1 attribute all mvs allowed;
+
+create table T_700_T2 (d int NOT NULL NOT DROPPABLE, 
+                       e char(2), 
+                       f numeric(4,2), 
+                       z int NOT NULL NOT DROPPABLE,
+                       primary key (d asc, z desc) )
+                       STORE BY PRIMARY KEY;
+ALTER TABLE T_700_T2 attribute all mvs allowed;
+
+insert into T_700_T1 values (1, 'a', 12.2, 5), (2, 'b', 19.9, 5), (3, 'c', 12.3, 5), (4, 'd', 22.3, 5), (5, 'r', 11.2, 6),
+                            (1, 'd', 15.3, 4), (2, 'w', 99.3, 4), (3, 'e', 12.4, 4), (4, 'e', 32.2, 4), (5, 'e', 93.4, 4),
+                            (1, 'd', 15.3, 6), (2, 'w', 99.3, 6), (3, 'e', 12.4, 3), (4, 'e', 32.2, 3), (5, 'e', 93.4, 3),
+                            (1, 'f', 43.8, 9), (2, 'j', 77.9, 9), (3, 'l', 14.3, 6), (4, 'l', 44.3, 6), (5, 'l', 14.2, 5),
+                            (1, 'g', 65.5, 7), (2, 'k', 65.3, 7), (3, 'k', 12.5, 7), (4, 'k', 34.4, 7), (5, 'k', 96.4, 7),
+                            (1, 'h', 44.3, 8), (2, 'l', 94.5, 8), (3, 'j', 17.6, 8), (4, 'j', 22.2, 8), (5, 'j', 93.4, 8);
+insert into T_700_T2 values (1, 'f', 13.2, 5), (2, 't', 19.5, 5), (3, '4', 22.3, 5), (4, 't', 25.3, 5), (5, 'h', 11.2, 6),
+                            (1, 'd', 15.3, 2), (2, '2', 99.5, 4), (3, 'y', 12.4, 4), (2, 'm', 34.2, 8), (5, 'r', 93.5, 3),
+                            (1, 'd', 54.3, 4), (2, 'w', 44.3, 3), (3, '8', 12.3, 2), (1, 'n', 32.2, 3), (5, 'e', 23.4, 2);
+
+create mv T_700_MV1
+refresh on request
+initialize on create
+as 
+select a, sum(c * f) as total
+from T_700_T1, T_700_T2
+where a = d
+group by a;
+ALTER MV T_700_MV1 attribute all mvs allowed;
+
+create mv T_700_MV2
+refresh on request
+initialize on create
+as 
+select a, total
+from T_700_MV1
+group by a, total;
+ALTER MV T_700_MV2 attribute all mvs allowed;
+
+create mv T_700_MV3
+refresh on request
+initialize on create
+as 
+select a, sum(c * f) as total
+from T_700_T1, T_700_T2
+where a = d
+group by a;
+ALTER MV T_700_MV3 attribute all mvs allowed;
+
+create index T_700_I1 on T_700_MV3(a);
+
+
+-- ============================================================================
+?section TEST1
+-- ============================================================================
+-- Checks that MV's log doesn't change after "delete from mv"
+log;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @0@ @10@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @0@ @10@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_MV1@ @0@ @10@ ;
+log LOGMV700;
+
+update T_700_T1
+set b = 'oh'
+where c = 19.9;
+
+update T_700_T2
+set f = f - 1;
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+internal refresh T_700_MV1
+from multidelta T_700_T1 between 10 and 10 de level 0 use no rangelog use iudlog,
+                T_700_T2 between 10 and 10 de level 0 use no rangelog use iudlog
+     phase 0;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_MV1@ @1@ @0@ ;
+
+internal refresh T_700_MV2
+from singledelta T_700_MV1 between 10 and 10 de level 0 use no rangelog use iudlog;
+
+-- MV1's log before "Delete from... "
+PREPARE stat1 FROM  
+select "@EPOCH", "@OPERATION_TYPE", "@IGNORE", "@RANGE_SIZE", "@TS", A, TOTAL
+from table (iud_log_table catmvs.mvschm.T_700_MV1)
+order by "@TS";
+
+log;
+log TEMP1 clear;
+  log TEMP1;
+  execute stat1;
+  log;
+
+log LOGMV700;
+delete from T_700_MV1;
+
+-- MV1's log after "Delete from... "
+PREPARE stat2 FROM
+select "@EPOCH", "@OPERATION_TYPE", "@IGNORE", "@RANGE_SIZE", "@TS", A, TOTAL
+from table (iud_log_table catmvs.mvschm.T_700_MV1)
+order by "@TS";
+
+log;
+log TEMP2 clear;
+  log TEMP2;
+  execute stat2;
+  log;
+
+#ifNTnotLINUX
+sh diff TEMP1 TEMP2 >> LOGMV700;
+#ifNTnotLINUX
+
+#ifLINUX
+sh diff -a TEMP1 TEMP2 >> LOGMV700;
+#ifLINUX
+
+delete from table (iud_log_table catmvs.mvschm.T_700_MV1);
+delete from table (iud_log_table catmvs.mvschm.T_700_T1);
+delete from table (iud_log_table catmvs.mvschm.T_700_T2);
+log LOGMV700;
+-- ============================================================================
+?section TEST2
+-- ============================================================================
+
+create table T_700_T3 (a int, b int, c int);
+ALTER TABLE T_700_T3 attribute all mvs allowed;
+insert into T_700_T3 values (1, 1, 1), (1, 2, 2), (3, 2, 1), (1, 2, 3), (4, 4, 3);
+
+create mv T_700_MV4
+refresh on request
+initialize on create
+as
+select count(a) as cnta,
+       sum(b)   as sumb
+from T_700_T3
+group by a;
+ALTER MV T_700_MV4 attribute all mvs allowed;
+
+-- updating T3 so sql_user2 can try to refresh it
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @0@ @20@ ;
+insert into T_700_T3 values (8, 6, 5), (8, 7, 6), 
+                            (8, 9, 7), (8, 4, 5);
+update T_700_T3
+set b = b + 1;
+
+set PARSERFLAGS 3;
+----- User 2 should not be able to perform his operations
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+
+revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+grant select on T_700_MV4 to $$SQLUSER2Q$$;
+
+----- User 2 should be able to perform select BUT NOT refresh.
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+
+revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+grant insert on T_700_MV4 to $$SQLUSER2Q$$;
+
+----- User 2 should be able to perform refresh BUT NOT select.
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+
+revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+grant insert on T_700_MV4 to $$SQLUSER2Q$$;
+grant select on T_700_MV4 to $$SQLUSER2Q$$;
+
+----- User 2 should be able to perform both operations.
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+
+-- clean
+drop mv T_700_MV4;
+drop table T_700_T3;
+
+-- ============================================================================
+?section User2Attempt
+
+set schema catmvs.mvschm;
+
+log LOGMV700;
+-- User 2 do :
+-- 1). refresh
+refresh T_700_MV4 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | sort >> LOGMV700;
+log LOGMV700;
+
+-- 2). select
+select * from T_700_mv4;
+log;
+---------------------
+?section TEST3
+-- ============================================================================
+select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (ASC  , ASC);
+select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (DESC , ASC);
+select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (ASC  ,DESC);
+select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (DESC ,DESC);
+
+
+-- ============================================================================
+?section TEST4
+-- ============================================================================
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @0@ @40@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @0@ @40@ ;
+
+-- for compare
+PREPARE stat1 FROM
+    select a from T_700_MV3
+    order by a;
+PREPARE stat2 FROM
+    select a from table (index_table T_700_I1)
+    order by a;
+
+log;
+obey COMPARE;
+#ifNTnotLINUX
+sh diff TEMP1 TEMP2 >> LOGMV700;
+#ifNTnotLINUX
+
+#ifLINUX
+sh diff -a TEMP1 TEMP2 >> LOGMV700;
+#ifLINUX
+log LOGMV700;
+
+-- -- -- -- -- -- -- 
+
+-- inserting new lines to MV
+insert into T_700_T1 values (7, 'o', 5.5, 8);
+insert into T_700_T2 values (7, 'p', 12.5, 5);
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+internal refresh T_700_MV3
+from multidelta T_700_T1 between 40 and 40 de level 0 use no rangelog use iudlog,
+                T_700_T2 between 40 and 40 de level 0 use no rangelog use iudlog
+     phase 0;
+
+-- another row should be added to MV3 and I1
+log;
+obey COMPARE;
+#ifNTnotLINUX
+sh diff TEMP1 TEMP2 >> LOGMV700;
+#ifNTnotLINUX
+
+#ifLINUX
+sh diff -a TEMP1 TEMP2 >> LOGMV700;
+#ifLINUX
+log LOGMV700;
+
+-- -- -- -- -- -- -- 
+
+-- deleting a line from mv
+delete from T_700_T1 where a = 1;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+internal refresh T_700_MV3
+from singledelta T_700_T1 between 41 and 41 de level 0 use no rangelog use iudlog;
+
+
+-- 1 row should be deleted from MV3 and I1
+log;
+obey COMPARE;
+#ifNTnotLINUX
+sh diff TEMP1 TEMP2 >> LOGMV700;
+#ifNTnotLINUX
+
+#ifLINUX
+sh diff -a TEMP1 TEMP2 >> LOGMV700;
+#ifLINUX
+
+delete from table (iud_log_table catmvs.mvschm.T_700_T1);
+delete from table (iud_log_table catmvs.mvschm.T_700_T2);
+log LOGMV700;
+
+-- ============================================================================
+?section TEST5
+
+set schema catmvs.mvschm;
+
+create table T_700_T3 (a int,b int,c int ,d int,e int,f int);
+ALTER TABLE T_700_T3 attribute all mvs allowed;
+
+create mv T_700_MV_ON_STAT
+	Refresh on statement
+initialized on refresh
+	as 
+	select a,b,c,d,e,sum(f) as sum_f
+	from T_700_T3
+	group by a,b,c,d,e;
+ALTER MV T_700_MV_ON_STAT attribute all mvs allowed;
+
+-- PASS without any warnings
+drop table T_700_T3 cascade;
+
+-- ============================================================================
+?section TEST6
+
+-- The test checks the parser flag 16 which allows selecting all columns from mv
+-- including the system added ones
+
+set schema catmvs.mvschm;
+
+create table T_700_T6 ( a int );
+ALTER TABLE T_700_T6 attribute all mvs allowed;
+
+create mv T_700_MV6
+  refresh on request
+  initialize on create
+  as select avg(a) as avga,
+	    sum(a) as suma,
+	    count(a) as cnta
+  from T_700_T6;
+ALTER MV T_700_MV6 attribute all mvs allowed;
+
+showddl T_700_MV6;
+
+reset PARSERFLAGS;
+
+-- No system added columns should be shown
+select * from T_700_MV6;
+
+set PARSERFLAGS 1;
+
+-- No system added columns should be shown
+select * from T_700_MV6;
+
+set PARSERFLAGS 3;
+
+-- No system added columns should be shown
+select * from T_700_MV6;
+
+set PARSERFLAGS 128;
+
+-- All columns include the system added ones should be shown
+select * from T_700_MV6;
+
+drop mv T_700_MV6;
+drop table T_700_T6;
+
+-- ============================================================================
+?section TEST7
+
+CREATE TABLE T_700_T11	(
+				a1 	INT NOT NULL NOT DROPPABLE, 
+				b1  INT NOT NULL NOT DROPPABLE, 
+				c1  INT NOT NULL NOT DROPPABLE, 
+				PRIMARY KEY(b1, a1, c1) DROPPABLE
+) STORE BY (a1,b1,c1);
+ALTER TABLE T_700_T11	 attribute all mvs allowed;
+
+CREATE TABLE  T_700_T12	(
+				a2 	INT NOT NULL NOT DROPPABLE, 
+				b2  INT NOT NULL NOT DROPPABLE, 
+				c2  INT NOT NULL NOT DROPPABLE,
+				PRIMARY KEY(b2, a2, c2)
+) STORE BY PRIMARY KEY;
+ALTER TABLE T_700_T12 attribute all mvs allowed;
+
+CREATE TABLE  T_700_T13	(
+				a3 	INT NOT NULL NOT DROPPABLE, 
+				b3  INT NOT NULL NOT DROPPABLE, 
+				c3  INT NOT NULL NOT DROPPABLE,
+				PRIMARY KEY(b3,a3)
+) STORE BY PRIMARY KEY;
+ALTER TABLE T_700_T13 attribute all mvs allowed;
+
+CREATE TABLE  T_700_T14	(
+				a4 	INT NOT NULL NOT DROPPABLE, 
+				b4  INT NOT NULL NOT DROPPABLE, 
+				c4  INT NOT NULL NOT DROPPABLE,
+				PRIMARY KEY(b4,c4)
+) STORE BY PRIMARY KEY;
+ALTER TABLE T_700_T14 attribute all mvs allowed;
+
+-- creation should pass
+CREATE MV T_700_MV11 REFRESH ON STATEMENT initialized on refresh
+AS
+			SELECT 	a1,b2,c3,c4 
+			FROM 	T_700_T11, T_700_T12, T_700_T13, T_700_T14 
+			WHERE 	a1=a2 AND a2=a3 
+				AND b1=b2 AND b2=b3 AND b3=b4
+				AND c1=c2;
+ALTER MV T_700_MV11 attribute all mvs allowed;
+
+drop mv T_700_MV11;
+drop table T_700_T14;
+drop table T_700_T13;
+drop table T_700_T12;
+drop table T_700_T11;
+
+
+-- ============================================================================
+?section CLEAN_UP
+-- ============================================================================
+set schema catmvs.mvschm;
+
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+drop mv T_700_MV_ON_STAT;
+drop table T_700_T3;
+drop mv T_700_MV3;
+drop mv T_700_MV2;
+drop mv T_700_MV1;
+drop table T_700_T1;
+drop table T_700_T2;
+
+set param ?schema_name 'MVSCHM';
+
+obey COMPARE_NUM_OF_OBJ;
+drop table Num_Obj;

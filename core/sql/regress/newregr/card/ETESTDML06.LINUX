@@ -1,0 +1,2950 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>-- Q1
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T2' ),
++>scan(path 'CAT.HCUBE.T3')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(*) from t2, t3 
++>where t2.a = t3.a and t3.b = 50;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+000           
+2     FILE_SCAN                       T2               1.00E+001           
+3     FILE_SCAN                       T3               1.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t2, t3 
++>where t2.a = t3.a and t3.b = 50;
+Histograms for query showstats for query select count(*) from t2, t3  where t2.a = t3.a and t3.b = 50;
+**************************************************************
+VEGcolumn:
+
+  43: VEGRef_43((CAT.HCUBE.T3.B = 50))
+Merge state:
+  15: CAT.HCUBE.T3.B
+
+Applied preds:
+  44: (CAT.HCUBE.T3.B = 50)
+***FAKE*** histogram
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 50.0000 )
+   Encoded MaxValue = ( 50.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      50.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      50.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>prepare xx from 
++>select count(*) from t2, t3 
++>where t2.a = t3.a and t3.b > 5;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+000           
+2     FILE_SCAN                       T2               1.00E+001           
+3     FILE_SCAN                       T3               4.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Q3
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9C'),
++>scan(path 'CAT.HCUBE.T7' )),
++>scan(path 'CAT.HCUBE.IX8B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(*)
++>from t9, t7, t8
++>where  t9.a = t7.c
++>and ((t7.b  = 5 and
++>        t8.b = 5)
++>or (t7.b = 7  and
++>     t8.b = 7));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.00E+002           
+2     HYBRID_HASH_JOIN                                 1.00E+002           
+3     INDEX_SCAN                      T9               1.00E+004           
+4     FILE_SCAN                       T7               1.00E+002           
+5     INDEX_SCAN                      T8               1.00E+003           
+
+--- 5 row(s) selected.
+>>
+>>-- left join
+>>-- Q4
+>>control query shape implicit enforcers sort_groupby(
++>scan(path 'CAT.HCUBE.IX8B' ));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      T8               1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q5
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B' ),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.b = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q6
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B' ),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q7
+>>control query shape implicit enforcers sort_groupby(
++>scan(path 'CAT.HCUBE.IX8B'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a
++>    LEFT JOIN T7 ON T8.a = T7.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      T8               1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q8
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T7')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a
++>     LEFT JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q9
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B' ),
++>scan(path 'CAT.HCUBE.T7')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a
++>    LEFT JOIN T7 ON T8.a = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.09E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q10
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.b
++>    LEFT JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+004           
+2     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+3     INDEX_SCAN                      T8               1.00E+003           
+4     FILE_SCAN                       T7               1.00E+002           
+5     INDEX_SCAN                      T9               1.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.b
++>    LEFT JOIN T7 ON T8.b = T7.b;
+Histograms for query showstats for query select count(*) from  T8 LEFT JOIN T9 ON T8.a = T9.b     LEFT JOIN T7 ON T8.b = T7.b;
+**************************************************************
+VEGcolumn:
+
+  79: instantiate_null(VEGRef_109((CAT.HCUBE.T7.C)))
+Merge state:
+
+  79: instantiate_null(VEGRef_109((CAT.HCUBE.T7.C)))
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.473684 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=0.526316,uec=0.526316 
+
+     Bound  <       (      NULL ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      NULL ) : rows=0.473684,uec=0.473684 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- left outer join
+>>-- Q11
+>>control query shape implicit enforcers sort_groupby(
++>scan(path 'CAT.HCUBE.IX8B'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      T8               1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q12
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B' ),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      T8               1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q13
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B' ),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.b = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q14
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q15
+>>control query shape implicit enforcers sort_groupby(
++>scan(path 'CAT.HCUBE.IX8B'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
++>     LEFT OUTER JOIN T7 ON T8.a = T7.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     INDEX_SCAN                      T8               1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q16
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T7')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
++>    LEFT OUTER JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q17
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T7')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.a
++>     LEFT OUTER JOIN T7 ON T8.a = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.09E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q18
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T7' )),
++>scan(path 'CAT.HCUBE.IX9B' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT OUTER JOIN T9 ON T8.a = T9.b
++>    LEFT OUTER JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+004           
+2     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+3     INDEX_SCAN                      T8               1.00E+003           
+4     FILE_SCAN                       T7               1.00E+002           
+5     INDEX_SCAN                      T9               1.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>-- Q19
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B'),
++>scan(path 'CAT.HCUBE.T7' )),
++>scan(path 'CAT.HCUBE.IX8C')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(*) from t9	
++>      LEFT OUTER JOIN t8 ON t9.a = t8.c 
++>      LEFT OUTER JOIN t7 ON t9.b = t7.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.19E+004           
+2     LEFT_HYBRID_HASH_JOIN                            1.09E+004           
+3     INDEX_SCAN                      T9               1.00E+004           
+4     FILE_SCAN                       T7               1.00E+002           
+5     INDEX_SCAN                      T8               1.00E+003           
+
+--- 5 row(s) selected.
+>>
+>>-- full outer join
+>>-- Q20
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T5' ),
++>scan(path 'CAT.HCUBE.T8'
++>));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t5 natural full outer join t8;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select * from t5 natural full outer join t8;
+Histograms for query showstats for query select * from t5 natural full outer join t8;
+**************************************************************
+VEGcolumn:
+
+  45: instantiate_null(\NSK.$DATA1.ZSDF7SDX.HRXDXR00.C)
+Merge state:
+
+  45: instantiate_null(\NSK.$DATA1.ZSDF7SDX.HRXDXR00.C)
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 1000.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 100.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      1.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      2.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      3.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      4.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      5.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      6.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      7.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      8.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <=      (      9.0000 ) : rows=100.000000,uec=1.000000 
+
+     Bound  <       (      NULL ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      NULL ) : rows=0.000000,uec=0.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q21
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T5' ),
++>scan(path 'CAT.HCUBE.T8'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t5 full outer join t8 on t5.b = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q22
+>>prepare xx from
++>select * from t5 full outer join t8 on t5.a = 20;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q23
+>>prepare xx from
++>select * from t5 full outer join t8 on t5.b = t8.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q24
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T8' ),
++>scan(path 'CAT.HCUBE.T5'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 full outer join t5 on t5.b = t8.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T8               1.00E+003           
+3     FILE_SCAN                       T5               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q25
+>>prepare xx from
++>select * from t8 full outer join t5 on t5.b = t8.a
++>      OR t5.b = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T8               1.00E+003           
+3     FILE_SCAN                       T5               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q26
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T5' ),
++>scan(path 'CAT.HCUBE.T8'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t5 full outer join t8 on t5.b = t8.a
++>      OR t5.b = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Semi-join queries
+>>-- Q27
+>>control query shape implicit enforcers hash_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B' ),
++>scan(path 'CAT.HCUBE.IX10B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9 where b in (select a from t10 where b < 10) group by b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HASH_GROUPBY                                     1.00E+003           
+2     HYBRID_HASH_JOIN                                 1.00E+004           
+3     INDEX_SCAN                      T9               1.00E+004           
+4     INDEX_SCAN                      T10              1.00E+003           
+
+--- 4 row(s) selected.
+>>
+>>-- Q28
+>>control query shape implicit enforcers hash_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B' ),
++>scan(path 'CAT.HCUBE.T10')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9 where b in (select a from t10) and b < 10 group by b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HASH_GROUPBY                                     1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+002           
+3     INDEX_SCAN                      T9               1.00E+002           
+4     FILE_SCAN                       T10              1.00E+001           
+
+--- 4 row(s) selected.
+>>
+>>-- Q29
+>>control query shape implicit enforcers hash_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B' ),
++>scan(path 'CAT.HCUBE.IX10C' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9 where b in (select a from t10) group by b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HASH_GROUPBY                                     1.00E+003           
+2     HYBRID_HASH_JOIN                                 1.00E+004           
+3     INDEX_SCAN                      T9               1.00E+004           
+4     INDEX_SCAN                      T10              1.00E+005           
+
+--- 4 row(s) selected.
+>>
+>>-- Q30
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B'),
++>scan(path 'CAT.HCUBE.IX10C')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9 where b in (select a from t10);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     INDEX_SCAN                      T9               1.00E+004           
+3     INDEX_SCAN                      T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t9 where b in (select a from t10);
+Histograms for query showstats for query select count(*) from t9 where b in (select a from t10);
+**************************************************************
+VEGcolumn:
+
+  68: VEGRef_68((CAT.HCUBE.T10.C))
+Merge state:
+  28: CAT.HCUBE.T10.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q31
+>>control query shape implicit enforcers hash_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX9B' ),
++>scan(path 'CAT.HCUBE.IX10B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9 where b in (select a from t10 where b = 10) group by b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HASH_GROUPBY                                     1.00E+002           
+2     HYBRID_HASH_JOIN                                 1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+4     INDEX_SCAN                      T10              1.00E+002           
+
+--- 4 row(s) selected.
+>>
+>>-- Q32
+>>control query shape implicit enforcers nested_join(
++>scan(path 'CAT.HCUBE.T8'),
++>scan(path 'CAT.HCUBE.IX10B' ));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where (b =  any (select b from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_SEMI_JOIN                                 1.00E+003           
+2     INDEX_SCAN                      T10              1.00E+000           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q33
+>>control query shape implicit enforcers nested_join(
++>scan(path 'CAT.HCUBE.T8'),
++>scan(path 'CAT.HCUBE.T10' ));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where (a >=  any (select a from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_SEMI_JOIN                                 3.33E+002           
+2     FILE_SCAN                       T10              3.33E-001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q34
+>>prepare xx from
++>select * from t8 where (b =  all (select b from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_ANTI_SEMI_JOIN                            3.34E+002           
+2     FILE_SCAN                       T10              3.33E-001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q35
+>>control query shape implicit enforcers nested_join(
++>scan(path 'CAT.HCUBE.T8' ),
++>scan(path 'CAT.HCUBE.T10' ));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where (a >=  all (select a from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_ANTI_SEMI_JOIN                            3.33E+002           
+2     FILE_SCAN                       T10              3.33E-001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q36
+>>control query shape implicit enforcers nested_join(
++>scan(path 'CAT.HCUBE.T8' ),
++>scan(path 'CAT.HCUBE.IX10B'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where exists (select * from t10);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_SEMI_JOIN                                 1.00E+003           
+2     INDEX_SCAN                      T10              1.00E+000           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q37
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T4')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t8
++>where a not in (select b from t4 where b is not null)
++>  and a is not null;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_ANTI_SEMI_JOIN                       9.94E+002           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T4               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q38
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T8' ),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T4' ),
++>scan(path 'CAT.HCUBE.T6' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where t8.a in (select a from t4 where not (
++>exists (select a from t6 where a=t4.a)));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.00E+000           
+2     FILE_SCAN                       T8               1.00E+003           
+3     HYBRID_HASH_ANTI_SEMI_JOIN                       3.00E+000           
+4     FILE_SCAN                       T4               1.00E+001           
+5     FILE_SCAN                       T6               1.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>------------------------------------------
+>>set schema cat.mcrand;
+
+--- SQL operation complete.
+>>
+>>-- Q39
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
++>scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts f1, facts f2 where
++>f1.xy = f2.xy and
++>f1.xpy < 50;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.06E+005           
+2     FILE_SCAN                       FACTS)           1.06E+004           
+3     FILE_SCAN                       FACTS)           3.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q40
+>>prepare xx from
++>select count(*) from facts f1, facts f2 where
++>f1.xy = f2.xy and
++>f1.xpy = 100;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.90E+003           
+2     FILE_SCAN                       FACTS)           2.90E+002           
+3     FILE_SCAN                       FACTS)           3.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from facts f1, facts f2 where
++>f1.xy = f2.xy and
++>f1.xpy = 100;
+Histograms for query showstats for query select count(*) from facts f1, facts f2 where f1.xy = f2.xy and f1.xpy = 100;
+**************************************************************
+VEGcolumn:
+
+ 235: VEGRef_235((F2.YPZ))
+Merge state:
+  73: F2.YPZ
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 39.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.033333 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 38.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      38.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q41
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
++>scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts f1, facts f2 where
++>f1.xy = f2.xy and
++>f1.x1 = 50 and f2.x1 < 70;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.13E+003           
+2     FILE_SCAN                       FACTS)           3.00E+002           
+3     FILE_SCAN                       FACTS)           2.13E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q42
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(TABLE 'F1', path 'CAT.MCRAND.FACTS'),
++>scan(TABLE 'F2', path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts f1, facts f2 where
++>f1.xty = f2.xty and
++>f1.x1 = 50 and f2.x1 = 70;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.08E+002           
+2     FILE_SCAN                       FACTS)           3.00E+002           
+3     FILE_SCAN                       FACTS)           3.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q43
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.HUNDRED1000'),
++>scan(path 'CAT.MCRAND.TEN1000')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) 
++>from hundred1000, ten1000 where
++>(hundred1000.c = 1 or (hundred1000.c = 9 and hundred1000.b = 20) )and
++>hundred1000.c = ten1000.c and
++>hundred1000.b = ten1000.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.89E+003           
+2     FILE_SCAN                       HUNDRED1000      1.00E+003           
+3     FILE_SCAN                       TEN1000          1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q44
+>>-- OR predicate on one of the joining columns. The columns are non-unique
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.HUNDRED1000'),
++>scan(path 'CAT.MCRAND.TEN1000')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) 
++>from hundred1000, ten1000 where
++>(hundred1000.c = 1 or hundred1000.c = 20 )and
++>hundred1000.c = ten1000.c and
++>hundred1000.b = ten1000.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+003           
+2     FILE_SCAN                       HUNDRED1000      2.00E+003           
+3     FILE_SCAN                       TEN1000          2.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q45
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.HUNDRED1000' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from 
++>ten1000, hundred1000 where
++>ten1000.a = hundred1000.a and
++>ten1000.b = hundred1000.b and
++>ten1000.c = hundred1000.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     FILE_SCAN                       TEN1000          1.00E+004           
+3     FILE_SCAN                       HUNDRED1000      1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q46
+>>control query shape implicit enforcers sort_groupby(nested_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.HUNDRED1000' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from 
++>ten1000, hundred1000 where
++>ten1000.b = 849 and
++>ten1000.c = hundred1000.c and
++>ten1000.d = hundred1000.d;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      1.00E+001           
+2     FILE_SCAN                       HUNDRED1000      1.00E+000           
+3     FILE_SCAN                       TEN1000          1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q47
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.HUNDRED1000')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from 
++>ten1000, hundred1000 where
++>ten1000.c = 5 and
++>ten1000.c = hundred1000.c and
++>ten1000.d = hundred1000.d;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     FILE_SCAN                       TEN1000          1.00E+003           
+3     FILE_SCAN                       HUNDRED1000      1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q48
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.HUNDRED1000')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from 
++>ten1000, hundred1000 where
++>ten1000.b < 500 and
++>ten1000.b = hundred1000.b and
++>ten1000.c = hundred1000.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.48E+003           
+2     FILE_SCAN                       TEN1000          5.00E+003           
+3     FILE_SCAN                       HUNDRED1000      5.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q49
+>>-- use minimum optimization level to avoid pland changes
+>>
+>>control query default OPTIMIZATION_LEVEL 'minimum';
+
+--- SQL operation complete.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>
+>>prepare xx from
++>select count(*) from hundred1000, randcols
++>where hundred1000.a IN (24999, 49999, 74999) and
++>hundred1000.b in (249, 499, 794) and
++>hundred1000.a = randcols.x and
++>hundred1000.b = randcols.y;
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.00E+003           
+2     HYBRID_HASH_JOIN                                 3.00E+003           
+
+--- 2 row(s) selected.
+>>
+>>-- Q50
+>>-- OR predicate on a joining column. Same column is also unique by stats. Other side is not unique
+>>
+>>prepare xx from
++>select count(*) from hundred1000, randcols
++>where hundred1000.a IN (24999, 49999, 74999) and
++>hundred1000.a = randcols.x and
++>hundred1000.b = randcols.y;
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.00E+003           
+2     HYBRID_HASH_JOIN                                 3.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from hundred1000, randcols
++>where hundred1000.a IN (24999, 49999, 74999) and
++>hundred1000.a = randcols.x and
++>hundred1000.b = randcols.y;
+Histograms for query showstats for query select count(*) from hundred1000, randcols where hundred1000.a IN (24999, 49999, 74999) and hundred1000.a = randcols.x and hundred1000.b = randcols.y;
+**************************************************************
+VEGcolumn:
+
+  48: VEGRef_48((CAT.MCRAND.HUNDRED1000.C))
+Merge state:
+
+   5: CAT.MCRAND.HUNDRED1000.C
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q51
+>>-- OR predicate on the joining column. Same column is also unique. Other side is unique too
+>>control query default OPTIMIZATION_LEVEL reset;
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.HUNDRED1000'),
++>cut),
++>nested_join(
++>cut,
++>scan(path 'CAT.MCRAND.FACTS'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from hundred1000, facts
++>where hundred1000.a IN (24999, 49999) and
++>hundred1000.a = facts.x and
++>hundred1000.d = facts.z and
++>hundred1000.b = facts.y;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>execute explainCard;
+
+--- 0 row(s) selected.
+>>
+>>-- Q52
+>>-- There is an issue with the way tables for MC join cardinality adjustment are picked up. Sol 10-091208-6929
+>>-- is being used to track that. 
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from rc2, ten1000,randcols
++>where ten1000.b=randcols.y 
++>and ten1000.c=randcols.z 
++>and rc2.y=randcols.y 
++>and rc2.z=randcols.z ;
+
+--- SQL command prepared.
+>>
+>>-- execute explainCard;
+>>
+>>-- Q53
+>>
+>>prepare xx from 
++>select count(*) from randcols,ten1000,rc2
++>where ten1000.a=randcols.x and 
++>ten1000.b=randcols.y and 
++>ten1000.c=randcols.z and 
++>rc2.x=randcols.x and 
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z;
+
+--- SQL command prepared.
+>>
+>>-- execute explainCard;
+>>
+>>-- Q54
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.RANDCOLS' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(*) from ten1000,randcols
++>where ten1000.a=randcols.x and 
++>ten1000.b=randcols.y and 
++>ten1000.c=randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.05E+004           
+2     FILE_SCAN                       TEN1000          1.00E+004           
+3     FILE_SCAN                       RANDCOLS         1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q55
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.RC2' )));
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(*) from randcols,rc2
++>where 
++>rc2.x=randcols.x and 
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.03E+005           
+2     FILE_SCAN                       RANDCOLS         1.00E+005           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q56
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from rc2,ten1000,randcols
++>where randcols.x < 50 and
++>ten1000.a < 5000 and
++>ten1000.b=randcols.y and 
++>ten1000.c=randcols.z and 
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z ;
+
+--- SQL command prepared.
+>>
+>>-- execute explainCard;
+>>
+>>-- Q57
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RC2' ),
++>scan(path 'CAT.MCRAND.RANDCOLS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from rc2,randcols
++>where randcols.x < 50 and
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.93E+005           
+2     FILE_SCAN                       RC2              1.00E+005           
+3     FILE_SCAN                       RANDCOLS         4.99E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- No unique set of columns. All tables joining on two columns
+>>
+>>-- Q58
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, hundred1000, randcols, rc2
++>where 
++>facts.y=randcols.y and 
++>facts.z=randcols.z and 
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z and
++>facts.y = hundred1000.b and
++>facts.z = hundred1000.c;
+
+--- SQL command prepared.
+>>
+>>-- execute explainCard;
+>>
+>>-- All tables joining on three columns. 
+>>
+>>-- Q59
+>>
+>>prepare xx from
++>select count(*) from facts, hundred1000, randcols,rc2
++>where 
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.z=randcols.z and 
++>rc2.x = randcols.x and
++>rc2.y=randcols.y and 
++>rc2.z=randcols.z and
++>facts.x = hundred1000.a and
++>facts.y = hundred1000.b and
++>facts.z = hundred1000.c;
+
+--- SQL command prepared.
+>>
+>>-- execute explainCard;
+>>
+>>-- Q60
+>>-- applied a range predicate on a joining column. We cannot capture correlation between columns which have been modified
+>>-- using any predicate other than equality predicate. Should we remove them while getting MC UEC for Join too? Example
+>>-- in the query below, when doing join, consider MCUEC for facts (y,xpy) and randcols (y,z) only
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.x < 5 and 
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.75E+004           
+2     FILE_SCAN                       RANDCOLS         4.93E+003           
+3     FILE_SCAN                       FACTS            1.50E+003           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from facts, randcols
++>where 
++>facts.x < 5 and 
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+Histograms for query showstats for query select count(*) from facts, randcols where  facts.x < 5 and  facts.x = randcols.x and facts.y=randcols.y and  facts.xpy = randcols.z ;
+**************************************************************
+VEGcolumn:
+
+ 170: VEGRef_170((CAT.MCRAND.RANDCOLS.SYSKEY))
+Merge state:
+
+  68: CAT.MCRAND.RANDCOLS.SYSKEY
+Applied preds:
+***FAKE*** histogram
+
+***Histogram with NO statistics
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 100000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000203 
+   Encoded MinValue = (
+-9223372036854775808.0000 )
+   Encoded MaxValue = (
+9223372036854775808.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      -9223372036854775808.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     9223372036854775808.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q61
+>>-- apply equality predicate to a joining column. The columns are not unique
+>>-- all columns to be considered for MC UEC
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.x = 5 and 
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.90E+001           
+2     FILE_SCAN                       RANDCOLS         1.01E+003           
+3     FILE_SCAN                       FACTS            3.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- Q62
+>>-- apply range predicate to one joining column and equality to the other one. Columns are non-unique. 
+>>-- Only two columns with no local predicate applied to be considred for 
+>>-- MC UECs, column with range predicate assumed to be not correlated
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.x < 5 and 
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.75E+004           
+2     FILE_SCAN                       RANDCOLS         4.93E+003           
+3     FILE_SCAN                       FACTS            1.50E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q63
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>(facts.x < 5 OR facts.y = 8)  and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.90E+002           
+2     FILE_SCAN                       RANDCOLS         5.95E+003           
+3     FILE_SCAN                       FACTS            2.45E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q64
+>>-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.z = 5 and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.12E+003           
+2     FILE_SCAN                       RANDCOLS         1.00E+005           
+3     FILE_SCAN                       FACTS            3.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q65
+>>-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.z > 5 and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.xpy = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.24E+004           
+2     FILE_SCAN                       RANDCOLS         1.00E+005           
+3     FILE_SCAN                       FACTS            1.20E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q66
+>>-- None of the joining columns have been directly reduced by a local predicate. So all considred for MCUEC. Also
+>>-- column set fo FACTS are unique by stats
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.xpy = 5 and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.z = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.30E+001           
+2     FILE_SCAN                       RANDCOLS         1.00E+005           
+3     FILE_SCAN                       FACTS            5.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Q67
+>>-- There is an equality predicate on one of the joining columns and also the columns are unique
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.z = 5 and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.z = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.68E+002           
+2     FILE_SCAN                       RANDCOLS         9.92E+002           
+3     FILE_SCAN                       FACTS            3.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- Q68
+>>-- There is a range predicate on one of the joining columns and total joining column set is unique
+>>-- but the columns for which only MC UEC should be considered for a non unique set
+>>
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>scan(path 'CAT.MCRAND.RANDCOLS'),
++>scan(path 'CAT.MCRAND.FACTS')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from facts, randcols
++>where 
++>facts.z > 5 and
++>facts.x = randcols.x and
++>facts.y=randcols.y and 
++>facts.z = randcols.z ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.24E+004           
+2     FILE_SCAN                       RANDCOLS         9.40E+004           
+3     FILE_SCAN                       FACTS            1.20E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Q69
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(path 'CAT.MCRAND.FACTS' ),
++>scan(path 'CAT.MCRAND.RC2' ));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select facts.x
++>from facts
++>where facts.y in (select rc2.x
++>                      from rc2
++>                      where facts.z = rc2.x OR rc2.y = 1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_SEMI_JOIN                            3.00E+004           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q70
+>>control query shape implicit enforcers nested_join(
++>scan(path 'CAT.MCRAND.FACTS' ),
++>sort_groupby(nested_join(
++>scan(path 'CAT.MCRAND.TEN1000' ),
++>scan(path 'CAT.MCRAND.RC2' ))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select facts.x  
++>from facts  
++>where  facts.y  > (select  ten1000.b  
++>                 from ten1000  
++>                 where ten1000.c = facts.x  and  ten1000.a=5 and   
++>                          exists (select rc2.x  from rc2  
++>                                      where   rc2.y = ten1000.d  and  rc2.z < facts.x ));
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      2.00E+000           
+2     NESTED_SEMI_JOIN                                 1.99E-004           
+3     FILE_SCAN                       RC2              7.78E+000           
+4     FILE_SCAN                       TEN1000          9.99E-003           
+5     FILE_SCAN                       FACTS            3.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select facts.x  
++>from facts  
++>where  facts.y  > (select  ten1000.b  
++>                 from ten1000  
++>                 where ten1000.c = facts.x  and  ten1000.a=5 and   
++>                          exists (select rc2.x  from rc2  
++>                                      where   rc2.y = ten1000.d  and  rc2.z < facts.x ));
+Histograms for query showstats for query select facts.x   from facts   where  facts.y  > (select  ten1000.b                    from ten1000                    where ten1000.c = facts.x  and  ten1000.a=5 and                              exists (select rc2.x  from rc2                                         where   rc2.y = ten1000.d  and  rc2.z < facts.x ));
+**************************************************************
+VEGcolumn:
+
+ 191: VEGRef_191((CAT.MCRAND.FACTS.X = CAT.MCRAND.TEN1000.C))
+Merge state:
+
+   3: CAT.MCRAND.FACTS.X
+  71: CAT.MCRAND.TEN1000.C
+Applied preds:
+
+ 192: (CAT.MCRAND.FACTS.X = CAT.MCRAND.TEN1000.C)
+   TotalUEC = 2.000000 
+
+   Rowcount = 2.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 2.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      1.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      2.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      3.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      4.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      5.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      6.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      7.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      8.0000 ) : rows=0.200000,uec=0.200000 
+
+     Bound  <=      (      9.0000 ) : rows=0.200000,uec=0.200000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>-- Q71
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(TABLE 'C1', path 'CAT.HCUBE.IXCUBE1F'),
++>scan(path 'CAT.HCUBE.IXCUBE1F')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from cube1 c1 where c1.c in (select a
++>from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_SEMI_JOIN                            1.00E+004           
+2     INDEX_SCAN                      CUBE1)           1.00E+005           
+3     INDEX_SCAN                      CUBE1            1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q72
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(TABLE 'C1', path 'CAT.HCUBE.IX10C'),
++>scan(path 'CAT.HCUBE.IX10C')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from T10 c1 where c1.a in (select a
++>from T10);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+005           
+2     INDEX_SCAN                      T10)             1.00E+005           
+3     INDEX_SCAN                      T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q73
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(TABLE 'C1', path 'CAT.HCUBE.IX10C'),
++>scan(path 'CAT.HCUBE.IXCUBE1F')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from T10 c1 where c1.c in (select a
++>from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_SEMI_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T10)             1.00E+005           
+3     INDEX_SCAN                      CUBE1            1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- Q74
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>
+>>-- tests for joins with tuple lists
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t10.a = t9.a and
++>t10.a in (1,2,3,4);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+000           
+2     HYBRID_HASH_JOIN                                 4.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>-- Q75
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>-- Q76
+>>control query default comp_int_22 '1';
+
+--- SQL operation complete.
+>>
+>>control query default nested_joins reset;
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
++>scan(path 'CAT.HCUBE.T9')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+3     FILE_SCAN                       T10              1.00E+005           
+4     HASH_GROUPBY                                     8.00E+000           
+5     FILE_SCAN                       T9               1.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>control query default comp_int_22 reset;
+
+--- SQL operation complete.
+>>
+>>-- Q77
+>>control query default hist_assume_independent_reduction 'off';
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
++>scan(path 'CAT.HCUBE.T9')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+3     FILE_SCAN                       T10              1.00E+005           
+4     HASH_GROUPBY                                     8.00E+000           
+5     FILE_SCAN                       T9               8.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>control query default hist_assume_independent_reduction reset;
+
+--- SQL operation complete.
+>>
+>>-- Q78
+>>control query default hist_assume_independent_reduction 'off';
+
+--- SQL operation complete.
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
++>scan(path 'CAT.HCUBE.T9')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+3     FILE_SCAN                       T10              1.00E+005           
+4     HASH_GROUPBY                                     8.00E+000           
+5     FILE_SCAN                       T9               8.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>control query default hist_assume_independent_reduction reset;
+
+--- SQL operation complete.
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>-- Q79
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T10'),hash_groupby(anything)),
++>scan(path 'CAT.HCUBE.T9')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.b = t10.b and
++>t9.b in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+3     FILE_SCAN                       T10              1.00E+005           
+4     HASH_GROUPBY                                     8.00E+000           
+5     FILE_SCAN                       T9               8.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Q82
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T9'),
++>scan(path 'CAT.HCUBE.T10')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.b in (1,2,3,4);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+001           
+2     FILE_SCAN                       T9               4.00E+001           
+3     FILE_SCAN                       T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t9, t10 where t9.a = t10.a and
++>t9.b in (1,2,3,4);
+Histograms for query showstats for query select count(*) from t9, t10 where t9.a = t10.a and t9.b in (1,2,3,4);
+**************************************************************
+VEGcolumn:
+
+  79: VEGRef_79((CAT.HCUBE.T10.C))
+Merge state:
+  28: CAT.HCUBE.T10.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.025000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q83
+>>control query shape implicit enforcers sort_groupby(
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T9'),
++>scan(path 'CAT.HCUBE.T10')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t9, t10 where t9.b = t10.b and
++>t9.a in (1,2,3,4);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.00E+002           
+2     FILE_SCAN                       T9               4.00E+000           
+3     FILE_SCAN                       T10              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>control query default merge_joins 'off';
+
+--- SQL operation complete.
+>>
+>>-- Q84
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t9.b in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q85
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+002           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q86
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
++>t10.a in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>-- Q87
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+000           
+2     HYBRID_HASH_JOIN                                 5.00E+000           
+3     HYBRID_HASH_JOIN                                 5.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Q88
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16,17,18);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- Q89
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q90
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t9, t10 where t9.b = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+Histograms for query showstats for query select count(*) from t9, t10 where t9.b = t10.b and t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+**************************************************************
+VEGcolumn:
+
+  89: VEGRef_89((CAT.HCUBE.T9.C))
+Merge state:
+   5: CAT.HCUBE.T9.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q91
+>>prepare xx from select count(*) from t9, t10
++>where t9.a = t10.a and
++>t9.b = t10.b;
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q92
+>>prepare xx from select count(*) from t8, t9, t10
++>where t8.a = t9.a and
++>t8.a = t10.a and
++>t8.b = t9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     HYBRID_HASH_JOIN                                 1.00E+003           
+
+--- 2 row(s) selected.
+>>
+>>-- The following CQD sets a threshold beyond which the optimizer will not merge 
+>>-- frequent value lists when joining on unique columns, instead will only
+>>-- scale the frequency and the rowcount. The default value of this CQD is 40
+>>-- it is being lowered to 5 for testing purposes
+>>
+>>cqd HIST_TUPLE_FREQVAL_LIST_THRESHOLD '5';
+
+--- SQL operation complete.
+>>
+>>-- Q93
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t9.b in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.99E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q94
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
++>t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+002           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q95
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
++>t10.a in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5,6,7,8);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.00E+000           
+2     HYBRID_HASH_JOIN                                 8.00E+000           
+
+--- 2 row(s) selected.
+>>
+>>-- Q96
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.a and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4,5);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.00E+000           
+2     HYBRID_HASH_JOIN                                 5.00E+000           
+3     HYBRID_HASH_JOIN                                 5.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Q97
+>>prepare xx from select count(*) from t9, t10 where t9.a = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16,17,18);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- Q98
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (11,12,13,14,15,16);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.99E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q99
+>>prepare xx from select count(*) from t9, t10 where t9.b = t10.b and
++>t10.b in (1,2,3,4,5,6,7,8) and t9.a in (1,2,3,4);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.99E+003           
+2     HYBRID_HASH_JOIN                                 8.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- Q100
+>>-- check with two tuple lists
+>>cqd or_pred_to_semijoin '10';
+
+--- SQL operation complete.
+>>cqd pcode_opt_level 'off';
+
+--- SQL operation complete.
+>>cqd pcode_opt_flags '1';
+
+--- SQL operation complete.
+>>
+>>prepare xx from select * from t8, t9 
++>where t8.a = t9.a 
++>and t8.a in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
+--- SQL command prepared.
+>>
+>>execute explainJoin;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.50E+001           
+2     HYBRID_HASH_JOIN                                 1.50E+001           
+3     HYBRID_HASH_JOIN                                 1.50E+001           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select * from t8, t9 
++>where t8.a = t9.a 
++>and t8.a in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+Histograms for query showstats for query select * from t8, t9  where t8.a = t9.a  and t8.a in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+**************************************************************
+VEGcolumn:
+
+  95: VEGRef_95((CAT.HCUBE.T8.A = CAT.HCUBE.T9.A))
+Merge state:
+
+   3: CAT.HCUBE.T8.A
+  26: CAT.HCUBE.T9.A
+ 178: SMALLINT SIGNED
+
+ 246: SMALLINT SIGNED
+Applied preds:
+
+  96: (CAT.HCUBE.T8.A = CAT.HCUBE.T9.A)
+
+ 180: (VEGRef_95((CAT.HCUBE.T8.A = CAT.HCUBE.T9.A)) = cast(1))
+
+ 248: (VEGRef_95((CAT.HCUBE.T8.A = CAT.HCUBE.T9.A)) = cast(1))
+
+   TotalUEC = 15.000000 
+   Rowcount = 15.000000 
+
+   BaseUEC  = 15.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.015000 
+   Encoded MinValue = ( zINIT )
+
+   Encoded MaxValue = ( 15.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      zINIT ) : rows=0.000000,uec=0.000000 
+
+     Bound  <       (      15.0000 ) : rows=15.000000,uec=15.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  98: VEGRef_98((CAT.HCUBE.T8.B))
+Merge state:
+   4: CAT.HCUBE.T8.B
+
+Applied preds:
+   TotalUEC = 15.000000 
+   Rowcount = 15.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.150000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=15.000000,uec=15.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 101: VEGRef_101((CAT.HCUBE.T8.C))
+Merge state:
+   5: CAT.HCUBE.T8.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 15.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.500000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=15.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 107: VEGRef_107((CAT.HCUBE.T9.B))
+Merge state:
+  27: CAT.HCUBE.T9.B
+
+Applied preds:
+   TotalUEC = 15.000000 
+   Rowcount = 15.000000 
+
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.015000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=15.000000,uec=15.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 110: VEGRef_110((CAT.HCUBE.T9.C))
+Merge state:
+  28: CAT.HCUBE.T9.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 15.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.500000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=15.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>LOG;

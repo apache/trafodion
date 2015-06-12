@@ -1,0 +1,18 @@
+>>obey TEST_1_2_2_1(tests);
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- the follwong command should fail
+>>DROP TRIGGER djfyg987uegyf;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.DJFYG987UEGYF could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>----------------------------------------
+>>LOG;

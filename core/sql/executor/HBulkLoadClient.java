@@ -246,6 +246,7 @@ public class HBulkLoadClient
      short colNameLen;
      int colValueLen;
      byte[] colName, colValue, rowID;
+     short actRowIDLen;
 
      bbRowIDs = (ByteBuffer)rowIDs;
      bbRows = (ByteBuffer)rows;
@@ -254,8 +255,13 @@ public class HBulkLoadClient
      long now = System.currentTimeMillis();
      for (short rowNum = 0; rowNum < numRows; rowNum++) 
      {
-        rowID = new byte[rowIDLen];
-        bbRowIDs.get(rowID, 0, rowIDLen);
+        byte rowIDSuffix  = bbRowIDs.get();
+        if (rowIDSuffix == '1')
+           actRowIDLen = (short)(rowIDLen+1);
+        else
+           actRowIDLen = rowIDLen;
+        rowID = new byte[actRowIDLen];
+        bbRowIDs.get(rowID, 0, actRowIDLen);
         numCols = bbRows.getShort();
         for (short colIndex = 0; colIndex < numCols; colIndex++)
         {

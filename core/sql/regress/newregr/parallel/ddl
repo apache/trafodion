@@ -1,0 +1,873 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--**********************************************************************
+--  This script contains the data definition language (DDL) statements *
+-- for creating the base tables of the parallel test database.  The    *
+-- matrix below summarizes the characteristics of each table:          *
+--                                                                     *
+--  Table|Number of |Number of  |                                      *
+--  Name |Partitions|Key Columns|          Boundary Values             *
+-- ------+----------+-----------+--------------------------------------*
+-- UTAB00|       1  |        1  |                 NA                   *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB00|       3  |        1  |              200,400                 *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB01|       3  |        1  |              200,400                 *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB02|       6  |        1  |        100,200,300,400,500           *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB03|       4  |        1  |            150,300,450               *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB04|       4  |        1  |            200,400,600               *
+--       |          |           |        Empty Final Partition         *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB05|       3  |        2  |              20,40                   *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB06|       3  |        2  |          (20,1);(40,1)               *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB07|       4  |        2  |      (15,0);(30,0);(45,0)            *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB08|       3  |        3  |        (2,9,5);(4,9,5)               *
+--       |          |           |        Descending middle column      *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB09|       4  |        3  |    (1,5,5);(3,9,5);(4,5,5)           *
+--       |          |           |        Descending middle column      *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB10|       3  |        1  |      'IAAAAAAA','QAAAAAAA'           *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB11|       4  |        1  |   'GAAAAAAA','MAAAAAAA','SAAAAAAA'   *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB12|       3  |        1  |      '2100-07-15','2101-02-01'       *
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB13|       4  |        1  |'2100-06-01','2100-11-01','2101-04-01'*
+-- ------+----------+-----------+--------------------------------------*
+-- PTAB14|       3  |        2  |            15,30,45                  *
+--**********************************************************************
+--<pb> 
+-- char data formats:
+--   Base string: all "A"'s
+--   All char columns vary first two positions only (i.e. [0],[1])
+--   
+--   _10   : [0] A->B
+--           [1] A->E
+--
+--   _100  : [0] A->D
+--           [1] A->Y
+--
+--   _50p  : [0] A->L
+--           [1] A->Y
+--
+--   _uniq : [0] A->X
+--           [1] A->Y
+--<pb> 
+
+?section sections
+-- =====================================================================
+-- dropDB  :  drop all base tables in the database.
+-- createDB:  create all base tables in the database.
+-- =====================================================================
+
+--<pb> 
+?section createDB
+
+----------------------------------------------
+-- Unpartitioned table with one key column. --
+----------------------------------------------
+create table $$U00$$ (
+  sInt16_10    smallint     signed,
+  sInt32_100   integer      signed,
+  sInt32_50p   integer      signed,
+  sInt32_uniq  integer      signed    not null ,
+  uInt16_10    smallint     unsigned,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  uInt32_uniq  integer      unsigned  not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (sInt32_uniq) not droppable)
+store by primary key
+location $$part1$$
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (sInt32_uniq) )
+buffered audit
+#ifMP
+;
+
+--<pb> 
+-----------------------------------------------------------------
+-- Partitioned table with one key column and three partitions. --
+-----------------------------------------------------------------
+create table $$P00$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(8)                not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null , 
+
+#ifMX
+primary key (sInt32_uniq) not droppable)
+store by primary key
+location $$part2$$
+partition ( 
+   add first key (200) location $$part3$$,
+   add first key (400) location $$part4$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (sInt32_uniq) )
+partition (
+  $$part3$$.PTAB00 first key (200),
+  $$part4$$.PTAB00 first key (400))
+buffered audit
+#ifMP
+;
+
+--<pb> 
+-----------------------------------------------------------------
+-- Partitioned table with one key column and three partitions. --
+-----------------------------------------------------------------
+create table $$P01$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  char_50p     char(1780),
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  char_uniq    char(9)                not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (uInt32_uniq) not droppable)
+store by primary key
+location $$part2$$
+partition ( 
+   add first key (200) location $$part3$$,
+   add first key (400) location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (uInt32_uniq) )
+partition (
+   $$part3$$.PTAB01 first key (200),
+   $$part1$$.PTAB01 first key (400) )
+buffered audit                                 
+#ifMP
+;
+
+--<pb> 
+---------------------------------------------------------------
+-- Partitioned table with one key column and six partitions. --
+---------------------------------------------------------------
+create table $$P02$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  char_50p     char(1780),
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_uniq    char(8)                not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (int64_uniq) not droppable)
+store by primary key
+location $$part0$$
+partition ( 
+   add first key (100) location $$part1$$,
+   add first key (200) location $$part2$$,
+   add first key (300) location $$part3$$,
+   add first key (400) location $$part4$$,
+   add first key (500) location $$part5$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (int64_uniq) )
+partition (
+   $$part1$$.PTAB02 first key (100),
+   $$part2$$.PTAB02 first key (200),
+   $$part3$$.PTAB02 first key (300),
+   $$part4$$.PTAB02 first key (400),
+   $$part5$$.PTAB02 first key (500))
+buffered audit
+#ifMP
+;
+
+--<pb> 
+----------------------------------------------------------------
+-- Partitioned table with one key column and four partitions. --
+----------------------------------------------------------------
+create table $$P03$$ (
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(9)                not null ,
+  date_uniq    date                   not null ,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  char_50p     char(1780),
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  int64_100    largeint,
+  date_12      date,
+  date_200     date,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (sInt32_uniq) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (150) location $$part2$$,
+   add first key (300) location $$part3$$,
+   add first key (450) location $$part4$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (sInt32_uniq) )
+partition (
+   $$part2$$.PTAB03 first key (150),
+   $$part3$$.PTAB03 first key (300),
+   $$part4$$.PTAB03 first key (450))
+buffered audit
+#ifMP
+;
+
+--<pb> 
+--------------------------------------------------------------------
+-- Partitioned table with one key column and four partitions with --
+-- the final partition containing no data.                        --
+--------------------------------------------------------------------
+create table $$P04$$ (
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(8)                not null ,
+  date_uniq    date                   not null ,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_100    largeint,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (uInt32_uniq) not droppable)
+store by primary key
+location $$part4$$
+partition ( 
+   add first key (200) location $$part3$$,
+   add first key (400) location $$part2$$,
+   add first key (600) location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (uInt32_uniq) )
+partition (
+   $$part3$$.PTAB04 first key (200) ,
+   $$part2$$.PTAB04 first key (400) ,
+   $$part1$$.PTAB04 first key (600) )
+buffered audit
+#ifMP
+;
+
+--<pb> 
+------------------------------------------------------------------
+-- Partitioned table with two key columns and three partitions. --
+------------------------------------------------------------------
+create table $$P05$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned  not null ,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(9)                not null ,
+  date_uniq    date                   not null ,
+  sInt32_60    integer      signed    not null ,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_100    largeint,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (sInt32_60, uInt16_10) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (20) location $$part3$$,
+   add first key (40) location $$part2$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (sInt32_60, uInt16_10) )
+partition (
+   $$part3$$.PTAB05 first key (20) ,
+   $$part2$$.PTAB05 first key (40) )
+buffered audit
+#ifMP
+;
+
+--<pb> 
+-----------------------------------------------------------------
+-- Partitioned table with two key columns and three partitions --
+-- with each partition beginning on a staggered boundary.      --
+-----------------------------------------------------------------
+create table $$P06$$ (
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_60    integer      unsigned  not null ,
+  sNum_100     numeric(9,2) signed,
+  int64_100    largeint,
+  sInt16_10    smallint     signed    not null ,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(8)                not null ,
+  date_uniq    date                   not null ,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (uInt32_60, sInt16_10) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (20,1) location $$part3$$,
+   add first key (40,1) location $$part2$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (uInt32_60, sInt16_10) )
+partition (
+   $$part3$$.PTAB06 first key (20,1) ,
+   $$part2$$.PTAB06 first key (40,1) )
+buffered audit
+#ifMP
+;
+
+--<pb> 
+-----------------------------------------------------------------
+-- Partitioned table with two key columns and four partitions. --
+-----------------------------------------------------------------
+create table $$P07$$ (
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_60     largeint               not null ,
+  sInt16_10    smallint     signed    not null ,
+  uInt16_10    smallint     unsigned,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(9)                not null ,
+  date_uniq    date                   not null ,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (int64_60, sInt16_10) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (15,0) location $$part3$$,
+   add first key (30,0) location $$part2$$,
+   add first key (45,0) location $$part4$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (int64_60, sInt16_10) )
+partition (
+   $$part3$$.PTAB07 first key (15,0) ,
+   $$part2$$.PTAB07 first key (30,0),
+   $$part4$$.PTAB07 first key (45,0) )
+buffered audit                                            
+#ifMP
+;
+
+--<pb> 
+-------------------------------------------------------------
+-- Partitioned table with three key columns, middle column --
+-- descending and three partitions.                        --
+-------------------------------------------------------------
+create table $$P08$$ (
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_6      largeint               not null ,
+  sInt16_10    smallint     signed    not null ,
+  uInt16_10    smallint     unsigned  not null ,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(8)                not null ,
+  date_uniq    date                   not null ,
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (int64_6, sInt16_10 desc, uInt16_10) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (2,9,5) location $$part3$$,
+   add first key (4,9,5) location $$part2$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (int64_6, sInt16_10 desc, uInt16_10) )
+partition (
+   $$part3$$.PTAB08 first key (2,9,5) ,
+   $$part2$$.PTAB08 first key (4,9,5) )
+buffered audit                                      
+#ifMP
+;
+
+--<pb> 
+-------------------------------------------------------------------
+-- Partitioned table with three key columns and four partitions. --
+-------------------------------------------------------------------
+create table $$P09$$ (
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  sInt32_100   integer      signed,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_6      largeint               not null ,
+  sInt16_10    smallint     signed    not null ,
+  uInt16_10    smallint     unsigned  not null ,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(9)                not null ,
+  date_uniq    date                   not null ,
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (int64_6, sInt16_10 desc, uInt16_10) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (1,5,5) location $$part4$$,
+   add first key (3,9,5) location $$part2$$,
+   add first key (4,5,5) location $$part3$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (int64_6, sInt16_10 desc, uInt16_10) )
+partition (
+   $$part4$$.PTAB09 first key (1,5,5) ,
+   $$part2$$.PTAB09 first key (3,9,5) ,
+   $$part3$$.PTAB09 first key (4,5,5) )
+buffered audit  
+#ifMP
+;
+
+
+--<pb> 
+---------------------------------------------------------------------------
+-- Partitioned table with one character key column and three partitions. --
+---------------------------------------------------------------------------
+create table $$P10$$ (
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null ,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (char_uniq) not droppable)
+store by primary key
+location $$part2$$
+partition ( 
+   add first key ('IAAAAAAA') location $$part3$$,
+   add first key ('QAAAAAAA') location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (char_uniq) )
+partition (
+   $$part3$$.PTAB10 first key ('IAAAAAAA') ,
+   $$part1$$.PTAB10 first key ('QAAAAAAA') )
+buffered audit                                              
+#ifMP
+;
+
+--<pb> 
+--------------------------------------------------------------------------
+-- Partitioned table with one character key column and four partitions. --
+--------------------------------------------------------------------------
+create table $$P11$$ (
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(8)                not null ,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  varchar_100  varchar(16),
+  varchar_uniq varchar(50)            not null ,
+
+#ifMX
+primary key (varchar_uniq) not droppable)
+store by primary key
+location $$part2$$
+partition ( 
+   add first key ('GAAAAAAA') location $$part3$$,
+   add first key ('MAAAAAAA') location $$part4$$,
+   add first key ('SAAAAAAA') location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (varchar_uniq) )
+partition (
+   $$part3$$.PTAB11 first key ('GAAAAAAA') ,
+   $$part4$$.PTAB11 first key ('MAAAAAAA') ,
+   $$part1$$.PTAB11 first key ('SAAAAAAA') )
+buffered audit
+#ifMP
+;
+
+--<pb> 
+----------------------------------------------------------------------
+-- Partitioned table with one date key column and three partitions. --
+----------------------------------------------------------------------
+create table $$P12$$ (
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null ,
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (date_uniq) not droppable)
+store by primary key
+location $$part1$$
+partition ( 
+   add first key (date '2100-07-15') location $$part2$$,
+   add first key (date '2101-02-01') location $$part3$$)
+attribute buffered, audit
+#ifMX
+
+
+#ifMP
+primary key (date_uniq) )
+partition (
+   $$part2$$.PTAB12 first key (date '2100-07-15') ,
+   $$part3$$.PTAB12 first key (date '2101-02-01') )
+buffered audit                                                  
+#ifMP
+;
+
+--<pb> 
+---------------------------------------------------------------------
+-- Partitioned table with one date key column and four partitions. --
+---------------------------------------------------------------------
+create table $$P13$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned,
+  sInt32_100   integer      signed,
+  uInt32_100   integer      unsigned,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uInt32_uniq  integer      unsigned  not null ,
+  sInt32_uniq  integer      signed    not null ,
+  uNum_10      numeric(9,2) unsigned,
+  sNum_100     numeric(9,2) signed,
+  uNum_50p     numeric(9,2) unsigned,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  date_12      date,
+  date_200     date,
+  date_uniq    date                   not null ,
+  int64_100    largeint,
+  int64_uniq   largeint               not null ,
+  char_10      char(9),
+  char_100     char(8),
+  char_50p     char(1780),
+  char_uniq    char(9)                not null ,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (date_uniq) not droppable)
+store by primary key
+location $$part4$$
+partition ( 
+   add first key (date '2100-06-01') location $$part2$$,
+   add first key (date '2100-11-01') location $$part3$$,
+   add first key (date '2101-04-01') location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (date_uniq) )
+partition (
+   $$part2$$.PTAB13 first key (date '2100-06-01') ,
+   $$part3$$.PTAB13 first key (date '2100-11-01') ,
+   $$part1$$.PTAB13 first key (date '2101-04-01') )
+buffered audit   
+#ifMP
+;
+
+
+--<pb> 
+------------------------------------------------------------------
+-- Partitioned table with two key columns and four partitions.  --
+------------------------------------------------------------------
+create table $$P14$$ (
+  sInt16_10    smallint     signed,
+  uInt16_10    smallint     unsigned  not null ,
+  char_10      char(9),
+  uNum_10      numeric(9,2) unsigned,
+  sInt32_uniq  integer      signed    not null ,
+  uInt32_uniq  integer      unsigned  not null ,
+  sNum_uniq    numeric(9,2) signed    not null ,
+  int64_uniq   largeint               not null ,
+  char_uniq    char(9)                not null ,
+  date_uniq    date                   not null ,
+  sInt32_60    integer      signed    not null ,
+  char_100     char(8),
+  uInt32_100   integer      unsigned,
+  sNum_100     numeric(9,2) signed,
+  int64_100    largeint,
+  uInt32_50p   integer      unsigned,
+  sInt32_50p   integer      signed,
+  uNum_50p     numeric(9,2) unsigned,
+  char_50p     char(1780),
+  date_12      date,
+  date_200     date,
+  varchar_uniq varchar(50)            not null ,
+  varchar_100  varchar(16),
+
+#ifMX
+primary key (sInt32_60, uInt16_10) not droppable)
+store by primary key
+location $$part2$$
+partition ( 
+   add first key (15) location $$part4$$,
+   add first key (30) location $$part3$$,
+   add first key (45) location $$part1$$)
+attribute buffered, audit
+#ifMX
+
+#ifMP
+primary key (sInt32_60, uInt16_10) )
+partition (
+   $$part4$$.PTAB14 first key (15) ,
+   $$part3$$.PTAB14 first key (30) ,
+   $$part1$$.PTAB14 first key (45) )
+buffered audit   
+#ifMP
+;

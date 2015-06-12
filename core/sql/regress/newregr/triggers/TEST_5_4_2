@@ -1,0 +1,96 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- cascading triggers
+-- recursive 'after' triggers
+
+-- runs on cat1.SCHM_ALT only
+----------------------------------------
+
+-- clean_up on all schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_5_4_2(clean_up);
+
+--control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+
+-- start logging
+log   LOG_5_4_2 clear;
+
+set schema CAT1.SCHM_ALT;
+obey TEST_5_4_2(set_up);
+obey TEST_5_4_2(tests);
+obey TEST_5_4_2(clean_up);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_5_4_2(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+
+DROP TRIGGER atrig542a;
+DROP TRIGGER atrig542b;
+obey clearTables;
+
+?section set_up
+
+INSERT INTO tab1A VALUES (1,1,1,1);
+INSERT INTO tab1A VALUES (2,2,2,2);
+INSERT INTO tab1A VALUES (3,3,3,3);
+INSERT INTO tab1B VALUES (1,1);
+INSERT INTO tab1B VALUES (2,2);
+INSERT INTO tab1B VALUES (10,10);
+
+---------------------------------
+-- DEFINE TRIGGER atrig542a
+---------------------------------
+
+CREATE TRIGGER atrig542a
+AFTER UPDATE OF (b) ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+UPDATE tab1B SET b=newR.b WHERE NOT (a > newR.a) AND NOT (a < newR.a);
+
+---------------------------------
+-- DEFINE TRIGGER atrig542b
+---------------------------------
+
+CREATE TRIGGER atrig542b
+AFTER UPDATE OF (b) ON tab1B
+REFERENCING NEW AS newR
+FOR EACH ROW
+WHEN (newR.b < 5)
+UPDATE tab1A SET b=newR.b +1
+WHERE NOT (a > newR.a) AND NOT (a < newR.a);
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b = b+1;
+
+SELECT * FROM tab1A; -- check result
+SELECT * FROM tab1B; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,18 +17,11 @@
 #
 # @@@ END COPYRIGHT @@@
 #######################################################################
- 
+
 CPPSRC := catapirequest.cpp \
 	CatSQLShare.cpp
 
 SRCPATH := sqlshare
 
-ifeq ($(TARGTYPE),linux)
 CPPSRC += vers_libtdm_sqlshare.cpp
-endif
 
-ifeq ($(TARGTYPE),nt)
-DEFS+= -DSHARE_DLL
-SYS_LIBS := kernel32.lib
-EXTERN_OBJS := $(YLIBDIR)/tdm_nsklib.lib
-endif

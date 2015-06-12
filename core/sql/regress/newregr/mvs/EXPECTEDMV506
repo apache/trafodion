@@ -1,0 +1,158 @@
+>>obey TESTMV506(SET_UP);
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>--------------------------------------------------------------
+>>
+>>
+>>
+>>-- Run Tests
+>>	obey TESTMV506(TEST1);
+>>-- one user creates an mv and another user tries to read from
+>>-- its iud log
+>>
+>>create table T_506_T1 ( a int, b int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_506_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_506_T2 ( c int, d int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_506_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_506_MV1
++>	refresh on request
++>	initialize on create
++>	as select a, b 
++>	from T_506_T1, T_506_T2
++>	where a = c 
++>	and   b = d
++>	group by a, b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_506_MV1_102641487_0007 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_506_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_506_T1 values (1, 2), (2, 3), (2, 4), (5, 34);
+
+--- 4 row(s) inserted.
+>>insert into T_506_T2 values (1, 2), (2, 3), (2, 5), (5, 34);
+
+--- 4 row(s) inserted.
+>>
+>>log;
+>>-- User 2 do : ( SHOULD PASS )
+>>select count(*) from table (iud_log_table T_506_T1);
+
+(EXPR)              
+--------------------
+
+                   4
+
+--- 1 row(s) selected.
+>>select count(*) from table (iud_log_table T_506_T2);
+
+(EXPR)              
+--------------------
+
+                   4
+
+--- 1 row(s) selected.
+>>log;
+>>	obey TESTMV506(TEST2);
+>>-- second user tries to read from range log
+>>
+>>log;
+>>-- User 2 do : ( SHOULD PASS )
+>>select count(*) from table (range_log_table T_506_T1);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>select count(*) from table (range_log_table T_506_T2);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>log;
+>>-- Clean and Exit
+>>
+>>obey TESTMV506(CLEAN_UP);
+>>
+>>drop mv T_506_MV1;
+
+--- SQL operation complete.
+>>drop table T_506_T2;
+
+--- SQL operation complete.
+>>drop table T_506_T1;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>log;

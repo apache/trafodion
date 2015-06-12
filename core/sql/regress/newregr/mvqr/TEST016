@@ -1,0 +1,289 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST016
+-- Unit Test to test MVQR_REWRITE_LEVEL and MV_AGE.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST016(clean_up);
+obey TEST016(clean_up_files);
+log LOG016 clear;
+obey TEST016(set_up);
+
+obey TEST016(create_stale_mvs);
+sh sleep 60;
+obey TEST016(create_fresh_mvs);
+
+--===========================================
+-- Level 1, should match 2 Immediate MVs.
+--===========================================
+set pattern $$QueryName$$ RL_Q1;
+control query default MV_AGE '60 SECONDS';
+control query default MVQR_REWRITE_LEVEL '1';
+obey TEST016(match);
+
+--===========================================
+-- Level 2, should match 4 MVs: 2 Immediate, the fresh ON REQUEST and the fresh RECOMPUTE.
+--===========================================
+set pattern $$QueryName$$ RL_Q2;
+control query default MVQR_REWRITE_LEVEL '2';
+obey TEST016(match);
+
+--===========================================
+-- Level 3, should match 6 non-UMVs.
+--===========================================
+set pattern $$QueryName$$ RL_Q3;
+control query default MVQR_REWRITE_LEVEL '3';
+obey TEST016(match);
+
+--===========================================
+-- Level 4, should match all 8 MVs
+--===========================================
+set pattern $$QueryName$$ RL_Q4;
+control query default MVQR_REWRITE_LEVEL '4';
+obey TEST016(match);
+
+
+obey TEST016(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema rl cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm rl*;
+sh rm RL*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '4';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+obey GetMvDesc;
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+create schema rl;
+set schema rl;
+set pattern $$MVSchemaName$$ RL;
+
+create table fact (
+	fday   int,
+	fmonth int,
+	fyear  int,
+	fitem  int,
+	fquant int,
+	fprice numeric (8,2),
+	dimkey int) no partition;
+
+create table dim1 (dkey int not null not droppable primary key, dimdata int, fk1 int) 
+  store by primary key no partition;
+
+?section create_stale_mvs
+--===========================================
+-- Stale MVs
+--===========================================
+
+-- Immediate
+create mv RL_IMM_STALE
+  refresh on statement
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_IMM_STALE;
+obey TEST016(dump_MV);
+
+-- ON REQ
+create mv RL_REQ_STALE
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_REQ_STALE;
+obey TEST016(dump_MV);
+
+-- RECOMPUTE
+create mv RL_RCM_STALE
+  recompute
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_RCM_STALE;
+obey TEST016(dump_MV);
+
+-- User maintained
+create mv RL_UMV_STALE
+  refresh by user
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_UMV_STALE;
+obey TEST016(dump_MV);
+
+?section create_fresh_mvs
+--===========================================
+-- Fresh MVs
+--===========================================
+
+-- Immediate
+create mv RL_IMM_FRESH
+  refresh on statement
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_IMM_FRESH;
+obey TEST016(dump_MV);
+
+-- ON REQ
+create mv RL_REQ_FRESH
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_REQ_FRESH;
+obey TEST016(dump_MV);
+
+-- RECOMPUTE
+create mv RL_RCM_FRESH
+  recompute
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_RCM_FRESH;
+obey TEST016(dump_MV);
+
+-- User maintained
+create mv RL_UMV_FRESH
+  refresh by user
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ RL_UMV_FRESH;
+obey TEST016(dump_MV);
+
+
+--===========================================
+--===========================================
+?section match
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select fprice, fquant, 
+         dimkey, dimdata, 
+	 fday oday, fmonth omonth, fyear oyear
+  from fact, dim1
+  where dimkey=dkey
+  order by dimkey;
+
+obey TEST016(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> $$QueryName$$.in;
+sh echo MATCH $$QueryName$$.xml  >> $$QueryName$$.in;
+
+sh cp $$QueryName$$.in rl_qx.in;
+sh sh -c "$QMS rl_qx.in rl_qx.out";
+
+log;
+sh cat rl_qx.out >> LOG016;
+log LOG016;
+
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG016;
+log LOG016;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG016;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+

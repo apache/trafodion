@@ -1,0 +1,127 @@
+>>
+>>-- Run Tests
+>>  obey TESTMV507(TEST1);
+>>create mv T_507_MV1
++>  refresh on request 
++>initialized on refresh
++>  as select b, count(a) as cnt_a from T_507_T1
++>  group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_507_MV1_321536351_5928 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_507_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'T_507_MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_507_MV1;
+
+--- SQL operation complete.
+>>
+>>-----------------------------
+>>  obey TESTMV507(TEST2);
+>>create mv T_507_MV1
++>  refresh on statement 
++>initialized on refresh
++>  as select b, count(a) as cnt_a from T_507_T1
++>  group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_507_MV1_692144951_5928 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_507_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'T_507_MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          S                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_507_MV1;
+
+--- SQL operation complete.
+>>
+>>-----------------------------
+>>  obey TESTMV507(TEST3);
+>>create mv T_507_MV1
++>  recompute 
++>initialized on refresh
++>  as select b, count(a) as cnt_a from T_507_T1
++>  group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_507_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'T_507_MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            N                          C                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_507_MV1;
+
+--- SQL operation complete.
+>>
+>>-----------------------------
+>>  obey TESTMV507(TEST4);
+>>
+>>alter table T_507_T1 attribute NO LOCKONREFRESH;
+
+--- SQL operation complete.
+>>
+>>-- warning 
+>>create mv T_507_MV1
++>  refresh on request 
++>initialized on refresh
++>  as select b, count(a) as cnt_a from T_507_T1
++>  group by b;
+
+*** WARNING[12077] All used objects must be set to LOCKONREFRESH before materialized view initialization.
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_507_MV1_273842661_5928 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_507_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'T_507_MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_507_MV1;
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------
+>>
+>>-- Clean and Exit
+>>log;

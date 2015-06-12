@@ -100,8 +100,6 @@
 
 
 
-#include "OptimizerSimulator.h"
-
 #include "ComCextdecs.h"
 
 #include "SqlParserGlobals.h"   // Parser Flags

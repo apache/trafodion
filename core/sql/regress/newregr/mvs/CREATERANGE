@@ -1,0 +1,92 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+?section CREAT
+set schema catmvs.mvschm;
+drop table Range_Factor2;
+drop table Range_Factor3;
+drop table Range_Factor5;
+drop table Range_Factor10;
+drop table Range_Factor100;
+
+create table Range_Factor2(TS TIMESTAMP);
+create table Range_Factor3(TS TIMESTAMP);
+create table Range_Factor5(TS TIMESTAMP);
+create table Range_Factor10(TS TIMESTAMP);
+create table Range_Factor100(TS TIMESTAMP);
+create table Range_Factor1000(TS TIMESTAMP);
+
+insert into Range_Factor2(TS)
+values 
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP);
+
+insert into Range_Factor3(TS)
+values 
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP);
+
+
+insert into Range_Factor5(TS)
+values 
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP);
+
+insert into Range_Factor10(TS)
+values 
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP),
+(CURRENT_TIMESTAMP);
+
+insert into Range_Factor100(TS)
+select CURRENT_TIMESTAMP
+from Range_Factor10 p10,Range_Factor10 P100;
+
+insert into Range_Factor1000(TS)
+select CURRENT_TIMESTAMP
+from Range_Factor10 p10,Range_Factor100 P1000;
+
+?section DROPALL
+
+drop table Range_Factor2;
+drop table Range_Factor3;
+drop table Range_Factor5;
+drop table Range_Factor10;
+drop table Range_Factor100;
+drop table Range_Factor1000;
+
+--create table a (ch1 int ,ch2 char(2));
+
+--insert into a 
+--values (1,'aa');
+
+
+--select a.ch1,a.ch2,RUNNINGCOUNT (*) 
+--from a,Range_Factor10 P10,Range_Factor100 P100
+--sequence by P10.TS,P100.TS;
+

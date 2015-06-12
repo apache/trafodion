@@ -1,0 +1,3917 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+ ***TEST1 : Expecting -8101 on rows 95 & 399***
+Number of conditions  : 3
+Number of rows inserted: 498
+
+Condition number : 1
+ROW INDEX : 95
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 2
+ROW INDEX : 399
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST2 : Expecting -8101 on rows 0 & 499***
+Number of conditions  : 3
+Number of rows inserted: 498
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 2
+ROW INDEX : 499
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST3 : Expecting -8101 on all rows except rows 92***
+Number of conditions  : 500
+Number of rows inserted: 1
+
+
+ Only the first 10 conditions will be printed. 
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 6
+ROW INDEX : 5
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 7
+ROW INDEX : 6
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 8
+ROW INDEX : 7
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 9
+ROW INDEX : 8
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 10
+ROW INDEX : 9
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+
+ ***TEST4 : Expecting -8101 on rows 110 & 112, and -8102 on rows 109 & 111***
+Number of conditions  : 3
+Number of rows inserted: 496
+
+Condition number : 1
+ROW INDEX : 110
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 2
+ROW INDEX : 112
+SQLCODE : -8101
+SQLSTATE  : 23000
+TABLE   : CAT.SCH.NT1SET
+TEXT   : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.CONS1SET on table CAT.SCH.NT1SET.
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST5 : Expecting -8105 on row 401***
+Number of conditions  : 2
+Number of rows inserted: 499
+
+Condition number : 1
+ROW INDEX : 401
+SQLCODE : -8105
+SQLSTATE  : 44000
+TABLE   : CAT.SCH.NTV1SET
+TEXT   : *** ERROR[8105] The operation is prevented by the check option on view CAT.SCH.NTV1SET.
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST6 : Expecting -8403 on row 481***
+Number of conditions  : 2
+Number of rows inserted: 499
+
+Condition number : 1
+ROW INDEX : 481
+SQLCODE : -8403
+SQLSTATE  : 22011
+TABLE   : 
+TEXT   : *** ERROR[8403] The length argument of function SUBSTRING cannot be less than zero or greater than source string length.
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST7 : Expecting -8411 on row 12***
+Number of conditions  : 2
+Number of rows inserted: 499
+
+Condition number : 1
+ROW INDEX : 12
+SQLCODE : -8411
+SQLSTATE  : 22003
+TABLE   : 
+TEXT   : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST8 : Expecting -8411 on all rows except row 12***
+Number of conditions  : 500
+Number of rows inserted: 1
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 6
+ROW INDEX : 5
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 7
+ROW INDEX : 6
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 8
+ROW INDEX : 7
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 9
+ROW INDEX : 8
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 10
+ROW INDEX : 9
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 11
+ROW INDEX : 10
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 12
+ROW INDEX : 11
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 13
+ROW INDEX : 13
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 14
+ROW INDEX : 14
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 15
+ROW INDEX : 15
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 16
+ROW INDEX : 16
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 17
+ROW INDEX : 17
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 18
+ROW INDEX : 18
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 19
+ROW INDEX : 19
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 20
+ROW INDEX : 20
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 21
+ROW INDEX : 21
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 22
+ROW INDEX : 22
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 23
+ROW INDEX : 23
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 24
+ROW INDEX : 24
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 25
+ROW INDEX : 25
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 26
+ROW INDEX : 26
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 27
+ROW INDEX : 27
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 28
+ROW INDEX : 28
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 29
+ROW INDEX : 29
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 30
+ROW INDEX : 30
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 31
+ROW INDEX : 31
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 32
+ROW INDEX : 32
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 33
+ROW INDEX : 33
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 34
+ROW INDEX : 34
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 35
+ROW INDEX : 35
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 36
+ROW INDEX : 36
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 37
+ROW INDEX : 37
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 38
+ROW INDEX : 38
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 39
+ROW INDEX : 39
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 40
+ROW INDEX : 40
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 41
+ROW INDEX : 41
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 42
+ROW INDEX : 42
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 43
+ROW INDEX : 43
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 44
+ROW INDEX : 44
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 45
+ROW INDEX : 45
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 46
+ROW INDEX : 46
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 47
+ROW INDEX : 47
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 48
+ROW INDEX : 48
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 49
+ROW INDEX : 49
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 50
+ROW INDEX : 50
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 51
+ROW INDEX : 51
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 52
+ROW INDEX : 52
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 53
+ROW INDEX : 53
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 54
+ROW INDEX : 54
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 55
+ROW INDEX : 55
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 56
+ROW INDEX : 56
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 57
+ROW INDEX : 57
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 58
+ROW INDEX : 58
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 59
+ROW INDEX : 59
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 60
+ROW INDEX : 60
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 61
+ROW INDEX : 61
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 62
+ROW INDEX : 62
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 63
+ROW INDEX : 63
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 64
+ROW INDEX : 64
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 65
+ROW INDEX : 65
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 66
+ROW INDEX : 66
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 67
+ROW INDEX : 67
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 68
+ROW INDEX : 68
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 69
+ROW INDEX : 69
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 70
+ROW INDEX : 70
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 71
+ROW INDEX : 71
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 72
+ROW INDEX : 72
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 73
+ROW INDEX : 73
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 74
+ROW INDEX : 74
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 75
+ROW INDEX : 75
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 76
+ROW INDEX : 76
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 77
+ROW INDEX : 77
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 78
+ROW INDEX : 78
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 79
+ROW INDEX : 79
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 80
+ROW INDEX : 80
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 81
+ROW INDEX : 81
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 82
+ROW INDEX : 82
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 83
+ROW INDEX : 83
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 84
+ROW INDEX : 84
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 85
+ROW INDEX : 85
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 86
+ROW INDEX : 86
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 87
+ROW INDEX : 87
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 88
+ROW INDEX : 88
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 89
+ROW INDEX : 89
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 90
+ROW INDEX : 90
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 91
+ROW INDEX : 91
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 92
+ROW INDEX : 92
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 93
+ROW INDEX : 93
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 94
+ROW INDEX : 94
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 95
+ROW INDEX : 95
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 96
+ROW INDEX : 96
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 97
+ROW INDEX : 97
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 98
+ROW INDEX : 98
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 99
+ROW INDEX : 99
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 100
+ROW INDEX : 100
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 101
+ROW INDEX : 101
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 102
+ROW INDEX : 102
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 103
+ROW INDEX : 103
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 104
+ROW INDEX : 104
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 105
+ROW INDEX : 105
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 106
+ROW INDEX : 106
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 107
+ROW INDEX : 107
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 108
+ROW INDEX : 108
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 109
+ROW INDEX : 109
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 110
+ROW INDEX : 110
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 111
+ROW INDEX : 111
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 112
+ROW INDEX : 112
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 113
+ROW INDEX : 113
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 114
+ROW INDEX : 114
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 115
+ROW INDEX : 115
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 116
+ROW INDEX : 116
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 117
+ROW INDEX : 117
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 118
+ROW INDEX : 118
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 119
+ROW INDEX : 119
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 120
+ROW INDEX : 120
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 121
+ROW INDEX : 121
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 122
+ROW INDEX : 122
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 123
+ROW INDEX : 123
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 124
+ROW INDEX : 124
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 125
+ROW INDEX : 125
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 126
+ROW INDEX : 126
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 127
+ROW INDEX : 127
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 128
+ROW INDEX : 128
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 129
+ROW INDEX : 129
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 130
+ROW INDEX : 130
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 131
+ROW INDEX : 131
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 132
+ROW INDEX : 132
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 133
+ROW INDEX : 133
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 134
+ROW INDEX : 134
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 135
+ROW INDEX : 135
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 136
+ROW INDEX : 136
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 137
+ROW INDEX : 137
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 138
+ROW INDEX : 138
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 139
+ROW INDEX : 139
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 140
+ROW INDEX : 140
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 141
+ROW INDEX : 141
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 142
+ROW INDEX : 142
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 143
+ROW INDEX : 143
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 144
+ROW INDEX : 144
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 145
+ROW INDEX : 145
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 146
+ROW INDEX : 146
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 147
+ROW INDEX : 147
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 148
+ROW INDEX : 148
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 149
+ROW INDEX : 149
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 150
+ROW INDEX : 150
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 151
+ROW INDEX : 151
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 152
+ROW INDEX : 152
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 153
+ROW INDEX : 153
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 154
+ROW INDEX : 154
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 155
+ROW INDEX : 155
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 156
+ROW INDEX : 156
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 157
+ROW INDEX : 157
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 158
+ROW INDEX : 158
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 159
+ROW INDEX : 159
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 160
+ROW INDEX : 160
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 161
+ROW INDEX : 161
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 162
+ROW INDEX : 162
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 163
+ROW INDEX : 163
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 164
+ROW INDEX : 164
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 165
+ROW INDEX : 165
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 166
+ROW INDEX : 166
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 167
+ROW INDEX : 167
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 168
+ROW INDEX : 168
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 169
+ROW INDEX : 169
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 170
+ROW INDEX : 170
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 171
+ROW INDEX : 171
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 172
+ROW INDEX : 172
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 173
+ROW INDEX : 173
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 174
+ROW INDEX : 174
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 175
+ROW INDEX : 175
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 176
+ROW INDEX : 176
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 177
+ROW INDEX : 177
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 178
+ROW INDEX : 178
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 179
+ROW INDEX : 179
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 180
+ROW INDEX : 180
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 181
+ROW INDEX : 181
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 182
+ROW INDEX : 182
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 183
+ROW INDEX : 183
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 184
+ROW INDEX : 184
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 185
+ROW INDEX : 185
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 186
+ROW INDEX : 186
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 187
+ROW INDEX : 187
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 188
+ROW INDEX : 188
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 189
+ROW INDEX : 189
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 190
+ROW INDEX : 190
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 191
+ROW INDEX : 191
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 192
+ROW INDEX : 192
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 193
+ROW INDEX : 193
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 194
+ROW INDEX : 194
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 195
+ROW INDEX : 195
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 196
+ROW INDEX : 196
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 197
+ROW INDEX : 197
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 198
+ROW INDEX : 198
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 199
+ROW INDEX : 199
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 200
+ROW INDEX : 200
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 201
+ROW INDEX : 201
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 202
+ROW INDEX : 202
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 203
+ROW INDEX : 203
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 204
+ROW INDEX : 204
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 205
+ROW INDEX : 205
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 206
+ROW INDEX : 206
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 207
+ROW INDEX : 207
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 208
+ROW INDEX : 208
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 209
+ROW INDEX : 209
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 210
+ROW INDEX : 210
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 211
+ROW INDEX : 211
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 212
+ROW INDEX : 212
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 213
+ROW INDEX : 213
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 214
+ROW INDEX : 214
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 215
+ROW INDEX : 215
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 216
+ROW INDEX : 216
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 217
+ROW INDEX : 217
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 218
+ROW INDEX : 218
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 219
+ROW INDEX : 219
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 220
+ROW INDEX : 220
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 221
+ROW INDEX : 221
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 222
+ROW INDEX : 222
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 223
+ROW INDEX : 223
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 224
+ROW INDEX : 224
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 225
+ROW INDEX : 225
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 226
+ROW INDEX : 226
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 227
+ROW INDEX : 227
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 228
+ROW INDEX : 228
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 229
+ROW INDEX : 229
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 230
+ROW INDEX : 230
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 231
+ROW INDEX : 231
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 232
+ROW INDEX : 232
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 233
+ROW INDEX : 233
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 234
+ROW INDEX : 234
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 235
+ROW INDEX : 235
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 236
+ROW INDEX : 236
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 237
+ROW INDEX : 237
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 238
+ROW INDEX : 238
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 239
+ROW INDEX : 239
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 240
+ROW INDEX : 240
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 241
+ROW INDEX : 241
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 242
+ROW INDEX : 242
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 243
+ROW INDEX : 243
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 244
+ROW INDEX : 244
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 245
+ROW INDEX : 245
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 246
+ROW INDEX : 246
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 247
+ROW INDEX : 247
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 248
+ROW INDEX : 248
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 249
+ROW INDEX : 249
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 250
+ROW INDEX : 250
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 251
+ROW INDEX : 251
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 252
+ROW INDEX : 252
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 253
+ROW INDEX : 253
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 254
+ROW INDEX : 254
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 255
+ROW INDEX : 255
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 256
+ROW INDEX : 256
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 257
+ROW INDEX : 257
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 258
+ROW INDEX : 258
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 259
+ROW INDEX : 259
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 260
+ROW INDEX : 260
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 261
+ROW INDEX : 261
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 262
+ROW INDEX : 262
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 263
+ROW INDEX : 263
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 264
+ROW INDEX : 264
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 265
+ROW INDEX : 265
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 266
+ROW INDEX : 266
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 267
+ROW INDEX : 267
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 268
+ROW INDEX : 268
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 269
+ROW INDEX : 269
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 270
+ROW INDEX : 270
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 271
+ROW INDEX : 271
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 272
+ROW INDEX : 272
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 273
+ROW INDEX : 273
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 274
+ROW INDEX : 274
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 275
+ROW INDEX : 275
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 276
+ROW INDEX : 276
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 277
+ROW INDEX : 277
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 278
+ROW INDEX : 278
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 279
+ROW INDEX : 279
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 280
+ROW INDEX : 280
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 281
+ROW INDEX : 281
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 282
+ROW INDEX : 282
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 283
+ROW INDEX : 283
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 284
+ROW INDEX : 284
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 285
+ROW INDEX : 285
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 286
+ROW INDEX : 286
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 287
+ROW INDEX : 287
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 288
+ROW INDEX : 288
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 289
+ROW INDEX : 289
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 290
+ROW INDEX : 290
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 291
+ROW INDEX : 291
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 292
+ROW INDEX : 292
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 293
+ROW INDEX : 293
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 294
+ROW INDEX : 294
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 295
+ROW INDEX : 295
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 296
+ROW INDEX : 296
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 297
+ROW INDEX : 297
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 298
+ROW INDEX : 298
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 299
+ROW INDEX : 299
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 300
+ROW INDEX : 300
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 301
+ROW INDEX : 301
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 302
+ROW INDEX : 302
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 303
+ROW INDEX : 303
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 304
+ROW INDEX : 304
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 305
+ROW INDEX : 305
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 306
+ROW INDEX : 306
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 307
+ROW INDEX : 307
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 308
+ROW INDEX : 308
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 309
+ROW INDEX : 309
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 310
+ROW INDEX : 310
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 311
+ROW INDEX : 311
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 312
+ROW INDEX : 312
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 313
+ROW INDEX : 313
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 314
+ROW INDEX : 314
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 315
+ROW INDEX : 315
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 316
+ROW INDEX : 316
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 317
+ROW INDEX : 317
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 318
+ROW INDEX : 318
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 319
+ROW INDEX : 319
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 320
+ROW INDEX : 320
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 321
+ROW INDEX : 321
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 322
+ROW INDEX : 322
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 323
+ROW INDEX : 323
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 324
+ROW INDEX : 324
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 325
+ROW INDEX : 325
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 326
+ROW INDEX : 326
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 327
+ROW INDEX : 327
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 328
+ROW INDEX : 328
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 329
+ROW INDEX : 329
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 330
+ROW INDEX : 330
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 331
+ROW INDEX : 331
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 332
+ROW INDEX : 332
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 333
+ROW INDEX : 333
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 334
+ROW INDEX : 334
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 335
+ROW INDEX : 335
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 336
+ROW INDEX : 336
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 337
+ROW INDEX : 337
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 338
+ROW INDEX : 338
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 339
+ROW INDEX : 339
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 340
+ROW INDEX : 340
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 341
+ROW INDEX : 341
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 342
+ROW INDEX : 342
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 343
+ROW INDEX : 343
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 344
+ROW INDEX : 344
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 345
+ROW INDEX : 345
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 346
+ROW INDEX : 346
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 347
+ROW INDEX : 347
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 348
+ROW INDEX : 348
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 349
+ROW INDEX : 349
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 350
+ROW INDEX : 350
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 351
+ROW INDEX : 351
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 352
+ROW INDEX : 352
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 353
+ROW INDEX : 353
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 354
+ROW INDEX : 354
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 355
+ROW INDEX : 355
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 356
+ROW INDEX : 356
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 357
+ROW INDEX : 357
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 358
+ROW INDEX : 358
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 359
+ROW INDEX : 359
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 360
+ROW INDEX : 360
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 361
+ROW INDEX : 361
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 362
+ROW INDEX : 362
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 363
+ROW INDEX : 363
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 364
+ROW INDEX : 364
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 365
+ROW INDEX : 365
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 366
+ROW INDEX : 366
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 367
+ROW INDEX : 367
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 368
+ROW INDEX : 368
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 369
+ROW INDEX : 369
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 370
+ROW INDEX : 370
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 371
+ROW INDEX : 371
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 372
+ROW INDEX : 372
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 373
+ROW INDEX : 373
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 374
+ROW INDEX : 374
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 375
+ROW INDEX : 375
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 376
+ROW INDEX : 376
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 377
+ROW INDEX : 377
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 378
+ROW INDEX : 378
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 379
+ROW INDEX : 379
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 380
+ROW INDEX : 380
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 381
+ROW INDEX : 381
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 382
+ROW INDEX : 382
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 383
+ROW INDEX : 383
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 384
+ROW INDEX : 384
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 385
+ROW INDEX : 385
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 386
+ROW INDEX : 386
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 387
+ROW INDEX : 387
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 388
+ROW INDEX : 388
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 389
+ROW INDEX : 389
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 390
+ROW INDEX : 390
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 391
+ROW INDEX : 391
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 392
+ROW INDEX : 392
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 393
+ROW INDEX : 393
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 394
+ROW INDEX : 394
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 395
+ROW INDEX : 395
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 396
+ROW INDEX : 396
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 397
+ROW INDEX : 397
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 398
+ROW INDEX : 398
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 399
+ROW INDEX : 399
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 400
+ROW INDEX : 400
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 401
+ROW INDEX : 401
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 402
+ROW INDEX : 402
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 403
+ROW INDEX : 403
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 404
+ROW INDEX : 404
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 405
+ROW INDEX : 405
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 406
+ROW INDEX : 406
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 407
+ROW INDEX : 407
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 408
+ROW INDEX : 408
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 409
+ROW INDEX : 409
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 410
+ROW INDEX : 410
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 411
+ROW INDEX : 411
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 412
+ROW INDEX : 412
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 413
+ROW INDEX : 413
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 414
+ROW INDEX : 414
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 415
+ROW INDEX : 415
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 416
+ROW INDEX : 416
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 417
+ROW INDEX : 417
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 418
+ROW INDEX : 418
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 419
+ROW INDEX : 419
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 420
+ROW INDEX : 420
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 421
+ROW INDEX : 421
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 422
+ROW INDEX : 422
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 423
+ROW INDEX : 423
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 424
+ROW INDEX : 424
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 425
+ROW INDEX : 425
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 426
+ROW INDEX : 426
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 427
+ROW INDEX : 427
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 428
+ROW INDEX : 428
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 429
+ROW INDEX : 429
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 430
+ROW INDEX : 430
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 431
+ROW INDEX : 431
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 432
+ROW INDEX : 432
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 433
+ROW INDEX : 433
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 434
+ROW INDEX : 434
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 435
+ROW INDEX : 435
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 436
+ROW INDEX : 436
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 437
+ROW INDEX : 437
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 438
+ROW INDEX : 438
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 439
+ROW INDEX : 439
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 440
+ROW INDEX : 440
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 441
+ROW INDEX : 441
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 442
+ROW INDEX : 442
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 443
+ROW INDEX : 443
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 444
+ROW INDEX : 444
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 445
+ROW INDEX : 445
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 446
+ROW INDEX : 446
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 447
+ROW INDEX : 447
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 448
+ROW INDEX : 448
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 449
+ROW INDEX : 449
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 450
+ROW INDEX : 450
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 451
+ROW INDEX : 451
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 452
+ROW INDEX : 452
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 453
+ROW INDEX : 453
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 454
+ROW INDEX : 454
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 455
+ROW INDEX : 455
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 456
+ROW INDEX : 456
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 457
+ROW INDEX : 457
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 458
+ROW INDEX : 458
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 459
+ROW INDEX : 459
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 460
+ROW INDEX : 460
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 461
+ROW INDEX : 461
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 462
+ROW INDEX : 462
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 463
+ROW INDEX : 463
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 464
+ROW INDEX : 464
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 465
+ROW INDEX : 465
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 466
+ROW INDEX : 466
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 467
+ROW INDEX : 467
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 468
+ROW INDEX : 468
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 469
+ROW INDEX : 469
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 470
+ROW INDEX : 470
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 471
+ROW INDEX : 471
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 472
+ROW INDEX : 472
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 473
+ROW INDEX : 473
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 474
+ROW INDEX : 474
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 475
+ROW INDEX : 475
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 476
+ROW INDEX : 476
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 477
+ROW INDEX : 477
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 478
+ROW INDEX : 478
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 479
+ROW INDEX : 479
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 480
+ROW INDEX : 480
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 481
+ROW INDEX : 481
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 482
+ROW INDEX : 482
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 483
+ROW INDEX : 483
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 484
+ROW INDEX : 484
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 485
+ROW INDEX : 485
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 486
+ROW INDEX : 486
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 487
+ROW INDEX : 487
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 488
+ROW INDEX : 488
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 489
+ROW INDEX : 489
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 490
+ROW INDEX : 490
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 491
+ROW INDEX : 491
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 492
+ROW INDEX : 492
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 493
+ROW INDEX : 493
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 494
+ROW INDEX : 494
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 495
+ROW INDEX : 495
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 496
+ROW INDEX : 496
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 497
+ROW INDEX : 497
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 498
+ROW INDEX : 498
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 499
+ROW INDEX : 499
+SQLCODE : -8411
+SQLSTATE  : 22003
+MESSAGE : *** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:4000000000 Target Type:LARGEINT(IBIN64S) Max Target Value:2147483647. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+TABLE   : 
+
+Condition number : 500
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST9 : Expecting -8412 on row 255***
+Number of conditions  : 2
+Number of rows inserted: 499
+
+Condition number : 1
+ROW INDEX : 255
+SQLCODE : -8412
+SQLSTATE  : 22024
+TABLE   : 
+TEXT   : *** ERROR[8412] An input character host variable is missing its null terminator.
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST10 : Expecting -8415 on row 489***
+Number of conditions  : 2
+Number of rows inserted: 499
+
+Condition number : 1
+ROW INDEX : 489
+SQLCODE : -8415
+SQLSTATE  : 22007
+TABLE   : 
+TEXT   : *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST11 : Expecting -8419 on rows 1,2,3,4,5,391,392,393,394, & 395. Also expecting -8102 on row 40***
+Number of conditions  : 11
+Number of rows inserted: 489
+
+Condition number : 1
+ROW INDEX : 1
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 2
+ROW INDEX : 2
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 4
+ROW INDEX : 4
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 6
+ROW INDEX : 391
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 7
+ROW INDEX : 392
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 8
+ROW INDEX : 393
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 9
+ROW INDEX : 394
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 10
+ROW INDEX : 395
+SQLCODE : -8419
+SQLSTATE  : 22012
+TABLE   : 
+TEXT   : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+Condition number : 11
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST12 : Expecting -8102 on all rows except row 0***
+Number of conditions  : 0
+Number of rows inserted: 1
+
+
+ ***TEST13 : Expect -8102 only for row 5 and row 10 Number of conditions  : 3
+Number of rows inserted: 1
+
+Condition number : 1
+ROW INDEX : 5
+SQLCODE : -8102
+SQLSTATE  : 23000
+TABLE   : <table_name_will_go_here>
+TEXT   : *** ERROR[8102] The operation is prevented by a unique constraint.
+
+Condition number : 2
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+TABLE   : <table_name_will_go_here>
+TEXT   : *** ERROR[8102] The operation is prevented by a unique constraint.
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST14 : Expect no errors. All duplicate rows are ignored in set table Number of conditions  : 0
+Number of rows inserted: 1
+
+
+ ***TEST15 : Expect -8102 only for row 5 and row 10, VSBB inserts used Number of conditions  : 3
+Number of rows inserted: 1
+
+Condition number : 1
+ROW INDEX : 5
+SQLCODE : -8102
+SQLSTATE  : 23000
+TABLE   : <table_name_will_go_here>
+TEXT   : *** ERROR[8102] The operation is prevented by a unique constraint.
+
+Condition number : 2
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+TABLE   : <table_name_will_go_here>
+TEXT   : *** ERROR[8102] The operation is prevented by a unique constraint.
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+TABLE   : 
+TEXT   : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+
+
+ ***TEST16 : Expect no errors. All duplicate rows are ignored in set table. VSBB Insertes used Number of conditions  : 0
+Number of rows inserted: 1
+

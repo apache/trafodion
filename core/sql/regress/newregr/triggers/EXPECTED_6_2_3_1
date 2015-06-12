@@ -1,0 +1,74 @@
+======================
+KNOWN BUG (BEGIN-END)
+======================
+FAULT LOG:
+=======================
+>>obey TEST_6_2_3_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE T1 SET b = b+1 WHERE a < 4;
+
+*** ERROR[8838] Unable to receive reply from arkcmp, possibly caused by internal errors in arkcmp when compiling SQL statements, processing DDL statements, or executing the builtin stored procedures.
+
+*** ERROR[8822] Unable to prepare the statement.
+
+>>
+>>SELECT * FROM T1 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          2            3  
+          3            4  
+          4            5  
+
+--- 4 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T2 ORDER BY a,b;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T3 ORDER BY a,b;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T4 ORDER BY a;
+
+A            
+-----------  
+
+          0  
+
+--- 1 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T5 ORDER BY a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T6 ORDER BY a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T7 ORDER BY a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T8 ORDER BY a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

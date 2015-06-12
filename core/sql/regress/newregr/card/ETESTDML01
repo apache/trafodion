@@ -1,0 +1,4299 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set envvar on_linux 0;
+
+--- SQL operation complete.
+>>#ifLINUX
+>>set envvar on_linux 1;
+>>#ifLINUX
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>-- Q1 	
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(scan(path 'CAT.HCUBE.IX8B'),
++>scan(path 'CAT.HCUBE.T9')),
++>hybrid_hash_join(scan(path 'CAT.HCUBE.T7'),
++>hybrid_hash_join(scan(path 'CAT.HCUBE.T1'),
++>scan(path 'CAT.HCUBE.T2')))),
++>scan(path 'CAT.HCUBE.T0')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a<77;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.70E+001           
+2     HYBRID_HASH_JOIN                                 7.70E+001           
+3     HYBRID_HASH_JOIN                                 7.70E+001           
+4     INDEX_SCAN                      T8               1.00E+003           
+5     FILE_SCAN                       T9               7.70E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+002           
+7     FILE_SCAN                       T7               1.00E+002           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     FILE_SCAN                       T1               1.00E+001           
+10    FILE_SCAN                       T2               1.00E+001           
+11    FILE_SCAN                       T0               1.00E+001           
+
+--- 11 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t0.a, t1.a, t2.a, t7.a, t8.a, t9.a from t0, t9, t1, t8, t2, t7 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a<77;
+Histograms for query showstats for query select t0.a, t1.a, t2.a, t7.a, t8.a, t9.a from t0, t9, t1, t8, t2, t7 where  t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a<77;
+**************************************************************
+VEGcolumn:
+
+  74: VEGRef_74((CAT.HCUBE.T9.A))
+Merge state:
+  10: CAT.HCUBE.T9.A
+
+Applied preds:
+  63: (VEGRef_74((CAT.HCUBE.T9.A)) < 77)
+***MAX
+ SET BY PRED***
+   TotalUEC = 77.000000 
+   Rowcount = 77.000000 
+
+   BaseUEC  = 77.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 77.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <       (      77.0000 ) : rows=76.999701,uec=76.999701 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  92: VEGRef_92((CAT.HCUBE.T9.B = CAT.HCUBE.T8.A))
+Merge state:
+
+  11: CAT.HCUBE.T9.B
+  28: CAT.HCUBE.T8.A
+Applied preds:
+
+  93: (CAT.HCUBE.T9.B = CAT.HCUBE.T8.A)
+   TotalUEC = 77.000000 
+
+   Rowcount = 77.000000 
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.077000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=77.000000,uec=77.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 110: VEGRef_110((CAT.HCUBE.T8.B = CAT.HCUBE.T7.A))
+Merge state:
+
+  29: CAT.HCUBE.T8.B
+  46: CAT.HCUBE.T7.A
+Applied preds:
+
+ 111: (CAT.HCUBE.T8.B = CAT.HCUBE.T7.A)
+   TotalUEC = 77.000000 
+
+   Rowcount = 77.000000 
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.770000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=77.000000,uec=77.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 101: VEGRef_101((CAT.HCUBE.T2.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  39: CAT.HCUBE.T2.A
+  47: CAT.HCUBE.T7.B
+Applied preds:
+
+ 102: (CAT.HCUBE.T2.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 77.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=77.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  83: VEGRef_83((CAT.HCUBE.T1.A = CAT.HCUBE.T2.B))
+Merge state:
+
+  21: CAT.HCUBE.T1.A
+  40: CAT.HCUBE.T2.B
+Applied preds:
+
+  84: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 77.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=77.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  65: VEGRef_65((CAT.HCUBE.T0.A = CAT.HCUBE.T1.B))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  22: CAT.HCUBE.T1.B
+Applied preds:
+
+  66: (CAT.HCUBE.T0.A = CAT.HCUBE.T1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 77.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=77.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T7'),
++>scan(path 'CAT.HCUBE.T8')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.T0')),
++>scan(path 'CAT.HCUBE.IX9B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.b<7;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.00E+001           
+2     HYBRID_HASH_JOIN                                 7.00E+000           
+3     HYBRID_HASH_JOIN                                 7.00E+000           
+4     HYBRID_HASH_JOIN                                 7.00E+000           
+5     HYBRID_HASH_JOIN                                 7.00E+000           
+6     FILE_SCAN                       T7               1.00E+002           
+7     FILE_SCAN                       T8               7.00E+000           
+8     FILE_SCAN                       T2               1.00E+001           
+9     FILE_SCAN                       T1               1.00E+001           
+10    FILE_SCAN                       T0               1.00E+001           
+11    INDEX_SCAN                      T9               7.00E+001           
+
+--- 11 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.b, t2.b, t7.b, t8.b, t9.b from t0, t9, t1, t8, t2, t7 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.b<7;
+Histograms for query showstats for query select t1.b, t2.b, t7.b, t8.b, t9.b from t0, t9, t1, t8, t2, t7 where  t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.b<7;
+**************************************************************
+VEGcolumn:
+
+  92: VEGRef_92((CAT.HCUBE.T9.B = CAT.HCUBE.T8.A))
+Merge state:
+
+  11: CAT.HCUBE.T9.B
+  28: CAT.HCUBE.T8.A
+Applied preds:
+
+  63: (VEGRef_92((CAT.HCUBE.T9.B = CAT.HCUBE.T8.A)) < 7)
+
+  93: (CAT.HCUBE.T9.B = CAT.HCUBE.T8.A)
+***MAX SET BY PRED***
+
+   TotalUEC = 7.000000 
+   Rowcount = 70.000000 
+
+   BaseUEC  = 7.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 7.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <       (      7.0000 ) : rows=70.000070,uec=7.007007 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 110: VEGRef_110((CAT.HCUBE.T8.B = CAT.HCUBE.T7.A))
+Merge state:
+
+  29: CAT.HCUBE.T8.B
+  46: CAT.HCUBE.T7.A
+Applied preds:
+
+ 111: (CAT.HCUBE.T8.B = CAT.HCUBE.T7.A)
+   TotalUEC = 7.000000 
+
+   Rowcount = 70.000000 
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.700000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=70.000000,uec=7.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 101: VEGRef_101((CAT.HCUBE.T2.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  39: CAT.HCUBE.T2.A
+  47: CAT.HCUBE.T7.B
+Applied preds:
+
+ 102: (CAT.HCUBE.T2.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 70.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=70.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  83: VEGRef_83((CAT.HCUBE.T1.A = CAT.HCUBE.T2.B))
+Merge state:
+
+  21: CAT.HCUBE.T1.A
+  40: CAT.HCUBE.T2.B
+Applied preds:
+
+  84: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 70.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=70.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  65: VEGRef_65((CAT.HCUBE.T0.A = CAT.HCUBE.T1.B))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  22: CAT.HCUBE.T1.B
+Applied preds:
+
+  66: (CAT.HCUBE.T0.A = CAT.HCUBE.T1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 70.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 7.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=70.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q3
+>>-- 8 way linear
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(nested_join(
++>scan(path 'CAT.HCUBE.T0'),
++>scan(path 'CAT.HCUBE.IX9B')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.IX8B')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T6')),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T5')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
++>t0.a=t9.b and t9.a=t1.b and t1.a=t8.b and t8.a=t2.b and t2.a=t7.b and t7.a=t3.b and t3.a=t6.b and t6.a=t4.b and t4.a=t5.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     NESTED_JOIN                                      1.00E+002           
+10    INDEX_SCAN                      T9               1.00E+001           
+11    FILE_SCAN                       T0               1.00E+001           
+12    FILE_SCAN                       T1               1.00E+001           
+13    INDEX_SCAN                      T8               1.00E+003           
+14    FILE_SCAN                       T2               1.00E+001           
+15    FILE_SCAN                       T7               1.00E+002           
+16    FILE_SCAN                       T3               1.00E+001           
+17    FILE_SCAN                       T6               1.00E+002           
+18    FILE_SCAN                       T4               1.00E+001           
+19    FILE_SCAN                       T5               1.00E+001           
+
+--- 19 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t0.a, t1.b, t1.a, t2.b, t2.a, t3.b, t3.a, t4.b, t4.a from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
++>t0.a=t9.b and t9.a=t1.b and t1.a=t8.b and t8.a=t2.b and t2.a=t7.b and t7.a=t3.b and t3.a=t6.b and t6.a=t4.b and t4.a=t5.b;
+Histograms for query showstats for query select t0.a, t1.b, t1.a, t2.b, t2.a, t3.b, t3.a, t4.b, t4.a from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where  t0.a=t9.b and t9.a=t1.b and t1.a=t8.b and t8.a=t2.b and t2.a=t7.b and t7.a=t3.b and t3.a=t6.b and t6.a=t4.b and t4.a=t5.b;
+**************************************************************
+VEGcolumn:
+
+ 153: VEGRef_153((CAT.HCUBE.T3.A = CAT.HCUBE.T6.B))
+Merge state:
+
+  57: CAT.HCUBE.T3.A
+  65: CAT.HCUBE.T6.B
+Applied preds:
+
+ 154: (CAT.HCUBE.T3.A = CAT.HCUBE.T6.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 144: VEGRef_144((CAT.HCUBE.T7.A = CAT.HCUBE.T3.B))
+Merge state:
+
+  46: CAT.HCUBE.T7.A
+  58: CAT.HCUBE.T3.B
+Applied preds:
+
+ 145: (CAT.HCUBE.T7.A = CAT.HCUBE.T3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 162: VEGRef_162((CAT.HCUBE.T6.A = CAT.HCUBE.T4.B))
+Merge state:
+
+  64: CAT.HCUBE.T6.A
+  76: CAT.HCUBE.T4.B
+Applied preds:
+
+ 163: (CAT.HCUBE.T6.A = CAT.HCUBE.T4.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 135: VEGRef_135((CAT.HCUBE.T2.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  39: CAT.HCUBE.T2.A
+  47: CAT.HCUBE.T7.B
+Applied preds:
+
+ 136: (CAT.HCUBE.T2.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 126: VEGRef_126((CAT.HCUBE.T8.A = CAT.HCUBE.T2.B))
+Merge state:
+
+  28: CAT.HCUBE.T8.A
+  40: CAT.HCUBE.T2.B
+Applied preds:
+
+ 127: (CAT.HCUBE.T8.A = CAT.HCUBE.T2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 117: VEGRef_117((CAT.HCUBE.T1.A = CAT.HCUBE.T8.B))
+Merge state:
+
+  21: CAT.HCUBE.T1.A
+  29: CAT.HCUBE.T8.B
+Applied preds:
+
+ 118: (CAT.HCUBE.T1.A = CAT.HCUBE.T8.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 108: VEGRef_108((CAT.HCUBE.T9.A = CAT.HCUBE.T1.B))
+Merge state:
+
+  10: CAT.HCUBE.T9.A
+  22: CAT.HCUBE.T1.B
+Applied preds:
+
+ 109: (CAT.HCUBE.T9.A = CAT.HCUBE.T1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+  99: VEGRef_99((CAT.HCUBE.T0.A = CAT.HCUBE.T9.B))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  11: CAT.HCUBE.T9.B
+Applied preds:
+
+ 100: (CAT.HCUBE.T0.A = CAT.HCUBE.T9.B)
+   TotalUEC = 9.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.111111 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=10.032749,uec=8.578000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 171: VEGRef_171((CAT.HCUBE.T4.A = CAT.HCUBE.T5.B))
+Merge state:
+
+  75: CAT.HCUBE.T4.A
+  83: CAT.HCUBE.T5.B
+Applied preds:
+
+ 172: (CAT.HCUBE.T4.A = CAT.HCUBE.T5.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q4
+>>-- 9 way almost linear
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(nested_join(nested_join(
++>scan(path 'CAT.HCUBE.T3'),
++>scan(path 'CAT.HCUBE.T10')),
++>scan(path 'CAT.HCUBE.T9')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.T0')),
++>scan(path 'CAT.HCUBE.T8')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.T4'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   * from t0, t1, t2, t3, t4, t7,t8 ,t9, t10 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t10.a and t4.a=t7.b and t7.a=t8.b and t8.c=t10.c and t9.b=t10.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+003           
+2     HYBRID_HASH_JOIN                                 1.00E+003           
+3     HYBRID_HASH_JOIN                                 1.00E+003           
+4     HYBRID_HASH_JOIN                                 1.00E+002           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     HYBRID_HASH_JOIN                                 1.00E+002           
+7     NESTED_JOIN                                      1.00E+002           
+8     FILE_SCAN                       T9               1.00E+001           
+9     NESTED_JOIN                                      1.00E+001           
+10    FILE_SCAN_UNIQUE                T10              1.00E+000           
+11    FILE_SCAN                       T3               1.00E+001           
+12    FILE_SCAN                       T2               1.00E+001           
+13    FILE_SCAN                       T1               1.00E+001           
+14    FILE_SCAN                       T0               1.00E+001           
+15    FILE_SCAN                       T8               1.00E+003           
+16    FILE_SCAN                       T7               1.00E+002           
+17    FILE_SCAN                       T4               1.00E+001           
+
+--- 17 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t10.* from t0, t1, t2, t3, t4, t7,t8 ,t9, t10 where 
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t10.a and t4.a=t7.b and t7.a=t8.b and t8.c=t10.c and t9.b=t10.b;
+Histograms for query showstats for query select t10.* from t0, t1, t2, t3, t4, t7,t8 ,t9, t10 where  t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t10.a and t4.a=t7.b and t7.a=t8.b and t8.c=t10.c and t9.b=t10.b;
+**************************************************************
+VEGcolumn:
+
+ 151: VEGRef_151((CAT.HCUBE.T8.C = CAT.HCUBE.T10.C))
+Merge state:
+
+  51: CAT.HCUBE.T8.C
+  73: CAT.HCUBE.T10.C
+Applied preds:
+
+ 152: (CAT.HCUBE.T8.C = CAT.HCUBE.T10.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 1000.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 100.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1000.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 118: VEGRef_118((CAT.HCUBE.T3.A = CAT.HCUBE.T10.A))
+Merge state:
+
+  24: CAT.HCUBE.T3.A
+  71: CAT.HCUBE.T10.A
+Applied preds:
+
+ 119: (CAT.HCUBE.T3.A = CAT.HCUBE.T10.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 1000.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1000.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 157: VEGRef_157((CAT.HCUBE.T9.B = CAT.HCUBE.T10.B))
+Merge state:
+
+  61: CAT.HCUBE.T9.B
+  72: CAT.HCUBE.T10.B
+Applied preds:
+
+ 158: (CAT.HCUBE.T9.B = CAT.HCUBE.T10.B)
+   TotalUEC = 1000.000000 
+
+   Rowcount = 1000.000000 
+
+   BaseUEC  = 1000.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=1000.000000,uec=1000.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q5
+>>--10 linear
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T2'),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T5')),
++>scan(path 'CAT.HCUBE.T6')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.IX8B')),
++>scan(path 'CAT.HCUBE.IX9B')),
++>scan(path 'CAT.HCUBE.IX10B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
++>t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+005           
+2     HYBRID_HASH_JOIN                                 1.00E+004           
+3     HYBRID_HASH_JOIN                                 1.00E+003           
+4     HYBRID_HASH_JOIN                                 1.00E+002           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    FILE_SCAN                       T2               1.00E+001           
+11    FILE_SCAN                       T1               1.00E+001           
+12    FILE_SCAN                       T3               1.00E+001           
+13    FILE_SCAN                       T4               1.00E+001           
+14    FILE_SCAN                       T5               1.00E+001           
+15    FILE_SCAN                       T6               1.00E+002           
+16    FILE_SCAN                       T7               1.00E+002           
+17    INDEX_SCAN                      T8               1.00E+003           
+18    INDEX_SCAN                      T9               1.00E+004           
+19    INDEX_SCAN                      T10              1.00E+005           
+
+--- 19 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
++>t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b;
+Histograms for query showstats for query select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and  t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a=t10.b;
+**************************************************************
+VEGcolumn:
+
+ 105: VEGRef_105((CAT.HCUBE.T1.A = CAT.HCUBE.T2.B))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  11: CAT.HCUBE.T2.B
+Applied preds:
+
+ 106: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.B)
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q6
+>>control query shape implicit enforcers sort_groupby(nested_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(nested_join(
++>hybrid_hash_join(hybrid_hash_join(nested_join(
++>scan(path 'CAT.HCUBE.T5'),
++>scan(path 'CAT.HCUBE.IX8B')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T6')),
++>scan(path 'CAT.HCUBE.IX9C')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.IX10B')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
++>t9.a=t6.b and t6.a=t3.b and t3.a=t8.b and 
++>t8.a=t5.b and t5.a=t2.b and t2.a=t7.b and 
++>t7.a=t4.b and t4.a=t1.b and t1.a=t10.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      1.00E+002           
+2     INDEX_SCAN                      T10              1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     NESTED_JOIN                                      1.00E+001           
+8     INDEX_SCAN                      T9               1.00E+000           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    NESTED_JOIN                                      1.00E+001           
+12    INDEX_SCAN                      T8               1.00E+000           
+13    FILE_SCAN                       T5               1.00E+001           
+14    FILE_SCAN                       T3               1.00E+001           
+15    FILE_SCAN                       T6               1.00E+002           
+16    FILE_SCAN                       T2               1.00E+001           
+17    FILE_SCAN                       T7               1.00E+002           
+18    FILE_SCAN                       T4               1.00E+001           
+19    FILE_SCAN                       T1               1.00E+001           
+
+--- 19 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.a, t10.b from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
++>t9.a=t6.b and t6.a=t3.b and t3.a=t8.b and 
++>t8.a=t5.b and t5.a=t2.b and t2.a=t7.b and 
++>t7.a=t4.b and t4.a=t1.b and t1.a=t10.b;
+Histograms for query showstats for query select t1.a, t10.b from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where t9.a=t6.b and t6.a=t3.b and t3.a=t8.b and  t8.a=t5.b and t5.a=t2.b and t2.a=t7.b and  t7.a=t4.b and t4.a=t1.b and t1.a=t10.b;
+**************************************************************
+VEGcolumn:
+
+ 103: VEGRef_103((CAT.HCUBE.T1.A = CAT.HCUBE.T10.B))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  83: CAT.HCUBE.T10.B
+Applied preds:
+
+ 104: (CAT.HCUBE.T1.A = CAT.HCUBE.T10.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=100.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q7
+>>--8 star (1 prime, 6 dimensions, 1 linear extension of a dimension)
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.CUBE1'),
++>scan(path 'CAT.HCUBE.T5')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T2')),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T6'),
++>scan(path 'CAT.HCUBE.T7'))),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,cube1 where
++>t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
++>t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+002           
+2     HYBRID_HASH_JOIN                                 1.00E+002           
+3     HYBRID_HASH_JOIN                                 1.00E+002           
+4     HYBRID_HASH_JOIN                                 1.00E+002           
+5     HYBRID_HASH_JOIN                                 1.00E+003           
+6     HYBRID_HASH_JOIN                                 1.00E+004           
+7     FILE_SCAN                       CUBE1            1.00E+005           
+8     FILE_SCAN                       T5               1.00E+001           
+9     FILE_SCAN                       T3               1.00E+001           
+10    FILE_SCAN                       T2               1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+002           
+12    FILE_SCAN                       T6               1.00E+002           
+13    FILE_SCAN                       T7               1.00E+002           
+14    FILE_SCAN                       T4               1.00E+001           
+15    FILE_SCAN                       T1               1.00E+001           
+
+--- 15 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select cube1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where
++>t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
++>t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b;
+Histograms for query showstats for query select cube1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and  t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b;
+**************************************************************
+VEGcolumn:
+
+  99: VEGRef_99((CAT.HCUBE.T1.A = CAT.HCUBE.CUBE1.A))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  60: CAT.HCUBE.CUBE1.A
+Applied preds:
+
+ 100: (CAT.HCUBE.T1.A = CAT.HCUBE.CUBE1.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=100.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 108: VEGRef_108((CAT.HCUBE.T2.A = CAT.HCUBE.CUBE1.B))
+Merge state:
+
+  10: CAT.HCUBE.T2.A
+  61: CAT.HCUBE.CUBE1.B
+Applied preds:
+
+ 109: (CAT.HCUBE.T2.A = CAT.HCUBE.CUBE1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=100.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 117: VEGRef_117((CAT.HCUBE.T3.A = CAT.HCUBE.CUBE1.C))
+Merge state:
+
+  17: CAT.HCUBE.T3.A
+  62: CAT.HCUBE.CUBE1.C
+Applied preds:
+
+ 118: (CAT.HCUBE.T3.A = CAT.HCUBE.CUBE1.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=100.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 126: VEGRef_126((CAT.HCUBE.T4.A = CAT.HCUBE.CUBE1.D))
+Merge state:
+
+  24: CAT.HCUBE.T4.A
+  63: CAT.HCUBE.CUBE1.D
+Applied preds:
+
+ 127: (CAT.HCUBE.T4.A = CAT.HCUBE.CUBE1.D)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=100.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 135: VEGRef_135((CAT.HCUBE.T5.A = CAT.HCUBE.CUBE1.E))
+Merge state:
+
+  31: CAT.HCUBE.T5.A
+  64: CAT.HCUBE.CUBE1.E
+Applied preds:
+
+ 136: (CAT.HCUBE.T5.A = CAT.HCUBE.CUBE1.E)
+   TotalUEC = 10.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=100.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 144: VEGRef_144((CAT.HCUBE.T6.A = CAT.HCUBE.CUBE1.F))
+Merge state:
+
+  38: CAT.HCUBE.T6.A
+  65: CAT.HCUBE.CUBE1.F
+Applied preds:
+
+ 145: (CAT.HCUBE.T6.A = CAT.HCUBE.CUBE1.F)
+   TotalUEC = 100.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=100.000000,uec=100.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 180: VEGRef_180((CAT.HCUBE.CUBE1.TXT))
+Merge state:
+
+  66: CAT.HCUBE.CUBE1.TXT
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 100.000000 
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 100.000000 
+   Encoded MinValue = (
+8123034490117401.0000 )
+   Encoded MaxValue = ( 8123034490117401.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      8123034490117401.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8123034490117401.0000 ) : rows=100.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q8
+>>#ifdef on_linux
+>>control query default nested_joins 'off';
+>>control query shape implicit enforcers sort_groupby(sort_groupby(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T3'),
++>scan(path 'CAT.HCUBE.CUBE1')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.IX6B')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.T5')),
++>scan(path 'CAT.HCUBE.T4'))));
+>>#else
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(nested_join(ordered_cross_product(ordered_cross_product(
++>scan(path 'CAT.HCUBE.T1'),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.CUBE1')),
++>scan(path 'CAT.HCUBE.T5')),
++>scan(path 'CAT.HCUBE.T4')),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T6'),
++>scan(path 'CAT.HCUBE.T7'))));
+
+--- SQL operation complete.
+>>#endif
+>>
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,cube1 where
++>t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
++>t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b and
++>t1.c=1 and t2.c=1 and t3.c=1;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+000           
+2     HYBRID_HASH_JOIN                                 1.00E+000           
+3     HYBRID_HASH_JOIN                                 1.00E+000           
+4     NESTED_JOIN                                      1.00E+000           
+5     FILE_SCAN_UNIQUE                CUBE1            1.00E+000           
+6     ORDERED_CROSS_PRODUCT                            1.00E+000           
+7     ORDERED_CROSS_PRODUCT                            1.00E+000           
+8     FILE_SCAN                       T1               1.00E+000           
+9     FILE_SCAN                       T2               1.00E+000           
+10    FILE_SCAN                       T3               1.00E+000           
+11    FILE_SCAN                       T5               1.00E+001           
+12    FILE_SCAN                       T4               1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+002           
+14    FILE_SCAN                       T6               1.00E+002           
+15    FILE_SCAN                       T7               1.00E+002           
+
+--- 15 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where
++>t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
++>t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b and
++>t1.c=1 and t2.c=1 and t3.c=1;
+Histograms for query showstats for query select t1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and  t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b and t1.c=1 and t2.c=1 and t3.c=1;
+**************************************************************
+VEGcolumn:
+
+ 103: VEGRef_103((CAT.HCUBE.T1.A = CAT.HCUBE.CUBE1.A))
+Merge state:
+
+   3: CAT.HCUBE.T1.A
+  60: CAT.HCUBE.CUBE1.A
+Applied preds:
+
+ 104: (CAT.HCUBE.T1.A = CAT.HCUBE.CUBE1.A)
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 106: VEGRef_106((CAT.HCUBE.T1.B))
+Merge state:
+   4: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 127: VEGRef_127((CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1))
+
+Merge state:
+   5: CAT.HCUBE.T1.C
+Applied preds:
+
+ 128: (CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1)
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 1.0000 )
+   Encoded MaxValue = ( 1.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      1.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 127: VEGRef_127((CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1))
+
+Merge state:
+  12: CAT.HCUBE.T2.C
+Applied preds:
+
+ 128: (CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1)
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 1.0000 )
+   Encoded MaxValue = ( 1.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      1.0000 ) : rows=1.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 127: VEGRef_127((CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1))
+
+Merge state:
+  19: CAT.HCUBE.T3.C
+Applied preds:
+
+ 128: (CAT.HCUBE.T1.C = CAT.HCUBE.T2.C = CAT.HCUBE.T3.C = 1)
+***MINMAX
+ SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+   Max Frequency = 1.000000 
+
+   Encoded MinValue = ( 1.0000 )
+   Encoded MaxValue = ( 1.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      1.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q9
+>>-- 10 way snowflake of fully connected frindges
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T9'),
++>scan(path 'CAT.HCUBE.T6')),
++>scan(path 'CAT.HCUBE.T5')),
++>scan(path 'CAT.HCUBE.IX8C')),
++>scan(path 'CAT.HCUBE.T7')),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.T0')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
++>t0.a=t9.c and t1.a=t9.c and t2.a=t9.c and t3.a=t9.b and t4.a=t9.b and t5.a=t9.b and t6.a=t9.a and t7.a=t9.a and t8.a=t9.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     HYBRID_HASH_JOIN                                 1.00E+002           
+10    FILE_SCAN                       T9               1.00E+004           
+11    FILE_SCAN                       T6               1.00E+002           
+12    FILE_SCAN                       T5               1.00E+001           
+13    INDEX_SCAN                      T8               1.00E+003           
+14    FILE_SCAN                       T7               1.00E+002           
+15    FILE_SCAN                       T4               1.00E+001           
+16    FILE_SCAN                       T3               1.00E+001           
+17    FILE_SCAN                       T2               1.00E+001           
+18    FILE_SCAN                       T1               1.00E+001           
+19    FILE_SCAN                       T0               1.00E+001           
+
+--- 19 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t0.a, t9.c, t1.a, t2.a, t3.a, t4.a, t5.a, t9.b, t6.a, t9.a, t7.a, t9.a, t8.a
++>from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 
++>where t0.a=t9.c and t1.a=t9.c and t2.a=t9.c and t3.a=t9.b and t4.a=t9.b and t5.a=t9.b 
++>and t6.a=t9.a and t7.a=t9.a and t8.a=t9.a;
+Histograms for query showstats for query select t0.a, t9.c, t1.a, t2.a, t3.a, t4.a, t5.a, t9.b, t6.a, t9.a, t7.a, t9.a, t8.a from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5  where t0.a=t9.c and t1.a=t9.c and t2.a=t9.c and t3.a=t9.b and t4.a=t9.b and t5.a=t9.b  and t6.a=t9.a and t7.a=t9.a and t8.a=t9.a;
+**************************************************************
+VEGcolumn:
+
+ 135: VEGRef_135((CAT.HCUBE.T0.A = CAT.HCUBE.T9.C = CAT.HCUBE.T1.A = CAT.HCUBE.T2.A))
+
+Merge state:
+   3: CAT.HCUBE.T0.A
+  12: CAT.HCUBE.T9.C
+
+  21: CAT.HCUBE.T1.A
+  39: CAT.HCUBE.T2.A
+Applied preds:
+
+ 136: (CAT.HCUBE.T0.A = CAT.HCUBE.T9.C = CAT.HCUBE.T1.A = CAT.HCUBE.T2.A)
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 126: VEGRef_126((CAT.HCUBE.T9.A = CAT.HCUBE.T8.A = CAT.HCUBE.T7.A = CAT.HCUBE.T6.A))
+
+Merge state:
+  10: CAT.HCUBE.T9.A
+  28: CAT.HCUBE.T8.A
+
+  46: CAT.HCUBE.T7.A
+  64: CAT.HCUBE.T6.A
+Applied preds:
+
+ 127: (CAT.HCUBE.T9.A = CAT.HCUBE.T8.A = CAT.HCUBE.T7.A = CAT.HCUBE.T6.A)
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 180: VEGRef_180((CAT.HCUBE.T9.B = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = CAT.HCUBE.T5.A))
+
+Merge state:
+  11: CAT.HCUBE.T9.B
+  57: CAT.HCUBE.T3.A
+
+  75: CAT.HCUBE.T4.A
+  82: CAT.HCUBE.T5.A
+Applied preds:
+
+ 181: (CAT.HCUBE.T9.B = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = CAT.HCUBE.T5.A)
+
+   TotalUEC = 9.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.111111 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 999.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      999.0000 ) : rows=10.011001,uec=9.100000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q10
+>>--10 snowflake
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IXCUBE1F'),
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T9'),
++>scan(path 'CAT.HCUBE.T1')),
++>scan(path 'CAT.HCUBE.T2'))),
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T8'),
++>scan(path 'CAT.HCUBE.T3')),
++>scan(path 'CAT.HCUBE.T4'))),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T6'),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T7'),
++>scan(path 'CAT.HCUBE.T5')))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t1.b and t9.c=t2.c and
++>t8.a=t3.a and t8.c=t4.c and
++>t7.a=t5.a and t7.b=t6.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+002           
+3     HYBRID_HASH_JOIN                                 1.00E+003           
+4     INDEX_SCAN                      CUBE1            1.00E+005           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     HYBRID_HASH_JOIN                                 1.00E+002           
+7     FILE_SCAN                       T9               1.00E+004           
+8     FILE_SCAN                       T1               1.00E+001           
+9     FILE_SCAN                       T2               1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    FILE_SCAN                       T8               1.00E+003           
+13    FILE_SCAN                       T3               1.00E+001           
+14    FILE_SCAN                       T4               1.00E+001           
+15    HYBRID_HASH_JOIN                                 1.00E+001           
+16    FILE_SCAN                       T6               1.00E+002           
+17    HYBRID_HASH_JOIN                                 1.00E+001           
+18    FILE_SCAN                       T7               1.00E+002           
+19    FILE_SCAN                       T5               1.00E+001           
+
+--- 19 row(s) selected.
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t1.b and t9.c=t2.c and
++>t8.a=t3.a and t8.c=t4.c and
++>t7.a=t5.a and t7.b=t6.a;
+Histograms for query showstats for query select count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and t9.b=t1.b and t9.c=t2.c and t8.a=t3.a and t8.c=t4.c and t7.a=t5.a and t7.b=t6.a;
+**************************************************************
+VEGcolumn:
+
+ 176: VEGRef_176((CAT.HCUBE.T6.C))
+Merge state:
+  40: CAT.HCUBE.T6.C
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q11
+>>--11 snowflake
+>>control query shape implicit enforcers sort_groupby(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.IXCUBE1F'),
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T9'),
++>hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T6'),
++>scan(path 'CAT.HCUBE.T0'))),
++>scan(path 'CAT.HCUBE.T1'))),
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T8'),
++>scan(path 'CAT.HCUBE.T2')),
++>scan(path 'CAT.HCUBE.T3'))),
++>hybrid_hash_join(hybrid_hash_join(
++>scan(path 'CAT.HCUBE.T7'),
++>scan(path 'CAT.HCUBE.T4')),
++>scan(path 'CAT.HCUBE.T5'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a = t6.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+002           
+3     HYBRID_HASH_JOIN                                 1.00E+003           
+4     INDEX_SCAN                      CUBE1            1.00E+005           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     HYBRID_HASH_JOIN                                 1.00E+002           
+7     FILE_SCAN                       T9               1.00E+004           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     FILE_SCAN                       T6               1.00E+002           
+10    FILE_SCAN                       T0               1.00E+001           
+11    FILE_SCAN                       T1               1.00E+001           
+12    HYBRID_HASH_JOIN                                 1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+001           
+14    FILE_SCAN                       T8               1.00E+003           
+15    FILE_SCAN                       T2               1.00E+001           
+16    FILE_SCAN                       T3               1.00E+001           
+17    HYBRID_HASH_JOIN                                 1.00E+001           
+18    HYBRID_HASH_JOIN                                 1.00E+001           
+19    FILE_SCAN                       T7               1.00E+002           
+20    FILE_SCAN                       T4               1.00E+001           
+21    FILE_SCAN                       T5               1.00E+001           
+
+--- 21 row(s) selected.
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>control query default join_order_by_user 'on';
+
+--- SQL operation complete.
+>>
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>
+>>control query default merge_joins 'off';
+
+--- SQL operation complete.
+>>
+>>showstats for query
++>select t9.b, t8.a, t7.a, t0.a, t9.c, t8.c, t7.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a = t6.a;
+Histograms for query showstats for query select t9.b, t8.a, t7.a, t0.a, t9.c, t8.c, t7.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and t9.b=t0.b and t9.c=t1.c and t8.a=t2.a and t8.c=t3.c and t7.a=t4.a and t7.b=t5.a and t0.a = t6.a;
+**************************************************************
+VEGcolumn:
+
+ 131: VEGRef_131((CAT.HCUBE.T0.A = CAT.HCUBE.T6.A))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  45: CAT.HCUBE.T6.A
+Applied preds:
+
+ 132: (CAT.HCUBE.T0.A = CAT.HCUBE.T6.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 215: VEGRef_215((CAT.HCUBE.T0.B = CAT.HCUBE.T9.B))
+Merge state:
+
+   4: CAT.HCUBE.T0.B
+  79: CAT.HCUBE.T9.B
+Applied preds:
+
+ 216: (CAT.HCUBE.T0.B = CAT.HCUBE.T9.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 218: VEGRef_218((CAT.HCUBE.T1.C = CAT.HCUBE.T9.C))
+Merge state:
+
+  12: CAT.HCUBE.T1.C
+  80: CAT.HCUBE.T9.C
+Applied preds:
+
+ 219: (CAT.HCUBE.T1.C = CAT.HCUBE.T9.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 203: VEGRef_203((CAT.HCUBE.T2.A = CAT.HCUBE.T8.A))
+Merge state:
+
+  17: CAT.HCUBE.T2.A
+  67: CAT.HCUBE.T8.A
+Applied preds:
+
+ 204: (CAT.HCUBE.T2.A = CAT.HCUBE.T8.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 209: VEGRef_209((CAT.HCUBE.T3.C = CAT.HCUBE.T8.C))
+Merge state:
+
+  26: CAT.HCUBE.T3.C
+  69: CAT.HCUBE.T8.C
+Applied preds:
+
+ 210: (CAT.HCUBE.T3.C = CAT.HCUBE.T8.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 194: VEGRef_194((CAT.HCUBE.T4.A = CAT.HCUBE.T7.A))
+Merge state:
+
+  31: CAT.HCUBE.T4.A
+  56: CAT.HCUBE.T7.A
+Applied preds:
+
+ 195: (CAT.HCUBE.T4.A = CAT.HCUBE.T7.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 197: VEGRef_197((CAT.HCUBE.T5.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  38: CAT.HCUBE.T5.A
+  57: CAT.HCUBE.T7.B
+Applied preds:
+
+ 198: (CAT.HCUBE.T5.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q12
+>>--12 snowflake
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+004           
+4     HYBRID_HASH_JOIN                                 1.00E+004           
+5     HYBRID_HASH_JOIN                                 1.00E+005           
+6     HYBRID_HASH_JOIN                                 1.00E+006           
+7     HYBRID_HASH_JOIN                                 1.00E+006           
+8     HYBRID_HASH_JOIN                                 1.00E+005           
+9     HYBRID_HASH_JOIN                                 1.00E+004           
+10    HYBRID_HASH_JOIN                                 1.00E+003           
+11    HYBRID_HASH_JOIN                                 1.00E+002           
+12    FILE_SCAN                       T0               1.00E+001           
+13    FILE_SCAN                       T1               1.00E+001           
+14    FILE_SCAN                       T2               1.00E+001           
+15    FILE_SCAN                       T3               1.00E+001           
+16    FILE_SCAN                       T4               1.00E+001           
+17    FILE_SCAN                       T5               1.00E+001           
+18    INDEX_SCAN                      T6               1.00E+002           
+19    FILE_SCAN                       T7               1.00E+002           
+20    FILE_SCAN                       T8               1.00E+003           
+21    FILE_SCAN                       T9               1.00E+004           
+22    INDEX_SCAN                      CUBE1            1.00E+005           
+23    FILE_SCAN                       T1)              1.00E+001           
+
+--- 23 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a ;
+Histograms for query showstats for query select count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1 where cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and t9.b=t0.b and t9.c=t1.c and t8.a=t2.a and t8.c=t3.c and t7.a=t4.a and t7.b=t5.a and t0.a=t6.a and t1.a=s1.a ;
+**************************************************************
+VEGcolumn:
+
+ 258: VEGRef_258((S1.C))
+Merge state:
+ 122: S1.C
+Applied preds:
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q13
+>>--12 linear
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+005           
+3     HYBRID_HASH_JOIN                                 1.00E+004           
+4     HYBRID_HASH_JOIN                                 1.00E+003           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     HYBRID_HASH_JOIN                                 1.00E+002           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    FILE_SCAN                       T0               1.00E+001           
+13    FILE_SCAN                       T1               1.00E+001           
+14    FILE_SCAN                       T2               1.00E+001           
+15    FILE_SCAN                       T3               1.00E+001           
+16    FILE_SCAN                       T4               1.00E+001           
+17    FILE_SCAN                       T5               1.00E+001           
+18    INDEX_SCAN                      T6               1.00E+002           
+19    INDEX_SCAN                      T7               1.00E+002           
+20    INDEX_SCAN                      T8               1.00E+003           
+21    INDEX_SCAN                      T9               1.00E+004           
+22    INDEX_SCAN                      T10              1.00E+005           
+23    FILE_SCAN                       T1)              1.00E+001           
+
+--- 23 row(s) selected.
+>>
+>>showstats for query
++>select s1.* from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b;
+Histograms for query showstats for query select s1.* from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1 where t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and  t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a=t10.b and t10.a=s1.b;
+**************************************************************
+VEGcolumn:
+
+ 209: VEGRef_209((CAT.HCUBE.T10.A = S1.B))
+Merge state:
+
+  89: CAT.HCUBE.T10.A
+ 101: S1.B
+Applied preds:
+
+ 210: (CAT.HCUBE.T10.A = S1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000100 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 218: VEGRef_218((S1.A))
+Merge state:
+ 100: S1.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 224: VEGRef_224((S1.C))
+Merge state:
+ 102: S1.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q14
+>>--14 linear
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+005           
+5     HYBRID_HASH_JOIN                                 1.00E+004           
+6     HYBRID_HASH_JOIN                                 1.00E+003           
+7     HYBRID_HASH_JOIN                                 1.00E+002           
+8     HYBRID_HASH_JOIN                                 1.00E+002           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    HYBRID_HASH_JOIN                                 1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+001           
+14    FILE_SCAN                       T0               1.00E+001           
+15    FILE_SCAN                       T1               1.00E+001           
+16    FILE_SCAN                       T2               1.00E+001           
+17    FILE_SCAN                       T3               1.00E+001           
+18    FILE_SCAN                       T4               1.00E+001           
+19    FILE_SCAN                       T5               1.00E+001           
+20    INDEX_SCAN                      T6               1.00E+002           
+21    INDEX_SCAN                      T7               1.00E+002           
+22    INDEX_SCAN                      T8               1.00E+003           
+23    INDEX_SCAN                      T9               1.00E+004           
+24    INDEX_SCAN                      T10              1.00E+005           
+25    FILE_SCAN                       T1)              1.00E+001           
+26    FILE_SCAN                       T2)              1.00E+001           
+27    FILE_SCAN                       T3)              1.00E+001           
+
+--- 27 row(s) selected.
+>>
+>>showstats for query
++>select s1.a, s1.b, s2.a, s2.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b;
+Histograms for query showstats for query select s1.a, s1.b, s2.a, s2.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and  t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and  s2.a=s3.b;
+**************************************************************
+VEGcolumn:
+
+ 225: VEGRef_225((CAT.HCUBE.T10.A = S1.B))
+Merge state:
+
+  89: CAT.HCUBE.T10.A
+ 101: S1.B
+Applied preds:
+
+ 226: (CAT.HCUBE.T10.A = S1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000100 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 234: VEGRef_234((S1.A = S2.B))
+Merge state:
+ 100: S1.A
+ 108: S2.B
+
+Applied preds:
+ 235: (S1.A = S2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 243: VEGRef_243((S2.A = S3.B))
+Merge state:
+ 107: S2.A
+ 115: S3.B
+
+Applied preds:
+ 244: (S2.A = S3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q15
+>>--16 linear
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as
++>s3,t4 as s4, t5 as s5 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b and s3.a=s4.b and s4.a=s5.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+005           
+7     HYBRID_HASH_JOIN                                 1.00E+004           
+8     HYBRID_HASH_JOIN                                 1.00E+003           
+9     HYBRID_HASH_JOIN                                 1.00E+002           
+10    HYBRID_HASH_JOIN                                 1.00E+002           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    HYBRID_HASH_JOIN                                 1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+001           
+14    HYBRID_HASH_JOIN                                 1.00E+001           
+15    HYBRID_HASH_JOIN                                 1.00E+001           
+16    FILE_SCAN                       T0               1.00E+001           
+17    FILE_SCAN                       T1               1.00E+001           
+18    FILE_SCAN                       T2               1.00E+001           
+19    FILE_SCAN                       T3               1.00E+001           
+20    FILE_SCAN                       T4               1.00E+001           
+21    FILE_SCAN                       T5               1.00E+001           
+22    INDEX_SCAN                      T6               1.00E+002           
+23    INDEX_SCAN                      T7               1.00E+002           
+24    INDEX_SCAN                      T8               1.00E+003           
+25    INDEX_SCAN                      T9               1.00E+004           
+26    INDEX_SCAN                      T10              1.00E+005           
+27    FILE_SCAN                       T1)              1.00E+001           
+28    FILE_SCAN                       T2)              1.00E+001           
+29    FILE_SCAN                       T3)              1.00E+001           
+30    FILE_SCAN                       T4)              1.00E+001           
+31    FILE_SCAN                       T5)              1.00E+001           
+
+--- 31 row(s) selected.
+>>
+>>showstats for query
++>select s1.a, s2.a, s3.a, s4.a, s5.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as
++>s3,t4 as s4, t5 as s5 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b and s3.a=s4.b and s4.a=s5.b;
+Histograms for query showstats for query select s1.a, s2.a, s3.a, s4.a, s5.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3,t4 as s4, t5 as s5 where t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and  t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and  s2.a=s3.b and s3.a=s4.b and s4.a=s5.b;
+**************************************************************
+VEGcolumn:
+
+ 250: VEGRef_250((S1.A = S2.B))
+Merge state:
+ 100: S1.A
+ 108: S2.B
+
+Applied preds:
+ 251: (S1.A = S2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 259: VEGRef_259((S2.A = S3.B))
+Merge state:
+ 107: S2.A
+ 115: S3.B
+
+Applied preds:
+ 260: (S2.A = S3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 268: VEGRef_268((S3.A = S4.B))
+Merge state:
+ 114: S3.A
+ 122: S4.B
+
+Applied preds:
+ 269: (S3.A = S4.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 277: VEGRef_277((S4.A = S5.B))
+Merge state:
+ 121: S4.A
+ 129: S5.B
+
+Applied preds:
+ 278: (S4.A = S5.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 286: VEGRef_286((S5.A))
+Merge state:
+ 128: S5.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q16
+>>--14 way circular
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b and s3.a=t0.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+000           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+005           
+5     HYBRID_HASH_JOIN                                 1.00E+004           
+6     HYBRID_HASH_JOIN                                 1.00E+003           
+7     HYBRID_HASH_JOIN                                 1.00E+002           
+8     HYBRID_HASH_JOIN                                 1.00E+002           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    HYBRID_HASH_JOIN                                 1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+001           
+14    FILE_SCAN                       T0               1.00E+001           
+15    FILE_SCAN                       T1               1.00E+001           
+16    FILE_SCAN                       T2               1.00E+001           
+17    FILE_SCAN                       T3               1.00E+001           
+18    FILE_SCAN                       T4               1.00E+001           
+19    FILE_SCAN                       T5               1.00E+001           
+20    INDEX_SCAN                      T6               1.00E+002           
+21    INDEX_SCAN                      T7               1.00E+002           
+22    INDEX_SCAN                      T8               1.00E+003           
+23    INDEX_SCAN                      T9               1.00E+004           
+24    INDEX_SCAN                      T10              1.00E+005           
+25    FILE_SCAN                       T1)              1.00E+001           
+26    FILE_SCAN                       T2)              1.00E+001           
+27    FILE_SCAN                       T3)              1.00E+001           
+
+--- 27 row(s) selected.
+>>
+>>showstats for query
++>select  t10.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
++>t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
++>t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
++>t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
++>s2.a=s3.b and s3.a=t0.b;
+Histograms for query showstats for query select  t10.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and  t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and  s2.a=s3.b and s3.a=t0.b;
+**************************************************************
+VEGcolumn:
+
+ 226: VEGRef_226((CAT.HCUBE.T10.A = S1.B))
+Merge state:
+
+  89: CAT.HCUBE.T10.A
+ 101: S1.B
+Applied preds:
+
+ 227: (CAT.HCUBE.T10.A = S1.B)
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000010 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q17
+>>--14 way snow flake (with linear frindges)
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+004           
+6     HYBRID_HASH_JOIN                                 1.00E+004           
+7     HYBRID_HASH_JOIN                                 1.00E+005           
+8     HYBRID_HASH_JOIN                                 1.00E+006           
+9     HYBRID_HASH_JOIN                                 1.00E+006           
+10    HYBRID_HASH_JOIN                                 1.00E+005           
+11    HYBRID_HASH_JOIN                                 1.00E+004           
+12    HYBRID_HASH_JOIN                                 1.00E+003           
+13    HYBRID_HASH_JOIN                                 1.00E+002           
+14    FILE_SCAN                       T0               1.00E+001           
+15    FILE_SCAN                       T1               1.00E+001           
+16    FILE_SCAN                       T2               1.00E+001           
+17    FILE_SCAN                       T3               1.00E+001           
+18    FILE_SCAN                       T4               1.00E+001           
+19    FILE_SCAN                       T5               1.00E+001           
+20    INDEX_SCAN                      T6               1.00E+002           
+21    FILE_SCAN                       T7               1.00E+002           
+22    FILE_SCAN                       T8               1.00E+003           
+23    FILE_SCAN                       T9               1.00E+004           
+24    INDEX_SCAN                      CUBE1            1.00E+005           
+25    FILE_SCAN                       T1)              1.00E+001           
+26    FILE_SCAN                       T2)              1.00E+001           
+27    FILE_SCAN                       T3)              1.00E+001           
+
+--- 27 row(s) selected.
+>>
+>>showstats for query
++>select t0.b, t2.a, t4.a, t6.a, t1.c, t3.c, t5.a, s1.a, s2.b, s3.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b;
+Histograms for query showstats for query select t0.b, t2.a, t4.a, t6.a, t1.c, t3.c, t5.a, s1.a, s2.b, s3.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3 where cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and t9.b=t0.b and t9.c=t1.c and t8.a=t2.a and t8.c=t3.c and t7.a=t4.a and t7.b=t5.a and t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b;
+**************************************************************
+VEGcolumn:
+
+ 155: VEGRef_155((CAT.HCUBE.T0.A = CAT.HCUBE.T6.A))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  45: CAT.HCUBE.T6.A
+Applied preds:
+
+ 156: (CAT.HCUBE.T0.A = CAT.HCUBE.T6.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 239: VEGRef_239((CAT.HCUBE.T0.B = CAT.HCUBE.T9.B))
+Merge state:
+
+   4: CAT.HCUBE.T0.B
+  79: CAT.HCUBE.T9.B
+Applied preds:
+
+ 240: (CAT.HCUBE.T0.B = CAT.HCUBE.T9.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 164: VEGRef_164((CAT.HCUBE.T1.A = S1.A))
+Merge state:
+
+  10: CAT.HCUBE.T1.A
+ 120: S1.A
+Applied preds:
+
+ 165: (CAT.HCUBE.T1.A = S1.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 242: VEGRef_242((CAT.HCUBE.T1.C = CAT.HCUBE.T9.C))
+Merge state:
+
+  12: CAT.HCUBE.T1.C
+  80: CAT.HCUBE.T9.C
+Applied preds:
+
+ 243: (CAT.HCUBE.T1.C = CAT.HCUBE.T9.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 227: VEGRef_227((CAT.HCUBE.T2.A = CAT.HCUBE.T8.A))
+Merge state:
+
+  17: CAT.HCUBE.T2.A
+  67: CAT.HCUBE.T8.A
+Applied preds:
+
+ 228: (CAT.HCUBE.T2.A = CAT.HCUBE.T8.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 176: VEGRef_176((CAT.HCUBE.T2.B = S2.B))
+Merge state:
+
+  18: CAT.HCUBE.T2.B
+ 128: S2.B
+Applied preds:
+
+ 177: (CAT.HCUBE.T2.B = S2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 185: VEGRef_185((CAT.HCUBE.T3.B = S3.B))
+Merge state:
+
+  25: CAT.HCUBE.T3.B
+ 135: S3.B
+Applied preds:
+
+ 186: (CAT.HCUBE.T3.B = S3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 233: VEGRef_233((CAT.HCUBE.T3.C = CAT.HCUBE.T8.C))
+Merge state:
+
+  26: CAT.HCUBE.T3.C
+  69: CAT.HCUBE.T8.C
+Applied preds:
+
+ 234: (CAT.HCUBE.T3.C = CAT.HCUBE.T8.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 218: VEGRef_218((CAT.HCUBE.T4.A = CAT.HCUBE.T7.A))
+Merge state:
+
+  31: CAT.HCUBE.T4.A
+  56: CAT.HCUBE.T7.A
+Applied preds:
+
+ 219: (CAT.HCUBE.T4.A = CAT.HCUBE.T7.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 221: VEGRef_221((CAT.HCUBE.T5.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  38: CAT.HCUBE.T5.A
+  57: CAT.HCUBE.T7.B
+Applied preds:
+
+ 222: (CAT.HCUBE.T5.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q18
+>>--16 way snow flake (with linear frindges)
+>>prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as
++>s3,t4 as s4, t5 as s5 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b and t4.b=s4.b and t5.b=s5.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+004           
+8     HYBRID_HASH_JOIN                                 1.00E+004           
+9     HYBRID_HASH_JOIN                                 1.00E+005           
+10    HYBRID_HASH_JOIN                                 1.00E+006           
+11    HYBRID_HASH_JOIN                                 1.00E+006           
+12    HYBRID_HASH_JOIN                                 1.00E+005           
+13    HYBRID_HASH_JOIN                                 1.00E+004           
+14    HYBRID_HASH_JOIN                                 1.00E+003           
+15    HYBRID_HASH_JOIN                                 1.00E+002           
+16    FILE_SCAN                       T0               1.00E+001           
+17    FILE_SCAN                       T1               1.00E+001           
+18    FILE_SCAN                       T2               1.00E+001           
+19    FILE_SCAN                       T3               1.00E+001           
+20    FILE_SCAN                       T4               1.00E+001           
+21    FILE_SCAN                       T5               1.00E+001           
+22    INDEX_SCAN                      T6               1.00E+002           
+23    FILE_SCAN                       T7               1.00E+002           
+24    FILE_SCAN                       T8               1.00E+003           
+25    FILE_SCAN                       T9               1.00E+004           
+26    INDEX_SCAN                      CUBE1            1.00E+005           
+27    FILE_SCAN                       T1)              1.00E+001           
+28    FILE_SCAN                       T2)              1.00E+001           
+29    FILE_SCAN                       T3)              1.00E+001           
+30    FILE_SCAN                       T4)              1.00E+001           
+31    FILE_SCAN                       T5)              1.00E+001           
+
+--- 31 row(s) selected.
+>>
+>>showstats for query
++>select   * from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as
++>s3,t4 as s4, t5 as s5 where
++>cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
++>t9.b=t0.b and t9.c=t1.c and
++>t8.a=t2.a and t8.c=t3.c and
++>t7.a=t4.a and t7.b=t5.a and
++>t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b and t4.b=s4.b and t5.b=s5.b;
+Histograms for query showstats for query select   * from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3,t4 as s4, t5 as s5 where cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and t9.b=t0.b and t9.c=t1.c and t8.a=t2.a and t8.c=t3.c and t7.a=t4.a and t7.b=t5.a and t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b and t4.b=s4.b and t5.b=s5.b;
+**************************************************************
+VEGcolumn:
+
+ 171: VEGRef_171((CAT.HCUBE.T0.A = CAT.HCUBE.T6.A))
+Merge state:
+
+   3: CAT.HCUBE.T0.A
+  45: CAT.HCUBE.T6.A
+Applied preds:
+
+ 172: (CAT.HCUBE.T0.A = CAT.HCUBE.T6.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 255: VEGRef_255((CAT.HCUBE.T0.B = CAT.HCUBE.T9.B))
+Merge state:
+
+   4: CAT.HCUBE.T0.B
+  79: CAT.HCUBE.T9.B
+Applied preds:
+
+ 256: (CAT.HCUBE.T0.B = CAT.HCUBE.T9.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 177: VEGRef_177((CAT.HCUBE.T0.C))
+Merge state:
+   5: CAT.HCUBE.T0.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 180: VEGRef_180((CAT.HCUBE.T1.A = S1.A))
+Merge state:
+
+  10: CAT.HCUBE.T1.A
+ 120: S1.A
+Applied preds:
+
+ 181: (CAT.HCUBE.T1.A = S1.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 183: VEGRef_183((CAT.HCUBE.T1.B))
+Merge state:
+  11: CAT.HCUBE.T1.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 258: VEGRef_258((CAT.HCUBE.T1.C = CAT.HCUBE.T9.C))
+Merge state:
+
+  12: CAT.HCUBE.T1.C
+  80: CAT.HCUBE.T9.C
+Applied preds:
+
+ 259: (CAT.HCUBE.T1.C = CAT.HCUBE.T9.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 243: VEGRef_243((CAT.HCUBE.T2.A = CAT.HCUBE.T8.A))
+Merge state:
+
+  17: CAT.HCUBE.T2.A
+  67: CAT.HCUBE.T8.A
+Applied preds:
+
+ 244: (CAT.HCUBE.T2.A = CAT.HCUBE.T8.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 192: VEGRef_192((CAT.HCUBE.T2.B = S2.B))
+Merge state:
+
+  18: CAT.HCUBE.T2.B
+ 128: S2.B
+Applied preds:
+
+ 193: (CAT.HCUBE.T2.B = S2.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 195: VEGRef_195((CAT.HCUBE.T2.C))
+Merge state:
+  19: CAT.HCUBE.T2.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 198: VEGRef_198((CAT.HCUBE.T3.A))
+Merge state:
+  24: CAT.HCUBE.T3.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 201: VEGRef_201((CAT.HCUBE.T3.B = S3.B))
+Merge state:
+
+  25: CAT.HCUBE.T3.B
+ 135: S3.B
+Applied preds:
+
+ 202: (CAT.HCUBE.T3.B = S3.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 249: VEGRef_249((CAT.HCUBE.T3.C = CAT.HCUBE.T8.C))
+Merge state:
+
+  26: CAT.HCUBE.T3.C
+  69: CAT.HCUBE.T8.C
+Applied preds:
+
+ 250: (CAT.HCUBE.T3.C = CAT.HCUBE.T8.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 234: VEGRef_234((CAT.HCUBE.T4.A = CAT.HCUBE.T7.A))
+Merge state:
+
+  31: CAT.HCUBE.T4.A
+  56: CAT.HCUBE.T7.A
+Applied preds:
+
+ 235: (CAT.HCUBE.T4.A = CAT.HCUBE.T7.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 210: VEGRef_210((CAT.HCUBE.T4.B = S4.B))
+Merge state:
+
+  32: CAT.HCUBE.T4.B
+ 142: S4.B
+Applied preds:
+
+ 211: (CAT.HCUBE.T4.B = S4.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 213: VEGRef_213((CAT.HCUBE.T4.C))
+Merge state:
+  33: CAT.HCUBE.T4.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 237: VEGRef_237((CAT.HCUBE.T5.A = CAT.HCUBE.T7.B))
+Merge state:
+
+  38: CAT.HCUBE.T5.A
+  57: CAT.HCUBE.T7.B
+Applied preds:
+
+ 238: (CAT.HCUBE.T5.A = CAT.HCUBE.T7.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 219: VEGRef_219((CAT.HCUBE.T5.B = S5.B))
+Merge state:
+
+  39: CAT.HCUBE.T5.B
+ 149: S5.B
+Applied preds:
+
+ 220: (CAT.HCUBE.T5.B = S5.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 222: VEGRef_222((CAT.HCUBE.T5.C))
+Merge state:
+  40: CAT.HCUBE.T5.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 228: VEGRef_228((CAT.HCUBE.T6.B))
+Merge state:
+  46: CAT.HCUBE.T6.B
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 231: VEGRef_231((CAT.HCUBE.T6.C))
+Merge state:
+  47: CAT.HCUBE.T6.C
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 267: VEGRef_267((CAT.HCUBE.T7.C = CAT.HCUBE.CUBE1.C))
+Merge state:
+
+  58: CAT.HCUBE.T7.C
+  91: CAT.HCUBE.CUBE1.C
+Applied preds:
+
+ 268: (CAT.HCUBE.T7.C = CAT.HCUBE.CUBE1.C)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 264: VEGRef_264((CAT.HCUBE.T8.B = CAT.HCUBE.CUBE1.B))
+Merge state:
+
+  68: CAT.HCUBE.T8.B
+  90: CAT.HCUBE.CUBE1.B
+Applied preds:
+
+ 265: (CAT.HCUBE.T8.B = CAT.HCUBE.CUBE1.B)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.110035 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 261: VEGRef_261((CAT.HCUBE.T9.A = CAT.HCUBE.CUBE1.A))
+Merge state:
+
+  78: CAT.HCUBE.T9.A
+  89: CAT.HCUBE.CUBE1.A
+Applied preds:
+
+ 262: (CAT.HCUBE.T9.A = CAT.HCUBE.CUBE1.A)
+   TotalUEC = 10.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.001000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 270: VEGRef_270((CAT.HCUBE.CUBE1.D))
+Merge state:
+  92: CAT.HCUBE.CUBE1.D
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 273: VEGRef_273((CAT.HCUBE.CUBE1.E))
+Merge state:
+  93: CAT.HCUBE.CUBE1.E
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 276: VEGRef_276((CAT.HCUBE.CUBE1.F))
+Merge state:
+  94: CAT.HCUBE.CUBE1.F
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 279: VEGRef_279((CAT.HCUBE.CUBE1.TXT))
+Merge state:
+
+  95: CAT.HCUBE.CUBE1.TXT
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 10.000000 
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 10.000000 
+   Encoded MinValue = ( 8123034490117401.0000
+ )
+   Encoded MaxValue = ( 8123034490117401.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      8123034490117401.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     8123034490117401.0000 ) : rows=10.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 285: VEGRef_285((S1.B))
+Merge state:
+ 121: S1.B
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 288: VEGRef_288((S1.C))
+Merge state:
+ 122: S1.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 291: VEGRef_291((S2.A))
+Merge state:
+ 127: S2.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 297: VEGRef_297((S2.C))
+Merge state:
+ 129: S2.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 300: VEGRef_300((S3.A))
+Merge state:
+ 134: S3.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 306: VEGRef_306((S3.C))
+Merge state:
+ 136: S3.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 309: VEGRef_309((S4.A))
+Merge state:
+ 141: S4.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 315: VEGRef_315((S4.C))
+Merge state:
+ 143: S4.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 318: VEGRef_318((S5.A))
+Merge state:
+ 148: S5.A
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 324: VEGRef_324((S5.C))
+Merge state:
+ 150: S5.C
+Applied preds:
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q19
+>>--12 flat fully connected
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
++>t0 as t10, t1 as t11, t0 where
++>t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
++>and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    FILE_SCAN                       T1               1.00E+001           
+13    FILE_SCAN                       T2               1.00E+001           
+14    FILE_SCAN                       T3               1.00E+001           
+15    FILE_SCAN                       T4               1.00E+001           
+16    FILE_SCAN                       T0)              1.00E+001           
+17    FILE_SCAN                       T1)              1.00E+001           
+18    FILE_SCAN                       T2)              1.00E+001           
+19    FILE_SCAN                       T3)              1.00E+001           
+20    FILE_SCAN                       T4)              1.00E+001           
+21    FILE_SCAN                       T0)              1.00E+001           
+22    FILE_SCAN                       T1)              1.00E+001           
+23    FILE_SCAN                       T0               1.00E+001           
+
+--- 23 row(s) selected.
+>>
+>>showstats for query
++>select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
++>t0 as t10, t1 as t11, t0 where
++>t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
++>and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a;
+Histograms for query showstats for query select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9,  t0 as t10, t1 as t11, t0 where t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a;
+**************************************************************
+VEGcolumn:
+
+ 200: VEGRef_200((CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = T5.A = T6.A = T7.A = T8.A = T9.A = T10.A = T11.A = CAT.HCUBE.T0.A))
+
+Merge state:
+   3: CAT.HCUBE.T1.A
+  10: CAT.HCUBE.T2.A
+
+  17: CAT.HCUBE.T3.A
+  24: CAT.HCUBE.T4.A
+  31: T5.A
+  38: T6.A
+  45: T7.A
+
+  52: T8.A
+  59: T9.A
+  66: T10.A
+  73: T11.A
+  80: CAT.HCUBE.T0.A
+
+Applied preds:
+
+ 201: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = T5.A = T6.A = T7.A = T8.A = T9.A = T10.A = T11.A = CAT.HCUBE.T0.A)
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q20
+>>--16 flat fully connected
+>>prepare xx from select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
++>t0 as t10, t1 as t11, t2 as t12, t3 as t13, t4 as t14, t5 as t15, t0 where
++>t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
++>and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a
++>and t11.a=t12.a and t12.a=t13.a and t13.a=t14.a and t14.a=t15.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+001           
+2     HYBRID_HASH_JOIN                                 1.00E+001           
+3     HYBRID_HASH_JOIN                                 1.00E+001           
+4     HYBRID_HASH_JOIN                                 1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+001           
+6     HYBRID_HASH_JOIN                                 1.00E+001           
+7     HYBRID_HASH_JOIN                                 1.00E+001           
+8     HYBRID_HASH_JOIN                                 1.00E+001           
+9     HYBRID_HASH_JOIN                                 1.00E+001           
+10    HYBRID_HASH_JOIN                                 1.00E+001           
+11    HYBRID_HASH_JOIN                                 1.00E+001           
+12    HYBRID_HASH_JOIN                                 1.00E+001           
+13    HYBRID_HASH_JOIN                                 1.00E+001           
+14    HYBRID_HASH_JOIN                                 1.00E+001           
+15    HYBRID_HASH_JOIN                                 1.00E+001           
+16    FILE_SCAN                       T1               1.00E+001           
+17    FILE_SCAN                       T2               1.00E+001           
+18    FILE_SCAN                       T3               1.00E+001           
+19    FILE_SCAN                       T4               1.00E+001           
+20    FILE_SCAN                       T0)              1.00E+001           
+21    FILE_SCAN                       T1)              1.00E+001           
+22    FILE_SCAN                       T2)              1.00E+001           
+23    FILE_SCAN                       T3)              1.00E+001           
+24    FILE_SCAN                       T4)              1.00E+001           
+25    FILE_SCAN                       T0)              1.00E+001           
+26    FILE_SCAN                       T1)              1.00E+001           
+27    FILE_SCAN                       T2)              1.00E+001           
+28    FILE_SCAN                       T3)              1.00E+001           
+29    FILE_SCAN                       T4)              1.00E+001           
+30    FILE_SCAN                       T5)              1.00E+001           
+31    FILE_SCAN                       T0               1.00E+001           
+
+--- 31 row(s) selected.
+>>
+>>showstats for query
++>select t1.a from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
++>t0 as t10, t1 as t11, t2 as t12, t3 as t13, t4 as t14, t5 as t15, t0 where
++>t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
++>and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a
++>and t11.a=t12.a and t12.a=t13.a and t13.a=t14.a and t14.a=t15.a;
+Histograms for query showstats for query select t1.a from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9,  t0 as t10, t1 as t11, t2 as t12, t3 as t13, t4 as t14, t5 as t15, t0 where t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a and t11.a=t12.a and t12.a=t13.a and t13.a=t14.a and t14.a=t15.a;
+**************************************************************
+VEGcolumn:
+
+ 266: VEGRef_266((CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = T5.A = T6.A = T7.A = T8.A = T9.A = T10.A = T11.A = T12.A = T13.A = T14.A = T15.A = CAT.HCUBE.T0.A))
+
+Merge state:
+   3: CAT.HCUBE.T1.A
+  10: CAT.HCUBE.T2.A
+
+  17: CAT.HCUBE.T3.A
+  24: CAT.HCUBE.T4.A
+  31: T5.A
+  38: T6.A
+  45: T7.A
+
+  52: T8.A
+  59: T9.A
+  66: T10.A
+  73: T11.A
+  80: T12.A
+  87: T13.A
+
+  94: T14.A
+ 101: T15.A
+ 108: CAT.HCUBE.T0.A
+Applied preds:
+
+ 267: (CAT.HCUBE.T1.A = CAT.HCUBE.T2.A = CAT.HCUBE.T3.A = CAT.HCUBE.T4.A = T5.A = T6.A = T7.A = T8.A = T9.A = T10.A = T11.A = T12.A = T13.A = T14.A = T15.A = CAT.HCUBE.T0.A)
+
+   TotalUEC = 10.000000 
+   Rowcount = 10.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 1.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=10.000000,uec=10.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>LOG;

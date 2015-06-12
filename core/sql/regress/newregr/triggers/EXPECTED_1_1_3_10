@@ -1,0 +1,39 @@
+>>obey TEST_1_1_3_10(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>
+>>CREATE TRIGGER trig AFTER UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS NEW, OLD AS oldRow
++>	FOR EACH ROW
++>
++>	update tab1a set c=new.c;
+
+*** ERROR[3128] NEW is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig AFTER UPDATE  ON tab1A  REFERENCING NEW AS NEW, OLD AS oldR
+                                                                 ^ (66 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>CREATE TRIGGER trig1 AFTER UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS CATALOG, OLD AS old
++>	FOR EACH ROW
++>
++>	update tab1a set c=catalog.c;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig1 AFTER UPDATE  ON tab1A  REFERENCING NEW AS CATALOG, OLD AS
+                                                                      ^ (71 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--------------------------------------------------------
+>>LOG;

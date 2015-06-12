@@ -695,7 +695,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
   NABoolean useQueryCache=TRUE, cacheable=FALSE, useTextCache=TRUE;
 
   // if running in OSIM capture mode or simulation, don't use the cache
-  if (OSIM_runningInCaptureMode())
+  if (OSIM_runningInCaptureMode()||OSIM_runningSimulation())
   {
     useQueryCache = FALSE;
     useTextCache = FALSE;

@@ -1,3 +1,21 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
 import java.sql.*;
 import java.lang.reflect.*;
 
@@ -61,11 +79,11 @@ class TEST101
       Class[] formalTypes = new Class[2];
       formalTypes[0] = action.getClass();
       formalTypes[1] = status.getClass();
-      
+
       Object[] args = new Object[2];
       args[0] = action;
       args[1] = status;
-      
+
       Class lmClass = Class.forName("org.trafodion.sql.udr.LmUtility");
       Object o = lmClass.newInstance();
       Method m = lmClass.getMethod("utils", formalTypes);
@@ -88,12 +106,12 @@ class TEST101
       formalTypes[0] = action.getClass();
       formalTypes[1] = status.getClass();
       formalTypes[2] = rs.getClass();
-      
+
       Object[] args = new Object[3];
       args[0] = action;
       args[1] = status;
       args[2] = rs;
-      
+
       Class lmClass = Class.forName("org.trafodion.sql.udr.LmUtility");
       Object o = lmClass.newInstance();
       Method m = lmClass.getMethod("rsUtils", formalTypes);
@@ -104,7 +122,7 @@ class TEST101
       throw e.getTargetException();
     }
   }
-  
+
   public static boolean isWindows()
   {
     String os = System.getProperty("os.name");
@@ -121,7 +139,7 @@ class TEST101
     throws Throwable
   {
     lmGateway(action, status);
-    
+
     if (action.trim().equalsIgnoreCase("GetTxName"))
     {
       // We do not actually return the TMF trans ID. We increment a
@@ -152,7 +170,7 @@ class TEST101
       }
     }
   }
-  
+
   public static void orderSummary(String onOrAfterDate,
                                   long[] numOrders,
                                   ResultSet[] rs1,
@@ -162,7 +180,7 @@ class TEST101
     String[] lmStatus = new String[1];
 
     String param = "'" + onOrAfterDate + "'";
-      
+
     Connection conn = null;
     if (!isWindows())
       conn = DriverManager.getConnection("jdbc:default:connection");
@@ -190,7 +208,7 @@ class TEST101
     }
     else
     {
-      String stmtTxt = 
+      String stmtTxt =
           "control query default robust_query_optimization 'minimum';";
       lmGateway("ExecSql " + stmtTxt, lmStatus);
       // Call the LmUtility class to retrieve values from SQL/MX via a
@@ -200,9 +218,9 @@ class TEST101
       lmGateway("FetchSql " + query1, lmStatus);
       numOrders[0] = Long.parseLong(lmStatus[0].trim());
     }
-    
+
     // Open a result set for <order num, order info> rows
-    String query2 = 
+    String query2 =
       " SELECT    AMOUNTS.*, ORDERS.order_date, EMPS.last_name " +
       " FROM      ( select o.ordernum, count(d.partnum) as num_parts, " +
       "               sum(d.unit_price * d.qty_ordered) as amount " +
@@ -223,9 +241,9 @@ class TEST101
     {
       lmGateway("PutEnv RS_SQL_STMT_1=" + query2, lmStatus);
     }
-    
+
     // Open a result set for order detail rows
-    String query3 = 
+    String query3 =
       " SELECT    D.*, P.partdesc " +
       " FROM      trafodion.spjrs.odetail D, trafodion.spjrs.parts P, " +
       "             trafodion.spjrs.orders O " +
@@ -256,7 +274,7 @@ class TEST101
     String[] lmStatus = new String[1];
 
     String param = Integer.toString(partNum);
-      
+
     Connection conn = null;
     if (!isWindows())
       conn = DriverManager.getConnection("jdbc:default:connection");
@@ -428,7 +446,7 @@ class TEST101
       // force parallel plan
       Statement stmtc = conn.createStatement();
       stmtc.execute ("control query shape esp_exchange(cut);");
-      
+
       PreparedStatement ps = conn.prepareStatement(s);
       return ps.executeQuery();
     }

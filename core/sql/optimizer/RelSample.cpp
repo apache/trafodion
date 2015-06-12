@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@
 #include "CostMethod.h"
 #include "opt.h"
 #include "Globals.h"
+#include "SqlParserAux.h"
 
 // -----------------------------------------------------------------------
 // This file contains all the methods for the class RelSample.
@@ -902,18 +903,55 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
   // If this is a random sample on an HBase table, push the sampling down into
   // the Scan node and remove the Sample node from the tree. For HBase, we
   // perform sampling via a row filter on the HBase side.
+  //
   // Avoid pushdown for oversampling (sampling rate > 100%); the HBase filter
   // we use can not return >1 copy of a row.
   //
+  // For very low sampling rates, a significant amount of time could be spent in
+  // HBase before returning anything to Trafodion, with the risk of getting a
+  // scanner timeout exception. This is addressed on the HBase side by reducing
+  // the scan's cache size (the term they use for a set of rows combined into a
+  // single return). In extreme cases, the expected interval between returns may
+  // still be too great even when the cache size is set to the  minimum prescribed
+  // by the HBASE_NUM_CACHE_ROWS_MIN cqd. For these cases, we divide the sampling
+  // between HBase and Trafodion, doing as much as possible in HBase without risking
+  // timeout.
+  //
+  Float32 trafSampleRate = getSamplePercent();
   RelExpr* myChild = child(0);
   if (myChild->getOperatorType() == REL_SCAN &&
       (static_cast<Scan*>(myChild))->isHbaseTable() &&
       myChild->selectionPred().entries() == 0 &&
       isSimpleRandomRelative() &&
-      getSamplePercent() <= 1.0f)
+      trafSampleRate <= 1.0f)
     {
-      (static_cast<Scan*>(myChild))->samplePercent(getSamplePercent());
-      return myChild;
+      ULng32 returnInterval =
+          ActiveSchemaDB()->getDefaults().getAsULong(USTAT_HBASE_SAMPLE_RETURN_INTERVAL);
+      Lng32 cacheMin = CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN);
+      if (trafSampleRate < cacheMin / (Float32)returnInterval)
+        {
+          Float32 hbaseSampleRate = cacheMin / (Float32)returnInterval;
+          trafSampleRate /= hbaseSampleRate;
+
+          // The parser function literalOfNumericWithScale() is used to get the
+          // correct form of the ConstValue (a fixed numeric) required for the
+          // ITM_BALANCE sample percentage operand. That function expects a heap-
+          // allocated NAString (which it deletes) containing the percentage in
+          // text form.
+          static const int BUF_SIZE = 20;
+          char buf[BUF_SIZE];
+          snprintf(buf, BUF_SIZE, "%f", trafSampleRate * 100);  // Express as a percentage
+          NAString* percentStrPtr = new(STMTHEAP) NAString(buf, STMTHEAP);
+          ExprNode* oldConst = balanceExprTree_->getChild(1);
+          balanceExprTree_->setChild(1, literalOfNumericWithScale(percentStrPtr, '+'));
+          delete oldConst;
+          (static_cast<Scan*>(myChild))->samplePercent(hbaseSampleRate);
+        }
+      else
+        {
+          (static_cast<Scan*>(myChild))->samplePercent(trafSampleRate);
+          return myChild;
+        }
     }
 
   ItemExpr *requiredOrderTree = removeRequiredOrderTree();

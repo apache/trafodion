@@ -1,0 +1,125 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- forbidden semantics
+-- Illegal correlation name
+
+
+obey TEST_1_1_3_1(clean_up);
+obey TEST_1_1_3_1(set_up);
+log   LOG_1_1_3_1 clear;
+obey TEST_1_1_3_1(tests);
+LOG;
+obey TEST_1_1_3_1(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+DROP TRIGGER trig31;
+DROP TRIGGER trig32;
+DROP TRIGGER trig33;
+DROP TRIGGER trig34;
+DROP TRIGGER trig35;
+DROP TRIGGER trig36;
+DROP TRIGGER trig37;
+DROP TRIGGER trig38;
+DROP TRIGGER trig39;
+
+obey clearTables2;
+
+?section set_up
+SET SCHEMA cat1.schm;
+
+?section tests
+
+------------------------------------------------------------------
+-- 	TEST CASE
+------------------------------------------------------------------
+
+-- Correlation name must not be the same as the subject table name.
+CREATE TRIGGER trig31 AFTER INSERT
+	ON tab1A
+	REFERENCING NEW AS tab1A
+	FOR EACH STATEMENT
+		UPDATE tab1A
+		SET d= 100 WHERE a = 0;
+
+-- A row trigger cannot select from the transition table.
+CREATE TRIGGER trig32 AFTER UPDATE ON tab1a 
+	REFERENCING new AS mynew
+	FOR EACH ROW
+	INSERT INTO t2 SELECT a FROM mynew;
+
+-- A before trigger cannot select from the transition table.
+CREATE TRIGGER trig33 BEFORE UPDATE ON tab1a 
+	REFERENCING new AS mynew
+	FOR EACH ROW
+	SET MYNEW.B = (SELECT MAX(a) FROM mynew);
+
+-- The transition table cannot be changed.
+CREATE TRIGGER trig34 AFTER UPDATE ON tab1a 
+	REFERENCING new AS mynew
+	FOR EACH STATEMENT
+	UPDATE mynew SET b=2;
+
+-- Correlation name T1 conflicts with qualified identifier of table CAT.SCHM.T1.
+CREATE TRIGGER trig35 AFTER UPDATE ON tab1a 
+	REFERENCING new AS t1
+	FOR EACH STATEMENT
+	INSERT INTO t2 SELECT MAX(a), MAX(b) FROM cat1.schm.t1;
+
+-- Using the same name for OLD and NEW
+CREATE TRIGGER trig36 AFTER UPDATE ON t1
+	REFERENCING old AS xxx, new AS xxx
+	FOR EACH STATEMENT
+	UPDATE t2 SET b=2;
+
+-- Using subject table rows without SELECTing them
+CREATE TRIGGER trig37 AFTER UPDATE ON t1
+	REFERENCING new AS mynew
+	FOR EACH ROW
+	INSERT INTO t2 VALUES(t1.a, t1.b);
+
+-- Using MYNEW in an inner scope (should work)
+INSERT INTO t1 VALUES(7,7);
+INSERT INTO t3 VALUES(7,5);
+
+CREATE TRIGGER trig38 AFTER UPDATE ON t1
+	REFERENCING old AS myold, new AS mynew
+	FOR EACH STATEMENT
+	INSERT INTO t2(a,b)
+		SELECT myold.b, mynew.b
+		FROM   myold, mynew
+		WHERE  mynew.a =
+			(SELECT mynew.a FROM t3 mynew
+			 WHERE mynew.b=5);
+
+UPDATE t1 SET b=b+1;
+SELECT * FROM t1;
+SELECT * FROM t2;
+
+-- Giving correlation names to MYNEW and MYOLD (Should work)
+CREATE TRIGGER trig39 AFTER UPDATE ON tab1a 
+	REFERENCING old AS myold, new AS mynew
+	FOR EACH STATEMENT
+	INSERT INTO t2(a,b)
+		SELECT o.b, n.b
+		FROM   myold o, mynew n
+		WHERE  o.b <> n.b;
+
+--------------------------------------------------------

@@ -1,0 +1,265 @@
+>>
+>>-- Run Tests
+>>  	obey TESTMV072(Test1);
+>>
+>>-- user1 creates a table and grants select on the table to user2
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>create table T_072_T1 (a int, b int) attribute all mvs allowed;
+
+--- SQL operation complete.
+>>grant select on T_072_T1 to $$SQLUSER2Q$$ ;
+
+--- SQL operation complete.
+>>log;
+>>-- user2 creates some mvs on the table
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>create mv T_072_MV1 refresh on request initialize on refresh
++>	attribute all mvs allowed
++>	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+
+*** WARNING[12112] A secondary index C2.S2.T_072_MV1_762877175_1279 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>create mv T_072_MV2 refresh on request initialize on refresh
++>	as select sum(bb) bbb from T_072_MV1;
+
+--- SQL operation complete.
+>>log;
+>>-- user1 revokes the select priv from user2
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>-- FAIL
+>>revoke select on T_072_T1 from $$SQLUSER2Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>-- PASS with warning
+>>revoke select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+
+*** WARNING[12110] The materialized view C2.S2.T_072_MV1 and its dependents were dropped because of insufficient privileges.
+
+--- SQL operation completed with warnings.
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>log;
+>>set param ?name 'T_072_MV1';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>set param ?name 'T_072_MV2';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>log;
+>>
+>>--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+>>	obey TESTMV072(Test2);
+>>
+>>-- user1 grants select on the table to user2 wgo
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>grant select on T_072_T1 to  $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>log;
+>>-- user2 creates some mvs on the table and grants select to user3
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>create mv T_072_MV1 refresh on request initialize on refresh
++>	attribute all mvs allowed
++>	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+
+*** WARNING[12112] A secondary index C2.S2.T_072_MV1_175526785_1279 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>create mv T_072_MV2 refresh on request initialize on refresh
++>	as select sum(bb) bbb from T_072_MV1;
+
+--- SQL operation complete.
+>>grant select on c1.s1.T_072_T1 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>grant select on c2.s2.T_072_MV1 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>log;
+>>-- user3 creates some mvs on the table
+>>log;
+>>set schema c3.s3;
+
+--- SQL operation complete.
+>>create mv T_072_MV3 refresh on request initialize on refresh
++>	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+
+*** WARNING[12112] A secondary index C3.S3.T_072_MV3_277154416_1279 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>create mv T_072_MV4 refresh on request initialize on refresh
++>	as select sum(bb) bbb from c2.s2.T_072_MV1;
+
+--- SQL operation complete.
+>>log;
+>>-- user1 revokes the grant option for select priv from user2
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>-- FAIL
+>>revoke grant option for select on T_072_T1 from $$SQLUSER2Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>-- PASS with warning
+>>revoke grant option for select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+
+*** WARNING[12110] The materialized view C3.S3.T_072_MV4 and its dependents were dropped because of insufficient privileges.
+
+*** WARNING[12110] The materialized view C3.S3.T_072_MV3 and its dependents were dropped because of insufficient privileges.
+
+--- SQL operation completed with warnings.
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>log;
+>>log;
+>>set param ?name 'T_072_MV1';
+>>execute mvs;
+
+(EXPR)    
+----------
+
+T_072_MV1 
+
+--- 1 row(s) selected.
+>>set param ?name 'T_072_MV2';
+>>execute mvs;
+
+(EXPR)    
+----------
+
+T_072_MV2 
+
+--- 1 row(s) selected.
+>>log;
+>>set schema c3.s3;
+
+--- SQL operation complete.
+>>log;
+>>log;
+>>set param ?name 'T_072_MV3';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>set param ?name 'T_072_MV4';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>log;
+>>
+>>--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+>>	obey TESTMV072(Test3);
+>>-- user1 grants select on the table to user2 wgo
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>grant select on T_072_T1 to  $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>log;
+>>-- user2 passes the select priv to user3
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>grant select on c1.s1.T_072_T1 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>grant select on c2.s2.T_072_MV1 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>log;
+>>-- user3 uses the select priv
+>>log;
+>>set schema c3.s3;
+
+--- SQL operation complete.
+>>create mv T_072_MV3 refresh on request initialize on refresh
++>	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+
+*** WARNING[12112] A secondary index C3.S3.T_072_MV3_375744446_1279 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>create mv T_072_MV4 refresh on request initialize on refresh
++>	as select sum(bb) bbb from c2.s2.T_072_MV1;
+
+--- SQL operation complete.
+>>log;
+>>-- user1 revokes the select priv from user2 cascade
+>>log;
+>>set schema c1.s1;
+
+--- SQL operation complete.
+>>revoke select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+
+*** WARNING[12110] The materialized view C2.S2.T_072_MV1 and its dependents were dropped because of insufficient privileges.
+
+*** WARNING[12110] The materialized view C3.S3.T_072_MV3 and its dependents were dropped because of insufficient privileges.
+
+--- SQL operation completed with warnings.
+>>log;
+>>set schema c2.s2;
+
+--- SQL operation complete.
+>>log;
+>>log;
+>>set param ?name 'T_072_MV1';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>set param ?name 'T_072_MV2';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>log;
+>>set schema c3.s3;
+
+--- SQL operation complete.
+>>log;
+>>log;
+>>set param ?name 'T_072_MV3';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>set param ?name 'T_072_MV4';
+>>execute mvs;
+
+--- 0 row(s) selected.
+>>log;
+>>
+>>--###################################################################
+>>-- clean and exit
+>>obey TESTMV072(clean_up);
+>>
+>>sh sh runmxci.ksh -i "TESTMV072(user3clean_up)";
+>>sh sh runmxci.ksh -i "TESTMV072(user2clean_up)";
+>>sh sh runmxci.ksh -i "TESTMV072(user1clean_up)";
+>>---------------------------------------------------------------------
+>>log;

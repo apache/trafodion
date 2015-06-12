@@ -368,7 +368,6 @@ void ContextCli::deleteMe()
 
   // delete all trusted routines in this context
   CollIndex maxTrustedRoutineIx = trustedRoutines_.getUsedLength();
-  LmResult res;
 
   for (CollIndex rx=0; rx<maxTrustedRoutineIx; rx++)
     if (trustedRoutines_.used(rx))
@@ -5774,7 +5773,7 @@ CollIndex ContextCli::addTrustedRoutine(LmRoutine *r)
   return result;
 }
 
-LmRoutine *ContextCli::getTrustedRoutine(CollIndex ix)
+LmRoutine *ContextCli::findTrustedRoutine(CollIndex ix)
 {
   if (trustedRoutines_.used(ix))
     return trustedRoutines_[ix];

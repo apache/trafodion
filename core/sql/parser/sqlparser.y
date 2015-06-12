@@ -65,6 +65,9 @@
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
 #include "Platform.h"				// must be the first #include
+//debug yacc
+#define YY_LOG_FILE "yylog"
+#define YYFPRINTF(stderr, format, args...) {FILE* fp=fopen(YY_LOG_FILE, "a+");fprintf(fp, format, ##args);fclose(fp);}
 
 #define   SQLPARSERGLOBALS__INITIALIZE
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
@@ -895,7 +898,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_OR
 %token <tokval> TOK_ORDER
 %token <tokval> TOK_ORDERED
-%token <tokval> TOK_OSIM_CAPTURE
 %token <tokval> TOK_OS_USERID
 %token <tokval> TOK_OUT
 %token <tokval> TOK_OUTER
@@ -1207,6 +1209,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_BUFFERED            /* Tandem extension */
 %token <tokval> TOK_BYTE                /* TD extension that HP maps to CHAR */
 %token <tokval> TOK_BYTES               /* Tandem extension */
+%token <tokval> TOK_CAPTURE
 %token <tokval> TOK_CASCADE
 %token <tokval> TOK_CASCADED
 %token <tokval> TOK_CATALOG
@@ -1323,6 +1326,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_OPCODE              /* internal label alter opcode */
 %token <tokval> TOK_OPTION
 %token <tokval> TOK_OPTIONS
+%token <tokval> TOK_OSIM
+%token <tokval> TOK_SIMULATE
 %token <tokval> TOK_PARALLEL            /* Tandem extension */
 %token <tokval> TOK_PARTITION           /* Tandem extension non-reserved word*/
 %token <tokval> TOK_PARTITIONING        /* Tandem extension non-reserved word*/
@@ -1844,7 +1849,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <uint>                 output_hostvar_list
 %type <uint>                 input_hostvar_list
 %type <boolean>              global_hint
-%type <boolean>              osim_capture_hint
 %type <boolean>              set_quantifier
 %type <tokval>               firstn_sorted
 %type <item>                 sort_spec_list
@@ -2155,7 +2159,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		delete_statement
 %type <relx>      		delete_start_tokens
 %type <relx>      		control_statement
-
+%type <relx>                    osim_statement
 %type <relx>      		set_statement  
 %type <relx>      		set_table_statement  
 %type <boolean>                 optional_stream
@@ -2541,6 +2545,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		sg_identity_option
 %type <pElemDDL>  		sg_identity_function
 %type <pElemDDL>  		sequence_generator_options
+%type <pElemDDL>  		all_sequence_generator_options
 %type <pElemDDL>  		sequence_generator_option
 %type <pElemDDL>  		sequence_generator_option_list
 %type <pElemDDL>  		start_with_option
@@ -2549,6 +2554,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		min_value_option
 %type <pElemDDL>  		cache_option
 %type <pElemDDL>  		cycle_option
+%type <pElemDDL>  		reset_option
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
@@ -6169,16 +6175,6 @@ TOK_ROWSET '(' rowset_input_host_variable_list ')'
 global_hint : empty { $$ = FALSE; }
     | TOK_BEGIN_HINT TOK_ORDERED TOK_END_HINT 
       { $$ = TRUE; QueryAnalysis::Instance()->setJoinOrderByUser(); }
-    | osim_capture_hint
-
-/* type boolean */
-osim_capture_hint : TOK_BEGIN_HINT TOK_OSIM_CAPTURE character_string_literal TOK_END_HINT 
-      { $$ = TRUE; 
-        if (CURRCONTEXT_OPTSIMULATOR) {
-          OptimizerSimulator::osimMode mode = OptimizerSimulator::CAPTURE;
-          CURRCONTEXT_OPTSIMULATOR->setOsimModeAndLogDir(mode, $3->data(), TRUE);
-        }
-      }
 
 /* type hint */
 optimizer_hint : empty { $$ = NULL; }
@@ -8964,26 +8960,32 @@ sg_identity_function :
                                        $3 /*sequence_generator_option_list*/);
                                      
 		    }  
-		                   
+	
+/* type pElemDDL */
+all_sequence_generator_options : empty
+                                {
+                                  $$ = NULL;
+                                }
+                      | sequence_generator_option_list
+                      | reset_option
+	                   
 /* type pElemDDL */
 sequence_generator_options : empty
                                 {
                                   $$ = NULL;
                                 }
-
                       | sequence_generator_option_list
 
 /* type pElemDDL */
 sequence_generator_option_list :   sequence_generator_option
-
 		      | sequence_generator_option_list sequence_generator_option
-		     
-        {
-                    $$ = new (PARSERHEAP())
-				    ElemDDLOptionList(
-                                       $1 /*sequence_generator_option_list*/,
-                                       $2 /*sequence_generator_option*/);
-        }
+                        {
+                          $$ = new (PARSERHEAP())
+                            ElemDDLOptionList(
+                                              $1 /*sequence_generator_option_list*/,
+                                              $2 /*sequence_generator_option*/);
+                        }
+
 /* type pElemDDL */
 sequence_generator_option : start_with_option
                       | increment_option
@@ -9100,6 +9102,15 @@ cycle_option : TOK_CYCLE
   
      }
 
+/* type pElemDDL */
+reset_option : TOK_RESET
+     {
+        // RESET Option
+        $$ = new (PARSERHEAP())
+          ElemDDLSGOptionResetOption();
+  
+     } 
+                                          
 /* type pElemDDL */
 cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
      {
@@ -11291,34 +11302,26 @@ tok_char_or_character_or_byte : TOK_CHAR | TOK_CHARACTER
 /* type na_type */
 blob_type : TOK_BLOB blob_optional_left_len_right 
             {
-	
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("BLOB");
 		}
 	      else
 		{
-    
-		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
-	     
-
+    		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
 		}
             }
           | TOK_CLOB blob_optional_left_len_right 
             {
-
-	      
-
-	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
+	      if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("CLOB");
 		}
 	      else
 		{
-
-
-	      $$ = new (PARSERHEAP()) SQLClob ( $2 );
-	      
+                  $$ = new (PARSERHEAP()) SQLClob ( $2 );
 		}
             }
 
@@ -14250,7 +14253,10 @@ interactive_query_expression:
 				{
 				  $$ = finalize($1);
 				}
-
+           |  osim_statement
+              {
+                  $$ = finalize($1);
+              }
               | set_statement
 				{ 
 				  $$ = finalize($1);
@@ -20644,6 +20650,63 @@ control_statement : TOK_CONTROL TOK_QUERY TOK_SHAPE query_shape_options query_sh
                   | declare_or_set_cqd
                   | set_session_default_statement
 
+osim_statement : TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
+                   {
+                      //input : $4 osim directory
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::CAPTURE, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_CAPTURE TOK_STOP
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::OFF, 
+                                                                                    *(new (PARSERHEAP()) NAString("")),
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_SIMULATE TOK_START
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
+                                                                                    *(new (PARSERHEAP()) NAString("")),
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_SIMULATE TOK_CONTINUE character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal ',' TOK_FORCE
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
+                                                                                    *$4,
+                                                                                    TRUE,
+                                                                                    PARSERHEAP());                                                             
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_UNLOAD character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::UNLOAD, 
+                                                                                    *$3,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());                                                            
+                      $$ = osim;
+                   }
 /* type relx */
 /* Except where noted (the Ansi flavor of SET CATALOG and of SET SCHEMA),
  * all of these are Tandem syntax extensions.
@@ -29337,7 +29400,7 @@ create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_
 			delete $4 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
 			ElemDDLSGOptions *sgOptions = 
 			  new (PARSERHEAP()) ElemDDLSGOptions(
@@ -29352,7 +29415,7 @@ alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_ge
 			delete $3 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
                         if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
                           {
@@ -30239,7 +30302,6 @@ no_log: empty
 		{
 			$$ = TRUE;
 		}
-        | osim_capture_hint
 
  no_check_log: empty
 		{
@@ -30260,10 +30322,6 @@ no_log: empty
 		| TOK_NO TOK_CHECK TOK_NOMVLOG
 		{
 		  $$ = 3;
-		}
-                | osim_capture_hint
-		{
-		  $$ = 0;
 		}
 
 ignore_triggers: empty
@@ -30995,6 +31053,19 @@ alter_table_alter_column_set_sg_option : TOK_ALTER TOK_COLUMN column_name TOK_SE
 				  ElemDDLSGOptions *sgOptions = new (PARSERHEAP()) ElemDDLSGOptions(
 				     1, /* SG_INTERNAL */
 				     $5 /*sequence_generator_option_list*/);
+                                       
+				  $$ = new (PARSERHEAP())
+				    StmtDDLAlterTableAlterColumnSetSGOption(
+				      *$3,        // column name
+				      sgOptions  /* sequence generator options*/);
+				      
+				  delete $3;
+				}
+                             | TOK_ALTER TOK_COLUMN column_name reset_option
+				{
+				  ElemDDLSGOptions *sgOptions = new (PARSERHEAP()) ElemDDLSGOptions(
+				     1, /* SG_INTERNAL */
+				     $4 /*sequence_generator_option_list*/);
                                        
 				  $$ = new (PARSERHEAP())
 				    StmtDDLAlterTableAlterColumnSetSGOption(
@@ -32959,7 +33030,6 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_NVL
                       | TOK_NULLIFZERO
                       | TOK_OFFSET
-                      | TOK_OSIM_CAPTURE
                       | TOK_OS_USERID
                       | TOK_PI
                       | TOK_PIVOT

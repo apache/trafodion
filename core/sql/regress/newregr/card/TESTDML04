@@ -1,0 +1,423 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML04 (Cardinality)
+-- Functionality: Tests cardinalities with expressions.
+-- Expected Files: ETESTDML04.
+-- History: Created on 12/05/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR
+                (operator like '%JOIN%') OR
+                (operator like '%GROUP%') OR 
+                (operator like '%TUPLE%') OR
+                (operator like '%INSERT%') OR
+                (operator like '%DELETE%') OR
+                (operator like '%UPDATE%') OR
+                (operator like '%VALUE%') OR
+                (operator like '%UNPACK%') OR
+                (operator like '%UNION%')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+set schema cat.hcube;
+control query default hist_rowcount_requiring_stats '1';
+
+drop table ui1;
+
+log ATESTDML04 clear;
+
+set schema TPCH.SCH;
+control query default query_cache '0';
+control query default cache_histograms '0';
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+-- LIKE predicates
+
+-- Q1
+prepare xx from
+select * from part where p_name like 'gr%';
+
+execute explainCard;
+
+showstats for query
+select * from part where p_name like 'gr%';
+
+-- Q2
+prepare xx from
+select * from part where p_name not like 'gr%';
+
+execute explainCard;
+
+-- Q3
+prepare xx from
+select * from part where p_name like '%';
+
+execute explainCard;
+
+-- Q4
+prepare xx from
+select * from part where p_name not like '%';
+
+execute explainCard;
+
+-- Q5
+prepare xx from
+select * from part where p_name like '%gr';
+
+execute explainCard;
+
+-- Q6
+prepare xx from
+select * from part where p_name not like '%gr';
+
+execute explainCard;
+
+-- Q7
+prepare xx from
+select * from part where UPPER(p_name) like '%g';
+
+execute explainCard;
+
+showstats for query
+select * from part where UPPER(p_name) like '%g';
+
+-- Q8
+prepare xx from
+select * from part where UPPER(p_name) not like '%g';
+
+execute explainCard;
+
+-- Q9
+prepare xx from
+select * from part where
+LOWER(p_name) > 'blue'
+and
+LOWER(p_name) < 'mint';
+
+execute explainCard;
+
+-- Q10
+prepare xx from
+select * from part where
+TRIM(p_name) = 'UNITED';
+
+execute explainCard;
+
+showstats for query
+select * from part where
+TRIM(p_name) = 'UNITED';
+
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'D1', path 'TPCH.SCH.PART'),
+scan(TABLE 'D2', path 'TPCH.SCH.PART'));
+
+-- Q11
+prepare xx from
+select * from part d1, part d2 where
+d1.p_name = UPPER(d2.p_name);
+
+execute explainCard;
+
+-- Q12
+prepare xx from
+select * from part d1, part d2 where
+d1.p_name <> UPPER(d2.p_name);
+
+execute explainCard;
+
+control query shape off;
+
+-- Q13
+prepare xx from
+select * from nation where
+UPPER(n_name) NOT IN ('INDIA', 'IRAN', 'UNITED STATES');
+
+execute explainCard;
+
+showstats for query
+select * from nation where
+UPPER(n_name) NOT IN ('INDIA', 'IRAN', 'UNITED STATES');
+
+-- Q14
+prepare xx from
+select * from nation where
+UPPER(n_name) IN ('INDIA', 'IRAN', 'UNITED STATES') OR
+cast( n_regionkey as real) = 2;
+
+execute explainCard;
+
+----------------------------------------
+set schema cat.hcube;
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+-- Q15
+prepare xx from
+select * from t7 where log(a) > 7 and log(a) < 900;
+
+execute explainCard;
+
+-- Q16
+control query shape implicit enforcers hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T10'));
+
+prepare xx from
+  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.b
+              else t8.a + t8.b end) = t10.a;
+
+execute explainCard;
+
+-- Q17
+prepare xx from
+  select t8.a, t8.b
+  from t8, t10
+  where (case when t8.a = 10
+              then t8.b
+              else t8.a + t8.b end) = (t10.a + t10.b);
+
+execute explainCard;
+
+-- Q18
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'D1', path 'CAT.HCUBE.T8'),
+scan(TABLE 'D2', path 'CAT.HCUBE.T8'));
+
+prepare xx from
+select * from t8 d1, t8 d2 where
+(d1.b * d2.b) = d2.c;
+
+execute explainCard;
+
+-- Q19
+control query shape implicit enforcers nested_join(unpack(tuple),nested_join(
+update,
+union(delete_unique ,insert)));
+
+prepare xx from
+UPDATE  t10
+           SET   b = b + 2
+           WHERE (c = ?[3000]) ;
+
+execute explainCard;
+
+-- Q20
+prepare xx from
+UPDATE  t10
+           SET   b = b + 2
+           WHERE (c = ?[300]) ;
+
+execute explainCard;
+
+-- Q21
+create table ui1 like t10;
+
+control query shape implicit enforcers nested_join(sort(hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T10'),
+scan(path 'CAT.HCUBE.T4')))),
+insert);
+
+prepare XX from
+insert into ui1 select *
+                from t10
+                where t10.b <= (select count (*)
+                      from t4
+                      where t10.c = t4.b) ;
+
+execute explainCard;
+
+-- Test Delete-Select
+-- Q22
+control query shape implicit enforcers nested_join(nested_join(
+scan(path 'CAT.HCUBE.UI1'),
+hash_groupby(nested_join(
+scan(path 'CAT.HCUBE.T10'),
+scan(path 'CAT.HCUBE.T4')))),
+delete_unique);
+
+prepare XX from
+delete from ui1 where ui1.a in (select t10.a
+                from t10
+                where t10.b <= (select count (*)
+                      from t4
+                      where t10.c = t4.b)) ;
+
+execute explainCard;
+
+-- Join with Tuple Lists
+
+control query shape off;
+
+control query default comp_int_22 '2';
+
+-- Q23
+prepare xx from
+select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
+T.a = T8.b;
+
+execute explainCard;
+
+showstats for query
+select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
+T.a = T8.b;
+
+-- Q24
+prepare xx from
+select * from (values (1),(2),(3),(4),(5), (1),(2),(3),(4),(5), (1),(2),(3),(4),(5), (1),(2),(3),(4),(5)) as T(a), t8 where
+T.a = T8.c;
+
+execute explainCard;
+
+-- Q25
+prepare xx from
+select * from t4 where t4.a in (1, 2, 3);
+
+execute explainCard;
+
+-- Q26
+prepare xx from
+select * from t8 where t8.b in (1, 2, 3, 4);
+
+execute explainCard;
+
+-- Q27
+prepare xx from
+select * from t8 where t8.c in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 1,1,1,1,1,1,1,1,1,1,2,3);
+
+execute explainCard;
+
+-- Q28
+prepare xx from
+select * from t8 where t8.b in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 1,1,1,1,1,1,1,1,1,1,2,3);
+
+execute explainCard;
+
+control query default join_order_by_user 'on';
+
+-- Q29
+prepare xx from
+select * from (values (1),(2),(3),(4),(5)) as T(a), t4 where
+T.a = T4.b;
+
+execute explainCard;
+
+-- Q30
+prepare xx from
+select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
+T.a = T8.b;
+
+execute explainCard;
+
+-- Q31
+prepare xx from
+select * from (values (1),(2),(3),(4),(5)) as T(a), t8 where
+T.a = T8.c;
+
+execute explainCard;
+
+-- Query on column with duplicate interval boundaries
+
+-- Q32
+-- look for 'some text'. The result should be 126K
+
+prepare xx from select * from cube2 where txt = 'some text';
+
+execute explainCard;
+
+-- Q33
+-- look for 'bright yellow flower'. The result shoule be 600
+
+prepare xx from select * from cube2 where txt = 'bright yellow flower';
+
+execute explainCard;
+
+-- Q34
+-- look for all values greater than or equal to 'some text'. Result should be
+-- 128K
+
+prepare xx from select * from cube2 where txt >= 'some text';
+
+execute explainCard;
+
+-- Q35
+-- look for all values greater than 'some text'. Result should be
+-- 2400
+
+prepare xx from select * from cube2 where txt > 'some text';
+
+execute explainCard;
+
+showstats for query select * from cube2 where txt > 'some text';
+
+-- Q36
+-- look for all values less than 'some text'. Result should be
+-- 21K
+
+prepare xx from select * from cube2 where txt < 'some text';
+
+execute explainCard;
+
+-- Q37
+-- look for all values less than or equal to 'some text'. Result should be
+-- 147K
+
+prepare xx from select * from cube2 where txt <= 'some text';
+
+execute explainCard;
+
+-- Q38
+-- look for all values not equal to 'some text'. Result should be
+-- 23K
+
+prepare xx from select * from cube2 where txt <> 'some text';
+
+execute explainCard;
+
+-- Q39
+-- look for all values greater than or equal to 'some text' and
+-- less than or equal to 'some text repeated again. Result should be
+-- 129K
+
+prepare xx from select * from cube2 where txt >= 'some text' 
+and txt <= 'some text repeated again';
+
+execute explainCard;
+
+-- Q40
+-- look for all values greater than or equal to 'some text'. Result should be
+-- 128K
+
+prepare xx from select * from cube2 where txt > 'bright yellow sun' 
+and txt <= 'some text';
+
+execute explainCard;
+
+showstats for query select * from cube2 where txt > 'bright yellow sun' 
+and txt <= 'some text';
+
+LOG;
+exit;

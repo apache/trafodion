@@ -1,0 +1,833 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST010
+-- Unit Test to test the support for HAVING predictes.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST010(clean_up);
+obey TEST010(clean_up_files);
+log LOG010 clear;
+obey TEST010(set_up);
+obey TEST010(create_mvs);
+obey TEST010(match_no_having);
+obey TEST010(match_no_having_rollup);
+obey TEST010(match_having_range_match);
+obey TEST010(match_having_range_match_rollup);
+obey TEST010(match_having_range_match_rollup_on_grouping);
+obey TEST010(match_having_range_sub);
+obey TEST010(match_having_range_sub_rollup);
+obey TEST010(match_having_range_no_sub);
+obey TEST010(match_having_range_no_sub_rollup);
+obey TEST010(match_having_residual_match);
+obey TEST010(match_having_residual_match_rollup);
+obey TEST010(match_having_residual_match_rollup_on_grouping);
+obey TEST010(match_having_residual_no_match);
+obey TEST010(match_having_residual_no_match_rollup);
+obey TEST010(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema test010 cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm HAVING*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default QUERY_CACHE '0';
+control query default MULTI_JOIN_THRESHOLD '2';
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+obey GetMvDesc;
+
+create schema test010;
+set schema test010;
+set pattern $$MVSchemaName$$ TEST010;
+
+create table T010_FACT (
+	g1   int,
+	g2   float,
+	dimkey int
+	) no partition;
+
+create table T010_DIM (
+        pkey int not null primary key, 
+        dimdata1 int,
+        dimdata2 char(10)
+        ) store by primary key no partition;
+
+insert into T010_FACT values
+  (2, 6, 5), (7, 6, 8), (4, 7, 5), (9, 5, 5), (5, 5, 3),  -- Random data
+  (2, 1, 9), (5, 8, 8), (4, 4, 6), (3, 2, 5), (9, 1, 6),
+  (2, 4, 7), (7, 1, 9), (6, 3, 3), (1, 9, 8), (5, 3, 1),
+  (8, 8, 2), (1, 9, 8), (8, 9, 4), (8, 1, 7), (4, 6, 4),
+  (1, 4, 5), (3, 7, 6), (6, 7, 2), (6, 1, 2), (9, 5, 3),
+  (4, 5, 4), (8, 6, 5), (8, 8, 8), (8, 6, 9), (1, 6, 4),
+  (7, 5, 7), (5, 6, 2), (8, 3, 8), (2, 1, 4), (2, 1, 5),
+  (6, 2, 5), (2, 7, 9), (3, 9, 7), (3, 5, 1), (1, 8, 4),
+  (3, 3, 4), (9, 1, 4), (2, 1, 9), (8, 6, 6), (9, 8, 1),
+  (5, 1, 9), (2, 9, 3), (6, 3, 2), (9, 4, 9), (2, 5, 8),
+  (1, 1, 1), (1, 1, 1), (1, 1, 1),                       -- Higher count data
+  (1, 2, 1), (1, 2, 1), (1, 2, 1), (1, 2, 1), (1, 2, 1), 
+  (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), 
+  (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1);
+insert into T010_FACT(g1)         values (0);           -- Some null values
+insert into T010_FACT(g1, g2)     values (0, 0);
+insert into T010_FACT(g1, dimkey) values (0, 1);
+insert into T010_FACT(g2)         values (0);
+insert into T010_FACT(g2, dimkey) values (0, 1);
+insert into T010_FACT(dimkey)     values (1);
+
+insert into T010_DIM(pkey, dimdata1, dimdata2) values
+  (1, 1, 'abcdef'), (2, 2, 'abcdef'), (3, 3, 'abcdef'), 
+  (4, 4, 'aNICEf'), (5, 5, 'aNICEf'), (6, 6, 'aNICEf'),
+  (7, 7, 'aNIECE'), (8, 8, 'aNIECE'), (9, 9, 'aNIECE');
+insert into T010_DIM(pkey) values (10);
+
+?section create_mvs
+--===========================================
+-- Create MVs
+--===========================================
+
+-- MJV
+create mv having_mjv
+	recompute
+	initialized on create
+	as  select *
+	    from T010_FACT, T010_DIM
+	    where dimkey=pkey;
+
+set pattern $$MVName$$ HAVING_MJV;
+obey TEST010(dump_MV);
+
+-- MAV with no HAVING clause
+create mv having_mav1
+	recompute
+	initialized on create
+	as  select g1, g2, count(*) cnt_star, count(dimdata1) cnt, max(dimdata2) mx
+	    from T010_FACT, T010_DIM
+	    where dimkey=pkey
+	    group by g1, g2;
+
+set pattern $$MVName$$ HAVING_MAV1;
+obey TEST010(dump_MV);
+
+-- MAV with range HAVING clause
+create mv having_mav2
+	recompute
+	initialized on create
+	as  select g1, g2, count(*) cnt_star, count(dimdata1) cnt
+	    from T010_FACT, T010_DIM
+	    where dimkey=pkey
+	    group by g1, g2
+	    having count(dimdata1) between 2 and 8;
+
+set pattern $$MVName$$ HAVING_MAV2;
+obey TEST010(dump_MV);
+
+-- MAV with residual HAVING clause
+create mv having_mav3
+	recompute
+	initialized on create
+	as  select g1, g2, count(*) cnt_star, max(dimdata2) mx
+	    from T010_FACT, T010_DIM
+	    where dimkey=pkey
+	    group by g1, g2
+	    having max(dimdata2) like '%NICE%';
+
+set pattern $$MVName$$ HAVING_MAV3;
+obey TEST010(dump_MV);
+
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV, :CAT.TEST010.HAVING_MAV1, :CAT.TEST010.HAVING_MAV2, :CAT.TEST010.HAVING_MAV3';
+
+?section HAVING_NONE
+prepare QueryStmt from
+  select g1, g2, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1, g2
+  order by g1, g2;
+
+?section match_no_having
+--===========================================
+-- Query 1, No HAVING_predicates
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_NONE;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having1.in;
+sh echo MATCH HAVING_NONE.xml >> having1.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having1.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_NONE_ROLLUP
+prepare QueryStmt from
+  select g1, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  order by g1;
+
+?section match_no_having_rollup
+--===========================================
+-- Query 2, No HAVING_predicates, with rollup
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_NONE_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having2.in;
+sh echo MATCH HAVING_NONE_ROLLUP.xml >> having2.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having2.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RANGE_MATCH
+prepare QueryStmt from
+  select g1, g2, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1, g2
+  having count(dimdata1) between 2 and 8
+     and count(*) = 2
+  order by g1, g2;
+
+?section match_having_range_match
+--===========================================
+-- Query 3, HAVING is a matching range predicate
+-- Should match MJV1, MAV1, MAV2
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_MATCH;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+ 
+sh echo INITIALIZE > having3.in;
+sh echo MATCH HAVING_RANGE_MATCH.xml >> having3.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having3.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+-- Verify MAV2 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV2';
+obey TEST010(compare);
+
+?section HAVING_RANGE_MATCH_ROLLUP
+prepare QueryStmt from
+  select g1, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having count(dimdata1) between 2 and 8
+     and count(*) = 2
+  order by g1;
+
+?section match_having_range_match_rollup
+--===========================================
+-- Query 4, HAVING is a matching range predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_MATCH_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having4.in;
+sh echo MATCH HAVING_RANGE_MATCH_ROLLUP.xml >> having4.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having4.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RANGE_MATCH_ROLLUP_GRP
+prepare QueryStmt from
+  select g1, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having sum(g2) between 10 and 20
+  order by g1;
+
+?section match_having_range_match_rollup_on_grouping
+--===========================================
+-- Query 4-1, HAVING is a matching range predicate
+-- Should match MJV, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_MATCH_ROLLUP_GRP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having41.in;
+sh echo MATCH HAVING_RANGE_MATCH_ROLLUP_GRP.xml >> having41.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having41.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RANGE_SUB
+prepare QueryStmt from
+ select g1, g2, count(dimdata1) cnt
+ from T010_FACT, T010_DIM
+ where dimkey=pkey
+ group by g1, g2
+ having count(dimdata1) between 3 and 8
+ order by g1, g2;
+
+?section match_having_range_sub
+--===========================================
+-- Query 5, HAVING is a subsumed range predicate
+-- Should match MJV1, MAV1, MAV2
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_SUB;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having5.in;
+sh echo MATCH HAVING_RANGE_SUB.xml >> having5.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having5.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+-- Verify MAV2 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV2';
+obey TEST010(compare);
+
+?section HAVING_RANGE_SUB_ROLLUP
+prepare QueryStmt from
+  select g1, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having count(dimdata1) between 3 and 8
+  order by g1;
+
+?section match_having_range_sub_rollup
+--===========================================
+-- Query 6, HAVING is a subsumed range predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_SUB_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having6.in;
+sh echo MATCH HAVING_RANGE_SUB_ROLLUP.xml >> having6.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having6.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RANGE_NOSUB
+prepare QueryStmt from
+  select g1, g2, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1, g2
+  having count(dimdata1) between 1 and 8
+  order by g1, g2;
+
+?section match_having_range_no_sub
+--===========================================
+-- Query 7, HAVING is a none subsumed range predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_NOSUB;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having7.in;
+sh echo MATCH HAVING_RANGE_NOSUB.xml >> having7.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having7.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RANGE_NOSUB_ROLLUP
+prepare QueryStmt from
+  select g1, count(dimdata1) cnt
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having count(dimdata1) between 1 and 8
+  order by g1;
+
+?section match_having_range_no_sub_rollup
+--===========================================
+-- Query 8, HAVING is a subsumed range predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RANGE_NOSUB_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+set pattern $$QueryName$$ HAVING_RANGE_NOSUB_ROLLUP;
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having8.in;
+sh echo MATCH HAVING_RANGE_NOSUB_ROLLUP.xml >> having8.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having8.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RES_MATCH
+prepare QueryStmt from
+  select g1, g2, max(dimdata2) mx
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1, g2
+  having max(dimdata2) like '%NICE%'
+     and count(*) = g1
+  order by g1, g2;
+
+?section match_having_residual_match
+--===========================================
+-- Query 9, HAVING is a matching residual predicate
+-- Should match MJV1, MAV1, MAV3
+--===========================================
+set pattern $$QueryName$$ HAVING_RES_MATCH;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having9.in;
+sh echo MATCH HAVING_RES_MATCH.xml >> having9.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having9.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify the MV is picked by the optimizer.
+obey TEST010(compare);
+
+?section HAVING_RES_MATCH_ROLLUP
+prepare QueryStmt from
+  select g1, max(dimdata2) mx
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having max(dimdata2) like '%NICE%'
+     and count(*) = g1
+  order by g1;
+
+?section match_having_residual_match_rollup
+--===========================================
+-- Query 10, HAVING is a matching residual predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RES_MATCH_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having10.in;
+sh echo MATCH HAVING_RES_MATCH_ROLLUP.xml >> having10.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having10.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify the MV is picked by the optimizer.
+obey TEST010(compare);
+
+?section HAVING_RES_MATCH_ROLLUP_GRP
+prepare QueryStmt from
+  select g1, max(dimdata2) mx, avg(g2) avg_g2
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having avg_g2+5 between 5 and 20
+  order by g1;
+
+?section match_having_residual_match_rollup_on_grouping
+--===========================================
+-- Query 10.1, HAVING is a residual predicate on an MV grouping column
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RES_MATCH_ROLLUP_GRP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having101.in;
+sh echo MATCH HAVING_RES_MATCH_ROLLUP_GRP.xml >> having101.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having101.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MJV';
+obey TEST010(compare);
+
+
+?section HAVING_RES_NOMATCH
+prepare QueryStmt from
+  select g1, g2, max(dimdata2) mx
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1, g2
+  having max(dimdata2) like '%NIECE%'
+  order by g1, g2;
+
+?section match_having_residual_no_match
+--===========================================
+-- Query 11, HAVING is a non-matching residual predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RES_NOMATCH;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having11.in;
+sh echo MATCH HAVING_RES_NOMATCH.xml >> having11.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having11.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section HAVING_RES_NOMATCH_ROLLUP
+prepare QueryStmt from
+  select g1, max(dimdata2) mx
+  from T010_FACT, T010_DIM
+  where dimkey=pkey
+  group by g1
+  having mx like '%NIECE%'
+  order by g1;
+
+?section match_having_residual_no_match_rollup
+--===========================================
+-- Query 12, HAVING is a non-matching residual predicate
+-- Should match MJV1, MAV1
+--===========================================
+set pattern $$QueryName$$ HAVING_RES_NOMATCH_ROLLUP;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST010($$QueryName$$);
+		
+obey TEST010(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > having12.in;
+sh echo MATCH HAVING_RES_NOMATCH_ROLLUP.xml >> having12.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS having12.in having.out";
+
+log;
+sh cat having.out >> LOG010;
+log LOG010;
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST010.HAVING_MAV1';
+obey TEST010(compare);
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+select * from $$MVName$$;
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG010;
+log LOG010;
+
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG010;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST010($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log T010_C1.txt clear;
+execute QueryStmt;
+log;
+log LOG010;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST010($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log T010_C2.txt clear;
+execute QueryStmt;
+log;
+log LOG010;
+
+-- Diff query results
+log;
+sh diff T010_C1.txt T010_C2.txt >> LOG010;
+log LOG010;
+-- Diff is done.

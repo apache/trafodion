@@ -80,6 +80,7 @@ class PrivMgr
     static bool isSQLAlterOperation(SQLOperation operation);
     static bool isSQLCreateOperation(SQLOperation operation);
     static bool isSQLDropOperation(SQLOperation operation);
+    static bool isSQLManageOperation(SQLOperation operation);
     static const char * ObjectEnumToLit(ComObjectType objectType);
     static ComObjectType ObjectLitToEnum(const char *objectLiteral);    
     static bool isRoleID(int_32 authID){ return CmpSeabaseDDLauth::isRoleID(authID); }
@@ -113,12 +114,12 @@ class PrivMgr
     PrivMgr( 
        const std::string &metadataLocation,
        ComDiagsArea * pDiags = NULL,
-       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZED);
     PrivMgr( 
        const std::string &trafMetadataLocation,
        const std::string &metadataLocation,
        ComDiagsArea * pDiags = NULL,
-       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZED);
     PrivMgr(const PrivMgr &rhs);
     virtual ~PrivMgr(void);
     

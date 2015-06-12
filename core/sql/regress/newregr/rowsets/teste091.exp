@@ -1,0 +1,43 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+EMPNUM	PNUM	HOURS
+------	----	-----
+E1 	P1 	40
+E1 	P2 	20
+E1 	P3 	80
+E1 	P4 	20
+E1 	P5 	12
+---------5 rows---------------
+E1 	P6 	12
+E2 	P1 	40
+E2 	P2 	80
+E3 	P2 	20
+E4 	P2 	20
+---------5 rows---------------
+E4 	P4 	40
+E4 	P5 	80
+---------2 rows---------------
+--- 12 row(s) selected.
+
+Expecting 12 rows selected
+Insert succeeded. Inserted Rows = 2
+Select succeeded. Selected Rows = 2
+Delete succeeded. Deleted Rows = 2
+Insert succeeded. Inserted Rows = 2
+Select succeeded. Selected Rows = 2
+Delete succeeded. Deleted Rows = 2

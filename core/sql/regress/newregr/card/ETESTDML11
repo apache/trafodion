@@ -1,0 +1,1566 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.atomic;
+
+--- SQL operation complete.
+>>
+>>--1
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.17E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--2
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.17E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--3
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.17E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--4
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.17E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--5
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.60E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--6
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--7
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--8
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--9
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--10
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--11
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.20E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--12
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.75E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--13
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.20E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--14
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.20E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--15
+>>prepare xx from select * from BIG R inner  JOIN BIG S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.20E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       BIG)             8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--16
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.05E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--17
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.05E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--18
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.16E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--19
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.08E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--20
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.89E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--21
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--22
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--23
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--24
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--25
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--26
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.68E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--27
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.16E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--28
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.93E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--29
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--30
+>>prepare xx from select * from BIG R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--31
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.17E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--32
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.87E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--33
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.42E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--34
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.37E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--35
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.54E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--36
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--37
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--38
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--39
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--40
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.38E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--41
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.20E+007           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--42
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.75E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--43
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.69E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--44
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.40E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--45
+>>prepare xx from select * from BIG R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 8.39E+006           
+2     FILE_SCAN                       BIG)             8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--46
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.38E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--47
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.29E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--48
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.27E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--49
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.30E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--50
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.90E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--51
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--52
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--53
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--54
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--55
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.86E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--56
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.26E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--57
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.26E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--58
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.26E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--59
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.08E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--60
+>>prepare xx from select * from GAP R inner  JOIN GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.97E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       GAP)             1.86E+006           
+
+--- 3 row(s) selected.
+>>
+>>--61
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.25E+007           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--62
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.39E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--63
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.75E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--64
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.53E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--65
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.47E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--66
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.34E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--67
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.52E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--68
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.51E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--69
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.43E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--70
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.52E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--71
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.01E+007           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--72
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.21E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--73
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.05E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--74
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.72E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--75
+>>prepare xx from select * from GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.61E+006           
+2     FILE_SCAN                       GAP)             1.86E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--76
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.01E+008           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--77
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.87E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--78
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.01E+008           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>
+>>--79
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.01E+008           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--80
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.N1 = S.N1 and R.N2 = S.N2 and R.N3 = S.N3 and R.N4 = S.N4 and R.N5 = S.N5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.01E+008           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--81
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.85E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--82
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.48E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--83
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.85E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--84
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.85E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--85
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.U1 = S.U1 and R.U2 = S.U2 and R.U3 = S.U3 and R.U4 = S.U4 and R.U5 = S.U5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.85E+007           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--86
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.18E+012           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--87
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.18E+012           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--88
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.24E+011           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--89
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.06E+010           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>--90
+>>prepare xx from select * from F_GAP R inner  JOIN F_GAP S ON R.Z1 = S.Z1 and R.Z2 = S.Z2 and R.Z3 = S.Z3 and R.Z4 = S.Z4 and R.Z5 = S.Z5;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.06E+010           
+2     FILE_SCAN                       F_GAP)           8.38E+006           
+3     FILE_SCAN                       F_GAP)           8.38E+006           
+
+--- 3 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+

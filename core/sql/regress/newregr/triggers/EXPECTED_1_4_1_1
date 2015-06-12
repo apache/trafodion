@@ -1,0 +1,136 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_1_4_1_1(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>
+>>CREATE TRIGGER trig1 AFTER UPDATE 
++>	ON tab1A
++>	REFERENCING NEW AS newrow, OLD AS oldrow
++>	FOR EACH ROW
++>		WHEN (newrow.b > oldrow.b)
++>
++>		INSERT INTO tab1A VALUES (newrow.a +1, newrow.b, oldrow.c, oldrow.d);
+
+--- SQL operation complete.
+>>obey TEST_1_4_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- the following command should add another row to tab1A
+>>
+>>UPDATE tab1A SET b=3, c=2;
+
+--- 1 row(s) updated.
+>>
+>>--------------------------------------------------------
+>>-- RESULT: tab1A: 
+>>-- 1  3  2  4
+>>-- 2  3  3  4
+>>--------------------------------------------------------
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            3            2            4  
+          2            3            3            4  
+
+--- 2 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>obey TEST_1_4_1_1(clean_up);
+>>
+>>DROP TRIGGER trig1;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 2 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_1_4_1_1(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>
+>>CREATE TRIGGER trig1 AFTER UPDATE 
++>	ON tab1A
++>	REFERENCING NEW AS newrow, OLD AS oldrow
++>	FOR EACH ROW
++>		WHEN (newrow.b > oldrow.b)
++>
++>		INSERT INTO tab1A VALUES (newrow.a +1, newrow.b, oldrow.c, oldrow.d);
+
+--- SQL operation complete.
+>>obey TEST_1_4_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- the following command should add another row to tab1A
+>>
+>>UPDATE tab1A SET b=3, c=2;
+
+--- 1 row(s) updated.
+>>
+>>--------------------------------------------------------
+>>-- RESULT: tab1A: 
+>>-- 1  3  2  4
+>>-- 2  3  3  4
+>>--------------------------------------------------------
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            3            2            4  
+          2            3            3            4  
+
+--- 2 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

@@ -1,0 +1,22 @@
+>>obey TEST_1_1_3_9(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>
+>>CREATE TRIGGER trig BEFORE UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS newtable, OLD AS oldRow
++>	FOR EACH ROW
++>
++>	SET oldRow.a = 100;
+
+*** ERROR[11017] Left hand side of SET assignment must be qualified with the name of the NEW transition variable.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------------------
+>>LOG;

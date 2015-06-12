@@ -1,0 +1,1226 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--**********************************************************************
+--  This script contains sanity checks for all base tables of the      *
+-- parallel test database.  Each section pertains to an underlying     *
+-- base table.                                                         *
+--                                                                     *
+--  For each column in each table, we determine the number of distinct *
+-- non-null values and the number of null values for that column.      *
+--**********************************************************************
+
+--<pb>
+?section UTAB00
+-------------------------------
+--  Sanity tests for UTAB00  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$U00$$;
+select count(*) from $$U00$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$U00$$;
+select count(*) from $$U00$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$U00$$;
+select count(*) from $$U00$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$U00$$;
+select count(*) from $$U00$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$U00$$;
+select count(*) from $$U00$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$U00$$;
+select count(*) from $$U00$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$U00$$;
+select count(*) from $$U00$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$U00$$;
+select count(*) from $$U00$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$U00$$;
+select count(*) from $$U00$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$U00$$;
+select count(*) from $$U00$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$U00$$;
+select count(*) from $$U00$$ where char_10 is null;
+
+select count(distinct char_100) from $$U00$$;
+select count(*) from $$U00$$ where char_100 is null;
+
+select count(distinct char_50p) from $$U00$$;
+select count(*) from $$U00$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$U00$$;
+select count(*) from $$U00$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$U00$$;
+select count(*) from $$U00$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$U00$$;
+select count(*) from $$U00$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$U00$$;
+select count(*) from $$U00$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$U00$$;
+select count(*) from $$U00$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$U00$$;
+select count(*) from $$U00$$ where date_12 is null;
+
+select count(distinct date_200) from $$U00$$;
+select count(*) from $$U00$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$U00$$;
+select count(*) from $$U00$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$U00$$;
+select count(*) from $$U00$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$U00$$;
+select count(*) from $$U00$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB00
+-------------------------------
+--  Sanity tests for PTAB00  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P00$$;
+select count(*) from $$P00$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P00$$;
+select count(*) from $$P00$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P00$$;
+select count(*) from $$P00$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P00$$;
+select count(*) from $$P00$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P00$$;
+select count(*) from $$P00$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P00$$;
+select count(*) from $$P00$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P00$$;
+select count(*) from $$P00$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P00$$;
+select count(*) from $$P00$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P00$$;
+select count(*) from $$P00$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P00$$;
+select count(*) from $$P00$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P00$$;
+select count(*) from $$P00$$ where char_10 is null;
+
+select count(distinct char_100) from $$P00$$;
+select count(*) from $$P00$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P00$$;
+select count(*) from $$P00$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P00$$;
+select count(*) from $$P00$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P00$$;
+select count(*) from $$P00$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P00$$;
+select count(*) from $$P00$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P00$$;
+select count(*) from $$P00$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P00$$;
+select count(*) from $$P00$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P00$$;
+select count(*) from $$P00$$ where date_12 is null;
+
+select count(distinct date_200) from $$P00$$;
+select count(*) from $$P00$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P00$$;
+select count(*) from $$P00$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P00$$;
+select count(*) from $$P00$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P00$$;
+select count(*) from $$P00$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB01
+-------------------------------
+--  Sanity tests for PTAB01  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P01$$;
+select count(*) from $$P01$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P01$$;
+select count(*) from $$P01$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P01$$;
+select count(*) from $$P01$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P01$$;
+select count(*) from $$P01$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P01$$;
+select count(*) from $$P01$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P01$$;
+select count(*) from $$P01$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P01$$;
+select count(*) from $$P01$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P01$$;
+select count(*) from $$P01$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P01$$;
+select count(*) from $$P01$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P01$$;
+select count(*) from $$P01$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P01$$;
+select count(*) from $$P01$$ where char_10 is null;
+
+select count(distinct char_100) from $$P01$$;
+select count(*) from $$P01$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P01$$;
+select count(*) from $$P01$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P01$$;
+select count(*) from $$P01$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P01$$;
+select count(*) from $$P01$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P01$$;
+select count(*) from $$P01$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P01$$;
+select count(*) from $$P01$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P01$$;
+select count(*) from $$P01$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P01$$;
+select count(*) from $$P01$$ where date_12 is null;
+
+select count(distinct date_200) from $$P01$$;
+select count(*) from $$P01$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P01$$;
+select count(*) from $$P01$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P01$$;
+select count(*) from $$P01$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P01$$;
+select count(*) from $$P01$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB02
+-------------------------------
+--  Sanity tests for PTAB02  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P02$$;
+select count(*) from $$P02$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P02$$;
+select count(*) from $$P02$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P02$$;
+select count(*) from $$P02$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P02$$;
+select count(*) from $$P02$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P02$$;
+select count(*) from $$P02$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P02$$;
+select count(*) from $$P02$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P02$$;
+select count(*) from $$P02$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P02$$;
+select count(*) from $$P02$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P02$$;
+select count(*) from $$P02$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P02$$;
+select count(*) from $$P02$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P02$$;
+select count(*) from $$P02$$ where char_10 is null;
+
+select count(distinct char_100) from $$P02$$;
+select count(*) from $$P02$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P02$$;
+select count(*) from $$P02$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P02$$;
+select count(*) from $$P02$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P02$$;
+select count(*) from $$P02$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P02$$;
+select count(*) from $$P02$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P02$$;
+select count(*) from $$P02$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P02$$;
+select count(*) from $$P02$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P02$$;
+select count(*) from $$P02$$ where date_12 is null;
+
+select count(distinct date_200) from $$P02$$;
+select count(*) from $$P02$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P02$$;
+select count(*) from $$P02$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P02$$;
+select count(*) from $$P02$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P02$$;
+select count(*) from $$P02$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB03
+-------------------------------
+--  Sanity tests for PTAB03  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P03$$;
+select count(*) from $$P03$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P03$$;
+select count(*) from $$P03$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P03$$;
+select count(*) from $$P03$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P03$$;
+select count(*) from $$P03$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P03$$;
+select count(*) from $$P03$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P03$$;
+select count(*) from $$P03$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P03$$;
+select count(*) from $$P03$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P03$$;
+select count(*) from $$P03$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P03$$;
+select count(*) from $$P03$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P03$$;
+select count(*) from $$P03$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P03$$;
+select count(*) from $$P03$$ where char_10 is null;
+
+select count(distinct char_100) from $$P03$$;
+select count(*) from $$P03$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P03$$;
+select count(*) from $$P03$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P03$$;
+select count(*) from $$P03$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P03$$;
+select count(*) from $$P03$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P03$$;
+select count(*) from $$P03$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P03$$;
+select count(*) from $$P03$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P03$$;
+select count(*) from $$P03$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P03$$;
+select count(*) from $$P03$$ where date_12 is null;
+
+select count(distinct date_200) from $$P03$$;
+select count(*) from $$P03$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P03$$;
+select count(*) from $$P03$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P03$$;
+select count(*) from $$P03$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P03$$;
+select count(*) from $$P03$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB04
+-------------------------------
+--  Sanity tests for PTAB04  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P04$$;
+select count(*) from $$P04$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P04$$;
+select count(*) from $$P04$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P04$$;
+select count(*) from $$P04$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P04$$;
+select count(*) from $$P04$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P04$$;
+select count(*) from $$P04$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P04$$;
+select count(*) from $$P04$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P04$$;
+select count(*) from $$P04$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P04$$;
+select count(*) from $$P04$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P04$$;
+select count(*) from $$P04$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P04$$;
+select count(*) from $$P04$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P04$$;
+select count(*) from $$P04$$ where char_10 is null;
+
+select count(distinct char_100) from $$P04$$;
+select count(*) from $$P04$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P04$$;
+select count(*) from $$P04$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P04$$;
+select count(*) from $$P04$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P04$$;
+select count(*) from $$P04$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P04$$;
+select count(*) from $$P04$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P04$$;
+select count(*) from $$P04$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P04$$;
+select count(*) from $$P04$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P04$$;
+select count(*) from $$P04$$ where date_12 is null;
+
+select count(distinct date_200) from $$P04$$;
+select count(*) from $$P04$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P04$$;
+select count(*) from $$P04$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P04$$;
+select count(*) from $$P04$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P04$$;
+select count(*) from $$P04$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB05
+-------------------------------
+--  Sanity tests for PTAB05  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P05$$;
+select count(*) from $$P05$$ where sInt16_10 is null;
+
+select count(distinct sInt32_60) from $$P05$$;
+select count(*) from $$P05$$ where sInt32_60 is null;
+
+select count(distinct sInt32_50p) from $$P05$$;
+select count(*) from $$P05$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P05$$;
+select count(*) from $$P05$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P05$$;
+select count(*) from $$P05$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P05$$;
+select count(*) from $$P05$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P05$$;
+select count(*) from $$P05$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P05$$;
+select count(*) from $$P05$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P05$$;
+select count(*) from $$P05$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P05$$;
+select count(*) from $$P05$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P05$$;
+select count(*) from $$P05$$ where char_10 is null;
+
+select count(distinct char_100) from $$P05$$;
+select count(*) from $$P05$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P05$$;
+select count(*) from $$P05$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P05$$;
+select count(*) from $$P05$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P05$$;
+select count(*) from $$P05$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P05$$;
+select count(*) from $$P05$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P05$$;
+select count(*) from $$P05$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P05$$;
+select count(*) from $$P05$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P05$$;
+select count(*) from $$P05$$ where date_12 is null;
+
+select count(distinct date_200) from $$P05$$;
+select count(*) from $$P05$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P05$$;
+select count(*) from $$P05$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P05$$;
+select count(*) from $$P05$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P05$$;
+select count(*) from $$P05$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB06
+-------------------------------
+--  Sanity tests for PTAB06  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P06$$;
+select count(*) from $$P06$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P06$$;
+select count(*) from $$P06$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P06$$;
+select count(*) from $$P06$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P06$$;
+select count(*) from $$P06$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P06$$;
+select count(*) from $$P06$$ where uInt16_10 is null;
+
+select count(distinct uInt32_60) from $$P06$$;
+select count(*) from $$P06$$ where uInt32_60 is null;
+
+select count(distinct uInt32_50p) from $$P06$$;
+select count(*) from $$P06$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P06$$;
+select count(*) from $$P06$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P06$$;
+select count(*) from $$P06$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P06$$;
+select count(*) from $$P06$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P06$$;
+select count(*) from $$P06$$ where char_10 is null;
+
+select count(distinct char_100) from $$P06$$;
+select count(*) from $$P06$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P06$$;
+select count(*) from $$P06$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P06$$;
+select count(*) from $$P06$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P06$$;
+select count(*) from $$P06$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P06$$;
+select count(*) from $$P06$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P06$$;
+select count(*) from $$P06$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P06$$;
+select count(*) from $$P06$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P06$$;
+select count(*) from $$P06$$ where date_12 is null;
+
+select count(distinct date_200) from $$P06$$;
+select count(*) from $$P06$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P06$$;
+select count(*) from $$P06$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P06$$;
+select count(*) from $$P06$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P06$$;
+select count(*) from $$P06$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB07
+-------------------------------
+--  Sanity tests for PTAB07  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P07$$;
+select count(*) from $$P07$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P07$$;
+select count(*) from $$P07$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P07$$;
+select count(*) from $$P07$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P07$$;
+select count(*) from $$P07$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P07$$;
+select count(*) from $$P07$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P07$$;
+select count(*) from $$P07$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P07$$;
+select count(*) from $$P07$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P07$$;
+select count(*) from $$P07$$ where uInt32_uniq is null;
+
+select count(distinct Int64_60) from $$P07$$;
+select count(*) from $$P07$$ where Int64_60 is null;
+
+select count(distinct Int64_uniq) from $$P07$$;
+select count(*) from $$P07$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P07$$;
+select count(*) from $$P07$$ where char_10 is null;
+
+select count(distinct char_100) from $$P07$$;
+select count(*) from $$P07$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P07$$;
+select count(*) from $$P07$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P07$$;
+select count(*) from $$P07$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P07$$;
+select count(*) from $$P07$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P07$$;
+select count(*) from $$P07$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P07$$;
+select count(*) from $$P07$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P07$$;
+select count(*) from $$P07$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P07$$;
+select count(*) from $$P07$$ where date_12 is null;
+
+select count(distinct date_200) from $$P07$$;
+select count(*) from $$P07$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P07$$;
+select count(*) from $$P07$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P07$$;
+select count(*) from $$P07$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P07$$;
+select count(*) from $$P07$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB08
+-------------------------------
+--  Sanity tests for PTAB08  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P08$$;
+select count(*) from $$P08$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P08$$;
+select count(*) from $$P08$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P08$$;
+select count(*) from $$P08$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P08$$;
+select count(*) from $$P08$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P08$$;
+select count(*) from $$P08$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P08$$;
+select count(*) from $$P08$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P08$$;
+select count(*) from $$P08$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P08$$;
+select count(*) from $$P08$$ where uInt32_uniq is null;
+
+select count(distinct Int64_6) from $$P08$$;
+select count(*) from $$P08$$ where Int64_6 is null;
+
+select count(distinct Int64_uniq) from $$P08$$;
+select count(*) from $$P08$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P08$$;
+select count(*) from $$P08$$ where char_10 is null;
+
+select count(distinct char_100) from $$P08$$;
+select count(*) from $$P08$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P08$$;
+select count(*) from $$P08$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P08$$;
+select count(*) from $$P08$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P08$$;
+select count(*) from $$P08$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P08$$;
+select count(*) from $$P08$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P08$$;
+select count(*) from $$P08$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P08$$;
+select count(*) from $$P08$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P08$$;
+select count(*) from $$P08$$ where date_12 is null;
+
+select count(distinct date_200) from $$P08$$;
+select count(*) from $$P08$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P08$$;
+select count(*) from $$P08$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P08$$;
+select count(*) from $$P08$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P08$$;
+select count(*) from $$P08$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB09
+-------------------------------
+--  Sanity tests for PTAB09  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P09$$;
+select count(*) from $$P09$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P09$$;
+select count(*) from $$P09$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P09$$;
+select count(*) from $$P09$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P09$$;
+select count(*) from $$P09$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P09$$;
+select count(*) from $$P09$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P09$$;
+select count(*) from $$P09$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P09$$;
+select count(*) from $$P09$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P09$$;
+select count(*) from $$P09$$ where uInt32_uniq is null;
+
+select count(distinct Int64_6) from $$P09$$;
+select count(*) from $$P09$$ where Int64_6 is null;
+
+select count(distinct Int64_uniq) from $$P09$$;
+select count(*) from $$P09$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P09$$;
+select count(*) from $$P09$$ where char_10 is null;
+
+select count(distinct char_100) from $$P09$$;
+select count(*) from $$P09$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P09$$;
+select count(*) from $$P09$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P09$$;
+select count(*) from $$P09$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P09$$;
+select count(*) from $$P09$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P09$$;
+select count(*) from $$P09$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P09$$;
+select count(*) from $$P09$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P09$$;
+select count(*) from $$P09$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P09$$;
+select count(*) from $$P09$$ where date_12 is null;
+
+select count(distinct date_200) from $$P09$$;
+select count(*) from $$P09$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P09$$;
+select count(*) from $$P09$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P09$$;
+select count(*) from $$P09$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P09$$;
+select count(*) from $$P09$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB10
+-------------------------------
+--  Sanity tests for PTAB10  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P10$$;
+select count(*) from $$P10$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P10$$;
+select count(*) from $$P10$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P10$$;
+select count(*) from $$P10$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P10$$;
+select count(*) from $$P10$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P10$$;
+select count(*) from $$P10$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P10$$;
+select count(*) from $$P10$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P10$$;
+select count(*) from $$P10$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P10$$;
+select count(*) from $$P10$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P10$$;
+select count(*) from $$P10$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P10$$;
+select count(*) from $$P10$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P10$$;
+select count(*) from $$P10$$ where char_10 is null;
+
+select count(distinct char_100) from $$P10$$;
+select count(*) from $$P10$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P10$$;
+select count(*) from $$P10$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P10$$;
+select count(*) from $$P10$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P10$$;
+select count(*) from $$P10$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P10$$;
+select count(*) from $$P10$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P10$$;
+select count(*) from $$P10$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P10$$;
+select count(*) from $$P10$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P10$$;
+select count(*) from $$P10$$ where date_12 is null;
+
+select count(distinct date_200) from $$P10$$;
+select count(*) from $$P10$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P10$$;
+select count(*) from $$P10$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P10$$;
+select count(*) from $$P10$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P10$$;
+select count(*) from $$P10$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB11
+-------------------------------
+--  Sanity tests for PTAB11  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P11$$;
+select count(*) from $$P11$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P11$$;
+select count(*) from $$P11$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P11$$;
+select count(*) from $$P11$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P11$$;
+select count(*) from $$P11$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P11$$;
+select count(*) from $$P11$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P11$$;
+select count(*) from $$P11$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P11$$;
+select count(*) from $$P11$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P11$$;
+select count(*) from $$P11$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P11$$;
+select count(*) from $$P11$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P11$$;
+select count(*) from $$P11$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P11$$;
+select count(*) from $$P11$$ where char_10 is null;
+
+select count(distinct char_100) from $$P11$$;
+select count(*) from $$P11$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P11$$;
+select count(*) from $$P11$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P11$$;
+select count(*) from $$P11$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P11$$;
+select count(*) from $$P11$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P11$$;
+select count(*) from $$P11$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P11$$;
+select count(*) from $$P11$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P11$$;
+select count(*) from $$P11$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P11$$;
+select count(*) from $$P11$$ where date_12 is null;
+
+select count(distinct date_200) from $$P11$$;
+select count(*) from $$P11$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P11$$;
+select count(*) from $$P11$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P11$$;
+select count(*) from $$P11$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P11$$;
+select count(*) from $$P11$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB12
+-------------------------------
+--  Sanity tests for PTAB12  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P12$$;
+select count(*) from $$P12$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P12$$;
+select count(*) from $$P12$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P12$$;
+select count(*) from $$P12$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P12$$;
+select count(*) from $$P12$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P12$$;
+select count(*) from $$P12$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P12$$;
+select count(*) from $$P12$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P12$$;
+select count(*) from $$P12$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P12$$;
+select count(*) from $$P12$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P12$$;
+select count(*) from $$P12$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P12$$;
+select count(*) from $$P12$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P12$$;
+select count(*) from $$P12$$ where char_10 is null;
+
+select count(distinct char_100) from $$P12$$;
+select count(*) from $$P12$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P12$$;
+select count(*) from $$P12$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P12$$;
+select count(*) from $$P12$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P12$$;
+select count(*) from $$P12$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P12$$;
+select count(*) from $$P12$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P12$$;
+select count(*) from $$P12$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P12$$;
+select count(*) from $$P12$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P12$$;
+select count(*) from $$P12$$ where date_12 is null;
+
+select count(distinct date_200) from $$P12$$;
+select count(*) from $$P12$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P12$$;
+select count(*) from $$P12$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P12$$;
+select count(*) from $$P12$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P12$$;
+select count(*) from $$P12$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB13
+-------------------------------
+--  Sanity tests for PTAB13  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P13$$;
+select count(*) from $$P13$$ where sInt16_10 is null;
+
+select count(distinct sInt32_100) from $$P13$$;
+select count(*) from $$P13$$ where sInt32_100 is null;
+
+select count(distinct sInt32_50p) from $$P13$$;
+select count(*) from $$P13$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P13$$;
+select count(*) from $$P13$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P13$$;
+select count(*) from $$P13$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P13$$;
+select count(*) from $$P13$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P13$$;
+select count(*) from $$P13$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P13$$;
+select count(*) from $$P13$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P13$$;
+select count(*) from $$P13$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P13$$;
+select count(*) from $$P13$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P13$$;
+select count(*) from $$P13$$ where char_10 is null;
+
+select count(distinct char_100) from $$P13$$;
+select count(*) from $$P13$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P13$$;
+select count(*) from $$P13$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P13$$;
+select count(*) from $$P13$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P13$$;
+select count(*) from $$P13$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P13$$;
+select count(*) from $$P13$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P13$$;
+select count(*) from $$P13$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P13$$;
+select count(*) from $$P13$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P13$$;
+select count(*) from $$P13$$ where date_12 is null;
+
+select count(distinct date_200) from $$P13$$;
+select count(*) from $$P13$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P13$$;
+select count(*) from $$P13$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P13$$;
+select count(*) from $$P13$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P13$$;
+select count(*) from $$P13$$ where varchar_uniq is null;
+
+--<pb>
+?section PTAB14
+-------------------------------
+--  Sanity tests for PTAB14  --
+-------------------------------
+
+select count(distinct sInt16_10) from $$P14$$;
+select count(*) from $$P14$$ where sInt16_10 is null;
+
+select count(distinct sInt32_60) from $$P14$$;
+select count(*) from $$P14$$ where sInt32_60 is null;
+
+select count(distinct sInt32_50p) from $$P14$$;
+select count(*) from $$P14$$ where sInt32_50p is null;
+
+select count(distinct sInt32_uniq) from $$P14$$;
+select count(*) from $$P14$$ where sInt32_uniq is null;
+
+select count(distinct uInt16_10) from $$P14$$;
+select count(*) from $$P14$$ where uInt16_10 is null;
+
+select count(distinct uInt32_100) from $$P14$$;
+select count(*) from $$P14$$ where uInt32_100 is null;
+
+select count(distinct uInt32_50p) from $$P14$$;
+select count(*) from $$P14$$ where uInt32_50p is null;
+
+select count(distinct uInt32_uniq) from $$P14$$;
+select count(*) from $$P14$$ where uInt32_uniq is null;
+
+select count(distinct Int64_100) from $$P14$$;
+select count(*) from $$P14$$ where Int64_100 is null;
+
+select count(distinct Int64_uniq) from $$P14$$;
+select count(*) from $$P14$$ where Int64_uniq is null;
+
+select count(distinct char_10) from $$P14$$;
+select count(*) from $$P14$$ where char_10 is null;
+
+select count(distinct char_100) from $$P14$$;
+select count(*) from $$P14$$ where char_100 is null;
+
+select count(distinct char_50p) from $$P14$$;
+select count(*) from $$P14$$ where char_50p is null;
+
+select count(distinct char_uniq) from $$P14$$;
+select count(*) from $$P14$$ where char_uniq is null;
+--<pb>
+select count(distinct uNum_10) from $$P14$$;
+select count(*) from $$P14$$ where uNum_10 is null;
+
+select count(distinct sNum_100) from $$P14$$;
+select count(*) from $$P14$$ where sNum_100 is null;
+
+select count(distinct uNum_50p) from $$P14$$;
+select count(*) from $$P14$$ where uNum_50p is null;
+
+select count(distinct sNum_uniq) from $$P14$$;
+select count(*) from $$P14$$ where sNum_uniq is null;
+
+select count(distinct date_12) from $$P14$$;
+select count(*) from $$P14$$ where date_12 is null;
+
+select count(distinct date_200) from $$P14$$;
+select count(*) from $$P14$$ where date_200 is null;
+
+select count(distinct date_uniq) from $$P14$$;
+select count(*) from $$P14$$ where date_uniq is null;
+
+select count(distinct substring(varchar_100 from 1 for 2)) from $$P14$$;
+select count(*) from $$P14$$ where varchar_100 is null;
+
+select count(distinct varchar_uniq) from $$P14$$;
+select count(*) from $$P14$$ where varchar_uniq is null;
+

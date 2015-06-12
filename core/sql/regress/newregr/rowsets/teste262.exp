@@ -1,0 +1,1951 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+ ***TEST1 : Expecting -8102 on row 25***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 25
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST2 : Expecting -8402 on row 25***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 25
+SQLCODE : -8402
+SQLSTATE  : 22001
+MESSAGE : *** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII) Source Value:how are you?? to Target Type:VARCHAR(REC_BYTE_V_ASCII).
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST3 : Expecting -8404 on row 9***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 9
+SQLCODE : -8404
+SQLSTATE  : 22027
+MESSAGE : *** ERROR[8404] The trim character argument of function TRIM must be one character in length.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST4 : Expecting -8405 on row 32***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 32
+SQLCODE : -8405
+SQLSTATE  : 22008
+MESSAGE : *** ERROR[8405] The operand of function CONVERTTIMESTAMP is out of range.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST5 : Expecting -8415 on row 7***
+Number of conditions  : 3
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 7
+SQLCODE : -8413
+SQLSTATE  : 22007
+MESSAGE : *** ERROR[8413] The string argument contains characters that cannot be converted.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 7
+SQLCODE : -8415
+SQLSTATE  : 22007
+MESSAGE : *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST6 : Expecting -8421 on all rows except row 5***
+Number of conditions  : 50
+Number of rows inserted: 1
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 6
+ROW INDEX : 6
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 7
+ROW INDEX : 7
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 8
+ROW INDEX : 8
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 9
+ROW INDEX : 9
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 10
+ROW INDEX : 10
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 11
+ROW INDEX : 11
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 12
+ROW INDEX : 12
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 13
+ROW INDEX : 13
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 14
+ROW INDEX : 14
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 15
+ROW INDEX : 15
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 16
+ROW INDEX : 16
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 17
+ROW INDEX : 17
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 18
+ROW INDEX : 18
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 19
+ROW INDEX : 19
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 20
+ROW INDEX : 20
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 21
+ROW INDEX : 21
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 22
+ROW INDEX : 22
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 23
+ROW INDEX : 23
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 24
+ROW INDEX : 24
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 25
+ROW INDEX : 25
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 26
+ROW INDEX : 26
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 27
+ROW INDEX : 27
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 28
+ROW INDEX : 28
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 29
+ROW INDEX : 29
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 30
+ROW INDEX : 30
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 31
+ROW INDEX : 31
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 32
+ROW INDEX : 32
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 33
+ROW INDEX : 33
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 34
+ROW INDEX : 34
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 35
+ROW INDEX : 35
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 36
+ROW INDEX : 36
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 37
+ROW INDEX : 37
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 38
+ROW INDEX : 38
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 39
+ROW INDEX : 39
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 40
+ROW INDEX : 40
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 41
+ROW INDEX : 41
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 42
+ROW INDEX : 42
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 43
+ROW INDEX : 43
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 44
+ROW INDEX : 44
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 45
+ROW INDEX : 45
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 46
+ROW INDEX : 46
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 47
+ROW INDEX : 47
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 48
+ROW INDEX : 48
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 49
+ROW INDEX : 49
+SQLCODE : -8421
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+TABLE   : 
+
+Condition number : 50
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST7 : Expecting -8409 on row 45***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 45
+SQLCODE : -8409
+SQLSTATE  : 22019
+MESSAGE : *** ERROR[8409] The escape character argument of a LIKE predicate must be one character in length.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST8 : Expecting -8410 on row 25***
+Number of conditions  : 2
+Number of rows inserted: 49
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 25
+SQLCODE : -8410
+SQLSTATE  : 22025
+MESSAGE : *** ERROR[8410] An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST9 : Expecting -8419 on rows 1,2,3,4,5,41,42,43,44, & 45. Also expecting -8102 on row 40***
+Number of conditions  : 12
+Number of rows inserted: 39
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 1
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 2
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 4
+ROW INDEX : 4
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 6
+ROW INDEX : 40
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 7
+ROW INDEX : 41
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 8
+ROW INDEX : 42
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 9
+ROW INDEX : 43
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 10
+ROW INDEX : 44
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 11
+ROW INDEX : 45
+SQLCODE : -8419
+SQLSTATE  : 22012
+MESSAGE : *** ERROR[8419] An arithmetic expression attempted a division by zero.
+TABLE   : 
+
+Condition number : 12
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST10 : Expecting -8102 on all rows except row 0***
+Number of conditions  : 50
+Number of rows inserted: 1
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 1
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 2
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : 4
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 6
+ROW INDEX : 6
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 7
+ROW INDEX : 7
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 8
+ROW INDEX : 8
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 9
+ROW INDEX : 9
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 10
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 11
+ROW INDEX : 11
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 12
+ROW INDEX : 12
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 13
+ROW INDEX : 13
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 14
+ROW INDEX : 14
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 15
+ROW INDEX : 15
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 16
+ROW INDEX : 16
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 17
+ROW INDEX : 17
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 18
+ROW INDEX : 18
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 19
+ROW INDEX : 19
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 20
+ROW INDEX : 20
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 21
+ROW INDEX : 21
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 22
+ROW INDEX : 22
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 23
+ROW INDEX : 23
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 24
+ROW INDEX : 24
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 25
+ROW INDEX : 25
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 26
+ROW INDEX : 26
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 27
+ROW INDEX : 27
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 28
+ROW INDEX : 28
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 29
+ROW INDEX : 29
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 30
+ROW INDEX : 30
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 31
+ROW INDEX : 31
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 32
+ROW INDEX : 32
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 33
+ROW INDEX : 33
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 34
+ROW INDEX : 34
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 35
+ROW INDEX : 35
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 36
+ROW INDEX : 36
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 37
+ROW INDEX : 37
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 38
+ROW INDEX : 38
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 39
+ROW INDEX : 39
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 40
+ROW INDEX : 40
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 41
+ROW INDEX : 41
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 42
+ROW INDEX : 42
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 43
+ROW INDEX : 43
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 44
+ROW INDEX : 44
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 45
+ROW INDEX : 45
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 46
+ROW INDEX : 46
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 47
+ROW INDEX : 47
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 48
+ROW INDEX : 48
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 49
+ROW INDEX : 49
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 50
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ ***TEST11 : Expecting -8412 on all rows ***
+Number of conditions  : 51
+Number of rows inserted: 0
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 6
+ROW INDEX : 5
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 7
+ROW INDEX : 6
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 8
+ROW INDEX : 7
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 9
+ROW INDEX : 8
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 10
+ROW INDEX : 9
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 11
+ROW INDEX : 10
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 12
+ROW INDEX : 11
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 13
+ROW INDEX : 12
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 14
+ROW INDEX : 13
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 15
+ROW INDEX : 14
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 16
+ROW INDEX : 15
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 17
+ROW INDEX : 16
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 18
+ROW INDEX : 17
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 19
+ROW INDEX : 18
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 20
+ROW INDEX : 19
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 21
+ROW INDEX : 20
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 22
+ROW INDEX : 21
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 23
+ROW INDEX : 22
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 24
+ROW INDEX : 23
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 25
+ROW INDEX : 24
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 26
+ROW INDEX : 25
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 27
+ROW INDEX : 26
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 28
+ROW INDEX : 27
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 29
+ROW INDEX : 28
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 30
+ROW INDEX : 29
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 31
+ROW INDEX : 30
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 32
+ROW INDEX : 31
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 33
+ROW INDEX : 32
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 34
+ROW INDEX : 33
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 35
+ROW INDEX : 34
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 36
+ROW INDEX : 35
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 37
+ROW INDEX : 36
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 38
+ROW INDEX : 37
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 39
+ROW INDEX : 38
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 40
+ROW INDEX : 39
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 41
+ROW INDEX : 40
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 42
+ROW INDEX : 41
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 43
+ROW INDEX : 42
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 44
+ROW INDEX : 43
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 45
+ROW INDEX : 44
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 46
+ROW INDEX : 45
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 47
+ROW INDEX : 46
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 48
+ROW INDEX : 47
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 49
+ROW INDEX : 48
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 50
+ROW INDEX : 49
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 51
+ROW INDEX : -1
+SQLCODE : 30035
+SQLSTATE  : 01U0Z
+MESSAGE : *** WARNING[30035] All rows in the NOT ATOMIC INSERT raised an error. No rows have been inserted.
+TABLE   : 
+
+
+ ***TEST12 : Expecting -8101 on all rows ***
+Number of conditions  : 51
+Number of rows inserted: 0
+More conditions?: N
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 6
+ROW INDEX : 5
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 7
+ROW INDEX : 6
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 8
+ROW INDEX : 7
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 9
+ROW INDEX : 8
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 10
+ROW INDEX : 9
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 11
+ROW INDEX : 10
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 12
+ROW INDEX : 11
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 13
+ROW INDEX : 12
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 14
+ROW INDEX : 13
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 15
+ROW INDEX : 14
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 16
+ROW INDEX : 15
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 17
+ROW INDEX : 16
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 18
+ROW INDEX : 17
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 19
+ROW INDEX : 18
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 20
+ROW INDEX : 19
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 21
+ROW INDEX : 20
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 22
+ROW INDEX : 21
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 23
+ROW INDEX : 22
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 24
+ROW INDEX : 23
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 25
+ROW INDEX : 24
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 26
+ROW INDEX : 25
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 27
+ROW INDEX : 26
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 28
+ROW INDEX : 27
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 29
+ROW INDEX : 28
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 30
+ROW INDEX : 29
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 31
+ROW INDEX : 30
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 32
+ROW INDEX : 31
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 33
+ROW INDEX : 32
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 34
+ROW INDEX : 33
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 35
+ROW INDEX : 34
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 36
+ROW INDEX : 35
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 37
+ROW INDEX : 36
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 38
+ROW INDEX : 37
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 39
+ROW INDEX : 38
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 40
+ROW INDEX : 39
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 41
+ROW INDEX : 40
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 42
+ROW INDEX : 41
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 43
+ROW INDEX : 42
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 44
+ROW INDEX : 43
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 45
+ROW INDEX : 44
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 46
+ROW INDEX : 45
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 47
+ROW INDEX : 46
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 48
+ROW INDEX : 47
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 49
+ROW INDEX : 48
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 50
+ROW INDEX : 49
+SQLCODE : -8101
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8101] The operation is prevented by check constraint CAT.SCH.SCONS1 on table CAT.SCH.SNT1.
+TABLE   : CAT.SCH.SNT1
+
+Condition number : 51
+ROW INDEX : -1
+SQLCODE : 30035
+SQLSTATE  : 01U0Z
+MESSAGE : *** WARNING[30035] All rows in the NOT ATOMIC INSERT raised an error. No rows have been inserted.
+TABLE   : 
+
+Failed to insert. SQLCODE = 30035
+
+ ***TEST13 : Expecting -30031 after 35 8412 conditions ***
+Number of conditions  : 35
+Number of rows inserted: 0
+More conditions?: Y
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 5
+ROW INDEX : 4
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 6
+ROW INDEX : 5
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 7
+ROW INDEX : 6
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 8
+ROW INDEX : 7
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 9
+ROW INDEX : 8
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 10
+ROW INDEX : 9
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 11
+ROW INDEX : 10
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 12
+ROW INDEX : 11
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 13
+ROW INDEX : 12
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 14
+ROW INDEX : 13
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 15
+ROW INDEX : 14
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 16
+ROW INDEX : 15
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 17
+ROW INDEX : 16
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 18
+ROW INDEX : 17
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 19
+ROW INDEX : 18
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 20
+ROW INDEX : 19
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 21
+ROW INDEX : 20
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 22
+ROW INDEX : 21
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 23
+ROW INDEX : 22
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 24
+ROW INDEX : 23
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 25
+ROW INDEX : 24
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 26
+ROW INDEX : 25
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 27
+ROW INDEX : 26
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 28
+ROW INDEX : 27
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 29
+ROW INDEX : 28
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 30
+ROW INDEX : 29
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 31
+ROW INDEX : 30
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 32
+ROW INDEX : 31
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 33
+ROW INDEX : 32
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 34
+ROW INDEX : 33
+SQLCODE : -8412
+SQLSTATE  : 22024
+MESSAGE : *** ERROR[8412] An input character host variable is missing its null terminator.
+TABLE   : 
+
+Condition number : 35
+ROW INDEX : -1
+SQLCODE : -30031
+SQLSTATE  : X0U0V
+MESSAGE : *** ERROR[30031] The number of error conditions raised during the NOT ATOMIC INSERT statement has exceeded the user specified value of 35 for the capacity of the diagnostic area.
+TABLE   : 
+
+Failed to insert. SQLCODE = -30031
+
+ ***TEST15***
+Number of conditions  : 0
+Number of rows inserted: 50
+More conditions?: N
+

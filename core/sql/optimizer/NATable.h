@@ -801,6 +801,7 @@ public:
   Int32 computeHBaseRowSizeFromMetaData() const ;
   Int64 estimateHBaseRowCount() const;
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
+  NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
 private:
   // copy ctor

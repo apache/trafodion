@@ -2080,6 +2080,197 @@ NABoolean CmpSeabaseDDL::isEncodingNeededForSerialization(NAColumn * nac)
   return FALSE;
 }
 
+// note: this function expects hbaseCreateOptionsArray to have
+// HBASE_MAX_OPTIONS elements
+short CmpSeabaseDDL::generateHbaseOptionsArray(
+  NAText * hbaseCreateOptionsArray,
+  NAList<HbaseCreateOption*> * hbaseCreateOptions)
+{
+  for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
+    {
+      HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
+      NAText &s = hbaseOption->val();
+      NAText valInOrigCase;
+
+      // trim leading and trailing spaces
+      size_t startpos = s.find_first_not_of(" ");
+      if (startpos != string::npos) // found a non-space character
+        {
+          size_t endpos = s.find_last_not_of(" ");
+          s = s.substr( startpos, endpos-startpos+1 );
+        }
+          
+      // upcase value, save original (now trimmed)
+      valInOrigCase = s;
+      std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+
+      NABoolean isError = FALSE;
+      if (hbaseOption->key() == "NAME")
+        {
+          hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
+        }
+          
+      else if (hbaseOption->key() == "MAX_VERSIONS")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_MAX_VERSIONS] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "MIN_VERSIONS")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_MIN_VERSIONS] = hbaseOption->val();
+        }
+      else if ((hbaseOption->key() == "TIME_TO_LIVE") ||
+               (hbaseOption->key() == "TTL"))
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_TTL] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "BLOCKCACHE")
+        {
+          hbaseCreateOptionsArray[HBASE_BLOCKCACHE] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "IN_MEMORY")
+        {
+          hbaseCreateOptionsArray[HBASE_IN_MEMORY] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "COMPRESSION")
+        {
+          hbaseCreateOptionsArray[HBASE_COMPRESSION] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "BLOOMFILTER")
+        {
+          hbaseCreateOptionsArray[HBASE_BLOOMFILTER] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "BLOCKSIZE")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_BLOCKSIZE] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "DATA_BLOCK_ENCODING")
+        {
+          if (hbaseOption->val() != "NONE" &&
+              hbaseOption->val() != "PREFIX" &&
+              hbaseOption->val() != "DIFF" &&
+              hbaseOption->val() != "FAST_DIFF")
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "CACHE_BLOOMS_ON_WRITE")
+        {
+          hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "CACHE_DATA_ON_WRITE")
+        {
+          hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "CACHE_INDEXES_ON_WRITE")
+        {
+          hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "COMPACT_COMPRESSION")
+        {
+          hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "PREFIX_LENGTH_KEY")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "EVICT_BLOCKS_ON_CLOSE")
+        {
+          hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "KEEP_DELETED_CELLS")
+        {
+          hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "REPLICATION_SCOPE")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "MAX_FILESIZE")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_MAX_FILESIZE] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "COMPACT")
+        {
+          hbaseCreateOptionsArray[HBASE_COMPACT] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "DURABILITY")
+        {
+          hbaseCreateOptionsArray[HBASE_DURABILITY] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "MEMSTORE_FLUSH_SIZE")
+        {
+          if (str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1)
+            isError = TRUE;
+          hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE] = 
+            hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "SPLIT_POLICY")
+        {
+          // for now, restrict the split policies to some well-known
+          // values, because specifying an invalid class gets us into
+          // a hang situation in the region server
+          if (valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
+              valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
+ ||
+              valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy")
+            hbaseCreateOptionsArray[HBASE_SPLIT_POLICY] = valInOrigCase;
+          else
+            {
+              *CmpCommon::diags() << DgSqlCode(-8449)
+                                  << DgString0(hbaseOption->key().data())
+                                  << DgString1(valInOrigCase.data());
+              return -1;
+            }
+        }
+      else
+        isError = TRUE;
+
+      if (isError)
+        {
+          short retcode = -HBASE_CREATE_OPTIONS_ERROR;
+          *CmpCommon::diags() << DgSqlCode(-8448)
+                              << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
+                              << DgString1(getHbaseErrStr(-retcode))
+                              << DgInt0(-retcode)
+                              << DgString2((char*)hbaseOption->key().data());
+              
+          return -1;
+        }
+    } // for
+
+  return 0;
+}
+
 short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
                                       HbaseStr *table,
                                       const char * cf1, 
@@ -2143,189 +2334,13 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
   if (hbaseCreateOptions)
     {
-      for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
+      if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
+                                    hbaseCreateOptions) < 0)
         {
-          HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
-          NAText &s = hbaseOption->val();
-          NAText valInOrigCase;
-
-          // trim leading and trailing spaces
-          size_t startpos = s.find_first_not_of(" ");
-          if (startpos != string::npos) // found a non-space character
-            {
-              size_t endpos = s.find_last_not_of(" ");
-              s = s.substr( startpos, endpos-startpos+1 );
-            }
-          
-          // upcase value, save original (now trimmed)
-          valInOrigCase = s;
-          std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-          
-          NABoolean isError = FALSE;
-          if (hbaseOption->key() == "NAME")
-            {
-              hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
-            }
-          
-          else if (hbaseOption->key() == "MAX_VERSIONS")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_MAX_VERSIONS] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "MIN_VERSIONS")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_MIN_VERSIONS] = hbaseOption->val();
-            }
-          else if ((hbaseOption->key() == "TIME_TO_LIVE") ||
-                   (hbaseOption->key() == "TTL"))
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_TTL] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "BLOCKCACHE")
-            {
-              hbaseCreateOptionsArray[HBASE_BLOCKCACHE] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "IN_MEMORY")
-            {
-              hbaseCreateOptionsArray[HBASE_IN_MEMORY] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "COMPRESSION")
-            {
-              hbaseCreateOptionsArray[HBASE_COMPRESSION] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "BLOOMFILTER")
-            {
-              hbaseCreateOptionsArray[HBASE_BLOOMFILTER] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "BLOCKSIZE")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_BLOCKSIZE] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "DATA_BLOCK_ENCODING")
-            {
-              if (hbaseOption->val() != "NONE" &&
-                  hbaseOption->val() != "PREFIX" &&
-                  hbaseOption->val() != "DIFF" &&
-                  hbaseOption->val() != "FAST_DIFF")
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "CACHE_BLOOMS_ON_WRITE")
-            {
-              hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "CACHE_DATA_ON_WRITE")
-            {
-              hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "CACHE_INDEXES_ON_WRITE")
-            {
-              hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "COMPACT_COMPRESSION")
-            {
-              hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "PREFIX_LENGTH_KEY")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "EVICT_BLOCKS_ON_CLOSE")
-            {
-              hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "KEEP_DELETED_CELLS")
-            {
-              hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "REPLICATION_SCOPE")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "MAX_FILESIZE")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_MAX_FILESIZE] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "COMPACT")
-            {
-              hbaseCreateOptionsArray[HBASE_COMPACT] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "DURABILITY")
-            {
-              hbaseCreateOptionsArray[HBASE_DURABILITY] = hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "MEMSTORE_FLUSH_SIZE")
-            {
-              if (str_atoi(hbaseOption->val().data(), 
-                           hbaseOption->val().length()) == -1)
-                isError = TRUE;
-              hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE] = 
-                hbaseOption->val();
-            }
-          else if (hbaseOption->key() == "SPLIT_POLICY")
-            {
-              // for now, restrict the split policies to some well-known
-              // values, because specifying an invalid class gets us into
-              // a hang situation in the region server
-              if (valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
-                  valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
- ||
-                  valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy")
-                hbaseCreateOptionsArray[HBASE_SPLIT_POLICY] = valInOrigCase;
-              else
-                {
-                  *CmpCommon::diags() << DgSqlCode(-8449)
-                                      << DgString0(hbaseOption->key().data())
-                                      << DgString1(valInOrigCase.data());
-                  return -1;
-                }
-            }
-          else
-            isError = TRUE;
-
-          if (isError)
-            {
-              retcode = -HBASE_CREATE_OPTIONS_ERROR;
-              *CmpCommon::diags() << DgSqlCode(-8448)
-                                  << DgString0((char*)"ExpHbaseInterface::create()")
-                                  << DgString1(getHbaseErrStr(-retcode))
-                                  << DgInt0(-retcode)
-                                  << DgString2((char*)hbaseOption->key().data());
-              
-              return -1;
-            }
-        } // for
+          // diags already set             
+          return -1;
+        }   
     }
-
   else
     {
       colFamList.clear();
@@ -2398,6 +2413,40 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
     }
   
   return 0;
+}
+
+short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
+                                     HbaseStr *table,
+                                     NAList<HbaseCreateOption*> * hbaseCreateOptions)
+{
+  short retcode = 0;
+  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
+
+  if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
+                                hbaseCreateOptions))
+    {
+      // diags already set             
+      retcode = -1;
+    } 
+  else  
+    {
+      NABoolean noXn =
+        (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+               
+      retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+
+      if (retcode < 0)
+        {
+           *CmpCommon::diags() << DgSqlCode(-8448)
+                          << DgString0((char*)"ExpHbaseInterface::alter()")
+                          << DgString1(getHbaseErrStr(-retcode))
+                          << DgInt0(-retcode)
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+           retcode = -1;
+        } 
+    }
+
+  return retcode;
 }
 
 short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi, 
@@ -3239,7 +3288,8 @@ Int64 CmpSeabaseDDL::getObjectUID(
                                    const char * inObjType,
                                    const char * inObjTypeStr,
                                    char * outObjType,
-                                   NABoolean lookInObjectsIdx)
+                                   NABoolean lookInObjectsIdx,
+                                   NABoolean reportErrorNow)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -3295,7 +3345,8 @@ Int64 CmpSeabaseDDL::getObjectUID(
 
   if (cliRC == 100) // did not find the row
     {
-      *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
+      if (reportErrorNow)
+        *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
 
       return -1;
     }
@@ -3923,8 +3974,6 @@ short CmpSeabaseDDL::genHbaseOptionsMetadataString(
       hbaseOptionsMetadataString += inTextForm;
 
       // now loop through list, appending KEY='VALUE'| for each option
-      // (the doubling of the single quotes is needed since this will be
-      // used as a literal string value in an INSERT statement later)
    
       for (CollIndex i = 0; i < numberOfOptions; i++)
         {
@@ -3979,7 +4028,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
                                  &beginHBOTextPos /* out */,
                                  &endHBOTextPos /* out */);
   if (result != 0)
-    // genHbaseCreateOptions makes sure oldHbaseCreateOptions is deleted
+    // genHbaseCreateOptions makes sure hbaseCreateOptions is deleted
     return result; 
 
   // merge the new HBase options into the old ones, replacing any key
@@ -6861,6 +6910,12 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
       str_sprintf(tmpBuf, " cycle_option = '%s',", (sgo->getCycle() ? "Y" : "N"));
       strcat(setOptions, tmpBuf);
     }
+
+  if (sgo->isResetSpecified())
+    {
+      str_sprintf(tmpBuf, " next_value = start_value, num_calls = 0, ");
+      strcat(setOptions, tmpBuf);
+    }
   
   Int64 redefTime = NA_JulianTimestamp();
   str_sprintf(tmpBuf, " redef_ts = %Ld", redefTime);
@@ -8918,6 +8973,8 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
+      // GRANTED BY clause reserved for DB__ROOT and users with the MANAGE_ROLES
+      // component privilege.
       if (grantorID != ComUser::getRootUserID())
       {
          PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
@@ -8932,19 +8989,6 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      // Give that this is a GRANT of a COMPONENT PRIVILEGE, could be an issue
-      // if DB__ROOT is not automatic.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.   
-      
       //TODO: will need to update this if grant role to role is supported,
       // i.e., the granted by could be a role. getUserIDFromUserName() only
       // supports users.       
@@ -8958,11 +9002,11 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       grantorName = grantedByName.data();
    }  // grantedBy not null
    else
-      {
-         grantorName = ComUser::getCurrentUsername();
-         if (grantorID == ComUser::getRootUserID())
-            grantorIsRoot = true;
-      }
+   {
+      grantorName = ComUser::getCurrentUsername();
+      if (grantorID == ComUser::getRootUserID())
+         grantorIsRoot = true;
+   }
       
 // *****************************************************************************
 // *                                                                           *
@@ -9217,26 +9261,20 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    {
       if (grantorID != ComUser::getRootUserID())
       {
-         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         return;
+         PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+         if (!componentPrivileges.hasSQLPriv(grantorID,
+                                             SQLOperation::MANAGE_COMPONENTS,
+                                             true))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return;
+         }
       }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      // Give that this is a GRANT of a COMPONENT PRIVILEGE, could be an issue
-      // if DB__ROOT is not automatic.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.         
 
-      if (ComUser::getUserIDFromUserName(grantedByName.data(),grantorID) != 0)
+      if (ComUser::getAuthIDFromAuthName(grantedByName.data(),grantorID) != 0)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                              << DgString0(grantedByName.data());
@@ -9440,24 +9478,20 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    {
       if (grantorID != ComUser::getRootUserID())
       {
-         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-         return;
+         PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+         if (!componentPrivileges.hasSQLPriv(grantorID,
+                                             SQLOperation::MANAGE_COMPONENTS,
+                                             true))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return;
+         }
       }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
-      // TODO: Only works for users.  For roles, need a more generic 
-      // authNameToAuthID.  Also, for users other than DB__ROOT, can only
-      // specify a role if role has been granted to the user.  
-      
-      //TODO: Both authorization checks could be hardcoded for DB__ROOT or 
-      // could rely on a COMPONENT PRIVILEGE, or both.
-      
-      //TODO: Finally, there is CURRENT USER syntax that means nothing other
-      // than use the CURRENT USER (the default!), but that may need to be
-      // supported for scripts.         
 
-      if (ComUser::getUserIDFromUserName(grantedByName.data(),grantorID) != 0)
+      if (ComUser::getAuthIDFromAuthName(grantedByName.data(),grantorID) != 0)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                              << DgString0(grantedByName.data());

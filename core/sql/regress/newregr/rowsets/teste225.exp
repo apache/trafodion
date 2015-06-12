@@ -1,0 +1,277 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+DYNAMIC_CAST:
+prepare update with cast:
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+Rowset Row Count Array:
+Rows affected by row number 0 = 1
+Rows affected by row number 1 = 1
+Rows affected by row number 2 = 1
+Rows affected by row number 3 = 1
+Rows affected by row number 4 = 1
+Rows affected by row number 5 = 2
+Rows affected by row number 6 = 0
+Rows affected by row number 7 = 0
+Rows affected by row number 8 = 0
+Rows affected by row number 9 = 0
+
+aaa     1
+aaa     3
+aaa     5
+aaa     7
+aaa     9
+bbb     0
+bbb     2
+bbb     4
+bbb     6
+bbb     8
+bbb     10
+bbb     10
+
+***********************************************************************
+
+DYNAMIC_CONSTANT:
+prepare insert with a constant:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+tom     0
+tom     2
+tom     4
+tom     6
+tom     8
+tom     10
+tom     12
+tom     14
+tom     16
+tom     18
+
+***********************************************************************
+
+DYNAMIC_DELETE:
+prepare delete:
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+abc     1
+abc     3
+abc     5
+abc     7
+abc     9
+
+***********************************************************************
+
+DYNAMIC_DIRECT:
+prepare insert:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+COUNT after prepare & describe is  1
+ROWSET_VAR_LAYOUT_SIZE after prepare & describe is  4
+ROWSET_IND_LAYOUT_SIZE after prepare & describe is  2
+TYPE after prepare & describe is  4
+TYPE_FS after prepare & describe is  132
+ROWSET_SIZE after prepare & describe is  10
+COUNT after prepare & describe is  1
+ROWSET_VAR_LAYOUT_SIZE after prepare & describe is  4
+ROWSET_IND_LAYOUT_SIZE after prepare & describe is  2
+TYPE after prepare & describe is  4
+TYPE_FS after prepare & describe is  132
+jim     0
+jim     2
+jim     4
+jim     6
+jim     10
+jim     12
+jim     14
+jim     16
+jim     18
+jim     ?
+
+***********************************************************************
+
+DYNAMIC_EXPRESSION:
+prepare insert:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+eee     9
+eee     11
+eee     13
+eee     15
+eee     19
+eee     21
+eee     23
+eee     25
+eee     27
+eee     ?
+
+***********************************************************************
+
+DYNAMIC_INPUTSIZE:
+prepare insert:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+sam     0
+sam     2
+sam     4
+sam     6
+sam     8
+sam     10
+
+***********************************************************************
+
+DYNAMIC_MIX1:
+prepare insert:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+sam     1001
+
+***********************************************************************
+
+DYNAMIC_MIX2:
+prepare insert:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+lll     0
+lll     2
+lll     4
+lll     6
+lll     8
+lll     10
+lll     12
+lll     14
+lll     16
+lll     18
+
+***********************************************************************
+
+DYNAMIC_SELECT1:
+prepare select:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after describe is 00000
+ROWSET_SIZE after prepare & describe is  10
+5   mmm   10
+5   ppp   10
+4   rrr   8
+3   ttt   6
+2   vvv   4
+1   xxx   2
+0   zzz   0
+
+***********************************************************************
+
+DYNAMIC_SELECT2:
+prepare select:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after allocate is 00000
+SQLSTATE after input describe is 00000
+SQLSTATE after output describe is 00000
+COUNT after prepare & describe is  3
+0   aaa   0
+1   ccc   2
+2   eee   4
+3   ggg   6
+4   iii   8
+5   kkk   10
+5   lll   10
+
+***********************************************************************
+
+DYNAMIC_CURSOR1:
+prepare select:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+abc   0
+cab   8
+def   0
+fed   10
+ghi   2
+ihg   10
+jkl   2
+mno   4
+pqr   4
+stu   6
+
+second fetch 
+vwx   6
+yza   8
+
+***********************************************************************
+
+DYNAMIC_CURSOR2:
+prepare select:
+SQLSTATE after prepare is 00000
+SQLCODE after prepare is 0
+SQLSTATE after allocate is 00000
+SQLSTATE after allocate is 00000
+SQLSTATE after input describe is 00000
+SQLSTATE after output describe is 00000
+input COUNT after prepare & describe is  1
+input ROWSET_SIZE after prepare & describe is  10
+input ROWSET_VAR_LAYOUT_SIZE after prepare & describe is  4
+input ROWSET_IND_LAYOUT_SIZE after prepare & describe is  2
+output COUNT after prepare & describe is  3
+0   AAA   0
+0   BBB   0
+1   CCC   2
+1   DDD   2
+2   EEE   4
+2   FFF   4
+3   GGG   6
+3   HHH   6
+5   JJJ   10
+6   KKK   12
+
+second fetch 
+6   LLL   12
+
+***********************************************************************
+

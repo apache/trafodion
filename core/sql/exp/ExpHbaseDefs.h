@@ -110,6 +110,7 @@ typedef enum
     HBASE_MIN_ERROR_NUM = 700,
     HBASE_OPER_OK = HBASE_MIN_ERROR_NUM,
     HBASE_CREATE_ERROR,
+    HBASE_ALTER_ERROR,
     HBASE_DROP_ERROR,
     HBASE_OPEN_ERROR,
     HBASE_CLOSE_ERROR,
@@ -133,6 +134,7 @@ static const char * const hbaseErrorEnumStr[] =
   {
     "HBASE_ERROR_OK",
     "HBASE_CREATE_ERROR",
+    "HBASE_ALTER_ERROR",
     "HBASE_DROP_ERROR",
     "HBASE_OPEN_ERROR",
     "HBASE_CLOSE_ERROR",

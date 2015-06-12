@@ -1,0 +1,32 @@
+>>obey TEST_1_1_3_4(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- NOTE: the following DDLs should fail
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER trig AFTER INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newTable
++>	FOR EACH ROW
++>		WHEN (newTable.a < 5 )
++>
++>		SELECT * from tab1B;
+
+*** ERROR[11018] An empty or unsupported trigger action was specified.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig AFTER INSERT  ON tab1A  REFERENCING NEW AS newTable  FOR EA
+CH ROW   WHEN (newTable.a < 5 )    SELECT * from tab1B;
+                                        ^ (120 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--------------------------------------------------------
+>>LOG;

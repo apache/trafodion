@@ -1280,8 +1280,10 @@ short RelRoot::codeGen(Generator * generator)
 
 
   // Remap the allocation of ESPs to Nodes/CPUs.
-  // 
-  generator->remapESPAllocation();
+  if (ActiveSchemaDB()->getDefaults().getAsLong(AFFINITY_VALUE) == -2)
+     generator->remapESPAllocationRandomly();
+  else
+     generator->remapESPAllocationAS();
 
   generator->compilerStatsInfo().affinityNumber()
     = generator->getAffinityValueUsed();

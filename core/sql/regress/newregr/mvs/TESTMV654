@@ -1,0 +1,721 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--===================================================================
+-- TestMV654
+-- ---------
+--===================================================================
+
+control query default pos 'OFF';
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+control query default insert_vsbb 'USER';
+control query default vsbb_test_mode 'ON';
+
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '1');
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+obey TESTMV654(CLEAN_UP);
+log LOGMV654 clear;
+
+obey TESTMV654(SET_UP);
+
+-- Run Tests
+
+	obey TESTMV654(SINGLE_ROW);
+	obey TESTMV654(VSBB_INSERT);
+	obey TESTMV654(SIDEINSERT);
+
+--Section disabled until range logging is supported
+	--obey TESTMV654(MVLOG1);
+
+-- Clean and Exit
+
+obey TESTMV654(CLEAN_UP);
+log;
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+exit;
+
+
+---------------------------------------------------------------
+?section SET_UP
+---------------------------------------------------------------
+
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG1_654;
+
+create table T_654_T1(	a int not null not droppable,
+						b int ,
+						c int not null not droppable,
+						d int not null not droppable,
+					primary key (d asc, a desc))
+					store by primary key;
+ALTER TABLE T_654_T1 attribute all mvs allowed;
+
+
+create table T_654_T2(	a int not null not droppable,
+					    b int ,
+						c int not null not droppable,
+						d int not null not droppable,
+					primary key (d desc, a asc))
+					store by primary key;
+ALTER TABLE T_654_T2 attribute all mvs allowed;
+
+create table temp1_654 (a int  not null not droppable, b int , c int,d int  not null not droppable,
+							primary key (d asc, a desc));
+ALTER TABLE temp1_654 attribute all mvs allowed;
+create table temp2_654 (a int  not null not droppable, b int , c int,d int  not null not droppable,
+							primary key (d desc, a asc));
+ALTER TABLE temp2_654 attribute all mvs allowed;
+
+create mv T_654_MV1_a
+	refresh on request 
+	initialize on create 
+	as
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a;
+ALTER MV T_654_MV1_a attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV1_a;
+
+create mv T_654_MV2_a
+	refresh on request 
+	initialize on create 
+	as
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a;
+ALTER MV T_654_MV2_a attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV2_a;
+
+
+create mv T_654_MV1_mtx
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a;
+ALTER MV T_654_MV1_mtx attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV1_mtx;
+
+create mv T_654_MV2_mtx
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a;
+ALTER MV T_654_MV2_mtx attribute all mvs allowed;
+ALTER MVGroup  MVG1_654 add T_654_MV2_mtx;
+
+create mv T_654_MV1_min
+	refresh on request 
+	initialize on create
+	as
+	select a,d,min(b) min_b
+	from T_654_T1
+	group by d,a;
+ALTER MV T_654_MV1_min attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV1_min;
+
+
+create mv T_654_MV2_min
+	refresh on request 
+	initialize on create
+	as
+	select a,d,min(b) min_b
+	from T_654_T2
+	group by d,a;
+ALTER MV T_654_MV2_min attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV2_min;
+
+
+create mv T_654_MV3_min
+	refresh on request 
+	initialize on create
+	as
+	select a,c,min(b) min_b
+	from T_654_T1
+	group by c,a;
+ALTER MV T_654_MV3_min attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV3_min;
+
+create mv T_654_MV4_min
+	refresh on request 
+	initialize on create
+	as
+	select a,c,min(b) min_b
+	from T_654_T2
+	group by c,a;
+ALTER MV T_654_MV4_min attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV4_min;
+
+
+create mv T_654_MV_mdelta
+	refresh on request 
+	initialize on create
+	as
+	select T_654_T1.a , T_654_T2.d, T_654_T1.b, sum(T_654_T1.c) sum_c
+	from T_654_T1,T_654_T2
+	where T_654_T1.a=T_654_T2.a
+	group by T_654_T1.a,T_654_T2.d,T_654_T1.b;
+ALTER MV T_654_MV_mdelta attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV_mdelta;
+
+create mv T_654_MV1_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,c,d, sum(b) sb
+	from T_654_T1
+	group by a,d,c;
+ALTER MV T_654_MV1_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV1_pipe;
+
+create mv T_654_MV2_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,sb,avg(d) avg_d
+	from T_654_MV1_pipe
+	group by a,sb;
+ALTER MV T_654_MV2_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV2_pipe;
+
+create mv T_654_MV3_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,c,d, sum(b) sb
+	from T_654_T2
+	group by a,d,c;
+ALTER MV T_654_MV3_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV3_pipe;
+
+create mv T_654_MV4_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,sb,avg(d) avg_d
+	from T_654_MV3_pipe
+	group by a,sb;
+ALTER MV T_654_MV4_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_654 add T_654_MV4_pipe;
+
+
+prepare select_from_log_of_T1 from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+		   d,a
+	from table (iud_log_table T_654_T1)
+	order by d asc, a desc, "@TS";
+
+prepare select_from_log_of_T2 from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+		   d,a
+	from table (iud_log_table T_654_T2)
+	order by d desc, a asc, "@TS";
+
+
+-------------------------------------------------------
+?section SINGLE_ROW
+-------------------------------------------------------
+insert into T_654_T1 values
+	(1,2,3,4),(2,3,4,5),(1,5,3,3),(4,12,22,22),(2,12,22,44), (15,3,4,2);
+
+insert into T_654_T2 values
+	(1,2,3,4),(2,3,4,5),(1,5,4,3),(4,12,22,22),(2,12,22,44), (15,3,4,2);
+
+execute select_from_log_of_T1;
+execute select_from_log_of_T2;
+
+refresh mvgroup MVG1_654 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV654;
+log LOGMV654;
+
+obey TESTMV654(COMPARE_MVS);
+
+-------------------------------------------------------
+?section VSBB_INSERT
+-------------------------------------------------------
+delete from T_654_T1 where a=1 and b=2;
+
+insert into T_654_T1 values 
+		(90,8,23,3),(90,7,23,4),(90,6,23,15),(90,6,23,16),
+		(90,6,23,17),(90,6,23,18),(80,16,14,26),(80,34,14,27),
+		(79,33,14,27),(4,11,22,34);
+
+insert into T_654_T2 values 
+		(4,11,22,34),(79,33,14,27),(80,34,14,27),(80,16,14,26),(90,6,23,18),(90,6,23,17),
+			(90,6,23,16),(90,6,23,15),(90,7,23,4);
+
+execute select_from_log_of_T1;
+execute select_from_log_of_T2;
+
+refresh mvgroup MVG1_654 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV654;
+log LOGMV654;
+
+obey TESTMV654(COMPARE_MVS);
+
+-------------------------------------------------------
+?section SIDEINSERT
+-------------------------------------------------------
+
+delete from T_654_T1;
+delete from T_654_T2;
+
+refresh mvgroup MVG1_654 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort>> LOGMV654;
+log LOGMV654;
+
+obey TESTMV654(COMPARE_MVS);
+
+
+Insert into temp1_654
+Values  (12,12,12,12),(13,23,23,11),(14,25,35,10),(15,24,56,6),
+		(15,24,56,5),	(90,8,23,3),(90,7,23,4),(90,6,23,15),(90,6,23,16),
+		(90,6,23,17),(90,6,23,18),(80,16,14,26),(80,34,14,27),
+		(79,33,14,27),(4,11,22,34);
+
+
+Insert into temp2_654
+Values  (12,12,12,12),(13,23,23,11),(14,25,35,10),(15,24,56,6),
+		(15,24,56,5),	(90,8,23,3),(90,7,23,4),(90,6,23,15),(90,6,23,16),
+		(90,6,23,17),(90,6,23,18),(80,16,14,26),(80,34,14,27),
+		(79,33,14,27),(4,11,22,34);
+
+set parserflags 1024; -- allow no audit
+ALTER table T_654_T1 attribute no audit;
+ALTER table T_654_T2 attribute no audit;
+reset parserflags 1024;
+
+insert using sideinserts into T_654_T1(a,b,c,d) select * from temp1_654 ;
+insert using sideinserts into T_654_T2(a,b,c,d) select * from temp2_654 ;
+
+set parserflags 1024; -- allow no audit
+ALTER table T_654_T1 attribute audit;
+ALTER table T_654_T2 attribute audit;
+reset parserflags 1024;
+
+-- IUD LOG 
+execute select_from_log_of_T1;
+execute select_from_log_of_T2;
+
+refresh mvgroup MVG1_654 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort >> LOGMV654;
+log LOGMV654;
+
+obey TESTMV654(COMPARE_MVS);
+
+-------------------------------------------------------
+?section MVLOG1
+-------------------------------------------------------
+drop mv T_654_MV_mdelta;
+
+delete from temp1_654;
+delete from temp2_654;
+
+Insert into temp1_654
+Values (12,1,12,61),(14,1,1,61),(15,1,15,61),(16,1,16,61),(17,1,17,61),(13,1,23,62),(90,3,23,64),
+		(7,1,71,61),(14,2,14,62);
+Insert into temp2_654
+Values (12,1,12,61),(14,1,1,61),(15,1,15,61),(16,1,16,61),(17,1,17,61),(13,1,23,62),(90,3,23,64),
+		(7,1,71,61),(14,2,14,62);
+		
+		
+insert NOMVLOG into T_654_T1  select * from  temp1_654;
+insert NOMVLOG into T_654_T2  select * from  temp2_654;
+
+MVLOG INTO RANGELOG OF T_654_T1 (d , a ) BETWEEN (61,17) AND (64,90);
+MVLOG INTO RANGELOG OF T_654_T2 (d , a ) BETWEEN (64,90) AND (61,17 );
+
+execute select_from_log_of_T1;
+execute select_from_log_of_T2;
+
+refresh mvgroup MVG1_654 outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV654;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV1_a
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV2_a
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV1_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV2_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_654_T1
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_654_MV1_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_654_T2
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_654_MV2_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,min(b) min_b
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from T_654_MV3_min
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,min(b) min_b
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from T_654_MV4_min
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_654_T1
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+	select * from T_654_MV1_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_654_MV1_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_654_MV2_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_654_T2
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+	select * from T_654_MV3_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_654_MV3_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_654_MV4_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+--------------------------------------------------------
+?section COMPARE_MVS
+--------------------------------------------------------
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV1_a
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV2_a
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV1_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_654_MV2_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_654_T1
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_654_MV1_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_654_T2
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_654_MV2_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,min(b) min_b
+	from T_654_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from T_654_MV3_min
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM 
+	select a,c,min(b) min_b
+	from T_654_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from T_654_MV4_min
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select T_654_T1.a , T_654_T2.d, T_654_T1.b, sum(T_654_T1.c) sum_c
+	from T_654_T1,T_654_T2
+	where T_654_T1.a=T_654_T2.a
+	group by T_654_T1.a,T_654_T2.d,T_654_T1.b
+	order by a,d,b;
+PREPARE stat2 FROM
+	select * from T_654_MV_mdelta
+	order by a,d,b;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_654_T1
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+	select * from T_654_MV1_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_654_MV1_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_654_MV2_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_654_T2
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+	select * from T_654_MV3_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_654_MV3_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_654_MV4_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV654 ;
+log LOGMV654;
+
+
+--------------------------------------------------------
+?section CLEAN_UP
+-------------------------------------------------------
+refresh mvgroup MVG1_654 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV654;
+log LOGMV654;
+
+drop mv T_654_MV4_pipe;
+drop mv T_654_MV3_pipe;
+drop mv T_654_MV2_pipe;
+drop mv T_654_MV1_pipe;
+drop mv T_654_MV_mdelta;
+drop mv T_654_MV4_min;
+drop mv T_654_MV3_min;
+drop mv T_654_MV2_min;
+drop mv T_654_MV1_min;
+drop mv T_654_MV2_mtx;
+drop mv T_654_MV1_mtx;
+drop mv T_654_MV2_a;
+drop mv T_654_MV1_a;
+
+drop table T_654_T2;
+drop table T_654_T1;
+drop table temp1_654;
+drop table temp2_654;
+
+drop mvgroup MVG1_654;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;

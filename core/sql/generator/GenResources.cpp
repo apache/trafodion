@@ -95,79 +95,6 @@ static ExScratchDiskDrive * genScratchDriveList(const NAString &def,
   CollHeap *heap = generator->wHeap();
   Space *space = generator->getSpace();
 
-  if (OSIM_isNSKbehavior())
-  {
-  // ---------------------------------------------------------------------
-  // process the NSK default
-  // ---------------------------------------------------------------------
-  while (str && *str)
-    {
-      const char *clusterName;
-      Lng32 clusterNameLen;
-      Int32 clusterNumber;
-      const char *diskName;
-      Lng32 diskNameLen;
-      char *savedClusterName = NULL;
-      char *savedDiskName = NULL;
-
-      if (ValidateDiskListNSK::getNextDiskAndAdvance(
-	   str,clusterName,clusterNameLen,diskName,diskNameLen))
-	{
-	  // syntax error in default, issue a warning (not an error)
-	  *CmpCommon::diags() << DgSqlCode(2055)
-			      << DgString0(def)
-			      << DgString1(defName);
-	  // don't continue after a syntax error
-	  str = NULL;
-	}
-      else
-	{
-	  if (clusterNameLen)
-	    {
-              short retcode;
-	      // cluster (NSK system name) was specified, translate
-	      // it into a cluster (system) number
-#pragma nowarn(1506)   // warning elimination 
-	      retcode = OSIM_NODENAME_TO_NODENUMBER_(clusterName,
-                                                     (short) clusterNameLen,
-						      &clusterNumber);
-#pragma nowarn(1506)   // warning elimination
-	      if (retcode)
-		{
-		  // node is wrong, issue a warning (not an error)
-		  *CmpCommon::diags() << DgSqlCode(2055)
-				      << DgString0(def)
-				      << DgString1(defName);
-		  clusterNumber = RES_LOCAL_CLUSTER;
-		}
-
-	      // save cluster name (without the backslash) on the heap
-	      clusterNameLen--;
-	      savedClusterName = new(heap) char[clusterNameLen+1];
-	      str_cpy_all(savedClusterName,&clusterName[1],clusterNameLen);
-	      savedClusterName[clusterNameLen] = 0;
-	    }
-	  else
-	    {
-	      // no NSK system was specified
-	      clusterNumber = RES_LOCAL_CLUSTER;
-	    }
-
-	  // save disk name on the heap
-	  savedDiskName = new(heap) char[diskNameLen+1];
-	  str_cpy_all(savedDiskName,diskName,diskNameLen);
-	  savedDiskName[diskNameLen] = 0;
-	  tempList.insert(new(heap) ExScratchDiskDrive(savedDiskName,
-						       diskNameLen,
-						       IPC_CPU_DONT_CARE,
-						       clusterNumber,
-						       savedClusterName,
-						       clusterNameLen));
-	}
-      
-    }
-  }
-  else{
   // ---------------------------------------------------------------------
   // process the NT default
   // ---------------------------------------------------------------------
@@ -199,7 +126,6 @@ static ExScratchDiskDrive * genScratchDriveList(const NAString &def,
       driveLetter = NULL;
 
     }
-  }
 
   // ---------------------------------------------------------------------
   // Calculate total generated space needed and allocate it
@@ -278,23 +204,14 @@ ExScratchFileOptions *genScratchFileOptions(Generator *generator)
   const char *pDefaultName;
 
   // use two different sets of defaults, dependent on the platform
-  if (OSIM_isNSKbehavior())
-  {
-    sEnum = SCRATCH_DISKS;
-    xEnum = SCRATCH_DISKS_EXCLUDED;
-    pEnum = SCRATCH_DISKS_PREFERRED;
-    sDefaultName = "SCRATCH_DISKS";
-    xDefaultName = "SCRATCH_DISKS_EXCLUDED";
-    pDefaultName = "SCRATCH_DISKS_PREFERRED";
-  }
-  else {
-    sEnum = SCRATCH_DRIVE_LETTERS;
-    xEnum = SCRATCH_DRIVE_LETTERS_EXCLUDED;
-    pEnum = SCRATCH_DRIVE_LETTERS_PREFERRED;
-    sDefaultName = "SCRATCH_DRIVE_LETTERS";
-    xDefaultName = "SCRATCH_DRIVE_LETTERS_EXCLUDED";
-    pDefaultName = "SCRATCH_DRIVE_LETTERS_PREFERRED";
-  }
+
+  sEnum = SCRATCH_DRIVE_LETTERS;
+  xEnum = SCRATCH_DRIVE_LETTERS_EXCLUDED;
+  pEnum = SCRATCH_DRIVE_LETTERS_PREFERRED;
+  sDefaultName = "SCRATCH_DRIVE_LETTERS";
+  xDefaultName = "SCRATCH_DRIVE_LETTERS_EXCLUDED";
+  pDefaultName = "SCRATCH_DRIVE_LETTERS_PREFERRED";
+ 
   // look up defaults
   CmpCommon::getDefault(sEnum,sDisks,0);
   CmpCommon::getDefault(xEnum,xDisks,0);

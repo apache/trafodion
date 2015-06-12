@@ -334,8 +334,20 @@ class CmpSeabaseDDL
                      const char * inObjType,
                      const char * inObjTypeStr = NULL,
                      char * outObjType = NULL,
-                     NABoolean lookInObjectsIdx = FALSE);
+                     NABoolean lookInObjectsIdx = FALSE,
+                     NABoolean reportErrorNow = TRUE);
 
+   Int64 getObjectUIDandOwners(
+                     ExeCliInterface * cliInterface,
+                     const char * catName,
+                     const char * schName,
+                     const char * objName,
+                     const ComObjectType objectType,
+		     Int32 & objectOwner,
+		     Int32 & schemaOwner,
+		     bool reportErrorNow = true,
+                     NABoolean checkForValidDef = FALSE);
+  
    short getObjectName(
                        ExeCliInterface *cliInterface,
                        Int64 objUID,
@@ -420,6 +432,11 @@ class CmpSeabaseDDL
                                              const NAString &schName,
                                              const NAString &objName);
 
+  // note: this function expects hbaseCreateOptionsArray to have
+  // HBASE_MAX_OPTIONS elements
+  short generateHbaseOptionsArray(NAText * hbaseCreateOptionsArray,
+    NAList<HbaseCreateOption*> * hbaseCreateOptions);
+
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
 			 const char * cf1, const char * cf2, const char * cf3,
@@ -428,7 +445,11 @@ class CmpSeabaseDDL
                          const int keyLength = 0,
                          char **encodedKeysBuffer = NULL,
 			 NABoolean doRetry = TRUE);
-  
+
+  short alterHbaseTable(ExpHbaseInterface *ehi,
+                        HbaseStr *table,
+                        NAList<HbaseCreateOption*> * hbaseCreateOptions);
+
   short dropHbaseTable(ExpHbaseInterface *ehi, 
 		       HbaseStr *table, NABoolean asyncDrop = FALSE);
 
@@ -522,17 +543,6 @@ class CmpSeabaseDDL
 			     NAString &schName,
 			     NAString &objName);
 
-   Int64 getObjectUIDandOwners(
-                     ExeCliInterface * cliInterface,
-                     const char * catName,
-                     const char * schName,
-                     const char * objName,
-                     const ComObjectType objectType,
-		     Int32 & objectOwner,
-		     Int32 & schemaOwner,
-		     bool reportErrorNow = true,
-                     NABoolean checkForValidDef = FALSE);
-  
   short getBaseTable(ExeCliInterface *cliInterface,
 		     const NAString &indexCatName,
 		     const NAString &indexSchName,
@@ -835,11 +845,13 @@ class CmpSeabaseDDL
   short createSeabaseTable2(
                             ExeCliInterface &cliInterface,
                             StmtDDLCreateTable * createTableNode,
-                            NAString &currCatName, NAString &currSchName);
+                            NAString &currCatName, NAString &currSchName,
+                            NABoolean isCompound = FALSE);
   
   void createSeabaseTable(
 			  StmtDDLCreateTable                  * createTableNode,
-			  NAString &currCatName, NAString &currSchName);
+			  NAString &currCatName, NAString &currSchName,
+                          NABoolean isCompound = FALSE);
  
   void createSeabaseTableCompound(
 			  StmtDDLCreateTable                  * createTableNode,
@@ -888,7 +900,8 @@ class CmpSeabaseDDL
 		      StmtDDLAddConstraintPK * pkConstr,
 		      StmtDDLAddConstraintUniqueArray &uniqueConstrArr,
 		      StmtDDLAddConstraintRIArray &riConstrArr,
-		      StmtDDLAddConstraintCheckArray &checkConstrArr);
+		      StmtDDLAddConstraintCheckArray &checkConstrArr,
+                      NABoolean isCompound = FALSE);
   
   void alterSeabaseTableAddColumn(
                                   StmtDDLAlterTableAddColumn * alterAddColNode,

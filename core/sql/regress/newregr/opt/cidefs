@@ -1,0 +1,81 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--	This is the sqlci analogue of the shell-script "setupenv".
+
+set SCHEMA $$TEST_SCHEMA$$;
+
+-- this is the datavol location of the second partition
+-- for partitioned tables.
+#ifNSK
+set pattern $$partition1$$  $DATA08;
+set pattern $$partition2$$ $DATA09;
+set pattern $$partition3$$  $DATA07;
+set pattern $$partition4$$ $DATA06;
+set pattern $$partition5$$ $DATA02;
+set pattern $$partition6$$ $DATA03;
+set pattern $$partition7$$ $DATA04;
+set pattern $$partition8$$ $DATA05;
+#ifNSK
+
+#ifNT
+set pattern $$partition1$$ $DATA;
+set pattern $$partition2$$ $DATA1;
+set pattern $$partition3$$  $DATA2;
+set pattern $$partition4$$ $DATA3;
+set pattern $$partition5$$ $DATA;
+set pattern $$partition6$$ $DATA1;
+set pattern $$partition7$$ $DATA2;
+set pattern $$partition8$$ $DATA3;
+set pattern $$SYSTEM_NAME$$ NSK;
+
+control query default USE_PARALLEL_FOR_NUM_PARTITIONS '10000';
+#ifNT
+
+#ifLINUX
+control query default POS 'off';
+#ifLINUX
+
+control query default SKIP_METADATA_VIEWS 'ON';
+
+
+-- Only on a Linux cluster
+#ifdef CLUSTERNAME
+set pattern $$partition$$  $DB0000;
+set pattern $$partition0$$ $DB0000;
+set pattern $$partition1$$ $DB0001;
+set pattern $$partition2$$ $DB0002;
+set pattern $$partition3$$ $DB0003;
+set pattern $$partition4$$ $DB0004;
+set pattern $$partition5$$ $DB0005;
+set pattern $$partition6$$ $DB0006;
+set pattern $$partition7$$ $DB0007;
+set pattern $$partition8$$ $DB0008;
+set pattern $$audit_vol$$  $AUD000;
+set pattern $$PosTablePartition$$ '''$DB0000''';
+set pattern $$PosTablePartitions2$$ '''$DB0001, $DB0002''';
+set pattern $$PosTablePartitions3$$ '''$DB0003, $DB0004, $DB0005''';
+set pattern $$PosTablePartitions4$$ '''$DB0006, $DB0007, $DB0008, $DB0009''';
+set pattern $$TrigTempTablePartition$$ '''$DB0003:$DB0004,$DB0005:$DB0001''';
+set pattern $$TrigTempTablePartition1$$ '''$DB0001: $DB0004''';
+set pattern $$TrigTempTablePartition2$$ '''$DB0001''';
+set pattern $$TrigTempTablePartition3$$ '''$DB0004''';
+set pattern $$TrigTempTablePartition4$$ '''$DB0001, $DB0004,$NINEX: $DB0005''';
+set pattern $$TrigTempTablePartition5$$ '''$DB0005, $DB0005, $DB0005: $DB0005, $DB0005''';
+set pattern $$TrigTempTablePartition6$$ '''$DB0001,XXXX64 $DB0005''';
+#endif
+-- eof

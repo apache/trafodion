@@ -1,0 +1,1721 @@
+>>
+>>obey TEST012(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>control query default MVQR_PUBLISH_TO 'PRIVATE';
+
+--- SQL operation complete.
+>>
+>>create schema sony_test;
+
+--- SQL operation complete.
+>>set schema sony_test;
+
+--- SQL operation complete.
+>>
+>>prepare checkPlan from
++>  select tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>obey TEST012(create_tables);
+>>--===========================================
+>>---------- create tables section ------------
+>>--===========================================
+>>
+>>CREATE TABLE DIM_ACCT
++>(
++>        acct_id               LARGEINT  NOT NULL ,
++>        demographic_id        SMALLINT  NOT NULL ,
++>        source_psn_acct_id    LARGEINT ,
++>        source_psn_acct_hex   CHAR(16) ,
++>        source_master_psn_acct_id  LARGEINT  NOT NULL ,
++>        source_online_id      VARCHAR(50)  NOT NULL ,
++>        vulgar_source_online_id_ind  CHAR(1)  NOT NULL ,
++>        source_acct_jid_id    VARCHAR(100) ,
++>        auto_deposit_ind      CHAR(1)  NOT NULL ,
++>        adult_confirmed_ind   CHAR(1)  NOT NULL ,
++>        account_suspend_ind   CHAR(1)  NOT NULL ,
++>        email_confirmed_ind   CHAR(1)  NOT NULL ,
++>        dob                   DATE ,
++>        gender                CHAR(15)  NOT NULL ,
++>        language_iso_code     CHAR(2)  NOT NULL ,
++>        language_name         VARCHAR(30)  NOT NULL ,
++>        country_iso_code      CHAR(2)  NOT NULL ,
++>        country_name          VARCHAR(30)  NOT NULL ,
++>        time_zone_iso_code    CHAR(3) ,
++>        acct_creation_dt_id   INTEGER  NOT NULL ,
++>        acct_creation_utc_dttm  TIMESTAMP(0)  NOT NULL ,
++>        acct_updated_dt_id    INTEGER  NOT NULL ,
++>        acct_updated_utc_dttm  TIMESTAMP(0)  NOT NULL ,
++>        utc_offset            SMALLINT ,
++>        acct_creation_local_time_id  INTEGER  NOT NULL ,
++>        acct_updated_local_time_id  INTEGER  NOT NULL ,
++>        optin_status_direct   CHAR(1)  NOT NULL ,
++>        optin_status_3rd_party  CHAR(1)  NOT NULL ,
++>        source_sce_region_code  CHAR(10)  NOT NULL ,
++>        sce_region_code       CHAR(10)  NOT NULL ,
++>        signup_console_code   VARCHAR(64)  default NULL ,
++>        eula_version          NUMERIC(9) ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        scd_start_dt          DATE  NOT NULL ,
++>        scd_end_dt            DATE  NOT NULL ,
++>        scd_current_ind       CHAR(1)  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>         PRIMARY KEY (acct_id)
++>) HASH PARTITION BY (acct_id);
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_AGE
++>(
++>        age_id                SMALLINT  NOT NULL ,
++>        age_years             SMALLINT  NOT NULL ,
++>        age_range_od          CHAR(15)  NOT NULL ,
++>        age_rand_od_order     INTEGER  NOT NULL ,
++>        age_range_1           CHAR(15)  NOT NULL ,
++>        age_range_1_order     SMALLINT  NOT NULL ,
++>        age_range_2           CHAR(15)  NOT NULL ,
++>        age_range_2_order     SMALLINT  NOT NULL ,
++>        age_range_3           CHAR(15)  NOT NULL ,
++>        age_range_3_order     SMALLINT  NOT NULL ,
++>        age_range_cbas        CHAR(15)  NOT NULL ,
++>        age_range_cbas_order  SMALLINT  NOT NULL ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (age_id)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_COUNTRY_OUTRIGGER
++>(
++>        country_iso_code      CHAR(2)  NOT NULL ,
++>        country_iso_name      VARCHAR(100)  NOT NULL ,
++>        country_name          VARCHAR(30)  NOT NULL ,
++>        sce_region_code       CHAR(7)  NOT NULL ,
++>        sce_marketing_region_code  CHAR(20)  NOT NULL ,
++>        marketing_report_sort_order  SMALLINT  NOT NULL ,
++>        sce_finance_region_code  CHAR(4)  NOT NULL ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (country_iso_code)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_DEMOGRAPHIC
++>(
++>        demographic_id        SMALLINT  NOT NULL ,
++>        country_iso_code      CHAR(2)  NOT NULL ,
++>        language_iso_code     CHAR(2)  NOT NULL ,
++>        language_name         VARCHAR(30)  NOT NULL ,
++>        gender                CHAR(15)  NOT NULL ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (demographic_id)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_DT
++>(
++>        dt_hrchy_id           INTEGER  NOT NULL ,
++>        aggr_level_code       VARCHAR(30)  NOT NULL ,
++>        aggr_level_num        INTEGER  NOT NULL ,
++>        calendar_dt           DATE  NOT NULL ,
++>        day_of_week           SMALLINT  NOT NULL ,
++>        day_num_in_month      INTEGER  NOT NULL ,
++>        day_num_overall       INTEGER  NOT NULL ,
++>        day_name              VARCHAR(30)  NOT NULL ,
++>        day_abrv              VARCHAR(30)  NOT NULL ,
++>        quarter               INTEGER  NOT NULL ,
++>        sply_day_id           INTEGER  NOT NULL ,
++>        weekday_flag          CHAR(1)  NOT NULL ,
++>        week_id               INTEGER  NOT NULL ,
++>        week_num_in_year      INTEGER  NOT NULL ,
++>        week_num_overall      INTEGER  NOT NULL ,
++>        week_begin_dt         DATE  NOT NULL ,
++>        week_begin_dt_id      INTEGER  NOT NULL ,
++>        week_end_dt           DATE  NOT NULL ,
++>        week_end_dt_id        INTEGER  NOT NULL ,
++>        sply_week_id          INTEGER  NOT NULL ,
++>        store_day_of_week     SMALLINT  NOT NULL ,
++>        store_week_id         INTEGER  NOT NULL ,
++>        store_week_num_in_year  SMALLINT  NOT NULL ,
++>        store_week_num_overall  SMALLINT  NOT NULL ,
++>        store_week_begin_dt   DATE  NOT NULL ,
++>        store_week_begin_dt_id  INTEGER  NOT NULL ,
++>        store_week_end_dt     DATE  NOT NULL ,
++>        store_week_end_dt_id  INTEGER  NOT NULL ,
++>        month_id              INTEGER  NOT NULL ,
++>        month_num             INTEGER  NOT NULL ,
++>        month_num_overall     INTEGER  NOT NULL ,
++>        month_name            VARCHAR(30)  NOT NULL ,
++>        month_abrv            VARCHAR(30)  NOT NULL ,
++>        sply_month_id         INTEGER  NOT NULL ,
++>        year_id               INTEGER  NOT NULL ,
++>        year_num              INTEGER  NOT NULL ,
++>        year_month            VARCHAR(30)  NOT NULL ,
++>        last_day_in_month_ind  CHAR(1)  NOT NULL ,
++>        relative_day_num      INTEGER ,
++>        relative_week_num     INTEGER ,
++>        relative_month_num    INTEGER ,
++>        relative_year_num     INTEGER ,
++>        source_system_id      SMALLINT ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (dt_hrchy_id)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_TITLE
++>(
++>        title_id              SMALLINT  NOT NULL ,
++>        publisher             VARCHAR(55)  NOT NULL ,
++>        service_provider      VARCHAR(55)  NOT NULL ,
++>        franchise             VARCHAR(55)  NOT NULL ,
++>        game                  VARCHAR(55)  NOT NULL ,
++>        super_title           VARCHAR(55)  NOT NULL ,
++>        title_name            VARCHAR(55)  NOT NULL ,
++>        game_genre            CHAR(20)  NOT NULL ,
++>        disk_title_name       VARCHAR(55)  CHARACTER SET UCS2 NOT NULL ,
++>        np_com_name           VARCHAR(55)  NOT NULL ,
++>        title_type            CHAR(15)  NOT NULL ,
++>        title_image_url       VARCHAR(55)  NOT NULL ,
++>        title_image_small_url  VARCHAR(55)  NOT NULL ,
++>        wws_service_provider  VARCHAR(100)  NOT NULL ,
++>        wws_franchise         VARCHAR(55)  NOT NULL ,
++>        wws_title_description  VARCHAR(100)  CHARACTER SET UCS2 NOT NULL ,
++>        wws_title_name        VARCHAR(55)  CHARACTER SET UCS2 NOT NULL ,
++>        initial_release_dt    DATE ,
++>        sceecat_licensor      VARCHAR(100)  NOT NULL ,
++>        sceecat_party_type    CHAR(15)  NOT NULL ,
++>        sceecat_genre         CHAR(20)  NOT NULL ,
++>        sceecat_publisher     VARCHAR(100)  NOT NULL ,
++>        sceecat_service_provider  VARCHAR(100)  NOT NULL ,
++>        sceecat_franchise     VARCHAR(100)  NOT NULL ,
++>        sceecat_game          VARCHAR(100)  NOT NULL ,
++>        sceecat_super_title   VARCHAR(100)  NOT NULL ,
++>        sceecat_title_name    VARCHAR(100)  CHARACTER SET UCS2 NOT NULL ,
++>        sceecat_generation_code  CHAR(15)  NOT NULL ,
++>        sceecat_generation_name  CHAR(20)  NOT NULL ,
++>        sceecat_title_release_dt  DATE ,
++>        pmt_title_type        VARCHAR(100)  CHARACTER SET UCS2 NOT NULL ,
++>        pmt_title_type_description  VARCHAR(55)  CHARACTER SET UCS2 NOT NULL ,
++>        pmt_title_language_code  CHAR(3)  NOT NULL ,
++>        pmt_service_provider  VARCHAR(55)  CHARACTER SET UCS2 NOT NULL ,
++>        pmt_title_name        VARCHAR(100)  CHARACTER SET UCS2 NOT NULL ,
++>        title_attribute_override_set  CHAR(1)  NOT NULL ,
++>        source_title_id       CHAR(15)  NOT NULL ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (title_id)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE DIM_TENURE
++>(
++>        tenure_id             SMALLINT  NOT NULL ,
++>        tenure_days           INTEGER  NOT NULL ,
++>        tenure_weeks          INTEGER  NOT NULL ,
++>        tenure_weeks_range_1  CHAR(15)  NOT NULL ,
++>        tenure_range_1_order  INTEGER  NOT NULL ,
++>        tenure_weeks_range_2  CHAR(15)  NOT NULL ,
++>        tenure_range_2_order  INTEGER  NOT NULL ,
++>        tenure_weeks_range_3  CHAR(15)  NOT NULL ,
++>        tenure_range_3_order  INTEGER  NOT NULL ,
++>        tenure_weeks_range_cbas  CHAR(15)  NOT NULL ,
++>        tenure_range_cbas_order  INTEGER  NOT NULL ,
++>        source_system_id      SMALLINT  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL ,
++>        etl_id_updated        LARGEINT  NOT NULL ,
++>         PRIMARY KEY (tenure_id)
++>) NO PARTITION;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE FCT_USER_PLAYTIME
++>(
++>        file_dt_id            INTEGER  NOT NULL ,
++>        title_id              SMALLINT  NOT NULL ,
++>        demographic_id        SMALLINT  NOT NULL ,
++>        acct_id               LARGEINT  NOT NULL ,
++>        dt_id                 INTEGER  NOT NULL ,
++>        age_id                SMALLINT  NOT NULL ,
++>        psn_tenure_id         SMALLINT  NOT NULL ,
++>        title_tenure_id       SMALLINT  NOT NULL ,
++>        total_playtime        INTEGER  NOT NULL ,
++>        playtime_utc_0000_0259  INTEGER  NOT NULL ,
++>        playtime_utc_0300_0559  INTEGER  NOT NULL ,
++>        playtime_utc_0600_0859  INTEGER  NOT NULL ,
++>        playtime_utc_0900_1159  INTEGER  NOT NULL ,
++>        playtime_utc_1200_1459  INTEGER  NOT NULL ,
++>        playtime_utc_1500_1759  INTEGER  NOT NULL ,
++>        playtime_utc_1800_2059  INTEGER  NOT NULL ,
++>        playtime_utc_2100_2359  INTEGER  NOT NULL ,
++>        total_playcount       INTEGER  NOT NULL ,
++>        last_played_dttm      TIMESTAMP(0) ,
++>        playtime_version      NUMERIC(1)  NOT NULL ,
++>        etl_id_inserted       LARGEINT  NOT NULL
++>)
++> STORE BY (file_dt_id,title_id,demographic_id,acct_id)
++> HASH PARTITION BY (acct_id);
+
+--- SQL operation complete.
+>>
+>>alter table FCT_USER_PLAYTIME add constraint plt_fk1 foreign key (file_dt_id)
++>    references DIM_DT(DT_HRCHY_ID) NOT ENFORCED;
+
+*** WARNING[1313] The referential integrity constraint CAT.SONY_TEST.PLT_FK1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation completed with warnings.
+>>alter table FCT_USER_PLAYTIME add constraint plt_fk2 foreign key (title_id)
++>    references DIM_TITLE(TITLE_ID) NOT ENFORCED;
+
+*** WARNING[1313] The referential integrity constraint CAT.SONY_TEST.PLT_FK2 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation completed with warnings.
+>>alter table FCT_USER_PLAYTIME add constraint plt_fk3 foreign key (demographic_id)
++>    references DIM_DEMOGRAPHIC(DEMOGRAPHIC_ID) NOT ENFORCED;
+
+*** WARNING[1313] The referential integrity constraint CAT.SONY_TEST.PLT_FK3 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>obey TEST012(indirect_group_by);
+>>--===========================================
+>>--------- indirect groupby section ----------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>CREATE MATERIALIZED VIEW FCT_USER_PLAYTIME_ACCT_AGG 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        FCT_USER_PLAYTIME.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        FCT_USER_PLAYTIME.ACCT_ID               AS ACCT_ID,
++>        FCT_USER_PLAYTIME.TITLE_ID              AS TITLE_ID,
++>        MAX(FCT_USER_PLAYTIME.AGE_ID)           AS AGE_ID,
++>        MAX(FCT_USER_PLAYTIME.PSN_TENURE_ID)    AS PSN_TENURE_ID,
++>        MAX(FCT_USER_PLAYTIME.TITLE_TENURE_ID)  AS TITLE_TENURE_ID,
++>        SUM(FCT_USER_PLAYTIME.TOTAL_PLAYTIME)   AS TOTAL_PLAYTIME,
++>        COUNT(FCT_USER_PLAYTIME.TOTAL_PLAYTIME) AS COUNT_PLAYTIME,
++>        SUM(FCT_USER_PLAYTIME.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT,
++>        MAX(FCT_USER_PLAYTIME.LAST_PLAYED_DTTM) AS LAST_PLAYED_DTTM
++>    FROM
++>        FCT_USER_PLAYTIME
++>    GROUP BY
++>        FCT_USER_PLAYTIME.DEMOGRAPHIC_ID,
++>        FCT_USER_PLAYTIME.ACCT_ID,
++>        FCT_USER_PLAYTIME.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG';
+
+--- SQL operation complete.
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        D1.ACCT_ID               AS ACCT_ID,
++>        D2.TITLE_ID              AS TITLE_ID,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>
++>    FROM
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_ACCT D1 ON F.ACCT_ID = D1.ACCT_ID
++>        INNER JOIN DIM_TITLE D2 ON F.TITLE_ID = D2.TITLE_ID
++>    GROUP BY
++>       F.DEMOGRAPHIC_ID,
++>        D1.ACCT_ID,
++>        D2.TITLE_ID ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_ACCT                                      
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG                    
+
+--- 2 row(s) selected.
+>>
+>>-- Q2:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        D1.ACCT_ID               AS ACCT_ID,
++>        F.TITLE_ID              AS TITLE_ID,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>
++>    FROM
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_ACCT D1 ON F.ACCT_ID = D1.ACCT_ID
++>
++>    GROUP BY
++>       F.DEMOGRAPHIC_ID,
++>        D1.ACCT_ID,
++>        F.TITLE_ID ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_ACCT                                      
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG                    
+
+--- 2 row(s) selected.
+>>
+>>-- Q3:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        F.ACCT_ID               AS ACCT_ID,
++>        D2.TITLE_ID              AS TITLE_ID,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>
++>    FROM
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D2 ON F.TITLE_ID = D2.TITLE_ID
++>    GROUP BY
++>       F.DEMOGRAPHIC_ID,
++>        F.ACCT_ID,
++>        D2.TITLE_ID ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG                    
+
+--- 1 row(s) selected.
+>>
+>>-- Q4:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        D1.ACCT_ID               AS ACCT_ID,
++>        D2.TITLE_ID              AS TITLE_ID,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>
++>    FROM
++>        FCT_USER_PLAYTIME F,
++>       DIM_ACCT D1, 
++>        DIM_TITLE D2 
++>WHERE
++>F.ACCT_ID = D1.ACCT_ID
++>AND F.TITLE_ID = D2.TITLE_ID
++>    GROUP BY
++>       F.DEMOGRAPHIC_ID,
++>        D1.ACCT_ID,
++>        D2.TITLE_ID ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_ACCT                                      
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG                    
+
+--- 2 row(s) selected.
+>>
+>>-- Q5:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT 
++>        Q1.DEMOGRAPHIC_ID,
++>        Q1.ACCT_ID,
++>        Q1.TOTAL_PLAYCOUNT
++>FROM 
++>        (SELECT F.DEMOGRAPHIC_ID, F.TOTAL_PLAYCOUNT, F.ACCT_ID
++>        FROM FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_ACCT D ON F.ACCT_ID = D.ACCT_ID) Q1 ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+D (CAT.SONY_TEST.DIM_ACCT)                                  
+F (CAT.SONY_TEST.FCT_USER_PLAYTIME)                         
+
+--- 2 row(s) selected.
+>>
+>>-- Q6:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        F.ACCT_ID               AS ACCT_ID,
++>        F.TITLE_ID              AS TITLE_ID,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>
++>    FROM
++>        FCT_USER_PLAYTIME F
++>
++>    GROUP BY
++>       F.DEMOGRAPHIC_ID,
++>        F.ACCT_ID,
++>        F.TITLE_ID ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG                    
+
+--- 1 row(s) selected.
+>>
+>>
+>>obey TEST012(back_joins);
+>>--===========================================
+>>----------- back joins section --------------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>-- need FCT_USER_PLAYTIME_ACCT_AGG already created by IGB section
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.FPDAGG 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.DEMOGRAPHIC_ID       AS DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TITLE_ID             AS TITLE_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TOTAL_PLAYTIME)  AS TOTAL_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.COUNT_PLAYTIME)  AS COUNT_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TOTAL_PLAYCOUNT) AS TOTAL_PLAYCOUNT,
++>        COUNT(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.ACCT_ID)       AS USERBASE
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG
++>    GROUP BY
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.SBJT 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>SELECT FILE_DT_ID,
++>        TITLE_ID,
++>        AGE_ID,
++>        total_playcount
++>FROM FCT_USER_PLAYTIME
++>WHERE FILE_DT_ID = 120100301
++>AND AGE_ID = 20;
+
+--- SQL operation complete.
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.SBJT, :CAT.SONY_TEST.FPDAGG';
+
+--- SQL operation complete.
+>>
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>FILE_DT_ID,
++>        TITLE_ID,
++>        AGE_ID,
++>        TOTAL_PLAYCOUNT
++>FROM    
++>FCT_USER_PLAYTIME 
++>WHERE   
++>FILE_DT_ID = 120100301
++>AND     AGE_ID = 20
++>AND     TITLE_ID <= 17;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SBJT                                          
+
+--- 1 row(s) selected.
+>>
+>>-- Q2:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        FILE_DT_ID,
++>        TITLE_ID,
++>        AGE_ID,
++>        TOTAL_PLAYCOUNT
++>FROM    
++>        FCT_USER_PLAYTIME 
++>WHERE   
++>        FILE_DT_ID = 120100301
++>AND     AGE_ID = 20
++>AND     TITLE_ID <= 17 
++>GROUP BY 
++>        FILE_DT_ID,
++>        TITLE_ID,
++>        AGE_ID,
++>        TOTAL_PLAYCOUNT;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SBJT                                          
+
+--- 1 row(s) selected.
+>>
+>>-- Q3:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        FILE_DT_ID,
++>        AGE_ID,
++>       SUM(TOTAL_PLAYCOUNT) AS SUM_TOTAL_PLAYTIME
++>FROM    
++>        FCT_USER_PLAYTIME 
++>WHERE   
++>        FILE_DT_ID = 120100301
++>AND     AGE_ID = 20
++>AND     TITLE_ID <= 17 
++>GROUP BY 
++>        FILE_DT_ID,
++>        AGE_ID;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SBJT                                          
+
+--- 1 row(s) selected.
+>>
+>>-- Q4:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>       SUM(TOTAL_PLAYCOUNT) AS SUM_TOTAL_PLAYTIME
++>FROM    
++>        FCT_USER_PLAYTIME 
++>WHERE   
++>        FILE_DT_ID = 120100301
++>AND     AGE_ID = 20
++>AND     TITLE_ID <= 17 ;
+
+--- SQL command prepared.
+>>
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SBJT                                          
+
+--- 1 row(s) selected.
+>>
+>>-- Q5:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        AGE_ID,
++>       SUM(TOTAL_PLAYCOUNT) AS SUM_TOTAL_PLAYTIME
++>FROM    
++>        FCT_USER_PLAYTIME 
++>GROUP BY 
++>        AGE_ID;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME                             
+
+--- 1 row(s) selected.
+>>
+>>-- Q6:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        TITLE_ID,
++>        SUM(TOTAL_PLAYCOUNT)
++>FROM    
++>        FCT_USER_PLAYTIME 
++>GROUP BY 
++>        TITLE_ID;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FPDAGG                                        
+
+--- 1 row(s) selected.
+>>
+>>-- Q7:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT 
++>        D.CALENDAR_DT,
++>        T.TITLE_NAME,
++>        SUM(F.PLAYTIME_UTC_0000_0259)
++>FROM
++>        FCT_USER_PLAYTIME F 
++>        INNER JOIN
++>        DIM_DT D ON F.FILE_DT_ID = D.DT_HRCHY_ID
++>        INNER JOIN
++>        DIM_TITLE T
++>        ON F.TITLE_ID = T.TITLE_ID
++>        INNER JOIN
++>        DIM_DEMOGRAPHIC DE
++>        ON F.DEMOGRAPHIC_ID = DE.DEMOGRAPHIC_ID
++>        INNER JOIN 
++>        DIM_COUNTRY_OUTRIGGER CO
++>        ON DE.COUNTRY_ISO_CODE = CO.COUNTRY_ISO_CODE
++>WHERE
++>        CO.SCE_REGION_CODE = 'SCEE'
++>GROUP BY
++>         D.CALENDAR_DT,
++>        T.TITLE_NAME;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CO (CAT.SONY_TEST.DIM_COUNTRY_OUTRIGGER)                    
+D (CAT.SONY_TEST.DIM_DT)                                    
+DE (CAT.SONY_TEST.DIM_DEMOGRAPHIC)                          
+F (CAT.SONY_TEST.FCT_USER_PLAYTIME)                         
+T (CAT.SONY_TEST.DIM_TITLE)                                 
+
+--- 5 row(s) selected.
+>>
+>>obey TEST012(extra_hub_tables);
+>>--===========================================
+>>--------- extra hub tables section ----------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.FPAGG 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID               AS ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID              AS TITLE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.AGE_ID)           AS AGE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.PSN_TENURE_ID)    AS PSN_TENURE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.TITLE_TENURE_ID)  AS TITLE_TENURE_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME)   AS TOTAL_PLAYTIME,
++>        COUNT(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME) AS COUNT_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.LAST_PLAYED_DTTM) AS LAST_PLAYED_DTTM
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME
++>    GROUP BY
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>CREATE MATERIALIZED VIEW SPT 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>SELECT  
++>        F.TITLE_ID AS FACT_TITLE_ID,
++>        F.TOTAL_PLAYCOUNT,
++>        D1.TITLE_ID AS DIM_TITLE_ID,
++>        D1.TITLE_NAME 
++>FROM 
++>        FCT_USER_PLAYTIME F INNER JOIN DIM_TITLE D1
++>        ON F.TITLE_ID = D1.TITLE_ID
++>WHERE
++>        F.TITLE_ID BETWEEN 0 AND 26;
+
+--- SQL operation complete.
+>>
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.SPT';
+
+--- SQL operation complete.
+>>
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        F.TITLE_ID AS FACT_TITLE_ID,
++>        F.TOTAL_PLAYCOUNT,
++>        D.TITLE_ID AS DIM_TITLE_ID,
++>        D.TITLE_NAME 
++>
++>FROM 
++>
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D ON F.TITLE_ID = D.TITLE_ID
++>WHERE
++>        F.TITLE_ID < 25 
++>        -- following predicate was added because column TITLE_ID
++>        -- is signed
++>        and F.TITLE_ID >= 0;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+
+--- 1 row(s) selected.
+>>
+>>-- Q2:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        F.TITLE_ID AS FACT_TITLE_ID,
++>        F.TOTAL_PLAYCOUNT,
++>        D.TITLE_ID AS DIM_TITLE_ID,
++>        D.TITLE_NAME 
++>
++>FROM 
++>
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D ON F.TITLE_ID = D.TITLE_ID
++>WHERE
++>        F.TITLE_ID < 25
++>        -- following predicate was added because column TITLE_ID
++>        -- is signed
++>        and F.TITLE_ID >= 0
++>GROUP BY 
++>        F.TITLE_ID,
++>        F.TOTAL_PLAYCOUNT,
++>        D.TITLE_ID,
++>        D.TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+
+--- 1 row(s) selected.
+>>
+>>-- Q3:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        F.TOTAL_PLAYCOUNT,
++>        D.TITLE_ID AS DIM_TITLE_ID,
++>        D.TITLE_NAME 
++>FROM 
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D ON F.TITLE_ID = D.TITLE_ID
++>WHERE
++>        F.TITLE_ID < 25
++>        -- following predicate was added because column TITLE_ID
++>        -- is signed
++>        and F.TITLE_ID >= 0
++>GROUP BY 
++>        F.TOTAL_PLAYCOUNT,
++>        D.TITLE_ID,
++>        D.TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+
+--- 1 row(s) selected.
+>>
+>>-- Q4:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        SUM(F.TOTAL_PLAYCOUNT) AS SUM_TOTAL_PLAYCOUNT,
++>        D.TITLE_ID AS DIM_TITLE_ID,
++>        D.TITLE_NAME 
++>FROM 
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D ON F.TITLE_ID = D.TITLE_ID
++>WHERE
++>        F.TITLE_ID < 25
++>        -- following predicate was added because column TITLE_ID
++>        -- is signed
++>        and F.TITLE_ID >= 0
++>GROUP BY 
++>        D.TITLE_ID,
++>        D.TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+
+--- 1 row(s) selected.
+>>
+>>-- Q5:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        SUM(F.TOTAL_PLAYCOUNT) AS SUM_TOTAL_PLAYCOUNT,
++>
++>        D.TITLE_NAME 
++>FROM 
++>        FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_TITLE D ON F.TITLE_ID = D.TITLE_ID
++>WHERE
++>        F.TITLE_ID < 25
++>        -- following predicate was added because column TITLE_ID
++>        -- is signed
++>        and F.TITLE_ID >= 0
++>GROUP BY 
++>        D.TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Q6:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>
++>        D1.GENDER,
++>        D2.TITLE_NAME,
++>        SUM(F.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME F
++>        INNER JOIN DIM_ACCT D1 ON F.ACCT_ID = D1.ACCT_ID
++>        INNER JOIN DIM_TITLE D2 ON F.TITLE_ID = D2.TITLE_ID
++>    WHERE F.TITLE_ID < 25
++>          -- following predicate was added because column TITLE_ID
++>          -- is signed
++>          and F.TITLE_ID >= 0
++>    GROUP BY
++>        D1.GENDER,
++>        D2.TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SPT                                           
+D1 (CAT.SONY_TEST.DIM_ACCT)                                 
+
+--- 2 row(s) selected.
+>>
+>>obey TEST012(range_predicates);
+>>--===========================================
+>>--------- range predicates section ----------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.SAK_DIM_DT
++>REFRESH ON REQUEST INITIALIZE ON CREATE
++>ENABLE QUERY REWRITE
++>AS
++>SELECT  
++>        D.RELATIVE_MONTH_NUM AS RELATIVE_MONTH_NUM,
++>        D.RELATIVE_WEEK_NUM  AS RELATIVE_WEEK_NUM,
++>        D.WEEKDAY_FLAG
++>    FROM
++>        SONY_TEST.DIM_DT D
++>WHERE
++>        D.RELATIVE_MONTH_NUM > -2 AND 
++>        D.RELATIVE_WEEK_NUM IN (-9,-8,-7,-6,-5,-4,-3,-2,-1);
+
+--- SQL operation complete.
+>>
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.SAK_DIM_DT_BETWEEN
++>REFRESH ON REQUEST INITIALIZE ON CREATE
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        D.RELATIVE_MONTH_NUM AS RELATIVE_MONTH_NUM,
++>        D.RELATIVE_WEEK_NUM  AS RELATIVE_WEEK_NUM,
++>        D.WEEKDAY_FLAG       AS WEEKDAY_FLAG
++>    FROM
++>        SONY_TEST.DIM_DT D
++>    WHERE
++>        D.RELATIVE_MONTH_NUM > -2
++>    AND D.RELATIVE_WEEK_NUM BETWEEN -9 AND -1;
+
+--- SQL operation complete.
+>>
+>>  -- The system added the following columns to the select list:
+>>  --  D.DT_HRCHY_ID AS SYS_DT_HRCHY_ID1
+>>
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.SAK_DIM_DT_BETWEEN';
+
+--- SQL operation complete.
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>RELATIVE_MONTH_NUM,
++>        RELATIVE_WEEK_NUM,
++>        WEEKDAY_FLAG
++>
++>FROM 
++>DIM_DT
++>
++>WHERE
++>        RELATIVE_MONTH_NUM > -1 AND 
++>        RELATIVE_WEEK_NUM between -7 and -3;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SAK_DIM_DT_BETWEEN                            
+
+--- 1 row(s) selected.
+>>
+>>-- Q2:
+>>------
+>>
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        RELATIVE_MONTH_NUM,
++>        RELATIVE_WEEK_NUM,
++>        WEEKDAY_FLAG
++>
++>FROM 
++>        DIM_DT
++>
++>WHERE
++>        RELATIVE_MONTH_NUM > -1 AND 
++>        RELATIVE_WEEK_NUM between -7 and -3
++>GROUP BY
++>        RELATIVE_MONTH_NUM,
++>        RELATIVE_WEEK_NUM,
++>        WEEKDAY_FLAG ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SAK_DIM_DT_BETWEEN                            
+
+--- 1 row(s) selected.
+>>
+>>-- Q3:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>        RELATIVE_MONTH_NUM,
++>        RELATIVE_WEEK_NUM,
++>        WEEKDAY_FLAG
++>
++>FROM 
++>        DIM_DT
++>
++>WHERE
++>        RELATIVE_MONTH_NUM > -1 AND 
++>        RELATIVE_WEEK_NUM between -7 and -3;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.SAK_DIM_DT_BETWEEN                            
+
+--- 1 row(s) selected.
+>>
+>>obey TEST012(rollup);
+>>--===========================================
+>>-------------- rollup section ---------------
+>>--===========================================
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG3
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID               AS ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID              AS TITLE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.AGE_ID)           AS AGE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.PSN_TENURE_ID)    AS PSN_TENURE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.TITLE_TENURE_ID)  AS TITLE_TENURE_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME)   AS TOTAL_PLAYTIME,
++>        COUNT(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME) AS COUNT_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.LAST_PLAYED_DTTM) AS LAST_PLAYED_DTTM
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME
++>    GROUP BY
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG3';
+
+--- SQL operation complete.
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT  
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME)   AS TOTAL_PLAYTIME,
++>        AVG(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYCOUNT)  AS AVG_PLAYCOUNT
++>FROM    
++>        SONY_TEST.FCT_USER_PLAYTIME
++>GROUP BY   
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG3                   
+
+--- 1 row(s) selected.
+>>
+>>obey TEST012(user_playtime_dem_agg);
+>>--===========================================
+>>------ user playtime dem agg section --------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.FCT_USER_PLAYTIME_DEMOGRAPHIC_AGG2
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.DEMOGRAPHIC_ID       AS DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TITLE_ID             AS TITLE_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TOTAL_PLAYTIME)  AS TOTAL_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.COUNT_PLAYTIME)  AS COUNT_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TOTAL_PLAYCOUNT) AS TOTAL_PLAYCOUNT,
++>        COUNT(SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.ACCT_ID)       AS USERBASE
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG
++>    GROUP BY
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.FCT_USER_PLAYTIME_DEMOGRAPHIC_AGG2 ,:CAT.SONY_TEST.FPAGG';
+
+--- SQL operation complete.
+>>
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>SUM(TOTAL_PLAYTIME)TOTAL_PLAYTIME
++>FROM FCT_USER_PLAYTIME
++>;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_DEMOGRAPHIC_AGG2            
+
+--- 1 row(s) selected.
+>>
+>>-- Q2:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++> TITLE_ID
++>,SUM(TOTAL_PLAYTIME)TOTAL_PLAYTIME
++>FROM FCT_USER_PLAYTIME
++>GROUP BY TITLE_ID   ;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_DEMOGRAPHIC_AGG2            
+
+--- 1 row(s) selected.
+>>
+>>-- Q3:
+>>------
+>>
+>>
+>>prepare QueryStmt from
++>SELECT
++>TITLE_NAME
++>,SUM(TOTAL_PLAYTIME)TOTAL_PLAYTIME
++>,COUNT(DISTINCT ACCT_ID) USERBASE
++>FROM FCT_USER_PLAYTIME F
++>INNER JOIN DIM_TITLE T ON T.TITLE_ID = F.TITLE_ID
++>GROUP BY TITLE_NAME ;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_TITLE                                     
+CAT.SONY_TEST.FPAGG                                         
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- Q4:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++> SCE_REGION_CODE
++>,TITLE_NAME
++>,SUM(TOTAL_PLAYTIME)TOTAL_PLAYTIME
++>FROM FCT_USER_PLAYTIME F
++>INNER JOIN DIM_TITLE T ON T.TITLE_ID = F.TITLE_ID
++>INNER JOIN DIM_DEMOGRAPHIC D ON D.DEMOGRAPHIC_ID = F.DEMOGRAPHIC_ID
++>INNER JOIN DIM_COUNTRY_OUTRIGGER O ON O.COUNTRY_ISO_CODE = D.COUNTRY_ISO_CODE
++>GROUP BY
++> SCE_REGION_CODE
++>,TITLE_NAME
++>
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_COUNTRY_OUTRIGGER                         
+CAT.SONY_TEST.DIM_DEMOGRAPHIC                               
+CAT.SONY_TEST.DIM_TITLE                                     
+CAT.SONY_TEST.FCT_USER_PLAYTIME_DEMOGRAPHIC_AGG2            
+
+--- 4 row(s) selected.
+>>
+>>
+>>obey TEST012(user_playtime_acct_agg);
+>>--===========================================
+>>------ user playtime acct agg section -------
+>>--===========================================
+>>
+>>-- MV:
+>>------
+>>
+>>CREATE MATERIALIZED VIEW SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2 
++>REFRESH ON REQUEST INITIALIZE ON CREATE 
++>ENABLE QUERY REWRITE
++>AS
++>    SELECT
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID        AS DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID               AS ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID              AS TITLE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.AGE_ID)           AS AGE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.PSN_TENURE_ID)    AS PSN_TENURE_ID,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.TITLE_TENURE_ID)  AS TITLE_TENURE_ID,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME)   AS TOTAL_PLAYTIME,
++>        COUNT(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYTIME) AS COUNT_PLAYTIME,
++>        SUM(SONY_TEST.FCT_USER_PLAYTIME.TOTAL_PLAYCOUNT)  AS TOTAL_PLAYCOUNT,
++>        MAX(SONY_TEST.FCT_USER_PLAYTIME.LAST_PLAYED_DTTM) AS LAST_PLAYED_DTTM
++>    FROM
++>        SONY_TEST.FCT_USER_PLAYTIME
++>    GROUP BY
++>        SONY_TEST.FCT_USER_PLAYTIME.DEMOGRAPHIC_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.ACCT_ID,
++>        SONY_TEST.FCT_USER_PLAYTIME.TITLE_ID;
+
+--- SQL operation complete.
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2';
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>-- Q1:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++> SUM(TOTAL_PLAYTIME)
++>FROM FCT_USER_PLAYTIME F
++>INNER JOIN DIM_TITLE T ON T.TITLE_ID = F.TITLE_ID
++>INNER JOIN DIM_DEMOGRAPHIC D ON D.DEMOGRAPHIC_ID = F.DEMOGRAPHIC_ID
++>INNER JOIN DIM_COUNTRY_OUTRIGGER O ON O.COUNTRY_ISO_CODE = D.COUNTRY_ISO_CODE
++>WHERE TITLE_NAME LIKE 'love sick'
++>GROUP BY ACCT_ID
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_COUNTRY_OUTRIGGER                         
+CAT.SONY_TEST.DIM_DEMOGRAPHIC                               
+CAT.SONY_TEST.DIM_TITLE                                     
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- Q2:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++> ACCT_ID 
++>FROM FCT_USER_PLAYTIME
++>GROUP BY ACCT_ID;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Q3:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>ACCT_ID 
++>FROM FCT_USER_PLAYTIME
++>GROUP BY 1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Q4:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>DISTINCT  ACCT_ID 
++>FROM FCT_USER_PLAYTIME
++>GROUP BY 1;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- Q5:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++> GENDER
++>,COUNT(DISTINCT  ACCT_ID )
++>FROM FCT_USER_PLAYTIME F 
++>INNER JOIN DIM_DEMOGRAPHIC D ON D.DEMOGRAPHIC_ID = F.DEMOGRAPHIC_ID
++>GROUP BY GENDER     
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.DIM_DEMOGRAPHIC                               
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- Q6:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT 
++>        TITLE_ID,
++>        CASE DEMOGRAPHIC_ID 
++>            WHEN (128) THEN (001)
++>            WHEN (164) THEN (002)
++>            ELSE DEMOGRAPHIC_ID
++>        END AS CUST_DEMOGRAPHIC_ID,
++>        ACCT_ID,
++>        SUM(TOTAL_PLAYTIME) AS SUM_TOTAL_PLAYTIME
++>FROM 
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        TITLE_ID,
++>        DEMOGRAPHIC_ID,
++>        ACCT_ID
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 1 row(s) selected.
+>>
+>>-- Q7:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>Q1.DEMOGRAPHIC_ID,
++>Q2.AGE_ID,
++>Q1.SUM_TOTAL_PLAYTIME
++>FROM
++>(
++>SELECT
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        SUM(TOTAL_PLAYTIME) AS SUM_TOTAL_PLAYTIME
++>FROM 
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID
++>)Q1
++>INNER JOIN 
++>(
++>SELECT 
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        AGE_ID
++>FROM
++>        FCT_USER_PLAYTIME
++>)Q2
++>ON Q1.TITLE_ID = Q2.TITLE_ID
++>GROUP BY 
++>        Q1.DEMOGRAPHIC_ID,
++>        Q2.AGE_ID,
++>        Q1.SUM_TOTAL_PLAYTIME
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME                             
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- Q8:
+>>------
+>>
+>>
+>>prepare QueryStmt from
++>SELECT
++>Q1.DEMOGRAPHIC_ID,
++>Q2.AGE_ID,
++>Q1.SUM_TOTAL_PLAYTIME
++>FROM
++>(
++>SELECT
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        SUM(TOTAL_PLAYTIME) AS SUM_TOTAL_PLAYTIME
++>FROM 
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID
++>)Q1
++>INNER JOIN 
++>(
++>SELECT 
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        AGE_ID
++>FROM
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        AGE_ID
++>)Q2
++>ON Q1.TITLE_ID = Q2.TITLE_ID
++>GROUP BY 
++>        Q1.DEMOGRAPHIC_ID,
++>        Q2.AGE_ID,
++>        Q1.SUM_TOTAL_PLAYTIME 
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME                             
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 2 row(s) selected.
+>>
+>>-- Q9:
+>>------
+>>
+>>prepare QueryStmt from
++>SELECT
++>Q1.DEMOGRAPHIC_ID,
++>Q1.TITLE_ID,
++>SUM(Q1.SUM_TOTAL_PLAYTIME/Q2.SUM_TOTAL_PLAYTIME)
++>FROM
++>(
++>SELECT
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        SUM(TOTAL_PLAYTIME) AS SUM_TOTAL_PLAYTIME
++>FROM 
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID
++>)Q1
++>INNER JOIN 
++>(
++>SELECT
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID,
++>        SUM(TOTAL_PLAYTIME) AS SUM_TOTAL_PLAYTIME
++>FROM 
++>        FCT_USER_PLAYTIME
++>GROUP BY
++>        DEMOGRAPHIC_ID,
++>        TITLE_ID
++>)Q2
++>ON Q1.TITLE_ID = Q2.TITLE_ID
++>AND Q1.DEMOGRAPHIC_ID=Q2.DEMOGRAPHIC_ID
++>
++>GROUP BY Q1.DEMOGRAPHIC_ID,
++>Q1.TITLE_ID
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+TNAME                                                       
+------------------------------------------------------------
+
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+CAT.SONY_TEST.FCT_USER_PLAYTIME_ACCT_AGG2                   
+
+--- 2 row(s) selected.
+>>
+>>
+>>---==========================================
+>>---------------- END OF TEST ----------------
+>>---==========================================
+>>
+>>obey TEST012(clean_up);
+>>----------------------------------------------------
+>>------------------ clean up section ----------------
+>>----------------------------------------------------
+>>drop schema sony_test cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

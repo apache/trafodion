@@ -1,0 +1,1408 @@
+>>obey TESTCLIC(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>control query default QUERY_CACHE '0';
+
+--- SQL operation complete.
+>>control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+
+--- SQL operation complete.
+>>control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+--- SQL operation complete.
+>>
+>>obey GetMvDesc;
+>>--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+>>set param ?mvDescSubId  -2;
+>>set param ?mvName 'SUMBY_DAY';
+>>set param ?mvSchemaName 'SUMBY';
+>>
+>>-- query the TEXT SMD table for the descriptor of an MV
+>>-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+>>--       length limit of the NT version of awk (file CropDescriptor.ksh).
+>>prepare getMVDescFromTEXT from
++>  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
++>                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
++>                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
++>  from
++>		 (SELECT o.object_uid as uid0, text as text0
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 0 ) as row0
++>	left outer join
++>		 (SELECT o.object_uid as uid1, text as text1
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 1 ) as row1
++>		 on uid0 = uid1
++>	left outer join
++>		 (SELECT o.object_uid as uid2, text as text2
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 2 ) as row2
++>		 on uid0 = uid2
++>	left outer join
++>		 (SELECT o.object_uid as uid3, text as text3
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 3 ) as row3
++>		 on uid0 = uid3
++>	left outer join
++>		 (SELECT o.object_uid as uid4, text as text4
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 4 ) as row4
++>		 on uid0 = uid4
++>	left outer join
++>		 (SELECT o.object_uid as uid5, text as text5
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 5 ) as row5
++>		 on uid0 = uid5
++>	left outer join
++>		 (SELECT o.object_uid as uid6, text as text6
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 6 ) as row6
++>		 on uid0 = uid6
++>	left outer join
++>		 (SELECT o.object_uid as uid7, text as text7
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 7 ) as row7
++>		 on uid0 = uid7
++>	left outer join
++>		 (SELECT o.object_uid as uid8, text as text8
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 8 ) as row8
++>		 on uid0 = uid8;
+
+--- SQL command prepared.
+>>
+>>
+>>create schema clic;
+
+--- SQL operation complete.
+>>set schema clic;
+
+--- SQL operation complete.
+>>set pattern $$MVSchemaName$$ CLIC;
+>>
+>>-- This is used to make sure the MV is used in the plan.
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>CREATE TABLE SRC1_B02 (
++>  MIO_LOG_ID         CHARACTER (105) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  PLNMIO_REC_ID      LARGEINT SIGNED  DEFAULT NULL,
++>  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  SG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_NO            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  MTN_ID             CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  MTN_ITEM_CODE      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  IPSN_NO            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  MIO_CUST_NO        CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  MIO_CUST_NAME      CHARACTER (20)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  PLNMIO_DATE        TIMESTAMP (0)   DEFAULT NULL,
++>  MIO_DATE           TIMESTAMP (0)   DEFAULT NULL,
++>  MIO_LOG_UPD_TIME   TIMESTAMP (0)   DEFAULT NULL,
++>  PREM_DEADLINE      TIMESTAMP (0)   DEFAULT NULL,
++>  MIO_ITEM_CODE      CHARACTER (4)   CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  MIO_TYPE_CODE      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  OCLK_BRANCH_NO     CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  OCLK_CLERK_NO      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_TYPE         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_BRANCH_NO    CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_NO           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MIO_CLASS          NUMERIC (1, 0)  SIGNED  DEFAULT NULL,
++>  AMNT               NUMERIC (18, 2) SIGNED  DEFAULT NULL,
++>  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  FIN_PLNMIO_DATE    TIMESTAMP (0)   DEFAULT NULL,
++>  CNTR_YEAR          NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
++>  MONEYIN_ITRVL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MONEYIN_DUR        NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
++>  MONEYIN_TIME       INTEGER SIGNED  DEFAULT NULL,
++>  AGENT_OAC_ID       VARCHAR (30)    CHARACTER SET ISO88591  DEFAULT NULL,
++>  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
++>  INSUR_DUR          NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  MAIN_POL_CODE      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_ID            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  ANN_ITRVL          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  IPSN_ID            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_TERM_CAUSE    CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MIO_TX_CLASS       NUMERIC (5, 0)  SIGNED  DEFAULT NULL,
++>  I_INFO_GROUP_FLAG  NUMERIC (1, 0)  SIGNED  DEFAULT NULL,
++>  CNTR_SOURCE        CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_NO            CHARACTER (16)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  UPD_TIME           TIMESTAMP (0)   DEFAULT NULL,
++>  RECEIPT_NO         CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  REL_KEY_NO         CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  EXT_KEY1           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
++>  EXT_KEY7           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
++>  EXT_KEY16          CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
++>  EXT_KEY4           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
++>  EXT_KEY19          NUMERIC (18, 2) SIGNED  DEFAULT NULL,
++>  PRIMARY KEY (MIO_ITEM_CODE ASC, CNTR_NO ASC, MIO_LOG_ID ASC) NOT DROPPABLE )
++>  STORE BY ( MIO_ITEM_CODE ASC, CNTR_NO ASC, MIO_LOG_ID ASC );
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE SRC1_STD_CONTRACT (
++>  CNTR_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  CNTR_FROM          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
++>  APPL_NO            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
++>  CNTR_NO            CHARACTER (32)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  LOSE_REG_NUM       NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  ORIGINAL_CNTR_NO   CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MR_TYPE            CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MASTER_CNTR_ID     CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_STAT          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_TERM_CAUSE    CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_TERM_DATE     TIMESTAMP (0)   DEFAULT NULL,
++>  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  SG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  IPSN_NUM           NUMERIC (8, 0)  SIGNED  DEFAULT 0,
++>  TERM_IPSN_NUM      NUMERIC (8, 0)  SIGNED  DEFAULT 0,
++>  APPL_DATE          TIMESTAMP (0)   DEFAULT NULL,
++>  SIGN_DATE          TIMESTAMP (0)   DEFAULT NULL,
++>  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
++>  AUTO_IN_FORCE_DATE TIMESTAMP (0)   DEFAULT NULL,
++>  RENEW_FLAG         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'1',
++>  RENEW_TIMES        NUMERIC (2, 0)  SIGNED  NOT NULL NOT DROPPABLE, --DEFAULT NULL,
++>  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  O_SALES_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  O_SALES_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  N_SALES_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  N_SALES_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_EXPIRY_DATE   TIMESTAMP (0)   DEFAULT NULL,
++>  MONEYIN_ITRVL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MONEYIN_ITRVL_MON  NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  BDD_TYPE           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  PAIDUP_FLAG        CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CV_FOR_PREM_FLAG   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MONEYIN_TYPE       CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  BANK_ACC_NO        CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  ACC_CUST_NAME      CHARACTER (48)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_STAT_NO       NUMERIC (2, 0)  SIGNED  DEFAULT 0,
++>  POL_CODE2          CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MR_TYPE2           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'M',
++>  CNTR_NO2           CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  STD_PREMIUM        NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  FACE_AMNT          NUMERIC (20, 2) SIGNED  DEFAULT NULL,
++>  INSUR_DUR_UNIT     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  INSUR_DUR          NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
++>  MONEYIN_DUR_UNIT   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
++>  MONEYIN_DUR        NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
++>  HEAL_EXAM_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  PH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  SH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  SH_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  OC_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  OT_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  OT_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  PRIMARY KEY (RENEW_TIMES ASC, CNTR_NO ASC, CNTR_ID ASC) NOT DROPPABLE )
++>  STORE BY ( RENEW_TIMES ASC, CNTR_NO ASC, CNTR_ID ASC );
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE SRC1_INSUR_APPL (
++>  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  CONTACT_SEQ        NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
++>  CUST_NO            CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  UNEV_CUST_ID       CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CONTACT_SHARE_FLAG CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  HEALTH_STAT_FLAG   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_NO            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'P',
++>  PREM_FROM          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
++>  PRODUCT_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  ACCEPT_BRANCH_NO   CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  ACCEPT_DEPT_TYPE   CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT _ISO88591'SP',
++>  ACCEPT_DEPT_NO     NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
++>  BIZ_ACCEPT_DATE    TIMESTAMP (0)   DEFAULT NULL,
++>  SYS_ACCEPT_DATE    TIMESTAMP (0)   DEFAULT NULL,
++>  APPL_DATE          TIMESTAMP (0)   DEFAULT NULL,
++>  APPL_ENT_DATE      TIMESTAMP (0)   DEFAULT NULL,
++>  SUM_PREM           NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  ENROLL_DATE        TIMESTAMP (0)   DEFAULT NULL,
++>  SIGN_DATE          TIMESTAMP (0)   DEFAULT NULL,
++>  AUTO_IN_FORCE_DATE TIMESTAMP (0)   DEFAULT NULL,
++>  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
++>  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT _ISO88591'PA',
++>  SALES_BRANCH_NO    CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  SALES_CODE         CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  BDD_TYPE           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'#',
++>  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  BANKACC_NO         CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  BANKACC_NAME       CHARACTER (72)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  ERNST_PREM         NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  ERNST_MONEYIN_TYPE CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'C',
++>  ERNST_MONEYIN_DATE TIMESTAMP (0)   DEFAULT NULL,
++>  MONEYIN_TYPE       CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MONEYIN_ITRVL      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
++>  ANN_DRAW_AGE       NUMERIC (3, 0)  SIGNED  DEFAULT NULL,
++>  ANN_AMNT           NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  ANN_ITRVL          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  ANN_INCR_PCT       NUMERIC (4, 2)  SIGNED  DEFAULT NULL,
++>  MAFP_FLAG          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  NOTICE_WAY         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  REMARK             CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_ENT_BRANCH_NO CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_ENT_CLERK_NO  CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_CHK_BRANCH_NO CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  APPL_CHK_CLERK_NO  CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_PR_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  CNTR_CLERK_NO      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  VIP_CUST_FLAG      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  VIP_SALES_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  NEW_APPL_STAT      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
++>  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  PRIMARY KEY (APPL_ID ASC) NOT DROPPABLE )
++>STORE BY ( APPL_ID ASC );
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE SRC1_APPL_STATE (
++>  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
++>  APPL_STAT_NO       NUMERIC (6, 0)  SIGNED  DEFAULT 0  NOT NULL NOT DROPPABLE,
++>  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  MR_TYPE            CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'M',
++>  CNTR_NO            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  STD_PREMIUM        NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
++>  FACE_AMNT          NUMERIC (20, 2) SIGNED  DEFAULT NULL,
++>  INSUR_DUR_UNIT     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  INSUR_DUR          NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
++>  MONEYIN_DUR_UNIT   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
++>  MONEYIN_DUR        NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
++>  HEAL_EXAM_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
++>  PH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  SH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  SH_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  OC_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  OT_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
++>  OT_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
++>  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
++>  PRIMARY KEY (APPL_ID ASC, APPL_STAT_NO ASC) NOT DROPPABLE )
++>STORE BY ( APPL_ID ASC, APPL_STAT_NO ASC );
+
+--- SQL operation complete.
+>>
+>>insert into SRC1_B02 (CNTR_NO, EXT_KEY1, EXT_KEY16, ext_key19, ext_key7, MGR_BRANCH_NO, mio_item_code, MIO_LOG_ID, pol_code) values
++>  ('100', '1', 'PS', 24, 'S', '17', 'RM', '14', 'D31'),
++>  ('101', '1', 'PS', 11, 'S', '12', 'ab', '16', 'D31'),
++>  ('102', '2', 'PS', 22, 'S', '29', 'cd', '23', 'D31'),
++>  ('103', '1', 'PS', 11, 'a', '19', 'RM', '39', 'D31'),
++>  ('104', '2', 'PS', 21, 'S', '11', 'ab', '12', 'D31'),
++>  ('105', '1', 'PS', 19, 'S', '23', 'cd', '12', 'D31'),
++>  ('106', '1', 'PS', 23, 'S', '16', 'RM', '18', 'D31'),
++>  ('107', '2', 'PS', 10, 'a', '16', 'ab', '35', 'D31'),
++>  ('108', '1', 'PS', 19, 'S', '24', 'cd', '17', 'D31'),
++>  ('109', '1', 'PS', 24, 'S', '28', 'RM', '35', 'D31'),
++>  ('110', '1', 'PS', 24, 'S', '11', 'ab', '47', 'D31'),
++>  ('111', '3', 'PS', 23, 'a', '24', 'cd', '44', 'D31'),
++>  ('112', '1', 'PU', 16, 'S', '26', 'RM', '28', 'D31'),
++>  ('113', '5', 'PU', 29, 'S', '28', 'ab', '31', 'S42'),
++>  ('114', '4', 'PU', 19, 'S', '18', 'cd', '48', 'S42'),
++>  ('115', '1', 'PU', 22, 'a', '18', 'RM', '26', 'S42'),
++>  ('116', '1', 'PU', 27, 'S', '24', 'ab', '33', 'S42'),
++>  ('117', '1', 'PU', 23, 'S', '15', 'cd', '31', 'S42'),
++>  ('118', '2', 'PU', 28, 'S', '21', 'RM', '23', 'S42'),
++>  ('119', '3', 'PU', 25, 'a', '21', 'ab', '47', 'S42'),
++>  ('120', '1', 'PU', 28, 'S', '24', 'cd', '12', 'S42'),
++>  ('121', '4', 'PU', 18, 'S', '22', 'RM', '36', 'S42'),
++>  ('122', '2', 'PU', 27, 'S', '17', 'ab', '15', 'S42'),
++>  ('123', '1', 'PU', 27, 'a', '20', 'cd', '48', 'S42'),
++>  ('124', '1', 'PU', 18, 'S', '12', 'RM', '12', 'S42'),
++>  ('125', '2', 'ab', 11, 'S', '16', 'ab', '41', 'abc'),
++>  ('126', '1', 'ab', 23, 'S', '24', 'cd', '30', 'abc'),
++>  ('127', '5', 'ab', 20, 'a', '17', 'RM', '30', 'abc'),
++>  ('128', '3', 'ab', 26, 'S', '15', 'ab', '36', 'abc'),
++>  ('129', '1', 'ab', 27, 'S', '21', 'cd', '24', 'abc');
+
+--- 30 row(s) inserted.
+>>
+>>insert into SRC1_STD_CONTRACT (RENEW_TIMES, CNTR_NO, CNTR_ID, N_SALES_BRANCH_NO, N_SALES_CODE, O_SALES_BRANCH_NO, O_SALES_CODE, POL_CODE) values
++>  (1, '109', '16', '15', '10', '15', '10', 'D31'),
++>  (5, '130', '11', '14', '12', '14', '12', 'D31'),
++>  (5, '102', '12', '14', '14', '14', '14', 'D31'),
++>  (6, '121', '10', '15', '14', '15', '14', 'D31'),
++>  (2, '109', '13', '12', '14', '12', '14', 'D31'),
++>  (5, '108', '11', '13', '15', '13', '15', 'D31'),
++>  (9, '114', '10', '13', '13', '13', '13', 'D31'),
++>  (5, '114', '10', '12', '15', '12', '15', 'D31'),
++>  (1, '122', '14', '12', '12', '12', '12', 'D31'),
++>  (6, '120', '12', '13', '13', '13', '13', 'D31'),
++>  (9, '122', '10', '14', '15', '14', '15', 'S42'),
++>  (4, '108', '14', '13', '15', '13', '15', 'S42'),
++>  (2, '123', '10', '15', '15', '15', '15', 'S42'),
++>  (1, '105', '14', '15', '12', '15', '12', 'S42'),
++>  (3, '106', '13', '11', '10', '11', '10', 'S42'),
++>  (9, '113', '14', '15', '10', '15', '10', 'S42'),
++>  (4, '109', '15', '15', '11', '15', '11', 'S42'),
++>  (6, '129', '11', '11', '14', '11', '14', 'S42'),
++>  (5, '113', '10', '14', '14', '14', '14', 'S42'),
++>  (5, '107', '13', '14', '15', '14', '15', 'S42'),
++>  (7, '119', '13', '13', '14', '13', '10', 'S42'),
++>  (3, '103', '11', '11', '12', '12', '13', 'abc'),
++>  (5, '119', '15', '10', '13', '10', '10', 'abc'),
++>  (8, '100', '15', '11', '12', '10', '10', 'abc'),
++>  (1, '120', '13', '12', '13', '11', '15', 'abc'),
++>  (6, '128', '10', '13', '14', '11', '11', 'abc'),
++>  (2, '110', '15', '12', '14', '10', '11', 'abc'),
++>  (3, '109', '10', '15', '12', '14', '13', 'abc'),
++>  (8, '119', '12', '12', '15', '14', '14', 'abc'),
++>  (9, '119', '13', '15', '12', '11', '14', 'abc');
+
+--- 30 row(s) inserted.
+>>
+>>
+>>insert into SRC1_INSUR_APPL (APPL_ID, SALES_BRANCH_NO) values
++>  (' 1', '350202'),
++>  (' 2', '350202'),
++>  (' 3', '350202'),
++>  (' 4', '350202'),
++>  (' 5', '350202'),
++>  (' 6', '350202'),
++>  (' 7', '350202'),
++>  (' 8', '350202'),
++>  (' 9', '350202'),
++>  ('10', '350202'),
++>  ('11', '350204'),
++>  ('12', '350204'),
++>  ('13', '350204'),
++>  ('14', '350204'),
++>  ('15', '350204'),
++>  ('16', '350204'),
++>  ('17', '350204'),
++>  ('18', '350204'),
++>  ('19', '350204'),
++>  ('20', '350204'),
++>  ('21', '350204'),
++>  ('22', '350212'),
++>  ('23', '350212'),
++>  ('24', '350215'),
++>  ('25', '350211'),
++>  ('26', '350215'),
++>  ('27', '350215'),
++>  ('28', '350215'),
++>  ('29', '350213'),
++>  ('30', '350213');
+
+--- 30 row(s) inserted.
+>>
+>>INSERT INTO SRC1_APPL_STATE (APPL_STAT_NO, APPL_ID, CNTR_NO, pol_code) VALUES
++>  ( 1, '18', '111', 'D31'),
++>  ( 2, ' 3', '127', 'D31'),
++>  ( 3, '23', '119', 'D31'),
++>  ( 4, '19', '115', 'D31'),
++>  ( 5, '16', '123', 'D31'),
++>  ( 6, ' 3', '107', 'D31'),
++>  ( 7, ' 2', '108', 'D31'),
++>  ( 8, ' 3', '120', 'D31'),
++>  ( 9, '24', '123', 'D31'),
++>  (10, '10', '124', 'D31'),
++>  (11, '16', '101', 'S42'),
++>  (12, '21', '122', 'S42'),
++>  (13, ' 5', '129', 'S42'),
++>  (14, '26', '121', 'S42'),
++>  (15, ' 3', '115', 'S42'),
++>  (16, ' 9', '109', 'S42'),
++>  (17, '29', '119', 'S42'),
++>  (18, '26', '112', 'S42'),
++>  (19, '27', '102', 'S42'),
++>  (20, '12', '130', 'S42'),
++>  (21, ' 5', '121', 'S42'),
++>  (22, '26', '125', 'abc'),
++>  (23, '18', '128', 'abc'),
++>  (24, '28', '107', 'abc'),
++>  (25, '23', '129', 'abc'),
++>  (26, '10', '107', 'abc'),
++>  (27, ' 5', '106', 'abc'),
++>  (28, ' 5', '112', 'abc'),
++>  (29, '20', '125', 'abc'),
++>  (30, '10', '109', 'abc');
+
+--- 30 row(s) inserted.
+>>
+>>--alter table fact  add constraint fact1_fk foreign key (dimkey) references dim1(dkey);
+>>--alter table fact2 add constraint fact2_fk foreign key (qdimkey) references dim1(dkey);
+>>--alter table dim1  add constraint dim1_fk foreign key (fk1) references dim2(dkey);
+>>--alter table dim2  add constraint dim2_fk foreign key (fk1) references dim3(dkey);
+>>
+>>obey TESTCLIC(create_mvs);
+>>--===========================================
+>>-- MJVs
+>>--===========================================
+>>
+>>-- Single table MJV
+>>create materialized view CLIC_MJV1
++>  refresh on request
++>  initialize on create
++>  AS  select MIO_ITEM_CODE, 
++>             CNTR_NO, 
++>             MIO_LOG_ID, 
++>             POL_CODE, 
++>             EXT_KEY16, 
++>             EXT_KEY19,
++>             mgr_branch_no
++>      from SRC1_B02 
++>      where EXT_KEY1 = '1' 
++>        and EXT_KEY16 in ('PS', 'PU')
++>        and EXT_KEY7 = 'S' ;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ CLIC_MJV1;
+>>obey TESTCLIC(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>select * from $$MVName$$;
+
+MIO_ITEM_CODE  CNTR_NO                              MIO_LOG_ID                                                                                                 POL_CODE  EXT_KEY16                                                                                                                                                                                                                                                        EXT_KEY19              MGR_BRANCH_NO
+-------------  -----------------------------------  ---------------------------------------------------------------------------------------------------------  --------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------------------  -------------
+
+RM             100                                  14                                                                                                         D31       PS                                                                                                                                                                                                                                                                               24.00  17           
+RM             106                                  18                                                                                                         D31       PS                                                                                                                                                                                                                                                                               23.00  16           
+RM             109                                  35                                                                                                         D31       PS                                                                                                                                                                                                                                                                               24.00  28           
+RM             112                                  28                                                                                                         D31       PU                                                                                                                                                                                                                                                                               16.00  26           
+RM             124                                  12                                                                                                         S42       PU                                                                                                                                                                                                                                                                               18.00  12           
+ab             101                                  16                                                                                                         D31       PS                                                                                                                                                                                                                                                                               11.00  12           
+ab             110                                  47                                                                                                         D31       PS                                                                                                                                                                                                                                                                               24.00  11           
+ab             116                                  33                                                                                                         S42       PU                                                                                                                                                                                                                                                                               27.00  24           
+cd             105                                  12                                                                                                         D31       PS                                                                                                                                                                                                                                                                               19.00  23           
+cd             108                                  17                                                                                                         D31       PS                                                                                                                                                                                                                                                                               19.00  24           
+cd             117                                  31                                                                                                         S42       PU                                                                                                                                                                                                                                                                               23.00  15           
+cd             120                                  12                                                                                                         S42       PU                                                                                                                                                                                                                                                                               28.00  24           
+
+--- 12 row(s) selected.
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.CLIC.CLIC_MJV1
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B10000'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212223875538840222' isKeyCovered='1' numCols='55' rangeBits='0000000000830000'>
+          CAT.CLIC.SRC1_B02
+        </Table>
+      </JBBCList>
+      <RangePredList>
+        <Range id='R681' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>
+          <Column ref='C430'>
+          </Column>
+          <OpEQ>
+            <StringVal><![CDATA[PS]]></StringVal>
+            <StringVal><![CDATA[PU]]></StringVal>
+          </OpEQ>
+        </Range>
+        <Range id='R685' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>
+          <Column id='C428' tableId='T1' colIndex='50'>
+            CAT.CLIC.SRC1_B02.EXT_KEY1
+          </Column>
+          <OpEQ>
+            <StringVal><![CDATA[1]]></StringVal>
+          </OpEQ>
+        </Range>
+        <Range id='R686' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>
+          <Column id='C429' tableId='T1' colIndex='51'>
+            CAT.CLIC.SRC1_B02.EXT_KEY7
+          </Column>
+          <OpEQ>
+            <StringVal><![CDATA[S]]></StringVal>
+          </OpEQ>
+        </Range>
+      </RangePredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O503' name='MIO_LOG_ID'>
+        <Column id='C378' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.CLIC.SRC1_B02.MIO_LOG_ID
+        </Column>
+      </Output>
+      <Output id='O509' name='POL_CODE'>
+        <Column id='C380' tableId='T1' colIndex='2'>
+          CAT.CLIC.SRC1_B02.POL_CODE
+        </Column>
+      </Output>
+      <Output id='O521' name='CNTR_NO'>
+        <Column id='C384' tableId='T1' colIndex='6' isNullable='0'>
+          CAT.CLIC.SRC1_B02.CNTR_NO
+        </Column>
+      </Output>
+      <Output id='O551' name='MIO_ITEM_CODE'>
+        <Column id='C394' tableId='T1' colIndex='16' isNullable='0'>
+          CAT.CLIC.SRC1_B02.MIO_ITEM_CODE
+        </Column>
+      </Output>
+      <Output id='O557' name='MGR_BRANCH_NO'>
+        <Column id='C396' tableId='T1' colIndex='18'>
+          CAT.CLIC.SRC1_B02.MGR_BRANCH_NO
+        </Column>
+      </Output>
+      <Output id='O659' name='EXT_KEY16'>
+        <Column id='C430' tableId='T1' colIndex='52'>
+          CAT.CLIC.SRC1_B02.EXT_KEY16
+        </Column>
+      </Output>
+      <Output id='O665' name='EXT_KEY19'>
+        <Column id='C432' tableId='T1' colIndex='54'>
+          CAT.CLIC.SRC1_B02.EXT_KEY19
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.CLIC.CLIC_MJV1';
+
+--- SQL operation complete.
+>>
+>>obey TESTCLIC(match_Q14);
+>>--===========================================
+>>-- Query 14
+>>--===========================================
+>>set pattern $$QueryName$$ CLIC_Q14;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 14
+>>prepare QueryStmt from
++>select c.pol_code,
++>       sum(ext_key19 ) amnt
++>  from      SRC1_B02 a
++>       join SRC1_STD_CONTRACT b 
++>         on a.cntr_no=b.CNTR_NO
++>       left join  SRC1_APPL_STATE c  
++>         on b.CNTR_NO=c.CNTR_NO                                                                          
++>  where a.ext_key1 = '1'                                                                                       
++>    and a.ext_key16 in ('PS','PU')                                                                                     
++>    and a.ext_key7 = 'S' 
++>    and c.APPL_ID in 
++>        (
++>          select APPL_ID 
++>            from SRC1_INSUR_APPL 
++>            where SALES_BRANCH_NO in ('350202','350204')
++>        ) 
++>    and  b.O_SALES_BRANCH_NO=b.N_SALES_BRANCH_NO 
++>    and  b.O_SALES_CODE=b.N_SALES_CODE
++>  group by c.pol_code
++>  order by c.pol_code;
+
+--- SQL command prepared.
+>>
+>>obey TESTCLIC(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+-------------------------------------------------------------------------------------------
+
+<Query>                                                                                    
+  <Version>                                                                                
+    1.0                                                                                    
+  </Version>                                                                               
+  <Misc rewriteLevel='3'>                                                                  
+  </Misc>                                                                                  
+  <JBB id='B0'>                                                                            
+    <Hub>                                                                                  
+      <JBBCList>                                                                           
+        <Table id='T2' TS='212223875540387345' numCols='20' hasLOJParent='1' joinOrder='2'>
+          CAT.CLIC.SRC1_APPL_STATE                                                         
+          <Key>                                                                            
+            <Column id='C240' tableId='T2' colIndex='0' isNullable='0'>                    
+              CAT.CLIC.SRC1_APPL_STATE.APPL_ID                                             
+            </Column>                                                                      
+            <Column id='C241' tableId='T2' colIndex='1' isNullable='0'>                    
+              CAT.CLIC.SRC1_APPL_STATE.APPL_STAT_NO                                        
+            </Column>                                                                      
+          </Key>                                                                           
+        </Table>                                                                           
+        <Table id='T4' TS='212223875543434707' numCols='55' rangeBits='0000000000830000'>  
+          CAT.CLIC.SRC1_B02                                                                
+          <Key>                                                                            
+            <Column id='C1' tableId='T4' colIndex='0' isNullable='0'>                      
+              CAT.CLIC.SRC1_B02.MIO_LOG_ID                                                 
+            </Column>                                                                      
+            <Column id='C7' tableId='T4' colIndex='6' isNullable='0'>                      
+              CAT.CLIC.SRC1_B02.CNTR_NO                                                    
+            </Column>                                                                      
+            <Column id='C17' tableId='T4' colIndex='16' isNullable='0'>                    
+              CAT.CLIC.SRC1_B02.MIO_ITEM_CODE                                              
+            </Column>                                                                      
+          </Key>                                                                           
+        </Table>                                                                           
+        <Table id='T1' TS='212223875540074795' numCols='53' rangeBits='0400000000000000'>  
+          CAT.CLIC.SRC1_INSUR_APPL                                                         
+          <Key>                                                                            
+            <Column id='C313' tableId='T1' colIndex='0' isNullable='0'>                    
+              CAT.CLIC.SRC1_INSUR_APPL.APPL_ID                                             
+            </Column>                                                                      
+          </Key>                                                                           
+        </Table>                                                                           
+        <Table id='T3' TS='212223875539637225' numCols='59'>                               
+          CAT.CLIC.SRC1_STD_CONTRACT                                                       
+          <Key>                                                                            
+            <Column id='C116' tableId='T3' colIndex='0' isNullable='0'>                    
+              CAT.CLIC.SRC1_STD_CONTRACT.CNTR_ID                                           
+            </Column>                                                                      
+            <Column id='C120' tableId='T3' colIndex='4' isNullable='0'>                    
+              CAT.CLIC.SRC1_STD_CONTRACT.CNTR_NO                                           
+            </Column>                                                                      
+            <Column id='C138' tableId='T3' colIndex='22' isNullable='0'>                   
+              CAT.CLIC.SRC1_STD_CONTRACT.RENEW_TIMES                                       
+            </Column>                                                                      
+          </Key>                                                                           
+        </Table>                                                                           
+      </JBBCList>                                                                          
+      <JoinPredList>                                                                       
+        <JoinPred id='J787'>                                                               
+          <Column id='C244' tableId='T2' colIndex='4'>                                     
+            CAT.CLIC.SRC1_APPL_STATE.CNTR_NO                                               
+          </Column>                                                                        
+          <Column ref='C7'>                                                                
+          </Column>                                                                        
+          <Column ref='C120'>                                                              
+          </Column>                                                                        
+        </JoinPred>                                                                        
+        <JoinPred id='J845'>                                                               
+          <Column id='C284' tableId='T2' colIndex='0' isNullable='0'>                      
+            CAT.CLIC.SRC1_APPL_STATE.APPL_ID                                               
+          </Column>                                                                        
+          <Column ref='C313'>                                                              
+          </Column>                                                                        
+        </JoinPred>                                                                        
+      </JoinPredList>                                                                      
+      <RangePredList>                                                                      
+        <Range id='R1020' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>         
+          <Column id='C53' tableId='T4' colIndex='52'>                                     
+            CAT.CLIC.SRC1_B02.EXT_KEY16                                                    
+          </Column>                                                                        
+          <OpEQ>                                                                           
+            <StringVal><![CDATA[PS]]></StringVal>                                          
+            <StringVal><![CDATA[PU]]></StringVal>                                          
+          </OpEQ>                                                                          
+        </Range>                                                                           
+        <Range id='R1031' sqlType='CHAR(6) CHARACTER SET ISO88591 ALLOWS NULLS'>           
+          <Column id='C338' tableId='T1' colIndex='25'>                                    
+            CAT.CLIC.SRC1_INSUR_APPL.SALES_BRANCH_NO                                       
+          </Column>                                                                        
+          <OpEQ>                                                                           
+            <StringVal><![CDATA[350202]]></StringVal>                                      
+            <StringVal><![CDATA[350204]]></StringVal>                                      
+          </OpEQ>                                                                          
+        </Range>                                                                           
+        <Range id='R1046' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>         
+          <Column id='C51' tableId='T4' colIndex='50'>                                     
+            CAT.CLIC.SRC1_B02.EXT_KEY1                                                     
+          </Column>                                                                        
+          <OpEQ>                                                                           
+            <StringVal><![CDATA[1]]></StringVal>                                           
+          </OpEQ>                                                                          
+        </Range>                                                                           
+        <Range id='R1047' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>         
+          <Column id='C52' tableId='T4' colIndex='51'>                                     
+            CAT.CLIC.SRC1_B02.EXT_KEY7                                                     
+          </Column>                                                                        
+          <OpEQ>                                                                           
+            <StringVal><![CDATA[S]]></StringVal>                                           
+          </OpEQ>                                                                          
+        </Range>                                                                           
+      </RangePredList>                                                                     
+      <ResidualPredList>                                                                   
+        <Residual id='D1048'>                                                              
+          <BinaryOper id='S1048' op='='>                                                   
+            <Column id='C143' tableId='T3' colIndex='27'>                                  
+              CAT.CLIC.SRC1_STD_CONTRACT.N_SALES_BRANCH_NO                                 
+            </Column>                                                                      
+            <Column id='C141' tableId='T3' colIndex='25'>                                  
+              CAT.CLIC.SRC1_STD_CONTRACT.O_SALES_BRANCH_NO                                 
+            </Column>                                                                      
+          </BinaryOper>                                                                    
+        </Residual>                                                                        
+        <Residual id='D1049'>                                                              
+          <BinaryOper id='S1049' op='='>                                                   
+            <Column id='C144' tableId='T3' colIndex='28'>                                  
+              CAT.CLIC.SRC1_STD_CONTRACT.N_SALES_CODE                                      
+            </Column>                                                                      
+            <Column id='C142' tableId='T3' colIndex='26'>                                  
+              CAT.CLIC.SRC1_STD_CONTRACT.O_SALES_CODE                                      
+            </Column>                                                                      
+          </BinaryOper>                                                                    
+        </Residual>                                                                        
+      </ResidualPredList>                                                                  
+    </Hub>                                                                                 
+    <ExtraHub>                                                                             
+    </ExtraHub>                                                                            
+    <OutputList>                                                                           
+      <Output id='O286'>                                                                   
+        <Column id='C286' tableId='T2' colIndex='2'>                                       
+          CAT.CLIC.SRC1_APPL_STATE.POL_CODE                                                
+        </Column>                                                                          
+      </Output>                                                                            
+      <Output id='O428'>                                                                   
+        <Expr id='X428'>                                                                   
+          <Function id='S428' op='sum' aggregateFunc='3'>                                  
+            <Column id='C55' tableId='T4' colIndex='54'>                                   
+              CAT.CLIC.SRC1_B02.EXT_KEY19                                                  
+            </Column>                                                                      
+          </Function>                                                                      
+        </Expr>                                                                            
+      </Output>                                                                            
+    </OutputList>                                                                          
+    <GroupBy id='G5'>                                                                      
+      <Primary>                                                                            
+        <Column id='C286' tableId='T2' colIndex='2'>                                       
+          CAT.CLIC.SRC1_APPL_STATE.POL_CODE                                                
+        </Column>                                                                          
+      </Primary>                                                                           
+    </GroupBy>                                                                             
+  </JBB>                                                                                   
+</Query>                                                                                   
+
+--- 161 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE            >> clic_q14.in;
+>>sh echo PUBLISH CLIC_MJV1.xml >> clic_q14.in;
+>>sh echo MATCH CLIC_Q14.xml    >> clic_q14.in;
+>>
+>>--== Run QMS as a command line tool
+>>sh sh -c "$QMS clic_q14.in clic.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T4'>
+          CAT.CLIC.SRC1_B02
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.CLIC.CLIC_MJV1
+          </MVName>
+          <RangePredList>
+            <Range ref='R1047' result='Provided'>
+            </Range>
+            <Range ref='R1046' result='Provided'>
+            </Range>
+            <Range ref='R1020' result='Provided'>
+            </Range>
+          </RangePredList>
+          <OutputList>
+            <Output ref='C55' result='Provided'>
+              <MVColumn ref='C55'>
+                EXT_KEY19
+              </MVColumn>
+            </Output>
+            <Output ref='C7' result='Provided'>
+              <MVColumn ref='C7'>
+                CNTR_NO
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+  </JbbResult>
+</Result>
+>>
+>>obey TESTCLIC(compare);
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 14
+>>prepare QueryStmt from
++>select c.pol_code,
++>       sum(ext_key19 ) amnt
++>  from      SRC1_B02 a
++>       join SRC1_STD_CONTRACT b 
++>         on a.cntr_no=b.CNTR_NO
++>       left join  SRC1_APPL_STATE c  
++>         on b.CNTR_NO=c.CNTR_NO                                                                          
++>  where a.ext_key1 = '1'                                                                                       
++>    and a.ext_key16 in ('PS','PU')                                                                                     
++>    and a.ext_key7 = 'S' 
++>    and c.APPL_ID in 
++>        (
++>          select APPL_ID 
++>            from SRC1_INSUR_APPL 
++>            where SALES_BRANCH_NO in ('350202','350204')
++>        ) 
++>    and  b.O_SALES_BRANCH_NO=b.N_SALES_BRANCH_NO 
++>    and  b.O_SALES_CODE=b.N_SALES_CODE
++>  group by c.pol_code
++>  order by c.pol_code;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       B (CAT.CLIC.SRC1_STD_CONTRACT)                              
+FILE_SCAN                       C (CAT.CLIC.SRC1_APPL_STATE)                                
+FILE_SCAN                       CAT.CLIC.CLIC_MJV1                                          
+FILE_SCAN                       CAT.CLIC.SRC1_INSUR_APPL                                    
+
+--- 4 row(s) selected.
+>>
+>>execute QueryStmt;
+
+POL_CODE  AMNT                 
+--------  ---------------------
+
+D31                       66.00
+S42                       72.00
+abc                       95.00
+
+--- 3 row(s) selected.
+>>
+>>log TCLIC_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 14
+>>prepare QueryStmt from
++>select c.pol_code,
++>       sum(ext_key19 ) amnt
++>  from      SRC1_B02 a
++>       join SRC1_STD_CONTRACT b 
++>         on a.cntr_no=b.CNTR_NO
++>       left join  SRC1_APPL_STATE c  
++>         on b.CNTR_NO=c.CNTR_NO                                                                          
++>  where a.ext_key1 = '1'                                                                                       
++>    and a.ext_key16 in ('PS','PU')                                                                                     
++>    and a.ext_key7 = 'S' 
++>    and c.APPL_ID in 
++>        (
++>          select APPL_ID 
++>            from SRC1_INSUR_APPL 
++>            where SALES_BRANCH_NO in ('350202','350204')
++>        ) 
++>    and  b.O_SALES_BRANCH_NO=b.N_SALES_BRANCH_NO 
++>    and  b.O_SALES_CODE=b.N_SALES_CODE
++>  group by c.pol_code
++>  order by c.pol_code;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       A (CAT.CLIC.SRC1_B02)                                       
+FILE_SCAN                       B (CAT.CLIC.SRC1_STD_CONTRACT)                              
+FILE_SCAN                       C (CAT.CLIC.SRC1_APPL_STATE)                                
+FILE_SCAN                       CAT.CLIC.SRC1_INSUR_APPL                                    
+
+--- 4 row(s) selected.
+>>
+>>execute QueryStmt;
+
+POL_CODE  AMNT                 
+--------  ---------------------
+
+D31                       66.00
+S42                       72.00
+abc                       95.00
+
+--- 3 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log TCLIC_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>--obey TESTCLIC(match_Q16);
+>>obey TESTCLIC(match_Q18);
+>>--===========================================
+>>-- Query 18
+>>--===========================================
+>>
+>>set pattern $$QueryName$$ CLIC_Q18;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 18
+>>prepare QueryStmt from
++>select a.mgr_branch_no,
++>       sum(ext_key19 ) amnt
++>  from SRC1_B02 a  
++>       join SRC1_STD_CONTRACT b 
++>         on    a.cntr_no=b.CNTR_NO 
++>           and a.mio_item_code='RM'
++>  where a.ext_key1 = '1'                                                                                       
++>	  and a.ext_key16 in ('PS')                                                                                     
++>	  and a.ext_key7 = 'S' 
++>	  and b.O_SALES_BRANCH_NO<>b.N_SALES_BRANCH_NO 
++>	  and b.O_SALES_CODE<>b.N_SALES_CODE
++>  group by a.mgr_branch_no
++>  order by a.mgr_branch_no;
+
+--- SQL command prepared.
+>>
+>>obey TESTCLIC(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+--------------------------------------------------------------------------------------------
+
+<Query>                                                                                     
+  <Version>                                                                                 
+    1.0                                                                                     
+  </Version>                                                                                
+  <Misc rewriteLevel='3'>                                                                   
+  </Misc>                                                                                   
+  <JBB id='B0'>                                                                             
+    <Hub>                                                                                   
+      <JBBCList>                                                                            
+        <Table id='T2' TS='212223875543434707' numCols='55' rangeBits='0008000000830000'>   
+          CAT.CLIC.SRC1_B02                                                                 
+          <Key>                                                                             
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>                       
+              CAT.CLIC.SRC1_B02.MIO_LOG_ID                                                  
+            </Column>                                                                       
+            <Column id='C7' tableId='T2' colIndex='6' isNullable='0'>                       
+              CAT.CLIC.SRC1_B02.CNTR_NO                                                     
+            </Column>                                                                       
+            <Column id='C17' tableId='T2' colIndex='16' isNullable='0'>                     
+              CAT.CLIC.SRC1_B02.MIO_ITEM_CODE                                               
+            </Column>                                                                       
+          </Key>                                                                            
+        </Table>                                                                            
+        <Table id='T1' TS='212223875539637225' numCols='59' residualBits='8700000000000000'>
+          CAT.CLIC.SRC1_STD_CONTRACT                                                        
+          <Key>                                                                             
+            <Column id='C116' tableId='T1' colIndex='0' isNullable='0'>                     
+              CAT.CLIC.SRC1_STD_CONTRACT.CNTR_ID                                            
+            </Column>                                                                       
+            <Column id='C120' tableId='T1' colIndex='4' isNullable='0'>                     
+              CAT.CLIC.SRC1_STD_CONTRACT.CNTR_NO                                            
+            </Column>                                                                       
+            <Column id='C138' tableId='T1' colIndex='22' isNullable='0'>                    
+              CAT.CLIC.SRC1_STD_CONTRACT.RENEW_TIMES                                        
+            </Column>                                                                       
+          </Key>                                                                            
+        </Table>                                                                            
+      </JBBCList>                                                                           
+      <JoinPredList>                                                                        
+        <JoinPred id='J270'>                                                                
+          <Column ref='C7'>                                                                 
+          </Column>                                                                         
+          <Column ref='C120'>                                                               
+          </Column>                                                                         
+        </JoinPred>                                                                         
+      </JoinPredList>                                                                       
+      <RangePredList>                                                                       
+        <Range id='R620' sqlType='CHAR(4) CHARACTER SET ISO88591 NO NULLS'>                 
+          <Column ref='C17'>                                                                
+          </Column>                                                                         
+          <OpEQ>                                                                            
+            <StringVal><![CDATA[RM]]></StringVal>                                           
+          </OpEQ>                                                                           
+        </Range>                                                                            
+        <Range id='R621' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>           
+          <Column id='C51' tableId='T2' colIndex='50'>                                      
+            CAT.CLIC.SRC1_B02.EXT_KEY1                                                      
+          </Column>                                                                         
+          <OpEQ>                                                                            
+            <StringVal><![CDATA[1]]></StringVal>                                            
+          </OpEQ>                                                                           
+        </Range>                                                                            
+        <Range id='R622' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>           
+          <Column id='C52' tableId='T2' colIndex='51'>                                      
+            CAT.CLIC.SRC1_B02.EXT_KEY7                                                      
+          </Column>                                                                         
+          <OpEQ>                                                                            
+            <StringVal><![CDATA[S]]></StringVal>                                            
+          </OpEQ>                                                                           
+        </Range>                                                                            
+        <Range id='R623' sqlType='CHAR(255) CHARACTER SET ISO88591 ALLOWS NULLS'>           
+          <Column id='C53' tableId='T2' colIndex='52'>                                      
+            CAT.CLIC.SRC1_B02.EXT_KEY16                                                     
+          </Column>                                                                         
+          <OpEQ>                                                                            
+            <StringVal><![CDATA[PS]]></StringVal>                                           
+          </OpEQ>                                                                           
+        </Range>                                                                            
+      </RangePredList>                                                                      
+      <ResidualPredList>                                                                    
+        <Residual id='D248'>                                                                
+          <BinaryOper id='S248' op='&lt;>'>                                                 
+            <Column id='C141' tableId='T1' colIndex='25'>                                   
+              CAT.CLIC.SRC1_STD_CONTRACT.O_SALES_BRANCH_NO                                  
+            </Column>                                                                       
+            <Column id='C143' tableId='T1' colIndex='27'>                                   
+              CAT.CLIC.SRC1_STD_CONTRACT.N_SALES_BRANCH_NO                                  
+            </Column>                                                                       
+          </BinaryOper>                                                                     
+        </Residual>                                                                         
+        <Residual id='D249'>                                                                
+          <BinaryOper id='S249' op='&lt;>'>                                                 
+            <Column id='C142' tableId='T1' colIndex='26'>                                   
+              CAT.CLIC.SRC1_STD_CONTRACT.O_SALES_CODE                                       
+            </Column>                                                                       
+            <Column id='C144' tableId='T1' colIndex='28'>                                   
+              CAT.CLIC.SRC1_STD_CONTRACT.N_SALES_CODE                                       
+            </Column>                                                                       
+          </BinaryOper>                                                                     
+        </Residual>                                                                         
+      </ResidualPredList>                                                                   
+    </Hub>                                                                                  
+    <ExtraHub>                                                                              
+    </ExtraHub>                                                                             
+    <OutputList>                                                                            
+      <Output id='O250'>                                                                    
+        <Expr id='X250'>                                                                    
+          <Function id='S250' op='sum' aggregateFunc='3'>                                   
+            <Column id='C55' tableId='T2' colIndex='54'>                                    
+              CAT.CLIC.SRC1_B02.EXT_KEY19                                                   
+            </Column>                                                                       
+          </Function>                                                                       
+        </Expr>                                                                             
+      </Output>                                                                             
+      <Output id='O306'>                                                                    
+        <Column ref='C19'>                                                                  
+        </Column>                                                                           
+      </Output>                                                                             
+    </OutputList>                                                                           
+    <GroupBy id='G3'>                                                                       
+      <Primary>                                                                             
+        <Column id='C19' tableId='T2' colIndex='18'>                                        
+          CAT.CLIC.SRC1_B02.MGR_BRANCH_NO                                                   
+        </Column>                                                                           
+      </Primary>                                                                            
+    </GroupBy>                                                                              
+  </JBB>                                                                                    
+</Query>                                                                                    
+
+--- 128 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE            >> clic_q18.in;
+>>sh echo PUBLISH CLIC_MJV1.xml >> clic_q18.in;
+>>sh echo MATCH CLIC_Q18.xml    >> clic_q18.in;
+>>
+>>--== Run QMS as a command line tool
+>>sh sh -c "$QMS clic_q18.in clic.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.CLIC.SRC1_B02
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.CLIC.CLIC_MJV1
+          </MVName>
+          <RangePredList>
+            <Range ref='R620' result='NotProvided'>
+              <MVColumn ref='C17'>
+                MIO_ITEM_CODE
+              </MVColumn>
+            </Range>
+            <Range ref='R623' result='NotProvided'>
+              <MVColumn ref='C53'>
+                EXT_KEY16
+              </MVColumn>
+            </Range>
+            <Range ref='R622' result='Provided'>
+            </Range>
+            <Range ref='R621' result='Provided'>
+            </Range>
+          </RangePredList>
+          <OutputList>
+            <Output ref='C55' result='Provided'>
+              <MVColumn ref='C55'>
+                EXT_KEY19
+              </MVColumn>
+            </Output>
+            <Output ref='O306' result='Provided'>
+              <MVColumn ref='C19'>
+                MGR_BRANCH_NO
+              </MVColumn>
+            </Output>
+            <Output ref='C7' result='Provided'>
+              <MVColumn ref='C7'>
+                CNTR_NO
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+  </JbbResult>
+</Result>
+>>
+>>obey TESTCLIC(compare);
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 18
+>>prepare QueryStmt from
++>select a.mgr_branch_no,
++>       sum(ext_key19 ) amnt
++>  from SRC1_B02 a  
++>       join SRC1_STD_CONTRACT b 
++>         on    a.cntr_no=b.CNTR_NO 
++>           and a.mio_item_code='RM'
++>  where a.ext_key1 = '1'                                                                                       
++>	  and a.ext_key16 in ('PS')                                                                                     
++>	  and a.ext_key7 = 'S' 
++>	  and b.O_SALES_BRANCH_NO<>b.N_SALES_BRANCH_NO 
++>	  and b.O_SALES_CODE<>b.N_SALES_CODE
++>  group by a.mgr_branch_no
++>  order by a.mgr_branch_no;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       B (CAT.CLIC.SRC1_STD_CONTRACT)                              
+FILE_SCAN                       CAT.CLIC.CLIC_MJV1                                          
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+MGR_BRANCH_NO  AMNT                 
+-------------  ---------------------
+
+17                             24.00
+28                             24.00
+
+--- 2 row(s) selected.
+>>
+>>log TCLIC_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TESTCLIC($$QueryName$$);
+>>-- Query 18
+>>prepare QueryStmt from
++>select a.mgr_branch_no,
++>       sum(ext_key19 ) amnt
++>  from SRC1_B02 a  
++>       join SRC1_STD_CONTRACT b 
++>         on    a.cntr_no=b.CNTR_NO 
++>           and a.mio_item_code='RM'
++>  where a.ext_key1 = '1'                                                                                       
++>	  and a.ext_key16 in ('PS')                                                                                     
++>	  and a.ext_key7 = 'S' 
++>	  and b.O_SALES_BRANCH_NO<>b.N_SALES_BRANCH_NO 
++>	  and b.O_SALES_CODE<>b.N_SALES_CODE
++>  group by a.mgr_branch_no
++>  order by a.mgr_branch_no;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       A (CAT.CLIC.SRC1_B02)                                       
+FILE_SCAN                       B (CAT.CLIC.SRC1_STD_CONTRACT)                              
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+MGR_BRANCH_NO  AMNT                 
+-------------  ---------------------
+
+17                             24.00
+28                             24.00
+
+--- 2 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log TCLIC_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>obey TESTCLIC(clean_up);
+>>----------------------------------------------------
+>>------------------ clean up section ----------------
+>>----------------------------------------------------
+>>drop schema clic cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

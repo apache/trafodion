@@ -1,0 +1,140 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- DDL Test of trigger temporary tables (using partitions)
+--
+-- Note: Requires DP volumes named $SYSTEM, $DATA, $DATA1, $DATA2.
+--  
+-- This test creates tables (range partitioned, hash partitioned, and entry
+-- sequenced (i.e., a log) ) and statement triggers (hence for each table,
+-- a temporary table is created and used.)  Some DML statements are run
+-- to make use of the TT, and "showddl" is used to see the TT.
+--
+
+obey TEST_2_3_1(clean_up);
+log LOG_2_3_1 clear;
+obey TEST_2_3_1(tests);
+log;
+obey TEST_2_3_1(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+set schema cat1.schm;
+
+drop trigger trg231;
+
+drop table t231range;
+drop table t231hash;
+drop table t231log;
+
+drop table t231B;
+
+?section tests
+
+-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+set parserflags 1;
+-- Clear this env variable to ensure that "showddl" won't show the LOCATION
+set envvar SQLMX_CMP_DESCRIBE_MORE_INFO ;
+reset envvar SQLMX_CMP_DESCRIBE_MORE_INFO ;
+
+set schema cat1.schm;
+
+-------------------------------------
+-- Test a table with range-partitions
+-------------------------------------
+create table t231range(
+	a int not null not droppable, b int not null, c int not null,
+	d int,
+	constraint t231bplus check (b > 0), constraint t231ubc unique(b,c),
+	primary key(a) not droppable)
+	location $$partition3$$
+	range partition(add first key  (100) location $$partition$$,
+		  add first key  (200) location $$partition1$$,
+		  add first key  (300) location $$partition2$$);
+
+create table t231B (x int, y int, z int);
+
+create trigger trg231 after update on t231range
+ referencing old as myold, new as mynew
+  for each statement
+    insert into t231B select a,b,c from mynew
+        where mynew.d > (select MAX(d) from myold);
+
+insert into t231range values (10,20,30,40),(110,120,130,140),(210,220,230,240),
+	(310,320,330,340);
+
+update t231range set d=d+1;
+
+update t231range set b=d+b;
+
+update t231range set d=b-1;
+
+select * from t231B;
+
+showddl TABLE ( TEMP_TABLE t231range__TEMP);
+-- remember to remove the __TEMP suffix when the code is changed!!
+
+drop trigger trg231 ;
+-- the temporary table is dropped
+
+------------------------------------
+-- Test a table with hash-partition
+------------------------------------
+create table t231hash ( 
+	ordernum      NUMERIC (6) UNSIGNED  NO DEFAULT NOT NULL,
+	partnum       NUMERIC (4) UNSIGNED  NO DEFAULT NOT NULL,  
+  	unit_price    NUMERIC (8,2)         NO DEFAULT NOT NULL,
+  	qty_ordered   NUMERIC (5) UNSIGNED  NO DEFAULT NOT NULL,
+  	PRIMARY KEY (ordernum, partnum) NOT DROPPABLE ) 
+  	STORE BY PRIMARY KEY
+  	LOCATION $$partition$$
+  	HASH PARTITION (ADD LOCATION $$partition1$$,  ADD LOCATION $$partition2$$); 
+
+create trigger trg231 after update of (qty_ordered) on t231hash
+ referencing old as myold, new as mynew
+  for each statement
+    insert into t231B select ordernum, unit_price, qty_ordered from mynew
+        where mynew.qty_ordered > (select MAX(qty_ordered) from myold);
+
+delete from t231B;
+
+insert into t231hash values (11,21,331,40),(12,22,332,140),(13,23,333,240),
+	(14,24,334,340);
+
+update t231hash set qty_ordered = qty_ordered + 5;
+
+update t231hash set unit_price = unit_price + qty_ordered;
+
+update t231hash set qty_ordered = ordernum + 500;
+
+select * from t231B;
+
+showddl TABLE ( TEMP_TABLE t231hash__TEMP), INTERNAL;
+-- remember to remove the __TEMP suffix when the code is changed!!
+
+drop trigger trg231 ;
+
+
+
+
+
+
+
+

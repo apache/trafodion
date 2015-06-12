@@ -93,7 +93,7 @@ s/EX_SEND_BOTTOM[ ]*[0-9, |]*/EX_SEND_BOTTOM @exSendBottomCounters@/
 s/EX_HASH_GRBY[ ]*[0-9, |A-Z]*/EX_HASH_GRBY @exHashGrbyCounters@/
 s/EX_PARTN_ACCESS[ ]*[A-Za-z0-9, |.#]*/EX_PARTN_ACCESS @exPartnAccessCounters@/
 s/EX_EID_ROOT[ ]*[0-9, |]*/EX_EID_ROOT @exEidRootCounters@/
-s/EX_DP2_SUBS_OPER[ ]*[0-9, |]*/EX_DP2_SUBS_OPER @exDp2SubsOperCounters@/
+s/EX_TRAF_KEY_SELECT[ ]*[0-9, |]*/EX_TRAF_KEY_SELECT @exTrafKeySelectCounters@/
 
 /[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*/{N
 s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/

@@ -1,0 +1,836 @@
+>>
+>>-- Run tests
+>>  obey TESTMV555(Test1);
+>>-- test1:
+>>-- T_555_T1(a, b) CI(syskey)
+>>-- T_555_T2(c, d) CI(c)
+>>-- indexes:
+>>-- (sys_syskey1), (a) {since a = c}
+>>
+>>create table T_555_T1 (a int, b int) attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T2 (c int not null not droppable, d int, primary key (c)) 
++>		store by primary key attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV1
++>refresh on statement
++>initialize on create
++>as select a, d from T_555_T1, T_555_T2
++>where a = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T1 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV1_219122298_8122 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV1_219122298_8122 ON CATMVS.MVSCHM.T_555_MV1
+--  (
+--    A ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.Z7V5WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_Z7V5WT00
+--  ;
+
+--- SQL operation complete.
+>>
+>>drop mv T_555_MV1;
+
+--- SQL operation complete.
+>>drop table T_555_T1;
+
+--- SQL operation complete.
+>>drop table T_555_T2;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>  obey TESTMV555(Test2);
+>>-- test2
+>>-- T_555_T1(a, b) CI(syskey)
+>>-- T_555_T2(c, d) CI(c)
+>>-- indexes:
+>>-- (syskey1), (b or c) {since b = c}
+>>
+>>create table T_555_T1 (a int, b int) attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T2 (c int not null not droppable, d int, 
++>	primary key(c)) store by primary key attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV1
++>refresh on statement
++>initialize on create
++>as select a, b, c from T_555_T1, T_555_T2
++>where b = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.C AS C
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.B = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T1 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.C AS C
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.B = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV1_943322298_8122 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.C AS C
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.B = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV1_943322298_8122 ON CATMVS.MVSCHM.T_555_MV1
+--  (
+--    C ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.HZX5WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_HZX5WT00
+--  ;
+
+--- SQL operation complete.
+>>
+>>drop mv T_555_MV1;
+
+--- SQL operation complete.
+>>drop table T_555_T1;
+
+--- SQL operation complete.
+>>drop table T_555_T2;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>  obey TESTMV555(Test3);
+>>-- test3
+>>-- T_555_T1 (a, b) CI(syskey)
+>>-- T_555_T2 (c, d) CI(c, d)
+>>-- indexes:
+>>-- (syskey1), (a, d) 
+>>
+>>create table T_555_T1 (a int, b int) attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T2 (c int not null not droppable, 
++>		 d int not null not droppable, 
++>		 primary key (c, d)) store by primary key
++>		 attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV1
++>refresh on statement
++>initialize on create
++>as select a, b, d from T_555_T1, T_555_T2
++>where a = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T1 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV1_797422298_8122 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV1_797422298_8122 ON CATMVS.MVSCHM.T_555_MV1
+--  (
+--    A ASC, D ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.CV15WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_CV15WT00
+--  ;
+
+--- SQL operation complete.
+>>
+>>drop mv T_555_MV1;
+
+--- SQL operation complete.
+>>drop table T_555_T1;
+
+--- SQL operation complete.
+>>drop table T_555_T2;
+
+--- SQL operation complete.
+>>----------------------------------------------------------------------------
+>>  obey TESTMV555(Test4);
+>>-- test4
+>>-- T_555_T1 (a, b) CI(syskey)
+>>-- T_555_T2 (c, d) CI(c, d)
+>>-- user specified index with the right prefix, don't create index 
+>>
+>>create table T_555_T1 (a int, b int) attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T2 (c int not null not droppable, 
++>		 d int not null not droppable, 
++>		 primary key (c, d)) store by primary key
++>		 attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV1
++>refresh on statement
++>initialize on create
++>as select a, b, d from T_555_T1, T_555_T2
++>where a = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create index i1 on T_555_MV1(a, d, b);
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    A ASC, D ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.FD35WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_FD35WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>-- no change
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    A ASC, D ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.FD35WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_FD35WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute insertlog;
+
+--- SQL operation complete.
+>>
+>>drop index i1;
+
+--- SQL operation complete.
+>>
+>>-- another index with a right prefix
+>>create index i1 on T_555_MV1(d, a, b);
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    D ASC, A ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.GZ35WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_GZ35WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>-- no change
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    D ASC, A ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.GZ35WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_GZ35WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute insertlog;
+
+--- SQL operation complete.
+>>drop index i1;
+
+--- SQL operation complete.
+>>
+>>-- an index that have a wrong prefix - this will cause another
+>>-- index (a, d) to be created
+>>create index i1 on T_555_MV1(d, b, a);
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    D ASC, B ASC, A ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.HK45WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_HK45WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV1_931722298_8122 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The system added the following columns to the select list:
+--  CATMVS.MVSCHM.T_555_T1.SYSKEY AS SYS_SYSKEY1
+
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV1
+  (
+    D ASC, B ASC, A ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.HK45WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_HK45WT00
+  ;
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV1_931722298_8122 ON CATMVS.MVSCHM.T_555_MV1
+--  (
+--    A ASC, D ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.NP45WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_NP45WT00
+--  ;
+
+--- SQL operation complete.
+>>
+>>drop mv T_555_MV1;
+
+--- SQL operation complete.
+>>drop table T_555_T1;
+
+--- SQL operation complete.
+>>drop table T_555_T2;
+
+--- SQL operation complete.
+>>----------------------------------------------------------------------
+>>  obey TESTMV555(Test5);
+>>
+>>create table T_555_T1 (a int not null not droppable, b int, primary key(a))
++>	store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T2 (c int not null not droppable, d int not null not droppable,
++>		e int, primary key (c, d)) store by primary key attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_555_T3 (f int not null not droppable, g int, primary key(f))
++>	store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE T_555_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV1
++>refresh on statement
++>initialize on create
++>as select a, b, d
++>from T_555_T1, T_555_T2
++>where a = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV2
++>refresh on statement
++>initialize on create
++>as select c, d, g
++>from T_555_T2, T_555_T3
++>where c = f;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_555_MV3
++>refresh on statement
++>initialize on create
++>as select a, b, d
++>from T_555_T1, T_555_T2
++>where a = c;
+
+--- SQL operation complete.
+>>ALTER MV T_555_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create index i1 on T_555_MV3(d, a, b);
+
+--- SQL operation complete.
+>>
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (A ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+
+--- SQL operation complete.
+>>showddl T_555_MV2;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV2
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (C ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T2.C AS C, CATMVS.MVSCHM.T_555_T2.D AS D, CATMVS.MVSCHM.T_555_T3.G AS G
+   FROM CATMVS.MVSCHM.T_555_T2, CATMVS.MVSCHM.T_555_T3 WHERE CATMVS.MVSCHM.T_555_T2.C = CATMVS.MVSCHM.T_555_T3.F;
+
+
+--- SQL operation complete.
+>>showddl T_555_MV3;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV3
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (A ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV3
+  (
+    D ASC, A ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.MC75WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_MC75WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>alter table T_555_T2 attribute no insertlog;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV1_173922298_8122 was created for the materialized view.
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_555_MV2_234922298_8122 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>-- indexes should be created to T_555_MV1, T_555_MV2 but not T_555_MV3.
+>>showddl T_555_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV1
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (A ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV1_173922298_8122 ON CATMVS.MVSCHM.T_555_MV1
+--  (
+--    A ASC, D ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.XJ75WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_XJ75WT00
+--  ;
+
+--- SQL operation complete.
+>>showddl T_555_MV2;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV2
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (C ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T2.C AS C, CATMVS.MVSCHM.T_555_T2.D AS D, CATMVS.MVSCHM.T_555_T3.G AS G
+   FROM CATMVS.MVSCHM.T_555_T2, CATMVS.MVSCHM.T_555_T3 WHERE CATMVS.MVSCHM.T_555_T2.C = CATMVS.MVSCHM.T_555_T3.F;
+
+-- The following index is a system created index --
+--CREATE INDEX T_555_MV2_234922298_8122 ON CATMVS.MVSCHM.T_555_MV2
+--  (
+--    C ASC, D ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.DM75WT00
+--  NAME NSK_SYSTEM_ZSDGXPRZ_DM75WT00
+--  ;
+
+--- SQL operation complete.
+>>showddl T_555_MV3;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_555_MV3
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (A ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_555_T1.A AS A, CATMVS.MVSCHM.T_555_T1.B AS B, CATMVS.MVSCHM.T_555_T2.D AS D
+   FROM CATMVS.MVSCHM.T_555_T1, CATMVS.MVSCHM.T_555_T2 WHERE CATMVS.MVSCHM.T_555_T1.A = CATMVS.MVSCHM.T_555_T2.C;
+
+CREATE INDEX I1 ON CATMVS.MVSCHM.T_555_MV3
+  (
+    D ASC, A ASC, B ASC
+  )
+  LOCATION \NSK.$SYSTEM.ZSDGXPRZ.MC75WT00
+  NAME NSK_SYSTEM_ZSDGXPRZ_MC75WT00
+  ;
+
+--- SQL operation complete.
+>>
+>>drop mv T_555_MV3;
+
+--- SQL operation complete.
+>>drop mv T_555_MV2;
+
+--- SQL operation complete.
+>>drop mv T_555_MV1;
+
+--- SQL operation complete.
+>>drop table T_555_T1;
+
+--- SQL operation complete.
+>>drop table T_555_T2;
+
+--- SQL operation complete.
+>>drop table T_555_T3;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- clean and exit
+>>obey TESTMV555(clean_up);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop mv T_555_MV3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_MV3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_MV3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_555_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_555_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_555_T1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_T1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_T1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_555_T2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_T2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_T2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_555_T3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_555_T3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_555_T3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>
+>>--------------------------------------------------------------------------
+>>log;

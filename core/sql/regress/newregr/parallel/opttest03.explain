@@ -1,0 +1,774 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- opttest03
+--
+-- parallel tests on tables with alternate indexes available
+--
+-- Phil Koza, Mike Skarpelos
+
+?section dropIDX
+------------------
+-- Drop Indexes --
+------------------
+drop index IDX01B00;
+drop index IDX02B00;
+drop index IDX03B00;
+drop index IDX04B00;
+drop index IDX05B00;
+drop index IDX01B06;
+drop index IDX01B07;
+
+
+?section createIDX
+--------------------
+-- Create Indexes --
+--------------------
+create index IDX01B00 on PTAB00 (int64_100,sInt32_100,
+                                 uInt16_10,sInt16_10)
+location $data3
+partition (
+  add first key (50,0) location $data1)
+attribute buffered;
+
+create index IDX02B00 on PTAB00 (sInt32_100,int64_100,sInt32_uniq)
+location $data1
+partition (
+  add first key (50) location $data4)
+attribute buffered;
+
+create index IDX03B00 on PTAB00 (sInt32_uniq,sInt32_100)
+location $data1
+partition (
+  add first key (150) location $data4,
+  add first key (300) location $data3,
+  add first key (450) location $data2)
+attribute buffered;
+
+create index IDX04B00 on PTAB00 (uInt32_uniq,sInt32_100)
+location $data1
+partition (
+  add first key (200) location $data2,
+  add first key (400) location $data)
+attribute buffered;
+
+create index IDX05B00 on PTAB00 (uInt32_uniq,sInt32_100)
+location $data3
+partition (
+  add first key (150) location $data1,
+  add first key (400) location $data4)
+attribute buffered;
+
+create index IDX01B06 on PTAB06 (sInt32_100, uInt16_10)
+location $data2
+partition (
+  add first key (15) location $data4,
+  add first key (30) location $data3,
+  add first key (45) location $data1)
+attribute buffered;
+
+create index IDX01B07 on PTAB07 (sInt32_uniq, uInt16_10)
+location $data1
+partition (
+  add first key (150) location $data2,
+  add first key (300) location $data3,
+  add first key (450) location $data4)
+attribute buffered;
+--<pb>
+
+
+?section cpara
+control query default PARALLEL_EXECUTION 'ON';
+control query default DEF_NUM_LOCAL_SMP_CPUS '4';
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '1';
+control query default NESTED_JOIN_CONTROL 'OFF';
+
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+-- INDEX ONLY TESTS
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+?section qlchj1
+-----------------------------------------------------------------
+--  Force a hash join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(exchange(scan('T00'))),
+             exchange(exchange(scan('T01')))
+                           )
+          );
+
+-------------------------------------------------------------
+--  None of the indexes nor the base table are partitioned --
+-- correctly for the query below.  Key columns of IDX01B00 --
+-- satisfy left child's scan.                              --
+-------------------------------------------------------------
+prepare P from
+select T00.int64_100,T01.int64_100,T01.sInt32_100,
+       T00.uInt16_10,T00.sInt32_100
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.int64_100 = T01.int64_100
+        and T01.sInt32_100 = 0;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlchj2
+-----------------------------------------------------------------
+--  Force a hash join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T00')),
+             exchange(scan('T03'))
+                           )
+          );
+
+----------------------------------------------------
+--  IDX03B00 partitioning matches that of PTAB03. --
+-- Its key columns entirely satisfy the left scan --
+-- for the query below.                           --
+----------------------------------------------------
+prepare P from
+select T00.sInt32_uniq, T03.sInt32_uniq, T03.int64_100
+  from  PTAB00 T00, PTAB03 T03
+  where     T00.sInt32_uniq = T03.sInt32_uniq
+        and T03.int64_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlchj3
+-----------------------------------------------------------------
+--  Force a hash join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T00')),
+             exchange(scan('T01'))
+                           )
+          );
+
+--------------------------------------------------------------
+--  IDX02B00 key columns satisfy the left scan of the query --
+-- below but it is not partitioned the same as PTAB01.      --
+-- PTAB00 is partitioned the same as PTAB01, however, so    --
+-- the query effectively sets up a competition between      --
+-- an index only scan and correct partitioning.             --
+--------------------------------------------------------------
+prepare P from
+select T00.sInt32_uniq,T01.uInt32_uniq,T00.sInt32_100,T01.sInt32_uniq
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.sInt32_uniq = T01.uInt32_uniq
+        and T01.sInt32_uniq < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlchj4
+-----------------------------------------------------------------
+--  Force a hash join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T00')),
+             exchange(scan('T01'))
+                           )
+          );
+
+-----------------------------------------------------
+--  Both IDX04B00 and IDX05B00 have key columns    --
+-- which satisfy the left scan in the query below, --
+-- but only IDX04B00 is partitioned correctly.     --
+-----------------------------------------------------
+prepare P from
+select T00.uInt32_uniq, T01.uInt32_uniq, T01.int64_100
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.uInt32_uniq = T01.uInt32_uniq
+        and T01.int64_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrchj1
+------------------------------------------------------------------
+--  Force a hash join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(exchange(scan('T01'))),
+             exchange(exchange(scan('T00')))
+                           )
+          );
+
+-------------------------------------------------------------
+--  None of the indexes nor the base table are partitioned --
+-- correctly for the query below.  Key columns of IDX01B00 --
+-- satisfy right child's scan.                             --
+-------------------------------------------------------------
+prepare P from
+select T01.int64_100,T00.int64_100,T00.sInt32_100,
+       T00.uInt16_10,T00.sInt32_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.int64_100 = T00.int64_100
+        and T00.sInt32_100 = 0;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrchj2
+------------------------------------------------------------------
+--  Force a hash join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T03')),
+             exchange(scan('T00'))
+                           )
+          );
+
+-----------------------------------------------------
+--  IDX03B00 partitioning matches that of PTAB03.  --
+-- Its key columns entirely satisfy the right scan --
+-- for the query below.                            --
+-----------------------------------------------------
+prepare P from
+select T03.sInt32_uniq, T00.sInt32_uniq, T00.sInt32_100
+  from  PTAB03 T03, PTAB00 T00
+  where     T03.sInt32_uniq = T00.sInt32_uniq
+        and T00.sInt32_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrchj3
+------------------------------------------------------------------
+--  Force a hash join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T01')),
+             exchange(scan('T00'))
+                           )
+          );
+
+---------------------------------------------------------------
+--  IDX02B00 key columns satisfy the right scan of the query --
+-- below but it is not partitioned the same as PTAB01.       --
+-- PTAB00 is partitioned the same as PTAB01, however, so     --
+-- the query effectively sets up a competition between       --
+-- an index only scan and correct partitioning.              --
+---------------------------------------------------------------
+prepare P from
+select T01.uInt32_uniq,T00.sInt32_uniq,T00.int64_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.uInt32_uniq = T00.sInt32_uniq
+        and T00.int64_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrchj4
+------------------------------------------------------------------
+--  Force a hash join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(scan('T01')),
+             exchange(scan('T00'))
+                           )
+          );
+
+------------------------------------------------------
+--  Both IDX04B00 and IDX05B00 have key columns     --
+-- which satisfy the right scan in the query below, --
+-- but only IDX04B00 is partitioned correctly.      --
+------------------------------------------------------
+prepare P from
+select T01.uInt32_uniq, T00.uInt32_uniq, T00.sInt32_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.uInt32_uniq = T00.uInt32_uniq
+        and T00.sInt32_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlcmj1
+------------------------------------------------------------------
+--  Force a merge join with potential index only scan in left child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             sort(exchange(exchange(scan('T00')))),
+             sort(exchange(exchange(scan('T01'))))
+                     )
+          );
+
+-------------------------------------------------------------
+--  None of the indexes nor the base table are partitioned --
+-- correctly for the query below.  Key columns of IDX01B00 --
+-- satisfy left child's scan.                              --
+-------------------------------------------------------------
+prepare P from
+select T00.int64_100,T01.int64_100,T01.sInt32_100,
+       T00.uInt16_10,T00.sInt32_100
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.int64_100 = T01.int64_100
+        and T01.sInt32_100 = 0;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlcmj2
+-----------------------------------------------------------------
+--  Force a merge join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T00')),
+             exchange(scan('T03'))
+                           )
+          );
+
+----------------------------------------------------
+--  IDX03B00 partitioning matches that of PTAB03. --
+-- Its key columns entirely satisfy the left scan --
+-- for the query below.                           --
+----------------------------------------------------
+prepare P from
+select T00.sInt32_uniq,T03.sInt32_uniq,T00.sInt32_100,T03.int64_100
+  from  PTAB00 T00, PTAB03 T03
+  where     T00.sInt32_uniq = T03.sInt32_uniq
+        and T03.int64_100 < 5
+order by T00.sInt32_uniq,T00.sInt32_100;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlcmj3
+-----------------------------------------------------------------
+--  Force a merge join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T00')),
+             exchange(scan('T01'))
+                           )
+          );
+
+--------------------------------------------------------------
+--  IDX02B00 key columns satisfy the left scan of the query --
+-- below but it is not partitioned the same as PTAB01.      --
+-- PTAB00 is partitioned the same as PTAB01, however, so    --
+-- the query effectively sets up a competition between      --
+-- an index only scan and correct partitioning.             --
+--------------------------------------------------------------
+prepare P from
+select T00.sInt32_uniq,T01.uInt32_uniq,T00.sInt32_100,T01.sInt32_uniq
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.sInt32_uniq = T01.uInt32_uniq
+        and T01.sInt32_uniq < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlcmj4
+-----------------------------------------------------------------
+--  Force a merge join with potential index only scan in left child.
+-----------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T00')),
+             exchange(scan('T01'))
+                           )
+          );
+
+-----------------------------------------------------
+--  Both IDX04B00 and IDX05B00 have key columns    --
+-- which satisfy the left scan in the query below, --
+-- but only IDX04B00 is partitioned correctly.     --
+-----------------------------------------------------
+prepare P from
+select T00.uInt32_uniq, T01.uInt32_uniq, T01.int64_100
+  from  PTAB00 T00, PTAB01 T01
+  where     T00.uInt32_uniq = T01.uInt32_uniq
+        and T01.int64_100 < 5
+order by T00.uint32_uniq,T00.sInt32_100;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcmj1
+------------------------------------------------------------------
+--  Force a merge join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             sort(exchange(exchange(scan('T01')))),
+             sort(exchange(exchange(scan('T00'))))
+                           )
+          );
+
+-------------------------------------------------------------
+--  None of the indexes nor the base table are partitioned --
+-- correctly for the query below.  Key columns of IDX01B00 --
+-- satisfy right child's scan.                             --
+-------------------------------------------------------------
+prepare P from
+select T01.int64_100,T00.int64_100,T00.sInt32_100,
+       T00.uInt16_10,T00.sInt32_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.int64_100 = T00.int64_100
+        and T00.sInt32_100 = 0;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcmj2
+------------------------------------------------------------------
+--  Force a merge join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T03')),
+             exchange(scan('T00'))
+                           )
+          );
+
+-----------------------------------------------------
+--  IDX03B00 partitioning matches that of PTAB03.  --
+-- Its key columns entirely satisfy the right scan --
+-- for the query below.                            --
+-----------------------------------------------------
+prepare P from
+select T03.sInt32_uniq, T00.sInt32_uniq, T00.sInt32_100
+  from  PTAB03 T03, PTAB00 T00
+  where     T03.sInt32_uniq = T00.sInt32_uniq
+        and T00.sInt32_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcmj3
+------------------------------------------------------------------
+--  Force a merge join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T01')),
+             exchange(scan('T00'))
+                           )
+          );
+
+---------------------------------------------------------------
+--  IDX02B00 key columns satisfy the right scan of the query --
+-- below but it is not partitioned the same as PTAB01.       --
+-- PTAB00 is partitioned the same as PTAB01, however, so     --
+-- the query effectively sets up a competition between       --
+-- an index only scan and correct partitioning.              --
+---------------------------------------------------------------
+prepare P from
+select T01.uInt32_uniq,T00.sInt32_uniq,T00.int64_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.uInt32_uniq = T00.sInt32_uniq
+        and T00.int64_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcmj4
+------------------------------------------------------------------
+--  Force a merge join with potential index only scan in right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(
+             exchange(scan('T01')),
+             exchange(scan('T00'))
+                           )
+          );
+
+------------------------------------------------------
+--  Both IDX04B00 and IDX05B00 have key columns     --
+-- which satisfy the right scan in the query below, --
+-- but only IDX04B00 is partitioned correctly.      --
+------------------------------------------------------
+prepare P from
+select T01.uInt32_uniq, T00.uInt32_uniq, T00.sInt32_100
+  from  PTAB01 T01, PTAB00 T00
+  where     T01.uInt32_uniq = T00.uInt32_uniq
+        and T00.sInt32_100 < 5;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+-- ALTERNATE INDEX TESTS
+-----------------------------------------------------------------
+-----------------------------------------------------------------
+
+?section qlcmjalt
+------------------------------------------------------------------
+--  Force a merge join with potential alternate index scan in left child.
+--  Index IDX01B06 is on (sInt32_100,uInt16_10), and sInt16_10 is
+--  one of the pkey columns of T06, so should evaluate all predicates
+--  on the index using EIP and there should be very few accesses
+--  to the T06 base table.
+--  Because the order by is on table T06, the optimizer should choose
+--  T06 as the left child and T14 as the right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(cut,cut));
+
+prepare P from
+select T06.sInt32_100,T14.sInt32_60,T06.uInt16_10,T06.sInt16_10,
+       T06.varchar_100
+  from  PTAB06 T06, PTAB14 T14
+  where     T06.sInt32_100 = T14.sInt32_60
+        and T06.uInt16_10 <= 0
+        and T06.sInt16_10 <= 0
+  order by T06.sInt32_100, T06.uInt16_10;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qlcnjalt
+------------------------------------------------------------------
+--  Force a nested join with potential alternate index scan in left child.
+--  Index IDX01B07 is on (sInt32_uniq,uInt16_10), and sInt16_10 is
+--  one of the pkey columns of T07, so should evaluate all predicates
+--  on the index using EIP and there should be very few accesses
+--  to the T07 base table.
+--  Because the order by is on table T07, the optimizer should choose
+--  T07 as the left child and T03 as the right child.
+------------------------------------------------------------------
+control query shape
+  exchange(nested_join(cut,cut));
+
+prepare P from
+select T07.sInt32_uniq,T03.sInt32_uniq,T07.uInt16_10,T07.sInt16_10,
+       T07.varchar_100
+  from  PTAB07 T07, PTAB03 T03
+  where     T07.sInt32_uniq = T03.sInt32_uniq
+        and T07.uInt16_10 <= 0
+        and T07.sInt16_10 <= 0
+  order by T07.sInt32_uniq, T07.uInt16_10;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcmjalt
+------------------------------------------------------------------
+--  Force a merge join with potential alternate index scan in right child.
+--  Index IDX01B06 is on (sInt32_100,uInt16_10), and sInt16_10 is
+--  one of the pkey columns of T06, so should evaluate all predicates
+--  on the index using EIP and there should be very few accesses
+--  to the T06 base table.
+--  Because the order by is on table T14, the optimizer should choose
+--  T14 as the left child and T06 as the right child.
+------------------------------------------------------------------
+control query shape
+  exchange(merge_join(cut,cut));
+
+prepare P from
+select T06.sInt32_100,T14.sInt32_60,T06.uInt16_10,T06.sInt16_10,
+       T06.varchar_100
+  from  PTAB06 T06, PTAB14 T14
+  where     T06.sInt32_100 = T14.sInt32_60
+        and T06.uInt16_10 <= 0
+        and T06.sInt16_10 <= 0
+  order by T14.sInt32_60, T14.uInt16_10;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+?section qrcnjalt
+------------------------------------------------------------------
+--  Force a nested join with potential alternate index scan in right child.
+--  Index IDX01B07 is on (sInt32_uniq,uInt16_10).
+--  Because the order by is on table T03, the optimizer should choose
+--  T03 as the left child and T07 as the right child.
+------------------------------------------------------------------
+control query shape
+  exchange(nested_join(cut,cut));
+
+prepare P from
+select T03.sInt32_uniq,T07.sInt32_uniq,T03.uInt32_uniq,
+       T07.char_10
+  from  PTAB03 T03, PTAB07 T07
+  where     T03.sInt32_uniq = T07.sInt32_uniq
+        and T03.uInt32_uniq < 20
+  order by T03.sInt32_uniq;
+
+----------------------------------------------------
+-- Explain the node structure (leave details off) --
+----------------------------------------------------
+control query shape anything;
+select seq_num, operator, left_child_seq_num l, right_child_seq_num r
+from table (explain(NULL,'P'));
+
+--execute P;
+--<pb>
+
+
+?section dropIDX2
+------------------
+-- Drop Indexes --
+------------------
+drop index IDX01B00;
+drop index IDX02B00;
+drop index IDX03B00;
+drop index IDX04B00;
+drop index IDX05B00;
+drop index IDX01B06;
+drop index IDX01B07;

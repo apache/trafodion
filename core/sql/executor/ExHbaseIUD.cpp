@@ -3683,16 +3683,12 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
   }
-
-  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)
-    {
-      // At the end of range, added an extra byte with "0" value to
-      // make the key exclusive which is required by hbase scan.
-      // Note that the key buffer should have 2 extra bytes allocated
-      rowIdRowText.val[rowIdRowText.len] = '\0';
-      rowIdRowText.len += 1;
-    }
-
+  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)		
+  {		
+      // To ensure no row is found, add extra byte with "0" value 		
+      rowIdRowText.val[rowIdRowText.len] = '\0';		
+      rowIdRowText.len += 1;		
+  }		
   copyRowIDToDirectBuffer(rowIdRowText);
   return 0;
 }
@@ -4138,6 +4134,11 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	} // switch
 
     } // while
+    if (qparent_.down->isEmpty()
+           && (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)) {
+        ehi_->close();
+        step_ = NOT_STARTED;
+    } 
 
   return WORK_OK;
 }

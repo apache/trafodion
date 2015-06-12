@@ -1,0 +1,115 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+FILENAME_DECOMPOSE_:
+  ERROR                              FILENAME   LEVEL  OPTIONS  SUBPART                              PARTNAME  
+      0    \NEOPRF2.$FC0000.ZSDKCTX9.JXGTRB00       0        2        0                      \NEOPRF2.$FC0000  
+      0    \NEOPRF2.$FC0001.ZSDKCTX9.GRJTRB00       0        2        0                      \NEOPRF2.$FC0001  
+      0    \NEOPRF2.$FC0002.ZSDKCTX9.STKTRB00       0        2        0                      \NEOPRF2.$FC0002  
+      0    \NEOPRF2.$FC0003.ZSDKCTX9.VRLTRB00       0        2        0                      \NEOPRF2.$FC0003  
+      0    \NEOPRF2.$FC0100.ZSDKCTX9.NSMTRB00       0        2        0                      \NEOPRF2.$FC0100  
+      0    \NEOPRF2.$FC0101.ZSDKCTX9.PVNTRB00       0        2        0                      \NEOPRF2.$FC0101  
+      0    \NEOPRF2.$FC0102.ZSDKCTX9.SZPTRB00       0        2        0                      \NEOPRF2.$FC0102  
+      0    \NEOPRF2.$FC0103.ZSDKCTX9.TZQTRB00       0        2        0                      \NEOPRF2.$FC0103  
+      0    \NEOPRF2.$FC0101.ZSDKCTX9.SCCCM400       0        2        0                      \NEOPRF2.$FC0101  
+      0    \NEOPRF2.$FC0102.ZSDKCTX9.CGDCM400       0        2        0                      \NEOPRF2.$FC0102  
+      0    \NEOPRF2.$FC0103.ZSDKCTX9.RJFCM400       0        2        0                      \NEOPRF2.$FC0103  
+      0    \NEOPRF2.$FC0000.ZSDKCTX9.WHGCM400       0        2        0                      \NEOPRF2.$FC0000  
+      0    \NEOPRF2.$FC0001.ZSDKCTX9.VGHCM400       0        2        0                      \NEOPRF2.$FC0001  
+      0    \NEOPRF2.$FC0002.ZSDKCTX9.NFJCM400       0        2        0                      \NEOPRF2.$FC0002  
+      0    \NEOPRF2.$FC0003.ZSDKCTX9.XBKCM400       0        2        0                      \NEOPRF2.$FC0003  
+      0    \NEOPRF2.$FC0100.ZSDKCTX9.W9KCM400       0        2        0                      \NEOPRF2.$FC0100  
+      0    \NEOPRF2.$FC0101.ZSDKCTX9.TPQ59500       0        2        0                      \NEOPRF2.$FC0101  
+      0    \NEOPRF2.$FC0102.ZSDKCTX9.Z2869500       0        2        0                      \NEOPRF2.$FC0102  
+      0    \NEOPRF2.$FC0103.ZSDKCTX9.QSB79500       0        2        0                      \NEOPRF2.$FC0103  
+      0    \NEOPRF2.$FC0000.ZSDKCTX9.ZVC79500       0        2        0                      \NEOPRF2.$FC0000  
+      0    \NEOPRF2.$FC0001.ZSDKCTX9.C6D79500       0        2        0                      \NEOPRF2.$FC0001  
+      0    \NEOPRF2.$FC0002.ZSDKCTX9.H4F79500       0        2        0                      \NEOPRF2.$FC0002  
+      0    \NEOPRF2.$FC0003.ZSDKCTX9.Q1G79500       0        2        0                      \NEOPRF2.$FC0003  
+      0    \NEOPRF2.$FC0100.ZSDKCTX9.GZH79500       0        2        0                      \NEOPRF2.$FC0100  
+      0    \NEOPRF2.$FC0101.ZSDKCTX9.PJQWT700       0        2        0                      \NEOPRF2.$FC0101  
+      0    \NEOPRF2.$FC0102.ZSDKCTX9.QQTXT700       0        2        0                      \NEOPRF2.$FC0102  
+      0    \NEOPRF2.$FC0103.ZSDKCTX9.LM2XT700       0        2        0                      \NEOPRF2.$FC0103  
+      0    \NEOPRF2.$FC0000.ZSDKCTX9.KKNZT700       0        2        0                      \NEOPRF2.$FC0000  
+      0    \NEOPRF2.$FC0001.ZSDKCTX9.CRPZT700       0        2        0                      \NEOPRF2.$FC0001  
+      0    \NEOPRF2.$FC0002.ZSDKCTX9.FXWZT700       0        2        0                      \NEOPRF2.$FC0002  
+      0    \NEOPRF2.$FC0003.ZSDKCTX9.C2XZT700       0        2        0                      \NEOPRF2.$FC0003  
+      0    \NEOPRF2.$FC0100.ZSDKCTX9.V1ZZT700       0        2        0                      \NEOPRF2.$FC0100  
+      0    \NEOPRF2.$FC0200.ZSDKCTX9.CNBCZB00       0        2        0                      \NEOPRF2.$FC0200  
+      0    \NEOPRF2.$FC0201.ZSDKCTX9.NRCCZB00       0        2        0                      \NEOPRF2.$FC0201  
+      0    \NEOPRF2.$FC0202.ZSDKCTX9.NQDCZB00       0        2        0                      \NEOPRF2.$FC0202  
+      0    \NEOPRF2.$FC0203.ZSDKCTX9.TPFCZB00       0        2        0                      \NEOPRF2.$FC0203  
+      0    \NEOPRF2.$FC0300.ZSDKCTX9.FPGCZB00       0        2        0                      \NEOPRF2.$FC0300  
+      0    \NEOPRF2.$FC0301.ZSDKCTX9.BPHCZB00       0        2        0                      \NEOPRF2.$FC0301  
+      0    \NEOPRF2.$FC0302.ZSDKCTX9.GPJCZB00       0        2        0                      \NEOPRF2.$FC0302  
+      0    \NEOPRF2.$FC0303.ZSDKCTX9.WMKCZB00       0        2        0                      \NEOPRF2.$FC0303  
+      0    \NEOPRF2.$FC0301.ZSDKCTX9.MB3ZZ900       0        2        0                      \NEOPRF2.$FC0301  
+      0    \NEOPRF2.$FC0302.ZSDKCTX9.KW4ZZ900       0        2        0                      \NEOPRF2.$FC0302  
+      0    \NEOPRF2.$FC0303.ZSDKCTX9.HB6ZZ900       0        2        0                      \NEOPRF2.$FC0303  
+      0    \NEOPRF2.$FC0200.ZSDKCTX9.NK7ZZ900       0        2        0                      \NEOPRF2.$FC0200  
+      0    \NEOPRF2.$FC0201.ZSDKCTX9.DM8ZZ900       0        2        0                      \NEOPRF2.$FC0201  
+      0    \NEOPRF2.$FC0202.ZSDKCTX9.QNB1Z900       0        2        0                      \NEOPRF2.$FC0202  
+      0    \NEOPRF2.$FC0203.ZSDKCTX9.B4C1Z900       0        2        0                      \NEOPRF2.$FC0203  
+      0    \NEOPRF2.$FC0300.ZSDKCTX9.T4D1Z900       0        2        0                      \NEOPRF2.$FC0300  
+      0    \NEOPRF2.$FC0301.ZSDKCTX9.L8XMGB00       0        2        0                      \NEOPRF2.$FC0301  
+      0    \NEOPRF2.$FC0302.ZSDKCTX9.HGGPGB00       0        2        0                      \NEOPRF2.$FC0302  
+      0    \NEOPRF2.$FC0303.ZSDKCTX9.DGHPGB00       0        2        0                      \NEOPRF2.$FC0303  
+      0    \NEOPRF2.$FC0200.ZSDKCTX9.MFJPGB00       0        2        0                      \NEOPRF2.$FC0200  
+      0    \NEOPRF2.$FC0201.ZSDKCTX9.GDKPGB00       0        2        0                      \NEOPRF2.$FC0201  
+      0    \NEOPRF2.$FC0202.ZSDKCTX9.BCLPGB00       0        2        0                      \NEOPRF2.$FC0202  
+      0    \NEOPRF2.$FC0203.ZSDKCTX9.T9LPGB00       0        2        0                      \NEOPRF2.$FC0203  
+      0    \NEOPRF2.$FC0300.ZSDKCTX9.G8MPGB00       0        2        0                      \NEOPRF2.$FC0300  
+      0    \NEOPRF2.$FC0301.ZSDKCTX9.JSGNZB00       0        2        0                      \NEOPRF2.$FC0301  
+      0    \NEOPRF2.$FC0302.ZSDKCTX9.CN6PZB00       0        2        0                      \NEOPRF2.$FC0302  
+      0    \NEOPRF2.$FC0303.ZSDKCTX9.QR7PZB00       0        2        0                      \NEOPRF2.$FC0303  
+      0    \NEOPRF2.$FC0200.ZSDKCTX9.B4FQZB00       0        2        0                      \NEOPRF2.$FC0200  
+      0    \NEOPRF2.$FC0201.ZSDKCTX9.H5GQZB00       0        2        0                      \NEOPRF2.$FC0201  
+      0    \NEOPRF2.$FC0202.ZSDKCTX9.V3HQZB00       0        2        0                      \NEOPRF2.$FC0202  
+      0    \NEOPRF2.$FC0203.ZSDKCTX9.J3JQZB00       0        2        0                      \NEOPRF2.$FC0203  
+      0    \NEOPRF2.$FC0300.ZSDKCTX9.X1KQZB00       0        2        0                      \NEOPRF2.$FC0300  
+      0    \NEOPRF2.$FC0400.ZSDKCTX9.MGHW3B00       0        2        0                      \NEOPRF2.$FC0400  
+      0    \NEOPRF2.$FC0401.ZSDKCTX9.MTJW3B00       0        2        0                      \NEOPRF2.$FC0401  
+      0    \NEOPRF2.$FC0402.ZSDKCTX9.MVKW3B00       0        2        0                      \NEOPRF2.$FC0402  
+      0    \NEOPRF2.$FC0403.ZSDKCTX9.GVLW3B00       0        2        0                      \NEOPRF2.$FC0403  
+      0    \NEOPRF2.$FC0500.ZSDKCTX9.CVMW3B00       0        2        0                      \NEOPRF2.$FC0500  
+      0    \NEOPRF2.$FC0501.ZSDKCTX9.TTNW3B00       0        2        0                      \NEOPRF2.$FC0501  
+      0    \NEOPRF2.$FC0502.ZSDKCTX9.MSPW3B00       0        2        0                      \NEOPRF2.$FC0502  
+      0    \NEOPRF2.$FC0503.ZSDKCTX9.QTQW3B00       0        2        0                      \NEOPRF2.$FC0503  
+      0    \NEOPRF2.$FC0501.ZSDKCTX9.Q3V2KC00       0        2        0                      \NEOPRF2.$FC0501  
+      0    \NEOPRF2.$FC0502.ZSDKCTX9.ZPX2KC00       0        2        0                      \NEOPRF2.$FC0502  
+      0    \NEOPRF2.$FC0503.ZSDKCTX9.C2Z2KC00       0        2        0                      \NEOPRF2.$FC0503  
+      0    \NEOPRF2.$FC0400.ZSDKCTX9.F212KC00       0        2        0                      \NEOPRF2.$FC0400  
+      0    \NEOPRF2.$FC0401.ZSDKCTX9.K122KC00       0        2        0                      \NEOPRF2.$FC0401  
+      0    \NEOPRF2.$FC0402.ZSDKCTX9.CZ32KC00       0        2        0                      \NEOPRF2.$FC0402  
+      0    \NEOPRF2.$FC0403.ZSDKCTX9.Q142KC00       0        2        0                      \NEOPRF2.$FC0403  
+      0    \NEOPRF2.$FC0500.ZSDKCTX9.D952KC00       0        2        0                      \NEOPRF2.$FC0500  
+      0    \NEOPRF2.$FC0501.ZSDKCTX9.ZX439F00       0        2        0                      \NEOPRF2.$FC0501  
+      0    \NEOPRF2.$FC0502.ZSDKCTX9.HBL69F00       0        2        0                      \NEOPRF2.$FC0502  
+      0    \NEOPRF2.$FC0503.ZSDKCTX9.BCGBBG00       0        2        0                      \NEOPRF2.$FC0503  
+      0    \NEOPRF2.$FC0400.ZSDKCTX9.JDHBBG00       0        2        0                      \NEOPRF2.$FC0400  
+      0    \NEOPRF2.$FC0401.ZSDKCTX9.DHJBBG00       0        2        0                      \NEOPRF2.$FC0401  
+      0    \NEOPRF2.$FC0402.ZSDKCTX9.ZFKBBG00       0        2        0                      \NEOPRF2.$FC0402  
+      0    \NEOPRF2.$FC0403.ZSDKCTX9.BGLBBG00       0        2        0                      \NEOPRF2.$FC0403  
+      0    \NEOPRF2.$FC0500.ZSDKCTX9.JFMBBG00       0        2        0                      \NEOPRF2.$FC0500  
+      0    \NEOPRF2.$FC0501.ZSDKCTX9.B5GP2H00       0        2        0                      \NEOPRF2.$FC0501  
+      0    \NEOPRF2.$FC0502.ZSDKCTX9.H1PQ2H00       0        2        0                      \NEOPRF2.$FC0502  
+      0    \NEOPRF2.$FC0503.ZSDKCTX9.C1QQ2H00       0        2        0                      \NEOPRF2.$FC0503  
+      0    \NEOPRF2.$FC0400.ZSDKCTX9.F1RQ2H00       0        2        0                      \NEOPRF2.$FC0400  
+      0    \NEOPRF2.$FC0401.ZSDKCTX9.L98Q2H00       0        2        0                      \NEOPRF2.$FC0401  
+      0    \NEOPRF2.$FC0402.ZSDKCTX9.JCBR2H00       0        2        0                      \NEOPRF2.$FC0402  
+      0    \NEOPRF2.$FC0403.ZSDKCTX9.BCCR2H00       0        2        0                      \NEOPRF2.$FC0403  
+      0    \NEOPRF2.$FC0500.ZSDKCTX9.R9CR2H00       0        2        0                      \NEOPRF2.$FC0500  

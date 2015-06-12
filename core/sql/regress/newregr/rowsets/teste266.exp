@@ -1,0 +1,963 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+ *** Test multiple index - Expecting insert of all except 2 rows 3,7 to succeed ***
+Number of conditions  : 7
+Number of rows inserted: 18
+
+Condition number : 1
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : 7
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 5
+ROW INDEX : 7
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 6
+ROW INDEX : 7
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 7
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+c1	c2
+------	------
+1	100	
+2	200	
+3	300	
+400	400	
+5	500	
+6	600	
+7	700	
+800	800	
+9	900	
+10	1000	
+11	1100	
+12	1200	
+13	1300	
+14	1400	
+15	1500	
+16	1600	
+17	1700	
+18	1800	
+19	1900	
+20	2000	
+
+ *** Test RI - Expecting insert of just 2 rows 3,11 to succeed ***
+Number of conditions  : 19
+Number of rows inserted: 2
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 4
+ROW INDEX : 4
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 6
+ROW INDEX : 6
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 7
+ROW INDEX : 7
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 8
+ROW INDEX : 8
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 9
+ROW INDEX : 9
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 10
+ROW INDEX : 10
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 11
+ROW INDEX : 12
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 12
+ROW INDEX : 13
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 13
+ROW INDEX : 14
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 14
+ROW INDEX : 15
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 15
+ROW INDEX : 16
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 16
+ROW INDEX : 17
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 17
+ROW INDEX : 18
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 18
+ROW INDEX : 19
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSCT1 on table CAT.SCH.CT1.
+TABLE   : CAT.SCH.CT1
+
+Condition number : 19
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+c1	c2
+------	------
+4	400	
+12	1200	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+0	0	
+
+ *** Test Index/MV - Expecting insert of all except 2 rows 19,29 to succeed ***
+Number of conditions  : 3
+Number of rows inserted: 38
+
+Condition number : 1
+ROW INDEX : 19
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 29
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+1	10	100	1000	
+2	20	200	2000	
+3	30	300	3000	
+4	40	400	4000	
+5	50	500	5000	
+6	60	600	6000	
+7	70	700	7000	
+8	80	800	8000	
+9	90	900	9000	
+10	100	1000	10000	
+11	110	1100	11000	
+12	120	1200	12000	
+13	130	1300	13000	
+14	140	1400	14000	
+15	150	1500	15000	
+16	160	1600	16000	
+17	170	1700	17000	
+18	180	1800	18000	
+19	190	1900	19000	
+21	210	2100	21000	
+22	220	2200	22000	
+23	230	2300	23000	
+24	240	2400	24000	
+25	250	2500	25000	
+26	260	2600	26000	
+27	270	2700	27000	
+28	280	2800	28000	
+29	290	2900	29000	
+31	310	3100	31000	
+32	320	3200	32000	
+33	330	3300	33000	
+34	340	3400	34000	
+35	350	3500	35000	
+36	360	3600	36000	
+37	370	3700	37000	
+38	380	3800	38000	
+39	390	3900	39000	
+40	400	4000	40000	
+0	0	0	0	
+0	0	0	0	
+
+ *** Test RI and MV - Expecting insert of just 3 rows 4,9,14 to succeed ***
+Number of conditions  : 18
+Number of rows inserted: 3
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 4
+ROW INDEX : 3
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 6
+ROW INDEX : 6
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 7
+ROW INDEX : 7
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 8
+ROW INDEX : 8
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 9
+ROW INDEX : 10
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 10
+ROW INDEX : 11
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 11
+ROW INDEX : 12
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 12
+ROW INDEX : 13
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 13
+ROW INDEX : 15
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 14
+ROW INDEX : 16
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 15
+ROW INDEX : 17
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 16
+ROW INDEX : 18
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 17
+ROW INDEX : 19
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSRM on table CAT.SCH.TAB1_RM.
+TABLE   : CAT.SCH.TAB1_RM
+
+Condition number : 18
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+5	50	500	5000	
+10	100	1000	10000	
+15	150	1500	15000	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+
+ *** Test RI/MV/Index - Expecting insert of just 3 rows 3,11,15 to succeed ***
+Number of conditions  : 18
+Number of rows inserted: 3
+
+Condition number : 1
+ROW INDEX : 0
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 2
+ROW INDEX : 1
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 3
+ROW INDEX : 2
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 4
+ROW INDEX : 4
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 5
+ROW INDEX : 5
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 6
+ROW INDEX : 6
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 7
+ROW INDEX : 7
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 8
+ROW INDEX : 8
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 9
+ROW INDEX : 9
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 10
+ROW INDEX : 10
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 11
+ROW INDEX : 12
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 12
+ROW INDEX : 13
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 13
+ROW INDEX : 14
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 14
+ROW INDEX : 16
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 15
+ROW INDEX : 17
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 16
+ROW INDEX : 18
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 17
+ROW INDEX : 19
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM on table CAT.SCH.TAB1_IRM.
+TABLE   : CAT.SCH.TAB1_IRM
+
+Condition number : 18
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+4	40	400	4000	
+12	120	1200	12000	
+16	160	1600	16000	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+
+ *** Test RI/On request MV/On Statement MV/Index - Expecting insert
+ of just 6 rows  to succeed . Expect 8103  errors on indexes 10 - 19 and 
+ 8102 errors on 2,4,3 and 6***
+Number of conditions  : 15
+Number of rows inserted: 6
+
+Condition number : 1
+ROW INDEX : 2
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 4
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : 6
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 5
+ROW INDEX : 10
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 6
+ROW INDEX : 11
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 7
+ROW INDEX : 12
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 8
+ROW INDEX : 13
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 9
+ROW INDEX : 14
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 10
+ROW INDEX : 15
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 11
+ROW INDEX : 16
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 12
+ROW INDEX : 17
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 13
+ROW INDEX : 18
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 14
+ROW INDEX : 19
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 15
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+1	10	100	1000	
+2	20	200	2000	
+3	30	300	3000	
+33	33	400	33	
+5	50	500	5000	
+6	60	600	6000	
+36	36	700	36	
+8	80	800	8000	
+9	90	900	9000	
+10	100	1000	10000	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+
+ *** VSBB Test RI/On request MV/On Statement MV/Index - Expecting insert
+ of just 6 rows  to succeed . Expect 8103  errors on indexes 10 - 19 and 
+ 8102 errors on 2,4,3 and 6***
+Number of conditions  : 15
+Number of rows inserted: 6
+
+Condition number : 1
+ROW INDEX : 2
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 4
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 3
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : 6
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 5
+ROW INDEX : 10
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 6
+ROW INDEX : 11
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 7
+ROW INDEX : 12
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 8
+ROW INDEX : 13
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 9
+ROW INDEX : 14
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 10
+ROW INDEX : 15
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 11
+ROW INDEX : 16
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 12
+ROW INDEX : 17
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 13
+ROW INDEX : 18
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 14
+ROW INDEX : 19
+SQLCODE : -8103
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8103] The operation is prevented by referential integrity constraint CAT.SCH.CONSIRM2 on table CAT.SCH.TAB1_IRM2.
+TABLE   : CAT.SCH.TAB1_IRM2
+
+Condition number : 15
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+1	10	100	1000	
+2	20	200	2000	
+3	30	300	3000	
+33	33	400	33	
+5	50	500	5000	
+6	60	600	6000	
+36	36	700	36	
+8	80	800	8000	
+9	90	900	9000	
+10	100	1000	10000	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+0	0	0	0	
+
+ *** Test MV with duplicate keys - Expecting insert of all except 2 rows 11,21 to succeed ***
+Number of conditions  : 3
+Number of rows inserted: 38
+
+Condition number : 1
+ROW INDEX : 11
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 21
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+a	b	c	d
+------	------	------	------
+1	10	100	1000	
+2	20	200	2000	
+3	30	300	3000	
+4	40	400	4000	
+5	50	500	5000	
+6	60	600	6000	
+7	70	700	7000	
+8	80	800	8000	
+9	90	900	9000	
+10	100	1000	10000	
+1610	110	1100	11000	
+13	130	1300	13000	
+14	140	1400	14000	
+15	150	1500	15000	
+16	160	1600	16000	
+17	170	1700	17000	
+18	180	1800	18000	
+19	190	1900	19000	
+20	200	2000	20000	
+1620	210	2100	21000	
+23	230	2300	23000	
+24	240	2400	24000	
+25	250	2500	25000	
+26	260	2600	26000	
+27	270	2700	27000	
+28	280	2800	28000	
+29	290	2900	29000	
+30	300	3000	30000	
+31	310	3100	31000	
+32	320	3200	32000	
+33	330	3300	33000	
+34	340	3400	34000	
+35	350	3500	35000	
+36	360	3600	36000	
+37	370	3700	37000	
+38	380	3800	38000	
+39	390	3900	39000	
+40	400	4000	40000	
+0	0	0	0	
+0	0	0	0	

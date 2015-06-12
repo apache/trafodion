@@ -1,0 +1,978 @@
+>>
+>>obey TESTMV237A(SET_UP);
+>>----------------------------------------
+>>--insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+>>--(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '4');
+>>
+>>--Activate the VSBB inserts
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>control query default pos 'off';
+
+--- SQL operation complete.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>obey CREATERANGE(CREAT);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop table Range_Factor2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor5;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor10;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR10 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR10 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor100;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR100 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR100 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>create table Range_Factor2(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor3(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor5(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor10(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor100(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor1000(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>
+>>insert into Range_Factor2(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 2 row(s) inserted.
+>>
+>>insert into Range_Factor3(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 3 row(s) inserted.
+>>
+>>
+>>insert into Range_Factor5(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 5 row(s) inserted.
+>>
+>>insert into Range_Factor10(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 10 row(s) inserted.
+>>
+>>insert into Range_Factor100(TS)
++>select CURRENT_TIMESTAMP
++>from Range_Factor10 p10,Range_Factor10 P100;
+
+--- 100 row(s) inserted.
+>>
+>>insert into Range_Factor1000(TS)
++>select CURRENT_TIMESTAMP
++>from Range_Factor10 p10,Range_Factor100 P1000;
+
+--- 1000 row(s) inserted.
+>>
+>>-- Create the base tables
+>>obey DUPENV(CREATE_SIMPLE);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- The AUTOMATIC RANGELOG attribute will:
+>>-- (1) Force the utility to perform duplicate elimination
+>>-- (2) Allow the VSBB range-logging.
+>>
+>>create table Dup_A (prim integer NOT NULL NOT DROPPABLE,
++>                   ch char(2),
++>                   PRIMARY KEY (prim desc) NOT DROPPABLE) 
++>                   store by (prim desc)
++>				   location $$partition1$$
++>				   attribute automatic rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE Dup_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table Dup_B (prim integer NOT NULL NOT DROPPABLE,
++>                    prim2 char(20) NOT NULL NOT DROPPABLE,
++>                    ch char(2),
++>                    PRIMARY KEY (prim,prim2 desc) NOT DROPPABLE) 
++>                    store by (prim asc, prim2 desc)
++>					attribute automatic rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE Dup_B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into Dup_A values (10,'a'),(20,'b'),(35,'c'),(45,'d'),(50,'e'),(55,'f'), (2000, 'AA');
+
+--- 7 row(s) inserted.
+>>insert into Dup_B values (10,'a1','a'),(20,'b1','b'),(35,'c1','c'),(45,'d1','d'),(50,'e1','e'), (2000, '2', 'AA');
+
+--- 6 row(s) inserted.
+>>
+>>create materialized view Dup_MV2
++>	Refresh on request
++>	initialized on refresh
++>	as 
++>	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_B
++>	Group by Dup_B.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV2_428946511_3236 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>--create materialized view Dup_MV2
+>>--	Refresh on request
+>>--	initialized on refresh
+>>--	as 
+>>--	select Dup_A.prim,Dup_B.prim2
+>>--	from Dup_A,Dup_B 
+>>--	where Dup_A.prim = Dup_B.prim;
+>>
+>>create materialized view Dup_MV3
++>	Refresh on request
++>	initialized on refresh
++>	as 
++>	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
++>	from Dup_A
++>	Group by Dup_A.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV3_982156511_3236 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG1;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG1 add Dup_MV2, Dup_MV3;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG2;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG2 add Dup_MV2;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG3;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG3 add Dup_MV2, Dup_MV3;
+
+--- SQL operation complete.
+>>
+>>obey DUPENV(CREATE_DUP_MV1);
+>>create materialized view Dup_MV1
++>	Refresh on request
++>	initialized on refresh
++>	as 
++>	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_A,Dup_B
++>	where Dup_A.prim = Dup_B.prim
++>	Group by Dup_A.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV1_796156511_3236 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv dup_mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>	alter mvgroup Dup_MVG1 add Dup_MV1;
+
+--- SQL operation complete.
+>>	alter mvgroup Dup_MVG2 add Dup_MV1;
+
+--- SQL operation complete.
+>>
+>>
+>>delete from Dup_A where prim between 400 and 1000;
+
+--- 0 row(s) deleted.
+>>delete from Dup_B where prim between 400 and 1000;
+
+--- 0 row(s) deleted.
+>>
+>>insert into Dup_A values (487,'c7');
+
+--- 1 row(s) inserted.
+>>insert into Dup_B values (487,'7','c7');
+
+--- 1 row(s) inserted.
+>>
+>>refresh MVGroup Dup_MVG1 with  MVLOG cleanup OUTFILE REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.DUP_MV1 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.DUP_MV1 has been refreshed (by recompute) in a single transaction.
+
+The materialized view CATMVS.MVSCHM.DUP_MV3 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.DUP_MV3 has been refreshed (by recompute) in a single transaction.
+
+The materialized view CATMVS.MVSCHM.DUP_MV2 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.DUP_MV2 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.DUP_A...
+
+Finished the log cleanup of table CATMVS.MVSCHM.DUP_A.
+
+Starting the log cleanup of table CATMVS.MVSCHM.DUP_B...
+
+Finished the log cleanup of table CATMVS.MVSCHM.DUP_B.
+
+
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @0@ @202@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @0@ @202@ ;
+
+--- SQL operation complete.
+>>
+>>prepare select_iud_log_a from
++> select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>          end
++>	, "@IGNORE"
++>	, "@RANGE_SIZE"
++>	, prim, ch
++> from table(iud_log_table dup_a)
++> where 
++> (prim = 487) or ("@OPERATION_TYPE" > 3)
++> order by prim desc, "@TS";
+
+--- SQL command prepared.
+>>
+>>prepare select_range_log_a from
++> select "@EPOCH"
++>		, case "@RANGE_TYPE" 
++>			when 3 then '[...]'
++>			when 2 then '(...]'
++>			when 1 then '[...)'
++>			when 0 then '(...)'
++>		  end
++>        , "@BR_PRIM"
++>        , "@ER_PRIM"
++> from table(range_log_table dup_a)
++> order by "@EPOCH", "@RANGE_ID", "@BR_PRIM" desc;
+
+--- SQL command prepared.
+>>
+>>prepare select_iud_log_b from
++> select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>          end
++>	, "@IGNORE"
++>	, "@RANGE_SIZE"
++>	, prim,prim2, ch
++> from table(iud_log_table dup_b)
++> where
++> (prim = 487) or ("@OPERATION_TYPE" > 3)
++> order by prim, prim2 desc ,"@TS";
+
+--- SQL command prepared.
+>>
+>>prepare select_range_log_b from
++> select "@EPOCH"
++>		, case "@RANGE_TYPE" 
++>			when 3 then '[...]'
++>			when 2 then '(...]'
++>			when 1 then '[...)'
++>			when 0 then '(...)'
++>		  end
++>        , "@BR_PRIM"
++>        , "@BR_PRIM2"
++>        , "@ER_PRIM"
++>        , "@ER_PRIM2"
++> from table(range_log_table dup_b)
++> order by "@EPOCH", "@RANGE_ID", "@BR_PRIM", "@BR_PRIM2" desc;
+
+--- SQL command prepared.
+>>
+>>-- Run Tests
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>obey TESTMV237A(TEST1);
+>>
+>>  Delete from Dup_A
++>    where ch='c7';
+
+--- 1 row(s) deleted.
+>>
+>>  Delete from Dup_B
++>    where ch='c7';
+
+--- 1 row(s) deleted.
+>>
+>>  Insert into Dup_A
++>    select 920 - RunningCount(*) as a,'R1'
++>    from Range_Factor100 p100,Range_Factor5 p5
++>    sequence by p100.ts,p5.ts;
+
+--- 500 row(s) inserted.
+>>
+>>  Insert into Dup_B
++>    select RunningCount(*) + 420 as a,'7','R1'
++>    from Range_Factor100 p100,Range_Factor5 p5
++>    sequence by p100.ts,p5.ts;
+
+--- 500 row(s) inserted.
+>>
+>>  Delete from Dup_A
++>	where prim between 400 and 600;
+
+--- 181 row(s) deleted.
+>>
+>>  Delete from Dup_B
++>	where prim between 400 and 600;
+
+--- 180 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 202
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 203
+>>
+>>  Insert into Dup_A
++>    select 547 - RunningCount(*) as a,'R2'
++>    from Range_Factor100 p100
++>    sequence by p100.ts;
+
+--- 100 row(s) inserted.
+>>
+>>  Insert into Dup_B
++>    select RunningCount(*) + 447 as a,'7','R2'
++>    from Range_Factor100 p100
++>    sequence by p100.ts;
+
+--- 100 row(s) inserted.
+>>
+>>-- IUD LOG 
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         CH
+-----------  -----------  ----------  -----------  -----------  --
+
+       -202  BEGIN-RANGE           0            0          919  R1
+       -204  BEGIN-RANGE           0            0          546  R2
+        202  DELETE                0            0          487  c7
+        202  DELETE                0            0          487  R1
+       -204  END-RANGE             0          100          447  R2
+       -202  END-RANGE             0          500          420  R1
+
+--- 6 row(s) selected.
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         PRIM2                 CH
+-----------  -----------  ----------  -----------  -----------  --------------------  --
+
+       -202  BEGIN-RANGE           0            0          421  7                     R1
+       -204  BEGIN-RANGE           0            0          448  7                     R2
+        202  DELETE                0            0          487  7                     c7
+        202  DELETE                0            0          487  7                     R1
+       -204  END-RANGE             0          100          547  7                     R2
+       -202  END-RANGE             0          500          920  7                     R1
+
+--- 6 row(s) selected.
+>>
+>>Refresh MVGroup Dup_MVG3  without  MVLOG cleanup debug 55;
+
+--- SQL operation complete.
+>> -- epoch 204
+>>log;
+
+
+
+
+
+
+
+CONTROL TABLE CATMVS.MVSCHM.DUP_B MDAM  'ON'; 
+The materialized view CATMVS.MVSCHM.DUP_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.DUP_MV2 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.DUP_MV3 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.DUP_MV3 is being refreshed in a single transaction...
+USING THE FOLLOWING CONTROL STATMENTS :
+>>-- IUD LOG 
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         CH
+-----------  -----------  ----------  -----------  -----------  --
+
+       -202  BEGIN-RANGE           0            0          919  R1
+       -204  BEGIN-RANGE           0            0          546  R2
+        202  DELETE                0            0          487  c7
+       -204  END-RANGE             0          100          447  R2
+       -202  END-RANGE             0          500          420  R1
+
+--- 5 row(s) selected.
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         PRIM2                 CH
+-----------  -----------  ----------  -----------  -----------  --------------------  --
+
+       -202  BEGIN-RANGE           0            0          421  7                     R1
+       -204  BEGIN-RANGE           0            0          448  7                     R2
+        202  DELETE                0            0          487  7                     c7
+       -204  END-RANGE             0          100          547  7                     R2
+       -202  END-RANGE             0          500          920  7                     R1
+
+--- 5 row(s) selected.
+>>-- RANGE LOG
+>>execute select_range_log_a;
+
+@EPOCH       (EXPR)  @BR_PRIM     @ER_PRIM   
+-----------  ------  -----------  -----------
+
+        202  [...)           919          546
+        202  (...]           447          420
+        204  [...]           546          447
+
+--- 3 row(s) selected.
+>>execute select_range_log_b;
+
+@EPOCH       (EXPR)  @BR_PRIM     @BR_PRIM2             @ER_PRIM     @ER_PRIM2
+-----------  ------  -----------  --------------------  -----------  --------------------
+
+        202  [...)           421  7                             448  7                   
+        202  (...]           547  7                             920  7                   
+        204  [...]           448  7                             547  7                   
+
+--- 3 row(s) selected.
+>>
+>>Refresh MVGroup Dup_MVG3  do only  MVLOG cleanup OUTFILE REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+Starting the log cleanup of table CATMVS.MVSCHM.DUP_A...
+
+Finished the log cleanup of table CATMVS.MVSCHM.DUP_A.
+
+Starting the log cleanup of table CATMVS.MVSCHM.DUP_B...
+
+Finished the log cleanup of table CATMVS.MVSCHM.DUP_B.
+
+
+>>
+>>-- End Phase 1
+>>
+>>  Delete from Dup_A
++>	where prim between 370 and 530;
+
+--- 84 row(s) deleted.
+>>
+>>  Delete from Dup_B
++>	where prim between 370 and 530;
+
+--- 83 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 205
+>>
+>>  Insert into Dup_A
++>   Values(487,'I1');
+
+--- 1 row(s) inserted.
+>>
+>>  Insert into Dup_B
++>   Values(487,'6','I1');
+
+--- 1 row(s) inserted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 206
+>>
+>>  Delete from Dup_A
++>	where prim between 370 and 530;
+
+--- 1 row(s) deleted.
+>>
+>>  Delete from Dup_B
++>	where prim between 370 and 530;
+
+--- 1 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 207
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @1@ @0@ ;
+
+--- SQL operation complete.
+>> -- epoch 208
+>>
+>>  Insert into Dup_A
++>    select 500 - 2*RunningCount(*) as a,'R2'
++>    from Range_Factor10 p10, Range_Factor5 p5
++>    sequence by p10.ts, p5.ts;
+
+--- 50 row(s) inserted.
+>>
+>>  Insert into Dup_B
++>    select 2*RunningCount(*) + 400 as a,'7','R2'
++>    from Range_Factor10 p10, Range_Factor5 p5
++>    sequence by p10.ts, p5.ts;
+
+--- 50 row(s) inserted.
+>>
+>>  Insert into Dup_A
++>   Values(487,'I2');
+
+--- 1 row(s) inserted.
+>>
+>>  Insert into Dup_B
++>   Values(487,'6','I2');
+
+--- 1 row(s) inserted.
+>>
+>>-- IUD LOG 
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         CH
+-----------  -----------  ----------  -----------  -----------  --
+
+       -202  BEGIN-RANGE           0            0          919  R1
+       -204  BEGIN-RANGE           0            0          546  R2
+       -209  BEGIN-RANGE           0            0          498  R2
+        202  DELETE                0            0          487  c7
+        205  DELETE                0            0          487  R2
+        206  INSERT                0            1          487  I1
+        207  DELETE                0            0          487  I1
+        209  INSERT                0            1          487  I2
+       -204  END-RANGE             0          100          447  R2
+       -202  END-RANGE             0          500          420  R1
+       -209  END-RANGE             0           50          400  R2
+
+--- 11 row(s) selected.
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         PRIM2                 CH
+-----------  -----------  ----------  -----------  -----------  --------------------  --
+
+       -209  BEGIN-RANGE           0            0          402  7                     R2
+       -202  BEGIN-RANGE           0            0          421  7                     R1
+       -204  BEGIN-RANGE           0            0          448  7                     R2
+        202  DELETE                0            0          487  7                     c7
+        205  DELETE                0            0          487  7                     R2
+        206  INSERT                0            1          487  6                     I1
+        207  DELETE                0            0          487  6                     I1
+        209  INSERT                0            1          487  6                     I2
+       -209  END-RANGE             0           50          500  7                     R2
+       -204  END-RANGE             0          100          547  7                     R2
+       -202  END-RANGE             0          500          920  7                     R1
+
+--- 11 row(s) selected.
+>>
+>>Refresh MVGroup Dup_MVG1 without  MVLOG cleanup debug 55;
+
+--- SQL operation complete.
+>> -- epoch 209
+>>log;
+
+
+
+
+
+
+
+
+
+CONTROL TABLE CATMVS.MVSCHM.DUP_B MDAM  'ON'; 
+The materialized view CATMVS.MVSCHM.DUP_MV1 has been refreshed from 2 deltas in a single transaction.
+The materialized view CATMVS.MVSCHM.DUP_MV1 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.DUP_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.DUP_MV2 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.DUP_MV3 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.DUP_MV3 is being refreshed in a single transaction...
+USING THE FOLLOWING CONTROL STATMENTS :
+>>
+>>-- IUD LOG 
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         CH
+-----------  -----------  ----------  -----------  -----------  --
+
+       -202  BEGIN-RANGE           0            0          919  R1
+       -204  BEGIN-RANGE           0            0          546  R2
+       -209  BEGIN-RANGE           0            0          498  R2
+        202  DELETE                0            0          487  c7
+        205  DELETE              204            0          487  R2
+        207  DELETE              206            0          487  I1
+       -204  END-RANGE             0          100          447  R2
+       -202  END-RANGE             0          500          420  R1
+       -209  END-RANGE             0           50          400  R2
+
+--- 9 row(s) selected.
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     @RANGE_SIZE  PRIM         PRIM2                 CH
+-----------  -----------  ----------  -----------  -----------  --------------------  --
+
+       -209  BEGIN-RANGE           0            0          402  7                     R2
+       -202  BEGIN-RANGE           0            0          421  7                     R1
+       -204  BEGIN-RANGE           0            0          448  7                     R2
+        202  DELETE                0            0          487  7                     c7
+        205  DELETE              204            0          487  7                     R2
+        207  DELETE              206            0          487  6                     I1
+       -209  END-RANGE             0           50          500  7                     R2
+       -204  END-RANGE             0          100          547  7                     R2
+       -202  END-RANGE             0          500          920  7                     R1
+
+--- 9 row(s) selected.
+>>-- RANGE LOG
+>>execute select_range_log_a;
+
+@EPOCH       (EXPR)  @BR_PRIM     @ER_PRIM   
+-----------  ------  -----------  -----------
+
+        202  [...)           919          546
+        204  [...)           546          498
+        209  [...]           498          400
+
+--- 3 row(s) selected.
+>>execute select_range_log_b;
+
+@EPOCH       (EXPR)  @BR_PRIM     @BR_PRIM2             @ER_PRIM     @ER_PRIM2
+-----------  ------  -----------  --------------------  -----------  --------------------
+
+        202  (...]           547  7                             920  7                   
+        204  (...]           500  7                             547  7                   
+        209  [...]           402  7                             500  7                   
+
+--- 3 row(s) selected.
+>>
+>>-- End Phase 2
+>>
+>>-- Correctness check
+>>
+>>obey DUPENV(CHECK_DUP_MV3);
+>>PREPARE stat1 FROM 
++>	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
++>	from Dup_A
++>	Group by Dup_A.ch
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select ch,sum_prim1 
++>	from Dup_MV3
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey DUPENV(CHECK_DUP_MV2);
+>>
+>>prepare stat1 from
++>	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_B
++>	Group by Dup_B.ch
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare stat2 from
++>	select ch,sum_prim1,avg_prim1
++>	from Dup_MV2
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>obey DUPENV(CHECK_DUP_MV1);
+>>prepare stat1 from
++>	select Dup_A.ch, sum(Dup_A.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_A,Dup_B
++>	where Dup_A.prim = Dup_B.prim
++>	Group by Dup_A.ch
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>prepare stat2 from
++>	select ch, sum_prim1, avg_prim1
++>	from Dup_MV1
++>	order by 1;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------
+>>
+>>-- Clean and exit
+>>obey TESTMV237A(CLEAN_UP);
+>>---------------------------------------
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>Refresh mvgroup Dup_MVG1 cancel OUTFILE REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>obey DUPENV(DROP_SIMPLE);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV3;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV2;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV1;
+
+--- SQL operation complete.
+>>
+>>drop MVGroup Dup_MVG1;
+
+--- SQL operation complete.
+>>drop MVGroup Dup_MVG2;
+
+--- SQL operation complete.
+>>drop MVGroup Dup_MVG3;
+
+--- SQL operation complete.
+>>
+>>drop table Dup_A;
+
+--- SQL operation complete.
+>>drop table Dup_B;
+
+--- SQL operation complete.
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>obey CREATERANGE(DROPALL);
+>>
+>>drop table Range_Factor2;
+
+--- SQL operation complete.
+>>drop table Range_Factor3;
+
+--- SQL operation complete.
+>>drop table Range_Factor5;
+
+--- SQL operation complete.
+>>drop table Range_Factor10;
+
+--- SQL operation complete.
+>>drop table Range_Factor100;
+
+--- SQL operation complete.
+>>drop table Range_Factor1000;
+
+--- SQL operation complete.
+>>
+>>--create table a (ch1 int ,ch2 char(2));
+>>
+>>--insert into a 
+>>--values (1,'aa');
+>>
+>>
+>>--select a.ch1,a.ch2,RUNNINGCOUNT (*) 
+>>--from a,Range_Factor10 P10,Range_Factor100 P100
+>>--sequence by P10.TS,P100.TS;
+>>
+>>
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+--- 0 row(s) deleted.
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+
+--- 0 row(s) deleted.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>log;

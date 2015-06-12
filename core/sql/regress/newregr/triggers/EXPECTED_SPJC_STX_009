@@ -1,0 +1,75 @@
+>>obey TEST_SPJC_STX_009(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger inserts new values into TAB02_SPJC_STX_009
+>>-- if a certain condition is true when TAB01_SPJC_STX_009 is updated.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_009 AFTER UPDATE ON
++>TAB01_SPJC_STX_009
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>WHEN (N.A = O.C)
++>	INSERT INTO TAB02_SPJC_STX_009 VALUES (N.A, N.B, N.C, N.D);
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Row trigger inserts old values into TAB03_SPJC_STX_009
+>>-- when  row is deleted from TAB01_SPJC_STX_009.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG02_SPJC_STX_009 AFTER DELETE ON
++>TAB01_SPJC_STX_009
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	INSERT INTO TAB03_SPJC_STX_009 VALUES (O.A, O.B, O.C, O.D);
++>END;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Compound statement firing the above triggers via parameters.
+>>BEGIN
++>	UPDATE TAB01_SPJC_STX_009 SET A = A + B;
++>
++>	DELETE FROM TAB01_SPJC_STX_009 WHERE A = ?t1p1;
++>END;
+
+--- SQL operation complete.
+>>
+>>-- Result: TAB01_SPJC_STX_009 A = {3, 5, 7}
+>>select * from TAB01_SPJC_STX_009;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          3            2            3            4
+          5            3            4            5
+          7            4            5            6
+
+--- 3 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_STX_009 = {3, 2, 3, 4}
+>>select * from TAB02_SPJC_STX_009;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          3            2            3            4
+
+--- 1 row(s) selected.
+>>
+>>-- Result: TAB03_SPJC_STX_009 = {9, 5, 6, 7}
+>>select * from TAB03_SPJC_STX_009;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          9            5            6            7
+
+--- 1 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

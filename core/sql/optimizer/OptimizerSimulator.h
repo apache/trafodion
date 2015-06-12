@@ -12,7 +12,7 @@
 **********************************************************************/
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,19 +38,142 @@
 #include <CmpCommon.h>
 #include "BaseTypes.h"
 #include "CollHeap.h"
-
+#include "XMLUtil.h"
 // forward declaration to allow usage of NATable *
 class NATable;
-
+class HiveClient_JNI;
+class ExeCliInterface; 
+class CmpSeabaseDDL;
+class Queue;
 // Define PATH_MAX, FILENAME_MAX, LINE_MAX for both NT and NSK.
   // _MAX_PATH and _MAX_FNAME are defined in stdlib.h that is
   // included above.
   #define OSIM_PATHMAX PATH_MAX
   #define OSIM_FNAMEMAX FILENAME_MAX
-  #define OSIM_LINEMAX 2048
+  #define OSIM_LINEMAX 4096
+  
+class OsimAllHistograms;
+class OsimHistogramEntry;
+
+#define TAG_ALL_HISTOGRAMS "all_histograms"
+#define TAG_HISTOGRAM_ENTRY "histogram_entry"
+#define TAG_FULL_PATH "fullpath"
+#define TAG_USER_NAME "username"
+#define TAG_PID "pid"
+#define TAG_CATALOG "catalog"
+#define TAG_SCHEMA "schema"
+#define TAG_TABLE "table"
+#define TAG_HISTOGRAM "histogram"
+//<TAG_ALL_HISTOGRAMS> 
+//  <TAG_HISTOGRAM_ENTRY>
+//    <TAG_FULL_PATH>/opt/home/xx/xxx </TAG_FULL_PATH>
+//    <TAG_USER_NAME>root</TAG_USER_NAME>
+//    <TAG_PID>12345</TAG_PID>
+//    <TAG_CATALOG>trafodion</TAG_CATALOG>
+//    <TAG_SCHEMA>seabase</TAG_SCHEMA>
+//    <TAG_TABLE>order042</TAG_TABLE>
+//    <TAG_HISTOGRAM>sb_histogram_interval</TAG_HISTOGRAM>
+//  </TAG_HISTOGRAM_ENTRY>
+// ...
+//</TAG_ALL_HISTOGRAMS>
+
+class OsimAllHistograms : public XMLElement
+{
+public:
+    static const char elemName[];
+    OsimAllHistograms(NAMemory * heap = 0)
+      : XMLElement(NULL, heap)
+      , list_(heap)
+    {
+        setParent(this);
+    }
+
+    virtual const char *getElementName() const
+    { return elemName; }
+    
+    virtual ElementType getElementType() const 
+    { return ElementType::ET_List;    }
+    
+    NAList<OsimHistogramEntry*> & getEntries() { return list_; }
+
+    void addEntry( const char* fullpath,
+                            const char* username,
+                            const char* pid,
+                            const char* cat,
+                            const char* sch,
+                            const char* table,
+                            const char* histogram);
+
+protected:
+    virtual void serializeBody(XMLString& xml);
+    virtual void startElement(void *parser, const char *elementName, const char **atts);
+
+    NAList<OsimHistogramEntry*> list_;
+
+private:
+    // Copy construction/assignment not defined.
+    OsimAllHistograms(const OsimAllHistograms&);
+    OsimAllHistograms& operator=(const OsimAllHistograms&);
+};
+
+class OsimHistogramEntry : public XMLElement
+{
+    friend class OsimAllHistograms;
+public:
+    static const char elemName[];
+    OsimHistogramEntry(XMLElementPtr parent, NAMemory * heap)
+      : XMLElement(parent, heap)
+      , currentTag_(heap)
+      , fullPath_(heap)
+      , userName_(heap)
+      , pid_(heap)
+      , catalog_(heap)
+      , schema_(heap)
+      , table_(heap)
+      , histogram_(heap)
+    {}
+    
+    virtual const char *getElementName() const
+    { return elemName; }
+    virtual ElementType getElementType() const 
+    { return ElementType::ET_Table;    }
+    
+    NAString & getFullPath() {  return fullPath_;  }
+    NAString & getUserName() {  return userName_;  }
+    NAString & getPID() {  return pid_;  }
+    NAString &  getCatalog() {  return catalog_;  }
+    NAString & getSchema() {  return schema_;  }
+    NAString &  getTable() {  return table_;  }
+    NAString & getHistogram() {  return histogram_;  }
+protected:
+    virtual void serializeBody(XMLString& xml);
+    virtual void endElement(void * parser, const char * elementName);
+    virtual void charData(void *parser, const char *data, Int32 len);
+    virtual void startElement(void *parser, const char *elementName, const char **atts);
+private:
+    NAString currentTag_;
+    NAString fullPath_;
+    NAString userName_;
+    NAString pid_;
+    NAString catalog_;
+    NAString schema_;
+    NAString table_;
+    NAString histogram_;
+    // Copy construction/assignment not defined.
+    OsimHistogramEntry(const OsimHistogramEntry&);
+    OsimHistogramEntry& operator=(const OsimHistogramEntry&);
+};
+
+class OsimElementMapper : public XMLElementMapper
+{
+  public:
+    virtual XMLElementPtr operator()(void *parser,
+                                     char *elementName,
+                                     AttributeList atts);
+};
 
 // This class initializes OSIM and implements capture and simulation
-// methods needed for OSIM.
+// OSIM is a single-threaded singleton.
 class OptimizerSimulator : public NABasicObject
 {
   public:
@@ -59,39 +182,33 @@ class OptimizerSimulator : public NABasicObject
     enum osimMode {
       OFF,
       CAPTURE,
-      SIMULATE
+      SIMULATE,
+      LOAD,
+      UNLOAD
     };
 
     enum sysCall {
       FIRST_SYSCALL,
-      NODENAME_TO_NODENUMBER_=FIRST_SYSCALL,
-      NODENUMBER_TO_NODENAME_,
-      FILENAME_TO_PROCESSHANDLE_,
-      PROCESSHANDLE_DECOMPOSE_,
-      REMOTEPROCESSORSTATUS,
-      FILENAME_DECOMPOSE_,
+      ESTIMATED_ROWS = FIRST_SYSCALL,
+      NODE_AND_CLUSTER_NUMBERS,
+      NACLUSTERINFO,
+      NODENAME_TO_NODENUMBER,
+      NODENUMBER_TO_NODENAME,
       MYSYSTEMNUMBER,
-      GETSYSTEMNAME,
-      getEstimatedRows,
-      getJustInTimeStatsRowcount,
-      getNodeAndClusterNumbers,
-      // following are not system calls
-      // following are files used to log information
       VIEWSFILE,
+      VIEWDDLS,
       TABLESFILE,
+      CREATE_SCHEMA_DDLS,
+      CREATE_TABLE_DDLS,
+      CREATE_INDEX_DDLS,
+      ALTER_TABLE_DDLS,
       SYNONYMSFILE,
-      DEFAULT_DEFAULTSFILE,
+      SYNONYMDDLS,
       CQD_DEFAULTSFILE,
-      DERIVED_DEFAULTSFILE,
-      DEF_TABLE_DEFAULTSFILE,
-      COMPUTED_DEFAULTSFILE,
-      UNINITIALIZED_DEFAULTSFILE,
-      IMMUTABLE_DEFAULTSFILE,
-      PLATFORM_DEFAULTSFILE,
       QUERIESFILE,
-      VPROCFILE,
+      VERSIONSFILE,
       CAPTURE_SYS_TYPE,
-      LAST_SYSCALL=CAPTURE_SYS_TYPE,
+      HISTOGRAM_PATHS,
       NUM_OF_SYSCALLS
     };
 
@@ -102,122 +219,23 @@ class OptimizerSimulator : public NABasicObject
       OSIM_WINNT,
       OSIM_LINUX
     };
-
     // Constructor
     OptimizerSimulator(CollHeap *heap);
-
     // Accessor methods to get and set osimMode_.
     void setOsimMode(osimMode mode) { osimMode_ = mode; }
     osimMode getOsimMode() { return osimMode_; }
 
-    // Accessor methods to get and set osimLogdir_.
-    void setOsimLogdir(const char *logdir) {
-      if (logdir) {
-        osimLogdir_ = new (heap_) char[strlen(logdir)+1];
-        strcpy(osimLogdir_, logdir);
-      } else {
-        osimLogdir_ = NULL;
+    // Accessor methods to get and set osimLogHDFSDir_.
+    void setOsimLogdir(const char *localdir) {
+      if (localdir) {
+          osimLogLocalDir_ = localdir;
       }
     }
-    char* getOsimLogdir() { return osimLogdir_; }
-
-    void initOptimizerSimulator();
+    const char* getOsimLogdir() const { return osimLogLocalDir_.isNull()? NULL : osimLogLocalDir_.data(); }
     void initHashDictionaries();
     void setLogFilepath(sysCall sc);
     void openAndAddHeaderToLogfile(sysCall sc);
-    void initSysCallLogfiles();
-    void readSysCallLogfiles();
-    void captureSystemInfo();
-
-    void captureSysType();
-    sysType getCaptureSysType();
-    void readLogFile_captureSysType();
-
-    void capture_NODENAME_TO_NODENUMBER_(short error,
-                                         const char *nodeName,
-                                         short nodeNameLen,
-                                         Int32 *nodeNumber);
-    void readLogfile_NODENAME_TO_NODENUMBER_();
-    short simulate_NODENAME_TO_NODENUMBER_(const char *nodeName,
-                                           short nodeNameLen,
-                                           Int32 *nodeNumber);
-
-    void capture_NODENUMBER_TO_NODENAME_(short error,
-                                         Int32 nodeNumber,
-                                         char *nodeName,
-                                         short maxLen,
-                                         short *actualLen);
-    void readLogfile_NODENUMBER_TO_NODENAME_();
-    short simulate_NODENUMBER_TO_NODENAME_(Int32 nodeNumber,
-                                           char *nodeName,
-                                           short maxLen,
-                                           short *actualLen);
-
-    void capture_FILENAME_TO_PROCESSHANDLE_(short error,
-                                            char *fileName,
-                                            short length,
-                                            short procHandle[]);
-    void readLogfile_FILENAME_TO_PROCESSHANDLE_();
-    short simulate_FILENAME_TO_PROCESSHANDLE_(char *fileName,
-                                              short length,
-                                              short procHandle[]);
-
-    void capture_PROCESSHANDLE_DECOMPOSE_(short error,
-                                          short procHandle[],
-                                          short *cpu,
-                                          short *pin,
-                                          Int32 *nodeNumber);
-    void readLogfile_PROCESSHANDLE_DECOMPOSE_();
-    short simulate_PROCESSHANDLE_DECOMPOSE_(short procHandle[],
-                                            short *cpu,
-                                            short *pin,
-                                            Int32 *nodeNumber);
-
-    void capture_REMOTEPROCESSORSTATUS(Lng32 status,
-                                       short clusterNum);
-    void log_REMOTEPROCESSORSTATUS();
-    void readLogfile_REMOTEPROCESSORSTATUS();
-    Lng32 simulate_REMOTEPROCESSORSTATUS(short clusterNum);
-
-    void capture_FILENAME_DECOMPOSE_(short error,
-                                     char *fileName,
-                                     short fileNameLen,
-                                     char *partName,
-                                     short maxLen,
-                                     short *partNameLen,
-                                     short level,
-                                     short options=0,
-                                     short subpart=0);
-    void readLogfile_FILENAME_DECOMPOSE_();
-    short simulate_FILENAME_DECOMPOSE_(char *fileName,
-                                       short fileNameLen,
-                                       char *partName,
-                                       short maxLen,
-                                       short *partNameLen,
-                                       short level,
-                                       short options=0,
-                                       short subpart=0);
-
-    void capture_MYSYSTEMNUMBER(short sysNum);
-    void readLogfile_MYSYSTEMNUMBER();
-    short simulate_MYSYSTEMNUMBER();
-
-    void capture_GETSYSTEMNAME(short error, short sysNum, short *sysName);
-    void readLogfile_GETSYSTEMNAME();
-    short simulate_GETSYSTEMNAME(short sysNum, short *sysName);
-
-    void capture_getEstimatedRows(const char *tableName, double estRows);
-    void readLogfile_getEstimatedRows();
-    double simulate_getEstimatedRows(const char *tableName);
-
-    void capture_getJustInTimeStatsRowcount(const char *queryText, double rowCount, float sampleFraction, double rowsInTable);
-    void readLogfile_getJustInTimeStatsRowcount();
-    void simulate_getJustInTimeStatsRowcount(const char *queryText, double *rowCount, float *sampleFraction, double *rowsInTable);
-
-    void capture_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
-    void log_getNodeAndClusterNumbers();
-    void readLogFile_getNodeAndClusterNumbers();
-    void simulate_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
+    void initLogFilePaths();
 
     void capture_CQDs();
     void capture_TableOrView(NATable * naTab);
@@ -225,115 +243,182 @@ class OptimizerSimulator : public NABasicObject
     void capturePrologue();
     void captureQueryText(const char * query);
     void captureQueryShape(const char * shape);
-    void captureVPROC();
+
     void cleanup();
     void cleanupSimulator();
     void cleanupAfterStatement();
 
     void errorMessage(const char *msg);
     void warningMessage(const char *msg);
+    
+    void debugMessage(const char* format, ...);
+    
+    NABoolean setOsimModeAndLogDir(osimMode mode, const char * localdir);
 
-    NABoolean setOsimModeAndLogDir(osimMode mode,
-                                   const char * logdir,
-                                   NABoolean usingCaptureHint,
-                                   NABoolean calledFromConstructor=FALSE);
-
+    NABoolean readStmt(ifstream & DDLFile,  NAString & stmt, NAString & comment);
+    NABoolean massageTableUID(OsimHistogramEntry* entry, NAHashDictionary<NAString, QualifiedName> * modifiedPathList);
     NABoolean isCallDisabled(ULng32 callBitPosition);
 
     NABoolean runningSimulation();
     NABoolean runningInCaptureMode();
 
+    NAHashDictionary<const QualifiedName, Int64> *getHashDictTables() 
+      {  return hashDict_Tables_; }
+
+    NAHashDictionary<const QualifiedName, Int64> *getHashDictViews() 
+      {  return hashDict_Views_; }
+
+    void readSysCallLogfiles();
+    
+    void capture_NODENUMBER_TO_NODENAME(short error, 
+                                                                                                                Int32 nodeNumber,
+                                                                                                                char *nodeNameStr,
+                                                                                                                short maxLen,
+                                                                                                                short *actualLen);
+    void readLogfile_NODENUMBER_TO_NODENAME();
+    short simulate_NODENUMBER_TO_NODENAME(Int32 nodeNumber,
+                                                                                                                   char *nodeName,
+                                                                                                                   short maxLen,
+                                                                                                                   short *actualLen);
+    
+    
+
+    void capture_NODENAME_TO_NODENUMBER(short error,
+                                                                                                               const char *fileName,
+                                                                                                               short nodeNameLen,
+                                                                                                               Int32 *nodeNumber);
+    void readLogfile_NODENAME_TO_NODENUMBER();
+    short simulate_NODENAME_TO_NODENUMBER(const char *fileName,
+                                                                                                                    short nodeNameLen,
+                                                                                                                    Int32 *nodeNumber);
+    
+    void capture_getEstimatedRows(const char *tableName, double estRows);
+    void readLogfile_getEstimatedRows();
+    double simulate_getEstimatedRows(const char *tableName);
+    
+   void simulate_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
+   void readLogFile_getNodeAndClusterNumbers();
+   void capture_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
+   void log_getNodeAndClusterNumbers();
+    
+    void readLogFile_captureSysType();
+    void captureSysType();
+    sysType getCaptureSysType();
+    
+    void capture_MYSYSTEMNUMBER(short sysNum);
+    void readLogfile_MYSYSTEMNUMBER();
+    short simulate_MYSYSTEMNUMBER();
+
+    NABoolean isSysParamsInitialized();
+    void setSysParamsInitialized(NABoolean b);
+    // File pathnames for log files that contain system call data.
+    const char * getLogFilePath (sysCall index) const
+    {  return sysCallLogFilePath_[index]; }
+
+    void setForceLoad(NABoolean b) { forceLoad_ = b; }
+    NABoolean isForceLoad() const { return forceLoad_; }
+    
   private:
-    NABoolean createLogDir(const char * logDir);
+    
+    void readAndSetCQDs();
+    void dumpHistograms();
+    void dumpDDLs(const QualifiedName & qualifiedName);
+    void initializeCLI();
+    void loadHistograms();
+    short loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen);
+    short loadHistogramIntervalsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen);
+    Int64 getTableUID(const char * catName, const char * schName, const char * objName);
+    short fetchAllRowsFromMetaTable(Queue * &q, const char* query);
+    short executeInMetaContext(const char* query);
+    void loadDDLs();
+    void histogramHDFSToLocal();
+    void removeHDFSCacheDirectory();
+    void createLogDir();
+    void checkDuplicateNames();
+    void dropObjects();
+    void dumpVersions();
+    void saveTablesBeforeAction();
+    void saveViewsBeforeAction();
+    void execHiveSQL(const char* hiveSQL);
     // This is the directory OSIM uses to read/write log files.
-    // It is set by an environment variable OSIM_LOGDIR.
-    char *osimLogdir_;
+    NAString osimLogLocalDir_;    //OSIM dir in local disk, used during capture and simu mode.
     // This is the mode under which OSIM is running (default is OFF).
     // It is set by an environment variable OSIM_MODE.
     osimMode osimMode_;
-
-    // System call names.
-    static const char *sysCallName[NUM_OF_SYSCALLS];
-    // File pathnames for log files that contain system call data.
-    char *sysCallLogfile[NUM_OF_SYSCALLS];
-    ofstream *writeSysCallStream[NUM_OF_SYSCALLS];
-
-    // Hash Dictionaries corresponding to all system calls.
-    NAHashDictionary<NAString, NAString> *hashDict_NODENAME_TO_NODENUMBER_;
-    NAHashDictionary<Int32, NAString> *hashDict_NODENUMBER_TO_NODENAME_;
-    NAHashDictionary<NAString, NAString> *hashDict_FILENAME_TO_PROCESSHANDLE_;
-    NAHashDictionary<NAString, NAString> *hashDict_PROCESSHANDLE_DECOMPOSE_;
-    NAHashDictionary<short, Lng32> *hashDict_REMOTEPROCESSORSTATUS;
-    NAHashDictionary<NAString, NAString> *hashDict_FILENAME_DECOMPOSE_;
-    NAHashDictionary<short, NAString> *hashDict_GETSYSTEMNAME;
-    NAHashDictionary<NAString, double> *hashDict_getEstimatedRows;
-    NAHashDictionary<NAString, NAString> *hashDict_getJustInTimeStatsRowcount;
     
-    NAHashDictionary<NAString, Int32> *hashDict_Views;
-    NAHashDictionary<NAString, Int32> *hashDict_Tables;
-    NAHashDictionary<NAString, Int32> *hashDict_Synonyms;
+    // System call names.
+    static const char *sysCallLogFileName_[NUM_OF_SYSCALLS];
+    
+    char *sysCallLogFilePath_[NUM_OF_SYSCALLS];
 
+    ofstream* writeSysCallStream_[NUM_OF_SYSCALLS];
+
+    NAHashDictionary<NAString, NAString> *hashDict_NODENAME_TO_NODENUMBER_;
+    
+    NAHashDictionary<Int32, NAString> *hashDict_NODENUMBER_TO_NODENAME_;
+    
+    NAHashDictionary<NAString, double> *hashDict_getEstimatedRows_;
+
+    NAHashDictionary<const QualifiedName, Int64> *hashDict_Views_;
+    NAHashDictionary<const QualifiedName, Int64> *hashDict_Tables_;
+    NAHashDictionary<const QualifiedName, Int32> *hashDict_Synonyms_;
+    NAHashDictionary<NAString, Int32> * hashDict_TablesBeforeAction_;
+    NAHashDictionary<NAString, Int32> * hashDict_ViewsBeforeAction_;
+    
     short nodeNum_;
     Int32 clusterNum_;
     short mySystemNumber_;
     sysType captureSysType_;
     NABoolean capturedNodeAndClusterNum_;
     NABoolean capturedInitialData_;
-    NABoolean usingCaptureHint_;
+    //NABoolean usingCaptureHint_;
     NABoolean hashDictionariesInitialized_;
-
+    NABoolean sysParamsInitialized_;
+    NABoolean tablesBeforeActionInitilized_;
+    NABoolean viewsBeforeActionInitilized_;
+    NABoolean CLIInitialized_;
+    CmpSeabaseDDL * cmpSBD_ ;
+    ExeCliInterface * cliInterface_ ;
+    Queue * queue_;
     //for debugging
     ULng32 sysCallsDisabled_;
-
+    //in respond to force option of osim load, 
+    //e.g. osim load from '/xxx/xxx/osim-dir', force
+    //if true, when loading osim tables/views/indexes
+    //existing objects with same qualified name 
+    //will be droped first
+    NABoolean forceLoad_;
+    HiveClient_JNI* hiveClient_;
     CollHeap *heap_;
 };
 
 // System call wrappers.
-  short OSIM_NODENAME_TO_NODENUMBER_(const char *nodeName,
+  short OSIM_NODENAME_TO_NODENUMBER(const char *nodeName,
                                      short nodeNameLen,
                                      Int32 *nodeNumber);
-  short OSIM_NODENUMBER_TO_NODENAME_(Int32 nodeNumber,
+  short OSIM_NODENUMBER_TO_NODENAME(Int32 nodeNumber,
                                      char *nodeName,
                                      short maxLen,
                                      short *actualLen);
-  short OSIM_FILENAME_TO_PROCESSHANDLE_(char *fileName,
-                                        short length,
-                                        short procHandle[]);
-  short OSIM_PROCESSHANDLE_DECOMPOSE_(short procHandle[],
-                                      short *cpu,
-                                      short *pin,
-                                      Int32 *nodeNumber);
-  Lng32 OSIM_REMOTEPROCESSORSTATUS(short clusterNum);
-  short OSIM_FILENAME_DECOMPOSE_(char *fileName,
-                                 short fileNameLen,
-                                 char *partName,
-                                 short maxLen,
-                                 short *partNameLen,
-                                 short level,
-                                 short options=0,
-                                 short subpart=0);
+  
 
-  short OSIM_GETSYSTEMNAME(short sysNum, short *sysName);
   short OSIM_MYSYSTEMNUMBER();
   void  OSIM_getNodeAndClusterNumbers(short& nodeNum, Int32& clusterNum);
   void  OSIM_captureTableOrView(NATable * naTab);
   void  OSIM_capturePrologue();
   void  OSIM_captureQueryText(const char * query);
   void  OSIM_captureQueryShape(const char * shape);
+  void  OSIM_captureEstimatedRows(const char *tableName, double estRows);
+  double OSIM_simulateEstimatedRows(const char *tableName);
   // errorMessage and warningMessage wrappers.
   void OSIM_errorMessage(const char *msg);
   void OSIM_warningMessage(const char *msg);
 
   NABoolean OSIM_runningSimulation();
   NABoolean OSIM_runningInCaptureMode();
-  NABoolean OSIM_catIsDisabled();
   NABoolean OSIM_ustatIsDisabled();
-
   NABoolean OSIM_isNTbehavior();
   NABoolean OSIM_isNSKbehavior();
   NABoolean OSIM_isLinuxbehavior();
-
-  //Stubs for NT & LINUX
-  Lng32 REMOTEPROCESSORSTATUS(short clusterNum);
-
+  NABoolean OSIM_SysParamsInitialized();
 #endif

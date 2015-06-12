@@ -1,0 +1,341 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+?section SCHEMA_PERSNL
+-- For schema PERSNL
+
+SET SCHEMA  MVTestEnv.PERSNL;
+
+-- JOB values:
+-- -----------
+
+INSERT INTO job 
+   VALUES ( 100, 'MANAGER' ),
+          ( 200, 'PRODUCTION SUPV' ),
+          ( 250, 'ASSEMBLER' ),
+          ( 300, 'SALESREP' ),
+          ( 400, 'SYSTEM ANALYST' ),
+          ( 420, 'ENGINEER' ),
+          ( 450, 'PROGRAMMER' ),
+          ( 500, 'ACCOUNTANT' ),
+          ( 600, 'ADMINISTRATOR' ),
+          ( 900, 'SECRETARY' );
+
+--UPDATE STATISTICS FOR TABLE MVTestEnv.PERSNL.JOB;
+
+-- EMPLOYEE values:
+-- ----------------
+
+INSERT INTO employee 
+   VALUES (   1,'ROGER'   ,'GREEN'     ,9000, 100,175500.00 ),
+          (  23,'JERRY'   ,'HOWARD'    ,1000, 100,137000.10 ),
+          (  29,'JANE'    ,'RAYMOND'   ,3000, 100,136000.00 ),
+          (  32,'THOMAS'  ,'RUDLOFF'   ,2000, 100,138000.40 ),
+          (  39,'KLAUS '  ,'SAFFERT'   ,3200, 100, 75000.00 ),
+          (  43,'PAUL'    ,'WINTER'    ,3100, 100, 90000.00 ),
+          (  65,'RACHEL'  ,'MCKAY'     ,4000, 100,118000.00 ),
+          (  72,'GLENN'   ,'THOMAS'    ,3300, 100, 80000.00 ),
+          (  75,'TIM'     ,'WALKER'    ,3000, 300, 32000.00 ),
+          (  87,'ERIC'    ,'BROWN'     ,4000, 400, 89000.00 ),
+          (  89,'PETER'   ,'SMITH'     ,3300, 300, 37000.40 ),
+          (  93,'DONALD'  ,'TAYLOR'    ,3100, 300, 33000.00 ),
+          ( 104,'DAVID'   ,'STRAND'    ,4000, 400, 69000.00 ),
+          ( 109,'STEVE'   ,'COOK'      ,4000, 400, 68000.00 ),
+          ( 111,'SHERRIE' ,'WONG'      ,3500, 100, 70000.00 ),
+          ( 178,'JOHN'    ,'CHOU'      ,3500, 900, 28000.00 ),
+          ( 180,'MANFRED' ,'CONRAD'    ,4000, 450, 32000.00 ),
+          ( 201,'JIM'     ,'HERMAN'    ,3000, 300, 19000.00 ),
+          ( 202,'LARRY'   ,'CLARK'     ,1000, 500, 25000.75 ),
+          ( 203,'KATHRYN' ,'HALL'      ,4000, 400, 96000.00 ),
+          ( 205,'GINNY'   ,'FOSTER'    ,3300, 900, 30000.00 ),
+          ( 206,'DAVE'    ,'FISHER'    ,3200, 900, 25000.00 ),
+          ( 207,'MARK'    ,'FOLEY'     ,4000, 420, 33000.00 ),
+          ( 208,'SUE'     ,'CRAMER'    ,1000, 900, 19000.00 ),
+          ( 209,'SUSAN'   ,'CHAPMAN'   ,1500, 900, 17000.00 ),
+          ( 210,'RICHARD' ,'BARTON'    ,1000, 500, 29000.00 ),
+          ( 211,'JIMMY'   ,'SCHNEIDER' ,1500, 600, 26000.00 ),
+          ( 212,'JONATHAN','MITCHELL'  ,1500, 600, 32000.00 ),
+          ( 213,'ROBERT'  ,'WHITE'     ,1500, 100, 90000.00 ),
+          ( 214,'JULIA'   ,'KELLY'     ,1000, 500, 50000.00 ),
+          ( 215,'WALTER'  ,'LANCASTER' ,4000, 450, 33000.50 ),
+          ( 216,'JOHN'    ,'JONES'     ,4000, 450, 40000.00 ),
+          ( 217,'MARLENE' ,'BONNY'     ,4000, 900, 24000.90 ),
+          ( 218,'GEORGE'  ,'FRENCHMAN' ,4000, 420, 36000.00 ),
+          ( 219,'DAVID'   ,'TERRY'     ,2000, 250, 27000.12 ),
+          ( 220,'JOHN'    ,'HUGHES'    ,3200, 300, 33000.10 ),
+          ( 221,'OTTO'    ,'SCHNABL'   ,3200, 300, 33000.00 ),
+          ( 222,'MARTIN'  ,'SCHAEFFER' ,3200, 300, 31000.00 ),
+          ( 223,'HERBERT' ,'KARAJAN'   ,3200, 300, 29000.00 ),
+          ( 224,'MARIA'   ,'JOSEF'     ,4000, 420, 18000.10 ),
+          ( 225,'KARL'    ,'HELMSTED'  ,4000, 450, 32000.00 ),
+          ( 226,'HEIDI'   ,'WEIGL'     ,3200, 300, 22000.00 ),
+          ( 227,'XAVIER'  ,'SEDLEMEYER',3300, 300, 30000.00 ),
+          ( 228,'PETE'    ,'WELLINGTON',3100, 300, 32000.20 ),
+          ( 229,'GEORGE'  ,'STRICKER'  ,3100, 300, 32222.00 ),
+          ( 230,'ROCKY'   ,'LEWIS'     ,2000, 200, 24000.00 ),
+          ( 231,'HERB'    ,'ALBERT'    ,3300, 300, 33000.00 ),
+          ( 232,'THOMAS'  ,'SPINNER'   ,4000, 450, 45000.00 ),
+          ( 233,'TED'     ,'MCDONALD'  ,2000, 250, 29000.00 ),
+          ( 234,'MARY'    ,'MILLER'    ,2500, 100, 56000.00 ),
+          ( 235,'MIRIAM'  ,'KING'      ,2500, 900, 18000.00 ),
+          ( 321,'BILL'    ,'WINN'      ,2000, 900, 32000.00 ),
+          ( 337,'DINAH'   ,'CLARK'     ,9000, 900, 37000.00 ),
+          ( 343,'ALAN'    ,'TERRY'     ,3000, 900, 39500.00 ),
+          ( 557,'BEN'     ,'HENDERSON' ,4000, 400, 65000.00 ),
+          ( 568,'JESSICA' ,'CRINER'    ,3500, 300, 39500.00 ),
+          ( 990,'thomas'  ,'stibbs'    ,3500,null,null      ),
+          ( 991,'Wayne'   ,'O''Neil'   ,3500,null,null      ),
+          ( 992,'Barry'   ,'Kinney'    ,3500,null,null      ),
+          ( 993,'Paul'    ,'Buskett'   ,3100,null,null      ),
+          ( 994,'Emmy'    ,'Buskett'   ,3100,null,null      ),
+          ( 995,'Walt'    ,'Farley'    ,3100,null,null      ),
+          ( 2000,'Nizan'  ,'Peleg'     ,9999,null,null     ),
+          ( 2001,'Rivka'  ,'Lad'       ,9999,null,40322.00 );
+
+--UPDATE STATISTICS FOR TABLE employee ON EVERY COLUMN;
+
+-- DEPT table values:
+-- ------------------
+
+INSERT INTO dept 
+   VALUES ( 1000,'FINANCE'     ,  23,9000,'CHICAGO'     ),
+          ( 1500,'PERSONNEL'   , 213,1000,'CHICAGO'     ),
+          ( 2000,'INVENTORY'   ,  32,9000,'LOS ANGELES' ),
+          ( 2500,'SHIPPING'    , 234,2000,'PHOENIX'     ),
+          ( 3000,'MARKETING'   ,  29,9000,'NEW YORK'    ),
+          ( 3100,'CANADA SALES',  43,3000,'TORONTO'     ),
+          ( 3200,'GERMNY SALES',  39,3000,'FRANKFURT'   ),
+          ( 3300,'ENGLND SALES',  72,3000,'LONDON'      ),
+          ( 3500,'ASIA SALES'  , 111,3000,'HONG KONG'   ),
+          ( 4000,'RESEARCH'    ,  65,9000,'NEW YORK'    ),
+          ( 4100,'PLANNING'    ,  87,4000,'NEW YORK'    ),
+          ( 9000,'CORPORATE'   ,   1,9000,'CHICAGO'     ),
+          ( 9998,'Test1'        ,  23,9000,'Testing1'     ),
+          ( 9999,'Test2'        ,  43,4100,'Testing2'     );
+
+--UPDATE STATISTICS FOR TABLE dept;
+
+?section SCHEMA_SALES
+-- for schema SALES
+
+SET SCHEMA  MVTestEnv.SALES;
+
+-- SALES data base
+-- CUSTOMER values:
+-- ----------------
+
+INSERT INTO customer 
+   VALUES (  21,'CENTRAL UNIVERSITY','UNIVERSITY WAY'),
+
+          ( 123,'BROWN MEDICAL CO'  ,'100 CALIFORNIA STREET'),
+ 
+          ( 143,'STEVENS SUPPLY'    ,'2020 HARRIS STREET' ),
+ 
+          ( 324,'PREMIER INSURANCE' ,'3300 WARBASH' ),
+
+          ( 543,'FRESNO STATE BANK' ,'2300 BROWN BLVD' ),
+
+          ( 926,'METALL-AG.'        ,'12 WAGNERRING'),
+
+          (1234,'DATASPEED'         ,'300 SAN GABRIEL WAY' ),
+
+          (3210,'BESTFOOD MARKETS'  ,'3333 PHELPS STREET' ),
+
+          (3333,'NATIONAL UTILITIES','6500 TRANS-CANADIENNE' ),
+
+          (5635,'ROYAL CHEMICALS'   ,'45 NEW BROAD STREET' ),
+
+          (7654,'MOTOR DISTRIBUTING','2345 FIRST STREET'),
+
+          (7777,'SLEEPWELL HOTELS'  ,'9000 PETERS AVENUE' ),
+
+          (9000,'bunknought inn'    ,'4738 ralph street' ),
+
+          (9010,'hotel oregon'      ,'333 portland ave.'),
+
+          (9033,'art supplies, inc.','22 sweet st.');
+
+--UPDATE STATISTICS FOR TABLE customer;
+
+-- ORDERS values:
+-- --------------
+
+INSERT INTO orders 
+   VALUES ( 100210,DATE '1997-04-10',DATE '1997-04-10', 220,1234 ),
+          ( 100250,DATE '1997-01-23',DATE '1997-06-15', 220,7777 ),
+          ( 101220,DATE '1997-07-21',DATE '1997-12-15', 221,5635 ),
+          ( 200300,DATE '1997-02-06',DATE '1997-07-01', 222, 926 ),
+          ( 200320,DATE '1997-02-17',DATE '1997-07-20', 223,  21 ),
+          ( 200490,DATE '1997-03-19',DATE '1997-11-01', 226, 123 ),
+          ( 300350,DATE '1997-03-03',DATE '1997-08-10', 231, 543 ),
+          ( 300380,DATE '1997-03-19',DATE '1997-08-20', 226, 123 ),
+          ( 400410,DATE '1997-03-27',DATE '1997-09-01', 227,7654 ),
+          ( 500450,DATE '1997-04-20',DATE '1997-09-15', 220, 324 ),
+          ( 700510,DATE '1997-06-01',DATE '1997-10-20', 229, 143 );
+
+UPDATE STATISTICS FOR TABLE MVTestEnv.SALES.ORDERS;
+
+
+-- PARTS values:
+-- -------------
+
+INSERT INTO parts 
+   VALUES ( 186,'186 MegaByte Disk' ,186186.86,  186 ),
+          ( 212,'PC SILVER, 20 MB'  ,  2500.00, 3525 ),
+          ( 244,'PC GOLD, 30 MB'    ,  3000.00, 4426 ),
+          ( 255,'PC DIAMOND, 60 MB' ,  4000.00, 3321 ),
+          (2001,'GRAPHIC PRINTER,M1',  1100.00, 2100 ),
+          (2002,'GRAPHIC PRINTER,M2',  1500.00, 3220 ),
+          (2003,'GRAPHIC PRINTER,M3',  2000.00, 2200 ),
+          (2402,'DAISY PRINTER,T1'  ,   350.00, 4425 ),
+          (2403,'DAISY PRINTER,T2'  ,   650.00, 3312 ),
+          (2405,'DAISY PRINTER, T3' ,   795.00, 2712 ),
+          (3103,'LASER PRINTER, X1' ,  4200.00, 3300 ),
+          (3201,'HARD DISK 20 MB'   ,   525.00, 4436 ),
+          (3205,'HARD DISK 30 MB'   ,   625.00, 2209 ),
+          (3210,'HARD DISK 40 MB'   ,   715.00, 3314 ),
+          (4102,'DISKETTE HD, BOX'  ,    28.00, 6540 ),
+          (5100,'MONITOR BW, TYPE 1',   150.00, 3237 ),
+          (5101,'MONITOR BW, TYPE 2',   200.00, 2400 ),
+          (5103,'MONITOR COLOR, M1' ,   400.00, 3328 ),
+          (5110,'MONITOR COLOR, M2' ,   525.00, 3236 ),
+          (5504,'MEMORY CARD, 512KB',   165.00, 2630 ),
+          (5505,'MEMORY CARD, 1 MB' ,   315.00, 3830 ),
+          (6201,'GRAPHIC CARD, LR'  ,   195.00, 2306 ),
+          (6301,'GRAPHIC CARD, HR'  ,   245.00, 2331 ),
+          (6400,'STREAMING TAPE,M20',   550.00, 1268 ),
+          (6401,'STREAMING TAPE,M60',   725.00, 1308 ),
+          (6500,'DISK CONTROLLER'   ,    95.00, 2532 ),
+          (6603,'PRINTER CONTROLLER',    45.00,  430 ),
+          (7102,'SMART MODEM, 1200' ,   275.00, 2200 ),
+          (7301,'SMART MODEM, 2400' ,   425.00, 2332 );
+
+--UPDATE STATISTICS FOR TABLE MVTestEnv.SALES.PARTS;
+
+-- ODETAIL values:
+-- ---------------
+
+INSERT INTO odetail 
+   VALUES ( 100210, 244,  3500.00,    3 ),
+          ( 100210,2001,  1100.00,    3 ),
+          ( 100210,2403,   620.00,    6 ),
+          ( 100210,5100,   150.00,   10 ),
+          ( 100250, 244,  3500.00,    4 ),
+          ( 100250,5103,   400.00,   10 ),
+          ( 100250,6301,   245.00,   15 ),
+          ( 100250,6500,    95.00,   10 ),
+          ( 101220, 255,  3900.00,   10 ),
+          ( 101220,5103,   400.00,    3 ),
+          ( 101220,7102,   275.00,    7 ),
+          ( 101220,7301,   425.00,    8 ),
+          ( 200300, 244,  3500.00,    8 ),
+          ( 200300,2001,  1000.00,   10 ),
+          ( 200300,2002,  1400.00,   10 ),
+          ( 200320,5504,   165.00,    5 ),
+          ( 200320,6201,   195.00,   16 ),
+          ( 200320,6301,   245.00,    6 ),
+          ( 200320,6400,   540.00,    7 ),
+          ( 200490,3210,   715.00,    1 ),
+          ( 200490,5505,   350.00,    1 ),
+          ( 300350, 244,  2800.00,   20 ),
+          ( 300350,5100,   150.00,    5 ),
+          ( 300350,5110,   525.00,   12 ),
+          ( 300350,6301,   245.00,    5 ),
+          ( 300350,6400,   550.00,    5 ),
+          ( 300380, 244,  3000.00,    6 ),
+          ( 300380,2402,   320.00,   12 ),
+          ( 300380,2405,   760.00,    8 ),
+          ( 400410, 212,  2450.00,   12 ),
+          ( 400410, 255,  3800.00,   12 ),
+          ( 400410,2001,  1000.00,   36 ),
+          ( 400410,6301,   240.00,   48 ),
+          ( 400410,6400,   500.00,   70 ),
+          ( 400410,7301,   415.00,   36 ),
+          ( 500450, 212,  2500.00,    8 ),
+          ( 500450, 255,  3900.00,   12 ),
+          ( 500450,2001,  1100.00,   16 ),
+          ( 500450,2002,  1500.00,   16 ),
+          ( 500450,2402,   330.00,   48 ),
+          ( 700410,2003,  1900.00,   65 ),
+          ( 700410,2403,   650.00,   10 ),
+          ( 700510, 255,  4000.00,    4 ),
+          ( 700510,6500,    95.00,    8 ),
+          ( 700510,7102,   275.00,    5 );
+
+--UPDATE STATISTICS FOR TABLE MVTestEnv.SALES.ODETAIL;
+
+
+
+?section SCHEMA_INVENT
+-- for schema INVENT
+
+SET SCHEMA MVTestEnv2.INVENT;
+
+-- PARTSUPP values:
+-- ----------------
+
+INSERT INTO partsupp 
+   VALUES ( 212,   1,  2000.00,   20 ),
+          ( 212,   3,  1900.00,   35 ),
+          ( 244,   1,  2400.00,   50 ),
+          ( 244,   2,  2200.00,   66 ),
+          ( 255,   1,  3300.00,   35 ),
+          ( 255,   3,  3000.00,   46 ),
+          (2001,   1,   700.00,  100 ),
+          (2001,   2,   750.00,   55 ),
+          (2002,   1,  1000.00,  120 ),
+          (2002,   6,  1100.00,   20 ),
+          (2003,   1,  1300.00,  100 ),
+          (2003,   2,  1400.00,   50 ),
+          (2003,  10,  1450.00,   50 ),
+          (2402,   1,   200.00,   35 ),
+          (2403,   1,   300.00,  200 ),
+          (2405,   1,   500.00,   40 ),
+          (2405,   6,   450.00,   50 ),
+          (3103,   1,  3200.00,  200 ),
+          (3103,  15,  3300.00,  100 ),
+          (3201,   1,   380.00,   36 ),
+          (3205,   1,   425.00,  150 ),
+          (3210,   6,   470.00,   10 ),
+          (3210,  15,   450.00,   25 ),
+          (4102,   6,    20.00,  115 ),
+          (4102,   8,    19.00,  140 ),
+          (4102,  15,    21.00,   30 ),
+          (5100,   6,   100.00,   50 ),
+          (5100,   8,   105.00,   40 ),
+          (5100,  15,    95.00,   60 ),
+          (5101,   8,   135.00,   33 ),
+          (5101,  15,   125.00,   43 ),
+          (5103,   8,   265.00,   20 ),
+          (5103,  15,   250.00,   58 ),
+          (5110,   1,   335.00,  100 ),
+          (5110,   2,   350.00,   36 ),
+          (5504,   2,    85.00,   10 ),
+          (5504,   6,    75.00,   10 ),
+          (5504,  15,    78.00,   10 ),
+          (5505,  15,   200.00,  100 ),
+          (6201,   1,   100.00,  110 ),
+          (6301,   1,   150.00,  230 ),
+          (6400,   1,   390.00,   50 ),
+          (6401,   2,   500.00,   20 ),
+          (6401,   3,   480.00,   38 ),
+          (6500,   2,    60.00,  140 ),
+          (6500,   3,    65.00,   32 ),
+          (6603,   2,    25.00,  150 ),
+          (7102,  10,   165.00,  100 ),
+          (7301,   1,   300.00,   32 );
+

@@ -1,0 +1,613 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_6_2_2_2(set_up);
+>>
+>>INSERT INTO T1 VALUES (1,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (2,3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (4,5);
+
+--- 1 row(s) inserted.
+>>
+>>INSERT INTO T5 VALUES (0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (100,200,0,0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (200,300,0,0);
+
+--- 1 row(s) inserted.
+>>---------------------------------
+>>-- DEFINE TRIGGERS
+>>---------------------------------
+>>
+>>CREATE TRIGGER rt0
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>UPDATE T1 SET b=b+1 WHERE a<newR.b AND a<4;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>----------
+>>CREATE TRIGGER rt1
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T2 VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt2
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T3 VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st3
++>AFTER UPDATE ON T1
++>INSERT INTO T4 VALUES (4);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt4
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>UPDATE T5 SET a=a+1 WHERE a=oldR.b-2;
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt5
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>UPDATE T5 SET a=100 WHERE a=4;
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st6
++>AFTER UPDATE ON T1
++>INSERT INTO T6 VALUES (6);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st7
++>AFTER UPDATE ON T1
++>INSERT INTO T7 VALUES (7);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt8
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T8 VALUES (oldR.b);
+
+--- SQL operation complete.
+>>
+>>obey TEST_6_2_2_2(set_up2);
+>>----------
+>>CREATE TRIGGER bt9
++>BEFORE INSERT ON T1
++>REFERENCING NEW AS NEWR
++>SET NEWR.A = NEWR.A + 0;
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st10
++>AFTER INSERT ON T1
++>DELETE FROM T1 WHERE A > 1000;
+
+--- SQL operation complete.
+>>
+>>obey TEST_6_2_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO tab1B (SELECT a,b FROM tab1a);
+
+--- 2 row(s) inserted.
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+A            B            
+-----------  -----------  
+
+        100          200  
+        200          300  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T1 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            5  
+          3            6  
+          4            5  
+
+--- 4 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T2 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          1            3  
+          2            3  
+          2            4  
+          3            4  
+          3            5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T3 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          1            3  
+          2            3  
+          2            4  
+          3            4  
+          3            5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T4 ORDER BY a;
+
+A            
+-----------  
+
+          4  
+          4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T5 ORDER BY a;
+
+A            
+-----------  
+
+        100  
+
+--- 1 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T6 ORDER BY a;
+
+A            
+-----------  
+
+          6  
+          6  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T7 ORDER BY a;
+
+A            
+-----------  
+
+          7  
+          7  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T8 ORDER BY a;
+
+A            
+-----------  
+
+          2  
+          3  
+          3  
+          4  
+          4  
+          5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_6_2_2_2(tests2);
+>>------------------------------------------------------------------
+>>--          ANOTHER TEST CASE
+>>------------------------------------------------------------------
+>>PREPARE SS FROM INSERT INTO T1 VALUES (1,1),(2,2),(3,3);
+
+--- SQL command prepared.
+>>
+>>obey TEST_6_2_2_2(clean_up2);
+>>DROP TRIGGER bt9;
+
+--- SQL operation complete.
+>>DROP TRIGGER st10;
+
+--- SQL operation complete.
+>>
+>>obey TEST_6_2_2_2(clean_up);
+>>
+>>DROP TRIGGER rt0;
+
+--- SQL operation complete.
+>>DROP TRIGGER rt1;
+
+--- SQL operation complete.
+>>DROP TRIGGER rt2;
+
+--- SQL operation complete.
+>>DROP TRIGGER st3;
+
+--- SQL operation complete.
+>>DROP TRIGGER rt4;
+
+--- SQL operation complete.
+>>DROP TRIGGER rt5;
+
+--- SQL operation complete.
+>>DROP TRIGGER st6;
+
+--- SQL operation complete.
+>>DROP TRIGGER st7;
+
+--- SQL operation complete.
+>>DROP TRIGGER rt8;
+
+--- SQL operation complete.
+>>obey clearTables2;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 2 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 2 row(s) deleted.
+>>DELETE FROM T1;
+
+--- 4 row(s) deleted.
+>>DELETE FROM T2;
+
+--- 6 row(s) deleted.
+>>DELETE FROM T3;
+
+--- 6 row(s) deleted.
+>>DELETE FROM T4;
+
+--- 2 row(s) deleted.
+>>DELETE FROM T5;
+
+--- 1 row(s) deleted.
+>>DELETE FROM T6;
+
+--- 2 row(s) deleted.
+>>DELETE FROM T7;
+
+--- 2 row(s) deleted.
+>>DELETE FROM T8;
+
+--- 6 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>-- delete from table (index_table tab1a_i2);
+>>-- delete from table (index_table tab1b_i1);
+>>-- delete from table (index_table cat3.schm.tab3a_i1);
+>>-- delete from table (index_table t1_i1);
+>>-- delete from table (index_table t1_i2);
+>>-- delete from table (index_table t3_i2);
+>>
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T1;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T2;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T3;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T4;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T5;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T6;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T7;
+
+--- 0 row(s) deleted.
+>>DELETE FROM T8;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_6_2_2_2(set_up);
+>>
+>>INSERT INTO T1 VALUES (1,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (2,3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO T1 VALUES (4,5);
+
+--- 1 row(s) inserted.
+>>
+>>INSERT INTO T5 VALUES (0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (100,200,0,0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (200,300,0,0);
+
+--- 1 row(s) inserted.
+>>---------------------------------
+>>-- DEFINE TRIGGERS
+>>---------------------------------
+>>
+>>CREATE TRIGGER rt0
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>UPDATE T1 SET b=b+1 WHERE a<newR.b AND a<4;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>----------
+>>CREATE TRIGGER rt1
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T2 VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt2
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T3 VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st3
++>AFTER UPDATE ON T1
++>INSERT INTO T4 VALUES (4);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt4
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>UPDATE T5 SET a=a+1 WHERE a=oldR.b-2;
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt5
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>UPDATE T5 SET a=100 WHERE a=4;
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st6
++>AFTER UPDATE ON T1
++>INSERT INTO T6 VALUES (6);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER st7
++>AFTER UPDATE ON T1
++>INSERT INTO T7 VALUES (7);
+
+--- SQL operation complete.
+>>
+>>----------
+>>CREATE TRIGGER rt8
++>AFTER UPDATE ON T1
++>REFERENCING OLD AS oldR FOR EACH ROW
++>INSERT INTO T8 VALUES (oldR.b);
+
+--- SQL operation complete.
+>>
+>>obey TEST_6_2_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO tab1B (SELECT a,b FROM tab1a);
+
+--- 2 row(s) inserted.
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+A            B            
+-----------  -----------  
+
+        100          200  
+        200          300  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T1 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            5  
+          3            6  
+          4            5  
+
+--- 4 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T2 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          1            3  
+          2            3  
+          2            4  
+          3            4  
+          3            5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T3 ORDER BY a,b;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          1            3  
+          2            3  
+          2            4  
+          3            4  
+          3            5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T4 ORDER BY a;
+
+A            
+-----------  
+
+          4  
+          4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T5 ORDER BY a;
+
+A            
+-----------  
+
+        100  
+
+--- 1 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T6 ORDER BY a;
+
+A            
+-----------  
+
+          6  
+          6  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T7 ORDER BY a;
+
+A            
+-----------  
+
+          7  
+          7  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM T8 ORDER BY a;
+
+A            
+-----------  
+
+          2  
+          3  
+          3  
+          4  
+          4  
+          5  
+
+--- 6 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

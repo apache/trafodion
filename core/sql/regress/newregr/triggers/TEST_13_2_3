@@ -1,0 +1,142 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--  
+--
+--  Recompilation
+--
+--
+
+set schema cat1.schm;
+
+obey TEST_13_2_3(clean_up);
+obey TEST_13_2_3(set_up);
+log   LOG_13_2_3 clear;
+obey TEST_13_2_3(tests);
+LOG;
+obey TEST_13_2_3(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+drop trigger Xtrigger;
+drop trigger Ytrigger;
+drop table   Xtab1;
+drop table   Xtab2;
+drop table   Xtab3;
+
+?section set_up
+
+create table Xtab1 (i int, j int);
+insert into Xtab1 values (11,22),(33,44),(55,66);
+
+create table cat1.schm.Xtab2 (j int, k int);
+insert into Xtab2 values (22,55),(66,77);
+
+create table cat1.schm.Xtab3 like cat1.schm.Xtab2;
+insert into Xtab3 values (1,1),(0,0);
+
+-- a row trigger avoids bug100
+create trigger Xtrigger after delete on Xtab1 for each row
+  update Xtab3 set k=(select MAX(j) from Xtab2);
+
+-- show 
+showddl Xtab1;
+
+
+-------------
+--   tests
+-------------
+?section tests
+
+control query default auto_query_retry_warnings 'ON';
+
+prepare stmtTrg from
+  delete from Xtab1;
+
+execute stmtTrg;
+-- should update Xtab3
+select * from Xtab3;
+
+insert into Xtab1 values (10,99);
+insert into Xtab2 values (1099,10);
+
+----
+-- modify Xtab1
+----
+alter table Xtab1 add column m int;
+
+-- open blown away
+-- should recompile, then update Xtab3
+execute stmtTrg;
+
+-- momentarily disable preparser caching to avoid getting false negative from
+-- the select * from Xtab3 which would otherwise cause mxci to try to execute 
+-- with outdated query result describe info from a preparser cache hit whose
+-- plan is based on the old table Xtab3 that has only 2 instead of 3 columns
+--control query default query_text_cache 'off';
+select * from Xtab3;
+--control query default query_text_cache 'on';
+
+-- Note: Uncomment/comment the following line to cause/stop  Bug 100
+insert into Xtab1 values (11,22,33);
+insert into Xtab2 values (1500,10);
+
+----
+-- modify Xtab3
+----
+alter table Xtab3 add column m int;
+
+-- open blown away
+execute stmtTrg;
+-- should recompile, then update Xtab3
+----
+
+select * from Xtab3;
+
+insert into Xtab1 values (11,22,33);
+insert into Xtab2 values (2000,10);
+
+----
+-- modify Xtab2
+----
+alter table Xtab2 add column m int;
+
+-- open blown away
+execute stmtTrg;
+-- should recompile, then update Xtab3 so that k=2000
+-- in both rows
+select * from Xtab3;
+
+-- The same with a statement trigger with a Union node
+create trigger Ytrigger after insert on Xtab1 for each statement
+  update Xtab3 set k=(select MAX(j) from Xtab2);
+prepare stmtTrg from
+  insert into Xtab1 values(9,99,999);
+execute stmtTrg;
+execute stmtTrg;
+alter table Xtab2 add column mm int;
+-- open blown away
+execute stmtTrg;
+execute stmtTrg;
+alter table Xtab3 add column mm int;
+
+-- The following "execute" would crash the executor (July 2000, Boaz)
+?section quitNowBeforeExecutorCrashes
+execute stmtTrg;
+execute stmtTrg;

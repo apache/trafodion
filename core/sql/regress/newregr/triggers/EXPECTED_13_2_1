@@ -1,0 +1,201 @@
+>>obey TEST_13_2_1(tests);
+>>
+>>control query default auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+>>-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>set schema cat1.schm ;
+
+--- SQL operation complete.
+>>
+>>create table mytable
++>( C1  INT      NOT NULL
++>    ,C2 INT
++>    ,C3 CHAR(10) NOT NULL
++>    ,C4 CHAR
++>    ,PRIMARY KEY (C3, C1) NOT DROPPABLE )
++>  STORE BY PRIMARY KEY
++>  LOCATION $$partition2$$
++>  RANGE PARTITION (ADD FIRST KEY ('c', 10) LOCATION $$partition2$$,
++>             ADD FIRST KEY ('m') LOCATION $$partition1$$);
+
+--- SQL operation complete.
+>>
+>>insert into mytable values (11,22,'G','H');
+
+--- 1 row(s) inserted.
+>>
+>>create trigger mytrig after update on mytable
++> referencing old as myold, new as mynew
++>  for each statement
++>    insert into mytable select c1,c2,c3,c4 from myold
++>        where mynew.c1 > mynew.c2;
+
+*** ERROR[4002] Column MYNEW.C1 is not found.  Table MYNEW not exposed.  Tables in scope: MYOLD.  Default schema: CAT1.SCHM.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- Should fail because the trigger is using mynew illegally.
+>>
+>>create table tblX (i int);
+
+--- SQL operation complete.
+>>
+>>insert into tblX values (10),(20),(30),(40);
+
+--- 4 row(s) inserted.
+>>
+>>create table tblY (i int, c char);
+
+--- SQL operation complete.
+>>
+>>create trigger mytrig after update on mytable
++> referencing old as myold, new as mynew
++>  for each statement
++>    insert into tblY select c1,c4 from mynew
++>       where mynew.c1 in (select * from tblX);
+
+--- SQL operation complete.
+>>
+>>showddl mytable;
+
+CREATE TABLE CAT1.SCHM.MYTABLE
+  (
+    C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , C3                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C4                               CHAR(1) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.MYTABLE_994343755_5567 PRIMARY KEY (C3 ASC, C1 ASC)
+      NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.MYTABLE_494343755_5567 CHECK (CAT1.SCHM.MYTABLE.C1 IS
+      NOT NULL AND CAT1.SCHM.MYTABLE.C3 IS NOT NULL) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA2.ZSDZVD7K.D83GDM00
+  NAME NSK_DATA2_ZSDZVD7K_D83GDM00
+  RANGE PARTITION
+  (
+    ADD FIRST KEY (_ISO88591'c', 10)
+      LOCATION \NSK.$DATA2.ZSDZVD7K.F83GDM00
+      NAME NSK_DATA2_ZSDZVD7K_F83GDM00
+  , ADD FIRST KEY (_ISO88591'm')
+      LOCATION \NSK.$DATA1.ZSDZVD7K.G83GDM00
+      NAME NSK_DATA1_ZSDZVD7K_G83GDM00
+  )
+  STORE BY (C3 ASC, C1 ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.MYTRIG AFTER UPDATE ON CAT1.SCHM.MYTABLE REFERENCING
+  OLD AS MYOLD, NEW AS MYNEW FOR EACH STATEMENT INSERT INTO CAT1.SCHM.TBLY
+  SELECT MYNEW.C1, MYNEW.C4 FROM MYNEW WHERE MYNEW.C1 IN (SELECT
+  CAT1.SCHM.TBLX.I FROM CAT1.SCHM.TBLX);
+
+--- SQL operation complete.
+>>-- name of tblX not expanded - bug # 95
+>>
+>>showddl TABLE ( TEMP_TABLE mytable__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.MYTABLE__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , C3                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C4                               CHAR(1) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.MYTABLE__TEMP_515443755_5567 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C3 ASC, C1 ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA2.ZSDZVD7K.FJ5GDM00
+  NAME NSK_DATA2_ZSDZVD7K_FJ5GDM00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C3 ASC, C1 ASC)
+  ;
+
+--- SQL operation complete.
+>>-- in the above, the two LOCATION lines may fail the "diff"
+>>-- remember to remove the __TEMP suffix when the code is changed!!
+>>
+>>insert into mytable values (20,30,'S','T');
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table CAT1.SCHM.MYTABLE.
+
+--- 1 row(s) inserted.
+>>
+>>prepare stmt from update mytable set c2=c2+1;
+
+--- SQL command prepared.
+>>
+>>execute stmt;
+
+--- 2 row(s) updated.
+>>-- should return "3 lines" (two in mytable, one (by the trigger) in tblY)
+>>
+>>alter table mytable add column c5 int;
+
+--- SQL operation complete.
+>>-- alter subject table, should drop+recreate temp table, update TS
+>>
+>>-- Open blown away
+>>execute stmt;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.MYTABLE.
+
+--- 2 row(s) updated.
+>>-- should recompile and execute as before
+>>-- Used to fail on "NULL": old bug # 96
+>>
+>>update mytable set c2=c2+1;
+
+--- 2 row(s) updated.
+>>-- same statement; should (compile and) work flawlessly
+>>
+>>execute stmt;
+
+--- 2 row(s) updated.
+>>-- should execute
+>>
+>>showddl TABLE ( TEMP_TABLE mytable__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.MYTABLE__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , C3                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C4                               CHAR(1) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C5                               INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.MYTABLE__TEMP_314543755_5567 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C3 ASC, C1 ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA2.ZSDZVD7K.MM6GDM00
+  NAME NSK_DATA2_ZSDZVD7K_MM6GDM00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C3 ASC, C1 ASC)
+  ;
+
+--- SQL operation complete.
+>>-- in the above, the two LOCATION lines may fail the "diff"
+>>-- remember to remove the __TEMP suffix when the code is changed!!
+>>LOG;

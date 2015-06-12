@@ -97,6 +97,8 @@ public:
                           ComDiagsArea *diagsArea = NULL) {}
   void cleanupResultSets(ComDiagsArea *diagsArea = NULL) {}
 
+  virtual LmResult handleFinalCall(ComDiagsArea *diagsArea = NULL);
+
 protected:
   LmRoutineCppObj(
     tmudr::UDRInvocationInfo *invocationInfo,
@@ -115,6 +117,7 @@ protected:
     ComDiagsArea *diagsArea);
 
   virtual ~LmRoutineCppObj();
+  LmResult dealloc(ComDiagsArea *diagsArea);
 
  private:
 

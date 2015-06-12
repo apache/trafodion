@@ -1,0 +1,2114 @@
+>>obey TEST_EN_DIS(tests);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TESTS
+>>------------------------------------------------------------------------------
+>>obey TEST_EN_DIS(test1);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TEST1
+>>------------------------------------------------------------------------------
+>>-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+>>-- enabled
+>>
+>>obey TEST_EN_DIS(clear_res);
+>>------------------------------------------------------------------------------
+>>-- SECTION: CLEAR_RES
+>>------------------------------------------------------------------------------
+>>alter trigger disable all of t0;
+
+--- SQL operation complete.
+>>alter trigger disable all of t1;
+
+--- SQL operation complete.
+>>alter trigger disable all of t2;
+
+--- SQL operation complete.
+>>alter trigger disable all of t3;
+
+--- SQL operation complete.
+>>alter trigger disable all of t4;
+
+--- SQL operation complete.
+>>alter trigger disable all of t5;
+
+--- SQL operation complete.
+>>alter trigger disable all of t6;
+
+--- SQL operation complete.
+>>alter trigger disable all of t7;
+
+--- SQL operation complete.
+>>alter trigger disable all of t8;
+
+--- SQL operation complete.
+>>alter trigger disable all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>delete from t0;
+
+--- 0 row(s) deleted.
+>>delete from t1;
+
+--- 2 row(s) deleted.
+>>delete from t2;
+
+--- 1 row(s) deleted.
+>>delete from t3;
+
+--- 1 row(s) deleted.
+>>delete from t4;
+
+--- 2 row(s) deleted.
+>>delete from t5;
+
+--- 1 row(s) deleted.
+>>delete from t6;
+
+--- 1 row(s) deleted.
+>>delete from t7;
+
+--- 2 row(s) deleted.
+>>delete from t8;
+
+--- 1 row(s) deleted.
+>>delete from t9;
+
+--- 1 row(s) deleted.
+>>
+>>
+>>insert into t1 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t1 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t2 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t3 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t5 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t6 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t8 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t9 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>update results set enabled=0;
+
+--- 50 row(s) updated.
+>>
+>>
+>>
+>>
+>>alter trigger enable  all of t0;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t1;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t2;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t3;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t4;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t5;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t6;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t7;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t8;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>	Alter trigger	ENABLE	tr00;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr01;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr02;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr03;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr04;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr10;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr11;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr12;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr13;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr14;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr19;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr20;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr21;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr22;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr23;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr24;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr30;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr31;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr32;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr33;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr34;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr40;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr41;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr42;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr43;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr44;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr49;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr50;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr51;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr52;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr53;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr54;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr60;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr61;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr62;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr63;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr64;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr70;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr71;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr72;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr73;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr74;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr79;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr80;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr81;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr82;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr83;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr84;
+
+--- SQL operation complete.
+>>
+>>
+>>--	TR	E/D	RES
+>>--	00	1	--
+>>--	01	1	1
+>>--	02	1	1
+>>--	03	1	1
+>>--	04	1	1
+>>--	10	1	--
+>>--	11	1	1
+>>--	12	1	1
+>>--	13	1	1
+>>--	14	1	1
+>>--	19	1	1
+>>--	20	1	--
+>>--	21	1	1
+>>--	22	1	1
+>>--	23	1	1
+>>--	24	1	1
+>>--	30	1	--
+>>--	31	1	1
+>>--	32	1	1
+>>--	33	1	1
+>>--	34	1	1
+>>--	40	1	--
+>>--	41	1	1
+>>--	42	1	1
+>>--	43	1	1
+>>--	44	1	1
+>>--	49	1	1
+>>--	50	1	--
+>>--	51	1	1
+>>--	52	1	1
+>>--	53	1	1
+>>--	54	1	1
+>>--	60	1	--
+>>--	61	1	1
+>>--	62	1	1
+>>--	63	1	1
+>>--	64	1	1
+>>--	70	1	--
+>>--	71	1	1
+>>--	72	1	1
+>>--	73	1	1
+>>--	74	1	1
+>>--	79	1	1
+>>--	80	1	--
+>>--	81	1	1
+>>--	82	1	1
+>>--	83	1	1
+>>--	84	1	1
+>>
+>>---------------------
+>>-- TRIGGERING IUD
+>>---------------------
+>>insert into t0 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------
+>>-- CHECK RESULTS
+>>---------------------
+>>select * from results;
+
+TRIG_NUM     ENABLED    
+-----------  -----------
+
+        -81            0
+        -71            0
+        -61            0
+        -51            0
+        -41            0
+        -31            0
+        -21            0
+        -12            0
+        -11            0
+         -2            0
+         -1            0
+          1            1
+          2            1
+          3            1
+          4            1
+         11            1
+         12            1
+         13            1
+         14            1
+         19            1
+         21            1
+         22            1
+         23            1
+         24            1
+         31            1
+         32            1
+         33            1
+         34            1
+         41            1
+         42            1
+         43            1
+         44            1
+         49            1
+         51            1
+         52            1
+         53            1
+         54            1
+         61            1
+         62            1
+         63            1
+         64            1
+         71            1
+         72            1
+         73            1
+         74            1
+         79            1
+         81            1
+         82            1
+         83            1
+         84            1
+
+--- 50 row(s) selected.
+>>
+>>
+>>
+>>obey TEST_EN_DIS(test2);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TEST2
+>>------------------------------------------------------------------------------
+>>-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+>>-- enabled
+>>
+>>obey TEST_EN_DIS(clear_res);
+>>------------------------------------------------------------------------------
+>>-- SECTION: CLEAR_RES
+>>------------------------------------------------------------------------------
+>>alter trigger disable all of t0;
+
+--- SQL operation complete.
+>>alter trigger disable all of t1;
+
+--- SQL operation complete.
+>>alter trigger disable all of t2;
+
+--- SQL operation complete.
+>>alter trigger disable all of t3;
+
+--- SQL operation complete.
+>>alter trigger disable all of t4;
+
+--- SQL operation complete.
+>>alter trigger disable all of t5;
+
+--- SQL operation complete.
+>>alter trigger disable all of t6;
+
+--- SQL operation complete.
+>>alter trigger disable all of t7;
+
+--- SQL operation complete.
+>>alter trigger disable all of t8;
+
+--- SQL operation complete.
+>>alter trigger disable all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>delete from t0;
+
+--- 1 row(s) deleted.
+>>delete from t1;
+
+--- 2 row(s) deleted.
+>>delete from t2;
+
+--- 0 row(s) deleted.
+>>delete from t3;
+
+--- 2 row(s) deleted.
+>>delete from t4;
+
+--- 2 row(s) deleted.
+>>delete from t5;
+
+--- 0 row(s) deleted.
+>>delete from t6;
+
+--- 2 row(s) deleted.
+>>delete from t7;
+
+--- 2 row(s) deleted.
+>>delete from t8;
+
+--- 0 row(s) deleted.
+>>delete from t9;
+
+--- 2 row(s) deleted.
+>>
+>>
+>>insert into t1 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t1 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t2 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t3 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t5 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t6 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t8 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t9 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>update results set enabled=0;
+
+--- 50 row(s) updated.
+>>
+>>
+>>
+>>
+>>alter trigger enable  all of t0;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t1;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t2;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t3;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t4;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t5;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t6;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t7;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t8;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>	Alter trigger	DISABLE	tr00;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr01;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr02;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr03;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr04;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr10;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr11;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr12;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr13;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr14;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr19;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr20;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr21;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr22;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr23;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr24;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr30;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr31;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr32;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr33;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr34;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr40;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr41;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr42;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr43;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr44;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr49;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr50;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr51;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr52;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr53;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr54;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr60;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr61;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr62;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr63;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr64;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr70;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr71;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr72;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr73;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr74;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr79;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr80;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr81;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr82;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr83;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr84;
+
+--- SQL operation complete.
+>>
+>>
+>>--	TR	E/D	RES
+>>--	00	0	--
+>>--	01	1	1
+>>--	02	1	1
+>>--	03	1	1
+>>--	04	1	1
+>>--	10	1	--
+>>--	11	1	0
+>>--	12	1	0
+>>--	13	1	0
+>>--	14	1	0
+>>--	19	1	0
+>>--	20	1	--
+>>--	21	1	0
+>>--	22	1	0
+>>--	23	1	0
+>>--	24	1	0
+>>--	30	1	--
+>>--	31	1	0
+>>--	32	1	0
+>>--	33	1	0
+>>--	34	1	0
+>>--	40	1	--
+>>--	41	1	0
+>>--	42	1	0
+>>--	43	1	0
+>>--	44	1	0
+>>--	49	1	0
+>>--	50	1	--
+>>--	51	1	0
+>>--	52	1	0
+>>--	53	1	0
+>>--	54	1	0
+>>--	60	1	--
+>>--	61	1	0
+>>--	62	1	0
+>>--	63	1	0
+>>--	64	1	0
+>>--	70	1	--
+>>--	71	1	0
+>>--	72	1	0
+>>--	73	1	0
+>>--	74	1	0
+>>--	79	1	0
+>>--	80	1	--
+>>--	81	1	0
+>>--	82	1	0
+>>--	83	1	0
+>>--	84	1	0
+>>
+>>---------------------
+>>-- TRIGGERING IUD
+>>---------------------
+>>insert into t0 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------
+>>-- CHECK RESULTS
+>>---------------------
+>>select * from results;
+
+TRIG_NUM     ENABLED    
+-----------  -----------
+
+        -81            0
+        -71            0
+        -61            0
+        -51            0
+        -41            0
+        -31            0
+        -21            0
+        -12            0
+        -11            0
+         -2            0
+         -1            0
+          1            1
+          2            1
+          3            1
+          4            1
+         11            0
+         12            0
+         13            0
+         14            0
+         19            0
+         21            0
+         22            0
+         23            0
+         24            0
+         31            0
+         32            0
+         33            0
+         34            0
+         41            0
+         42            0
+         43            0
+         44            0
+         49            0
+         51            0
+         52            0
+         53            0
+         54            0
+         61            0
+         62            0
+         63            0
+         64            0
+         71            0
+         72            0
+         73            0
+         74            0
+         79            0
+         81            0
+         82            0
+         83            0
+         84            0
+
+--- 50 row(s) selected.
+>>
+>>
+>>obey TEST_EN_DIS(test3);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TEST3
+>>------------------------------------------------------------------------------
+>>-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+>>-- enabled
+>>
+>>obey TEST_EN_DIS(clear_res);
+>>------------------------------------------------------------------------------
+>>-- SECTION: CLEAR_RES
+>>------------------------------------------------------------------------------
+>>alter trigger disable all of t0;
+
+--- SQL operation complete.
+>>alter trigger disable all of t1;
+
+--- SQL operation complete.
+>>alter trigger disable all of t2;
+
+--- SQL operation complete.
+>>alter trigger disable all of t3;
+
+--- SQL operation complete.
+>>alter trigger disable all of t4;
+
+--- SQL operation complete.
+>>alter trigger disable all of t5;
+
+--- SQL operation complete.
+>>alter trigger disable all of t6;
+
+--- SQL operation complete.
+>>alter trigger disable all of t7;
+
+--- SQL operation complete.
+>>alter trigger disable all of t8;
+
+--- SQL operation complete.
+>>alter trigger disable all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>delete from t0;
+
+--- 1 row(s) deleted.
+>>delete from t1;
+
+--- 2 row(s) deleted.
+>>delete from t2;
+
+--- 1 row(s) deleted.
+>>delete from t3;
+
+--- 1 row(s) deleted.
+>>delete from t4;
+
+--- 2 row(s) deleted.
+>>delete from t5;
+
+--- 1 row(s) deleted.
+>>delete from t6;
+
+--- 1 row(s) deleted.
+>>delete from t7;
+
+--- 2 row(s) deleted.
+>>delete from t8;
+
+--- 1 row(s) deleted.
+>>delete from t9;
+
+--- 1 row(s) deleted.
+>>
+>>
+>>insert into t1 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t1 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t2 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t3 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t5 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t6 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t8 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t9 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>update results set enabled=0;
+
+--- 50 row(s) updated.
+>>
+>>
+>>
+>>
+>>alter trigger enable  all of t0;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t1;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t2;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t3;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t4;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t5;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t6;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t7;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t8;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>	Alter trigger	ENABLE	tr00;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr01;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr02;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr03;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr04;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr10;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr11;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr12;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr13;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr14;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr19;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr20;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr21;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr22;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr23;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr24;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr30;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr31;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr32;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr33;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr34;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr40;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr41;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr42;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr43;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr44;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr49;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr50;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr51;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr52;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr53;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr54;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr60;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr61;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr62;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr63;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr64;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr70;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr71;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr72;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr73;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr74;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr79;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr80;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr81;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr82;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr83;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr84;
+
+--- SQL operation complete.
+>>
+>>
+>>--	TR	E/D	RES
+>>--	00	1	--
+>>--	01	1	1
+>>--	02	0	0
+>>--	03	1	1
+>>--	04	0	0
+>>--	10	1	--
+>>--	11	1	1
+>>--	12	1	1
+>>--	13	0	0
+>>--	14	1	1
+>>--	19	1	1
+>>--	20	1	--
+>>--	21	0	0
+>>--	22	1	1
+>>--	23	1	1
+>>--	24	1	1
+>>--	30	1	--
+>>--	31	1	1
+>>--	32	1	1
+>>--	33	1	1
+>>--	34	0	0
+>>--	40	1	--
+>>--	41	1	1
+>>--	42	0	0
+>>--	43	1	1
+>>--	44	1	1
+>>--	49	0	0
+>>--	50	1	--
+>>--	51	0	0
+>>--	52	0	0
+>>--	53	0	0
+>>--	54	0	0
+>>--	60	0	--
+>>--	61	1	1
+>>--	62	1	1
+>>--	63	0	0
+>>--	64	1	1
+>>--	70	1	--
+>>--	71	1	0
+>>--	72	1	0
+>>--	73	1	0
+>>--	74	0	0
+>>--	79	1	0
+>>--	80	1	--
+>>--	81	0	0
+>>--	82	0	0
+>>--	83	0	0
+>>--	84	0	0
+>>
+>>---------------------
+>>-- TRIGGERING IUD
+>>---------------------
+>>insert into t0 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------
+>>-- CHECK RESULTS
+>>---------------------
+>>select * from results;
+
+TRIG_NUM     ENABLED    
+-----------  -----------
+
+        -81            0
+        -71            0
+        -61            0
+        -51            0
+        -41            0
+        -31            0
+        -21            0
+        -12            0
+        -11            0
+         -2            0
+         -1            0
+          1            1
+          2            0
+          3            1
+          4            0
+         11            1
+         12            1
+         13            0
+         14            1
+         19            1
+         21            0
+         22            1
+         23            1
+         24            1
+         31            1
+         32            1
+         33            1
+         34            0
+         41            1
+         42            0
+         43            1
+         44            1
+         49            0
+         51            0
+         52            0
+         53            0
+         54            0
+         61            1
+         62            1
+         63            0
+         64            1
+         71            0
+         72            0
+         73            0
+         74            0
+         79            0
+         81            0
+         82            0
+         83            0
+         84            0
+
+--- 50 row(s) selected.
+>>
+>>obey TEST_EN_DIS(test4);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TEST4
+>>------------------------------------------------------------------------------
+>>-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+>>-- enabled
+>>
+>>obey TEST_EN_DIS(clear_res);
+>>------------------------------------------------------------------------------
+>>-- SECTION: CLEAR_RES
+>>------------------------------------------------------------------------------
+>>alter trigger disable all of t0;
+
+--- SQL operation complete.
+>>alter trigger disable all of t1;
+
+--- SQL operation complete.
+>>alter trigger disable all of t2;
+
+--- SQL operation complete.
+>>alter trigger disable all of t3;
+
+--- SQL operation complete.
+>>alter trigger disable all of t4;
+
+--- SQL operation complete.
+>>alter trigger disable all of t5;
+
+--- SQL operation complete.
+>>alter trigger disable all of t6;
+
+--- SQL operation complete.
+>>alter trigger disable all of t7;
+
+--- SQL operation complete.
+>>alter trigger disable all of t8;
+
+--- SQL operation complete.
+>>alter trigger disable all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>delete from t0;
+
+--- 1 row(s) deleted.
+>>delete from t1;
+
+--- 2 row(s) deleted.
+>>delete from t2;
+
+--- 0 row(s) deleted.
+>>delete from t3;
+
+--- 2 row(s) deleted.
+>>delete from t4;
+
+--- 2 row(s) deleted.
+>>delete from t5;
+
+--- 0 row(s) deleted.
+>>delete from t6;
+
+--- 2 row(s) deleted.
+>>delete from t7;
+
+--- 2 row(s) deleted.
+>>delete from t8;
+
+--- 1 row(s) deleted.
+>>delete from t9;
+
+--- 1 row(s) deleted.
+>>
+>>
+>>insert into t1 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t1 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t2 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t3 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t5 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t6 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t8 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t9 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>update results set enabled=0;
+
+--- 50 row(s) updated.
+>>
+>>
+>>
+>>
+>>alter trigger enable  all of t0;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t1;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t2;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t3;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t4;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t5;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t6;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t7;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t8;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>	Alter trigger	ENABLE	tr00;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr01;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr02;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr03;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	tr04;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr10;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr11;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr12;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr13;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr14;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr19;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr20;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr21;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr22;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr23;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr24;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr30;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr31;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr32;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr33;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr34;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr40;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr41;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr42;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr43;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr44;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr49;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr50;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr51;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr52;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr53;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr54;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr60;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr61;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr62;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr63;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr64;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr70;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr71;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr72;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr73;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr74;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr79;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr80;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr81;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr82;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr83;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr84;
+
+--- SQL operation complete.
+>>
+>>
+>>--	TR	E/D	RES
+>>--	00	1	--
+>>--	01	1	1
+>>--	02	0	0
+>>--	03	1	1
+>>--	04	1	1
+>>--	10	1	--
+>>--	11	0	0
+>>--	12	0	0
+>>--	13	0	0
+>>--	14	0	0
+>>--	19	1	1
+>>--	20	1	--
+>>--	21	1	1
+>>--	22	0	0
+>>--	23	1	1
+>>--	24	0	0
+>>--	30	1	--
+>>--	31	0	0
+>>--	32	1	1
+>>--	33	1	1
+>>--	34	1	1
+>>--	40	1	--
+>>--	41	1	1
+>>--	42	1	1
+>>--	43	1	1
+>>--	44	1	1
+>>--	49	1	1
+>>--	50	1	--
+>>--	51	0	0
+>>--	52	0	0
+>>--	53	0	0
+>>--	54	1	1
+>>--	60	1	--
+>>--	61	1	1
+>>--	62	1	1
+>>--	63	1	1
+>>--	64	1	1
+>>--	70	1	--
+>>--	71	1	1
+>>--	72	1	1
+>>--	73	1	1
+>>--	74	1	1
+>>--	79	0	0
+>>--	80	0	--
+>>--	81	1	1
+>>--	82	0	0
+>>--	83	1	1
+>>--	84	1	1
+>>
+>>---------------------
+>>-- TRIGGERING IUD
+>>---------------------
+>>insert into t0 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------
+>>-- CHECK RESULTS
+>>---------------------
+>>select * from results;
+
+TRIG_NUM     ENABLED    
+-----------  -----------
+
+        -81            0
+        -71            0
+        -61            0
+        -51            0
+        -41            0
+        -31            0
+        -21            0
+        -12            0
+        -11            0
+         -2            0
+         -1            0
+          1            1
+          2            0
+          3            1
+          4            1
+         11            0
+         12            0
+         13            0
+         14            0
+         19            1
+         21            1
+         22            0
+         23            1
+         24            0
+         31            0
+         32            1
+         33            1
+         34            1
+         41            1
+         42            1
+         43            1
+         44            1
+         49            1
+         51            0
+         52            0
+         53            0
+         54            1
+         61            1
+         62            1
+         63            1
+         64            1
+         71            1
+         72            1
+         73            1
+         74            1
+         79            0
+         81            1
+         82            0
+         83            1
+         84            1
+
+--- 50 row(s) selected.
+>>
+>>
+>>
+>>
+>>
+>>obey TEST_EN_DIS(test5);
+>>------------------------------------------------------------------------------
+>>-- SECTION: TEST5
+>>------------------------------------------------------------------------------
+>>-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+>>-- enabled
+>>
+>>obey TEST_EN_DIS(clear_res);
+>>------------------------------------------------------------------------------
+>>-- SECTION: CLEAR_RES
+>>------------------------------------------------------------------------------
+>>alter trigger disable all of t0;
+
+--- SQL operation complete.
+>>alter trigger disable all of t1;
+
+--- SQL operation complete.
+>>alter trigger disable all of t2;
+
+--- SQL operation complete.
+>>alter trigger disable all of t3;
+
+--- SQL operation complete.
+>>alter trigger disable all of t4;
+
+--- SQL operation complete.
+>>alter trigger disable all of t5;
+
+--- SQL operation complete.
+>>alter trigger disable all of t6;
+
+--- SQL operation complete.
+>>alter trigger disable all of t7;
+
+--- SQL operation complete.
+>>alter trigger disable all of t8;
+
+--- SQL operation complete.
+>>alter trigger disable all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>delete from t0;
+
+--- 1 row(s) deleted.
+>>delete from t1;
+
+--- 2 row(s) deleted.
+>>delete from t2;
+
+--- 0 row(s) deleted.
+>>delete from t3;
+
+--- 2 row(s) deleted.
+>>delete from t4;
+
+--- 2 row(s) deleted.
+>>delete from t5;
+
+--- 0 row(s) deleted.
+>>delete from t6;
+
+--- 2 row(s) deleted.
+>>delete from t7;
+
+--- 2 row(s) deleted.
+>>delete from t8;
+
+--- 0 row(s) deleted.
+>>delete from t9;
+
+--- 1 row(s) deleted.
+>>
+>>
+>>insert into t1 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t1 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t2 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t3 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t4 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t5 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t6 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t7 values (1000);
+
+--- 1 row(s) inserted.
+>>insert into t8 values (0);
+
+--- 1 row(s) inserted.
+>>insert into t9 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>update results set enabled=0;
+
+--- 50 row(s) updated.
+>>
+>>
+>>
+>>
+>>alter trigger enable  all of t0;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t1;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t2;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t3;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t4;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t5;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t6;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t7;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t8;
+
+--- SQL operation complete.
+>>alter trigger enable  all of t9;
+
+*** WARNING[11036] No triggers are defined on table T9.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>
+>>	Alter trigger	ENABLE	tr00;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr01;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr02;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr03;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	tr04;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr10;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr11;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr12;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr13;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr14;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr19;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr20;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr21;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr22;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr23;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr24;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr30;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr31;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr32;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr33;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr34;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr40;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr41;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr42;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr43;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr44;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr49;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr50;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr51;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr52;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr53;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr54;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr60;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr61;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr62;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr63;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr64;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr70;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr71;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr72;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr73;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr74;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr79;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr80;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr81;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr82;
+
+--- SQL operation complete.
+>>	Alter trigger	DISABLE	Tr83;
+
+--- SQL operation complete.
+>>	Alter trigger	ENABLE	Tr84;
+
+--- SQL operation complete.
+>>
+>>
+>>--	TR	E/D	RES
+>>--	00	1	--
+>>--	01	0	0
+>>--	02	0	0
+>>--	03	0	0
+>>--	04	0	0
+>>--	10	1	--
+>>--	11	0	0
+>>--	12	0	0
+>>--	13	0	0
+>>--	14	0	0
+>>--	19	0	0
+>>--	20	1	--
+>>--	21	0	0
+>>--	22	0	0
+>>--	23	0	0
+>>--	24	0	0
+>>--	30	1	--
+>>--	31	1	1
+>>--	32	1	1
+>>--	33	1	1
+>>--	34	0	0
+>>--	40	1	--
+>>--	41	0	0
+>>--	42	0	0
+>>--	43	0	0
+>>--	44	0	0
+>>--	49	1	1
+>>--	50	0	--
+>>--	51	1	1
+>>--	52	0	0
+>>--	53	1	1
+>>--	54	0	0
+>>--	60	1	--
+>>--	61	1	0
+>>--	62	0	0
+>>--	63	1	0
+>>--	64	1	0
+>>--	70	1	--
+>>--	71	0	0
+>>--	72	1	0
+>>--	73	1	0
+>>--	74	0	0
+>>--	79	1	0
+>>--	80	1	--
+>>--	81	0	0
+>>--	82	1	0
+>>--	83	0	0
+>>--	84	1	0
+>>
+>>---------------------
+>>-- TRIGGERING IUD
+>>---------------------
+>>insert into t0 values (0);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------
+>>-- CHECK RESULTS
+>>---------------------
+>>select * from results;
+
+TRIG_NUM     ENABLED    
+-----------  -----------
+
+        -81            0
+        -71            0
+        -61            0
+        -51            0
+        -41            0
+        -31            0
+        -21            0
+        -12            0
+        -11            0
+         -2            0
+         -1            0
+          1            0
+          2            0
+          3            0
+          4            0
+         11            0
+         12            0
+         13            0
+         14            0
+         19            0
+         21            0
+         22            0
+         23            0
+         24            0
+         31            1
+         32            1
+         33            1
+         34            0
+         41            0
+         42            0
+         43            0
+         44            0
+         49            1
+         51            1
+         52            0
+         53            1
+         54            0
+         61            0
+         62            0
+         63            0
+         64            0
+         71            0
+         72            0
+         73            0
+         74            0
+         79            0
+         81            0
+         82            0
+         83            0
+         84            0
+
+--- 50 row(s) selected.
+>>
+>>
+>>
+>>LOG;

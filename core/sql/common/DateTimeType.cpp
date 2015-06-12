@@ -1448,7 +1448,8 @@ DatetimeValue::DatetimeValue
   // If this contains both a DAY and HOUR, scan the separator between them
   //
   if (startField <= REC_DATE_DAY  && endField >= REC_DATE_HOUR &&
-      (! scanChar(strValue, ' ')) && (! scanChar(strValue, ':')))
+      (! scanChar(strValue, ' ')) && (! scanChar(strValue, ':')) &&
+      (! scanChar(strValue, 'T')))
     return;
   //
   // If this contains an HOUR, MINUTE or SECOND, scan is as time.
@@ -1719,8 +1720,14 @@ NABoolean DatetimeValue::scanTime(const char* &strValue,
                   values[HOUR] += 12;
           strValue += 3;
         }
-    }
-  }
+    } // FORMAT_ANY or FORMAT_USA
+    else if (format == FORMAT_DEFAULT) {
+      if (strncmp(strValue, "Z", 1) == 0) {
+        strValue += 1;
+      }
+    } // FORMAT_DEFAULT
+  } // contains HOUR
+  
   return TRUE;
 } // DatetimeValue::scanTime
 

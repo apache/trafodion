@@ -3277,6 +3277,36 @@ const NAString SetSessionDefault::getText() const
 }
 
 // -----------------------------------------------------------------------
+// member functions for class OSIMControl
+// -----------------------------------------------------------------------
+OSIMControl::OSIMControl(OptimizerSimulator::osimMode mode,
+                                       NAString & localDir,
+                                       NABoolean force,
+                                       CollHeap * oHeap)
+                                       //the real work is done in OSIMControl::bindNode() to control OSIM.
+                                       //We set operator type to REL_SET_SESSION_DEFAULT,
+                                       //so as not to define dummy OSIMControl::codeGen() and OSIMControl::work(),
+                                       //which will do nothing there,  
+                       : ControlAbstractClass(REL_SET_SESSION_DEFAULT, NAString("DUMMYSQLTEXT", oHeap), 
+                                                           CharInfo::ISO88591, NAString("OSIM", oHeap), 
+                                                           NAString("DUMMYVALUE", oHeap), TRUE, oHeap)
+                       , targetMode_(mode), osimLocalDir_(localDir, oHeap), forceLoad_(force)
+{}
+
+
+RelExpr * OSIMControl::copyTopNode(RelExpr *derivedNode, CollHeap *h )
+{
+      RelExpr *result;
+
+      if (derivedNode == NULL)
+          result = new (h) OSIMControl(targetMode_, osimLocalDir_, forceLoad_, h);
+      else
+          result = derivedNode;
+          
+      return ControlAbstractClass::copyTopNode(result,h);
+}
+
+// -----------------------------------------------------------------------
 // member functions for class Sort
 // -----------------------------------------------------------------------
 

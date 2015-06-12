@@ -1,0 +1,464 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV060
+-- known diff for NT exists for bug 620 (delete after closing bug!)
+------------------------------------------------------
+--obey ENVIRON;
+control query default insert_vsbb 'USER';
+control query default pos 'OFF';
+
+obey TESTMV060(CLEAN_UP);
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '1');
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+log LOGMV060 clear;
+obey TESTMV060(SET_UP);
+
+-- Run Tests
+
+	obey TESTMV060(ALTERTABLEADDCOL);
+	obey TESTMV060(LOGGING1);
+	obey TESTMV060(LOGGING2);
+	obey TESTMV060(LOGGING3);
+	obey TESTMV060(LOGGING5);
+--	obey TESTMV060(LOGGING6);  Bug 491 ,  expected of this section in regress/triggers/expected_13_1
+
+-- Check the drop statement on the way out
+obey TESTMV060(CLEAN_UP);
+log;
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+exit;
+
+--------------------------------------------------------------------
+?section SET_UP
+-- Create the base tables
+set schema catmvs.mvschm;
+
+create table catmvs.mvschm.Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE catmvs.mvschm.Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+set PARSERFLAGS 3;
+
+CREATE TABLE T_60_A (a int, b char(2)) ATTRIBUTE AUTOMATIC RANGELOG;
+ALTER TABLE T_60_A attribute all mvs allowed;
+
+CREATE TABLE T_60_B (a int NOT NULL NOT DROPPABLE,b numeric (2), c date,PRIMARY KEY    (a) NOT DROPPABLE)
+        ATTRIBUTE AUTOMATIC RANGELOG;
+ALTER TABLE T_60_B attribute all mvs allowed;
+
+CREATE TABLE T_60_C (a INT NOT NULL,b int,PRIMARY KEY (a) NOT DROPPABLE) ATTRIBUTE AUTOMATIC RANGELOG;
+ALTER TABLE T_60_C attribute all mvs allowed;
+
+CREATE TABLE tab1A (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE, 
+	PRIMARY KEY (a, d) NOT DROPPABLE, 
+	CONSTRAINT constr1 CHECK (100000 > a+b+c))
+	STORE BY (a, d)
+        Location $$partition1$$
+        Partition (add first key (30) location $$partition1$$,
+                   add first key (60) location $$partition2$$)
+        ATTRIBUTE AUTOMATIC RANGELOG;	
+ALTER TABLE tab1A attribute all mvs allowed;
+
+CREATE TABLE tab1B (a INT NOT NULL, b INT NOT NULL NOT DROPPABLE, PRIMARY KEY (a) NOT DROPPABLE)
+	STORE BY (a)
+        Location $$partition0$$
+        Partition (add first key (30) location $$partition1$$,
+                   add first key (60) location $$partition2$$)
+        ATTRIBUTE AUTOMATIC RANGELOG;
+ALTER TABLE tab1B attribute all mvs allowed;
+
+CREATE TABLE T_60_L (a int NOT NULL NOT DROPPABLE, PRIMARY KEY (a)) STORE BY PRIMARY KEY;
+ALTER TABLE T_60_L attribute all mvs allowed;
+
+INSERT INTO T_60_L VALUES 
+    (0) , (1) , (2) , (3) , (4) , (5) , (6) , (7) , (8) , (9) ,
+    (10), (11), (12), (13), (14), (15), (16), (17), (18), (19),
+    (20), (21), (22), (23), (24), (25), (26), (27), (28), (29),
+    (30), (31), (32), (33), (34), (35), (36), (37), (38), (39),
+    (40), (41), (42), (43), (44), (45), (46), (47), (48), (49),
+    (50), (51), (52), (53), (54), (55), (56), (57), (58), (59),
+    (60), (61), (62), (63), (64), (65), (66), (67), (68), (69),
+    (70), (71), (72), (73), (74), (75), (76), (77), (78), (79),
+    (80), (81), (82), (83), (84), (85), (86), (87), (88), (89),
+    (90), (91), (92), (93), (94), (95), (96), (97), (98), (99);
+
+INSERT INTO T_60_C VALUES (1,2), (2,3), (3,4), (10, 2), (11, 1), (12, 3), (13, 4), (14, 2),
+                          (15, 3), (16, 9), (17, 2), (18, 9), (19, 8), (20, 3), (21, 3),
+                          (22, 3), (23, 4), (24, 1), (25, 9), (26, 2), (27, 9), (28, 3), (29, 8);
+
+create mvgroup MVG1_60 ;
+
+--create materialized view T_60_MV1
+--	Refresh on request
+--	initialize on create 
+--	as
+--	select T_60_A.b 
+--	from T_60_A,T_60_B
+--	where T_60_A.a=T_60_B.a
+--    group by T_60_A.b;
+
+
+--create materialized view T_60_MV2
+--	Refresh on request
+--	initialize on create
+--	as
+--	select tab1A.a,tab1B.b
+--	from tab1A,tab1B
+--	where tab1A.a = tab1B.a
+--   group by tab1A.a, tab1b.b;
+
+
+create mv T_60_MV3
+	Refresh on request
+	initialize on create
+	as
+	select a,sum (b) sum_b
+	from tab1A
+	group by a;
+ALTER MV T_60_MV3 attribute all mvs allowed;
+ALTER MVGroup MVG1_60 add T_60_MV3;
+
+create materialized view T_60_MV4
+	Refresh on request
+	initialize on create 
+	as
+	select T_60_A.a , count(T_60_B.b) cnt 
+	from T_60_A,T_60_B
+	where T_60_A.a=T_60_B.a
+  	  group by T_60_A.a;
+ALTER MVGroup MVG1_60 add T_60_MV4;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @0@ @120@ ;
+
+----------------------------------------------------------------
+?section ALTERTABLEADDCOL
+Alter Table T_60_B
+Add Column newcol numeric(7) ;
+
+
+----------------------------------------------------------------
+?section LOGGING1
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+INSERT INTO tab1A VALUES (3,4,5,5);
+UPDATE tab1a SET B=B+1;
+delete from tab1A
+where d=4;
+-- increase epoch
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+-- increase epoch 
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+-- data
+
+-- bulk insert
+-- 2008-07-15 Caroline: On LINUX, no support for VSBB on Table with range partitions.
+--
+-- control query default vsbb_test_mode 'ON';
+INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+-- control query default vsbb_test_mode 'OFF';
+
+select * from tab1a;
+select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+                end
+    from table(iud_log_table tab1a)
+    order by a,b,c,d,"@TS";
+
+obey TESTMV060(REFRESH_AND_COMPARE);
+
+
+----------------------------------------------------------------
+?section LOGGING2
+delete from tab1a;
+
+obey TESTMV060(RECOMPUTE_AND_COMPARE);
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @0@ @200@ ;
+CREATE TRIGGER atrig1
+	AFTER UPDATE OF (c) ON tab1A
+	REFERENCING OLD AS oldR, NEW AS newR
+	FOR EACH ROW
+	WHEN (newR.a < 3)
+	INSERT INTO tab1B VALUES (newR.c, oldR.c); 
+
+CREATE TRIGGER btrig1
+	BEFORE UPDATE OF (c) ON tab1A
+	REFERENCING NEW AS newR 
+	FOR EACH ROW
+	SET newR.c = newR.c + 1;
+CREATE INDEX i1 ON tab1a (b);
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+INSERT INTO tab1A VALUES (3,4,5,5);
+UPDATE tab1a SET B=B+1;
+delete from tab1A
+where d=4;
+-- increase epoch
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+-- increase epoch 
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+-- bulk insert
+control query default vsbb_test_mode 'ON';
+INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+control query default vsbb_test_mode 'OFF';
+
+-- data
+
+select * from tab1a;
+select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+                end
+    from table(iud_log_table tab1a)
+    order by a,b,c,d,"@TS";
+
+
+obey TESTMV060(REFRESH_AND_COMPARE);
+
+----------------------------------------------------------------
+?section LOGGING3
+
+delete from tab1a;
+
+obey TESTMV060(RECOMPUTE_AND_COMPARE);
+
+Alter table tab1a
+Add FOREIGN KEY ( a) REFERENCES T_60_C(a); 
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+CREATE INDEX i2 ON tab1a (b);
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+INSERT INTO tab1A VALUES (3,4,5,5);
+UPDATE tab1a SET B=B+1;
+delete from tab1A
+where d=4;
+-- increase epoch
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,4);
+-- bulk insert
+control query default vsbb_test_mode 'ON';
+INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+control query default vsbb_test_mode 'OFF';
+
+-- increase epoch 
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1a@ @1@ @0@ ;
+
+-- data
+
+select * from tab1a;
+select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+                end
+    from table(iud_log_table tab1a)
+    order by a,b,c,d,"@TS";
+
+
+obey TESTMV060(REFRESH_AND_COMPARE);
+
+----------------------------------------------------------------
+?section LOGGING5
+
+INSERT INTO T_60_B VALUES (1,20,current_date,3),(2,30,current_date,4);
+update T_60_B 
+set b =50;
+delete from T_60_B
+where a = 1;
+-- bulk insert
+control query default vsbb_test_mode 'ON';
+INSERT INTO T_60_B SELECT a + 10, a + 20, current_date, a FROM T_60_L WHERE a < 20;
+control query default vsbb_test_mode 'OFF';
+
+select a,b, case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+            end
+from table(iud_log_table T_60_B)
+order by a,b,"@TS";
+
+
+obey TESTMV060(REFRESH_AND_COMPARE);
+
+----------------------------------------------------------------
+?section LOGGING6
+DROP TRIGGER atrig1;
+DROP TRIGGER btrig1;
+
+obey MORETESTMV060;
+
+
+------------------------------------------------------------------------------
+?section CLEAN_UP
+
+set schema catmvs.mvschm;
+
+refresh mvgroup MVG1_60 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV060;
+log LOGMV060;
+
+drop mv T_60_MV4;
+drop mv T_60_MV3;
+drop materialized view T_60_MV2;
+drop materialized view T_60_MV1;
+DROP INDEX i1;
+DROP INDEX i2;
+DROP TRIGGER atrig7;
+DROP TRIGGER atrig2;
+DROP TRIGGER atrig3;
+DROP TRIGGER atrig1;
+DROP TRIGGER btrig1;
+drop table T_60_A;
+drop table T_60_B;
+drop table T_60_C;
+drop table tab1a;
+drop table tab1b;
+drop table tab2a;
+drop table tab2b;
+drop table T_60_L;
+
+drop table T_60_C;
+drop materialized view T_60_MV2;
+drop materialized view T_60_MV1;
+DROP INDEX i1;
+DROP INDEX i2;
+DROP TRIGGER atrig7;
+DROP TRIGGER atrig2;
+DROP TRIGGER atrig3;
+DROP TRIGGER atrig1;
+DROP TRIGGER btrig1;
+drop table T_60_A;
+drop table T_60_B;
+drop table T_60_C;
+drop table tab1a;
+drop table tab1b;
+drop table tab2a;
+drop table tab2b;
+drop table T_60_L;
+
+drop mvgroup MVG1_60;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table catmvs.mvschm.Num_Obj;
+
+--------------------------------------------------------
+?section REFRESH_AND_COMPARE
+--------------------------------------------------------
+refresh mvgroup MVG1_60 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV060;
+log LOGMV060;
+
+
+PREPARE stat1 FROM
+	select a,sum (b) sum_b
+	from tab1A
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_60_MV3
+	order by a;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV060 ;
+log LOGMV060;
+
+PREPARE stat1 FROM
+	select T_60_A.a , count(T_60_B.b) cnt 
+	from T_60_A,T_60_B
+	where T_60_A.a=T_60_B.a
+  	 group by T_60_A.a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_60_MV4
+	order by a;
+
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV060 ;
+log LOGMV060;
+
+
+
+--------------------------------------------------------
+?section RECOMPUTE_AND_COMPARE
+--------------------------------------------------------
+refresh mvgroup MVG1_60 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV060;
+log LOGMV060;
+
+
+PREPARE stat1 FROM
+	select a,sum (b) sum_b
+	from tab1A
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_60_MV3
+	order by a;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV060 ;
+log LOGMV060;
+
+PREPARE stat1 FROM
+	select T_60_A.a , count(T_60_B.b) cnt 
+	from T_60_A,T_60_B
+	where T_60_A.a=T_60_B.a
+  	 group by T_60_A.a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_60_MV4
+	order by a;
+
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV060 ;
+log LOGMV060;
+
+

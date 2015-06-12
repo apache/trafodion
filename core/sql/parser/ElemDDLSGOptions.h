@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -115,6 +115,7 @@ public:
   inline NABoolean isMaxValueSpecified()    const { return isMaxValueSpec_; }
   inline NABoolean isCycleSpecified()       const { return isCycleSpec_; }
   inline NABoolean isCacheSpecified()       const { return isCacheSpec_; }
+  inline NABoolean isResetSpecified()       const { return isResetSpec_; }
   
   inline NABoolean isNoMinValue()    const { return isNoMinValue_; }
   inline NABoolean isNoMaxValue()    const { return isNoMaxValue_; }
@@ -122,6 +123,7 @@ public:
   inline NABoolean isNoCycle()       const { return cycle_ == FALSE; }
   inline NABoolean isCache()         const { return cache_ > 0; }
   inline NABoolean isNoCache()       const { return isNoCache_; }
+  inline NABoolean isReset()            const { return reset_; }
 
   inline NABoolean isInternalSG()      const { return ieType_ == SG_INTERNAL; }
   inline NABoolean isExternalSG()      const { return ieType_ == SG_EXTERNAL; }
@@ -150,12 +152,14 @@ public:
   inline void setMaxValueSpec(NABoolean maxValue)       { isMaxValueSpec_ = maxValue; }
   inline void setCycleSpec(NABoolean cycle)             { isCycleSpec_ = cycle; }
   inline void setCacheSpec(NABoolean cache)             { isCacheSpec_ = cache; }
- 
+  inline void setResetSpec()             { isResetSpec_ = TRUE; }
+
   inline void setNoMinValue(NABoolean minValue)       { isNoMinValue_ = minValue; }
   inline void setNoMaxValue(NABoolean maxValue)       { isNoMaxValue_ = maxValue; }
   inline void setCycle(NABoolean cycle)               { cycle_ = cycle; }
   inline void setCache(Int64 cache)               { cache_ = cache; }
-  
+  inline void setReset(NABoolean reset)         { reset_ = reset; }
+
   ComFSDataType getFSDataType() { return fsDataType_; }
   void setFSDataType (ComFSDataType dt) { fsDataType_ = dt;}
 
@@ -232,6 +236,10 @@ private:
   // Datatype
   NABoolean isDatatypeSpec_;
   ComFSDataType   fsDataType_;
+
+  // Reset
+  NABoolean isResetSpec_;
+  NABoolean reset_;
 
   // Internal or External SG
   SG_IE_TYPE ieType_;

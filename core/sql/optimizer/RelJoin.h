@@ -1604,7 +1604,7 @@ public:
                             LIST(NAString) &llist) const;
 
   //This is the original isBMO method.
-  virtual NABoolean isBigMemoryOperator(const Context* context,
+  virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 planNumber);
 
   virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);

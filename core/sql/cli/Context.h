@@ -203,7 +203,7 @@ public:
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 
   CollIndex addTrustedRoutine(LmRoutine *r);
-  LmRoutine *getTrustedRoutine(CollIndex ix);
+  LmRoutine *findTrustedRoutine(CollIndex ix);
   void putTrustedRoutine(CollIndex ix);
 
 private:

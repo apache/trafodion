@@ -98,13 +98,20 @@ protected:
 
   // global reference to UDR object, of the user-defined class
   // that implements the UDR
-  jobject udrObject_;
+  jobject udrObjectG_;
 
   // global reference to the LmUDRObjMethodInvoke object that
   // is used to unpack/pack information and invoke routines, this
   // is the one we actually call through JNI
-  jobject udrInvokeObject_;
+  jobject udrInvokeObjectG_;
 
+  // local reference to a byte array with the last returned
+  // serialized UDRInvocationInfo and UDRPlanInfo objects and
+  // their lengths
+  jbyteArray returnedIIL_;
+  jbyteArray returnedPIL_;
+  jsize iiLen_;
+  jsize piLen_;
 }; // class LmRoutineJava
 
 #endif

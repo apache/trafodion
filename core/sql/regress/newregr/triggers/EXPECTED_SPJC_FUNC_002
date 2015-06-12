@@ -1,0 +1,107 @@
+>>obey TEST_SPJC_FUNC_002(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger on insert.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_FUNC_002 AFTER INSERT ON
++>TAB01_SPJC_FUNC_002
++>REFERENCING NEW ROW AS N
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_FUNC_002 VALUES (N.A, N.B, N.C, N.D);
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Row trigger on update.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_FUNC_002 AFTER UPDATE ON
++>TAB01_SPJC_FUNC_002
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB03_SPJC_FUNC_002 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 03: Row trigger on delete.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG03_SPJC_FUNC_002 AFTER DELETE ON
++>TAB01_SPJC_FUNC_002
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB04_SPJC_FUNC_002 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>
+>>-- The tests
+>>
+>>BEGIN
++>--	triggers an insert of new values
++>	INSERT INTO TAB01_SPJC_FUNC_002 VALUES(101, 201, 301, 401);
++>
++>--	triggers an insert of old values
++>	UPDATE TAB01_SPJC_FUNC_002 set a = a + 1000, b = b + 1000,
++>			c = c + 1000, d = d + 1000 where a = 3;
++>
++>--	triggers an insert of old values
++>	DELETE FROM TAB01_SPJC_FUNC_002 where a = 8;
++>END;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Result: TAB01_SPJC_FUNC_002 will have one row
+>>select * from TAB01_SPJC_FUNC_002;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+       1003         1006         1009         1012
+        101          201          301          401
+
+--- 3 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_FUNC_002 will have one row
+>>select * from TAB02_SPJC_FUNC_002;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        101          201          301          401
+
+--- 1 row(s) selected.
+>>
+>>-- Result: TAB03_SPJC_FUNC_002 will have one row
+>>select * from TAB03_SPJC_FUNC_002;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          3            6            9           12
+
+--- 1 row(s) selected.
+>>
+>>-- Result: TAB04_SPJC_FUNC_002 will have one row
+>>select * from TAB04_SPJC_FUNC_002;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+
+--- 1 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

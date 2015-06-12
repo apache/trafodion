@@ -1,0 +1,56 @@
+>>obey TEST_SPJC_STX_003(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG01_SPJC_STX_003 AFTER UPDATE ON
++>TAB01_SPJC_STX_003
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_STX_003 VALUES (1, 2);
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>
+>>update TAB01_SPJC_STX_003 set a = a + 1;
+
+--- 4 row(s) updated.
+>>
+>>-- Result: 4
+>>select sum(x) from TAB02_SPJC_STX_003;
+
+(EXPR)              
+--------------------
+
+                   4
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Statement trigger
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG02_SPJC_STX_003 AFTER UPDATE ON
++>TAB03_SPJC_STX_003
++>FOR EACH STATEMENT
++>	INSERT INTO TAB04_SPJC_STX_003 VALUES(1, 2);
+
+--- SQL operation complete.
+>>
+>>update TAB03_SPJC_STX_003 set a = a + 1;
+
+--- 4 row(s) updated.
+>>
+>>-- Result: 1
+>>select sum(x) from TAB04_SPJC_STX_003;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

@@ -1,0 +1,712 @@
+>>obey TEST_13_5(s11);
+>>
+>>-- should return error: no triggers on view
+>>CREATE TRIGGER trerr AFTER UPDATE
++>	ON myview
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW	
++>	insert into tab1b values (newrow.a, newrow.b);
+
+*** ERROR[11037] A trigger cannot be defined on a view!
+
+--- SQL operation failed with errors.
+>>
+>>-- shoud return an error
+>>alter trigger enable all of myview;
+
+*** ERROR[11037] A trigger cannot be defined on a view!
+
+--- SQL operation failed with errors.
+>>
+>>---------------------------------
+>>-- episode 1.2: Views and Update
+>>---------------------------------
+>>
+>>obey TEST_13_5(s12);
+>>
+>>update myview set b = b+1;
+
+--- 1 row(s) updated.
+>>
+>>-- result: tab1b should contain:
+>>--(1,2)
+>>--------------------------------
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>
+>>alter trigger disable all of tab1a;
+
+--- SQL operation complete.
+>>
+>>insert into tab1a values(3,3,3,3);
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8575] Timestamp mismatch on table CAT1.SCHM.TAB1A.
+
+--- 1 row(s) inserted.
+>>
+>>update myview set b = b+1 where a=3;
+
+--- 1 row(s) updated.
+>>
+>>-- result: tab1b should contain the same
+>>-- (1,2)
+>>---------------------------------
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>alter trigger enable trviewu;
+
+--- SQL operation complete.
+>>
+>>insert into tab1a values(11,11,11,11);
+
+--- 1 row(s) inserted.
+>>update myview set b = b-1 where a = 11;
+
+--- 1 row(s) updated.
+>>
+>>-- result: tab1b should contain:
+>>-- (1,2)
+>>-- (12,11)
+>>---------------------------------
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+          1            2
+         12           11
+
+--- 2 row(s) selected.
+>>
+>>---------------------------------
+>>-- episode 1.3: Views and Insert
+>>---------------------------------
+>>
+>>obey TEST_13_5(s13);
+>>
+>>delete from tab1b;
+
+--- 2 row(s) deleted.
+>>delete from tab1a;
+
+--- 3 row(s) deleted.
+>>
+>>alter trigger disable all of tab1a;
+
+--- SQL operation complete.
+>>alter trigger enable trviewi;
+
+--- SQL operation complete.
+>>
+>>insert into myView 
++>	values(11,22),(33,44),(66,77),(88,99);
+
+--- 4 row(s) inserted.
+>>
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+         11           22
+         33           44
+         66           77
+         88           99
+
+--- 4 row(s) selected.
+>>
+>>-----------------------------------------
+>>-- episode 1.4: Views and Trigger Usage
+>>---------------------------------
+>>
+>>obey TEST_13_5(s14);
+>>
+>>delete from tab1a;
+
+--- 4 row(s) deleted.
+>>delete from tab1b;
+
+--- 4 row(s) deleted.
+>>
+>>CREATE TRIGGER trviewus AFTER INSERT
++>	ON tab1a
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>	WHEN (newrow.a < 104)
++>	insert into myview
++>	values (newrow.a+1, newrow.b+1);
+
+--- SQL operation complete.
+>>
+>>alter trigger disable all of tab1a;
+
+--- SQL operation complete.
+>>alter trigger enable trviewus;
+
+--- SQL operation complete.
+>>
+>>insert into tab1a values(101,102,103,104);
+
+*** WARNING[11002] Trigger CAT1.SCHM.TRVIEWUS on table CAT1.SCHM.TAB1A may be triggered recursively more than 16 times.
+
+--- 1 row(s) inserted.
+>>
+>>select * from myview;
+
+A            B          
+-----------  -----------
+
+        101          102
+        102          103
+        103          104
+        104          105
+
+--- 4 row(s) selected.
+>>
+>>-- should fail because of usage
+>>drop view myview;
+
+*** ERROR[11033] Object CAT1.SCHM.MYVIEW cannot be dropped because it is being used by trigger CAT1.SCHM.TRVIEWUS.
+
+*** ERROR[1031] Object CAT1.SCHM.MYVIEW could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trviewus;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------
+>>-- episode 2.1: Params 
+>>---------------------------------
+>>
+>>obey TEST_13_5(s21);
+>>
+>>delete from tab1b;
+
+--- 0 row(s) deleted.
+>>prepare st from update tab1a set b = ?pp;
+
+--- SQL command prepared.
+>>set param ?pp 111;
+>>alter trigger enable trviewu;
+
+--- SQL operation complete.
+>>execute st;
+
+--- 4 row(s) updated.
+>>---------------------------------
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+        102          112
+        103          112
+        104          112
+        105          112
+
+--- 4 row(s) selected.
+>>delete from tab1b;
+
+--- 4 row(s) deleted.
+>>alter trigger disable trviewu;
+
+--- SQL operation complete.
+>>-- open blown away
+>>execute st;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.TAB1A.
+
+--- 4 row(s) updated.
+>>
+>>---------------------------------
+>>select * from tab1b;
+
+--- 0 row(s) selected.
+>>delete from tab1b;
+
+--- 0 row(s) deleted.
+>>alter trigger enable trviewu;
+
+--- SQL operation complete.
+>>set param ?pp 222;
+>>-- open blown away
+>>execute st;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.TAB1A.
+
+--- 4 row(s) updated.
+>>
+>>---------------------------------
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+        102          223
+        103          223
+        104          223
+        105          223
+
+--- 4 row(s) selected.
+>>
+>>-----------------------------------------
+>>-- episode 2.2: params in DDL
+>>---------------------------------
+>>
+>>obey TEST_13_5(s22);
+>>
+>>delete from tab1b;
+
+--- 4 row(s) deleted.
+>>
+>>set param ?pa 11;
+>>
+>>create trigger trpara after update on tab1a 
++>	insert into tab1b values(?pa, ?pa);
+
+*** ERROR[3186] ?pa: Dynamic parameters and host variables are currently not allowed in DDL.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST_13_5(s31);
+>>
+>>set envvar pp cat1.schm.tab1b;
+
+--- SQL operation complete.
+>> -- no triggers are defined on tab1b
+>>prepare s from select * from $pp;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 0 row(s) selected.
+>>execute s;
+
+--- 0 row(s) selected.
+>>set envvar pp cat1.schm.liketab1b;
+
+--- SQL operation complete.
+>> -- there are triggers on liketab1b
+>>execute s;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8579] Similarity check failed: Similarity check should not be reached with aqr enabled.
+
+--- 0 row(s) selected.
+>>
+>>---------------------------------
+>>-- episode 3.2: late name resolution
+>>---------------------------------
+>>
+>>obey TEST_13_5(s32);
+>>
+>>delete from tab1b;
+
+--- 0 row(s) deleted.
+>>
+>>set envvar tab cat1.schm.tab1a;
+
+--- SQL operation complete.
+>>prepare s from insert into $tab values(100,1,2,3);
+
+--- SQL command prepared.
+>>alter trigger disable all of tab1a;
+
+--- SQL operation complete.
+>>-- recompiles, works just fine
+>>execute s;
+
+--- 1 row(s) inserted.
+>>select * from tab1b;
+
+--- 0 row(s) selected.
+>>alter trigger enable trviewi;
+
+--- SQL operation complete.
+>>delete from tab1a where a=100;
+
+--- 1 row(s) deleted.
+>>-- open blown away
+>>execute s;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.TAB1A.
+
+--- 1 row(s) inserted.
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+        100            1
+
+--- 1 row(s) selected.
+>>
+>>---------------------------------
+>>-- episode 3.2: late name in trigger def
+>>---------------------------------
+>>
+>>obey TEST_13_5(s33);
+>>
+>>-- works fine -- gets an error
+>>CREATE TRIGGER trerr AFTER insert
++>	ON tab1a
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW	
++>	insert into $tab
++>	values (newrow.a+1, newrow.b+1);
+
+*** ERROR[3186] TAB: Dynamic parameters and host variables are currently not allowed in DDL.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>---------------------------------
+>>-- episode 4.1: partitioned subject table
+>>---------------------------------
+>>
+>>obey TEST_13_5(s41);
+>>
+>>create table subjpart(
++>	a int not null not droppable, b int not null, c int not null,
++>	d int,
++>	primary key(a) not droppable)
++>	range partition(add first key  (100) location $$partition$$,
++>		  add first key  (200) location $$partition1$$,
++>		  add first key  (300) location $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>
+>>CREATE TRIGGER tpartb BEFORE insert
++>	ON subjpart
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW	
++>	WHEN (newrow.b > 200)
++>	set newrow.b = newrow.b + 1;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tparta AFTER insert
++>	ON subjpart
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW	
++>	WHEN (newrow.b > 200)
++>	insert into tab1b
++>	values (newrow.a+1, newrow.b+1);
+
+--- SQL operation complete.
+>>
+>>delete from tab1b;
+
+--- 1 row(s) deleted.
+>>
+>>insert into subjpart values
++>	(0,0,0,0),
++>	(1,1,1,1),
++>	(100,100,100,100),
++>	(101,101,101,101),
++>	(200,200,200,200),
++>	(201,201,201,201),
++>	(300,300,300,300),
++>	(301,301,301,301),
++>	(1000,1000,1000,1000);
+
+--- 9 row(s) inserted.
+>>
+>>select * from subjpart order by a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          0            0            0            0
+          1            1            1            1
+        100          100          100          100
+        101          101          101          101
+        200          200          200          200
+        201          202          201          201
+        300          301          300          300
+        301          302          301          301
+       1000         1001         1000         1000
+
+--- 9 row(s) selected.
+>>select * from tab1b;
+
+A            B          
+-----------  -----------
+
+        202          203
+        301          302
+        302          303
+       1001         1002
+
+--- 4 row(s) selected.
+>>
+>>alter trigger disable all of subjpart;
+
+--- SQL operation complete.
+>>
+>>delete from subjpart;
+
+--- 9 row(s) deleted.
+>>delete from tab1b;
+
+--- 4 row(s) deleted.
+>>
+>>insert into subjpart values
++>	(0,0,0,0),
++>	(1,1,1,1),
++>	(100,100,100,100),
++>	(101,101,101,101),
++>	(200,200,200,200),
++>	(201,201,201,201),
++>	(300,300,300,300),
++>	(301,301,301,301),
++>	(1000,1000,1000,1000);
+
+--- 9 row(s) inserted.
+>>
+>>select * from subjpart order by a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          0            0            0            0
+          1            1            1            1
+        100          100          100          100
+        101          101          101          101
+        200          200          200          200
+        201          201          201          201
+        300          300          300          300
+        301          301          301          301
+       1000         1000         1000         1000
+
+--- 9 row(s) selected.
+>>select * from tab1b;
+
+--- 0 row(s) selected.
+>>
+>>---------------------------------
+>>-- episode 5.1: syskey is not allowed
+>>---------------------------------
+>>
+>>obey TEST_13_5(s51);
+>>
+>>CREATE TABLE T11 (A INT);
+
+--- SQL operation complete.
+>>CREATE TABLE T21 (A INT, TS LARGEINT);
+
+--- SQL operation complete.
+>>
+>>-- should fail in DDL
+>>CREATE TRIGGER TRERR1 AFTER INSERT ON T11
++> 	REFERENCING NEW AS MYNEW
++> 	FOR EACH STATEMENT
++> 	INSERT INTO T21 SELECT A, SYSKEY FROM MYNEW;
+
+*** ERROR[4001] Column SYSKEY is not found.  Tables in scope: MYNEW.  Default schema: CAT1.SCHM.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- should fail in DDL
+>>CREATE TRIGGER TRERR2 AFTER INSERT ON T11
++> 	REFERENCING NEW AS MYNEW
++> 	FOR EACH ROW
++> 	INSERT INTO T21 VALUES (MYNEW.A, MYNEW.SYSKEY);
+
+*** ERROR[4003] Column MYNEW.SYSKEY is not a column in table MYNEW, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>---------------------------------
+>>-- episode 6.1: column name new_a should be OK
+>>---------------------------------
+>>
+>>obey TEST_13_5(s61);
+>>
+>>create table tricky(a int, new_a int not null, primary key (new_a) not droppable );
+
+--- SQL operation complete.
+>>-- should work fine
+>>create trigger fool after insert on tricky delete from tricky;
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- episode 7.1: WHEN clause should signal only when condition is TRUE, not NULL or FALSE.
+>>---------------------------------
+>>--
+>>-- Case 10-040604-5021"NF:IMPORT invoked statement trigger fired when WHEN condition was not met"
+>>--
+>>create table tbl_a313 (
++>partnum int no default not null not droppable
++>)
++>;
+
+--- SQL operation complete.
+>>
+>>create table tbl_a3132 (
++>partnum int no default not null not droppable
++>)
++>;
+
+--- SQL operation complete.
+>>
+>>create trigger tri_a313
++>after insert on tbl_a313
++>referencing new as n
++>for each statement
++>insert into tbl_a3132
++>select max(partnum) from n
++>;
+
+--- SQL operation complete.
+>>
+>>create trigger tri_a3132
++>before insert on tbl_a3132
++>referencing new as n
++>for each row
++>when (n.partnum=3103)
++>SIGNAL sqlstate 'S0213'('tri_a3132')
++>;
+
+--- SQL operation complete.
+>>
+>>create table tbl_a313x (
++>partnum int no default not null not droppable
++>)
++>;
+
+--- SQL operation complete.
+>>
+>>--
+>>--  Should not signal; should get NULL violation on insert, 
+>>--  since tbl_a313x is empty, and "select max(partnum)" will be NULL.
+>>--
+>>insert into tbl_a313 select * from tbl_a313x;
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.TRI_A313 on table CAT1.SCHM.TBL_A313 has failed.
+
+--- 0 row(s) inserted.
+>>--
+>>--  Should cause signal, since condition is true
+>>--
+>>insert into tbl_a313 values(3103);
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0213, Message: tri_a3132.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.TRI_A313 on table CAT1.SCHM.TBL_A313 has failed.
+
+--- 0 row(s) inserted.
+>>--
+>>--  Should succeed without error or signal.
+>>--
+>>insert into tbl_a313 values(3104);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- episode 8.1: Fix Optimizer assert when WHEN condition is same as the WHERE clause.
+>>---------------------------------
+>>--
+>>-- Case 10-040630-8369:
+>>-- "NF:Optimizer asserts when trigger WHEN condition is the same as the WHERE clause"
+>>--
+>>
+>>create table tbl_a313y (
++>partnum numeric (4) unsigned no default not null not droppable
++>,partdesc char (18) no default not null not droppable
++>,price numeric (8, 2) no default not null not droppable
++>,qty_available numeric (5) default 0 not null not droppable
++>,mycol varchar(20)
++>,primary key (partnum) not droppable);
+
+--- SQL operation complete.
+>>
+>>
+>>create trigger tri_a313yy
++>after update on tbl_a313y
++>referencing new as n
++>for each row
++>when (n.partnum=3103)
++>SIGNAL sqlstate 'S0213'('tri_a313y')
++>;
+
+--- SQL operation complete.
+>>
+>>--
+>>-- Populate table tbl_a313y
+>>--
+>>insert into tbl_a313y values(3103,'a',0,0,'a');
+
+--- 1 row(s) inserted.
+>>insert into tbl_a313y values(3104,'a',0,0,'a');
+
+--- 1 row(s) inserted.
+>>
+>>--
+>>-- Trigger signals correctly.
+>>--
+>>update tbl_a313y set price=123.45 where partdesc='a';
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0213, Message: tri_a313y.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.TRI_A313YY on table CAT1.SCHM.TBL_A313Y has failed.
+
+--- 0 row(s) updated.
+>>
+>>--
+>>-- Row is updated correctly
+>>--
+>>update tbl_a313y set price=123.45 where partnum=3104;
+
+--- 1 row(s) updated.
+>>
+>>--
+>>-- Case 10-040630-8369:
+>>-- When preparing the statement, if the partnum=value is the same one in the 
+>>-- WHEN clause an assert occurred. Instead, the statement should execute and 
+>>-- the trigger should fire, as in the first update.
+>>--
+>>update tbl_a313y set price=123.45 where partnum=3103;
+
+*** ERROR[3193] SIGNAL SQLSTATE=S0213, Message: tri_a313y.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.TRI_A313YY on table CAT1.SCHM.TBL_A313Y has failed.
+
+--- 0 row(s) updated.
+>>LOG;

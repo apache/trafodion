@@ -246,23 +246,6 @@ int CTmTxBase::safe_initialize_slot (int32 pv_rmid)
    unlock();
    return lv_idx;
 }
-  
-// --------------------------------------------------------------
-// req_ddloperation
-// Purpose - Txn Thread specific processing for ddl operations
-// --------------------------------------------------------------
-bool CTmTxBase::req_ddloperation(CTmTxMessage *pp_msg, char *ddlbuffer)
-{
-   TMTrace (2, ("CTmTxBase::req_ddloperation : ID (%d,%d) ENTRY.\n",
-      node(), seqnum()));
-
-   short lv_error = branches()->ddlOperation(this, 0, pp_msg, ddlbuffer);
-
-   TMTrace (2, ("CTmTxBase::req_ddloperation : EXIT error %d, Txn ID (%d,%d).\n",
-      lv_error, node(), seqnum()));
-
-   return true;
-}
  
 // -----------------------------------------------------------------
 // initialize_slot

@@ -1,0 +1,50 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+STAFF_NUM
+---------
+E1 
+E2 
+E3 
+E4 
+E5 
+
+PROJ_NUM
+--------
+P1 
+P2 
+P3 
+P4 
+P5 
+P6 
+
+----- Test 1 -----
+ROWID1	EMPNUM	EMPNAME	CITY1	ROWID2	PNAME
+------	------	-------	-----	------	-----
+0	E1 	Alice               	Deale	0	MXSS                
+0	E1 	Alice               	Deale	3	SDP                 
+0	E1 	Alice               	Deale	5	PAYR                
+1	E2 	Betty               	Vienna	1	CALM                
+1	E2 	Betty               	Vienna	4	IRM                 
+2	E3 	Carmen              	Vienna	1	CALM                
+2	E3 	Carmen              	Vienna	4	IRM                 
+3	E4 	Don                 	Deale	0	MXSS                
+3	E4 	Don                 	Deale	3	SDP                 
+3	E4 	Don                 	Deale	5	PAYR                
+--- 10 row(s) selected.
+
+Expecting 10 rows are selected.

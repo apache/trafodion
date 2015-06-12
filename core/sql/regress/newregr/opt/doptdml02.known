@@ -1,0 +1,97 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+1256,1259c1256,1259
+< 14  ESP_EXCHANGE      13  ?               1.517E+007   
+< 13  SPLIT_TOP         12  ?               1.517E+007   
+< 12  PARTITION_ACCESS  11  ?               1.517E+007   
+< 11  HASH_PARTIAL_GRO  10  ?               1.517E+007   
+---
+> 14  ESP_EXCHANGE      13  ?               1.489E+007   
+> 13  SPLIT_TOP         12  ?               1.489E+007   
+> 12  PARTITION_ACCESS  11  ?               1.489E+007   
+> 11  HASH_PARTIAL_GRO  10  ?               1.489E+007   
+1265,1268c1265,1268
+< 05  ESP_EXCHANGE      4   ?               1.517E+007   
+< 04  SPLIT_TOP         3   ?               1.517E+007   
+< 03  PARTITION_ACCESS  2   ?               1.517E+007   
+< 02  HASH_PARTIAL_GRO  1   ?               1.517E+007   
+---
+> 05  ESP_EXCHANGE      4   ?               1.489E+007   
+> 04  SPLIT_TOP         3   ?               1.489E+007   
+> 03  PARTITION_ACCESS  2   ?               1.489E+007   
+> 02  HASH_PARTIAL_GRO  1   ?               1.489E+007   
+1309,1312c1309,1312
+< 13   .    14   esp_exchange                    4(hash2):4(range)     1.51E+007
+< 12   .    13   split_top                       4(range):72(range)    1.51E+007
+< 11   .    12   partition_access                                      1.51E+007
+< 10   .    11   hash_partial_groupby                                  1.51E+007
+---
+> 13   .    14   esp_exchange                    4(hash2):4(range)     1.48E+007
+> 12   .    13   split_top                       4(range):72(range)    1.48E+007
+> 11   .    12   partition_access                                      1.48E+007
+> 10   .    11   hash_partial_groupby                                  1.48E+007
+1318,1321c1318,1321
+< 4    .    5    esp_exchange                    4(hash2):4(range)     1.51E+007
+< 3    .    4    split_top                       4(range):72(range)    1.51E+007
+< 2    .    3    partition_access                                      1.51E+007
+< 1    .    2    hash_partial_groupby                                  1.51E+007
+---
+> 4    .    5    esp_exchange                    4(hash2):4(range)     1.48E+007
+> 3    .    4    split_top                       4(range):72(range)    1.48E+007
+> 2    .    3    partition_access                                      1.48E+007
+> 1    .    2    hash_partial_groupby                                  1.48E+007
+3070,3073c3070,3073
+< 14  ESP_EXCHANGE      13  ?               1.517E+007   
+< 13  SPLIT_TOP         12  ?               1.517E+007   
+< 12  PARTITION_ACCESS  11  ?               1.517E+007   
+< 11  HASH_PARTIAL_GRO  10  ?               1.517E+007   
+---
+> 14  ESP_EXCHANGE      13  ?               1.489E+007   
+> 13  SPLIT_TOP         12  ?               1.489E+007   
+> 12  PARTITION_ACCESS  11  ?               1.489E+007   
+> 11  HASH_PARTIAL_GRO  10  ?               1.489E+007   
+3079,3082c3079,3082
+< 05  ESP_EXCHANGE      4   ?               1.517E+007   
+< 04  SPLIT_TOP         3   ?               1.517E+007   
+< 03  PARTITION_ACCESS  2   ?               1.517E+007   
+< 02  HASH_PARTIAL_GRO  1   ?               1.517E+007   
+---
+> 05  ESP_EXCHANGE      4   ?               1.489E+007   
+> 04  SPLIT_TOP         3   ?               1.489E+007   
+> 03  PARTITION_ACCESS  2   ?               1.489E+007   
+> 02  HASH_PARTIAL_GRO  1   ?               1.489E+007   
+3123,3126c3123,3126
+< 13   .    14   esp_exchange                    4(hash2):4(range)     1.51E+007
+< 12   .    13   split_top                       4(range):72(range)    1.51E+007
+< 11   .    12   partition_access                                      1.51E+007
+< 10   .    11   hash_partial_groupby                                  1.51E+007
+---
+> 13   .    14   esp_exchange                    4(hash2):4(range)     1.48E+007
+> 12   .    13   split_top                       4(range):72(range)    1.48E+007
+> 11   .    12   partition_access                                      1.48E+007
+> 10   .    11   hash_partial_groupby                                  1.48E+007
+3132,3135c3132,3135
+< 4    .    5    esp_exchange                    4(hash2):4(range)     1.51E+007
+< 3    .    4    split_top                       4(range):72(range)    1.51E+007
+< 2    .    3    partition_access                                      1.51E+007
+< 1    .    2    hash_partial_groupby                                  1.51E+007
+---
+> 4    .    5    esp_exchange                    4(hash2):4(range)     1.48E+007
+> 3    .    4    split_top                       4(range):72(range)    1.48E+007
+> 2    .    3    partition_access                                      1.48E+007
+> 1    .    2    hash_partial_groupby                                  1.48E+007

@@ -1,0 +1,86 @@
+>>obey TEST_SPJC_STX_006(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger with a CALL triggered action
+>>-- Inserts supplied values into TAB02_SPJC_STX_006 by calling a procedure
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_006 AFTER DELETE ON
++>TAB01_SPJC_STX_006
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_006',
++>		O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>delete from TAB01_SPJC_STX_006 where a = 100;
+
+--- 1 row(s) deleted.
+>>
+>>-- Result: TAB01_SPJC_STX_006 has only two rows and
+>>-- TAB02_SPJC_STX_006 has a copy of the deleted row.
+>>
+>>select * from TAB01_SPJC_STX_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            5
+
+--- 2 row(s) selected.
+>>
+>>select * from TAB02_SPJC_STX_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        100          101          102          103
+
+--- 1 row(s) selected.
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Statement trigger with a CALL triggered action
+>>-- Inserts SUM of each column from TAB01_SPJC_STX_006 into
+>>-- corresponding columns of TAB02_SPJC_STX_006.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG02_SPJC_STX_006 AFTER UPDATE ON
++>TAB01_SPJC_STX_006 REFERENCING NEW TABLE AS NT, OLD TABLE AS OT
++>FOR EACH STATEMENT
++>	CALL InsertSelectOfSumOfFourColumns('CAT1.SCHM.TAB01_SPJC_STX_006',
++>		'CAT1.SCHM.TAB02_SPJC_STX_006', 'A', 'B', 'C', 'D');
+
+--- SQL operation complete.
+>>
+>>update TAB01_SPJC_STX_006 set a = a + 1;
+
+--- 2 row(s) updated.
+>>
+>>-- Result: TAB01_SPJC_STX_006 has two rows ( A = {2, 3} instead
+>>-- of {1, 2}), and TAB02_SPJC_STX_006 has one extra row (copy of the
+>>-- old row with a = {5}.
+>>
+>>select * from TAB01_SPJC_STX_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          2            2            3            4
+          3            3            4            5
+
+--- 2 row(s) selected.
+>>
+>>select * from TAB02_SPJC_STX_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        100          101          102          103
+          5            5            7            9
+
+--- 2 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

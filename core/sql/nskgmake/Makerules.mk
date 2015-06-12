@@ -95,7 +95,7 @@ BASE_INCLUDE_DIRS := sqlci arkcmp comexe sqlfe eh export sqlmsg sqlcomp \
 	sqlcat executor parser generator exp filesystem optimizer cli \
 	nskcre common dml arkfsindp2 arkfsinopen ddl sort catman \
 	smdio ustat sqlshare sqlmxevents bin langman sqludr udrserv \
-	security runtimestats qmscommon porting_layer
+	security runtimestats qmscommon qms porting_layer
 
 # SQLUTILS_INCLUDE_DIRS defines the directories that are included
 # during the compilation of all files that are under the sqlutils
@@ -363,7 +363,7 @@ endif
 
 # Some (soon maybe all) Java files get built through Maven
 mavenbuild:
-	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -v WARNING
+	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
 
 # This is where the top-level is declared to build everything.

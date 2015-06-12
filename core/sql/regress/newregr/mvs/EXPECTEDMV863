@@ -1,0 +1,208 @@
+>>obey TESTMV863(set_up);
+>>------------------------------------------------------------
+>>set parserflags 3;
+
+--- SQL operation complete.
+>>create table T_863_T1 
++>(a int not null not droppable, b int,primary key(a) not droppable);
+
+--- SQL operation complete.
+>>
+>>
+>>create mv T_863_MV1
++>        refresh on request
++>        initialized on refresh
++>        as
++>        select a from T_863_T1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------
+>>
+>>-- Run Tests
+>>  obey TESTMV863(Test1);
+>>------------------------------------------------------------
+>>refresh T_863_MV1;
+
+--- SQL operation complete.
+>>
+>>insert into T_863_T1 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>update T_863_T1 set b = 2 where a = 1;
+
+--- 1 row(s) updated.
+>>
+>>refresh T_863_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_863_T1.
+Starting the log cleanup of table CATMVS.MVSCHM.T_863_T1...
+The materialized view CATMVS.MVSCHM.T_863_MV1 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_863_MV1 is being refreshed in a single transaction...
+>>
+>>select a from T_863_T1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>select * from T_863_MV1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>------------------------------------------------------------
+>>  obey TESTMV863(Test2);
+>>--
+>>------------------------------------------------------------
+>>insert into T_863_T1 values (2,2),(3,3);
+
+--- 2 row(s) inserted.
+>>refresh T_863_MV1;
+
+--- SQL operation complete.
+>>
+>>update T_863_T1 set b = 3 where a = 2;
+
+--- 1 row(s) updated.
+>>delete from T_863_T1 where a = 2;
+
+--- 1 row(s) deleted.
+>>
+>>refresh T_863_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_863_T1.
+Starting the log cleanup of table CATMVS.MVSCHM.T_863_T1...
+The materialized view CATMVS.MVSCHM.T_863_MV1 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_863_MV1 is being refreshed in a single transaction...
+>>
+>>select a from T_863_T1;
+
+A          
+-----------
+
+          1
+          3
+
+--- 2 row(s) selected.
+>>select * from T_863_MV1;
+
+A          
+-----------
+
+          1
+          3
+
+--- 2 row(s) selected.
+>>
+>>insert into T_863_T1 values (4,4);
+
+--- 1 row(s) inserted.
+>>refresh T_863_MV1;
+
+--- SQL operation complete.
+>>
+>>select a from T_863_T1;
+
+A          
+-----------
+
+          1
+          3
+          4
+
+--- 3 row(s) selected.
+>>select * from T_863_MV1;
+
+A          
+-----------
+
+          1
+          3
+          4
+
+--- 3 row(s) selected.
+>>
+>>update T_863_T1 set b = 4 where a = 3;
+
+--- 1 row(s) updated.
+>>delete from T_863_T1 where a = 4;
+
+--- 1 row(s) deleted.
+>>
+>>refresh T_863_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_863_T1.
+Starting the log cleanup of table CATMVS.MVSCHM.T_863_T1...
+The materialized view CATMVS.MVSCHM.T_863_MV1 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_863_MV1 is being refreshed in a single transaction...
+>>
+>>select a from T_863_T1;
+
+A          
+-----------
+
+          1
+          3
+
+--- 2 row(s) selected.
+>>select * from T_863_MV1;
+
+A          
+-----------
+
+          1
+          3
+
+--- 2 row(s) selected.
+>>
+>>------------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>obey TESTMV863(clean_up);
+>>------------------------------------------------------------
+>>drop mv T_863_MV1;
+
+--- SQL operation complete.
+>>drop table T_863_T1;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

@@ -1,0 +1,161 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+234a235,237
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+296a300,302
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+319a326,328
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+342a352,354
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+365a378,380
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+388a404,406
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+411a430,432
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+434a456,458
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+457a482,484
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+480a508,510
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+503a534,536
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+526a560,562
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+549a586,588
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+572a612,614
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+595a638,640
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+618a664,666
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+641a690,692
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+664a716,718
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+687a742,744
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+718a776,778
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+741a802,804
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+764a828,830
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+787a854,856
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+810a880,882
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+833a906,908
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+856a932,934
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+879a958,960
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+902a984,986
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+925a1010,1012
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+948a1036,1038
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+971a1062,1064
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+994a1088,1090
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+1040a1137,1139
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+1063a1163,1165
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+1086a1189,1191
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+1109a1215,1217
+> *** WARNING[6008] Statistics for column (A) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (B) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+> *** WARNING[6008] Statistics for column (C) from table CAT.MYHCUBE.CUBE1 were not available. As a result, the access path chosen might not be the best possible.

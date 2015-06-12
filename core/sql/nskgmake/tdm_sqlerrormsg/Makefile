@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,19 +20,10 @@
 
 CPPSRC := GetErrorMessage.cpp
 
-ifeq ($(TARGTYPE),linux)
 CPPSRC += vers_libtdm_sqlerrormsg.cpp
-endif
 
 YINC := tdm_sqlmxmsg_intl
 
 SRCPATH := sqlmsg bin
-
-ifeq ($(TARGTYPE),nt)
-RESSRC :=  $(TOPDIR)/bin/tdm_sqlerrormsg.rc
-DEFS := -DWIN32 -D_WINDOWS -DSQLERRORS_LIB -D_UNICODE
-SYS_LIBS := $(IMAGEHELP) kernel32.lib user32.lib advapi32.lib
-DEP_LIBS := common tdm_sqlexport
-endif
 
 $(TARGOBJDIR)/GetErrorMessage.$(OBJSUFFIX): tdm_sqlmxmsg_intl/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)/sqlmxmsg_msg.h

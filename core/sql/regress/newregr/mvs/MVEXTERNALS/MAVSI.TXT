@@ -1,0 +1,161 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--------------------------------------------------------------
+-- MAV SECONDARY INDEX
+set envvar DEBUG_LOG_TABLE;
+set PARSERFLAGS 3;
+
+PREPARE select_index FROM
+select ?t_name as index_for_table,valid_def
+from HP_DEFINITION_SCHEMA.OBJECTS
+where OBJECT_NAME_SPACE = 'IX' AND
+	OBJECT_UID IN ( select  ACCESS_PATH_UID 
+				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
+				   where ACCESS_PATH_UID <> table_uid 
+				   and table_uid =( select OBJECT_UID from
+				    HP_DEFINITION_SCHEMA.OBJECTS
+					where OBJECT_NAME = ?t_name
+                                          and OBJECT_NAME_SPACE = 'TA')
+				   );
+control query default pos 'off'; 
+
+create table t1 ( a int not null not droppable, 
+			b int not null not droppable, 
+			c int not null not droppable,
+			d int not null not droppable) LOCATION $$partition1$$ store by (b,c); 
+ALTER TABLE t1 attribute all mvs allowed;
+
+
+-- CASE 1
+-- user did not specify the store by clause
+-- this should result with a primary key containing the group by columns
+
+
+create mv mv1 refresh on request 
+initialized on refresh
+location $$partition1$$ 
+range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+ADD FIRST KEY 3000 LOCATION $$partition0$$)
+MVATTRIBUTES NO AUDITONREFRESH
+as select max(a) as max_a, b, c 
+from t1 
+group by b ,c;
+ALTER MV mv1 attribute all mvs allowed;
+
+showddl mv1;
+control query default pos 'MULTI_NODE';
+
+-- CASE 2
+-- user did specify a store by clause with the group by 
+-- this should result with a primary key containing the group by columns
+
+create mv mv2 refresh on request 
+initialized on refresh
+location $$partition1$$ 
+range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+ADD FIRST KEY 3000 LOCATION $$partition0$$)
+MVATTRIBUTES NO AUDITONREFRESH
+STORE BY (b, c)
+as select max(a) as max_a, b, c 
+from t1 
+group by b ,c;
+ALTER MV mv2 attribute all mvs allowed;
+
+showddl mv2;
+
+
+
+-- CASE 3
+-- user specified store by clause, containing the same cols as in the group by clause
+-- this should result with a primary key containing the store by columns
+
+create mv mv3 refresh on request 
+initialized on refresh
+location $$partition1$$ 
+range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+ADD FIRST KEY 3000 LOCATION $$partition0$$)
+MVATTRIBUTES NO AUDITONREFRESH
+STORE BY (c, b ,d)
+as select max(a) as max_a, d, b, c 
+from t1 
+group by b ,c, d;
+ALTER MV mv3 attribute all mvs allowed;
+
+showddl mv3;
+
+
+
+-- CASE 4
+-- user did specify the store by clause without all group by cols
+-- all group by cols are not null
+-- this should result with a primary key containing the group by columns
+
+create mv mv4 refresh on request 
+initialized on refresh
+location $$partition1$$ 
+range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+ADD FIRST KEY 3000 LOCATION $$partition0$$)
+MVATTRIBUTES NO AUDITONREFRESH
+STORE BY (b)
+as select max(a) as max_a, b, c 
+from t1 
+group by b ,c;
+ALTER MV mv4 attribute all mvs allowed;
+
+showddl mv4;
+
+
+create table t2 ( 	a int not null not droppable, 
+			b int , 
+			c int not null not droppable) LOCATION $$partition1$$; 
+ALTER TABLE t2 attribute all mvs allowed;
+
+
+
+-- CASE 5
+-- user did not specify the store by clause and a group by column is nullable
+-- this should result in creating a secondary index
+-- because the mv is no auditonrefresh the index is created non populated and 
+-- will not be shown with showddl
+
+
+--create mv mv5 refresh on request 
+--initialized on refresh
+--location $$partition1$$ 
+--range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+--ADD FIRST KEY 3000 LOCATION $$partition0$$)
+--MVATTRIBUTES NO AUDITONREFRESH
+--as select max(a) as max_a, b, c 
+--from t2 
+--group by b ,c;
+--ALTER MV mv5 attribute all mvs allowed;
+
+--showddl mv5;
+
+--set param ?t_name 'MV5';
+--execute select_index;
+
+
+drop mv mv4;
+drop mv mv3;
+drop mv mv2;
+drop mv mv1;
+drop table t1;
+drop mv mv5;
+drop table t2;
+

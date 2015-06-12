@@ -1,0 +1,3908 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML10 (Cardinality)
+-- Functionality: Uses HCUBE database to test Compile Time Stats.
+-- Expected Files: ETESTDML10.
+-- History: Created on 03/26/2009
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+cqd pos 'off';
+#ifLINUX
+cqd join_order_by_user 'on';
+#ifLINUX
+
+set schema cat.hcube;
+control query default hist_on_demand_stats_size '0';
+
+drop table temp;
+
+create table temp(execard int);
+
+prepare querytest from
+select hist.card "Card From Histograms", 
+executed.card "Actual Card",
+case when sample.card >= executed.minCard
+     then 'PASS' 
+     else 'FAIL' 
+end "Card From Sample"
+from
+
+(select cast(cardinality as int) as card 
+from table(explain(null,'YY')) 
+where (operator like '%SCAN%') ) sample(card), 
+
+(select execard, 
+        case when execard <= 100 then execard*0.60
+                               else (execard*0.80) 
+        end 
+
+from temp) executed(card, minCard),
+
+(select cast(cardinality as int) as card 
+from table(explain(null,'XX')) 
+where (operator like '%SCAN%') ) hist(card) 
+;
+
+prepare cardfromHist from
+select plan.num, plan.op, tab_name, plan.card "Card From Histograms"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+prepare cardfromSample from
+select plan.num, plan.op, tab_name, plan.card "Card From Sample"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'YY'))
+      where (operator like '%SCAN%') 
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+
+drop table r1;
+drop table r2;
+drop table r3;
+drop index t3idx1;
+drop index t3idx2;
+drop index t3idx3;
+drop table tDML10;
+
+control query default hist_rowcount_requiring_stats '1';
+
+-- display only single column missing stats warning
+control query default HIST_MISSING_STATS_WARNING_LEVEL '1';
+
+-- To use fetchcount as much as possible
+control query default comp_int_43 '0';
+
+control query default nested_joins 'off';
+
+create table r1(a char(10), b int, c char (9) character set ucs2, d date);
+
+insert into r1 values ('aaaaccccd', 1, N'abcabcabc',date '2009-01-01');
+insert into r1 values ('aaaaccccd',2, N'abw', date '2009-01-03');
+insert into r1 values ('aaaaccccd',3, N'aec', date '2009-01-04');
+insert into r1 values ('aaaaccccd',4, N'abt', date '2009-01-05');
+insert into r1 values ('aaaaccccd',5, N'aysq', date '2009-01-06');
+insert into r1 values ('aaaaccccd',6, N'ebss', date '2009-01-07');
+insert into r1 values ('aaaacccff',7, N'rbdw', date '2009-01-08');
+insert into r1 values ('abbbcccff',8, N'ghcdf', date '2009-01-09');
+insert into r1 values ('abbbcccff',9, N'fdfdg', date '2009-01-10');
+insert into r1 values ('abbbcccff',1, N'abcfdg', date '2009-02-01');
+insert into r1 values ('abbbcccff',2, N'abfdc', date '2009-02-02');
+insert into r1 values ('abbbcccff',3, N'nbnabc', date '2009-02-03');
+insert into r1 values ('abbbcccfj',4, N'zacbc', date '2009-02-04');
+insert into r1 values ('abbbcccfj',5, N'azbcxz', date '2009-02-05');
+insert into r1 values ('bbbacccfj',6, N'awebtc', date '2009-02-06');
+insert into r1 values ('bbbacccfj',7, N'abfdc', date '2009-02-07');
+insert into r1 values ('bbbacccfj',8, N'dfabc', date '2009-02-08');
+insert into r1 values ('bbbacccfj',9, N'abghnc', date '2009-02-09');
+insert into r1 values ('bbbaccccd',1, N'tdabhc', date '2009-02-10');
+insert into r1 values ('bbbaccccc',2, N'abcfgt', date '2009-02-11');
+insert into r1 values ('bbbaccccc',3, N'aabdcg', date '2009-02-12');
+insert into r1 values ('bbbaccccc',4, N'adbfch', date '2009-02-13');
+insert into r1 values ('bbbaccccc',5, N'abbgcf', date '2009-02-14');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabd', date '2009-02-15');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabd', date '2009-02-16');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabd', date '2009-02-01');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabd', date '2009-02-01');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabd', date '2009-02-01');
+insert into r1 values ('bbbaaaaas', 1, N'abcabcabd', date '2009-02-01');
+insert into r1 values ('bbbaaaaas', 1, N'abcabcabd', date '2009-02-17');
+insert into r1 values ('bbbaaaaad', 1, N'abcabcabd', date '2009-02-18');
+insert into r1 values ('bbbaaaaaf', 1, N'abcabcadd', date '2009-02-19');
+insert into r1 values ('bbbaaaaag', 1, N'abcabcafg', date '2009-02-18');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabg', date '2009-02-18');
+insert into r1 values ('bbbaaaaaa', 1, N'abcabcabr', date '2009-02-18');
+insert into r1 values ('bbbaaaaad', 1, N'abcabcabt', date '2009-02-19');
+insert into r1 values ('bbbbbbbad', 1, N'abcabcaby', date '2009-02-19');
+insert into r1 values ('bbbbbbbad', 1, N'abcabcabu', date '2009-02-19');
+insert into r1 values ('bbbbbbbad', 1, N'abcabcabr', date '2009-02-19');
+
+update statistics for table r1 on every column;
+
+create table tDML10
+  (
+    S2                               INT NOT NULL NOT DROPPABLE
+  , I1                               CHAR(2) NOT NULL
+  , I3                               CHAR(10) DEFAULT NULL
+  , S0                               INT DEFAULT NULL
+  , I2                               VARCHAR(10) DEFAULT NULL
+  , S3                               INT DEFAULT NULL
+  );
+
+create index t3idx1 on tDML10(S2, I1);
+create index t3idx2 on tDML10(S2, I1, I3, S0);
+create index t3idx3 on tDML10(S2, I1, I2, S3);
+
+
+#ifNT
+-- The ifNT setting is also enabled when run on Linux platforms.
+prepare insertIntoCatHCubeTdml10 from insert into CAT.HCUBE.tDML10 values (?,?,?,?,?,?);
+sh sh -c 'rm -f insertIntoCatHCubeTdml10.sql insertIntoCatHCubeTdml10.tmp ';
+-- Do not know how to insert a single-quote in the following command so inserting a colon instead.
+sh sh -c 'sed -e "s|,\\([A-Za-z][A-Za-z]*\\),|,:\\1:,|g" -e "s|,\\([A-Za-z][A-Za-z]*\\),|,:\\1:,|g" -e "s|^|execute insertIntoCatHCubeTdml10 using |" -e "s|$|;|" $REGRTSTDIR/data_TESTDML10 > insertIntoCatHCubeTdml10.tmp ';
+-- Now use TR to replace each colon with a single-quote.
+sh sh -c 'tr ":" "\047" < insertIntoCatHCubeTdml10.tmp > insertIntoCatHCubeTdml10.sql ';
+sh sh -c 'rm -f insertIntoCatHCubeTdml10.tmp ';
+-- #ifLINUX
+-- -- Things are much nice on Linux platforms :-)
+-- -- The following steps are not needed because we already executed the steps above.
+-- -- Leave them here as comments so we can compare the differences between NT and Linux.
+-- sh rm -f insertIntoCatHCubeTdml10.sql > /dev/null 2>&1;
+-- sh sed -e "s|,\\([A-Za-z][A-Za-z]*\\),|,'\\1',|g" -e "s|,\\([A-Za-z][A-Za-z]*\\),|,'\\1',|g" -e "s|^|execute insertIntoCatHCubeTdml10 using |" -e "s|$|;|" $REGRTSTDIR/data_TESTDML10 > insertIntoCatHCubeTdml10.sql ;
+-- #ifLINUX
+begin work;
+obey insertIntoCatHCubeTdml10.sql;
+commit work;
+sh sh -c 'rm -f insertIntoCatHCubeTdml10.sql ';
+select count(*) as CAT_HCUBE_TDML10_ROWS from t3;
+#ifNT
+#ifNSK
+sh ${mxcidir}/import CAT.HCUBE.tDML10 -I $REGRTSTDIR/data_TESTDML10; 
+#ifNSK
+
+update statistics for table tDML10 on every key;
+
+-- Tables for testing rolling columns
+create table r2(d date not null);
+insert into r2 values (date '2009-01-01'), (date '2009-01-02'),
+(date '2009-01-03'), (date '2009-01-04'),(date '2009-01-05'), 
+(date '2009-01-06'), (date '2009-01-07'), (date '2009-01-08'),
+(date '2009-01-09'), (date '2009-01-10');
+insert into r2 values (date '2009-02-01'), (date '2009-02-02'),
+(date '2009-02-03'), (date '2009-02-04'),(date '2009-02-05'), 
+(date '2009-02-06'), (date '2009-02-07'), (date '2009-02-08'),
+(date '2009-02-09'), (date '2009-02-10');
+insert into r2 values (date '2009-03-01'), (date '2009-03-02'),
+(date '2009-03-03'), (date '2009-03-04'),(date '2009-03-05'), 
+(date '2009-03-06'), (date '2009-03-07'), (date '2009-03-08'),
+(date '2009-03-09'), (date '2009-03-10');
+insert into r2 values (date '2009-04-01'), (date '2009-04-02'),
+(date '2009-04-03'), (date '2009-04-04'),(date '2009-04-05'), 
+(date '2009-04-06'), (date '2009-04-07'), (date '2009-04-08'),
+(date '2009-04-09'), (date '2009-04-10');
+insert into r2 values (date '2009-05-01'), (date '2009-05-02'),
+(date '2009-05-03'), (date '2009-05-04'),(date '2009-05-05'), 
+(date '2009-05-06'), (date '2009-05-07'), (date '2009-05-08'),
+(date '2009-05-09'), (date '2009-05-10');
+insert into r2 values (date '2009-06-01'), (date '2009-06-02'),
+(date '2009-06-03'), (date '2009-06-04'),(date '2009-06-05'), 
+(date '2009-06-06'), (date '2009-06-07'), (date '2009-06-08'),
+(date '2009-06-09'), (date '2009-06-10');
+insert into r2 values (date '2009-07-01'), (date '2009-07-02'),
+(date '2009-07-03'), (date '2009-07-04'),(date '2009-07-05'), 
+(date '2009-07-06'), (date '2009-07-07'), (date '2009-07-08'),
+(date '2009-07-09'), (date '2009-07-10');
+insert into r2 values (date '2009-08-01'), (date '2009-08-02'),
+(date '2009-08-03'), (date '2009-08-04'),(date '2009-08-05'), 
+(date '2009-08-06'), (date '2009-08-07'), (date '2009-08-08'),
+(date '2009-08-09'), (date '2009-08-10');
+insert into r2 values (date '2009-09-01'), (date '2009-09-02'),
+(date '2009-09-03'), (date '2009-09-04'),(date '2009-09-05'), 
+(date '2009-09-06'), (date '2009-09-07'), (date '2009-09-08'),
+(date '2009-09-09'), (date '2009-09-10');
+
+create table r3(a int, 
+d date not null not droppable 
+);
+
+-- 9000 rows inserted
+insert into r3 select t6.a, r2.d 
+from r2, t6;
+
+update statistics for table r3 on every column;
+update statistics for table r3 create sample random 70 percent;
+
+-- Start test cases
+
+control query default query_cache '0';
+
+control query default cache_histograms '0';
+
+log ATESTDML10 clear;
+
+CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+CQD USTAT_SAMPLE_PERCENT_DIFF '50';
+
+-- Q1
+log;
+
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where a >= 20 and b < 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where a >= 20 and b < 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  ON;
+
+log ATESTDML10;
+
+prepare YY from
+select count(*) from t10 where a >= 20 and b < 2;
+
+execute querytest;
+
+showstats for query
+select count(*) from t10 where a >= 20 and b < 2;
+
+-- Q2
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from r1 where a > 'aaaaccccd' and a < 'bbb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a > 'aaaaccccd' and a < 'bbb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+prepare yy from
+select count(*) from r1 where a > 'aaaaccccd' and a < 'bbb';
+
+execute querytest;
+
+-- Q3
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where t10.b = t10.a or t10.b < 200;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where t10.b = t10.a or t10.b < 200;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where t10.b = t10.a or t10.b < 200;
+
+execute queryTest;
+
+-- Q4
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where (b + c) > 6 and (b - c) < 8;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from 
+select count(*) from t10 where (b + c) > 6 and (b - c) < 8;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from 
+select count(*) from t10 where (b + c) > 6 and (b - c) < 8;
+
+execute queryTest;
+
+-- Q5
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where (a + c) > 6 and (a - c) < 8;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from 
+select count(*) from t10 where (a + c) > 6 and (a - c) < 8;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from 
+select count(*) from t10 where (a + c) > 6 and (a - c) < 8;
+
+execute queryTest;
+
+-- Q6
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where (t10.a*2) > t10.c;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where (t10.a*2) > t10.c;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where (t10.a*2) > t10.c;
+
+execute queryTest;
+
+-- Q7
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where
+(t10.a > 500 and t10.a < 1000) or
+(t10.a > 100 and t10.a < 200);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where
+(t10.a > 500 and t10.a < 1000) or
+(t10.a > 100 and t10.a < 200);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where
+(t10.a > 500 and t10.a < 1000) or
+(t10.a > 100 and t10.a < 200);
+
+execute queryTest;
+
+-- Q8
+-- Cardinality returned from sample is 1050, which is greater than 10%
+-- of the actual row count causing the test to fail. 
+-- This is still within the acceptable limits so we can actually assume
+-- this to be pass
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10
+where (b + 5) between 3 and 13;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10
+where (b + 5) between 3 and 13;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10
+where (b + 5) between 3 and 13;
+
+execute queryTest;
+
+-- Q9
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where cast(b + c as real) < 250.5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where cast(b + c as real) < 250.5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where cast(b + c as real) < 250.5;
+
+execute queryTest;
+
+-- Q10
+
+log;
+delete from temp;
+
+insert into temp 
+select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+
+execute queryTest;
+
+showstats for query
+select count(*) from t10 where cast(c as numeric) * 2 >= 10.5;
+
+-- Q11
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t10 where mod(a,7) >= 1 and mod(a,7) < 4;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where mod(a,7) >= 1 and mod(a,7) < 4;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where mod(a,7) >= 1 and mod(a,7) < 4;
+
+execute queryTest;
+
+-- Q12
+-- cardinality from sample is just above 10% of the actual
+-- so assume the test to pass
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t10
+where (t10.b * 2) < 30 and
+cast((t10.a * 2.3) as real) > 40.0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10
+where (t10.b * 2) < 30 and
+cast((t10.a * 2.3) as real) > 40.0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10
+where (t10.b * 2) < 30 and
+cast((t10.a * 2.3) as real) > 40.0;
+
+execute queryTest;
+
+-- Q13
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t5 where cast((a + b) as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t5 where cast((a + b) as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t5 where cast((a + b) as real) = 7;
+
+execute queryTest;
+
+-- Q14
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where a + b = c + d ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where a + b = c + d ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where a + b = c + d ;
+
+execute queryTest;
+
+-- Q15
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where d in (1, 2, 3) and a = d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where d in (1, 2, 3) and a = d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where d in (1, 2, 3) and a = d;
+
+execute queryTest;
+
+-- Q16
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t5 where cast(b as real) IS NOT NULL;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t5 where cast(b as real) IS NOT NULL;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t5 where cast(b as real) IS NOT NULL;
+
+execute queryTest;
+
+-- Q17
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t5 where cast(b as real) IS NULL;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t5 where cast(b as real) IS NULL;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t5 where cast(b as real) IS NULL;
+
+execute queryTest;
+
+-- Q18
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t10 where (b*b - 4*a*c) < 0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where (b*b - 4*a*c) < 0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where (b*b - 4*a*c) < 0;
+
+execute queryTest;
+
+-- Q19
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t10 where (b*b - 4*a*c) > 0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where (b*b - 4*a*c) > 0;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where (b*b - 4*a*c) > 0;
+
+execute queryTest;
+
+-- Q20
+
+log;
+
+delete from temp;
+
+insert into temp
+ select count(*)
+  from t10
+  where (case when t10.a > 10 and t10.b < 5
+              then t10.b
+              else t10.a + t10.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+  select count(*)
+  from t10
+  where (case when t10.a > 10 and t10.b < 5
+              then t10.b
+              else t10.a + t10.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+  select count(*)
+  from t10
+  where (case when t10.a > 10 and t10.b < 5
+              then t10.b
+              else t10.a + t10.b end) = 7;
+
+execute queryTest;
+
+showstats for query
+  select count(*)
+  from t10
+  where (case when t10.a > 10 and t10.b < 5
+              then t10.b
+              else t10.a + t10.b end) = 7;
+
+set param ?q 100;
+
+-- Q21
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from CUBE1 where
+CUBE1.c > ?q and
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from CUBE1 where
+CUBE1.c > ?q and
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from CUBE1 where
+CUBE1.c > ?q and
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+execute queryTest;
+
+-- Q22
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where
+lower(a) IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where
+lower(a) IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where
+lower(a) IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+execute queryTest;
+
+-- Q23
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where
+lower(a) NOT IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where
+lower(a) NOT IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where
+lower(a) NOT IN ('aaaa', 'baaa', 'caaa') OR
+d between date '2009-02-17' and date '2009-02-14';
+
+execute queryTest;
+
+-- Q24
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+execute queryTest;
+
+-- Q25
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where right(a, 2) = 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where right(a, 2) = 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where right(a, 2) = 'ab';
+
+execute queryTest;
+
+-- Q26
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like 'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a like 'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a like 'a%';
+
+execute queryTest;
+
+-- Q27
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like 'a%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a like 'a%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a like 'a%a';
+
+execute queryTest;
+
+-- Q28
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like '%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from 
+select count(*) from r1 where a like '%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from 
+select count(*) from r1 where a like '%a';
+
+execute queryTest;
+
+-- Q29
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+execute queryTest;
+
+-- Q30
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where c like _UCS2'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where c like _UCS2'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where c like _UCS2'a%';
+
+execute queryTest;
+
+showstats for query
+select count(*) from r1 where c like _UCS2'a%';
+
+-- Q31
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+execute queryTest;
+
+-- Q32
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+execute queryTest;
+
+-- Check for Rolling column issues
+-- Q33
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+execute queryTest;
+
+-- Q34
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+execute queryTest;
+
+-- Q35
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d < date '2009-02-23' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d < date '2009-02-23' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d < date '2009-02-23' ;
+
+execute queryTest;
+
+-- Q36
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where left(a, 2) = 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where left(a, 2) = 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where left(a, 2) = 'ab';
+
+execute queryTest;
+
+-- Q37
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where right(a, 2) = 'd';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where right(a, 2) = 'd';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where right(a, 2) = 'd';
+
+execute queryTest;
+
+-- Q38
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where right(a, 2) = 'a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where right(a, 2) = 'a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where right(a, 2) = 'a';
+
+execute queryTest;
+
+-- Q39
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where lcase(a) like 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where lcase(a) like 'ab';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where lcase(a) like 'ab';
+
+execute queryTest;
+
+-- Q40
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where concat('date', a) like 'dateab%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where concat('date', a) like 'dateab%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where concat('date', a) like 'dateab%';
+
+execute queryTest;
+
+showstats for query
+select count(*) from r1 where concat('date', a) like 'dateab%';
+
+-- Q41
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where char_length(a) > 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where char_length(a) > 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where char_length(a) > 5;
+
+execute queryTest;
+
+-- Q42
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where code_value(a) = 98;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where code_value(a) = 98;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where code_value(a) = 98;
+
+execute queryTest;
+
+-- Q43
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where code_value(a) = 97;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where code_value(a) = 97;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where code_value(a) = 97;
+
+execute queryTest;
+
+-- Q44
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from t10 where round(b * 5.3) > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where round(b * 5.3) > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where round(b * 5.3) > 2000;
+
+execute queryTest;
+
+-- Q45
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where substring(a from 1 for 2) = 'aa';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where substring(a from 1 for 2) = 'aa';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where substring(a from 1 for 2) = 'aa';
+
+execute queryTest;
+
+-- Q46
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where substring(a from 1 for 2) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where substring(a from 1 for 2) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where substring(a from 1 for 2) = 'bb';
+
+execute queryTest;
+
+-- Q47
+
+log;
+
+delete from temp;
+
+insert into temp
+select count (*) from r1 where
+(substring(case WHEN A is null THEN NULL 
+            WHEN (char_length(A) >= 2) THEN A 
+            ELSE 
+            substring(A , 1, (2 - char_length(A))) 
+            END , 1, 2)) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count (*) from r1 where
+(substring(case WHEN A is null THEN NULL 
+            WHEN (char_length(A) >= 2) THEN A 
+            ELSE 
+            substring(A , 1, (2 - char_length(A))) 
+            END , 1, 2)) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count (*) from r1 where
+(substring(case WHEN A is null THEN NULL 
+            WHEN (char_length(A) >= 2) THEN A 
+            ELSE 
+            substring(A , 1, (2 - char_length(A))) 
+            END , 1, 2)) = 'bb';
+
+
+execute queryTest;
+
+-- Q48
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where month(d) = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where month(d) = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where month(d) = 2;
+
+execute queryTest;
+
+-- Q49
+-- 
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where year(d) = 2008;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where year(d) = 2008;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where year(d) = 2008;
+
+execute queryTest;
+
+-- Q50
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where year(d) = 2009;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where year(d) = 2009;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where year(d) = 2009;
+
+execute queryTest;
+
+showstats for query
+select count(*) from r3 where year(d) = 2009;
+
+-- Q51
+-- The optimizer uses histograms to compute selectivity for the following
+-- kind of queries, hence failure is acceptable
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where dayofyear(d) > 25;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where dayofyear(d) > 25;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where dayofyear(d) > 25;
+
+execute queryTest;
+
+-- Q52
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where dayofweek(d) = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where dayofweek(d) = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where dayofweek(d) = 2;
+
+execute queryTest;
+
+-- Q53
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where dayofmonth(d) < 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where dayofmonth(d) < 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where dayofmonth(d) < 5;
+
+execute queryTest;
+
+-- Q54
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where dayname(d) = 'Monday';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where dayname(d) = 'Monday';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where dayname(d) = 'Monday';
+
+execute queryTest;
+
+-- Q55
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where monthname(d) = 'February';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where monthname(d) = 'February';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where monthname(d) = 'February';
+
+execute queryTest;
+
+-- Q56
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where monthname(d) = 'January';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where monthname(d) = 'January';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where monthname(d) = 'January';
+
+execute queryTest;
+
+-- Q57
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where quarter(d) = 1;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where quarter(d) = 1;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where quarter(d) = 1;
+
+execute queryTest;
+
+-- Q58
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where quarter(d) = 3;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where quarter(d) = 3;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where quarter(d) = 3;
+
+execute queryTest;
+
+-- Q59
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where lpad(a,2) = 'aa';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where lpad(a,2) = 'aa';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where lpad(a,2) = 'aa';
+
+execute queryTest;
+
+-- Q60
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where lpad(a,2) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where lpad(a,2) = 'bb';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where lpad(a,2) = 'bb';
+
+execute queryTest;
+
+showstats for query
+select count(*) from r1 where lpad(a,2) = 'bb';
+
+-- Q61
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where rpad(a,1) = 'b';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where rpad(a,1) = 'b';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where rpad(a,1) = 'b';
+
+execute queryTest;
+
+
+-------------------------------------------------------------------
+update statistics for table r1 clear;
+
+control query default hist_missing_stats_warning_level '0';
+
+-- since Stats are missing CTS should be invoked for all queries
+------------------------------------------------------------------
+
+-- Q62
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where
+UPPER(a) IN ('Aaaa', 'Baaa', 'Caaa') OR
+cast(b as real) = 7;
+
+execute queryTest;
+
+-- Q63
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where
+UPPER(a) NOT IN ('Aaaa', 'Baaa', 'Caaa');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where
+UPPER(a) NOT IN ('Aaaa', 'Baaa', 'Caaa');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where
+UPPER(a) NOT IN ('Aaaa', 'Baaa', 'Caaa');
+
+execute queryTest;
+
+-- Q64
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where upper(a) = upper('Aaaa') or upper(a) <> 'BBBA';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where upper(a) = upper('Aaaa') or upper(a) <> 'BBBA';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where upper(a) = upper('Aaaa') or upper(a) <> 'BBBA';
+
+execute queryTest;
+
+-- Q65
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where right(a, 2) = 'd';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where right(a, 2) = 'd';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where right(a, 2) = 'd';
+
+execute queryTest;
+
+-- Q66
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like 'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a like 'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a like 'a%';
+
+execute queryTest;
+
+-- Q67
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like 'a%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a like 'a%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a like 'a%a';
+
+execute queryTest;
+
+-- Q68
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a like '%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from 
+select count(*) from r1 where a like '%a';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from 
+select count(*) from r1 where a like '%a';
+
+execute queryTest;
+
+-- Q69
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where upper(c) like _UCS2'%c';
+
+execute queryTest;
+
+-- Q70
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where c like _UCS2'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where c like _UCS2'a%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where c like _UCS2'a%';
+
+execute queryTest;
+
+showstats for query
+select count(*) from r1 where c like _UCS2'a%';
+
+-- Q71
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where c = _UCS2'abcabcabg';
+
+execute queryTest;
+
+-- Q72
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where a = 'bbbaaaaaf';
+
+execute queryTest;
+
+-- Check for Rolling column issues
+-- Q73
+
+log;
+update statistics for table r1 on every column;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d < date '2009-02-23' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d < date '2009-02-23' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d < date '2009-02-23' ;
+
+execute queryTest;
+
+-- Q74
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '2009-02-01' and d < date '2009-02-27' ;
+
+execute queryTest;
+
+-- Q75
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '2009-02-27' ;
+
+execute queryTest;
+
+set param ?r 100;
+set param ?q 5;
+
+-- Q76
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from CUBE1 where
+CUBE1.c > ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from CUBE1 where
+CUBE1.c > ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from CUBE1 where
+CUBE1.c > ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+execute queryTest;
+
+-- Q77
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from CUBE1 where
+CUBE1.c = ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a/4 end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from CUBE1 where
+CUBE1.c = ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a/4 end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from CUBE1 where
+CUBE1.c > ?r and
+(case when CUBE1.a > 10 and CUBE1.b < ?q
+              then CUBE1.b
+              else CUBE1.a/4 end) = 7;
+
+execute queryTest;
+
+-- Q78
+-- cardinality from sample is just above 10% of the actual
+-- so assume the test to pass
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a * CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a * CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a * CUBE1.b end) = 7;
+
+execute queryTest;
+
+-- Q79
+-- cardinality from sample is just above 10% of the actual
+-- so assume the test to pass
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+(case when CUBE1.a > 10 or CUBE1.b > 2
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+(case when CUBE1.a > 10 or CUBE1.b > 2
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+(case when CUBE1.a > 10 or CUBE1.b > 2
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+execute queryTest;
+
+-- Following query should invoke CTS since multi-column stats
+-- is missing for columns with preds
+
+control query default COMP_INT_43 reset;
+
+-- Q80
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+b = 5 and
+c = 6;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+b = 5 and
+c = 6;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+b = 5 and
+c = 6;
+
+execute queryTest;
+
+showstats for query
+select count(*) from cube1 where
+b = 5 and
+c = 6;
+
+-- Following query should not invoke CTS since the columns
+-- constitute a unique index
+
+-- Q81
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+b = 5 and
+c = 6 and
+a = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+b = 5 and
+c = 6 and
+a = 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+b = 5 and
+c = 6 and 
+a =2;
+
+execute queryTest;
+
+-- Following query should invoke CTS since there is a 
+-- predicate with more than one column from the same table
+-- cardinality returned from sample is 5, which is a good
+-- cardinality but the test fails as it is outside the 20% error
+-- margin kept for the test
+
+-- Q82
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+b = 5 and
+c = 6 and
+a = d;
+
+-- control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+b = 5 and
+c = 6 and
+a = d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+b = 5 and
+c = 6 and
+a = d;
+
+-- execute queryTest;
+
+-- Q83
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+b > d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+b > d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+b > d;
+
+execute queryTest;
+
+-- Q84
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where c = 4 and d*e=10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where c = 4 and d*e=10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where c = 4 and d*e=10;
+
+execute queryTest;
+
+-- Q85
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+b = d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+b = d;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+b = d;
+
+execute queryTest;
+
+-- Q86
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from CUBE1 where
+CUBE1.c > ?q
+OR
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+-- This is a single predicate with a parameter 
+-- hence should not be executed by CTS
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from CUBE1 where
+CUBE1.c > ?q
+OR
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from CUBE1 where
+CUBE1.c > ?q
+OR
+(case when CUBE1.a > 10 and CUBE1.b < 5
+              then CUBE1.b
+              else CUBE1.a + CUBE1.b end) = 7;
+
+execute queryTest;
+
+-- Q87
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where
+((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+-- Only predicate b = 6 should be executed by CTS
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where
+((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where
+((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+execute queryTest;
+
+-- Q88
+-- Set query cache ON, such that we get all constants as parametrized variables
+-- CTS should be able to unparse them as literals, and then evaluate and
+-- unparse the predicates accordingly. The expected cardinality should be same 
+-- as obtained earlier with CTS
+
+control query default query_cache reset;
+
+prepare yy from
+select count(*) from cube1 where
+((a = 1 and B = ?q) OR (a = 5)) AND c = 6;
+
+execute queryTest;
+
+control query default QUERY_CACHE '0';
+
+-- Q89
+-- Test with a VEG
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from T1, T2 where
+T1. a = T1.b and
+T1. a = T2.a;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from T1, T2 where
+T1. a = T1.b and
+T1. a = T2.a;
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q90
+-- Test with a VEG
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from T1, T2 where
+T1. a = 5 and
+T1.b > 3 and
+T1. a = T2.a;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from T1, T2 where
+T1. a = 5 and
+T1.b > 3 and
+T1. a = T2.a;
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+showstats for query
+select count(*) from T1, T2 where
+T1. a = 5 and
+T1.b > 3 and
+T1. a = T2.a;
+
+-- Q91
+-- Test with a VEG
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from T1, T2 where
+T1. a = 5 and
+T1.b = 3 and
+T1. a = T2.a and 
+T1.b = T2.b;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from T1, T2 where
+T1. a = 5 and
+T1.b = 3 and
+T1. a = T2.a and 
+T1.b = T2.b;
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q92
+-- Test with a VEG
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from T1, T2 where
+T1.b > T1.a and
+T1. a = T2.a and 
+T1.b = T2.b;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from T1, T2 where
+T1.b > T1.a and
+T1. a = T2.a and 
+T1.b = T2.b;
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q93
+-- Index does not cover all the predicates 
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from tDML10  <<+ index t3idx1 >>
+where
+s2 > 1900 and I2 >= 'A';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tDML10  <<+ index t3idx1 >>
+where
+s2 > 1900 and I2 >= 'A';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tDML10  <<+ index t3idx1 >>
+where
+s2 > 1900 and I2 >= 'A';
+
+execute queryTest;
+
+-- Q94
+-- Index has more predicates than were executed 
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from tDML10  <<+ index t3idx3 >>
+where
+s2 > 1900 and I1 >= 'A' and s0 < ?q;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tDML10  <<+ index t3idx3 >>
+where
+s2 > 1900 and I1 >= 'A' and s0 < ?q;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tDML10  <<+ index t3idx3 >>
+where
+s2 > 1900 and I1 >= 'A' and s0 < ?q;
+
+execute queryTest;
+
+-- Q95
+-- Index has more predicates than were executed 
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from tDML10  <<+ index t3idx2 >>
+where
+s2 > 1900 and I1 >= 'A';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tDML10  <<+ index t3idx2 >>
+where
+s2 > 1900 and I1 >= 'A';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tDML10  <<+ index t3idx2 >>
+where
+s2 > 1900 and I1 >= 'A';
+
+execute queryTest;
+
+-- Q96
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where
+cube2.txt like '%sun%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where
+cube2.txt like '%sun%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+prepare yy from
+select count(*) from cube2 where
+cube2.txt like '%sun%';
+
+execute queryTest;
+
+-- Q97
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where
+cube2.txt  = 'some text';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where
+cube2.txt  = 'some text';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube2 where
+cube2.txt  = 'some text';
+
+execute queryTest;
+
+-- Q98
+-- Tests for out of range values
+
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where a*2 > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where a*2 > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where a*2 > 2000;
+
+execute queryTest;
+
+-- Now insert the actual rows into the table and do not
+-- do update stats. 
+
+-- 90,000 rows inserted
+insert into r3 select t8.a*2, r2.d from r2,t8;
+
+update statistics for table r3 create sample random 50 percent;
+
+CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+-- Q99
+-- Tests for additional rows that have been added but do not appear 
+-- in histograms
+-- Tests should give accurate results with CTS.
+-- Without CTS, the row count will be similar to what
+-- we got in the previous query. With CTS it should be closer to
+-- actual as that should actually run the query on a newly 
+-- created sample table.
+--
+-- This query will report queryTest as FAILED. This is expected
+-- due to changes in compile time stats caching changes.
+-- 
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where a*2 > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where a*2 > 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where a*2 > 2000;
+
+execute queryTest;
+
+-- Q100
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where d = date '2009-02-09';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where d = date '2009-02-09';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where d = date '2009-02-09';
+
+execute queryTest;
+
+showstats for query
+select count(*) from r3 where d = date '2009-02-09';
+
+-- Queries to test the cases where histogram boundaries are
+-- duplicated and there is a skew in the data
+
+CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '50000';
+
+-- Q101
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where 
+cube2.txt like '%repeated  %';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where 
+cube2.txt like '%repeated  %';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube2 where 
+cube2.txt like '%repeated  %';
+
+execute queryTest;
+
+-- Q102
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where 
+cube2.txt = 'some text repeated';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where 
+cube2.txt = 'some text repeated';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube2 where 
+cube2.txt = 'some text repeated';
+
+execute queryTest;
+
+-- Q103
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where 
+cube2.txt like '%sky%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where 
+cube2.txt like '%sky%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube2 where 
+cube2.txt like '%sky%';
+
+execute queryTest;
+
+-- Q104
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from cube2 where 
+cube2.txt like '%grass%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube2 where 
+cube2.txt like '%grass%';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube2 where 
+cube2.txt like '%grass%';
+
+execute queryTest;
+
+-- Q105
+-- date predicate will not be handled by CTS while the range would be
+-- Date lies outside the table range
+
+CQD USTAT_MIN_ROWCOUNT_FOR_SAMPLE '50000';
+CQD USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE '90000';
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-23';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-23';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-23';
+
+execute queryTest;
+
+-- Q106
+-- date predicate will not be handled by CTS while the range would be
+-- Date lies in the table range but is outside the histogram range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-09';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-09';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-10-09';
+
+execute queryTest;
+
+-- Q107
+-- Both date and range predicates will be handled by CTS
+-- since the date is within the histogram boundaries
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+a/10 >= 2 and a/10 < 5 and d = date'2009-02-02';
+
+--execute queryTest;
+
+-- Q108
+-- Test to see if fetchCount is being invoked or not
+-- It should be
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d = date'2009-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d = date'2009-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d = date'2009-02-02';
+
+execute queryTest;
+
+-- Q109
+-- Test to see if fetchCount is being invoked or not
+-- It should not
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d = date'2010-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d = date'2010-02-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d = date'2010-02-02';
+
+execute queryTest;
+
+-- Q110
+-- Test to see if fetchCount is being invoked or not
+-- It should not since atleast one value is outside range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+
+execute queryTest;
+
+showstats for query
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-11-02');
+
+-- Q111
+-- Test to see if fetchCount is being invoked or not
+-- It should not since atleast one date is outside range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d >= date'2009-07-02' and d <= date'2009-08-02'
+or
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d >= date'2009-07-02' and d <= date'2009-08-02'
+or
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d >= date'2009-07-02' and d <= date'2009-08-02'
+or
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+execute queryTest;
+
+-- Q112
+-- Test to see if fetchCount is being invoked or not
+-- It should do the first predicate and use histogram for 
+-- the second one
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d >= date'2009-09-02' and d <= date'2009-11-02';
+
+execute queryTest;
+
+-- Q113
+-- Test to see if fetchCount is being invoked or not
+-- It should do the first predicate and use histogram for 
+-- the second one
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d <> date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d <> date'2009-11-02';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d <> date'2009-11-02';
+
+execute queryTest;
+
+-- Q114
+-- Test to see if fetchCount is being invoked or not
+-- It should since all values are withon histogram range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-09-03');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-09-03');
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d in (date'2009-07-02', date'2009-08-02',date'2009-09-02',date'2009-09-03');
+
+execute queryTest;
+
+-- Q115
+-- Test to see if fetchCount is being invoked or not
+-- It should not, since the value is outside the range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d = date'2009-07-02' + interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d = date'2009-07-02' + interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d = date'2009-07-02' + interval '1' year;
+
+execute queryTest;
+
+-- Q116
+-- Test to see if fetchCount is being invoked or not
+-- It should not, since the value is outside the range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d  + interval '1' year = date'2009-07-02' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d  + interval '1' year = date'2009-07-02' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d  + interval '1' year = date'2009-07-02' ;
+
+execute queryTest;
+
+-- Q117
+-- Test to see if fetchCount is being invoked or not
+-- It should not, since the value is outside the range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d = date'2009-07-02' - interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d = date'2009-07-02' - interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d = date'2009-07-02' - interval '1' year;
+
+execute queryTest;
+
+-- Q118
+-- Test to see if fetchCount is being invoked or not
+-- It should, since the value is within the range
+
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r3 where 
+d = date'2010-07-02' - interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r3 where 
+d = date'2010-07-02' - interval '1' year;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r3 where 
+d = date'2010-07-02' - interval '1' year;
+
+execute queryTest;
+
+-- Q119
+log;
+
+delete from temp;
+
+insert into temp
+select * from t8 where
+(t8.b + t8.c) = 10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8 where
+(t8.b + t8.c) = 10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8 where
+(t8.b + t8.c) = 10;
+
+execute queryTest;
+
+-- Q120
+log;
+
+delete from temp;
+
+insert into temp
+select * from t8 where
+(3 *t8.b + 4) = (4 * t8.b + 10);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8 where
+(3 *t8.b + 4) = (4 * t8.b + 10);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8 where
+(3 *t8.b + 4) = (4 * t8.b + 10);
+
+execute queryTest;
+
+showstats for query
+select * from t8 where
+(3 *t8.b + 4) = (4 * t8.b + 10);
+
+-- Q121
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8, t10 where
+t8.b *(t8.a + t10.b) + 4 =  10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8, t10 where
+t8.b *(t8.a + t10.b) + 4 =  10;
+
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q122
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8, t10 where
+t8.b + 4 =  t10.b + 10;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8, t10 where
+t8.b + 4 =  t10.b + 10;
+
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q123
+log;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8, t10 where
+(t8.b + t8.c) = (t10.b + t10.c);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8, t10 where
+(t8.b + t8.c) = (t10.b + t10.c);
+
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q124
+log;
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select * from t8, t10 where
+t8.b  > (t10.b + t10.c);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select * from t8, t10 where
+t8.b  > (t10.b + t10.c);
+
+
+execute cardFromHist;
+
+execute cardFromSample;
+
+-- Q125
+log;
+delete from temp;
+
+insert into temp
+select count(*) from cube1 where cube1.a/5 > 5 and cube1.b*2 = cube1.c*3;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from cube1 where cube1.a/5 > 5 and cube1.b*2 = cube1.c*3;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from cube1 where cube1.a/5 > 5 and cube1.b*2 = cube1.c*3;
+
+execute queryTest;
+
+-- Q126
+log;
+delete from temp;
+
+insert into temp
+select count(*) from t10 where
+(case when b<0 then a*5 else b*5 end) between 1 and 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t10 where
+(case when b<0 then a*5 else b*5 end) between 1 and 2;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t10 where
+(case when b<0 then a*5 else b*5 end) between 1 and 2;
+
+execute queryTest;
+
+-- Q127
+log;
+delete from temp;
+
+insert into temp
+select count(*) from t8 where b < 1 and c in (2, 3);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t8 where b < 1 and c in (2, 3);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t8 where b < 1 and c in (2, 3);
+
+execute queryTest;
+
+-- Q128
+log;
+delete from temp;
+
+insert into temp
+select count(*) from t8 where b < 1 and c in (2, 3, 4, 5, 6);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t8 where b < 1 and c in (2, 3, 4, 5, 6);
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t8 where b < 1 and c in (2, 3, 4, 5, 6);
+
+execute queryTest;
+
+-- Q129
+log;
+delete from temp;
+
+insert into temp
+select count(*) from t8 where b in (1,2) or a < 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B'));
+
+prepare xx from
+select count(*) from t8 where b in (1,2) or a < 5;
+
+control query shape off;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+control query shape implicit enforcers sort_groupby(
+scan(path 'CAT.HCUBE.IX8B'));
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t8 where b in (1,2) or a < 5;
+
+execute queryTest;
+
+-- Q130
+log;
+control query shape off;
+delete from temp;
+
+insert into temp
+select count(*) from t8 where b = 1 or a between 3 and 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from t8 where b = 1 or a between 3 and 5;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from t8 where b = 1 or a between 3 and 5;
+
+execute queryTest;
+
+showstats for query
+select count(*) from t8 where b = 1 or a between 3 and 5;
+
+-- Q131
+log;
+delete from temp;
+
+insert into temp
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1600;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1600;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1600;
+
+execute queryTest;
+
+-- Q132
+log;
+delete from temp;
+
+insert into temp
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1700;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1700;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1700;
+
+execute queryTest;
+
+-- Q133
+log;
+delete from temp;
+
+insert into temp
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1800;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1800;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 1800;
+
+execute queryTest;
+
+-- Q134
+log;
+delete from temp;
+
+insert into temp
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 2000;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from tdml10 where (i1 like '%BA' or i2 like '%BA') 
+and s2 between 1500 and 2000;
+
+execute queryTest;
+
+-----------------------------------------------------------------------
+-- Queries to test rolling columns for less than predicate
+-- The histogram if required should be extrapolated for greater
+-- than predicate and not for less than or less than equal to
+-----------------------------------------------------------------------
+
+-- Q135
+#ifNT
+-- COMPUTETIMESTAMP on NT can't handle year 9999.
+CQD RANGESPEC_TRANSFORMATION 'OFF';
+#ifNT
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '2009-02-19' and d < date '9999-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '9999-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '2009-02-19' and d < date '9999-02-27' ;
+
+execute queryTest;
+#ifNT
+CQD RANGESPEC_TRANSFORMATION RESET;
+#ifNT
+
+-- Q136
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d < date '2009-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d < date '2009-02-27' ;
+
+execute queryTest;
+
+-- Q137
+#ifNT
+-- COMPUTETIMESTAMP on NT can't handle year 9999.
+CQD RANGESPEC_TRANSFORMATION 'OFF';
+#ifNT
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d < date '9999-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d < date '9999-02-27' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d < date '9999-02-27' ;
+
+execute queryTest;
+#ifNT
+CQD RANGESPEC_TRANSFORMATION RESET;
+#ifNT
+
+-- Q138
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d <= date '2009-02-19' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d <= date '2009-02-19' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d <= date '2009-02-19' ;
+
+execute queryTest;
+
+-- Q139
+#ifNT
+-- COMPUTETIMESTAMP on NT can't handle year 9999.
+CQD RANGESPEC_TRANSFORMATION 'OFF';
+#ifNT
+log;
+
+delete from temp;
+
+insert into temp
+select count(*) from r1 where d >= date '9999-02-19' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
+
+prepare xx from
+select count(*) from r1 where d >= date '9999-02-19' ;
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+
+log ATESTDML10;
+
+prepare yy from
+select count(*) from r1 where d >= date '9999-02-19' ;
+
+execute queryTest;
+
+showstats for query
+select count(*) from r1 where d >= date '9999-02-19' ;
+
+#ifNT
+CQD RANGESPEC_TRANSFORMATION RESET;
+#ifNT
+
+
+log;
+
+
+
+drop table r1;
+drop table r2;
+drop table r3;
+drop index t3idx1;
+drop index t3idx2;
+drop index t3idx3;
+drop table tDML10;
+drop table temp;
+
+exit;

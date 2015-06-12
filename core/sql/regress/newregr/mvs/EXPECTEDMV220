@@ -1,0 +1,922 @@
+>>obey TESTMV220(SET_UP);
+>>------------------------------------------------------
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create mvgroup MVG220_cancel;
+
+--- SQL operation complete.
+>>
+>>create table T_220_T1 (a int not null not droppable,b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_220_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_220_T2 (c int,d int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_220_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_220_T3 (e int,f int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_220_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_220_T4 (g int,h int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_220_T4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_220_T5 (c int,d int) attribute NO LOCKONREFRESH;
+
+--- SQL operation complete.
+>>ALTER TABLE T_220_T5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>create mv T_220_MV1 
++>	refresh on request 
++>	initialize on create
++>	as 
++>	select sum(a) as sum_a,b from T_220_T1, T_220_T2 
++>	where b=d group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV1_547253896_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add T_220_MV1;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV2 
++>	refresh on request 
++>	initialize on create
++>	as select sum(b) as sum_b,a from T_220_T1, T_220_T2 
++>	where b=d group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add T_220_MV2;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV3 
++>	refresh on request 
++>	initialize on create
++>	as select sum(e) as sum_e,g from T_220_T3, T_220_T4 
++>	where f=g group by g;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV3_235562617_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV3;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV4 
++>	refresh on request 
++>	initialize on refresh 
++>	as select sum(f) as sum_f ,e  
++>	from T_220_MV1,T_220_T3 where b=e group by e;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV4_964338917_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV4;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV5 
++>	refresh on request 
++>	initialize on refresh 
++>	as select sum(sum_a) as sum_aa,g  
++>	from T_220_MV1,T_220_MV3 where b=g group by g;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV5_585274427_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV5;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV6 
++>	recompute 
++>	initialize on refresh 
++>	as select b,g from T_220_MV1,T_220_MV3 where b=g;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV6;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV7  
++>	recompute 
++>	initialize on refresh 
++>	as select e,f from T_220_MV1,T_220_T3 where e=f;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV7;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV8
++>	refresh on statement
++>	initialize on create 
++>	as select * from T_220_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV8 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV9 
++>	refresh on request 
++>	initialize on refresh 
++>	as select sum(sum_a) as sum_aa,g  from T_220_MV1,T_220_MV3 
++>	where b=g group by g;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV9_991421237_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV9 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV9;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV10  
++>	refresh on request 
++>	initialize on refresh  
++>	as select sum(g) as sum_g from T_220_MV9   group by g;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV10_573931437_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV10;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV11 
++>	refresh on request 
++>	initialize on refresh 
++>	as select sum(c) as sum_c from T_220_T5 group by d;
+
+*** WARNING[12077] All used objects must be set to LOCKONREFRESH before materialized view initialization.
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_220_MV11_456275537_8244 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV11;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV12 
++>	refresh on statement 
++>	initialize on refresh as select * from T_220_T5;
+
+*** WARNING[12077] All used objects must be set to LOCKONREFRESH before materialized view initialization.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_220_MV12 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV13
++>	refresh on statement
++>	initialize on refresh 
++>	as
++>        select a,count(b) Bb
++>	from T_220_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV13 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV14 
++>	refresh on statement 
++>	initialize on refresh
++>	as 
++>	select * from T_220_MV13;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV14 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV15
++>	refresh on request
++>	initialize on create
++>	store by (a)
++>	as
++>        select a,count(b) Bb
++>	from T_220_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV15 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV15;
+
+--- SQL operation complete.
+>>
+>>create mv T_220_MV16
++>	recompute
++>	initialize on create
++>	as
++>        select a,count(b) Bb
++>	from T_220_T1
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_220_MV16 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG220_cancel add  T_220_MV16;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------
+>>
+>>-- Run Tests
+>>
+>>	obey TESTMV220(TEST1);
+>>------------------------------------------------------
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail must use cascade or mvgroup
+>>refresh T_220_MV5 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20556] Materialized view CATMVS.MVSCHM.T_220_MV5 cannot be refreshed standalone (the used materialized view(s) and table(s) are not coordinated).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail must use cascade or mvgroup
+>>refresh T_220_MV6 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20556] Materialized view CATMVS.MVSCHM.T_220_MV6 cannot be refreshed standalone (the used materialized view(s) and table(s) are not coordinated).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail must use cascade or mvgroup
+>>refresh T_220_MV7 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20556] Materialized view CATMVS.MVSCHM.T_220_MV7 cannot be refreshed standalone (the used materialized view(s) and table(s) are not coordinated).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	obey TESTMV220(TEST2);
+>>------------------------------------------------------
+>>
+>>-- Fail recompute task on more than one mv's 
+>>refresh T_220_MV4 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20556] Materialized view CATMVS.MVSCHM.T_220_MV4 cannot be refreshed standalone (the used materialized view(s) and table(s) are not coordinated).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- PASS
+>>refresh T_220_MV4 cascade outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail not all deltas other than mv are empty
+>>refresh T_220_MV4 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20556] Materialized view CATMVS.MVSCHM.T_220_MV4 cannot be refreshed standalone (the used materialized view(s) and table(s) are not coordinated).
+*** ERROR[20527] Failed to complete the task REF(CATMVS.MVSCHM.T_220_MV4) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- PASS
+>>refresh T_220_MV4 cascade outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>refresh T_220_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 has been refreshed from 2 deltas in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T2...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T2.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T1.
+
+
+>>
+>>-- PASS
+>>refresh T_220_MV4 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV4 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_220_MV4 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_MV1...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T3...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_MV1.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T3.
+
+
+>>
+>>------------------------------------------------------
+>>	obey TESTMV220(TEST3);
+>>------------------------------------------------------
+>>-- Fail,second initialization in on statement mv
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>refresh T_220_MV8 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20555] ON STATEMENT materialized view CATMVS.MVSCHM.T_220_MV8 is already initialized.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	obey TESTMV220(TEST4);
+>>------------------------------------------------------
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail,not all underlying mv's are already initialized
+>>refresh T_220_MV10 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20551] The materialized view CATMVS.MVSCHM.T_220_MV10 cannot be refreshed (not all of the used materialized views are initialized).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>	obey TESTMV220(TEST5);
+>>------------------------------------------------------
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail,recompute cannot be on no lock on refresh
+>>refresh T_220_MV11 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20554] Materialized view CATMVS.MVSCHM.T_220_MV11 cannot be recomputed (at least one of the used tables is NO LOCKONREFRESH).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>insert into T_220_T1 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T2 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T3 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T4 values(1,1);
+
+--- 1 row(s) inserted.
+>>insert into T_220_T5 values(1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- Fail,recompute cannot be on no lock on refresh
+>>refresh T_220_MV12 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20554] Materialized view CATMVS.MVSCHM.T_220_MV12 cannot be recomputed (at least one of the used tables is NO LOCKONREFRESH).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>
+>>--------------------------------------------------------
+>>	obey TESTMV220(TEST7);
+>>--------------------------------------------------------
+>>-- Expected ERROR
+>>
+>>refresh T_220_MV14 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20551] The materialized view CATMVS.MVSCHM.T_220_MV14 cannot be refreshed (not all of the used materialized views are initialized).
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- Expected ERROR
+>>refresh T_220_MV14 cascade outfile REFRESH.LOG;
+
+*** ERROR[20511] ON STATEMENT materialized view CATMVS.MVSCHM.T_220_MV14 cannot be refreshed with CASCADE option.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20511] ON STATEMENT materialized view CATMVS.MVSCHM.T_220_MV14 cannot be refreshed with CASCADE option.
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+
+>>
+>>
+>>------------------------------------------------------
+>>	obey TESTMV220(TEST8);
+>>------------------------------------------------------
+>>Alter mv T_220_MV15 MVAttribute NO AUDIT;
+
+--- SQL operation complete.
+>>
+>>insert into T_220_t1 values (2, 100);
+
+--- 1 row(s) inserted.
+>>
+>>-- MV - un-available
+>>refresh T_220_MV15 debug 102 target CATMVS.MVSCHM.T_220_MV15;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV15 is being refreshed in a single transaction...
+
+*** ERROR[20516] Simulating a crash of the refresh utility at testpoint #102 !!!
+*** ERROR[20527] Failed to complete the task REF(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20524] A DDL lock on materialized view CATMVS.MVSCHM.T_220_MV15 cannot be released. Try to perform Refresh with the CANCEL option.
+*** ERROR[20527] Failed to complete the task RR(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- Expected FAIL with message " refresh recompute" 
+>>refresh  T_220_MV15 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20553] Materialized view CATMVS.MVSCHM.T_220_MV15 is unavailable. Specify the RECOMPUTE option explicitly for REFRESH.
+
+*** ERROR[20524] A DDL lock on materialized view CATMVS.MVSCHM.T_220_MV15 cannot be released. Try to perform Refresh with the CANCEL option.
+*** ERROR[20527] Failed to complete the task RR(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- Expected Success
+>>refresh T_220_MV15 recompute outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV15 is being refreshed (by recompute) in a single transaction...
+
+*** ERROR[4211] DML operations are not allowed on a non-audited table.  Table: CATMVS.MVSCHM.T_220_MV15.
+*** ERROR[8822] The statement was not prepared.
+*** ERROR[20550] Unable to compile statement : INTERNAL REFRESH CATMVS.MVSCHM.T_220_MV15 RECOMPUTE NODELETE.
+*** ERROR[20535] Remote task execution failure.
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20524] A DDL lock on materialized view CATMVS.MVSCHM.T_220_MV15 cannot be released. Try to perform Refresh with the CANCEL option.
+*** ERROR[20527] Failed to complete the task RR(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>------------------------------------------------------
+>>
+>>	obey TESTMV220(TEST9);
+>>------------------------------------------------------
+>>drop mv T_220_MV8 cascade;
+
+--- SQL operation complete.
+>>drop mv T_220_MV13 cascade;
+
+--- SQL operation complete.
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>--Alter table T_220_T1 attribute NO AUDIT;
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>-- Expected FAIL - incremental MV
+>>Refresh T_220_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 has been refreshed from 2 deltas in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T2...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T2.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T1.
+
+
+>>
+>>-- Expected Success - recomputed MV
+>>Refresh T_220_MV16 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV16 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_220_MV16 has been refreshed (by recompute) in a single transaction.
+
+
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>--Alter table T_220_T1 attribute AUDIT;
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>-- Expected Success
+>>Refresh T_220_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_220_MV1 was found up to date.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T2...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_220_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T2.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_220_T1.
+
+
+>>
+>>
+>>------------------------------------------------------
+>>
+>>
+>>-- Check the drop statement on the way out
+>>
+>>obey TESTMV220(CLEAN_UP);
+>>------------------------------------------------------
+>>refresh T_220_MV15 recompute outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_220_MV15 is being refreshed (by recompute) in a single transaction...
+
+*** ERROR[4211] DML operations are not allowed on a non-audited table.  Table: CATMVS.MVSCHM.T_220_MV15.
+*** ERROR[8822] The statement was not prepared.
+*** ERROR[20550] Unable to compile statement : INTERNAL REFRESH CATMVS.MVSCHM.T_220_MV15 RECOMPUTE NODELETE.
+*** ERROR[20535] Remote task execution failure.
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20524] A DDL lock on materialized view CATMVS.MVSCHM.T_220_MV15 cannot be released. Try to perform Refresh with the CANCEL option.
+*** ERROR[20527] Failed to complete the task RR(CATMVS.MVSCHM.T_220_MV15) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>refresh mvgroup MVG220_cancel cancel outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20522] A DDL lock on materialized view CATMVS.MVSCHM.T_220_MV15 cannot be canceled. Try to perform Refresh again, or restore the materialized view.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+
+--- 0 row(s) deleted.
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+--- 0 row(s) deleted.
+>>
+>>
+>>
+>>drop table T_220_T1 cascade;
+
+--- SQL operation complete.
+>>drop table T_220_T2 cascade;
+
+--- SQL operation complete.
+>>drop table T_220_T3 cascade;
+
+--- SQL operation complete.
+>>drop table T_220_T4 cascade;
+
+--- SQL operation complete.
+>>drop table T_220_T5 cascade;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG220_cancel;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+

@@ -42,10 +42,10 @@
 
 --- SQL operation complete.
 >>
->>grant update(col1) on t1 to $$SQLUSER3X$$;
+>>grant update(col1) on t1 to sql_user3;
 
 --- SQL operation complete.
->>grant select(col1) on t1 to $$SQLUSER3X$$;
+>>grant select(col1) on t1 to sql_user3;
 
 --- SQL operation complete.
 >>showddl t1;
@@ -421,6 +421,381 @@ select * from table(natablecache()) ;
 
 >>
 >>log;
+>>-- As user2, should fail
+>>delete from us4.t1 ;
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into us4.t1 values (1,1,1);
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from us4.v1 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.V1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into us4.t2 values (1,1,1);
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- As user2, should succeed
+>>update us4.t1 set col3 = 4 ;
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>update us4.t1 set col2 = 3 ;
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from us4.t1 order by col1;
+
+COL1         COL2         COL3       
+-----------  -----------  -----------
+
+          1            1            1
+          2            2            2
+          5            5            5
+          7            7            7
+
+--- 4 row(s) selected.
+>>insert into us4.t2(a,b) values (1,1);
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>log;
+>>-- as user3
+>>insert into us4.t2(a,b) values (2,2) ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>update us4.t1 set col2 = col1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>insert into us4.t2(a) values (3) ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>update us4.t1 set col1 = col1 + 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select col1 from us4.t1 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select col2 from us4.t1 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select col1 from us4.t1 where col2 > 100;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select col1 from us4.t1 where col1 > 100 order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select count(*), min(col1) from us4.t1 group by col2;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*), min(col1) from us4.t1 group by col1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select count(*) from us4.t1 group by col1 having min(col2) > 10;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*) from us4.t1 group by col1 having min(col1) > 10;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select x from us4.t1 transpose col2 as x;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select x from us4.t1 transpose col1 as x order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select col1 from us4.t1 sample random balance 
++>when col2 = 1 then 100 percent else 0 percent end;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select col1 from us4.t1 sample random balance 
++>when col1 = 1 then 100 percent else 0 percent end order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select col1 from us4.t1 where exists (select 1 from (values (us4.t1.col2)) t2(x) where t2.x = 100);
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select col1 from us4.t1 where exists (select 1 from (values (us4.t1.col1)) t2(x) where t2.x = 100) order by 1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from us4.t1 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>log;
+>>-- Testing create view based on column-level SELECT
+>>-- as user3
+>>
+>>set schema cat.us4;
+
+--- SQL operation complete.
+>>
+>>-- View on single table (positive):
+>>
+>>create view v3bd as select b,d from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v3bd;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3b as select b from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v3b;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3d as select d from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v3d;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3bbbbbb (c1,c2,c3,c4,c5,c6) as select b,b,b,b,b,b from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v3bbbbbb;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- View on single table (negative):
+>>
+>>create view v3ac as select a,c from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3a as select a from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3c as select c from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>create view v3 as select * from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>create view v3ab as select a,b from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3abcd as select a,b,c,d from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v3bc as select b,c from t3;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- View on two tables (positive):
+>>
+>>create view v34bf as select b,f from t3, t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v34bf;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v34bdfg as select b,d,f,g from t3, t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v34bdfg;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v34bdfg2 (c1,c2,c3,c4) as select b,d,f,g from t3, t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v34bdfg2;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v34gb as select g,b from t3, t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from v34gb;
+
+*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- View on two tables (negative):
+>>
+>>create view v34 as select * from t3,t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v34af as select a,f from t3, t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view v34bh as select b,h from t3,t4;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>log;
 >>-- Testing revoke for column-level SELECT
 >>-- as user4
 >>
@@ -509,3 +884,378 @@ CREATE TABLE TRAFODION.US4.T3
 
 End of MXCI Session
 
+>>-- as user1
+>>
+>>cqd query_cache '0' ;
+
+--- SQL operation complete.
+>>cqd metadata_cache_size '0' ;
+
+--- SQL operation complete.
+>>
+>>select count(*) from us4.t129_a ;
+
+(EXPR)              
+--------------------
+
+                1000
+
+--- 1 row(s) selected.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4;
+>>revoke select on us4.t129_a from sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
+>>sh sleep 10;
+>>
+>>-- checking that cache gets refreshed.
+>>-- should get an error
+>>prepare s1 from select * from us4.t129_a ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T129_A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>cqd metadata_cache_size reset ;
+
+--- SQL operation complete.
+>>
+>>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select case when current_cache_size > 0 then 1 else 0 end from table(natablecac
+he());
+   ^ (83 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--should error but place t129_a in natable cache
+>>prepare s1 from select * from us4.t129_a where c1 > 10;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T129_A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select case when current_cache_size > 0 then 1 else 0 end from table(natablecache());
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select case when current_cache_size > 0 then 1 else 0 end from table(natablecac
+he());
+   ^ (83 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>
+>>-- should succeed
+>>prepare s1 from select * from us4.t129_a as t1, us4.t129_a as t2;
+
+--- SQL command prepared.
+>>
+>>cqd query_cache reset ;
+
+--- SQL operation complete.
+>>cqd query_text_cache 'off' ;
+
+--- SQL operation complete.
+>>
+>>select count(*) from us4.t129_a where c1 = 10 ;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>select num_entries from table(querycache());
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select num_entries from table(querycache());
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4;
+>>revoke select on us4.t129_a from sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
+>>sh sleep 10;
+>>
+>>-- should fail
+>>select count(*) from us4.t129_a where c1 = 10 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T129_A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cache has 1 entry
+>>select num_entries from table(querycache());
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select num_entries from table(querycache());
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>cqd query_text_cache reset ;
+
+--- SQL operation complete.
+>>cqd auto_query_retry 'off' ;
+
+--- SQL operation complete.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select count(*) from us4.t129_a where c1 = 100 ;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4;
+>>revoke select on us4.t129_a from sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
+>>sh sleep 10;
+>>
+>>-- fails
+>>select count(*) from us4.t129_a where c1 = 100 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T129_A.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>cqd auto_query_retry reset ;
+
+--- SQL operation complete.
+>>cqd auto_query_retry_warnings 'on' ;
+
+--- SQL operation complete.
+>>
+>>
+>>select count(*) from us4.t129_a where c10 = 100 ;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant2)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user2 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>
+>>select count(*) from us4.t129_a where c10 = 100 ;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>cqd auto_query_retry_warnings reset ;
+
+--- SQL operation complete.
+>>prepare s1 from select count(*) from us4.t129_a where c10 < 100 ;
+
+--- SQL command prepared.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(revoke1)" -u sql_user4;
+>>revoke select on us4.t129_a from sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- MUST DELAY so that QVP process has time to send Security Key invalidations to all SQL Compiler caches
+>>sh sleep 10;
+>>
+>>-- should error
+>>execute s1 ;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T129_A.
+
+*** ERROR[8822] The statement was not prepared.
+
+--- 0 row(s) selected.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant1)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user1 ;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>set envvar sqlci_cursor '1';
+
+--- SQL operation complete.
+>>cqd attempt_esp_parallelism 'off' ;
+
+--- SQL operation complete.
+>>cqd nested_joins 'off' ;
+
+--- SQL operation complete.
+>>cqd merge_joins 'off' ;
+
+--- SQL operation complete.
+>>
+>>declare c1 cursor for 
++>select uniq from us4.t129_a, us4.t129_starter 
++>where filler = 'a' or a = 1 for read uncommitted access ;
+
+--- SQL operation complete.
+>>
+>>open c1 ;
+
+--- SQL operation complete.
+>>
+>>sh  sh runmxci.ksh -i "TEST129(grant3)" -u sql_user4;
+>>grant select on us4.t129_a to sql_user3 ;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          0
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          2
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          3
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          4
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          5
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          6
+
+--- 1 row(s) selected.
+>>fetch c1;
+
+UNIQ       
+-----------
+
+          7
+
+--- 1 row(s) selected.
+>>
+>>log ;

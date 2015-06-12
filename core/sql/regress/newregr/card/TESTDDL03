@@ -1,0 +1,49 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDDL03 (Cardinality)
+-- Functionality: Creates HPIT database.
+-- Expected Files: ETESTDDL03.
+-- History: Created on 12/03/2008
+-- Owner: Renu Varshneya
+-----------------------------------------------------------------------------
+drop schema BENCH9X4.HPITD cascade;
+drop catalog BENCH9X4 ;
+LOG ATESTDDL03 clear;
+set envvar is_linux 0;
+
+#ifLINUX
+set envvar is_linux 1;
+#ifLINUX
+---------------------------------------------------------------------------
+#ifdef is_linux
+sh sh $OPTSCRIPTDIR../tools/OSIM_cleanupSimulation.ksh ./hpit;
+
+?section crDB
+-- create HPIT database objects
+sh sh $OPTSCRIPTDIR../tools/OSIM_setupSimulation.ksh ./hpit;
+#else
+sh sh w:/regress/tools/OSIM_cleanupSimulation.ksh w:/regress/card/hpit;
+
+?section crDB
+-- create HPIT database objects
+sh sh w:/regress/tools/OSIM_setupSimulation.ksh w:/regress/card/hpit;
+
+#endif
+
+LOG;
+exit;

@@ -535,16 +535,16 @@ public class HTableClient {
 			byte[] rowID = (byte[])rows[i]; 
 			Get get = new Get(rowID);
 			listOfGets.add(get);
+			if (columns != null)
+			{
+				for (int j = 0; j < columns.length; j++ ) {
+					byte[] col = (byte[])columns[j];
+					get.addColumn(getFamily(col), getName(col));
+				}
+			}
 		}
 		if (columns != null)
-		{
-			for (int j = 0; j < columns.length; j++ ) {
-				byte[] col = (byte[])columns[j];
-				for (Get get : listOfGets)
-					get.addColumn(getFamily(col), getName(col));
-			}
 			numColsInScan = columns.length;
-		}
 		else
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
@@ -573,22 +573,29 @@ public class HTableClient {
 		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
 		List<Get> listOfGets = new ArrayList<Get>();
 		short numRows = bbRowIDs.getShort();
+		short actRowIDLen ;
+		byte rowIDSuffix;
+		byte[] rowID;
 
 		for (int i = 0; i < numRows; i++) {
-                        byte[] rowID = new byte[rowIDLen];
-                        bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 			Get get = new Get(rowID);
 			listOfGets.add(get);
+			if (columns != null) {
+				for (int j = 0; j < columns.length; j++ ) {
+					byte[] col = (byte[])columns[j];
+					get.addColumn(getFamily(col), getName(col));
+				}
+			}
 		}
 		if (columns != null)
-		{
-			for (int j = 0; j < columns.length; j++ ) {
-				byte[] col = (byte[])columns[j];
-				for (Get get : listOfGets)
-					get.addColumn(getFamily(col), getName(col));
-			}
 			numColsInScan = columns.length;
-		}
 		else
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
@@ -598,7 +605,9 @@ public class HTableClient {
 			getResultSet = table.get(listOfGets);
 			fetchType = BATCH_GET;
 		}
-                 pushRowsToJni(getResultSet);
+		if (getResultSet.length != numRows)
+                   throw new IOException("Number of rows retunred is not equal to requested number of rows");
+ 		pushRowsToJni(getResultSet);
 		return getResultSet.length;
 	}
 
@@ -712,11 +721,11 @@ public class HTableClient {
 		if (cellsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, cellsReturned);
+				null, null, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		else 
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -776,11 +785,11 @@ public class HTableClient {
 		if (numColsReturned == 0)
 			setResultInfo(jniObject, null, null,
 				null, null, null, null,
-				null, null, rowIDs, kvsPerRow, numColsReturned);
+				null, null, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		else
 			setResultInfo(jniObject, kvValLen, kvValOffset,
 				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned);
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned, rowsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -823,10 +832,17 @@ public class HTableClient {
 		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
 		short numRows = bbRowIDs.getShort();
                 byte[] rowID;		
+		byte rowIDSuffix;
+		short actRowIDLen;
        
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
-			rowID = new byte[rowIDLen];
-			bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 
 			Delete del;
 			if (timestamp == -1)
@@ -962,7 +978,8 @@ public class HTableClient {
 		short colNameLen;
                 int colValueLen;
 		byte[] colName, colValue, rowID;
-
+		byte rowIDSuffix;
+                short actRowIDLen;
 		bbRowIDs = (ByteBuffer)rowIDs;
 		bbRows = (ByteBuffer)rows;
 
@@ -970,8 +987,13 @@ public class HTableClient {
 		numRows = bbRowIDs.getShort();
 		
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
-			rowID = new byte[rowIDLen];
-			bbRowIDs.get(rowID, 0, rowIDLen);
+                        rowIDSuffix  = bbRowIDs.get();
+                        if (rowIDSuffix == '1')
+		           actRowIDLen = (short)(rowIDLen+1);
+                        else
+                           actRowIDLen = rowIDLen; 	
+			rowID = new byte[actRowIDLen];
+			bbRowIDs.get(rowID, 0, actRowIDLen);
 			put = new Put(rowID);
 			numCols = bbRows.getShort();
 			for (short colIndex = 0; colIndex < numCols; colIndex++)
@@ -1189,7 +1211,8 @@ public class HTableClient {
 				int[] kvFamLen, int[] kvFamOffset,
   				long[] timestamp, 
 				byte[][] kvBuffer, byte[][] rowIDs,
-				int[] kvsPerRow, int numCellsReturned);
+				int[] kvsPerRow, int numCellsReturned,
+				int rowsReturned);
 
    private native void cleanup(long jniObject);
 

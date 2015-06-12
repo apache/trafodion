@@ -1,0 +1,266 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST011
+-- Unit Test to test the support for Aggregate with No GroupBy (ANGB) queries.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST011(clean_up);
+obey TEST011(clean_up_files);
+log LOG011 clear;
+obey TEST011(set_up);
+obey TEST011(create_mvs);
+obey TEST011(match_angb);
+obey TEST011(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema test011 cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm ANGB*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+--control query default QUERY_CACHE '0';
+control query default MVQR_PUBLISH_TO 'PRIVATE';
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+obey GetMvDesc;
+
+create schema test011;
+set schema test011;
+set pattern $$MVSchemaName$$ TEST011;
+
+create table T011_FACT (
+	g1   int,
+	g2   int,
+	dimkey int
+	) no partition;
+
+create table T011_DIM (
+        pkey int not null primary key, 
+        dimdata1 int,
+        dimdata2 char(10)
+        ) store by primary key no partition;
+
+insert into T011_FACT values
+  (2, 6, 5), (7, 6, 1), (4, 7, 9), (9, 5, 5), (5, 5, 3),  -- Random data
+  (2, 1, 9), (5, 8, 8), (4, 4, 6), (3, 2, 5), (9, 1, 6),
+  (2, 4, 7), (7, 1, 6), (6, 3, 3), (1, 9, 8), (5, 3, 1),
+  (8, 8, 2), (1, 9, 8), (8, 9, 4), (8, 1, 7), (4, 6, 1),
+  (1, 4, 5), (3, 7, 6), (6, 7, 2), (6, 1, 2), (9, 5, 3),
+  (4, 5, 1), (8, 6, 5), (8, 8, 8), (8, 6, 9), (1, 6, 4),
+  (7, 5, 4), (5, 6, 2), (8, 3, 8), (2, 1, 4), (2, 1, 5),
+  (6, 2, 5), (2, 7, 9), (3, 9, 7), (3, 5, 1), (1, 8, 4),
+  (3, 3, 4), (9, 1, 4), (2, 1, 9), (8, 6, 6), (9, 8, 1),
+  (5, 1, 9), (2, 9, 3), (6, 3, 2), (9, 4, 9), (2, 5, 8),
+  (1, 1, 1), (1, 1, 1), (1, 1, 1),                       -- Higher count data
+  (1, 2, 1), (1, 2, 1), (1, 2, 1), (1, 2, 1), (1, 2, 1), 
+  (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), (1, 3, 1), 
+  (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1), (1, 4, 1);
+insert into T011_FACT(g1)         values (0);           -- Some null values
+insert into T011_FACT(g1, g2)     values (0, 0);
+insert into T011_FACT(g1, dimkey) values (0, 1);
+insert into T011_FACT(g2)         values (0);
+insert into T011_FACT(g2, dimkey) values (0, 1);
+insert into T011_FACT(dimkey)     values (1);
+
+insert into T011_DIM(pkey, dimdata1, dimdata2) values
+  (1, 1, 'abcdef'), (2, 2, 'abcdef'), (3, 3, 'abcdef'), 
+  (4, 4, 'aNICEf'), (5, 5, 'aNICEf'), (6, 6, 'aNICEf'),
+  (7, 7, 'aNIECE'), (8, 8, 'aNIECE'), (9, 9, 'aNIECE');
+insert into T011_DIM(pkey) values (10);
+
+?section create_mvs
+--===========================================
+-- Create MVs
+--===========================================
+
+-- MJV
+create mv angb_mjv
+	recompute
+	initialized on create
+	as  select *
+	    from T011_FACT, T011_DIM
+	    where dimkey=pkey;
+
+set pattern $$MVName$$ ANGB_MJV;
+obey TEST011(dump_MV);
+
+-- MAV 
+create mv angb_mav1
+	recompute
+	initialized on create
+	as  select g1, g2, count(dimdata1) cnt, max(dimdata2) mx
+	    from T011_FACT, T011_DIM
+	    where dimkey=pkey
+	    group by g1, g2;
+
+set pattern $$MVName$$ ANGB_MAV1;
+obey TEST011(dump_MV);
+
+-- ANGB MV
+create mv angb_mav2
+	recompute
+	initialized on create
+	as  select count(dimdata1) cnt, max(dimdata2) mx
+	    from T011_FACT, T011_DIM
+	    where dimkey=pkey;
+
+set pattern $$MVName$$ ANGB_MAV2;
+obey TEST011(dump_MV);
+
+?section ANGB_QUERY
+prepare QueryStmt from
+  select count(dimdata1) cnt, max(dimdata2) mx
+  from T011_FACT, T011_DIM
+  where dimkey=pkey
+  order by 1;
+
+?section match_angb
+--===========================================
+-- Query 1
+-- Should match all 3 MVs
+--===========================================
+set pattern $$QueryName$$ ANGB_QUERY;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST011($$QueryName$$);
+		
+obey TEST011(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE > angb1.in;
+sh echo MATCH ANGB_QUERY.xml >> angb1.in;
+
+-- Run QMS as a command line tool
+sh sh -c "$QMS angb1.in angb.out";
+
+log;
+sh cat angb.out >> LOG011;
+log LOG011;
+
+-- Verify MJV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST011.ANGB_MJV';
+obey TEST011(compare);
+
+-- Verify MAV1 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST011.ANGB_MAV1';
+obey TEST011(compare);
+
+-- Verify MAV2 is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.TEST011.ANGB_MAV2';
+obey TEST011(compare);
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+select * from $$MVName$$;
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG011;
+log LOG011;
+
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG011;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST011($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log T011_C1.txt clear;
+execute QueryStmt;
+log;
+log LOG011;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST011($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log T011_C2.txt clear;
+execute QueryStmt;
+log;
+log LOG011;
+
+-- Diff query results
+log;
+sh diff T011_C1.txt T011_C2.txt >> LOG011;
+log LOG011;
+-- Diff is done.

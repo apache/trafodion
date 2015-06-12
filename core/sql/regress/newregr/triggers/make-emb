@@ -1,0 +1,41 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+echo Creating $1.m, $1.cpp and $1.exe from $1
+echo Note: argument file should not contain the .sql extension
+echo ----------------------------------------------------------
+
+SQLC="tdm_sqlc"
+INCLUDE_OPTS="/Zp4 /MDd /W3 /GX /Zi /Od /Ic:/tdm_sql/include /Iy:/inc"
+MAINCMP="tdm_arkcmp"
+LIB_OPTS="/link w:/lib/debug/tdm_sqlcli.lib"
+CLINK="cl"
+
+
+rm $1.m
+rm $1.cpp
+rm $1.exe
+
+$SQLC $1.sql -c $1.cpp
+$MAINCMP $1.m
+$CLINK $1.cpp $INCLUDE_OPTS $LIB_OPTS
+
+rm $1.pdb
+rm $1.obj
+rm $1.ilk
+rm vc50.pdb

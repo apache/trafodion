@@ -1,0 +1,107 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets
+-- RW-conflicting set
+
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+--control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+
+obey TEST_6_2_1_3(clean_up);
+obey TEST_6_2_1_3(set_up);
+log   LOG_6_2_1_3 clear;
+obey TEST_6_2_1_3(tests);
+LOG;
+obey TEST_6_2_1_3(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+DROP TRIGGER rt0;
+DROP TRIGGER rt1;
+DROP TRIGGER rt2;
+DROP TRIGGER st3;
+
+------------------------------------------------------------------
+obey clearTables2;
+
+?section set_up
+INSERT INTO T2 VALUES (1,1);
+INSERT INTO T2 VALUES (1,2);
+INSERT INTO T1 VALUES (10,10);
+
+---------------------------------
+-- DEFINE TRIGGER rt0
+---------------------------------
+
+CREATE TRIGGER rt0
+AFTER DELETE ON T1
+FOR EACH ROW
+UPDATE T2 SET b= b+1;
+
+---------------------------------
+-- DEFINE TRIGGER rt1
+---------------------------------
+
+CREATE TRIGGER rt1
+AFTER UPDATE ON T2
+REFERENCING OLD AS oldR
+FOR EACH ROW
+WHEN (oldR.a <> oldR.b)
+INSERT INTO T1 VALUES (oldR.a+1, oldR.b);
+
+
+---------------------------------
+-- DEFINE TRIGGER rt2
+---------------------------------
+
+CREATE TRIGGER rt2
+AFTER UPDATE ON T2
+REFERENCING OLD AS oldR, NEW AS newR
+FOR EACH ROW
+WHEN (oldR.b <> 2)
+INSERT INTO T3 VALUES (newR.a, newR.B);
+
+---------------------------------
+-- DEFINE TRIGGER st3
+---------------------------------
+
+CREATE TRIGGER st3
+AFTER UPDATE ON T2
+INSERT INTO T4 VALUES (100);
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+DELETE FROM T1 WHERE a>9;
+
+SELECT * FROM T1 ORDER BY a; -- check result
+
+SELECT * FROM T2 ORDER BY a,b; -- check result
+
+SELECT * FROM T3 ORDER BY a; -- check result
+
+SELECT * FROM T4 ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

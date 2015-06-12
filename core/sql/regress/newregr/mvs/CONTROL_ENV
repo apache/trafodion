@@ -1,0 +1,46 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------------------
+-- CONTROL ENVIRONMENT
+------------------------------------------------------------------
+
+?section CLEAN_UP
+obey MVDROPDB(ALL_SECTIONS);
+
+?section SET_UP
+
+--obey ENVIRON;
+--obey PREPARE_DDL_SELECTS;
+obey MVCREATEDB(CREATE_CATALOG);
+obey MVCREATEDB(SCHEMA_PERSNL);
+obey MVCREATEDB(SCHEMA_SALES);
+obey MVCREATEDB(SCHEMA_INVENT);
+
+obey MVINSERTDB(SCHEMA_PERSNL);
+obey MVINSERTDB(SCHEMA_SALES);
+obey MVINSERTDB(SCHEMA_INVENT);
+
+?section SIMPLE_ENV_SET
+create catalog catmvs;
+create schema catmvs.mvschm;
+create schema catmvs.mvschm2;
+
+?section SIMPLE_ENV_CLEAN
+drop schema catmvs.mvschm cascade;
+drop schema catmvs.mvschm2 cascade;
+drop catalog catmvs;

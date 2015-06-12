@@ -1,0 +1,76 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+This set of queries was developed to compare the execution time of key executor
+operators with different build labels. 
+
+To run the script, type the following in korn shell:
+
+./runregr [-ndb]
+
+The ndb flag indicates that no database creation will take place.  Use this
+flag only if a valid database is present.
+
+The result summary is stored in the runregr.log file.  This file contains the 
+execution time for each of the 9 queries as well as elapsed time for each of
+the import runs.  To see more detail stats information on a particular query, 
+check the query?.log files.  
+
+The result of each of the queries is compared against the base number for that 
+query.  For each machine, a file should exist containing the base numbers with 
+which all future tests will be compared.  This file must be added manually by
+the person running the test.  This is a one-time procedure, and the base file
+should be updated periodically to reflect permanent improvement (or 
+degradation) in performance.
+
+To create a base file for a particular machine, do the following steps:
+
+1) run the 'runregr' script (note that none of the tests will pass because 
+   there's no base file) and a file named "runregr.log" will be produced
+
+2) find out the name of your machine by typing the command 
+
+    echo ${COMPUTERNAME}
+
+3) If you want to use the "runregr.log" as the base file, just rename the
+   file to "base.{COMPUTERNAME}".  For example, if the name of my computer
+   is "nssw-yuanm", then the base file for my machine is base.nssw-yuanm
+
+4) You may want to run the script a few times, thus creating several log files.
+   The base file can then be created by using one of the log files and 
+   manually changing the results in the file to reflect the average time for
+   the queries.
+
+With each run of the script, an entry is added to the history.MACHINE_NAME.log 
+file.  This file is not deleted by the script.  This file provides history 
+information on the elapsed time of the script.  There's one history file for
+each machine where this script is run.  For the build machines, when the test
+is executed for the first time on that machine, the history.MACHINE_NAME.log
+file needs to be added to clearcase manually by the build coordinator.
+
+For the build machines, the script is set up to only run when the build is a
+release build.  A environment variable FLAVOR is checked for the value Debug.
+If the env variable is present and the value is "Debug", the test is not 
+executed.
+
+The program SetCache.exe that is included in the w:/regress/perf directory is
+copied from the y-area 990524sp1.  It is very possible that this application
+will change later on.  In that case, the program needs to be copied again.  The
+reason why I couldn't just execute the program from the Y-area is because the
+bit testing environment doesn't have a y-area.
+
+For questions, please see Maria Yuin (5-5161, maria.yuin@compaq.com)

@@ -2489,9 +2489,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 						.extractShort(rawBuffer_, desc.nullValue_ + rowOffset, this.stmt_.connection_.ic_.getByteSwap()) == -1) {
 			ret = null;
 		} else {
-			int maxLen = desc.sqlDataType_ != -601 ? desc.maxLen_ : desc.maxLen_ + 2;
-	        ret = new byte[maxLen];
-	        System.arraycopy(rawBuffer_, desc.noNullValue_ + rowOffset, ret, 0, maxLen);
+                       boolean shortLength = desc.maxLen_ < Math.pow(2, 15);
+                       int dataOffset = ((shortLength) ? 2 : 4);
+		       int maxLen = desc.sqlDataType_ != InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH ? desc.maxLen_ : desc.maxLen_ + dataOffset;
+	               ret = new byte[maxLen];
+	               System.arraycopy(rawBuffer_, desc.noNullValue_ + rowOffset, ret, 0, maxLen);
 		}
 		return ret;
 	}

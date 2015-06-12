@@ -1,0 +1,203 @@
+>>
+>>-- Run Tests
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>	sh sh runmxci.ksh -i "TESTMV521(User1Setup)" -u $$SQLUSER1Q$$;
+>>-- User1Setup
+>>----------------------
+>>create catalog c;
+
+--- SQL operation complete.
+>>create schema c.s;
+
+--- SQL operation complete.
+>>set schema c.s;
+
+--- SQL operation complete.
+>>create table T1_T_521 (a int);
+
+--- SQL operation complete.
+>>ALTER TABLE T1_T_521 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create mv MV1_T_521
++>	refresh on request
++>initialized on refresh
++>	--mvattribute no audit
++>	as
++>	select sum(a) as sa
++>	from T1_T_521;
+
+--- SQL operation complete.
+>>ALTER MV MV1_T_521 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- SUCCEED (using purge data)
+>>refresh MV1_T_521 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+The materialized view C.S.MV1_T_521 is being refreshed (by recompute) in a single transaction...
+
+The materialized view C.S.MV1_T_521 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table C.S.T1_T_521...
+
+Finished the log cleanup of table C.S.T1_T_521.
+
+
+>>
+>>sh sh runmxci.ksh -i "TestMV521(User1Grant)" -u $$SQLUSER1Q$$;
+>>-- User1Grant
+>>----------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>grant select on T1_T_521 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant select on MV1_T_521 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant insert on MV1_T_521 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant delete on MV1_T_521 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>log;
+>>
+>>sh sh runmxci.ksh -i "TestMV521(User2Refresh)" -u $$SQLUSER2Q$$;
+>>-- User2Refresh
+>>---------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>-- SUCCEED (using purge data)
+>>refresh MV1_T_521 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view C.S.MV1_T_521 is being refreshed (by recompute) in a single transaction...
+
+The materialized view C.S.MV1_T_521 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table C.S.T1_T_521...
+
+Finished the log cleanup of table C.S.T1_T_521.
+
+
+>>
+>>--FAIL
+>>sh sh runmxci.ksh -i "TestMV521(User3Refresh1)" -u $$SQLUSER3Q$$;
+>>-- User3Refresh
+>>---------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>refresh MV1_T_521 recompute outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20552] The current user does not have the refresh privilege for materialized view C.S.MV1_T_521.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>sh sh runmxci.ksh -i "TestMV521(User1Grant2)" -u $$SQLUSER1Q$$;
+>>-- User1Grant2
+>>---------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>grant select on T1_T_521 to $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>grant select on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>grant insert on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>grant delete on MV1_T_521 to $$SQLUSER2Q$$ with grant option;
+
+--- SQL operation complete.
+>>log;
+>>
+>>sh sh runmxci.ksh -i "TestMV521(User2Grant)" -u $$SQLUSER2Q$$;
+>>-- User2Grant
+>>--------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>grant select on T1_T_521 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>grant select, insert, delete on MV1_T_521 to $$SQLUSER3Q$$;
+
+--- SQL operation complete.
+>>log;
+>>
+>>-- SUCCESS
+>>sh sh runmxci.ksh -i "TestMV521(User3Refresh2)" -u $$SQLUSER3Q$$;
+>>-- User3Refresh
+>>---------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>
+>>refresh MV1_T_521 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view C.S.MV1_T_521 is being refreshed (by recompute) in a single transaction...
+
+The materialized view C.S.MV1_T_521 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table C.S.T1_T_521...
+
+Finished the log cleanup of table C.S.T1_T_521.
+
+
+>>
+>>sh sh runmxci.ksh -i "TestMV521(User1CleanUP)" -u $$SQLUSER1Q$$;
+>>-- User1CleanUP
+>>--------------------
+>>set schema c.s;
+
+--- SQL operation complete.
+>>drop mv MV1_T_521;
+
+--- SQL operation complete.
+>>drop table T1_T_521;
+
+--- SQL operation complete.
+>>drop schema c.s;
+
+--- SQL operation complete.
+>>drop catalog c;
+
+--- SQL operation complete.
+>>log;
+>>
+>>log;
+>>-- exit
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

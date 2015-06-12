@@ -1,0 +1,69 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- full correct syntax
+-- AFTER UPDATE using OLD ROW and NEW ROW, verifying exact match on columns as a trigger condition
+
+
+obey TEST_1_1_1_4(clean_up);
+obey TEST_1_1_1_4(set_up);
+log   LOG_1_1_1_4 clear;
+obey TEST_1_1_1_4(tests);
+LOG;
+obey TEST_1_1_1_4(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+drop trigger trig4;
+obey clearTables;
+
+?section set_up
+
+SET SCHEMA cat1.schm;
+
+DELETE FROM tab1B;
+
+CREATE TRIGGER trig4 AFTER UPDATE OF (c, d)
+	ON tab1A
+	REFERENCING NEW AS newTable, OLD AS oldTable
+	FOR EACH STATEMENT
+	
+		INSERT INTO tab1B VALUES ((select count(*) from tab1b), 100000);
+?section tests
+
+------------------------------------------------------------------
+-- 	TEST CASE
+------------------------------------------------------------------
+-- NOTE:  the following statement should NOT fire the trigger (no match)
+UPDATE tab1A SET b=2;
+
+-- NOTE:  the following statement SHOULD fire the trigger (any match)
+UPDATE tab1A SET b=2, c=2, d=2;
+
+-- NOTE:  the following statement SHOULD fire the trigger (any match)
+UPDATE tab1A SET d=3;
+
+-- NOTE:  the following statement SHOULD fire the trigger (exact match)
+UPDATE tab1A SET c=2, d=2;
+
+---------------------------------------------------------------------------------
+-- RESULT : tab1B has 3 row
+SELECT count(*) FROM tab1B;
+
+---------------------------------------------------------------------------------

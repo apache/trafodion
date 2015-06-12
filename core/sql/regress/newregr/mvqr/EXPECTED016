@@ -1,0 +1,2433 @@
+>>obey TEST016(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>
+>>obey GetMvDesc;
+>>--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+>>set param ?mvDescSubId  -2;
+>>set param ?mvName 'SUMBY_DAY';
+>>set param ?mvSchemaName 'SUMBY';
+>>
+>>-- query the TEXT SMD table for the descriptor of an MV
+>>-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+>>--       length limit of the NT version of awk (file CropDescriptor.ksh).
+>>prepare getMVDescFromTEXT from
++>  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
++>                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
++>                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
++>  from
++>		 (SELECT o.object_uid as uid0, text as text0
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 0 ) as row0
++>	left outer join
++>		 (SELECT o.object_uid as uid1, text as text1
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 1 ) as row1
++>		 on uid0 = uid1
++>	left outer join
++>		 (SELECT o.object_uid as uid2, text as text2
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 2 ) as row2
++>		 on uid0 = uid2
++>	left outer join
++>		 (SELECT o.object_uid as uid3, text as text3
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 3 ) as row3
++>		 on uid0 = uid3
++>	left outer join
++>		 (SELECT o.object_uid as uid4, text as text4
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 4 ) as row4
++>		 on uid0 = uid4
++>	left outer join
++>		 (SELECT o.object_uid as uid5, text as text5
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 5 ) as row5
++>		 on uid0 = uid5
++>	left outer join
++>		 (SELECT o.object_uid as uid6, text as text6
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 6 ) as row6
++>		 on uid0 = uid6
++>	left outer join
++>		 (SELECT o.object_uid as uid7, text as text7
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 7 ) as row7
++>		 on uid0 = uid7
++>	left outer join
++>		 (SELECT o.object_uid as uid8, text as text8
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 8 ) as row8
++>		 on uid0 = uid8;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>create schema rl;
+
+--- SQL operation complete.
+>>set schema rl;
+
+--- SQL operation complete.
+>>set pattern $$MVSchemaName$$ RL;
+>>
+>>create table fact (
++>	fday   int,
++>	fmonth int,
++>	fyear  int,
++>	fitem  int,
++>	fquant int,
++>	fprice numeric (8,2),
++>	dimkey int) no partition;
+
+--- SQL operation complete.
+>>
+>>create table dim1 (dkey int not null not droppable primary key, dimdata int, fk1 int) 
++>  store by primary key no partition;
+
+--- SQL operation complete.
+>>
+>>
+>>obey TEST016(create_stale_mvs);
+>>--===========================================
+>>-- Stale MVs
+>>--===========================================
+>>
+>>-- Immediate
+>>create mv RL_IMM_STALE
++>  refresh on statement
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+*** WARNING[12112] A secondary index CAT.RL.RL_IMM_STALE_147272434_5587 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>set pattern $$MVName$$ RL_IMM_STALE;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_IMM_STALE
+  </Table>
+  <Misc isIncremental='1' isImmediate='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168268549104' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168263068961' isKeyCovered='1' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J165'>
+          <Column id='C135' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C126'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O144' name='SYS_SYSKEY1'>
+        <Column id='C119' tableId='T2' colIndex='0' isNullable='0'>
+          CAT.RL.FACT.SYSKEY
+        </Column>
+      </Output>
+      <Output id='O147' name='ODAY'>
+        <Column id='C120' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O150' name='OMONTH'>
+        <Column id='C121' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O153' name='OYEAR'>
+        <Column id='C122' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O159' name='FQUANT'>
+        <Column id='C124' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O162' name='FPRICE'>
+        <Column id='C125' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O165' name='DIMKEY'>
+        <Column id='C126' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O171' name='DIMDATA'>
+        <Column id='C136' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- ON REQ
+>>create mv RL_REQ_STALE
++>  refresh on request
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+*** WARNING[12112] A secondary index CAT.RL.RL_REQ_STALE_171772434_5587 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>set pattern $$MVName$$ RL_REQ_STALE;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_REQ_STALE
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168271653402' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168271653402' isKeyCovered='1' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J165'>
+          <Column id='C135' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C126'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O144' name='SYS_SYSKEY1'>
+        <Column id='C119' tableId='T2' colIndex='0' isNullable='0'>
+          CAT.RL.FACT.SYSKEY
+        </Column>
+      </Output>
+      <Output id='O147' name='ODAY'>
+        <Column id='C120' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O150' name='OMONTH'>
+        <Column id='C121' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O153' name='OYEAR'>
+        <Column id='C122' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O159' name='FQUANT'>
+        <Column id='C124' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O162' name='FPRICE'>
+        <Column id='C125' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O165' name='DIMKEY'>
+        <Column id='C126' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O171' name='DIMDATA'>
+        <Column id='C136' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- RECOMPUTE
+>>create mv RL_RCM_STALE
++>  recompute
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RL_RCM_STALE;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_RCM_STALE
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168300442203' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168300442203' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J133'>
+          <Column id='C103' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C94'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O115' name='ODAY'>
+        <Column id='C88' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O118' name='OMONTH'>
+        <Column id='C89' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O121' name='OYEAR'>
+        <Column id='C90' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O127' name='FQUANT'>
+        <Column id='C92' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O130' name='FPRICE'>
+        <Column id='C93' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O133' name='DIMKEY'>
+        <Column id='C94' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O139' name='DIMDATA'>
+        <Column id='C104' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- User maintained
+>>create mv RL_UMV_STALE
++>  refresh by user
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RL_UMV_STALE;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_UMV_STALE
+  </Table>
+  <Misc isIncremental='0' isUMV='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168300442203' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168300442203' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J133'>
+          <Column id='C103' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C94'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O115' name='ODAY'>
+        <Column id='C88' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O118' name='OMONTH'>
+        <Column id='C89' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O121' name='OYEAR'>
+        <Column id='C90' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O127' name='FQUANT'>
+        <Column id='C92' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O130' name='FPRICE'>
+        <Column id='C93' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O133' name='DIMKEY'>
+        <Column id='C94' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O139' name='DIMDATA'>
+        <Column id='C104' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>sh sleep 60;
+>>obey TEST016(create_fresh_mvs);
+>>--===========================================
+>>-- Fresh MVs
+>>--===========================================
+>>
+>>-- Immediate
+>>create mv RL_IMM_FRESH
++>  refresh on statement
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+*** WARNING[12112] A secondary index CAT.RL.RL_IMM_FRESH_988192434_5587 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>set pattern $$MVName$$ RL_IMM_FRESH;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_IMM_FRESH
+  </Table>
+  <Misc isIncremental='1' isImmediate='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168300442203' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168300442203' isKeyCovered='1' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J165'>
+          <Column id='C135' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C126'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O144' name='SYS_SYSKEY1'>
+        <Column id='C119' tableId='T2' colIndex='0' isNullable='0'>
+          CAT.RL.FACT.SYSKEY
+        </Column>
+      </Output>
+      <Output id='O147' name='ODAY'>
+        <Column id='C120' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O150' name='OMONTH'>
+        <Column id='C121' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O153' name='OYEAR'>
+        <Column id='C122' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O159' name='FQUANT'>
+        <Column id='C124' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O162' name='FPRICE'>
+        <Column id='C125' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O165' name='DIMKEY'>
+        <Column id='C126' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O171' name='DIMDATA'>
+        <Column id='C136' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- ON REQ
+>>create mv RL_REQ_FRESH
++>  refresh on request
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+*** WARNING[12112] A secondary index CAT.RL.RL_REQ_FRESH_539492434_5587 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>set pattern $$MVName$$ RL_REQ_FRESH;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_REQ_FRESH
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168410035437' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168410035437' isKeyCovered='1' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J165'>
+          <Column id='C135' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C126'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O144' name='SYS_SYSKEY1'>
+        <Column id='C119' tableId='T2' colIndex='0' isNullable='0'>
+          CAT.RL.FACT.SYSKEY
+        </Column>
+      </Output>
+      <Output id='O147' name='ODAY'>
+        <Column id='C120' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O150' name='OMONTH'>
+        <Column id='C121' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O153' name='OYEAR'>
+        <Column id='C122' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O159' name='FQUANT'>
+        <Column id='C124' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O162' name='FPRICE'>
+        <Column id='C125' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O165' name='DIMKEY'>
+        <Column id='C126' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O171' name='DIMDATA'>
+        <Column id='C136' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- RECOMPUTE
+>>create mv RL_RCM_FRESH
++>  recompute
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RL_RCM_FRESH;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_RCM_FRESH
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168410035437' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168410035437' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J133'>
+          <Column id='C103' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C94'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O115' name='ODAY'>
+        <Column id='C88' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O118' name='OMONTH'>
+        <Column id='C89' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O121' name='OYEAR'>
+        <Column id='C90' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O127' name='FQUANT'>
+        <Column id='C92' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O130' name='FPRICE'>
+        <Column id='C93' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O133' name='DIMKEY'>
+        <Column id='C94' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O139' name='DIMDATA'>
+        <Column id='C104' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- User maintained
+>>create mv RL_UMV_FRESH
++>  refresh by user
++>  initialized on create
++>  as  select fprice, fquant, 
++>             dimkey, dimdata, 
++>	     fday oday, fmonth omonth, fyear oyear
++>      from fact, dim1
++>      where dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RL_UMV_FRESH;
+>>obey TEST016(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RL.RL_UMV_FRESH
+  </Table>
+  <Misc isIncremental='0' isUMV='1'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212226168410035437' isKeyCovered='1' numCols='3'>
+          CAT.RL.DIM1
+        </Table>
+        <Table id='T2' TS='212226168410035437' numCols='8'>
+          CAT.RL.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J133'>
+          <Column id='C103' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.RL.DIM1.DKEY
+          </Column>
+          <Column ref='C94'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O115' name='ODAY'>
+        <Column id='C88' tableId='T2' colIndex='1'>
+          CAT.RL.FACT.FDAY
+        </Column>
+      </Output>
+      <Output id='O118' name='OMONTH'>
+        <Column id='C89' tableId='T2' colIndex='2'>
+          CAT.RL.FACT.FMONTH
+        </Column>
+      </Output>
+      <Output id='O121' name='OYEAR'>
+        <Column id='C90' tableId='T2' colIndex='3'>
+          CAT.RL.FACT.FYEAR
+        </Column>
+      </Output>
+      <Output id='O127' name='FQUANT'>
+        <Column id='C92' tableId='T2' colIndex='5'>
+          CAT.RL.FACT.FQUANT
+        </Column>
+      </Output>
+      <Output id='O130' name='FPRICE'>
+        <Column id='C93' tableId='T2' colIndex='6'>
+          CAT.RL.FACT.FPRICE
+        </Column>
+      </Output>
+      <Output id='O133' name='DIMKEY'>
+        <Column id='C94' tableId='T2' colIndex='7'>
+          CAT.RL.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O139' name='DIMDATA'>
+        <Column id='C104' tableId='T1' colIndex='1'>
+          CAT.RL.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>
+>>--===========================================
+>>--===========================================
+>>
+>>--===========================================
+>>-- Level 1, should match 2 Immediate MVs.
+>>--===========================================
+>>set pattern $$QueryName$$ RL_Q1;
+>>control query default MV_AGE '60 SECONDS';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_LEVEL '1';
+
+--- SQL operation complete.
+>>obey TEST016(match);
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>prepare QueryStmt from
++>  select fprice, fquant, 
++>         dimkey, dimdata, 
++>	 fday oday, fmonth omonth, fyear oyear
++>  from fact, dim1
++>  where dimkey=dkey
++>  order by dimkey;
+
+--- SQL command prepared.
+>>
+>>obey TEST016(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc MVAge='60 SECONDS' rewriteLevel='1'>                          
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212226168410035437' numCols='3'>           
+          CAT.RL.DIM1                                                 
+          <Key>                                                       
+            <Column id='C17' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.RL.DIM1.DKEY                                        
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212226168410035437' numCols='8'>           
+          CAT.RL.FACT                                                 
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.RL.FACT.SYSKEY                                      
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J47'>                                           
+          <Column ref='C17'>                                          
+          </Column>                                                   
+          <Column ref='C8'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O29'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.RL.FACT.FDAY                                            
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O32'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.RL.FACT.FMONTH                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O35'>                                               
+        <Column id='C4' tableId='T2' colIndex='3'>                    
+          CAT.RL.FACT.FYEAR                                           
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O41'>                                               
+        <Column id='C6' tableId='T2' colIndex='5'>                    
+          CAT.RL.FACT.FQUANT                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O44'>                                               
+        <Column id='C7' tableId='T2' colIndex='6'>                    
+          CAT.RL.FACT.FPRICE                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O47'>                                               
+        <Column id='C8' tableId='T2' colIndex='7'>                    
+          CAT.RL.FACT.DIMKEY                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O53'>                                               
+        <Column id='C18' tableId='T1' colIndex='1'>                   
+          CAT.RL.DIM1.DIMDATA                                         
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 76 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE               >> $$QueryName$$.in;
+>>sh echo MATCH $$QueryName$$.xml  >> $$QueryName$$.in;
+>>
+>>sh cp $$QueryName$$.in rl_qx.in;
+>>sh sh -c "$QMS rl_qx.in rl_qx.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.RL.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.RL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168410035437'>
+            CAT.RL.RL_IMM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168271653402'>
+            CAT.RL.RL_IMM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RL.RL_RCM_FRESH was disqualified because MV CAT.RL.RL_RCM_FRESH was skipped because it is not completey fresh]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_RCM_STALE was disqualified because MV CAT.RL.RL_RCM_STALE was skipped because it is not completey fresh]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_REQ_FRESH was disqualified because MV CAT.RL.RL_REQ_FRESH was skipped because it is not completey fresh]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_REQ_STALE was disqualified because MV CAT.RL.RL_REQ_STALE was skipped because it is not completey fresh]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_FRESH was disqualified because MV CAT.RL.RL_UMV_FRESH was skipped because it is not completey fresh]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_STALE was disqualified because MV CAT.RL.RL_UMV_STALE was skipped because it is not completey fresh]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>
+>>
+>>--===========================================
+>>-- Level 2, should match 4 MVs: 2 Immediate, the fresh ON REQUEST and the fresh RECOMPUTE.
+>>--===========================================
+>>set pattern $$QueryName$$ RL_Q2;
+>>control query default MVQR_REWRITE_LEVEL '2';
+
+--- SQL operation complete.
+>>obey TEST016(match);
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>prepare QueryStmt from
++>  select fprice, fquant, 
++>         dimkey, dimdata, 
++>	 fday oday, fmonth omonth, fyear oyear
++>  from fact, dim1
++>  where dimkey=dkey
++>  order by dimkey;
+
+--- SQL command prepared.
+>>
+>>obey TEST016(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc MVAge='60 SECONDS' rewriteLevel='2'>                          
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212226168410035437' numCols='3'>           
+          CAT.RL.DIM1                                                 
+          <Key>                                                       
+            <Column id='C17' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.RL.DIM1.DKEY                                        
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212226168410035437' numCols='8'>           
+          CAT.RL.FACT                                                 
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.RL.FACT.SYSKEY                                      
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J47'>                                           
+          <Column ref='C17'>                                          
+          </Column>                                                   
+          <Column ref='C8'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O29'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.RL.FACT.FDAY                                            
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O32'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.RL.FACT.FMONTH                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O35'>                                               
+        <Column id='C4' tableId='T2' colIndex='3'>                    
+          CAT.RL.FACT.FYEAR                                           
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O41'>                                               
+        <Column id='C6' tableId='T2' colIndex='5'>                    
+          CAT.RL.FACT.FQUANT                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O44'>                                               
+        <Column id='C7' tableId='T2' colIndex='6'>                    
+          CAT.RL.FACT.FPRICE                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O47'>                                               
+        <Column id='C8' tableId='T2' colIndex='7'>                    
+          CAT.RL.FACT.DIMKEY                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O53'>                                               
+        <Column id='C18' tableId='T1' colIndex='1'>                   
+          CAT.RL.DIM1.DIMDATA                                         
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 76 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE               >> $$QueryName$$.in;
+>>sh echo MATCH $$QueryName$$.xml  >> $$QueryName$$.in;
+>>
+>>sh cp $$QueryName$$.in rl_qx.in;
+>>sh sh -c "$QMS rl_qx.in rl_qx.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.RL.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.RL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168410035437'>
+            CAT.RL.RL_IMM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168271653402'>
+            CAT.RL.RL_IMM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168440074480'>
+            CAT.RL.RL_RCM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168425098937'>
+            CAT.RL.RL_REQ_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RL.RL_RCM_STALE was disqualified because MV CAT.RL.RL_RCM_STALE was skipped because it is stale.]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_REQ_STALE was disqualified because MV CAT.RL.RL_REQ_STALE was skipped because it is stale.]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_FRESH was disqualified because MV CAT.RL.RL_UMV_FRESH was skipped because it is user maintained]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_STALE was disqualified because MV CAT.RL.RL_UMV_STALE was skipped because it is user maintained]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>
+>>
+>>--===========================================
+>>-- Level 3, should match 6 non-UMVs.
+>>--===========================================
+>>set pattern $$QueryName$$ RL_Q3;
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>obey TEST016(match);
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>prepare QueryStmt from
++>  select fprice, fquant, 
++>         dimkey, dimdata, 
++>	 fday oday, fmonth omonth, fyear oyear
++>  from fact, dim1
++>  where dimkey=dkey
++>  order by dimkey;
+
+--- SQL command prepared.
+>>
+>>obey TEST016(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc MVAge='60 SECONDS' rewriteLevel='3'>                          
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212226168410035437' numCols='3'>           
+          CAT.RL.DIM1                                                 
+          <Key>                                                       
+            <Column id='C17' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.RL.DIM1.DKEY                                        
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212226168410035437' numCols='8'>           
+          CAT.RL.FACT                                                 
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.RL.FACT.SYSKEY                                      
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J47'>                                           
+          <Column ref='C17'>                                          
+          </Column>                                                   
+          <Column ref='C8'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O29'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.RL.FACT.FDAY                                            
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O32'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.RL.FACT.FMONTH                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O35'>                                               
+        <Column id='C4' tableId='T2' colIndex='3'>                    
+          CAT.RL.FACT.FYEAR                                           
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O41'>                                               
+        <Column id='C6' tableId='T2' colIndex='5'>                    
+          CAT.RL.FACT.FQUANT                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O44'>                                               
+        <Column id='C7' tableId='T2' colIndex='6'>                    
+          CAT.RL.FACT.FPRICE                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O47'>                                               
+        <Column id='C8' tableId='T2' colIndex='7'>                    
+          CAT.RL.FACT.DIMKEY                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O53'>                                               
+        <Column id='C18' tableId='T1' colIndex='1'>                   
+          CAT.RL.DIM1.DIMDATA                                         
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 76 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE               >> $$QueryName$$.in;
+>>sh echo MATCH $$QueryName$$.xml  >> $$QueryName$$.in;
+>>
+>>sh cp $$QueryName$$.in rl_qx.in;
+>>sh sh -c "$QMS rl_qx.in rl_qx.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.RL.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.RL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168410035437'>
+            CAT.RL.RL_IMM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168271653402'>
+            CAT.RL.RL_IMM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168440074480'>
+            CAT.RL.RL_RCM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168333031212'>
+            CAT.RL.RL_RCM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168425098937'>
+            CAT.RL.RL_REQ_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168300442203'>
+            CAT.RL.RL_REQ_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_FRESH was disqualified because MV CAT.RL.RL_UMV_FRESH was skipped because it is user maintained]]></Info>
+    <Info><![CDATA[MV CAT.RL.RL_UMV_STALE was disqualified because MV CAT.RL.RL_UMV_STALE was skipped because it is user maintained]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>
+>>
+>>--===========================================
+>>-- Level 4, should match all 8 MVs
+>>--===========================================
+>>set pattern $$QueryName$$ RL_Q4;
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>obey TEST016(match);
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>prepare QueryStmt from
++>  select fprice, fquant, 
++>         dimkey, dimdata, 
++>	 fday oday, fmonth omonth, fyear oyear
++>  from fact, dim1
++>  where dimkey=dkey
++>  order by dimkey;
+
+--- SQL command prepared.
+>>
+>>obey TEST016(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc MVAge='60 SECONDS' rewriteLevel='4'>                          
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212226168410035437' numCols='3'>           
+          CAT.RL.DIM1                                                 
+          <Key>                                                       
+            <Column id='C17' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.RL.DIM1.DKEY                                        
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212226168410035437' numCols='8'>           
+          CAT.RL.FACT                                                 
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.RL.FACT.SYSKEY                                      
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J47'>                                           
+          <Column ref='C17'>                                          
+          </Column>                                                   
+          <Column ref='C8'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O29'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.RL.FACT.FDAY                                            
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O32'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.RL.FACT.FMONTH                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O35'>                                               
+        <Column id='C4' tableId='T2' colIndex='3'>                    
+          CAT.RL.FACT.FYEAR                                           
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O41'>                                               
+        <Column id='C6' tableId='T2' colIndex='5'>                    
+          CAT.RL.FACT.FQUANT                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O44'>                                               
+        <Column id='C7' tableId='T2' colIndex='6'>                    
+          CAT.RL.FACT.FPRICE                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O47'>                                               
+        <Column id='C8' tableId='T2' colIndex='7'>                    
+          CAT.RL.FACT.DIMKEY                                          
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O53'>                                               
+        <Column id='C18' tableId='T1' colIndex='1'>                   
+          CAT.RL.DIM1.DIMDATA                                         
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 76 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE               >> $$QueryName$$.in;
+>>sh echo MATCH $$QueryName$$.xml  >> $$QueryName$$.in;
+>>
+>>sh cp $$QueryName$$.in rl_qx.in;
+>>sh sh -c "$QMS rl_qx.in rl_qx.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.RL.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.RL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168410035437'>
+            CAT.RL.RL_IMM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168271653402'>
+            CAT.RL.RL_IMM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168440074480'>
+            CAT.RL.RL_RCM_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168333031212'>
+            CAT.RL.RL_RCM_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168425098937'>
+            CAT.RL.RL_REQ_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168300442203'>
+            CAT.RL.RL_REQ_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168446033308'>
+            CAT.RL.RL_UMV_FRESH
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212226168342942293'>
+            CAT.RL.RL_UMV_STALE
+          </MVName>
+          <OutputList>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C2'>
+                ODAY
+              </MVColumn>
+            </Output>
+            <Output ref='O32' result='Provided'>
+              <MVColumn ref='C3'>
+                OMONTH
+              </MVColumn>
+            </Output>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C4'>
+                OYEAR
+              </MVColumn>
+            </Output>
+            <Output ref='O41' result='Provided'>
+              <MVColumn ref='C6'>
+                FQUANT
+              </MVColumn>
+            </Output>
+            <Output ref='O44' result='Provided'>
+              <MVColumn ref='C7'>
+                FPRICE
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C8'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O53' result='Provided'>
+              <MVColumn ref='C18'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+  </JbbResult>
+</Result>
+>>
+>>
+>>
+>>
+>>obey TEST016(clean_up);
+>>----------------------------------------------------
+>>------------------ clean up section ----------------
+>>----------------------------------------------------
+>>drop schema rl cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

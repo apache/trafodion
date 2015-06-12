@@ -1,0 +1,137 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets
+-- non RW-conflicting set
+-- runs on cat1.schm and cat1.schm_alt
+----------------------------------------
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_6_1_2(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_6_1_2(clean_up);
+
+-- start logging
+log   LOG_6_1_2 clear;
+
+set schema CAT1.SCHM;
+obey TEST_6_1_2(set_up);
+obey TEST_6_1_2(tests);
+obey TEST_6_1_2(clean_up);
+
+-- switch schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_6_1_2(set_up);
+obey TEST_6_1_2(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_6_1_2(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+
+DROP TRIGGER atrigA;
+DROP TRIGGER atrigB;
+DROP TRIGGER atrigC;
+DROP TRIGGER atrigD;
+DROP TRIGGER btrig;
+obey clearTables2;
+
+?section set_up
+
+INSERT INTO T1 VALUES (1,2);
+INSERT INTO T1 VALUES (3,4);
+INSERT INTO T1 VALUES (5,6);
+
+---------------------------------
+-- DEFINE TRIGGER atrigA
+---------------------------------
+
+
+CREATE TRIGGER atrigA
+AFTER UPDATE ON T1
+INSERT INTO T2 VALUES (2,2);
+
+---------------------------------
+-- DEFINE TRIGGER atrigB
+---------------------------------
+
+
+CREATE TRIGGER atrigB
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR, NEW AS newR
+FOR EACH ROW
+WHEN (oldR.b <> 2)
+INSERT INTO T3 VALUES (newR.a, newR.B);
+
+---------------------------------
+-- DEFINE TRIGGER btrig
+---------------------------------
+
+CREATE TRIGGER btrig
+BEFORE UPDATE OF (b) ON T1
+REFERENCING NEW AS newR
+FOR EACH ROW
+SET newR.b= newR.b+1;
+
+---------------------------------
+-- DEFINE TRIGGER atrigC
+---------------------------------
+
+
+CREATE TRIGGER atrigC
+AFTER UPDATE ON T1
+INSERT INTO T4 VALUES (4);
+
+---------------------------------
+-- DEFINE TRIGGER atrigD
+---------------------------------
+
+
+CREATE TRIGGER atrigd
+AFTER UPDATE ON T1
+REFERENCING NEW AS newR
+FOR EACH ROW
+INSERT INTO T5 VALUES (newR.a);
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE T1 SET b = b+1  WHERE a <> 3;
+
+SELECT * FROM T1 ORDER BY a; -- check result
+
+SELECT * FROM T2 ORDER BY a; -- check result
+
+SELECT * FROM T3 ORDER BY a; -- check result
+
+SELECT * FROM T4 ORDER BY a; -- check result
+
+SELECT * FROM T5 ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

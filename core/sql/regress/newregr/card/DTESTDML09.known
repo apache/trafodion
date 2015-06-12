@@ -1,0 +1,41 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+231,232c231,232
+< 1     HYBRID_HASH_JOIN                                 1.00E+003
+< 2     INDEX_SCAN                      T10              1.00E+005
+---
+> 1     NESTED_JOIN                                      1.00E+003
+> 2     FILE_SCAN_UNIQUE                T10              1.00E+000
+375,376c375,376
+< 1     HYBRID_HASH_JOIN                                 1.00E+003
+< 2     INDEX_SCAN                      T10              1.00E+005
+---
+> 1     NESTED_JOIN                                      1.00E+003
+> 2     FILE_SCAN_UNIQUE                T10              1.00E+000
+440,441c440,441
+< 1     HYBRID_HASH_JOIN                                 5.00E+002
+< 2     INDEX_SCAN                      T10              5.00E+004
+---
+> 1     NESTED_JOIN                                      5.00E+002
+> 2     FILE_SCAN_UNIQUE                T10              1.00E+000
+606,607c606,607
+< 1     HYBRID_HASH_JOIN                                 5.00E+002
+< 2     INDEX_SCAN                      T10              5.00E+004
+---
+> 1     NESTED_JOIN                                      5.00E+002
+> 2     FILE_SCAN_UNIQUE                T10              1.00E+000

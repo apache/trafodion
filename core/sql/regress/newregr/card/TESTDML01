@@ -1,0 +1,548 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML01 (Cardinality)
+-- Functionality: Uses HCUBE database to test various join cardinalities.
+-- Expected Files: ETESTDML01.
+-- History: Created on 12/03/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+control query default query_cache '0';
+control query default hist_rowcount_requiring_stats '1';
+control query default cache_histograms '0';
+
+-- Since all queries have the same shape, we can prepare teh following query only once
+-- If you add a query with another shape, you may need to modify the following query 
+-- by adding the operators you want to filter and prepare it explicitly for that. 
+
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator = 'ORDERED_CROSS_PRODUCT')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+log ATESTDML01 clear;
+
+set envvar on_linux 0;
+#ifLINUX
+set envvar on_linux 1;
+#ifLINUX
+
+set schema cat.hcube;
+
+-- Q1 	
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.T9')),
+hybrid_hash_join(scan(path 'CAT.HCUBE.T7'),
+hybrid_hash_join(scan(path 'CAT.HCUBE.T1'),
+scan(path 'CAT.HCUBE.T2')))),
+scan(path 'CAT.HCUBE.T0')));
+
+prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a<77;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t0.a, t1.a, t2.a, t7.a, t8.a, t9.a from t0, t9, t1, t8, t2, t7 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.a<77;
+
+-- Q2
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T7'),
+scan(path 'CAT.HCUBE.T8')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.T0')),
+scan(path 'CAT.HCUBE.IX9B')));
+
+prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.b<7;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t1.b, t2.b, t7.b, t8.b, t9.b from t0, t9, t1, t8, t2, t7 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t7.b and t7.a=t8.b and t8.a=t9.b and t9.b<7;
+
+-- Q3
+-- 8 way linear
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(nested_join(
+scan(path 'CAT.HCUBE.T0'),
+scan(path 'CAT.HCUBE.IX9B')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.IX8B')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T6')),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T5')));
+
+prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
+t0.a=t9.b and t9.a=t1.b and t1.a=t8.b and t8.a=t2.b and t2.a=t7.b and t7.a=t3.b and t3.a=t6.b and t6.a=t4.b and t4.a=t5.b;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t0.a, t1.b, t1.a, t2.b, t2.a, t3.b, t3.a, t4.b, t4.a from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
+t0.a=t9.b and t9.a=t1.b and t1.a=t8.b and t8.a=t2.b and t2.a=t7.b and t7.a=t3.b and t3.a=t6.b and t6.a=t4.b and t4.a=t5.b;
+
+-- Q4
+-- 9 way almost linear
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(nested_join(nested_join(
+scan(path 'CAT.HCUBE.T3'),
+scan(path 'CAT.HCUBE.T10')),
+scan(path 'CAT.HCUBE.T9')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.T0')),
+scan(path 'CAT.HCUBE.T8')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.T4'));
+
+prepare xx from select   * from t0, t1, t2, t3, t4, t7,t8 ,t9, t10 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t10.a and t4.a=t7.b and t7.a=t8.b and t8.c=t10.c and t9.b=t10.b;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t10.* from t0, t1, t2, t3, t4, t7,t8 ,t9, t10 where 
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t10.a and t4.a=t7.b and t7.a=t8.b and t8.c=t10.c and t9.b=t10.b;
+
+-- Q5
+--10 linear
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T2'),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T5')),
+scan(path 'CAT.HCUBE.T6')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.IX8B')),
+scan(path 'CAT.HCUBE.IX9B')),
+scan(path 'CAT.HCUBE.IX10B')));
+
+prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
+t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
+t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b;
+
+-- Q6
+control query shape implicit enforcers sort_groupby(nested_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(nested_join(
+hybrid_hash_join(hybrid_hash_join(nested_join(
+scan(path 'CAT.HCUBE.T5'),
+scan(path 'CAT.HCUBE.IX8B')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T6')),
+scan(path 'CAT.HCUBE.IX9C')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.IX10B')));
+
+prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
+t9.a=t6.b and t6.a=t3.b and t3.a=t8.b and 
+t8.a=t5.b and t5.a=t2.b and t2.a=t7.b and 
+t7.a=t4.b and t4.a=t1.b and t1.a=t10.b;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t1.a, t10.b from t1,t2,t3,t4,t5,t6,t7,t8,t9,t10 where
+t9.a=t6.b and t6.a=t3.b and t3.a=t8.b and 
+t8.a=t5.b and t5.a=t2.b and t2.a=t7.b and 
+t7.a=t4.b and t4.a=t1.b and t1.a=t10.b;
+
+-- Q7
+--8 star (1 prime, 6 dimensions, 1 linear extension of a dimension)
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.CUBE1'),
+scan(path 'CAT.HCUBE.T5')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T2')),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6'),
+scan(path 'CAT.HCUBE.T7'))),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T1')));
+
+prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,cube1 where
+t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
+t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select cube1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where
+t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
+t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b;
+
+-- Q8
+#ifdef on_linux
+control query default nested_joins 'off';
+control query shape implicit enforcers sort_groupby(sort_groupby(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T3'),
+scan(path 'CAT.HCUBE.CUBE1')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.IX6B')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.T5')),
+scan(path 'CAT.HCUBE.T4'))));
+#else
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(nested_join(ordered_cross_product(ordered_cross_product(
+scan(path 'CAT.HCUBE.T1'),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.CUBE1')),
+scan(path 'CAT.HCUBE.T5')),
+scan(path 'CAT.HCUBE.T4')),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6'),
+scan(path 'CAT.HCUBE.T7'))));
+#endif
+
+prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,cube1 where
+t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
+t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b and
+t1.c=1 and t2.c=1 and t3.c=1;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t1.* from t1,t2,t3,t4,t5,t6,t7,cube1 where
+t1.a=cube1.a and t2.a=cube1.b and t3.a=cube1.c and 
+t4.a=cube1.d and t5.a=cube1.e and t6.a=cube1.f and t7.a=t6.b and
+t1.c=1 and t2.c=1 and t3.c=1;
+
+-- Q9
+-- 10 way snowflake of fully connected frindges
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T9'),
+scan(path 'CAT.HCUBE.T6')),
+scan(path 'CAT.HCUBE.T5')),
+scan(path 'CAT.HCUBE.IX8C')),
+scan(path 'CAT.HCUBE.T7')),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.T0')));
+
+prepare xx from select   count(*) from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 where 
+t0.a=t9.c and t1.a=t9.c and t2.a=t9.c and t3.a=t9.b and t4.a=t9.b and t5.a=t9.b and t6.a=t9.a and t7.a=t9.a and t8.a=t9.a;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select t0.a, t9.c, t1.a, t2.a, t3.a, t4.a, t5.a, t9.b, t6.a, t9.a, t7.a, t9.a, t8.a
+from t0, t9, t1, t8, t2, t7,t3,t6,t4,t5 
+where t0.a=t9.c and t1.a=t9.c and t2.a=t9.c and t3.a=t9.b and t4.a=t9.b and t5.a=t9.b 
+and t6.a=t9.a and t7.a=t9.a and t8.a=t9.a;
+
+-- Q10
+--10 snowflake
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IXCUBE1F'),
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T9'),
+scan(path 'CAT.HCUBE.T1')),
+scan(path 'CAT.HCUBE.T2'))),
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T8'),
+scan(path 'CAT.HCUBE.T3')),
+scan(path 'CAT.HCUBE.T4'))),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6'),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T7'),
+scan(path 'CAT.HCUBE.T5')))));
+
+prepare xx from select   count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t1.b and t9.c=t2.c and
+t8.a=t3.a and t8.c=t4.c and
+t7.a=t5.a and t7.b=t6.a;
+
+execute explainCard;
+
+control query shape cut;
+
+showstats for query
+select count(*) from t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t1.b and t9.c=t2.c and
+t8.a=t3.a and t8.c=t4.c and
+t7.a=t5.a and t7.b=t6.a;
+
+-- Q11
+--11 snowflake
+control query shape implicit enforcers sort_groupby(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IXCUBE1F'),
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T9'),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6'),
+scan(path 'CAT.HCUBE.T0'))),
+scan(path 'CAT.HCUBE.T1'))),
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T8'),
+scan(path 'CAT.HCUBE.T2')),
+scan(path 'CAT.HCUBE.T3'))),
+hybrid_hash_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T7'),
+scan(path 'CAT.HCUBE.T4')),
+scan(path 'CAT.HCUBE.T5'))));
+
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a = t6.a;
+
+execute explainCard;
+
+control query shape off;
+
+control query default join_order_by_user 'on';
+
+control query default nested_joins 'off';
+
+control query default merge_joins 'off';
+
+showstats for query
+select t9.b, t8.a, t7.a, t0.a, t9.c, t8.c, t7.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a = t6.a;
+
+-- Q12
+--12 snowflake
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a ;
+
+execute explainCard;
+
+showstats for query
+select count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a ;
+
+-- Q13
+--12 linear
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b;
+
+execute explainCard;
+
+showstats for query
+select s1.* from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b;
+
+-- Q14
+--14 linear
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b;
+
+execute explainCard;
+
+showstats for query
+select s1.a, s1.b, s2.a, s2.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b;
+
+-- Q15
+--16 linear
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as
+s3,t4 as s4, t5 as s5 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b and s3.a=s4.b and s4.a=s5.b;
+
+execute explainCard;
+
+showstats for query
+select s1.a, s2.a, s3.a, s4.a, s5.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as
+s3,t4 as s4, t5 as s5 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b and s3.a=s4.b and s4.a=s5.b;
+
+-- Q16
+--14 way circular
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b and s3.a=t0.b;
+
+execute explainCard;
+
+showstats for query
+select  t10.a from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t1 as s1,t2 as s2, t3 as s3 where
+t0.a=t1.b and t1.a=t2.b and t2.a=t3.b and t3.a=t4.b and 
+t4.a=t5.b and t5.a=t6.b and t6.a=t7.b and t7.a=t8.b and
+t8.a=t9.b and t9.a=t10.b and t10.a=s1.b and s1.a=s2.b and 
+s2.a=s3.b and s3.a=t0.b;
+
+-- Q17
+--14 way snow flake (with linear frindges)
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b;
+
+execute explainCard;
+
+showstats for query
+select t0.b, t2.a, t4.a, t6.a, t1.c, t3.c, t5.a, s1.a, s2.b, s3.b from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as s3 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b;
+
+-- Q18
+--16 way snow flake (with linear frindges)
+prepare xx from select   count(*) from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as
+s3,t4 as s4, t5 as s5 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b and t4.b=s4.b and t5.b=s5.b;
+
+execute explainCard;
+
+showstats for query
+select   * from t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,cube1,t1 as s1,t2 as s2, t3 as
+s3,t4 as s4, t5 as s5 where
+cube1.a=t9.a and cube1.b=t8.b and cube1.c=t7.c and
+t9.b=t0.b and t9.c=t1.c and
+t8.a=t2.a and t8.c=t3.c and
+t7.a=t4.a and t7.b=t5.a and
+t0.a=t6.a and t1.a=s1.a and t2.b=s2.b and t3.b=s3.b and t4.b=s4.b and t5.b=s5.b;
+
+-- Q19
+--12 flat fully connected
+prepare xx from select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
+t0 as t10, t1 as t11, t0 where
+t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
+and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a;
+
+execute explainCard;
+
+showstats for query
+select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
+t0 as t10, t1 as t11, t0 where
+t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
+and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a;
+
+-- Q20
+--16 flat fully connected
+prepare xx from select   count(*) from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
+t0 as t10, t1 as t11, t2 as t12, t3 as t13, t4 as t14, t5 as t15, t0 where
+t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
+and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a
+and t11.a=t12.a and t12.a=t13.a and t13.a=t14.a and t14.a=t15.a;
+
+execute explainCard;
+
+showstats for query
+select t1.a from t1,t2,t3,t4,t0 as t5,t1 as t6, t2 as t7,t3 as t8, t4 as t9, 
+t0 as t10, t1 as t11, t2 as t12, t3 as t13, t4 as t14, t5 as t15, t0 where
+t0.a=t1.a and t1.a=t2.a and t2.a=t3.a and t3.a=t4.a and t4.a=t5.a and t5.a=t6.a
+and t6.a=t7.a and t7.a=t8.a and t8.a=t9.a and t9.a=t10.a and t10.a=t11.a
+and t11.a=t12.a and t12.a=t13.a and t13.a=t14.a and t14.a=t15.a;
+
+LOG;
+exit;

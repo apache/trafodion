@@ -237,13 +237,14 @@ public class SsccTransactionState extends TransactionState{
             */
             if(thisTs > startId)  //only for debug checking, like an assert
             {
-            	//check whether has mt_ family , if has ,doesn't display, if not, displays
+                //check whether has mt_ family , if has ,doesn't display, if not, displays
                 if(versionList==null && statusList==null){
-                if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
-                return true;
-                }else {
-              	    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
-              	    return false;
+                   if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                   return true;
+                }
+                else {
+                   if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
+                   return false;
                 }
             }
 
@@ -296,7 +297,7 @@ public class SsccTransactionState extends TransactionState{
                         {
                             boolean isit = SsccConst.isSelfUpdate(statusValList,startId);
                             if(LOG.isTraceEnabled()) LOG.trace("handleResult this is updated by me " + isit);
-                            return isit;  
+                            return isit;
                         }
                         else
                         {
@@ -320,6 +321,7 @@ public class SsccTransactionState extends TransactionState{
 
             // Status is empty: no active update of this row, so need to check the commit version
             // or status is not empty but current transaction not update it, still need to check the commit version
+            boolean versionIsDelete=false;
             for(Cell v: versionList) {
                     version=CellUtil.cloneValue(v);
                     commitId=v.getTimestamp();
@@ -344,8 +346,7 @@ public class SsccTransactionState extends TransactionState{
                                 allcollist = byteMerger(allcollist,colVBytes);
                             }
                         }
-
-                        if(indexOf(allcollist,matcher) != -1) 
+                        if(indexOf(allcollist,matcher) != -1  || allcollist.length == 0)
                         {
                             sameCommit = true;
                             if(LOG.isTraceEnabled()) LOG.trace("handleResult: check version item cid: " + commitId );
@@ -354,6 +355,7 @@ public class SsccTransactionState extends TransactionState{
                             {
                                 maxCommitId= commitId;
                                 maxStartId = SsccConst.getVersionStartID(version);
+                                versionIsDelete = SsccConst.isDeleteVersion(version);
                             }
                         }
                         else {
@@ -372,7 +374,7 @@ public class SsccTransactionState extends TransactionState{
                if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell is out of MAX_VERSION window check, returning true");
                return true;
             }
-            finalret = (maxStartId == thisTs);
+            finalret = (maxStartId == thisTs) && (versionIsDelete == false) ;
             if(LOG.isTraceEnabled()) LOG.trace("handleResult: finally return " + finalret + " maxId is " + maxStartId + " thisTs is " + thisTs);
         }
         catch( Exception e) {

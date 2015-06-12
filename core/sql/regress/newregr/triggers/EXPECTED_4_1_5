@@ -1,0 +1,170 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_4_1_5(set_up);
+>>
+>>create trigger bt1 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SIGNAL SQLSTATE 's7777' ('Gotcha!');
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_1_5(tests);
+>>
+>>--------------------------------------------------------
+>>-- TEST CASE
+>>--------------------------------------------------------
+>>-- This should fail with a Signal message.
+>>insert into tab1b values (1,1);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>
+>>create trigger bt2 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SET my_new.a = 99;
+
+--- SQL operation complete.
+>>
+>>
+>>-- This too should fail with a Signal message,
+>>insert into tab1b values (2,2);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>-- tab1b should be empty!!
+>>select * from tab1b order by a;
+
+--- 0 row(s) selected.
+>>--------------------------------------------------------
+>>obey TEST_4_1_5(clean_up);
+>>
+>>drop trigger bt1;
+
+--- SQL operation complete.
+>>drop trigger bt2;
+
+--- SQL operation complete.
+>>delete from tab1b;
+
+--- 0 row(s) deleted.
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_4_1_5(set_up);
+>>
+>>create trigger bt1 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SIGNAL SQLSTATE 's7777' ('Gotcha!');
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_1_5(tests);
+>>
+>>--------------------------------------------------------
+>>-- TEST CASE
+>>--------------------------------------------------------
+>>-- This should fail with a Signal message.
+>>insert into tab1b values (1,1);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>
+>>create trigger bt2 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SET my_new.a = 99;
+
+--- SQL operation complete.
+>>
+>>
+>>-- This too should fail with a Signal message,
+>>insert into tab1b values (2,2);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>-- tab1b should be empty!!
+>>select * from tab1b order by a;
+
+--- 0 row(s) selected.
+>>--------------------------------------------------------
+>>obey TEST_4_1_5(clean_up);
+>>
+>>drop trigger bt1;
+
+--- SQL operation complete.
+>>drop trigger bt2;
+
+--- SQL operation complete.
+>>delete from tab1b;
+
+--- 0 row(s) deleted.
+>>
+>>
+>>-- make trig temp tables partitioned
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition1$$;
+
+--- SQL operation complete.
+>>obey TEST_4_1_5(set_up);
+>>
+>>create trigger bt1 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SIGNAL SQLSTATE 's7777' ('Gotcha!');
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_1_5(tests);
+>>
+>>--------------------------------------------------------
+>>-- TEST CASE
+>>--------------------------------------------------------
+>>-- This should fail with a Signal message.
+>>insert into tab1b values (1,1);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>
+>>create trigger bt2 before insert on tab1b
++>	referencing new as my_new
++>	for each row
++>	SET my_new.a = 99;
+
+--- SQL operation complete.
+>>
+>>
+>>-- This too should fail with a Signal message,
+>>insert into tab1b values (2,2);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s7777, Message: Gotcha!.
+
+--- 0 row(s) inserted.
+>>
+>>-- tab1b should be empty!!
+>>select * from tab1b order by a;
+
+--- 0 row(s) selected.
+>>--------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

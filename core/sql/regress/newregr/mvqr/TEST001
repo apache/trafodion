@@ -1,0 +1,815 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST001
+-- Unit Test to test the REWRITE_PUBLISH query
+-- rewrite PUBLISH table
+-- Author: Taoufik Ben Abdellatif
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST001(clean_up);
+obey TEST001(clean_up_rewrite_publish_table);
+log LOG001 clear;
+obey TEST001(create_rewrite_publish_table);
+obey TEST001(set_up);
+obey TEST001(rewrite_publish_ddl);
+obey TEST001(create_mv);
+obey TEST001(refresh_mv);
+obey TEST001(refresh_mvgroup);
+obey TEST001(mv_rename);
+obey TEST001(table_rename);
+obey TEST001(ignore_changes);
+obey TEST001(commit_refresh_each);
+obey TEST001(rewrite_enabled);
+obey TEST001(drop_mv);
+obey TEST001(redescribe_mv);
+obey TEST001(clean_up);
+obey TEST001(clean_up_rewrite_publish_table);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+-- drop all mvs and tables used by the test
+----------------------------------------------------
+
+set schema QRP_CAT.SCH;
+drop schema QRP_CAT.SCH cascade; 
+drop catalog QRP_CAT;
+delete from manageability.mv_rewrite.rewrite_publish;
+
+?section clean_up_rewrite_publish_table
+----------------------------------------------------
+------ publish rewrite table clean up section ------
+-- this section should be removed when creation   --
+-- of the publish rewrite table is part of init   --
+-- sql script                                     -- 
+----------------------------------------------------
+
+drop schema MANAGEABILITY.MV_REWRITE cascade;
+
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+-- create and populate all tables needed by the test
+----------------------------------------------------
+
+create catalog QRP_CAT;
+create schema QRP_CAT.SCH;
+set schema QRP_CAT.SCH;
+set pattern $$MVSchemaName$$ SCH;
+
+create table t1 (a int not null primary key,
+                 b int,
+                 c char(10)) no partition;
+
+create table t2 (d int not null primary key,
+                 e char (20),
+                 f int) no partition;
+
+create table t3 (g int not null primary key,
+                 h int) no partition;
+
+create view t1_v as select * from t1;
+
+insert into t1 values (1,1,'a'),(2,2,'b'),(3,2,'d');
+insert into t2 values (1,'a',1),(2,'b',2),(3,'c',3);
+insert into t3 values (1,1),(2,2),(3,3);
+
+Update statistics for table t1 on every column; 
+Update statistics for table t2 on every column; 
+Update statistics for table t3 on every column;
+
+set param ?mvDescSubId  -2;
+
+-- query the TEXT SMD table for the descriptor of an MV
+prepare getMVDescFromTEXT  from
+  SELECT sequence_num, substring(TEXT, 1, 2000) as mv_descriptor_text
+         from  HP_DEFINITION_SCHEMA.TEXT t,
+               HP_DEFINITION_SCHEMA.objects o
+         where o.object_name = ?mvName and
+               o.OBJECT_TYPE = 'MV' and
+               o.object_uid = t.object_uid and
+               t.object_sub_id = ?mvDescSubId
+         order by sequence_num;
+
+-- retrieve all rows from the REWRITE_PUBLISH table
+prepare getMVRP  from
+  SELECT substring(OBJECT_NAME,1,18) object_name,
+         substring(OBJECT_NEW_NAME,1,18) object_new_name,
+         DESCRIPTOR_INDEX D_I, OPERATION_TYPE O_T, IGNORE_CHANGES_USED I_C,
+         case when REFRESH_AT_TIME = 0 then '0' ELSE 'NONZERO' end as refresh_at
+  FROM manageability.mv_rewrite.rewrite_publish;
+
+-- retrieve all rows related to a specific MV identified by its
+-- full external name from the REWRITE_PUBLISH table
+prepare getMVRP_PERMV  from
+  SELECT substring(OBJECT_NAME,1,18) object_name,
+         substring(OBJECT_NEW_NAME,1,18) object_new_name,
+         DESCRIPTOR_INDEX D_I, OPERATION_TYPE O_T, IGNORE_CHANGES_USED I_C,
+         case when REFRESH_AT_TIME = 0 then '0' ELSE 'NONZERO' end as refresh_at
+  FROM   manageability.mv_rewrite.rewrite_publish
+  WHERE  object_name = ?fullMVName;
+
+
+-- enable query rewrite
+control query default MVQR_REWRITE_LEVEL '4';
+control query default MVQR_PUBLISH_TO  'public';
+
+
+execute getMVRP;
+
+?section create_rewrite_publish_table
+----------------------------------------------------
+---------- create rewrite publish table ------------
+-- In the future this should be part of init sql  --
+----------------------------------------------------
+
+log;
+create catalog MANAGEABILITY;
+log LOG001;
+create schema MANAGEABILITY.MV_REWRITE;
+
+CREATE TABLE MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH   (
+    OPERATION_TIMESTAMP   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REDEF_TIME            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REFRESH_AT_TIME       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OBJECT_UID            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATALOG_UID           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OBJECT_NAME        CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT 
+NO DEFAULT NOT NULL NOT DROPPABLE
+  , OBJECT_NEW_NAME    CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT 
+DEFAULT NULL
+  , DESCRIPTOR_INDEX      INT NO DEFAULT 
+  , OPERATION_TYPE      CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT 
+NO DEFAULT NOT NULL NOT DROPPABLE
+  , IGNORE_CHANGES_USED	CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT 
+DEFAULT NULL    
+  ,PRIMARY KEY (OPERATION_TIMESTAMP, REDEF_TIME)) NO PARTITION;
+
+?section rewrite_publish_ddl
+----------------------------------------------------
+---------- check rewrite publish schema ------------
+----------------------------------------------------
+
+showddl manageability.mv_rewrite.rewrite_publish;
+
+?section create_mv
+----------------------------------------------------
+----------------- create mv section ----------------
+-- test the creation of the different mv refresh
+-- types: ON REQUEST, ON STATEMENT and RECOMPUTE
+--        User Maintained MVs
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after the
+--        creation of an MV if the MV is initialize
+--        on refresh and 2 row if initialize on
+--        create
+--      make sure that a row is inserted into the 
+--        TEXT SMD metadata table with the MV 
+--        descriptor TEXT
+--      all the created mvs are created with the
+--      qeuery rewrite attribute enabled
+----------------------------------------------------
+
+-- ON REQUEST INITIALIZE ON REREFSH MV
+set param ?mvName 'MV1';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv1 refresh on request initialize on refresh 
+  enable query rewrite
+  as select b, c from t1,t2
+  where  a < 20 and b = f;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+-- ON REQUEST INITIALIZE ON CREATE MV
+set param ?mvName 'MV2';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv2 refresh on request initialize on create 
+  enable query rewrite
+  as select b, count (*)  cnt from t1,t2
+  where  a < 20 and c = e
+  group by b;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+
+-- ON STATEMENT INITIALIZE ON REFRESH MV
+set param ?mvName 'MV3';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv3 refresh on statement initialize on refresh 
+  enable query rewrite
+  as select b from t1,t2
+  where  a < 20 and b = f;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+
+-- ON STATEMENT INITIALIZE ON CREATE MV
+set param ?mvName 'MV4';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv4 refresh on statement initialize on create
+  enable query rewrite
+  as select b from t1,t2
+  where  a < 20 and b = f;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVRP;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVDescFromTEXT;
+
+-- RECOMPUTE INITIALIZE ON REFRESH MV
+set param ?mvName 'MV5';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv5 recompute initialize on refresh
+  enable query rewrite
+  as select b, max(c) max_c from t1,t2
+  where  a < 20 and b = f
+  group by b;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+
+-- RECOMPUTE INITIALIZE ON CREATE MV
+set param ?mvName 'MV6';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv6 recompute initialize on create
+  enable query rewrite
+  as select b, max(c) max_c from t1_v,t2
+  where  a < 20 and b = f
+  group by b;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+-- MV using another MV
+set param ?mvName 'MV7';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv7 refresh on request initialize on refresh
+  enable query rewrite
+  as select b, count(c) cc from mv1
+  group by b;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVRP;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVDescFromTEXT;
+
+-- USER MAINTAINED MV
+set param ?mvName 'MV10';
+set param ?mvSchemaName $$MVSchemaName$$;
+create mv mv10 refresh by user initialize by user
+  enable query rewrite
+  as select b, max(c) max_c from t1_v,t2
+  where  a < 20 and b = f
+  group by b;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- check the mv descriptor text in TEXT SMD table
+execute getMVDescFromTEXT;
+
+-- clean it up
+drop mv mv10;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section refresh_mv
+----------------------------------------------------
+---------------- refresh mv section ----------------
+-- test the refresh of the different mv refresh
+-- types: ON REQUEST, ON STATEMENT and RECOMPUTE
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an MV refresh
+--      make sure that the correct type of refresh
+--      is indicated (incremental refresh versus
+--      recompute refresh)
+----------------------------------------------------
+
+-- initialize an ON REQUEST MV
+refresh mv1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- initialize an ON STATEMENT MV
+refresh mv3 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- initialize a RECOMPUTE MV
+refresh mv5 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- induce incremental refresh and
+-- check contents of REWRITE_PUBLISH table
+insert into t1 values (8,1,'k'),(9,2,'z');
+refresh mv1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+refresh mv2 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+execute getMVRP;
+
+-- execute a refresh with recompute on an mv
+refresh mv1 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section refresh_mvgroup
+----------------------------------------------------
+------------- refresh mvgroup section --------------
+-- test the refresh of an mvgroup. An mvgroup can 
+-- only have ON REQUEST an RECOMPUTE mvs
+---- The test will:
+------- make sure that rows are inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        the mvgroup refresh as if the mvs were
+--        refreshed seperatly
+--      make sure that the correct type of refresh
+--      is indicated (incremental refresh versus
+--      recompute refresh)
+----------------------------------------------------
+
+-- generate deltas
+insert into t1 values (4,4,'e');
+insert into t2 values (4,'d',2),(5,'e',3);
+
+-- create and mvgroup and add two on request 
+-- mvs to it, then refresh it
+create mvgroup mvr_g1;
+alter mvgroup mvr_g1 add mv1;
+--alter mvgroup mvr_g1 add mv2;
+refresh mvgroup mvr_g1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+alter mvgroup mvr_g1 remove mv1;
+alter mvgroup mvr_g1 add mv2;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+
+-- generate deltas
+insert into t1 values (5,2,'f'),(6,3,'g');
+insert into t2 values (6,'f',4);
+
+-- add a recompute mv to the mvgroup, then 
+--refresh the mvgroup with recompute
+--alter mvgroup mvr_g1 add mv6;
+refresh mvgroup mvr_g1 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section mv_rename
+----------------------------------------------------
+----------------- mv rename section ----------------
+-- test renaming an MV
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an MV is renamed and make sure that
+--        correct operation type is used. the row
+--        should include the MV new and old names
+----------------------------------------------------
+
+-- rename an MV
+alter mv mv1 rename to mv1_r;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- make sure that mv mv1_r descriptor has changed
+set param ?mvName 'MV1_R';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+-- MV7 is defined on top of MV1 make sure 
+-- mv7 descriptor text is changed
+set param ?mvName 'MV7';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+
+?section table_rename
+----------------------------------------------------
+--------------- table rename section ---------------
+-- test renaming an MV base table
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an table is renamed and make sure that 
+--        correct operation type is used
+--      make sure that the MV descriptor TEXT in the
+--        SMD TEXT table is updated to use the new 
+--        table name
+----------------------------------------------------
+
+-- rename an mv base table
+alter table t1 rename to t4;
+
+-- check contents of REWRITE_PUBLISH table
+-- each mv directly defined on the table should
+-- have a row published
+-- mvs that are not directly using the table should
+-- not be affected (MV7 in this case)
+-- mv MV6 should also change because views are
+-- expanded to their base tables
+execute getMVRP;
+
+-- make sure that the mv descriptors of all mvs
+-- directly defined on the table have been updated
+
+set param ?mvName 'MV1_R';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+set param ?mvName 'MV3';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+set param ?mvName 'MV5';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+-- expected MV6 to change even though it is not
+-- directly using the table. The mv is using a 
+-- view on the table instead.
+set param ?mvName 'MV5';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+-- the mv descriptor for MV7 should not
+-- change since it is not directly defined  on t1
+set param ?mvName 'MV7';
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+
+
+-- test view name change on the MV, for now
+-- we can only have views as base tables for
+-- RECOMPUTE Mvs
+alter view t1_v rename to t4_v;
+
+-- check contents of REWRITE_PUBLISH table
+-- no rows should be added
+execute getMVRP;
+
+set param ?mvName 'MV6';
+set param ?mvSchemaName $$MVSchemaName$$;
+-- check the MV descriptor text
+-- expected no change to the descriptor
+-- because of the view rename
+execute getMVDescFromTEXT;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section ignore_changes
+----------------------------------------------------
+------------- ignore changes section ---------------
+-- test altering the ignore changes clause of an MV
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an MV ignore changes clause is altered
+--      make sure that the the correct state is 
+--        included in the (empty ignore changes
+--        list or not)
+----------------------------------------------------
+
+
+-- add a base table to the ignore changes list of
+-- an mv
+alter mv mv2 add ignore changes on t2;
+
+-- change the table in the ignore changes list and
+-- refresh the mv
+delete from t2 where f = 2;
+refresh mv2;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- mv with a non-empty ignore changes list
+create mv mv9 refresh on request 
+  ignore changes on t2,t3
+  initialize on create
+  enable query rewrite
+  as select b from t4,t2,t3
+  where  a < 20 and b = f and f = h;
+
+-- remove a table from ignore changes list
+-- but the IG list still not empty
+alter mv mv9 remove ignore changes on t2;
+
+-- remove a table from ignore changes list
+-- list becomes empty
+alter mv mv9 remove ignore changes on t3;
+
+
+-- now add one table to the ignore changes list
+-- so the IG list is not empty
+alter mv mv9 add ignore changes on t2;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section rewrite_enabled
+----------------------------------------------------
+------------- rewrite enabled section --------------
+-- test altering the rewrite enabled mv attribute
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an MV query rewrite attribute is 
+--        changed
+--      make sure that publishing to the PUBLISH
+--        is turned OFF when the query rewrite 
+--        attribute is disabled
+----------------------------------------------------
+
+-- create an mv with query rewrite enabled
+-- all ddl and refresh operations on the mv
+-- will be published
+set param ?fullMVName 'QRP_CAT.SCH.MV8';
+create mv mv8 refresh on request initialize on refresh
+  enable query rewrite
+  as select b, max(c) max_c from t4,t2
+  where  a < 20 and b = f
+  group by b;
+
+alter mv mv8 add ignore changes on t2;
+alter mv mv8 remove ignore changes on t2;
+
+-- check the contents of the published table 
+execute getMVRP_PERMV;
+
+-- disable the mv query rewrite attribute
+-- should publish a row then turn off publishing
+alter mv mv8 disable query rewrite;
+
+-- check the contents of the published table 
+execute getMVRP_PERMV;
+
+-- these two events should not be published
+alter mv mv8 add ignore changes on t2;
+alter mv mv8 remove ignore changes on t2;
+
+-- check the contents of the published table 
+execute getMVRP_PERMV;
+
+-- reset the mv query rewrite enable attribute
+-- should publish a row and enable publishing
+-- the first row should include the mv 
+-- descriptor index
+alter mv mv8 enable query rewrite;
+
+alter mv mv8 add ignore changes on t2;
+alter mv mv8 remove ignore changes on t2;
+
+drop mv mv8;
+
+-- check the contents of the published table 
+execute getMVRP_PERMV;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section commit_refresh_each
+----------------------------------------------------
+---------- commit refresh each section -------------
+-- test altering the commit refresh each clause 
+-- of an MV
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        an MV commit refresh each clause is 
+--        altered
+----------------------------------------------------
+
+-- mv2 is a self-maintainable mv so it can be 
+-- refreshed in multiple transactions
+
+alter mv mv2 mvattributes commit refresh each 2;
+
+refresh mv2 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOG001;
+log LOG001;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section drop_mv
+----------------------------------------------------
+------------------ drop mv section -----------------
+-- test the dropping of the different mv refresh
+-- types: ON REQUEST, ON STATEMENT and RECOMPUTE
+---- The test will:
+------- make sure that a row is inserted into the
+--        REWRITE_PUBLISH PUBLISH table after
+--        dropping an MV
+----------------------------------------------------
+
+-- drop mvs and make sure the event is published in the
+-- PUBLISH table
+drop mv mv7;
+drop mv mv1_r;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+drop mv mv2;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+drop mv mv3;
+drop mv mv4;
+drop mv mv5;
+drop mv mv6;
+drop mv mv7;
+
+-- check contents of REWRITE_PUBLISH table
+execute getMVRP;
+
+-- Run QMP and clean up the PUBLISH table
+obey TEST001(run_qmp);
+
+?section redescribe_mv
+----------------------------------------------------
+---------- redescribe section ----------------------
+-- test the redescribe tool, repeating match operations
+-- before and after. Without a descriptor version change,
+-- this does not really exercise the redescribe tool
+-- completely.
+-- In addition, mv renaming and ignore changes operations
+-- are carried out to round out code coverage for these
+-- features in QMS.
+----------------------------------------------------
+
+control query default MVQR_PUBLISH_TO 'PRIVATE';
+
+create table mvqr_001_t1 (
+  a int not null
+, b int not null
+, c char(10)
+, primary key(a)
+);
+create table mvqr_001_t2 like mvqr_001_t1;
+insert into mvqr_001_t1 values(1,10,'abc'), (2,20,'def'), (3,20,'ghi');
+insert into mvqr_001_t2 values(1,19,'abc'), (2,11,'def');
+
+cqd MVQR_REWRITE_LEVEL '4';
+
+create mv mvqr_001_mv1 refresh on request initialized on create ENABLE QUERY REWRITE
+as select count(*) c1 from mvqr_001_t1 group by b;
+
+create mv mvqr_001_mv2 refresh on request initialized on create ENABLE QUERY REWRITE
+as select t1.c c1, t2.c c2 from mvqr_001_t1 t1, mvqr_001_t2 t2 where t1.a=t2.a;
+
+-- redescribe single mv
+sh sh -c "$QMS redescribe QRP_CAT.SCH.mvqr_001_MV1";
+-- redescribe nonexistent mv
+sh sh -c "$QMS redescribe QRP_CAT.SCH.mvqr_001_MVXYZ";
+-- redescribe all mvs, with publish option; also test handling of empty catalog
+create catalog mvqr_t001_emptycat;
+sh sh -c "$QMS redescribe all publish";
+drop catalog mvqr_t001_emptycat;
+
+cqd mvqr_rewrite_candidates 'QRP_CAT.SCH.MVQR_001_MV1 :,QRP_CAT.SCH.MVQR_001_MV2';
+
+prepare s from select count(*) c1 from mvqr_001_t1 group by b;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV1%';
+execute s;
+
+prepare s from select t1.c, t2.c from mvqr_001_t1 t1, mvqr_001_t2 t2 where t1.a=t2.a and t1.b>10;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV2%';
+execute s;
+
+-- Test use of renamed MV.
+alter mv mvqr_001_mv1 rename to mvqr_001_mv1_x;
+cqd mvqr_rewrite_candidates 'QRP_CAT.SCH.MVQR_001_MV1_X :,QRP_CAT.SCH.MVQR_001_MV2';
+prepare s from select count(*) c1 from mvqr_001_t1 group by b;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV1_X%';
+execute s;
+
+-- Ignore changes on 1 component table of mvqr_001_mv2. Query should still use it
+-- since mvqr_rewrite_level is 1. Design calls for it to not be used if rewrite level
+-- is 3, but that is not implemented yet.
+alter mv mvqr_001_mv2 add ignore changes on mvqr_001_t2;
+prepare s from select t1.c, t2.c from mvqr_001_t1 t1, mvqr_001_t2 t2 where t1.a=t2.a and t1.b>10;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV2%';
+execute s;
+
+-- At rewrite level 3, mv that has a non-empty Ignore Changes list should not be used.
+cqd mvqr_rewrite_level '4';
+prepare s from select t1.c, t2.c from mvqr_001_t1 t1, mvqr_001_t2 t2 where t1.a=t2.a and t1.b>10;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV2%';
+execute s;
+
+-- Now remove the sole entry from the Ignore Changes list and try again.
+alter mv mvqr_001_mv2 remove ignore changes on mvqr_001_t2;
+prepare s from select t1.c, t2.c from mvqr_001_t1 t1, mvqr_001_t2 t2 where t1.a=t2.a and t1.b>10;
+select 'Success: MV used' from table(explain(null,'S')) where tname like '%MVQR_001_MV2%';
+execute s;
+
+control query default MVQR_PUBLISH_TO RESET;
+
+?section run_qmp
+----------------------------------------------------
+----------------------------------------------------
+
+-- Run QMP
+sh sh -c "$QMP -target FILE qmpLog.log";
+log;
+sh sleep 1;
+sh cat qmpLog.log >> LOG001;
+log LOG001;
+
+-- clean up the PUBLISH table
+delete from manageability.mv_rewrite.rewrite_publish;
+

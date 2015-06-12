@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -345,6 +345,8 @@ public:
   inline double value() const                      { return dpv_ ; }
   inline const double toDouble() const             { return dpv_ ; }
 
+  inline long toLong() const
+  { return (dpv_ > LONG_MAX ? LONG_MAX : (dpv_ < LONG_MIN ? LONG_MIN : (long) dpv_)); }
 
   // Many functions above are expensive because of using overloaded op==
   // The purpose of functions below is to make comparison with csOne,csZero

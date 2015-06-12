@@ -1,0 +1,1780 @@
+>>
+>>-- Run Tests
+>>  obey TESTMV333(Test1);
+>>------------------------------------------------------------
+>>create mv T_333_MV1
++>  refresh on request
++>initialized on refresh
++>  as select a, sum(b) as s_b
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV1_658314178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV1;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV1
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, sum(CATMVS.MVSCHM.T_333_T1.B) AS S_B
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV1_658314178_4222 ON CATMVS.MVSCHM.T_333_MV1
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.P7T9GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_P7T9GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV1;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV1
+-- Definition current  Thu Mar 15 12:59:44 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , S_B                              LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test2);
+>>------------------------------------------------------------
+>>create mv T_333_MV2
++>  refresh on request
++>initialized on refresh
++>  as select sum(a) as s_a, count(a) as c_a, count(*) as c_aa,
++>            min(a) as m_a, max(a) as mm_a, variance(a) as v_a,
++>            stddev(a) as ssa, b from T_333_T1
++>  group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV2_232414178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV2;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV2
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT sum(CATMVS.MVSCHM.T_333_T1.A) AS S_A, count(CATMVS.MVSCHM.T_333_T1.A) AS C_A, count(*) AS C_AA, min(CATMVS.MVSCHM.T_333_T1.A) AS M_A, max(CATMVS.MVSCHM.T_333_T1.A) AS MM_A, variance(CATMVS.MVSCHM.T_333_T1.A) AS V_A, stddev(CATMVS.MVSCHM.T_333_T1.A) AS SSA, CATMVS.MVSCHM.T_333_T1.B AS B
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  sum((CATMVS.MVSCHM.T_333_T1.A * CATMVS.MVSCHM.T_333_T1.A)) AS SYS_SUM1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV2_232414178_4222 ON CATMVS.MVSCHM.T_333_MV2
+--  (
+--    B ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.QLV9GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_QLV9GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV2;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV2
+-- Definition current  Thu Mar 15 12:59:46 2012
+
+  (
+    S_A                              LARGEINT DEFAULT NULL
+  , C_A                              LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C_AA                             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , M_A                              INT DEFAULT NULL
+  , MM_A                             INT DEFAULT NULL
+  , V_A                              FLOAT(54) DEFAULT NULL
+  , SSA                              FLOAT(54) DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  , SYS_SUM1                         FLOAT(54) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>refresh T_333_MV2;
+
+--- SQL operation complete.
+>>showddl T_333_MV2;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV2
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT sum(CATMVS.MVSCHM.T_333_T1.A) AS S_A, count(CATMVS.MVSCHM.T_333_T1.A) AS C_A, count(*) AS C_AA, min(CATMVS.MVSCHM.T_333_T1.A) AS M_A, max(CATMVS.MVSCHM.T_333_T1.A) AS MM_A, variance(CATMVS.MVSCHM.T_333_T1.A) AS V_A, stddev(CATMVS.MVSCHM.T_333_T1.A) AS SSA, CATMVS.MVSCHM.T_333_T1.B AS B
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  sum((CATMVS.MVSCHM.T_333_T1.A * CATMVS.MVSCHM.T_333_T1.A)) AS SYS_SUM1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV2_232414178_4222 ON CATMVS.MVSCHM.T_333_MV2
+--  (
+--    B ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.QLV9GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_QLV9GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV2;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV2
+-- Definition current  Thu Mar 15 13:00:04 2012
+
+-- Refreshed at Thursday March 15 19:59:51 2012
+  (
+    S_A                              LARGEINT DEFAULT NULL
+  , C_A                              LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C_AA                             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , M_A                              INT DEFAULT NULL
+  , MM_A                             INT DEFAULT NULL
+  , V_A                              FLOAT(54) DEFAULT NULL
+  , SSA                              FLOAT(54) DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  , SYS_SUM1                         FLOAT(54) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>-----------------------------------------------------------
+>>  obey TESTMV333(Test3);
+>>-----------------------------------------------------------
+>>create mv T_333_MV3(the_a, the_b)
++>  refresh on request 
++>initialized on refresh
++>  as select a, b from T_333_T1
++>  group by a, b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV3_111714178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV3;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV3(THE_A, THE_B)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS THE_A, CATMVS.MVSCHM.T_333_T1.B AS THE_B
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A, CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV3_111714178_4222 ON CATMVS.MVSCHM.T_333_MV3
+--  (
+--    THE_A ASC, THE_B ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.Z6Z9GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_Z6Z9GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV3;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV3
+-- Definition current  Thu Mar 15 13:00:07 2012
+
+  (
+    THE_A                            INT DEFAULT NULL
+  , THE_B                            INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>----------------------------------------------------------
+>>  obey TESTMV333(Test4);
+>>----------------------------------------------------------
+>>create mv T_333_MV4(the_a, the_b)
++>  refresh on request
++>initialized on refresh
++>  as select a, sum(b) as bb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV4_523714178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV4;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV4(THE_A, THE_B)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS THE_A, sum(CATMVS.MVSCHM.T_333_T1.B) AS THE_B
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV4_523714178_4222 ON CATMVS.MVSCHM.T_333_MV4
+--  (
+--    THE_A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.SH19GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_SH19GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV4;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV4
+-- Definition current  Thu Mar 15 13:00:08 2012
+
+  (
+    THE_A                            INT DEFAULT NULL
+  , THE_B                            LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test5);
+>>---------------------------------------------------------
+>>create mv T_333_MV5
++>  refresh on request
++>initialized on refresh
++>  as select a, count(b) as bb 
++>  from T_333_T1, T_333_T2
++>  where a = c
++>  group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV5_886714178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV5;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV5
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1, CATMVS.MVSCHM.T_333_T2 WHERE CATMVS.MVSCHM.T_333_T1.A = CATMVS.MVSCHM.T_333_T2.C GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV5_886714178_4222 ON CATMVS.MVSCHM.T_333_MV5
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.S119GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_S119GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV5;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV5
+-- Definition current  Thu Mar 15 13:00:12 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test6);
+>>---------------------------------------------------------
+>>create mv T_333_MV6
++>  refresh on statement
++>initialized on refresh
++>  as select a, sum(b) as bb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV6_151814178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV6;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV6
+  REFRESH ON STATEMENT 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, sum(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV6_151814178_4222 ON CATMVS.MVSCHM.T_333_MV6
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.GJ29GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_GJ29GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV6;
+
+-- Definition of ON STATEMENT materialized view CATMVS.MVSCHM.T_333_MV6
+-- Definition current  Thu Mar 15 13:00:14 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test7);
+>>---------------------------------------------------------
+>>create mv T_333_MV7
++>  recompute
++>initialized on refresh
++>  as select a, sum(b) as bb 
++>  from T_333_T1 group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_333_MV7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV7;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV7
+  RECOMPUTE 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, sum(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+
+--- SQL operation complete.
+>>invoke T_333_MV7;
+
+-- Definition of RECOMPUTE materialized view CATMVS.MVSCHM.T_333_MV7
+-- Definition current  Thu Mar 15 13:00:16 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test8);
+>>---------------------------------------------------------
+>>create mv T_333_MV8
++>  refresh on request
++>initialized on refresh
++>  mvattribute no audit
++>  as select a, avg(b) as ab
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV8_735814178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV8 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV8;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV8
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDIT 
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, avg(CATMVS.MVSCHM.T_333_T1.B) AS AB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+--  sum(CATMVS.MVSCHM.T_333_T1.B) AS SYS_SUM3
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV8_735814178_4222 ON CATMVS.MVSCHM.T_333_MV8
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.V229GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_V229GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV8;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV8
+-- Definition current  Thu Mar 15 13:00:17 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , AB                               LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  , SYS_SUM3                         LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>alter mv T_333_MV8 mvattribute no auditonrefresh;
+
+--- SQL operation complete.
+>>showddl T_333_MV8;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV8
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, avg(CATMVS.MVSCHM.T_333_T1.B) AS AB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+--  sum(CATMVS.MVSCHM.T_333_T1.B) AS SYS_SUM3
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV8_735814178_4222 ON CATMVS.MVSCHM.T_333_MV8
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.V229GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_V229GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV8;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV8
+-- Definition current  Thu Mar 15 13:00:18 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , AB                               LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  , SYS_SUM3                         LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>alter mv T_333_MV8 mvattribute audit;
+
+--- SQL operation complete.
+>>showddl T_333_MV8;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV8
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, avg(CATMVS.MVSCHM.T_333_T1.B) AS AB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+--  sum(CATMVS.MVSCHM.T_333_T1.B) AS SYS_SUM3
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV8_735814178_4222 ON CATMVS.MVSCHM.T_333_MV8
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.V229GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_V229GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV8;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV8
+-- Definition current  Thu Mar 15 13:00:18 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , AB                               LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  , SYS_SUM3                         LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test9);
+>>---------------------------------------------------------
+>>create mv T_333_MV9
++>  refresh on request
++>initialized on refresh
++>  mvattributes commit refresh each 1122
++>  as select a, count(b) as bb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV9_969814178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV9 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV9;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV9
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES COMMIT REFRESH EACH 1122
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV9_969814178_4222 ON CATMVS.MVSCHM.T_333_MV9
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.MN39GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_MN39GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV9;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV9
+-- Definition current  Thu Mar 15 13:00:21 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>alter mv T_333_MV9 mvattribute commit refresh each 2211;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV9;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV9
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES COMMIT REFRESH EACH 2211
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV9_969814178_4222 ON CATMVS.MVSCHM.T_333_MV9
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.MN39GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_MN39GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV9;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV9
+-- Definition current  Thu Mar 15 13:00:21 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>---------------------------------------------------------
+>>  obey TESTMV333(Test10);
+>>---------------------------------------------------------
+>>create mv T_333_MV10
++>  refresh on request
++>initialized on refresh
++>  enable query rewrite
++>  as select a, count(b) as cb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV10_853914178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV10;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV10
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH ENABLE QUERY REWRITE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV10_853914178_4222 ON CATMVS.MVSCHM.T_333_MV10
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.D339GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_D339GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV10;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV10
+-- Definition current  Thu Mar 15 13:00:23 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , CB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>alter mv T_333_MV10 disable query rewrite;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV10;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV10
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV10_853914178_4222 ON CATMVS.MVSCHM.T_333_MV10
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.D339GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_D339GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV10;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV10
+-- Definition current  Thu Mar 15 13:00:24 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , CB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test11);
+>>------------------------------------------------------------
+>>alter table T_333_T2 attribute insertlog;
+
+--- SQL operation complete.
+>>create mv T_333_MV11
++>  refresh on request 
++>  no initialization
++>  as select c from T_333_T2
++>  group by c;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV11_196914178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV11;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV11
+  REFRESH ON REQUEST 
+  NO INITIALIZATION 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T2.C AS C
+   FROM CATMVS.MVSCHM.T_333_T2 GROUP BY CATMVS.MVSCHM.T_333_T2.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV11_196914178_4222 ON CATMVS.MVSCHM.T_333_MV11
+--  (
+--    C ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.SJ49GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_SJ49GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV11;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV11
+-- Definition current  Thu Mar 15 13:00:26 2012
+
+-- Refreshed at Thursday March 15 20:00:24 2012
+  (
+    C                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>refresh T_333_MV11;
+
+--- SQL operation complete.
+>>showddl T_333_MV11;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV11
+  REFRESH ON REQUEST 
+  NO INITIALIZATION 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T2.C AS C
+   FROM CATMVS.MVSCHM.T_333_T2 GROUP BY CATMVS.MVSCHM.T_333_T2.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV11_196914178_4222 ON CATMVS.MVSCHM.T_333_MV11
+--  (
+--    C ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.SJ49GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_SJ49GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV11;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV11
+-- Definition current  Thu Mar 15 13:00:36 2012
+
+-- Refreshed at Thursday March 15 20:00:32 2012
+  (
+    C                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test12);
+>>------------------------------------------------------------
+>>create mv T_333_MV12(c heading 'the c', d heading 'the d', e)
++>  refresh on request 
++>initialized on refresh
++>  as select b, count(a) as aa, avg(a) as aaa
++>  from T_333_T1 group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV12_343224178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV12 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV12;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV12(C HEADING 'the c', D HEADING 'the d', E)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.B AS C, count(CATMVS.MVSCHM.T_333_T1.A) AS D, avg(CATMVS.MVSCHM.T_333_T1.A) AS E
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  sum(CATMVS.MVSCHM.T_333_T1.A) AS SYS_SUM2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV12_343224178_4222 ON CATMVS.MVSCHM.T_333_MV12
+--  (
+--    C ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.JK69GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_JK69GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV12;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV12
+-- Definition current  Thu Mar 15 13:00:38 2012
+
+  (
+    C                                INT DEFAULT NULL
+  , D                                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , E                                LARGEINT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_SUM2                         LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test13);
+>>------------------------------------------------------------
+>>create mv T_333_MV13
++>  refresh on request
++>initialized on refresh
++>  location $$partition0$$
++>  as select a, count(b) as bb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV13_755224178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV13 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV13;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV13
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS BB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV13_755224178_4222 ON CATMVS.MVSCHM.T_333_MV13
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$DATA.ZSDNWGDD.CV69GK00
+--  NAME NSK_DATA_ZSDNWGDD_CV69GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV13;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV13
+-- Definition current  Thu Mar 15 13:00:39 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , BB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test14);
+>>------------------------------------------------------------
+>>create mv T_333_MV14
++>  refresh on request 
++>  initialize on create
++>  as select a, count(b) as cb
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV14_739224178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV14 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV14;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV14
+  REFRESH ON REQUEST 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV14_739224178_4222 ON CATMVS.MVSCHM.T_333_MV14
+--  (
+--    A ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.KD79GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_KD79GK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV14;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV14
+-- Definition current  Thu Mar 15 13:00:43 2012
+
+-- Refreshed at Thursday March 15 20:00:40 2012
+  (
+    A                                INT DEFAULT NULL
+  , CB                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>showddl T_333_T1;
+
+CREATE TABLE CATMVS.MVSCHM.T_333_T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA3.ZSDNWGDD.ZWS9GK00
+  NAME NSK_DATA3_ZSDNWGDD_ZWS9GK00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>invoke T_333_T1;
+
+-- Definition of table CATMVS.MVSCHM.T_333_T1
+-- Definition current  Thu Mar 15 13:00:44 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test15);
+>>------------------------------------------------------------
+>>create mv T_333_MV15
++>  refresh on request
++>initialized on refresh
++>  attribute no lockonrefresh
++>  as select a, count(b) as cb 
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV15_714324178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV15 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV15;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV15
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES NO LOCKONREFRESH, ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV15_714324178_4222 ON CATMVS.MVSCHM.T_333_MV15
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.RW79GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_RW79GK00
+--  ;
+
+--- SQL operation complete.
+>>alter mv T_333_MV15 attribute lockonrefresh;
+
+--- SQL operation complete.
+>>showddl T_333_MV15;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV15
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV15_714324178_4222 ON CATMVS.MVSCHM.T_333_MV15
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.RW79GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_RW79GK00
+--  ;
+
+--- SQL operation complete.
+>>alter mv T_333_MV15 attribute no lockonrefresh;
+
+--- SQL operation complete.
+>>showddl T_333_MV15;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV15
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES NO LOCKONREFRESH, ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, count(CATMVS.MVSCHM.T_333_T1.B) AS CB
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV15_714324178_4222 ON CATMVS.MVSCHM.T_333_MV15
+--  (
+--    A ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.RW79GK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_RW79GK00
+--  ;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test16);
+>>------------------------------------------------------------
+>>CREATE MATERIALIZED VIEW T_333_MV16 (X, Y)
++>	REFRESH ON REQUEST
++>initialized on refresh
++>	AS SELECT A, E
++>		FROM T_333_TT1, T_333_TT2
++>		WHERE A=D
++>	group by a, e;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV16_493424178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_333_MV16;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV16(X, Y)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (X ASC)  HASH2 PARTITION BY (X) 
+  AS SELECT CATMVS.MVSCHM.T_333_TT1.A AS X, CATMVS.MVSCHM.T_333_TT2.E AS Y
+   FROM CATMVS.MVSCHM.T_333_TT1, CATMVS.MVSCHM.T_333_TT2 WHERE CATMVS.MVSCHM.T_333_TT1.A = CATMVS.MVSCHM.T_333_TT2.D GROUP BY CATMVS.MVSCHM.T_333_TT1.A, CATMVS.MVSCHM.T_333_TT2.E;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV16_493424178_4222 ON CATMVS.MVSCHM.T_333_MV16
+--  (
+--    X ASC, Y ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$DATA1.ZSDNWGDD.N589GK00
+--  NAME NSK_DATA1_ZSDNWGDD_N589GK00
+--  HASH2 PARTITION
+--  (
+--    ADD LOCATION \NSK.$DATA3.ZSDNWGDD.P589GK00
+--      NAME NSK_DATA3_ZSDNWGDD_P589GK00
+--  , ADD LOCATION \NSK.$DATA.ZSDNWGDD.Q589GK00
+--      NAME NSK_DATA_ZSDNWGDD_Q589GK00
+--  , ADD LOCATION \NSK.$DATA2.ZSDNWGDD.R589GK00
+--      NAME NSK_DATA2_ZSDNWGDD_R589GK00
+--  , ADD LOCATION \NSK.$DATA4.ZSDNWGDD.S589GK00
+--      NAME NSK_DATA4_ZSDNWGDD_S589GK00
+--  )
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV16;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV16
+-- Definition current  Thu Mar 15 13:00:55 2012
+
+  (
+    X                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Y                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test17);
+>>------------------------------------------------------------
+>>CREATE MATERIALIZED VIEW T_333_MV17 (X, Y, Z)
++>	REFRESH ON REQUEST
++>initialized on refresh
++>	AS
++>		SELECT A, D, E
++>		FROM T_333_TT1, T_333_TT2
++>		WHERE A=D
++>	group by a, d, e;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV17_161524178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>showddl T_333_MV17;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV17(X, Y, Z)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (X ASC, Y ASC)  HASH2 PARTITION BY (X, Y) 
+  AS SELECT CATMVS.MVSCHM.T_333_TT1.A AS X, CATMVS.MVSCHM.T_333_TT2.D AS Y, CATMVS.MVSCHM.T_333_TT2.E AS Z
+   FROM CATMVS.MVSCHM.T_333_TT1, CATMVS.MVSCHM.T_333_TT2 WHERE CATMVS.MVSCHM.T_333_TT1.A = CATMVS.MVSCHM.T_333_TT2.D GROUP BY CATMVS.MVSCHM.T_333_TT1.A, CATMVS.MVSCHM.T_333_TT2.D, CATMVS.MVSCHM.T_333_TT2.E;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV17_161524178_4222 ON CATMVS.MVSCHM.T_333_MV17
+--  (
+--    X ASC, Y ASC, Z ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$DATA1.ZSDNWGDD.K399GK00
+--  NAME NSK_DATA1_ZSDNWGDD_K399GK00
+--  HASH2 PARTITION
+--  (
+--    ADD LOCATION \NSK.$DATA3.ZSDNWGDD.L399GK00
+--      NAME NSK_DATA3_ZSDNWGDD_L399GK00
+--  , ADD LOCATION \NSK.$DATA.ZSDNWGDD.M399GK00
+--      NAME NSK_DATA_ZSDNWGDD_M399GK00
+--  , ADD LOCATION \NSK.$DATA2.ZSDNWGDD.N399GK00
+--      NAME NSK_DATA2_ZSDNWGDD_N399GK00
+--  , ADD LOCATION \NSK.$DATA4.ZSDNWGDD.P399GK00
+--      NAME NSK_DATA4_ZSDNWGDD_P399GK00
+--  )
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV17;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV17
+-- Definition current  Thu Mar 15 13:00:59 2012
+
+  (
+    X                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Y                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Z                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test18);
+>>------------------------------------------------------------
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>create mv T_333_MV18
++>  refresh on request
++>  initialize on create
++>  as select a, sum(b) as aaa
++>  from T_333_T1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV18_666524178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV18 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @CATMVS.MVSCHM.T_333_MV18@ @1@;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV18;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV18
+  REFRESH ON REQUEST 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, sum(CATMVS.MVSCHM.T_333_T1.B) AS AAA
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.B) AS SYS_COUNT2
+
+
+-- The materialized view is unavailable.
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV18_666524178_4222 ON CATMVS.MVSCHM.T_333_MV18
+--  (
+--    A ASC
+--  )
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.WRBBHK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_WRBBHK00
+--  ;
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test19);
+>>------------------------------------------------------------
+>>create mv T_333_MV19 
++>	refresh on request 
++>initialized on refresh
++>	store by (b)
++>	location $$partition1$$ 
++>	range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
++>		    ADD FIRST KEY 3000 LOCATION $$partition0$$)
++>	MVATTRIBUTES NO AUDITONREFRESH
++>	as select max(a) as max_a, b 
++>	from T_333_T19 
++>	group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_333_MV19 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV19;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV19
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (B ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT max(CATMVS.MVSCHM.T_333_T19.A) AS MAX_A, CATMVS.MVSCHM.T_333_T19.B AS B
+   FROM CATMVS.MVSCHM.T_333_T19 GROUP BY CATMVS.MVSCHM.T_333_T19.B;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T19.A) AS SYS_COUNT2
+
+
+
+--- SQL operation complete.
+>>invoke T_333_MV19;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV19
+-- Definition current  Thu Mar 15 13:01:06 2012
+
+  (
+    MAX_A                            INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test20);
+>>------------------------------------------------------------
+>>create mv T_333_MV20A(x, y)
++>  refresh on request
++>initialized on refresh
++>  as select sum(a), b
++>  from T_333_T1
++>  group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV20A_193624178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV20A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_333_MV20B(x heading 'the x', y)
++>  refresh on request
++>initialized on refresh
++>  as select sum(a), b
++>  from T_333_T1
++>  group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV20B_365624178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV20B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV20A;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV20A(X, Y)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT sum(CATMVS.MVSCHM.T_333_T1.A) AS X, CATMVS.MVSCHM.T_333_T1.B AS Y
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.A) AS SYS_COUNT2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV20A_193624178_4222 ON CATMVS.MVSCHM.T_333_MV20A
+--  (
+--    Y ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.HNCBHK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_HNCBHK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV20A;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV20A
+-- Definition current  Thu Mar 15 13:01:09 2012
+
+  (
+    X                                LARGEINT DEFAULT NULL
+  , Y                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl T_333_MV20B;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV20B(X HEADING 'the x', Y)
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT sum(CATMVS.MVSCHM.T_333_T1.A) AS X, CATMVS.MVSCHM.T_333_T1.B AS Y
+   FROM CATMVS.MVSCHM.T_333_T1 GROUP BY CATMVS.MVSCHM.T_333_T1.B;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+--  count(CATMVS.MVSCHM.T_333_T1.A) AS SYS_COUNT2
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV20B_365624178_4222 ON CATMVS.MVSCHM.T_333_MV20B
+--  (
+--    Y ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.DWCBHK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_DWCBHK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV20B;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV20B
+-- Definition current  Thu Mar 15 13:01:09 2012
+
+  (
+    X                                LARGEINT DEFAULT NULL
+  , Y                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNT2                       LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test21);
+>>------------------------------------------------------------
+>>create mv T_333_MV21
++>  refresh on request
++>  ignore changes on T_333_T2
++>initialized on refresh
++>  as select a, c from T_333_T1, T_333_T2
++>  where a = c
++>  group by a, c;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV21_638624178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV21 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV21;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV21
+  REFRESH ON REQUEST 
+  IGNORE CHANGES ON CATMVS.MVSCHM.T_333_T2
+ INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS A, CATMVS.MVSCHM.T_333_T2.C AS C
+   FROM CATMVS.MVSCHM.T_333_T1, CATMVS.MVSCHM.T_333_T2 WHERE CATMVS.MVSCHM.T_333_T1.A = CATMVS.MVSCHM.T_333_T2.C GROUP BY CATMVS.MVSCHM.T_333_T1.A, CATMVS.MVSCHM.T_333_T2.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV21_638624178_4222 ON CATMVS.MVSCHM.T_333_MV21
+--  (
+--    A ASC, C ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.C9CBHK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_C9CBHK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV21;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV21
+-- Definition current  Thu Mar 15 13:01:11 2012
+
+  (
+    A                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test22);
+>>------------------------------------------------------------
+>>create mv T_333_MV22(c, d heading 'r')
++>  refresh on request
++>  ignore changes on T_333_T1, T_333_TT1
++>initialized on refresh
++>  as select T_333_T1.a, count(T_333_T1.b) as cb
++>  from T_333_T1, T_333_T2, T_333_TT1
++>  where T_333_T1.a = T_333_T2.c and T_333_T2.c = T_333_TT1.a
++>  group by T_333_T1.a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_333_MV22_431724178_4222 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_333_MV22 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_333_MV22;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_333_MV22(C, D HEADING 'r')
+  REFRESH ON REQUEST 
+  IGNORE CHANGES ON CATMVS.MVSCHM.T_333_T1, CATMVS.MVSCHM.T_333_TT1
+ INITIALIZE ON REFRESH 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_333_T1.A AS C, count(CATMVS.MVSCHM.T_333_T1.B) AS D
+   FROM CATMVS.MVSCHM.T_333_T1, CATMVS.MVSCHM.T_333_T2, CATMVS.MVSCHM.T_333_TT1 WHERE CATMVS.MVSCHM.T_333_T1.A = CATMVS.MVSCHM.T_333_T2.C AND CATMVS.MVSCHM.T_333_T2.C = CATMVS.MVSCHM.T_333_TT1.A GROUP BY CATMVS.MVSCHM.T_333_T1.A;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+-- The following index is a system created index --
+--CREATE UNIQUE INDEX T_333_MV22_431724178_4222 ON CATMVS.MVSCHM.T_333_MV22
+--  (
+--    C ASC
+--  )
+--  NO POPULATE
+--  LOCATION \NSK.$SYSTEM.ZSDNWGDD.CKDBHK00
+--  NAME NSK_SYSTEM_ZSDNWGDD_CKDBHK00
+--  ;
+
+--- SQL operation complete.
+>>invoke T_333_MV22;
+
+-- Definition of ON REQUEST materialized view CATMVS.MVSCHM.T_333_MV22
+-- Definition current  Thu Mar 15 13:01:12 2012
+
+  (
+    C                                INT DEFAULT NULL
+  , D                                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYS_COUNTSTAR1                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>  obey TESTMV333(Test23);
+>>------------------------------------------------------------
+>>control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition$$;
+
+--- SQL operation complete.
+>>create table T_333_T23(
++>	a int not null not droppable, 
++>	b int not null, 
++>	c int not null,
++>	d int,
++>	e int,
++>	constraint t231bplus check (b > 0), 
++>	constraint t231ubc unique(b,c),
++>	primary key(a) droppable)
++>	store by (c)
++>	location $$partition2$$	
++>	range partition(add first key  (100) location $$partition1$$,
++>		  add first key  (200) location $$partition1$$,
++>		  add first key  (300) location $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>alter table T_333_T23 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_333_MV23
++>refresh on statement initialize on create
++>as select d from T_333_T23;
+
+--- SQL operation complete.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table T_333_T23__temp);
+
+CREATE TABLE (TEMP_TABLE CATMVS.MVSCHM.T_333_T23__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT DEFAULT NULL
+  , E                                INT DEFAULT NULL
+  , CONSTRAINT CATMVS.MVSCHM.T_333_T23__TEMP_366724178_4222 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY" ASC)
+      NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA3.ZSDNWGDD.J9DBHK00
+  NAME NSK_DATA3_ZSDNWGDD_J9DBHK00
+  HASH PARTITION BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC)
+  (
+    ADD LOCATION \NSK.$DATA4.ZSDNWGDD.K9DBHK00
+      NAME NSK_DATA4_ZSDNWGDD_K9DBHK00
+  , ADD LOCATION \NSK.$DATA2.ZSDNWGDD.L9DBHK00
+      NAME NSK_DATA2_ZSDNWGDD_L9DBHK00
+  , ADD LOCATION \NSK.$DATA1.ZSDNWGDD.M9DBHK00
+      NAME NSK_DATA1_ZSDNWGDD_M9DBHK00
+  )
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, "@SYSKEY"
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>obey TESTMV333(clean_up);
+>>------------------------------------------------------------
+>>drop mv T_333_MV23;
+
+--- SQL operation complete.
+>>drop mv T_333_MV22;
+
+--- SQL operation complete.
+>>drop mv T_333_MV21;
+
+--- SQL operation complete.
+>>drop mv T_333_MV20A;
+
+--- SQL operation complete.
+>>drop mv T_333_MV20B;
+
+--- SQL operation complete.
+>>drop mv T_333_MV19;
+
+--- SQL operation complete.
+>>drop mv T_333_MV18;
+
+--- SQL operation complete.
+>>drop mv T_333_MV17;
+
+--- SQL operation complete.
+>>drop mv T_333_MV16;
+
+--- SQL operation complete.
+>>drop mv T_333_MV15;
+
+--- SQL operation complete.
+>>drop mv T_333_MV14;
+
+--- SQL operation complete.
+>>drop mv T_333_MV13;
+
+--- SQL operation complete.
+>>drop mv T_333_MV12;
+
+--- SQL operation complete.
+>>drop mv T_333_MV11;
+
+--- SQL operation complete.
+>>drop mv T_333_MV10;
+
+--- SQL operation complete.
+>>drop mv T_333_MV9;
+
+--- SQL operation complete.
+>>drop mv T_333_MV8;
+
+--- SQL operation complete.
+>>drop mv T_333_MV7;
+
+--- SQL operation complete.
+>>drop mv T_333_MV6;
+
+--- SQL operation complete.
+>>drop mv T_333_MV5;
+
+--- SQL operation complete.
+>>drop mv T_333_MV4;
+
+--- SQL operation complete.
+>>drop mv T_333_MV3;
+
+--- SQL operation complete.
+>>drop mv T_333_MV2;
+
+--- SQL operation complete.
+>>drop mv T_333_MV1;
+
+--- SQL operation complete.
+>>drop table T_333_T23;
+
+--- SQL operation complete.
+>>drop table T_333_T2;
+
+--- SQL operation complete.
+>>drop table T_333_T1;
+
+--- SQL operation complete.
+>>drop table T_333_TT2;
+
+--- SQL operation complete.
+>>drop table T_333_TT1;
+
+--- SQL operation complete.
+>>
+>>drop table T_333_T19;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+

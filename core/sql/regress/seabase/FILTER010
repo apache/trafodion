@@ -31,6 +31,7 @@ s/^\([ ]*HBASE_INTERFACE[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*HBASE_SERIALIZATION[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*HBASE_FILTER_PREDS[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*TRAF_ALIGNED_ROW_FORMAT[ ]*[\.]*\) .*/\1 removed/g
+s/^\([ ]*TRAF_INDEX_CREATE_OPT[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*embedded_arkcmp[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_TOTAL_COST[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_OPER_COST[ ]*[\.]*\) .*/\1 removed/g

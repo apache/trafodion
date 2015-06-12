@@ -98,7 +98,6 @@ CPPSRC := \
 	NormWA.cpp \
 	ObjectNames.cpp \
 	opt.cpp \
-	OptAllNtLinux.cpp \
 	OptHints.cpp \
 	OptimizerSimulator.cpp \
 	OptItemExpr.cpp \
@@ -132,7 +131,9 @@ CPPSRC := \
 	Rule.cpp \
 	ScanOptimizer.cpp \
 	SchemaDB.cpp \
+	ScmCostMethod.cpp \
 	SearchKey.cpp \
+	SimpleScanOptimizer.cpp \
 	Stats.cpp \
 	SynthType.cpp \
 	TableDesc.cpp \

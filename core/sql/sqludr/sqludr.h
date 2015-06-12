@@ -890,7 +890,7 @@ namespace tmudr
 
     const std::string &getColName() const;
     const TypeInfo &getType() const;
-    long getUniqueEntries() const;
+    long getEstimatedUniqueEntries() const;
     ColumnUseCode getUsage() const;
     const ProvenanceInfo &getProvenance() const;
 
@@ -898,7 +898,7 @@ namespace tmudr
     TypeInfo &getType();
     void setColName(const char *name);
     void setType(TypeInfo &type);
-    void setUniqueEntries(long uniqueEntries);
+    void setEstimatedUniqueEntries(long uniqueEntries);
     void setUsage(ColumnUseCode usage);
     void setProvenance(const ProvenanceInfo &provenance);
 
@@ -918,7 +918,7 @@ namespace tmudr
     std::string name_;
     TypeInfo type_;
     ColumnUseCode usage_;
-    long uniqueEntries_;
+    long estimatedUniqueEntries_;
     ProvenanceInfo provenance_;
 
     friend class ::TMUDFInternalSetup;
@@ -1320,6 +1320,9 @@ namespace tmudr
     void deleteColumn(int i);
     void deleteColumn(const std::string &name);
 
+    // useful for cost estimation
+    int getRecordLength() const;
+
     // Functions for debugging
     void print();
 
@@ -1333,7 +1336,6 @@ namespace tmudr
     virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
     char *getRowPtr() const;
-    int getRecordLength() const;
 
   protected:
 
@@ -1363,7 +1365,8 @@ namespace tmudr
   public: 
 
     // Functions for use by UDR writer, both at compile and at run time
-    long getNumRows() const;
+    long getEstimatedNumRows() const;
+    long getEstimatedNumPartitions() const;
     const PartitionInfo &getQueryPartitioning() const;
     const OrderInfo &getQueryOrdering() const;
     bool isStream() const;
@@ -1371,7 +1374,7 @@ namespace tmudr
     const ConstraintInfo &getConstraint(int i) const;
 
     // non-const methods, used during compile time only
-    void setNumRows(long rows);
+    void setEstimatedNumRows(long rows);
     void addCardinalityConstraint(const CardinalityConstraintInfo &constraint);
     void addUniquenessConstraint(const UniqueConstraintInfo &constraint);
     void setIsStream(bool stream);
@@ -1398,7 +1401,8 @@ namespace tmudr
     // this object owns all the ConstraintInfo objects
     // contained in its data members, and the destructor will delete them
 
-    long                          numRows_;
+    long                          estimatedNumRows_;
+    long                          estimatedNumPartitions_;
     PartitionInfo                 queryPartitioning_;
     OrderInfo                     queryOrdering_;
     std::vector<ConstraintInfo *> constraints_;
@@ -1589,6 +1593,10 @@ namespace tmudr
     const std::string &getCurrentUser() const;
     const std::string &getSessionUser() const;
     const std::string &getCurrentRole() const;
+    SQLAccessType getSQLAccessType() const;
+    SQLTransactionType getSQLTransactionType() const;
+    SQLRightsType getSQLRights() const;
+    IsolationType getIsolationType() const;
     bool isCompileTime() const;
     bool isRunTime() const;
     int getDebugFlags() const;
@@ -1737,7 +1745,7 @@ namespace tmudr
 
     // Functions available at compile time only
     // call this from describePlanProperties() or earlier
-    void setCostPerRow(long microseconds);
+    void setCostPerRow(long nanoseconds);
 
     // call this from describeDesiredDegreeOfParallelism() or earlier
     void setDesiredDegreeOfParallelism(int dop);

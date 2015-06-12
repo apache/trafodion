@@ -1,0 +1,80 @@
+>>obey TEST_SPJC_FUNC_007(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Recursive trigger
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_FUNC_007 AFTER DELETE ON
++>TAB01_SPJC_FUNC_007
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_FUNC_007 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER TRIG02_SPJC_FUNC_007 AFTER INSERT ON
++>TAB02_SPJC_FUNC_007
++>REFERENCING NEW ROW AS N
++>FOR EACH ROW
++>	DELETE FROM TAB01_SPJC_FUNC_007
++>		WHERE TAB01_SPJC_FUNC_007.D = N.A + N.D + 2;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>
+>>-- original table
+>>select * from TAB01_SPJC_FUNC_007;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          8            6            4            2
+          3            6            9           12
+          3            6            9           12
+          3            6            9           12
+
+--- 5 row(s) selected.
+>>
+>>-- The tests
+>>
+>>BEGIN
++>-- Triggers an insert of old values into TAB02_SPJC_FUNC_007
++>-- which in turn deletes rows with D = 12, effectively
++>-- deleting all except one row in TAB01_SPJC_FUNC_007
++>-- Raises a warning that trigger may be triggered recursively more
++>-- than 16 times
++>	DELETE FROM TAB01_SPJC_FUNC_007 where a = 8;
++>END;
+
+*** WARNING[11002] Trigger CAT1.SCHM.TRIG01_SPJC_FUNC_007 on table CAT1.SCHM.TAB01_SPJC_FUNC_007 may be triggered recursively more than 16 times.
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>-- Result: TAB01_SPJC_FUNC_007 has one row
+>>select * from TAB01_SPJC_FUNC_007;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+
+--- 1 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_FUNC_007 has four rows
+>>select * from TAB02_SPJC_FUNC_007;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+          3            6            9           12
+          3            6            9           12
+          3            6            9           12
+
+--- 4 row(s) selected.
+>>------------------------------------------------------------------
+>>log;

@@ -1,0 +1,198 @@
+>>
+>>obey TESTMV287(SET_UP);
+>>---------------------------------------------------------------
+>>
+>>Control Query Shape cut;
+
+--- SQL operation complete.
+>>
+>>create table t1_287 (a1 int, b1 int);
+
+--- SQL operation complete.
+>>ALTER TABLE t1_287 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2_287 (a2 int, b2 int);
+
+--- SQL operation complete.
+>>ALTER TABLE t2_287 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into t2_287 values (1,1),(2,4),(2,3),(3,4);
+
+--- 4 row(s) inserted.
+>>
+>>create mv mv1_287
++>refresh on request
++>ignore changes on t2_287
++>initialize on create
++>MVAttributes COMMIT Refresh EACH 2 
++>as
++>select a2 , sum (b1) sb from t1_287,t2_287
++>where a1 = a2
++>group by a2;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.MV1_287_834889631_6949 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1_287 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>insert into t1_287 values (1,1),(2,3),(3,4);
+
+--- 3 row(s) inserted.
+>>
+>>---------------------------------------------------------------
+>>-- Run Tests
+>>
+>>	obey TESTMV287(TEST1);
+>>---------------------------------------------------------------
+>>-- correct plan with nested_join
+>>-- expected that internal refresh succeed
+>>
+>>Control Query Shape join(join(groupby(nested_join(cut,cut)),cut),cut);
+
+--- SQL operation complete.
+>>begin work ;
+
+--- SQL operation complete.
+>>
+>>
+>>INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
++>	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
++>	 USE NO RANGELOG
++>	USE IUDLOG 
++>	 COMMIT EACH 2 PHASE 0;
+
+--- SQL operation complete.
+>>
+>>rollback;
+
+--- SQL operation complete.
+>>
+>>Control Query Shape cut;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>	obey TESTMV287(TEST2);
+>>---------------------------------------------------------------
+>>-- incorrect plan with nested_join
+>>-- expected that internal refresh fails , no such plan
+>>
+>>update statistics for log table t1_287 on (a1);
+
+--- SQL operation complete.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>
+>>update histograms set rowcount = 1000000
++>where  table_uid = 
++>  ( select object_uid from HP_DEFINITION_SCHEMA.objects objects 
++>    where  OBJECT_NAME = 'T1_287' and OBJECT_NAME_SPACE = 'IL' 
++>    for read uncommitted access);
+
+--- 1 row(s) updated.
+>>
+>>Control Query Shape join(join(groupby(nested_join(cut,join(cut,cut))),cut),cut);
+
+--- SQL operation complete.
+>>
+>>-- expected - no such plan
+>>INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
++>	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
++>	 USE NO RANGELOG
++>	USE IUDLOG 
++>	 COMMIT EACH 2 PHASE 0;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>rollback;
+
+--- SQL operation complete.
+>>
+>>
+>>Control Query Shape cut;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>
+>>	obey TESTMV287(TEST3);
+>>---------------------------------------------------------------
+>>-- plan with merge_join
+>>-- expected that internal refresh fail - no such plan 
+>>Control Query Shape join(join(groupby(merge_join(cut,cut)),cut),cut);
+
+--- SQL operation complete.
+>>
+>>
+>>begin work ;
+
+--- SQL operation complete.
+>>
+>>INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
++>	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
++>	 USE NO RANGELOG
++>	USE IUDLOG 
++>	 COMMIT EACH 2 PHASE 0;
+
+--- SQL operation complete.
+>>
+>>rollback;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>	obey TESTMV287(TEST4);
+>>---------------------------------------------------------------
+>>-- plan with hybrid_hash_join
+>>-- expected that internal refresh succeed
+>>Control Query Shape join(join(groupby(hybrid_hash_join(cut,cut)),cut),cut);
+
+--- SQL operation complete.
+>>
+>>
+>>begin work ;
+
+--- SQL operation complete.
+>>
+>>INTERNAL REFRESH CATMVS.MVSCHM.MV1_287 FROM SINGLEDELTA 
++>	CATMVS.MVSCHM.T1_287 BETWEEN 101 AND 101 DE LEVEL 0
++>	 USE NO RANGELOG
++>	USE IUDLOG 
++>	 COMMIT EACH 2 PHASE 0;
+
+--- SQL operation complete.
+>>
+>>rollback;
+
+--- SQL operation complete.
+>>
+>>Control Query Shape cut;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------
+>>
+>>obey TESTMV287(CLEAN_UP);
+>>----------------------------------------------------------------
+>>Control Query Shape cut;
+
+--- SQL operation complete.
+>>
+>>drop table t1_287 cascade;
+
+--- SQL operation complete.
+>>drop table t2_287 cascade;
+
+--- SQL operation complete.
+>>log;

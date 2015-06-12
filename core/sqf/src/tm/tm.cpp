@@ -422,7 +422,7 @@ void tm_process_req_registerregion(CTmTxMessage * pp_msg)
 // tm_process_req_ddlrequest
 // Purpose : process message of type TM_MSG_TYPE_DDLREQUEST
 // -----------------------------------------------------------------
-void tm_process_req_ddlrequest(CTmTxMessage * pp_msg, char * ddlbuffer)
+void tm_process_req_ddlrequest(CTmTxMessage * pp_msg)
 {
     TM_Txid_Internal * lp_transid = (TM_Txid_Internal *)
                                     &pp_msg->request()->u.iv_ddl_request.iv_transid;
@@ -430,8 +430,15 @@ void tm_process_req_ddlrequest(CTmTxMessage * pp_msg, char * ddlbuffer)
     TMTrace(2, ("tm_process_req_ddlrequest ENTRY for Txn ID (%d, %d) ", lp_transid->iv_node, lp_transid->iv_seq_num));
 
     TM_TX_Info *lp_tx = (TM_TX_Info*) gv_tm_info.get_tx(lp_transid);
-    lp_tx->req_ddloperation(pp_msg, ddlbuffer);
-    pp_msg->reply(FEOK);
+
+    if (!gv_tm_info.multithreaded()) {
+       lp_tx->req_ddloperation(pp_msg);
+       pp_msg->reply(FEOK);
+       delete pp_msg;
+    }
+    else {
+       lp_tx->queueToTransaction(lp_transid, pp_msg);
+    }
 
     TMTrace(2, ("tm_process_req_ddlrequest EXIT for Txn ID"));
 }
@@ -3058,9 +3065,9 @@ void tm_process_msg(BMS_SRE *pp_sre)
     // has been processed.
 
     if( la_recv_buffer_ddl!=NULL)
-       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) la_recv_buffer_ddl, pp_sre->sre_msgId);
+       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) la_recv_buffer_ddl, pp_sre->sre_msgId, la_recv_buffer_ddl);
     else 
-    lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId);
+       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId, NULL);
 
     if (lp_msg_hdr->dialect_type == DIALECT_TM_DP2_SQ)
     {
@@ -3161,12 +3168,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
         tm_process_req_registerregion(lp_msg);
         break;
    case TM_MSG_TYPE_DDLREQUEST:
-        if( la_recv_buffer_ddl==NULL)
-           tm_process_req_ddlrequest(lp_msg, (char *)la_recv_buffer);
-        else {
-           tm_process_req_ddlrequest(lp_msg, (char *)la_recv_buffer_ddl);
-           delete[] la_recv_buffer_ddl;
-        }
+        tm_process_req_ddlrequest(lp_msg);
         break;
    case TM_MSG_TYPE_REQUESTREGIONINFO:
         tm_process_req_requestregioninfo(lp_msg);

@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -479,6 +479,55 @@ NAString ElemDDLSGOptionDatatype::getSyntax() const
    
   return syntax; 
 } // getSyntax
+
+// -----------------------------------------------------------------------
+// methods for class ElemDDLSGOptionResetOption
+// -----------------------------------------------------------------------
+
+// constructor
+
+ElemDDLSGOptionResetOption::ElemDDLSGOptionResetOption()
+: ElemDDLSGOption(ELM_SG_OPT_RESET_OPTION_ELEM)
+{
+} // ElemDDLSGOptionResetOption::ElemDDLSGOptionResetOption()
+
+// virtual destructor
+ElemDDLSGOptionResetOption::~ElemDDLSGOptionResetOption()
+{
+}
+
+// casting
+ElemDDLSGOptionResetOption *
+ElemDDLSGOptionResetOption::castToElemDDLSGOptionResetOption()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString
+ElemDDLSGOptionResetOption::displayLabel1() const
+{
+  return (NAString("RESET "));
+}
+
+const NAString
+ElemDDLSGOptionResetOption::getText() const
+{
+  return "ElemDDLSGOptionResetOption";
+}
+
+// method for building text
+// virtual 
+NAString ElemDDLSGOptionResetOption::getSyntax() const
+{
+  NAString syntax = "RESET";
+   
+  return syntax; 
+} // getSyntax
+
 
 //
 // End of File

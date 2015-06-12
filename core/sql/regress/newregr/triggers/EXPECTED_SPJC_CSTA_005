@@ -1,0 +1,116 @@
+>>obey TEST_SPJC_CSTA_005(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: CS with multiple Insert/Update/Delete statements (row
+>>-- trigger)
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_005 AFTER UPDATE ON
++>TAB01_SPJC_CSTA_005
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	DELETE FROM TAB02_SPJC_CSTA_005 WHERE A = O.A;
++>
++>	INSERT INTO TAB02_SPJC_CSTA_005 VALUES
++>			(N.A, N.B + N.A, N.C + N.A, N.D + N.A);
++>END;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: CS with multiple Insert/Update/Delete statements (
+>>-- statement trigger)
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_CSTA_005 AFTER DELETE ON
++>TAB01_SPJC_CSTA_005
++>REFERENCING OLD TABLE AS OT
++>FOR EACH STATEMENT
++>BEGIN ATOMIC
++>	INSERT INTO TAB02_SPJC_CSTA_005
++>		SELECT SUM(A), SUM(B), SUM(C), SUM(D)
++>		FROM TAB01_SPJC_CSTA_005;
++>
++>	INSERT INTO TAB02_SPJC_CSTA_005
++>		SELECT SUM(A) + 100, SUM(B) + 100, SUM(C) + 100, SUM(D) + 100
++>			FROM TAB01_SPJC_CSTA_005;
++>END;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>-- case 1:
+>>UPDATE TAB01_SPJC_CSTA_005 SET A = A + 100 WHERE A = 10;
+
+--- 1 row(s) updated.
+>>
+>>select * from TAB01_SPJC_CSTA_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        110           11           12           13
+         20           21           22           23
+         30           31           32           33
+
+--- 3 row(s) selected.
+>>
+>>select * from TAB02_SPJC_CSTA_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        110          121          122          123
+
+--- 1 row(s) selected.
+>>
+>>-- now update TAB01_SPJC_CSTA_005 once again
+>>UPDATE TAB01_SPJC_CSTA_005 SET A = A + 100 WHERE A = 110;
+
+--- 1 row(s) updated.
+>>
+>>
+>>select * from TAB01_SPJC_CSTA_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        210           11           12           13
+         20           21           22           23
+         30           31           32           33
+
+--- 3 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_CSTA_005 has one row with new A and new A added to
+>>-- other columns
+>>select * from TAB02_SPJC_CSTA_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        210          221          222          223
+
+--- 1 row(s) selected.
+>>
+>>-- case 2:
+>>DELETE FROM TAB01_SPJC_CSTA_005 WHERE A = 210;
+
+--- 1 row(s) deleted.
+>>
+>>select * from TAB02_SPJC_CSTA_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        210          221          222          223
+         50           52           54           56
+        150          152          154          156
+
+--- 3 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

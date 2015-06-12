@@ -1,0 +1,444 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST005
+-- Unit Test to test residual predicate matching.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST005(clean_up);
+obey TEST005(clean_up_files);
+log LOG005 clear;
+obey TEST005(set_up);
+obey TEST005(create_mvs);
+obey TEST005(match_jq1);
+obey TEST005(match_jq2);
+obey TEST005(match_jq3);
+obey TEST005(match_jq4);
+obey TEST005(match_jq5);
+obey TEST005(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema residual cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm residual*;
+sh rm RESIDUAL*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default QUERY_CACHE '0';
+control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+control query default MVQR_USE_RI_FOR_EXTRA_HUB_TABLES 'ON';
+
+obey GetMvDesc;
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+create schema residual;
+set schema residual;
+set pattern $$MVSchemaName$$ RESIDUAL;
+
+create table fact (
+	pk		 int not null not droppable primary key,
+	f1     char(20),
+	f2     char(20),
+	f3     char(20),
+	name   char(20),
+	dimkey int)
+	store by primary key;
+
+create table dim1 (dkey int not null not droppable primary key, dimdata int);
+create table dim2 (dkey int not null not droppable primary key, dimdata int);
+
+insert into fact values
+  ( 1, 'abc', 'def', 'ghi', 'jklmnop', 1),
+  ( 2, '123', 'def', 'ghi', 'jVONnop', 2),
+  ( 3, 'abc', '123', 'ghi', 'jVONXop', 3),
+  ( 4, 'abc', 'def', '123', 'jklmnop', 4),
+  ( 5, 'abc', 'def', 'ghi', 'jVONnop', 5),
+  ( 6, '123', 'def', 'ghi', 'jVONXop', 6),
+  ( 7, 'abc', '123', 'ghi', 'jklmnop', 7),
+  ( 8, 'abc', 'def', '123', 'jVONnop', 8),
+  ( 9, 'abc', 'def', 'ghi', 'jVONXop', 9),
+  (10, '123', 'def', 'ghi', 'jklmnop', 1),
+  (11, 'abc', '123', 'ghi', 'jVONnop', 2),
+  (12, 'abc', 'def', '123', 'jVONXop', 3);
+
+insert into dim1 values
+ (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10);
+
+insert into dim2 values
+ (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10);
+
+
+alter table fact add constraint fact_fk1 foreign key (dimkey) references dim1(dkey);
+alter table fact add constraint fact_fk2 foreign key (dimkey) references dim2(dkey);
+
+?section create_mvs
+--===========================================
+-- MJVs
+--===========================================
+
+-- No residual preds.
+create mv residual_mjv1
+	refresh on request
+	initialized on create
+	as  select f1, f2, dimkey, name
+	    from fact;
+
+set pattern $$MVName$$ RESIDUAL_MJV1;
+obey TEST005(dump_MV);
+
+-- Single column residual pred.
+create mv residual_mjv2
+	refresh on request
+	initialized on create
+	as  select f1, f2, dimkey, name
+	    from  fact
+	    where name like '%VON%';
+
+set pattern $$MVName$$ RESIDUAL_MJV2;
+obey TEST005(dump_MV);
+
+-- Multi-column residual pred.
+create mv residual_mjv3
+	refresh on request
+	initialized on create
+	as  select f1, f2, dimkey, name
+	    from  fact
+	    where f2 || f3 like '%123%';
+
+set pattern $$MVName$$ RESIDUAL_MJV3;
+obey TEST005(dump_MV);
+
+-- Multiple preds using the same predicate text.
+create mv residual_mjv4
+	refresh on request
+	initialized on create
+	as  select f1, f2, dimkey, name
+	    from  fact
+	    where f1 || f2 like '%123%'
+	      and f2 || f3 like '%123%';
+
+set pattern $$MVName$$ RESIDUAL_MJV4;
+obey TEST005(dump_MV);
+
+?section RESIDUAL_JQ1
+prepare QueryStmt from
+	    select f1, f2, 
+		         dimkey, dimdata
+	    from fact, dim1
+	    where dimkey=dkey
+	    order by f1, f2, dimkey;
+
+?section match_jq1
+--===========================================
+--== No preds, should match only MJV1
+--===========================================
+set pattern $$QueryName$$ RESIDUAL_JQ1;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+obey TEST005($$QueryName$$);
+
+obey TEST005(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> residual1.in;
+sh echo PUBLISH RESIDUAL_MJV1.xml >> residual1.in;
+sh echo PUBLISH RESIDUAL_MJV2.xml >> residual1.in;
+sh echo PUBLISH RESIDUAL_MJV3.xml >> residual1.in;
+sh echo PUBLISH RESIDUAL_MJV4.xml >> residual1.in;
+sh echo MATCH RESIDUAL_JQ1.xml    >> residual1.in;
+
+sh sh -c "$QMS residual1.in residual.out";
+
+log;
+sh cat residual.out >> LOG005;
+log LOG005;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV1';
+obey TEST005(compare);
+
+?section RESIDUAL_JQ2
+prepare QueryStmt from
+	    select f1, f2, 
+		         dimkey, dimdata
+	    from fact, dim1
+	    where dimkey=dkey
+	      and name like '%VONX%'
+	    order by f1, f2, dimkey;
+
+?section match_jq2
+--===========================================
+--== One, different residual pred. Should match MJV1 only.
+--===========================================
+set pattern $$QueryName$$ RESIDUAL_JQ2;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST005($$QueryName$$);
+
+obey TEST005(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> residual2.in;
+sh echo PUBLISH RESIDUAL_MJV1.xml >> residual2.in;
+sh echo PUBLISH RESIDUAL_MJV2.xml >> residual2.in;
+sh echo PUBLISH RESIDUAL_MJV3.xml >> residual2.in;
+sh echo PUBLISH RESIDUAL_MJV4.xml >> residual2.in;
+sh echo MATCH RESIDUAL_JQ2.xml    >> residual2.in;
+
+sh sh -c "$QMS residual2.in residual.out";
+
+log;
+sh cat residual.out >> LOG005;
+log LOG005;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV1';
+obey TEST005(compare);
+
+?section RESIDUAL_JQ3
+prepare QueryStmt from
+	    select f1, f2, 
+		         dimkey, dimdata
+	    from fact, dim1
+	    where dimkey=dkey
+	      and name like '%VON%'
+	    order by f1, f2, dimkey;
+
+?section match_jq3
+--===========================================
+--== One, exact residual pred, should match MJV2.
+--===========================================
+set pattern $$QueryName$$ RESIDUAL_JQ3;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST005($$QueryName$$);
+
+obey TEST005(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> residual3.in;
+sh echo PUBLISH RESIDUAL_MJV1.xml >> residual3.in;
+sh echo PUBLISH RESIDUAL_MJV2.xml >> residual3.in;
+sh echo PUBLISH RESIDUAL_MJV3.xml >> residual3.in;
+sh echo PUBLISH RESIDUAL_MJV4.xml >> residual3.in;
+sh echo MATCH RESIDUAL_JQ3.xml    >> residual3.in;
+
+sh sh -c "$QMS residual3.in residual.out";
+
+log;
+sh cat residual.out >> LOG005;
+log LOG005;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV2';
+obey TEST005(compare);
+
+?section RESIDUAL_JQ4
+prepare QueryStmt from
+	    select f1, f2, 
+		         dimkey, dimdata
+	    from fact, dim1
+	    where dimkey=dkey
+	      and f2 || f3 like '%123%'
+	    order by f1, f2, dimkey;
+
+?section match_jq4
+--===========================================
+--== One, exact residual pred, should match MJV3.
+--===========================================
+set pattern $$QueryName$$ RESIDUAL_JQ4;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST005($$QueryName$$);
+
+obey TEST005(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> residual4.in;
+sh echo PUBLISH RESIDUAL_MJV1.xml >> residual4.in;
+sh echo PUBLISH RESIDUAL_MJV2.xml >> residual4.in;
+sh echo PUBLISH RESIDUAL_MJV3.xml >> residual4.in;
+sh echo PUBLISH RESIDUAL_MJV4.xml >> residual4.in;
+sh echo MATCH RESIDUAL_JQ4.xml    >> residual4.in;
+
+sh sh -c "$QMS residual4.in residual.out";
+
+log;
+sh cat residual.out >> LOG005;
+log LOG005;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV3';
+obey TEST005(compare);
+
+?section RESIDUAL_JQ5
+prepare QueryStmt from
+	    select f1, f2, 
+		         dimkey, dimdata
+	    from fact, dim1
+	    where dimkey=dkey
+	      and f1 || f2 like '%123%'
+	      and f2 || f3 like '%123%'
+	    order by f1, f2, dimkey;
+
+?section match_jq5
+--===========================================
+--== Two, exact residual preds, should match MJV3 and MJV4.
+--===========================================
+set pattern $$QueryName$$ RESIDUAL_JQ5;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TEST005($$QueryName$$);
+
+obey TEST005(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> residual5.in;
+sh echo PUBLISH RESIDUAL_MJV1.xml >> residual5.in;
+sh echo PUBLISH RESIDUAL_MJV2.xml >> residual5.in;
+sh echo PUBLISH RESIDUAL_MJV3.xml >> residual5.in;
+sh echo PUBLISH RESIDUAL_MJV4.xml >> residual5.in;
+sh echo MATCH RESIDUAL_JQ5.xml    >> residual5.in;
+
+sh sh -c "$QMS residual5.in residual.out";
+
+log;
+sh cat residual.out >> LOG005;
+log LOG005;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV3';
+obey TEST005(compare);
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG005;
+log LOG005;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG005;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section dump_Query2
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log Query005.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG005;
+sh sh ./CropDescriptor.ksh -q -i Query005.tmp -o Query005.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TEST005($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log T005_C1.txt clear;
+execute QueryStmt;
+log;
+log LOG005;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TEST005($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log T005_C2.txt clear;
+execute QueryStmt;
+log;
+log LOG005;
+
+-- Diff query results
+log;
+sh diff T005_C1.txt T005_C2.txt >> LOG005;
+log LOG005;
+-- Diff is done.
+

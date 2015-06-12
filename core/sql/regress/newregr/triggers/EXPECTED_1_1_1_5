@@ -1,0 +1,97 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_1_1_1_5(set_up);
+>>
+>>
+>>
+>>
+>>obey TEST_1_1_1_5(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig5 AFTER DELETE
++>	ON tab1A
++>	REFERENCING OLD AS oldRow
++>	FOR EACH ROW
++>		WHEN (oldRow.a < oldRow.b)
++>
++>		SIGNAL SQLSTATE 's0000' ('hello');
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------------
+>>obey TEST_1_1_1_5(clean_up);
+>>
+>>drop trigger trig5;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_1_1_1_5(set_up);
+>>
+>>
+>>
+>>
+>>obey TEST_1_1_1_5(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig5 AFTER DELETE
++>	ON tab1A
++>	REFERENCING OLD AS oldRow
++>	FOR EACH ROW
++>		WHEN (oldRow.a < oldRow.b)
++>
++>		SIGNAL SQLSTATE 's0000' ('hello');
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

@@ -681,6 +681,8 @@ enum DefaultConstants
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*)
   USTAT_FORCE_TEMP,            // Force temporary table to be used
+  USTAT_HBASE_SAMPLE_RETURN_INTERVAL, // When sampling in HBase, adjust sampling rate to return once
+                                      //   on average once per this many rows
   USTAT_JIT_LOGGING,           // Use just-in-time logging when error occurs
   USTAT_LOCK_HIST_TABLES,      // Force lock of hist tables during FlushStatistics() to
                                //   avoid deadlock for concurrent Update Stats on same table
@@ -3530,9 +3532,10 @@ enum DefaultConstants
   MEMORY_LIMIT_NATABLECACHE_UPPER_KB,
   MEMORY_LIMIT_QCACHE_UPPER_KB,
 
-  // if set, change blob datatype to varchar. This is needed until blob
-  // support is in.
+  // if set, change blob/clob datatype to varchar. This is needed until blob/clob
+  // support is externalized.
   TRAF_BLOB_AS_VARCHAR,
+  TRAF_CLOB_AS_VARCHAR,
 
   // for internal use only.
   // execute a create table statement and create the table with this UID.
@@ -3711,6 +3714,20 @@ enum DefaultConstants
 
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
+  // enable ESP-RegionServer colocation logic
+  TRAF_ALLOW_ESP_COLOCATION,
+
+  // if set, index population step is skipped for external and internal index creates.
+  // Should be set as an opt when objects are being
+  // created in one session (create table, create index, add constraints, etc).
+  // Does a fast check to see if source table is empty to validate.
+  TRAF_INDEX_CREATE_OPT, 
+
+  // truncate strings on insert and updates without returning an error.
+  TRAF_STRING_AUTO_TRUNCATE,
+  // return a warning on truncation.
+  TRAF_STRING_AUTO_TRUNCATE_WARNING,
+  NCM_UDR_NANOSEC_FACTOR,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

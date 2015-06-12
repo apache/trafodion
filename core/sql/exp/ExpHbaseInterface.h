@@ -108,6 +108,10 @@ class ExpHbaseInterface : public NABasicObject
                        NABoolean noXn,
                        NABoolean isMVCC) =0;
 
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn) =0;
+
   // During upsert using load, register truncate on abort will be used
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
 
@@ -167,6 +171,9 @@ class ExpHbaseInterface : public NABasicObject
 		     LIST(NAString) &col1ValueList, // output
 		     LIST(NAString) &col2ValueList, // output
 		     LIST(NAString) &col3ValueList); // output
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName) = 0;
 		     
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -360,6 +367,11 @@ class ExpHbaseInterface : public NABasicObject
                                   Int32& indexLevels,
                                   Int32& blockSize) = 0;
 
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) = 0;
+
+
 protected:
   enum 
     {
@@ -413,6 +425,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                        NABoolean noXn,
                        NABoolean isMVCC);
 
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn);
+
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
@@ -452,6 +468,9 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 scanClose();
 
   virtual Lng32 getHTable(HbaseStr &tblName);
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName);
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -641,6 +660,10 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   virtual Lng32 getHbaseTableInfo(const HbaseStr& tblName,
                                   Int32& indexLevels,
                                   Int32& blockSize) ;
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) ;
+
 
 private:
   bool  useTRex_;

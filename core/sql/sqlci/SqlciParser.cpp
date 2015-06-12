@@ -52,6 +52,7 @@
 // Globals from SqlciEnv.C
 extern ComDiagsArea sqlci_DA;
 
+extern int yydebug;
 
 static Int32 sqlci_parser_subproc(char *instr, char *origstr, SqlciNode ** node, SqlciEnv *sqlci_env)
 {

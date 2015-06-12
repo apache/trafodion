@@ -1,0 +1,56 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_14_4(tests);
+>>-------------------
+>>
+>>log   LOG_14_4;
+>>sh ./etest_14_4.exe | tee -a LOG_14_4;
+
+ 3 row(s) affected by the update
+ row (13,13) found 2 times int cat3.schm.tab3A
+ row (14,14) found 1 times int cat3.schm.tab3A
+ RESULT: success
+>>
+>>
+>>log;
+>>alter trigger disable trig1;
+
+--- SQL operation complete.
+>>alter trigger disable trig4;
+
+--- SQL operation complete.
+>>
+>>obey TEST_14_4(tests);
+>>-------------------
+>>
+>>log   LOG_14_4;
+>>sh ./etest_14_4.exe | tee -a LOG_14_4;
+
+ 3 row(s) affected by the update
+ row (13,13) found 0 times int cat3.schm.tab3A
+ row (14,14) found 0 times int cat3.schm.tab3A
+ RESULT: failure
+>>
+>>
+>>
+>>-- end logging
+>>LOG;

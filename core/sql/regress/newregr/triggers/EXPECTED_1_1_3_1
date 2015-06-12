@@ -1,0 +1,145 @@
+>>obey TEST_1_1_3_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- Correlation name must not be the same as the subject table name.
+>>CREATE TRIGGER trig31 AFTER INSERT
++>	ON tab1A
++>	REFERENCING NEW AS tab1A
++>	FOR EACH STATEMENT
++>		UPDATE tab1A
++>		SET d= 100 WHERE a = 0;
+
+*** ERROR[11021] The subject table name cannot be used in the REFERENCING clause.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- A row trigger cannot select from the transition table.
+>>CREATE TRIGGER trig32 AFTER UPDATE ON tab1a 
++>	REFERENCING new AS mynew
++>	FOR EACH ROW
++>	INSERT INTO t2 SELECT a FROM mynew;
+
+*** ERROR[11019] Only statement triggers can scan the transition table.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- A before trigger cannot select from the transition table.
+>>CREATE TRIGGER trig33 BEFORE UPDATE ON tab1a 
++>	REFERENCING new AS mynew
++>	FOR EACH ROW
++>	SET MYNEW.B = (SELECT MAX(a) FROM mynew);
+
+*** ERROR[11019] Only statement triggers can scan the transition table.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- The transition table cannot be changed.
+>>CREATE TRIGGER trig34 AFTER UPDATE ON tab1a 
++>	REFERENCING new AS mynew
++>	FOR EACH STATEMENT
++>	UPDATE mynew SET b=2;
+
+*** ERROR[11020] Ambiguous or invalid use of transition name MYNEW.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- Correlation name T1 conflicts with qualified identifier of table CAT.SCHM.T1.
+>>CREATE TRIGGER trig35 AFTER UPDATE ON tab1a 
++>	REFERENCING new AS t1
++>	FOR EACH STATEMENT
++>	INSERT INTO t2 SELECT MAX(a), MAX(b) FROM cat1.schm.t1;
+
+*** ERROR[4057] Correlation name T1 conflicts with qualified identifier of table CAT1.SCHM.T1.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- Using the same name for OLD and NEW
+>>CREATE TRIGGER trig36 AFTER UPDATE ON t1
++>	REFERENCING old AS xxx, new AS xxx
++>	FOR EACH STATEMENT
++>	UPDATE t2 SET b=2;
+
+*** ERROR[11024] Specifying the same name, XXX, for both OLD and NEW is not allowed.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- Using subject table rows without SELECTing them
+>>CREATE TRIGGER trig37 AFTER UPDATE ON t1
++>	REFERENCING new AS mynew
++>	FOR EACH ROW
++>	INSERT INTO t2 VALUES(t1.a, t1.b);
+
+*** ERROR[4002] Column T1.A is not found.  Table T1 not exposed.  Tables in scope: "OLD@", "NEW@", MYNEW.  Default schema: CAT1.SCHM.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- Using MYNEW in an inner scope (should work)
+>>INSERT INTO t1 VALUES(7,7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO t3 VALUES(7,5);
+
+--- 1 row(s) inserted.
+>>
+>>CREATE TRIGGER trig38 AFTER UPDATE ON t1
++>	REFERENCING old AS myold, new AS mynew
++>	FOR EACH STATEMENT
++>	INSERT INTO t2(a,b)
++>		SELECT myold.b, mynew.b
++>		FROM   myold, mynew
++>		WHERE  mynew.a =
++>			(SELECT mynew.a FROM t3 mynew
++>			 WHERE mynew.b=5);
+
+--- SQL operation complete.
+>>
+>>UPDATE t1 SET b=b+1;
+
+--- 1 row(s) updated.
+>>SELECT * FROM t1;
+
+A            B          
+-----------  -----------
+
+          7            8
+
+--- 1 row(s) selected.
+>>SELECT * FROM t2;
+
+A            B          
+-----------  -----------
+
+          7            8
+
+--- 1 row(s) selected.
+>>
+>>-- Giving correlation names to MYNEW and MYOLD (Should work)
+>>CREATE TRIGGER trig39 AFTER UPDATE ON tab1a 
++>	REFERENCING old AS myold, new AS mynew
++>	FOR EACH STATEMENT
++>	INSERT INTO t2(a,b)
++>		SELECT o.b, n.b
++>		FROM   myold o, mynew n
++>		WHERE  o.b <> n.b;
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------
+>>LOG;

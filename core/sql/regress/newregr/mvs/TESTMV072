@@ -1,0 +1,303 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+---------------------------------------------------------------------
+-- TestMV072
+-- ----------
+-- MVs and privileges test
+---------------------------------------------------------------------
+log LOGMV072 clear;
+obey TESTMV072(clean_up);
+obey TESTMV072(set_up);
+
+log LOGMV072 clear;
+
+-- Run Tests
+  	obey TESTMV072(Test1);
+	obey TESTMV072(Test2);
+	obey TESTMV072(Test3);
+-- clean and exit
+obey TESTMV072(clean_up);
+log;	
+exit;
+
+---------------------------------------------------------------------
+?section set_up
+
+sh sh runmxci.ksh -i "TESTMV072(user1set_up)" -u $$SQLUSER1X$$;
+sh sh runmxci.ksh -i "TESTMV072(user2set_up)" -u $$SQLUSER2X$$;
+sh sh runmxci.ksh -i "TESTMV072(user3set_up)" -u $$SQLUSER3X$$;
+---------------------------------------------------------------------
+?section user1set_up
+log LOGMV072;
+create catalog c1;
+create schema c1.s1;
+log;
+---------------------------------------------------------------------
+?section user2set_up
+log LOGMV072;
+create catalog c2;
+create schema c2.s2;
+log;
+---------------------------------------------------------------------
+?section user3set_up
+log LOGMV072;
+create catalog c3;
+create schema c3.s3;
+log;
+
+--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+?section Test1
+
+-- user1 creates a table and grants select on the table to user2
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test1)" -u $$SQLUSER1X$$;
+log LOGMV072;
+-- user2 creates some mvs on the table
+log;
+sh sh runmxci.ksh -i "TESTMV072(user2test1)" -u $$SQLUSER2X$$;
+log LOGMV072;
+-- user1 revokes the select priv from user2
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test1revoke)" -u $$SQLUSER1X$$;
+sh sh runmxci.ksh -i "TESTMV072(user2test1check)" -u $$SQLUSER2X$$;
+log LOGMV072;
+
+--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+?section Test2
+
+-- user1 grants select on the table to user2 wgo
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test2)" -u $$SQLUSER1X$$;
+log LOGMV072;
+-- user2 creates some mvs on the table and grants select to user3
+log;
+sh sh runmxci.ksh -i "TESTMV072(user2test2)" -u $$SQLUSER2X$$;
+log LOGMV072;
+-- user3 creates some mvs on the table
+log;
+sh sh runmxci.ksh -i "TESTMV072(user3test2)" -u $$SQLUSER3X$$;
+log LOGMV072;
+-- user1 revokes the grant option for select priv from user2
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test2revoke)" -u $$SQLUSER1X$$;
+sh sh runmxci.ksh -i "TESTMV072(user2test2check)" -u $$SQLUSER2X$$;
+sh sh runmxci.ksh -i "TESTMV072(user3test2check)" -u $$SQLUSER3X$$;
+log LOGMV072;
+
+--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+?section Test3
+-- user1 grants select on the table to user2 wgo
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test3)" -u $$SQLUSER1X$$;
+log LOGMV072;
+-- user2 passes the select priv to user3
+log;
+sh sh runmxci.ksh -i "TESTMV072(user2test3)" -u $$SQLUSER2X$$;
+log LOGMV072;
+-- user3 uses the select priv
+log;
+sh sh runmxci.ksh -i "TESTMV072(user3test3)" -u $$SQLUSER3X$$;
+log LOGMV072;
+-- user1 revokes the select priv from user2 cascade
+log;
+sh sh runmxci.ksh -i "TESTMV072(user1test3revoke)" -u $$SQLUSER1X$$;
+sh sh runmxci.ksh -i "TESTMV072(user2test3check)" -u $$SQLUSER2X$$;
+sh sh runmxci.ksh -i "TESTMV072(user3test3check)" -u $$SQLUSER3X$$;
+log LOGMV072;
+
+--###################################################################
+?section user1test1
+--
+-- 2008-07-11
+-- Caroline: on Linux, we need this CQD as well.
+-- #ifNSK
+-- This CQD is added for creating a table  with no
+-- partition or primary key when the POS is enabled.
+
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+--
+-- #ifNSK
+
+log LOGMV072;
+set schema c1.s1;
+create table T_072_T1 (a int, b int) attribute all mvs allowed;
+grant select on T_072_T1 to $$SQLUSER2Q$$ ;
+log;
+
+?section user2test1
+log LOGMV072;
+set schema c2.s2;
+create mv T_072_MV1 refresh on request initialize on refresh
+	attribute all mvs allowed
+	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+create mv T_072_MV2 refresh on request initialize on refresh
+	as select sum(bb) bbb from T_072_MV1;
+log;
+
+?section user1test1revoke
+log LOGMV072;
+set schema c1.s1;
+-- FAIL
+revoke select on T_072_T1 from $$SQLUSER2Q$$;
+-- PASS with warning
+revoke select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+log;
+
+?section user2test1check
+log LOGMV072;
+set schema c2.s2;
+log;
+obey TESTMV072(prepare_queries);
+log LOGMV072;
+set param ?name 'T_072_MV1';
+execute mvs;
+set param ?name 'T_072_MV2';
+execute mvs;
+log;
+
+--###################################################################
+?section user1test2
+log LOGMV072;
+set schema c1.s1;
+grant select on T_072_T1 to  $$SQLUSER2Q$$ with grant option;
+log;
+
+?section user2test2
+log LOGMV072;
+set schema c2.s2;
+create mv T_072_MV1 refresh on request initialize on refresh
+	attribute all mvs allowed
+	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+create mv T_072_MV2 refresh on request initialize on refresh
+	as select sum(bb) bbb from T_072_MV1;
+grant select on c1.s1.T_072_T1 to $$SQLUSER3Q$$;
+grant select on c2.s2.T_072_MV1 to $$SQLUSER3Q$$;
+log;
+
+?section user3test2
+log LOGMV072;
+set schema c3.s3;
+create mv T_072_MV3 refresh on request initialize on refresh
+	as select a, count(b) bb from c1.s1.T_072_T1 group by a;
+create mv T_072_MV4 refresh on request initialize on refresh
+	as select sum(bb) bbb from c2.s2.T_072_MV1;
+log;
+
+?section user1test2revoke
+log LOGMV072;
+set schema c1.s1;
+-- FAIL
+revoke grant option for select on T_072_T1 from $$SQLUSER2Q$$;
+-- PASS with warning
+revoke grant option for select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+log;
+
+?section user2test2check
+log LOGMV072;
+set schema c2.s2;
+log;
+obey TESTMV072(prepare_queries);
+log LOGMV072;
+log;
+obey TESTMV072(prepare_queries);
+log LOGMV072;
+set param ?name 'T_072_MV1';
+execute mvs;
+set param ?name 'T_072_MV2';
+execute mvs;
+log;
+
+?section user3test2check
+log LOGMV072;
+set schema c3.s3;
+log;
+obey TESTMV072(prepare_queries);
+log LOGMV072;
+log;
+obey TESTMV072(prepare_queries);
+log LOGMV072;
+set param ?name 'T_072_MV3';
+execute mvs;
+set param ?name 'T_072_MV4';
+execute mvs;
+log;
+
+--###################################################################
+?section user1test3
+log LOGMV072;
+set schema c1.s1;
+grant select on T_072_T1 to  $$SQLUSER2Q$$ with grant option;
+log;
+
+?section user2test3
+log LOGMV072;
+set schema c2.s2;
+grant select on c1.s1.T_072_T1 to $$SQLUSER3Q$$;
+grant select on c2.s2.T_072_MV1 to $$SQLUSER3Q$$;
+log;
+
+?section user3test3
+obey TESTMV072(user3test2);
+
+?section user1test3revoke
+log LOGMV072;
+set schema c1.s1;
+revoke select on T_072_T1 from $$SQLUSER2Q$$ cascade;
+log;
+
+?section user2test3check
+obey TESTMV072(user2test2check);
+
+?section user3test3check
+obey TESTMV072(user3test2check);
+
+--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+--/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+?section prepare_queries
+-- Cannot use $$VERS_CURR_SCHEMA_VERSION$$ pattern.
+prepare mvs from
+		select substring(object_name, 0, 10)
+			from HP_DEFINITION_SCHEMA.objects
+			where object_name = ?name and object_name_space = 'TA'
+			for read uncommitted access;
+
+
+---------------------------------------------------------------------
+?section clean_up
+
+sh sh runmxci.ksh -i "TESTMV072(user3clean_up)";
+sh sh runmxci.ksh -i "TESTMV072(user2clean_up)";
+sh sh runmxci.ksh -i "TESTMV072(user1clean_up)";
+---------------------------------------------------------------------
+?section user3clean_up
+
+drop schema c3.s3 cascade;
+drop catalog c3;
+---------------------------------------------------------------------
+?section user2clean_up
+
+drop schema c2.s2 cascade;
+drop catalog c2;
+---------------------------------------------------------------------
+?section user1clean_up
+
+drop schema c1.s1 cascade;
+drop catalog c1;
+

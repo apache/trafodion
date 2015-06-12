@@ -1,0 +1,1629 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- ==================================================================
+-- TestMV630
+-- -------------------
+-- VSBB logging test
+-- known diff exists for NSK on bug 624 (delete after closing bug!)
+-- ==================================================================
+
+-- Buffer size = 32 Kbyte
+-- Line length =  2 Kbyte
+-- Lines in Buffer = 16 lines
+
+-- NOTE :
+--      Due to the use of DE, we do not set the epochs manually, but have to consider
+-- them when invoking internal refresh. If you use some of the sections that are commented
+-- or if you use a specific section (without the whole test) you may have to change the epochs.
+
+-- Test set A is for machines that insert 4 single insert rows before beginning range
+-- Test set B is for machines that insert 5 single insert rows before beginning range
+-- Test set C is for machines that insert 3 single insert rows before beginning range
+-- various combinations can be used.
+
+control query default pos 'OFF';
+set PARSERFLAGS 3;
+
+obey TESTMV630(CLEAN_UP);
+log LOGMV630 clear;
+
+obey TESTMV630(SET_UP);
+
+control query default insert_vsbb 'USER';
+control query default vsbb_test_mode 'ON';
+
+-- Run Tests
+    obey TESTMV630(TEST1A);
+    obey TESTMV630(TEST2A);
+    obey TESTMV630(TEST3A);
+    obey TESTMV630(TEST4A);
+    obey TESTMV630(TEST5A);
+    obey TESTMV630(TEST6A);
+    obey TESTMV630(TEST7);    
+
+	obey TESTMV630(CLEAN_UP);
+	obey TESTMV630(SET_UP);
+	obey TESTMV630(ADD_INDEX); 
+	
+	obey TESTMV630(TEST1A);
+    obey TESTMV630(CHECK_INDEX1);
+	obey TESTMV630(TEST2A);
+	obey TESTMV630(CHECK_INDEX1);
+    obey TESTMV630(TEST3A);
+	obey TESTMV630(CHECK_INDEX1);
+    obey TESTMV630(TEST4A);
+	obey TESTMV630(CHECK_INDEX1);
+    obey TESTMV630(TEST5A);
+	obey TESTMV630(CHECK_INDEX1);
+    obey TESTMV630(TEST6A);
+	obey TESTMV630(CHECK_INDEX1);
+    obey TESTMV630(TEST7);   
+	obey TESTMV630(CHECK_INDEX4);
+--------------------------------
+
+-- In case the tests don't work properly try these ones.
+-- They are the same tests, considering VSBB is doing a different number of simple inserts
+-- before inserting the rabge itself.
+
+-- obey TESTMV630(TEST3B);
+-- obey TESTMV630(TEST4B);
+-- obey TESTMV630(TEST5B);
+-- obey TESTMV630(TEST6B);
+
+-- obey TESTMV630(TEST3C);
+-- obey TESTMV630(TEST4C);
+-- obey TESTMV630(TEST5C);
+-- obey TESTMV630(TEST6C);
+
+-- Clean and Exit
+obey TESTMV630(CLEAN_UP);
+
+log;
+exit;
+
+-- ==================================================================
+?section TEST1A
+-- ==================================================================
+-- range size < buffer size.
+
+-- 3 rows -> 1st buf, 8 rows -> 2nd buf. 
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 11;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a <= 10;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 11;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 101 and 101 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+-- ==================================================================
+?section TEST2A
+-- ==================================================================
+
+-- 36 rows -> buffers
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 50;       
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 55;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 60;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 65;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 70;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 75;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 77;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 12 and 90 
+       and a <> 50 and a <> 55 and a <> 60 and a <> 65 and a <> 70 and a <> 75 and a <> 77;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 79;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 102 and 102 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST3A
+-- ==================================================================
+
+-- 1. without EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 154;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 158;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 161;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 172;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 151 and 171 
+       and a <> 154 and a <> 158 and a <> 161; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 103 and 103 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 304;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 308;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 311;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 301 and 321
+       and a <> 304 and a <> 308 and a <> 311; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 21;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 104 and 104 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST4A
+-- ==================================================================
+
+-- 1. without EOF aftr range
+
+-- 17 rows -> buffers => end range falls on 1st row in following buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 504;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 508;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 512;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 523;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 501 and 522
+       and a <> 504 and a <> 508 and a <> 512;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 105 and 105 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 654;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 658;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 662;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 651 and 672
+       and a <> 654 and a <> 658 and a <> 662;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 106 and 106 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST5A
+-- ==================================================================
+-- range size = 2 on buffer boundaries
+
+-- 1. without EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 904;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 908;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 912;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 917;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 924;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 901 and 923 
+       and a <> 904 and a <> 908 and a <> 912 and a <> 917;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 24;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 107 and 107 
+	de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 934;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 938;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 942;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 947;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 931 and 953 
+       and a <> 934 and a <> 938 and a <> 942 and a <> 947;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 108 and 108
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST6A
+-- ==================================================================
+-- begin range on end of buffer
+
+-- 1. followed by Single insert
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1004;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1008;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1012;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1017;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1023;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1001 and 1022
+       and a <> 1004 and a <> 1008 and a <> 1012 and a <> 1017;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 109 and 109
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. followd by EOF
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1034;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1038;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1042;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1047;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1031 and 1052
+       and a <> 1034 and a <> 1038 and a <> 1042 and a <> 1047;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 110 and 110
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+
+-- ==================================================================
+?section TEST3B
+-- ==================================================================
+
+-- 1. without EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 154;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 158;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 160;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 172;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 151 and 171 
+       and a <> 154 and a <> 158 and a <> 160; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 103 and 103 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 304;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 308;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 310;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 301 and 321
+       and a <> 304 and a <> 308 and a <> 310; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 21;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 104 and 104 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST4B
+-- ==================================================================
+
+-- 1. without EOF aftr range
+
+-- 17 rows -> buffers => end range falls on 1st row in following buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 504;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 508;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 511;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 523;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 501 and 522
+       and a <> 504 and a <> 508 and a <> 511;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 105 and 105 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 654;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 658;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 661;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 651 and 672
+       and a <> 654 and a <> 658 and a <> 661;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 106 and 106 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST5B
+-- ==================================================================
+-- range size = 2 on buffer boundaries
+
+-- 1. without EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 904;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 908;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 912;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 916;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 924;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 901 and 923 
+       and a <> 904 and a <> 908 and a <> 912 and a <> 916;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 24;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 107 and 107 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 934;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 938;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 942;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 946;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 931 and 953 
+       and a <> 934 and a <> 938 and a <> 942 and a <> 946;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 108 and 108
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST6B
+-- ==================================================================
+-- begin range on end of buffer
+
+-- 1. followed by Single insert
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1004;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1008;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1012;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1016;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1023;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1001 and 1022
+       and a <> 1004 and a <> 1008 and a <> 1012 and a <> 1016;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 109 and 109
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. followd by EOF
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1034;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1038;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1042;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1046;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1031 and 1052
+       and a <> 1034 and a <> 1038 and a <> 1042 and a <> 1046;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 110 and 110
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+
+-- ==================================================================
+?section TEST3C
+-- ==================================================================
+
+-- 1. without EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 154;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 158;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 162;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 172;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 151 and 171 
+       and a <> 154 and a <> 158 and a <> 162; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 103 and 103 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 304;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 308;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 312;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 301 and 321
+       and a <> 304 and a <> 308 and a <> 312; 
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 21;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 104 and 104 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST4C
+-- ==================================================================
+
+-- 1. without EOF aftr range
+
+-- 17 rows -> buffers => end range falls on 1st row in following buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 504;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 508;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 513;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 523;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 501 and 522
+       and a <> 504 and a <> 508 and a <> 513;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 105 and 105 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 654;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 658;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 6630;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 651 and 672
+       and a <> 654 and a <> 658 and a <> 6630;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 106 and 106 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST5C
+-- ==================================================================
+-- range size = 2 on buffer boundaries
+
+-- 1. without EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 904;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 908;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 912;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 918;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 924;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 901 and 923 
+       and a <> 904 and a <> 908 and a <> 912 and a <> 918;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 24;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 107 and 107 
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. with EOF after range
+
+-- 17 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 934;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 938;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 942;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 948;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 931 and 953 
+       and a <> 934 and a <> 938 and a <> 942 and a <> 948;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 108 and 108
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+?section TEST6C
+-- ==================================================================
+-- begin range on end of buffer
+
+-- 1. followed by Single insert
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1004;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1008;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1012;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1018;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1023;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1001 and 1022
+       and a <> 1004 and a <> 1008 and a <> 1012 and a <> 1018;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 23;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 109 and 109
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+
+-- 2. followd by EOF
+
+-- 16 rows -> buffer
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1034;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1038;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1042;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a = 1048;
+insert into T_630_T1 select a, b, c, d from T_630_T3 where a between 1031 and 1052
+       and a <> 1034 and a <> 1038 and a <> 1042 and a <> 1048;
+
+execute select_iud_log;
+execute compare_BR_ER;
+set param ?size 22;
+execute check_range_size;
+
+refresh T_630_MV1 debug 130;
+internal refresh T_630_MV1
+    from singledelta T_630_T1 between 110 and 110
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+delete from table(iud_log_table T_630_T1);
+delete from table(range_log_table T_630_T1);
+log LOGMV630;
+
+
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+-- ==================================================================
+
+-- ==================================================================
+?section TEST7
+-- ==================================================================
+-- for compare
+PREPARE stat1 FROM 
+    select b,
+           count(*) as cnt,
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T4
+    group by b
+    order by b;
+
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV7
+    order by b;    
+
+
+-- bulk insert
+
+insert into T_630_T4 select a, b, c, d from T_630_T3 where a <= 2000;
+
+select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@RANGE_SIZE"
+	, a
+ from table(iud_log_table T_630_T4)
+ order by a, syskey;
+
+select count("@OPERATION_TYPE") - 
+            (select count("@OPERATION_TYPE")
+             from table (iud_log_table T_630_T4)
+             where "@OPERATION_TYPE" = 12)  as br_minus_er
+ from table (iud_log_table T_630_T4)
+ where "@OPERATION_TYPE" = 4;
+
+select sum("@RANGE_SIZE") - 2000 as range_size_minus_rows_inserted
+    from table (iud_log_table T_630_T4);
+
+
+
+refresh T_630_MV7 debug 130;
+internal refresh T_630_MV7
+    from singledelta T_630_T4 between 101 and 101
+        de level 2 use rangelog 20 NUM_OF_RANGES
+        use iudlog 10 rows_inserted 10 rows_deleted 10 rows_updated;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV630;
+log LOGMV630;
+
+
+
+-- ==================================================================
+?section SET_UP
+-- ==================================================================
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+
+create table T_630_T1 ( a int      NOT NULL NOT DROPPABLE, 
+                        b int      NOT NULL NOT DROPPABLE, 
+                        c largeint NOT NULL NOT DROPPABLE, 
+                        d char(1860),
+                        PRIMARY KEY (a))
+       store by primary key
+	   location $$partition2$$
+	   attribute automatic rangelog;
+ALTER TABLE T_630_T1 attribute all mvs allowed;
+
+create table T_630_T2 ( a int      NOT NULL NOT DROPPABLE, 
+                        b int      NOT NULL NOT DROPPABLE, 
+                        c largeint NOT NULL NOT DROPPABLE, 
+                        d char(1860),
+                        PRIMARY KEY (a))
+       store by primary key;    
+ALTER TABLE T_630_T2 attribute all mvs allowed;
+
+create table T_630_T3 ( a int      NOT NULL NOT DROPPABLE, 
+                        b int      NOT NULL NOT DROPPABLE, 
+                        c largeint NOT NULL NOT DROPPABLE, 
+                        d char(1860),
+                        PRIMARY KEY (a))
+       store by primary key;
+ALTER TABLE T_630_T3 attribute all mvs allowed;
+
+create table T_630_T4 ( a int      NOT NULL NOT DROPPABLE,
+                        b int      NOT NULL NOT DROPPABLE,
+                        c largeint NOT NULL NOT DROPPABLE,
+                        d char(1860),
+                        PRIMARY KEY (a))
+       attribute automatic rangelog;
+ALTER TABLE T_630_T4 attribute all mvs allowed;
+
+
+insert into T_630_T2 values (   1, 10,  101,  'a' ),
+                            (   2,  9,  120,  'b' ),
+                            (   3,  8,  130,  'c' ),
+                            (   4,  7,  400,  'd' ),
+                            (   5,  6,  150,  'e' ),
+                            (   6,  5,  100,  'f' ),
+                            (   7,  4,  106,  'g' ),
+                            (   8,  3,  122,  'h' ),
+                            (   9,  2,  103,  'i' ),
+                            (  10,  1,  115,  'j' );
+
+insert into T_630_T3 select        a,      b,      c, d from T_630_T2;
+insert into T_630_T3 select   a + 10,  b + 9,  c + 2, d from T_630_T2;
+insert into T_630_T3 select   a + 20,  b + 8,  c - 6, d from T_630_T2;
+insert into T_630_T3 select   a + 30,  b + 7,  c + 2, d from T_630_T2;
+insert into T_630_T3 select   a + 40,  b + 6,  c - 6, d from T_630_T2;
+insert into T_630_T3 select   a + 50,  b + 5,  c + 2, d from T_630_T2;
+insert into T_630_T3 select   a + 60,  b + 3,  c - 6, d from T_630_T2;
+insert into T_630_T3 select   a + 70,  b + 4,  c + 2, d from T_630_T2;
+insert into T_630_T3 select   a + 80,  b + 2,  c - 6, d from T_630_T2;
+insert into T_630_T3 select   a + 90,  b + 1,  c + 2, d from T_630_T2;
+
+delete from T_630_T2;
+
+insert into T_630_T2 select        a,      b,      c, d from T_630_T3;
+insert into T_630_T2 select  a + 100,  b - 1,  c + 5, d from T_630_T3;
+insert into T_630_T2 select  a + 200,  b - 2,  c + 2, d from T_630_T3;
+insert into T_630_T2 select  a + 300,  b - 3,  c + 5, d from T_630_T3;
+insert into T_630_T2 select  a + 400,  b - 4,  c + 4, d from T_630_T3;
+insert into T_630_T2 select  a + 500,  b - 5,  c + 5, d from T_630_T3;
+insert into T_630_T2 select  a + 600,  b - 6,  c + 6, d from T_630_T3;
+insert into T_630_T2 select  a + 700,  b - 7,  c + 5, d from T_630_T3;
+insert into T_630_T2 select  a + 800,  b - 8,  c + 8, d from T_630_T3;
+insert into T_630_T2 select  a + 900,  b - 9,  c + 5, d from T_630_T3;
+
+delete from T_630_T3;
+
+insert into T_630_T3 select         a,      b,      c, d from T_630_T2;
+insert into T_630_T3 select  a + 1000,  b + 7,  c - 1, d from T_630_T2;
+insert into T_630_T3 select  a + 2000,  b + 6,  c - 2, d from T_630_T2;
+insert into T_630_T3 select  a + 3000,  b + 5,  c - 1, d from T_630_T2;
+--insert into T_630_T3 select  a + 4000,  b + 6,  c - 4, d from T_630_T2;
+--insert into T_630_T3 select  a + 5000,  b + 5,  c - 5, d from T_630_T2;
+--insert into T_630_T3 select  a + 6000,  b + 4,  c - 6, d from T_630_T2;
+--insert into T_630_T3 select  a + 7000,  b + 2,  c - 4, d from T_630_T2;
+--insert into T_630_T3 select  a + 8000,  b + 4,  c - 2, d from T_630_T2;
+--insert into T_630_T3 select  a + 9000,  b + 2,  c + 1, d from T_630_T2;
+
+create mv T_630_MV1 
+    refresh on request
+initialize on create
+    as
+        select b, 
+               count(*) as cnt, 
+               avg(c) as average,
+               sum(a) as suma
+        from T_630_T1
+        group by b;
+ALTER MV T_630_MV1 attribute all mvs allowed;
+
+create mv T_630_MV7
+    refresh on request
+initialize on create
+    as
+        select b,
+               count(*) as cnt,
+               avg(c) as average,
+               sum(a) as suma
+        from T_630_T4
+        group by b;
+ALTER MV T_630_MV7 attribute all mvs allowed;
+
+prepare select_iud_log from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@RANGE_SIZE"
+	, a
+ from table(iud_log_table T_630_T1)
+ order by a, syskey;
+
+prepare compare_BR_ER from
+select sum("@RANGE_SIZE") as Num_OF_ROWS,
+       (select count("@OPERATION_TYPE")
+             from table (iud_log_table T_630_T1)
+             where "@OPERATION_TYPE" =  4)  as NUM_OF_BR,
+       (select count("@OPERATION_TYPE")
+             from table (iud_log_table T_630_T1)
+             where "@OPERATION_TYPE" = 12)  as NUM_OF_ER,
+       (select sum(case when (("@OPERATION_TYPE" = 4) AND OFFSET("@OPERATION_TYPE", 1) = 12)
+                        then 1 else 0 end) as ER_AFTER_BR
+             from table(iud_log_table T_630_T1)
+             sequence by syskey) as ER_AFTER_BR
+  from table(iud_log_table T_630_T1);
+
+--prepare compare_BR_ER from
+-- select count("@OPERATION_TYPE") - 
+--            (select count("@OPERATION_TYPE")
+--             from table (iud_log_table T_630_T1)
+--            where "@OPERATION_TYPE" = 12)  as br_minus_er
+--from table (iud_log_table T_630_T1)
+-- where "@OPERATION_TYPE" = 4;
+
+prepare check_range_size from 
+    select sum("@RANGE_SIZE") - ?size
+    from table (iud_log_table T_630_T1);
+
+
+-- for compare
+PREPARE stat1 FROM
+    select b, 
+           count(*) as cnt, 
+           avg(c) as average,
+           sum(a) as suma
+    from T_630_T1
+    group by b
+    order by b;
+      
+PREPARE stat2 FROM
+    select b, cnt, average, suma
+    from T_630_MV1
+    order by b;
+
+-- ==================================================================
+?section ADD_INDEX
+-- ==================================================================
+CREATE INDEX index1
+  ON T_630_T1 (a asc, b desc);
+
+CREATE INDEX index2
+ ON T_630_T2 (c , b );
+
+CREATE INDEX index3
+ON T_630_T3 (a asc, b desc);
+
+CREATE INDEX index4
+  ON T_630_T4 (a asc, b desc);
+
+-- ==================================================================
+?section CHECK_INDEX1
+-- ==================================================================
+SELECT a,b FROM TABLE(INDEX_TABLE index1);
+
+
+-- ==================================================================
+?section CHECK_INDEX2
+-- ==================================================================
+SELECT * FROM TABLE(INDEX_TABLE index2);
+
+
+-- ==================================================================
+?section CHECK_INDEX3
+-- ==================================================================
+SELECT * FROM TABLE(INDEX_TABLE index3);
+
+
+-- ==================================================================
+?section CHECK_INDEX4
+-- ==================================================================
+SELECT a,b FROM TABLE(INDEX_TABLE index4);
+
+
+-- ==================================================================
+?section CLEAN_UP
+-- ==================================================================
+set schema catmvs.mvschm;
+
+create MVGroup MVG1_630;
+ALTER MVGroup MVG1_630 ADD T_630_MV1 ,T_630_MV7;
+refresh MVGroup MVG1_630 cancel;
+
+drop mv T_630_MV7;
+drop mv T_630_MV1;
+drop table T_630_T4;
+drop table T_630_T3;
+drop table T_630_T2;
+drop table T_630_T1;
+
+drop mvgroup MVG1_630;
+
+
+set param ?schema_name 'MVSCHM';
+
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;
+
+

@@ -1,0 +1,90 @@
+>>obey TEST_13_3(set_up);
+>>
+>>INSERT INTO T1 VALUES (1,2), (101, 102), (201, 202), (301, 302);
+
+--- 4 row(s) inserted.
+>>INSERT INTO T2 VALUES (1,2), (101, 102), (201, 202), (301, 302);
+
+--- 4 row(s) inserted.
+>>
+>>CREATE TABLE T133
++>	(op CHAR(10),
++>	 a  INT,
++>	 b  INT);
+
+--- SQL operation complete.
+>>
+>>-- Before Trigger on T1
+>>CREATE TRIGGER tr133_1 BEFORE UPDATE ON T1
++>	REFERENCING OLD AS MY_OLD, NEW AS MY_NEW
++>	FOR EACH ROW
++>	SET  MY_NEW.a = MY_NEW.a+50;
+
+--- SQL operation complete.
+>>
+>>-- Row Trigger on T1, write to T2
+>>CREATE TRIGGER tr133_2 AFTER UPDATE ON T1
++>	REFERENCING OLD AS MY_OLD, NEW AS MY_NEW
++>	FOR EACH ROW
++>	UPDATE T2
++>		SET   a = MY_NEW.a
++>		WHERE a = MY_OLD.a;
+
+--- SQL operation complete.
+>>
+>>-- Statement trigger on T2, write to T133
+>>CREATE TRIGGER tr133_3 AFTER UPDATE ON T2
++>	REFERENCING OLD AS MY_OLD, NEW AS MY_NEW
++>	FOR EACH STATEMENT
++>	INSERT INTO T133 VALUES ('Update', 
++>                             (SELECT MAX(a) FROM MY_OLD), 
++>                             (SELECT MAX(a) FROM MY_NEW));
+
+--- SQL operation complete.
+>>
+>>obey TEST_13_3(tests);
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE T1 SET A=1 WHERE A>100;
+
+--- 3 row(s) updated.
+>>
+>>SELECT * FROM T1;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+         51          102  
+         51          202  
+         51          302  
+
+--- 4 row(s) selected.
+>>SELECT * FROM T2;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+         51          102  
+         51          202  
+         51          302  
+
+--- 4 row(s) selected.
+>>SELECT * FROM T133;
+
+OP          A            B            
+----------  -----------  -----------  
+
+Update              101           51  
+Update              201           51  
+Update              301           51  
+
+--- 3 row(s) selected.
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

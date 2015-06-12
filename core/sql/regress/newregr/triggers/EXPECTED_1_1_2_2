@@ -1,0 +1,24 @@
+>>obey TEST_1_1_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig22 AFTER UPDATE OF (c, d)
++>	ON tab1A
++>	REFERENCING OLD oldRow
++>	FOR EACH ROW
++>		WHEN ( )
++>
++>		DELETE FROM tab1B WHERE tab1b.a = oldRow.a;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig22 AFTER UPDATE OF (c, d)  ON tab1A  REFERENCING OLD oldRow 
+ FOR EACH ROW   WHEN ( )    DELETE FROM tab1B WHERE tab1b.a = oldRow.a;
+                       ^ (103 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>---------------------------------------------
+>>LOG;

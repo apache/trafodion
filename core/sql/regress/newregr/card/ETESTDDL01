@@ -1,0 +1,316 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>---------------------------------------------------------------------------
+>>
+>>?section createDDL
+>>
+>>-- Drop tables and create DDL
+>>
+>>create table t0 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t1 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t2 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t3 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t4 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t5 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t6 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t7 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t8 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t9 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t10 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>
+>>create table cube1
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int, e int, f int, txt char(100),
++>primary key (a,b,c));
+
+--- SQL operation complete.
+>>
+>>create table cube2
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int, e int, f int, txt char(100),
++>primary key (a,b,c));
+
+--- SQL operation complete.
+>>
+>>insert into t0 values (0,0,0);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (2,2,2);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (3,3,3);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (4,4,4);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (5,5,5);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (6,6,6);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (7,7,7);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (8,8,8);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (9,9,9);
+
+--- 1 row(s) inserted.
+>>
+>>-- t1,t2,t3,t4,t5 are 10 rows similar to t0
+>>insert into t1  select  * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t2  select  * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t3  select  * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t4  select  * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t5  select  * from t0;
+
+--- 10 row(s) inserted.
+>>
+>>-- t6, t7 are 100 rows
+>>insert into t6  select  t1.a+10*t2.a,t1.a,t2.a from t1,t2;
+
+--- 100 row(s) inserted.
+>>insert into t7  select  t1.a+10*t2.a,t1.a,t2.a from t1,t2;
+
+--- 100 row(s) inserted.
+>>
+>>-- t8 is 1000 rows
+>>insert into t8  select  t6.a+100*t1.a,t6.a,t1.a from t1,t6;
+
+--- 1000 row(s) inserted.
+>>
+>>-- t9 is 10000 rows
+>>insert into t9  select  t8.a+1000*t1.a,t8.a,t1.a from t1,t8;
+
+--- 10000 row(s) inserted.
+>>
+>>-- t10 is 100000 rows
+>>insert into t10  select  t8.a+1000*t6.a,t8.a,t6.a from t6,t8;
+
+--- 100000 row(s) inserted.
+>>
+>>create index ix6b on t6(b);
+
+--- SQL operation complete.
+>>create index ix6c on t6(c);
+
+--- SQL operation complete.
+>>create index ix7b on t7(b);
+
+--- SQL operation complete.
+>>create index ix7c on t7(c);
+
+--- SQL operation complete.
+>>create index ix8b on t8(b);
+
+--- SQL operation complete.
+>>create index ix8c on t8(c);
+
+--- SQL operation complete.
+>>create index ix9b on t9(b);
+
+--- SQL operation complete.
+>>create index ix9c on t9(c);
+
+--- SQL operation complete.
+>>create index ix10b on t10(b);
+
+--- SQL operation complete.
+>>create index ix10c on t10(c);
+
+--- SQL operation complete.
+>>
+>>update statistics for table t0 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t1 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t2 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t3 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t4 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t5 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t6 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t6 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(C, A),(B, A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t7 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t7 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(C, A),(B, A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t8 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t8 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(C, A),(B, A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t9 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t9 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(C, A),(B, A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t9 create sample random 50 percent;
+
+--- SQL operation complete.
+>>update statistics for table t10 on every column;
+
+--- SQL operation complete.
+>>update statistics for table t10 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(C, A),(B, A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t10 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>
+>>-- cube1 is 100000 row (change t8.a < 100 if you want more rows)
+>>insert into cube1  select  t1.a, t6.a, t8.a, t1.a, t6.a, t8.a, 'some text'
++>from t1, t6, t8 where t8.a < 100;
+
+--- 100000 row(s) inserted.
+>>
+>>
+>>-- cube2 is 150,000 rows
+>>insert into cube2  select  t1.a, t6.a, t8.a, t1.a, t6.a, t8.a, 'some text'
++>from t1, t6, t8  where t8.a < 150;
+
+--- 150000 row(s) inserted.
+>>
+>>update cube2 set txt = 'blue sky' where a < 3;
+
+--- 45000 row(s) updated.
+>>update cube2 set txt = 'blue sky green grass' where a = 3;
+
+--- 15000 row(s) updated.
+>>update cube2 set txt = 'blue sky red sun' where a+b = 3;
+
+--- 600 row(s) updated.
+>>update cube2 set txt = 'some text repeated' where a >=4 and a <= 8;
+
+--- 75000 row(s) updated.
+>>update cube2 set txt = 'some text repeated again' where a=9 and b = 9 and c = 9;
+
+--- 1 row(s) updated.
+>>
+>>create index ixcube1d on cube1(d);
+
+--- SQL operation complete.
+>>create index ixcube1e on cube1(e);
+
+--- SQL operation complete.
+>>create index ixcube1f on cube1(f);
+
+--- SQL operation complete.
+>>create index ixcube2d on cube2(d);
+
+--- SQL operation complete.
+>>create index ixcube2e on cube2(e);
+
+--- SQL operation complete.
+>>create index ixcube2f on cube2(f);
+
+--- SQL operation complete.
+>>
+>>update statistics for table cube1 on every column;
+
+--- SQL operation complete.
+>>update statistics for table cube1 on (b,c), (c,d), (b,c,d), (b,c,e);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(TXT),(F),(F, A),(F, A, B),(F, A, B, C),(E, A),(E, A, B),(E, A, B, C),(D, A),(D, A, B),(D, A, B, C),(A, B),(A, B, C).
+
+--- SQL operation completed with warnings.
+>>update statistics for table cube1 create sample random 50 percent;
+
+--- SQL operation complete.
+>>update statistics for table cube2 on every column;
+
+--- SQL operation complete.
+>>update statistics for table cube2 on (b,c), (c,d), (b,c,d), (b,d,e), (a,b,d,e);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(F, A),(F, A, B),(F, A, B, C),(E, A),(E, A, B),(E, A, B, C),(D, A),(D, A, B),(D, A, B, C),(A, B),(A, B, C).
+
+--- SQL operation completed with warnings.
+>>update statistics for table cube2 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>LOG;

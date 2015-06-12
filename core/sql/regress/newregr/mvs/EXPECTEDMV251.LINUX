@@ -1,0 +1,689 @@
+>>
+>>obey TESTMV251(SETUP);
+>>-----------------------------------------------------------------
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create mvgroup MVG251_cancel;
+
+--- SQL operation complete.
+>>
+>>create table T1_251 ( a int not null not droppable,
++>			  b int not null not droppable, 
++>			  c int not null not droppable, primary key (a))
++>			  store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE T1_251 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T1_251 values ( 1,1,1),(2,1,2),(3,4,3),(5,4,4);
+
+--- 4 row(s) inserted.
+>>
+>>
+>>PREPARE select_index FROM
++>  select  RUNNINGCOUNT(*) num,valid_data
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID <> table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access)
++>SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>PREPARE select_audit_status FROM
++> select  AUDITED 
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID = table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access);
+
+--- SQL command prepared.
+>>
+>>PREPARE select_audited_index_status FROM
++>select  RUNNINGCOUNT(*) num,audited
++>				from HP_DEFINITION_SCHEMA.access_paths a
++>				where table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access)
++>				and access_path_uid <> table_uid
++>SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>
+>>
+>>create index another_index on T1_251 ( a );
+
+--- SQL operation complete.
+>>
+>>create table employee 
++>like mvtestenv.persnl.employee;
+
+--- SQL operation complete.
+>>ALTER TABLE employee attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table orders
++>like mvtestenv.sales.Orders;
+
+--- SQL operation complete.
+>>ALTER TABLE orders attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>log;
+>>
+>>
+>>create mv MV_251_test34
++>	Refresh on request
++>	initialize on create 
++>	as 
++>	select Employee.empnum,Employee.last_name,Employee.deptnum,sum(Employee.salary) sal,
++>	count(orders.salesrep) num_of_deals        
++>		from Employee,orders
++>		where Employee.empnum=orders.salesrep
++>	 group by Employee.empnum,Employee.last_name,Employee.deptnum;
+
+--- SQL operation complete.
+>>ALTER MV MV_251_test34 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup catmvs.mvschm.MVG251_cancel ADD MV_251_test34;
+
+--- SQL operation complete.
+>>
+>>
+>>-----------------------------------------------------------------
+>>
+>>-- Run Tests	
+>>	obey TESTMV251(TEST9_1);
+>>-----------------------------------------------------------------
+>>create mv T_251_MV11
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>store by (b)
++>as
++>select b, c, sum(a) sa
++>from T1_251
++>group by b, c;
+
+*** WARNING[12109] To ensure optimal refresh performance, the STORE BY clause should include the following GROUP BY columns: C.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_251_MV11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG251_cancel ADD T_251_MV11;
+
+--- SQL operation complete.
+>>
+>>refresh  T_251_MV11 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_251_MV11 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_251_MV11 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>insert into T1_251 values (91,1, 3),(92,2, 5),(93,3, 7);
+
+--- 3 row(s) inserted.
+>>
+>>grant select, insert on T1_251 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select, insert on T_251_MV11 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>log;
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>-- no Purgedata executed
+>>refresh T_251_MV11 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_251_MV11 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_251_MV11 RECOMPUTE 
+The materialized view CATMVS.MVSCHM.T_251_MV11 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+ Compiling Statement : 
+ SELECT ROW COUNT FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+IUD log has 3 rows, and 5 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>
+>>PREPARE select_audit_status FROM
++> select  AUDITED 
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID = table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access);
+
+--- SQL command prepared.
+>>
+>>
+>>PREPARE select_audited_index_status FROM
++>select  RUNNINGCOUNT(*) num,audited
++>				from HP_DEFINITION_SCHEMA.access_paths a
++>				where table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access)
++>				and access_path_uid <> table_uid
++>SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>set param ?t_name 'T_251_MV11';
+>>-- expected - MV11 no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>
+>>log;
+>>	obey TESTMV251(TEST10_1);
+>>-----------------------------------------------------------------
+>>create mv T_251_MV12
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, c, sum(a) sa
++>from T1_251
++>group by b, c;
+
+*** WARNING[12109] To ensure optimal refresh performance, the STORE BY clause should include the following GROUP BY columns: C.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_251_MV12 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG251_cancel ADD T_251_MV12;
+
+--- SQL operation complete.
+>>
+>>refresh T_251_MV12 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_251_MV12 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_251_MV12 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>insert into T1_251 values (95,1, 34),(96,2, 45),(97,3, 56);
+
+--- 3 row(s) inserted.
+>>
+>>grant select, insert,delete on T1_251 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select, insert,delete on T_251_MV12 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>log;
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>-- Purgedata executed,NoDelete
+>>refresh T_251_MV12 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_251_MV12 is being refreshed (by recompute) in a single transaction...
+
+
+Purging the data from materialized view CATMVS.MVSCHM.T_251_MV12...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_251_MV12 RECOMPUTE NODELETE 
+The materialized view CATMVS.MVSCHM.T_251_MV12 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+ Compiling Statement : 
+ SELECT ROW COUNT FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+IUD log has 3 rows, and 5 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>
+>>log;
+>>
+>>		obey TESTMV251(TEST23_1);
+>>-----------------------------------------------------------------
+>>create mv T_251_MV25
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_251
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_251_MV25 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG251_cancel ADD T_251_MV25;
+
+--- SQL operation complete.
+>>
+>>refresh T_251_MV25 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_251_MV25 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_251_MV25 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>insert into T1_251 values (242,1, 232),(243,2, 324),(244,3,534);
+
+--- 3 row(s) inserted.
+>>
+>>grant select, insert , delete on T_251_MV25 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on T1_251 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>log;
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>-- no Purgedata executed
+>>refresh T_251_MV25 recompute debug 51,65;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_251_MV25 is being refreshed (by recompute) in a single transaction...
+
+
+Purging the data from materialized view CATMVS.MVSCHM.T_251_MV25...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_251_MV25 RECOMPUTE NODELETE 
+The materialized view CATMVS.MVSCHM.T_251_MV25 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+ Compiling Statement : 
+ SELECT ROW COUNT FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+IUD log has 6 rows, and 5 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>prepare stat1 from
++>select b, sum(a) sa
++>from T1_251
++>group by b
++>order by b;
+
+--- SQL command prepared.
+>>cqd ALLOW_DML_ON_NONAUDITED_TABLE 'ON';
+
+--- SQL operation complete.
+>>prepare stat2 from
++>select * from T_251_MV25
++>order by b;
+
+--- SQL command prepared.
+>>cqd ALLOW_DML_ON_NONAUDITED_TABLE reset;
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>
+>>PREPARE select_audit_status FROM
++> select  AUDITED 
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID = table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access);
+
+--- SQL command prepared.
+>>
+>>
+>>PREPARE select_audited_index_status FROM
++>select  RUNNINGCOUNT(*) num,audited
++>				from HP_DEFINITION_SCHEMA.access_paths a
++>				where table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>				    for read uncommitted access)
++>				and access_path_uid <> table_uid
++>SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>set param ?t_name 'T_251_MV25';
+>>-- expected - MV24 no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>log;
+>>	obey TESTMV251(TEST24_1);
+>>-----------------------------------------------------------------
+>>create mv T_251_MV26
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_251
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_251_MV26 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG251_cancel ADD T_251_MV26;
+
+--- SQL operation complete.
+>>
+>>refresh T_251_MV26 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_251_MV26 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_251_MV26 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>insert into T1_251 values (251,1,435),(252,2,64),(253,3,69);
+
+--- 3 row(s) inserted.
+>>
+>>grant select, insert on T_251_MV26 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>grant select on T1_251 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>log;
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>-- no Purgedata executed
+>>refresh T_251_MV26 recompute debug 51,65;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_251_MV26 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_251_MV26 RECOMPUTE 
+The materialized view CATMVS.MVSCHM.T_251_MV26 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_251...
+
+ Compiling Statement : 
+ SELECT ROW COUNT FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+IUD log has 9 rows, and 5 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_251)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_251.
+
+
+>>
+>>
+>>log;
+>>	obey TESTMV251(TEST24_3);
+>>-----------------------------------------------------------------
+>>
+>>log LOGMV251;
+>>
+>>set param ?t_name 'T_251_MV26';
+>>-- expected - MV26 no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>
+>>------------------------------------------------------------------
+>>
+>>
+>>	sh sh runmxci.ksh  -i "TESTMV251(TEST34)" -u $$SQLUSER7X$$;
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>-- expected failure - no privilege
+>>refresh MV_251_test34 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+>>
+>>-- expected - 0
+>>select count(*) from HP_DEFINITION_SCHEMA.ddl_locks;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>log;
+>>	log LOGMV251;
+>>
+>>
+>>-- Check the drop statement on the way out
+>>obey TESTMV251(CLEAN_UP);
+>>-----------------------------------------------------------------
+>>
+>>refresh mvgroup MVG251_cancel cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>
+>>
+>>drop table T1_251 cascade;
+
+--- SQL operation complete.
+>>drop mv MV_251_test34;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG251_cancel;
+
+--- SQL operation complete.
+>>drop table employee;
+
+--- SQL operation complete.
+>>drop table orders;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

@@ -89,6 +89,7 @@ class TM_TX_Info :public CTmTxBase
        virtual bool req_forget(CTmTxMessage *pp_msg = NULL);
        virtual bool req_abort(CTmTxMessage *pp_msg);
        virtual bool req_abort_complete(CTmTxMessage *pp_msg = NULL);
+       virtual bool req_ddloperation(CTmTxMessage *pp_msg);
        //virtual bool req_status(CTmTxMessage *pp_msg);
        //virtual bool req_ax_reg(CTmTxMessage *pp_msg);
        //virtual bool req_join(CTmTxMessage *pp_msg);

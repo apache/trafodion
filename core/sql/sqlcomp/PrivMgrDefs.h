@@ -22,6 +22,8 @@
 #define PRIVMGR_DEFS_H
 
 #include <bitset>
+#include <map>
+#include <iterator>
 #include "NAUserId.h"
 #include "ComSmallDefs.h"
 
@@ -126,7 +128,7 @@ inline bool isSequenceGeneratorPrivType(PrivType privType)
    
 }
      
-// Defines the list of privileges that are support for the 
+// Defines the list of privileges that are supported for the 
 // SQLOperation component
 enum class SQLOperation {
    ALTER = 2,
@@ -165,9 +167,11 @@ enum class SQLOperation {
    DROP_TABLE,
    DROP_TRIGGER,
    DROP_VIEW,
+   MANAGE,
    MANAGE_COMPONENTS,
    MANAGE_LIBRARY,
    MANAGE_LOAD,
+   MANAGE_PRIVILEGES,
    MANAGE_ROLES,
    MANAGE_STATISTICS,
    MANAGE_USERS,
@@ -234,6 +238,8 @@ const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 typedef std::bitset<NBR_OF_PRIVS> PrivObjectBitmap;
 typedef std::bitset<NBR_DML_COL_PRIVS> PrivColumnBitmap;
 typedef std::bitset<NBR_OF_PRIVS> PrivSchemaBitmap;
+typedef std::map<size_t,PrivColumnBitmap> PrivColList;
+typedef std::map<size_t,std::bitset<NBR_DML_COL_PRIVS> >::const_iterator PrivColIterator;
 
 inline bool isDMLPrivType(PrivType privType)
 {

@@ -1,0 +1,92 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- Lineitems
+-- 1 Delta 
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -F 6005 -C 2984;
+-- 2 Delta 
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -F 8989 -C 2968;
+-- 3 Delta 
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -F 11957 -C 3088;
+-- 4 Delta 
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt -r -F 15045 -C 2928;
+
+-- Order
+
+-- 1 Delta 
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -F 1500 -C 750;
+-- 2 Delta 
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -F 2250 -C 750;
+-- 3 Delta 
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -F 3000 -C 750;
+-- 4 Delta 
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt -r -F 3750 -C 750;
+
+-- Part
+
+-- 1 Delta 
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -F 200 -C 100;
+-- 2 Delta 
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -F 300 -C 100;
+-- 3 Delta 
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -F 400 -C 100;
+-- 4 Delta 
+sh import cat.tpcd.part -I part.tbl -U part.fmt -r -F 500 -C 100;
+
+-- Partsupp
+
+-- 1 Delta 
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -F 800 -C 400;
+-- 2 Delta 
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -F 1200 -C 400;
+-- 3 Delta 
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -F 1600 -C 400;
+-- 4 Delta 
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt -r -F 2000 -C 400;
+
+
+-- Customer
+
+-- 1 Delta 
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -F 150 -C 75;
+-- 2 Delta 
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -F 225 -C 75;
+-- 3 Delta 
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -F 300 -C 75;
+-- 4 Delta 
+sh import cat.tpcd.customer -I customer.tbl -U customer.fmt -r -F 375 -C 75;
+
+-- Supplier
+
+-- 1 Delta 
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -F 10 -C 5;
+-- 2 Delta 
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -F 15 -C 5;
+-- 3 Delta 
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -F 20 -C 5;
+-- 4 Delta 
+sh import cat.tpcd.supplier -I supplier.tbl -U supplier.fmt -r -F 25 -C 5;
+
+
+
+
+
+
+
+
+
+

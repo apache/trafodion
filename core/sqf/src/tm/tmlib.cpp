@@ -650,7 +650,7 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
    TM_Transseq_Type lv_savedStartId = gp_trans_thr->get_startid();
 
    TMlibTrace(("REGISTERREGION lv_savedStartId is %ld.  Startid is %ld \n", (long) lv_savedStartId, startid), 2);
-   if (lv_savedStartId <= 0){ // -1 or 0
+   if (lv_savedStartId != lv_startid){
       TMlibTrace(("REGISTERREGION setting lv_savedStartId to %ld. \n", startid), 2);
       lv_savedStartId = lv_startid;
       gp_trans_thr->set_startid(lv_startid);
@@ -661,8 +661,8 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
           the transaction is unknown to the TM Library which may not be the case.
        &&
        lp_currTrans->getTransid()->get_native_type() == lv_transid.get_native_type()*/) {
-      TMlibTrace(("TMLIB_TRACE : REGISTERREGION using current transid (%d,%d).\n", 
-                  lv_transid.get_node(), lv_transid.get_seq_num()), 1);
+      TMlibTrace(("TMLIB_TRACE : REGISTERREGION using current transid (%d,%d) and startId %ld.\n",
+                  lv_transid.get_node(), lv_transid.get_seq_num(),lv_savedStartId ), 1);
       lv_error =  lp_currTrans->register_region(lv_savedStartId, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
    }
    else {
@@ -674,8 +674,8 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
       gp_trans_thr->set_current(lp_trans);
       gp_trans_thr->set_startid(lv_startid);
       if (lv_error == FEOK) {
-         TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) passed to REGISTERREGION.\n", 
-                     lv_transid.get_node(), lv_transid.get_seq_num()), 1);
+         TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) and startId (%ld) passed to REGISTERREGION.\n",
+                     lv_transid.get_node(), lv_transid.get_seq_num(),lv_startid), 1);
          lv_error =  lp_trans->register_region(lv_startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
       }
       gp_trans_thr->set_current(lp_currTrans);
@@ -701,7 +701,7 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
       }
    } */
 
-   TMlibTrace(("TMLIB_TRACE : REGISTERREGION EXIT: txid: (%d,%d), returning %d\n", 
+   TMlibTrace(("TMLIB_TRACE : REGISTERREGION EXIT: txid: (%d,%d), returning %d\n",
               lv_transid.get_node(), lv_transid.get_seq_num(), lv_error), 2);
    return lv_error;
 } //REGISTERREGION
@@ -933,7 +933,7 @@ short BEGINTX(int *pp_tag, int pv_timeout, int64 pv_type_flags)
     lv_error = lp_trans->get_error();
     if (!lv_error)
         *pp_tag = (int) lp_trans->getTag();
-    
+
     return lv_error;
 } //BEGINTX
 

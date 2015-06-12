@@ -1,0 +1,134 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------
+--- TestMV071
+-- privileges
+-------------------------------------------------------
+
+obey TESTMV071(CLEAN_UP);
+log LOGMV071 clear;
+obey TESTMV071(SET_UP);
+
+-- Run Tests
+  obey TESTMV071(TEST1);
+  obey TESTMV071(TEST2);
+  obey TESTMV071(TEST3);
+  obey TESTMV071(TEST4);
+  obey TESTMV071(TEST5);
+  obey TESTMV071(TEST6);
+
+-- Clean and Exit
+
+obey TESTMV071(CLEAN_UP);
+log;
+exit;
+
+-------------------------------------------------------
+?section TEST1
+-- revoking select after a recomputed mv was dropped
+
+create mv mv1 RECOMPUTE initialize on create as select * from t1;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+
+-------------------------------------------------------
+?section TEST2
+-- revoking select after an on request mv was dropped
+
+create mv mv1 REFRESH ON REQUEST initialize on create as select * from t1 group by a;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+
+-------------------------------------------------------
+?section TEST3
+-- revoking select after an on statement mv was dropped
+
+create mv mv1 REFRESH ON STATEMENT initialize on create as select * from t1;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+
+-------------------------------------------------------
+?section TEST4
+-- revoking select after a recomputed MV was dropped (2 tables)
+
+create mv mv1 RECOMPUTE initialize on create as select a from t1, t2 where a = b;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+grant select on t2 to $$SQLUSER5Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+revoke select on t2 from $$SQLUSER5Q$$;
+
+-------------------------------------------------------
+?section TEST5
+-- revoking select after an on request MV was dropped (2 tables)
+
+create mv mv1 REFRESH ON REQUEST initialize on create as select a from t1, t2 where a = b group by a;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+grant select on t2 to $$SQLUSER5Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+revoke select on t2 from $$SQLUSER5Q$$;
+
+-------------------------------------------------------
+?section TEST6
+-- revoking select after an on statement MV was dropped (2 tables)
+
+create mv mv1 REFRESH ON STATEMENT initialize on create as select a from t1, t2 where a = b;
+ALTER MV mv1 attribute all mvs allowed;
+grant select on t1 to $$SQLUSER7Q$$;
+grant select on t2 to $$SQLUSER5Q$$;
+drop mv mv1;
+revoke select on t1 from $$SQLUSER7Q$$;
+revoke select on t2 from $$SQLUSER5Q$$;
+
+
+-------------------------------------------------------
+?section SET_UP
+
+set schema catmvs.mvschm;
+
+create table catmvs.mvschm.Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE catmvs.mvschm.Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create table t1 ( a int );
+ALTER TABLE t1 attribute all mvs allowed;
+create table t2 ( b int );
+ALTER TABLE t2 attribute all mvs allowed;
+-------------------------------------------------------
+?section CLEAN_UP
+
+drop mv mv1;
+drop mv mv9;
+drop table t1;
+drop table t2;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table catmvs.mvschm.Num_Obj;
+

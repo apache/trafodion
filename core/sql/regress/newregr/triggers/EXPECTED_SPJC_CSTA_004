@@ -1,0 +1,87 @@
+>>obey TEST_SPJC_CSTA_004(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01:  CS with one Insert/Update/Delete statement (row
+>>-- trigger)
+>>-- Result: success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_004 AFTER DELETE ON
++>TAB01_SPJC_CSTA_004
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	INSERT INTO TAB02_SPJC_CSTA_004 VALUES(O.A, O.B, O.C, O.D);
++>END;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02:  CS with one Insert/Update/Delete statement (statement
+>>-- trigger)
+>>-- Result: success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_CSTA_004 AFTER UPDATE ON
++>TAB01_SPJC_CSTA_004
++>FOR EACH STATEMENT
++>BEGIN ATOMIC
++>        INSERT INTO TAB02_SPJC_CSTA_004 VALUES(111, 222, 333, 444);
++>END;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>-- case 01:
+>>DELETE FROM TAB01_SPJC_CSTA_004 WHERE A = 10;
+
+--- 1 row(s) deleted.
+>>
+>>select * from TAB01_SPJC_CSTA_004;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         20           21           22           23
+         30           31           32           33
+
+--- 2 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_CSTA_004 has the row deleted from TAB01_SPJC_CSTA_004
+>>select * from TAB02_SPJC_CSTA_004;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           11           12           13
+
+--- 1 row(s) selected.
+>>
+>>-- case 02:
+>>UPDATE TAB01_SPJC_CSTA_004 SET A = A + B;
+
+--- 2 row(s) updated.
+>>
+>>SELECT * FROM TAB01_SPJC_CSTA_004;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         41           21           22           23
+         61           31           32           33
+
+--- 2 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_CSTA_004 has two rows
+>>SELECT * FROM TAB02_SPJC_CSTA_004;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           11           12           13
+        111          222          333          444
+
+--- 2 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

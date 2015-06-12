@@ -1,0 +1,111 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- DDL Test temporary tables
+--
+-- Requires $data1, $data2
+
+obey TEST_13_2_1(clean_up);
+LOG LOG_13_2_1 clear;
+obey TEST_13_2_1(tests);
+LOG;
+obey TEST_13_2_1(clean_up);
+exit;
+
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+drop trigger cat1.schm.mytrig;
+drop table   cat1.schm.mytable;
+drop table   cat1.schm.tblX;
+drop table   cat1.schm.tblY;
+
+?section tests
+
+control query default auto_query_retry_warnings 'ON';
+
+-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+set parserflags 1;
+
+set schema cat1.schm ;
+
+create table mytable
+( C1  INT      NOT NULL
+    ,C2 INT
+    ,C3 CHAR(10) NOT NULL
+    ,C4 CHAR
+    ,PRIMARY KEY (C3, C1) NOT DROPPABLE )
+  STORE BY PRIMARY KEY
+  LOCATION $$partition2$$
+  RANGE PARTITION (ADD FIRST KEY ('c', 10) LOCATION $$partition2$$,
+             ADD FIRST KEY ('m') LOCATION $$partition1$$);
+
+insert into mytable values (11,22,'G','H');
+
+create trigger mytrig after update on mytable
+ referencing old as myold, new as mynew
+  for each statement
+    insert into mytable select c1,c2,c3,c4 from myold
+        where mynew.c1 > mynew.c2;
+
+-- Should fail because the trigger is using mynew illegally.
+
+create table tblX (i int);
+
+insert into tblX values (10),(20),(30),(40);
+
+create table tblY (i int, c char);
+
+create trigger mytrig after update on mytable
+ referencing old as myold, new as mynew
+  for each statement
+    insert into tblY select c1,c4 from mynew
+       where mynew.c1 in (select * from tblX);
+
+showddl mytable;
+-- name of tblX not expanded - bug # 95
+
+showddl TABLE ( TEMP_TABLE mytable__TEMP);
+-- in the above, the two LOCATION lines may fail the "diff"
+-- remember to remove the __TEMP suffix when the code is changed!!
+
+insert into mytable values (20,30,'S','T');
+
+prepare stmt from update mytable set c2=c2+1;
+
+execute stmt;
+-- should return "3 lines" (two in mytable, one (by the trigger) in tblY)
+
+alter table mytable add column c5 int;
+-- alter subject table, should drop+recreate temp table, update TS
+
+-- Open blown away
+execute stmt; 
+-- should recompile and execute as before
+-- Used to fail on "NULL": old bug # 96
+
+update mytable set c2=c2+1;
+-- same statement; should (compile and) work flawlessly
+
+execute stmt;
+-- should execute
+
+showddl TABLE ( TEMP_TABLE mytable__TEMP);
+-- in the above, the two LOCATION lines may fail the "diff"
+-- remember to remove the __TEMP suffix when the code is changed!!

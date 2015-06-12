@@ -208,6 +208,7 @@ public class HBaseTxClient {
       this.useRecovThread = false;
       this.stallWhere = 0;
       this.useDDLTrans = false;
+
       String useSSCC = System.getenv("TM_USE_SSCC");
       TRANSACTION_ALGORITHM = AlgorithmType.MVCC;
       if (useSSCC != null)
@@ -414,7 +415,7 @@ public class HBaseTxClient {
       try {
          ts.setStatus(TransState.STATE_ABORTED);
          if (useTlog) {
-            tLog.putSingleRecord(transactionID, "ABORTED", ts.getParticipatingRegions(), false);
+            tLog.putSingleRecord(transactionID, -1, "ABORTED", ts.getParticipatingRegions(), false);
          }
       } catch(Exception e) {
          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " tLog.putRecord: EXCEPTION");
@@ -454,10 +455,10 @@ public class HBaseTxClient {
       }
       if (useTlog && useForgotten) {
          if (forceForgotten) {
-            tLog.putSingleRecord(transactionID, "FORGOTTEN", null, true);
+            tLog.putSingleRecord(transactionID, -1, "FORGOTTEN", null, true);
          }
          else {
-            tLog.putSingleRecord(transactionID, "FORGOTTEN", null, false);
+            tLog.putSingleRecord(transactionID, -1, "FORGOTTEN", null, false);
          }
       }
  //     mapTransactionStates.remove(transactionID);
@@ -541,7 +542,7 @@ public class HBaseTxClient {
        try {
           ts.setStatus(TransState.STATE_COMMITTED);
           if (useTlog) {
-             tLog.putSingleRecord(transactionId, "COMMITTED", ts.getParticipatingRegions(), true);
+             tLog.putSingleRecord(transactionId, commitIdVal, "COMMITTED", ts.getParticipatingRegions(), true);
           }
        } catch(Exception e) {
           LOG.error("Returning from HBaseTxClient:doCommit, txid: " + transactionId + " tLog.putRecord: EXCEPTION " + e);
@@ -578,16 +579,17 @@ public class HBaseTxClient {
        }
        if (useTlog && useForgotten) {
           if (forceForgotten) {
-             tLog.putSingleRecord(transactionId, "FORGOTTEN", null, true);
+             tLog.putSingleRecord(transactionId, commitIdVal, "FORGOTTEN", null, true);
           }
           else {
-             tLog.putSingleRecord(transactionId, "FORGOTTEN", null, false);
+             tLog.putSingleRecord(transactionId, commitIdVal, "FORGOTTEN", null, false);
           }
        }
 //       mapTransactionStates.remove(transactionId);
 
        if (LOG.isTraceEnabled()) LOG.trace("Exit doCommit, retval(ok): " + TransReturnCode.RET_OK.toString() +
                          " txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
+
        return TransReturnCode.RET_OK.getShort();
    }
 
@@ -630,17 +632,20 @@ public class HBaseTxClient {
        }
        commitErr = doCommit(transactionId);
        if (commitErr != TransReturnCode.RET_OK.getShort()) {
-         abortErr = abortTransaction(transactionId);
-         if (LOG.isDebugEnabled()) LOG.debug("tryCommit commit failed and was aborted. Commit error " +
-                   commitErr + ", Abort error " + abortErr);
+         LOG.error("doCommit for committed transaction " + transactionId + " failed with error " + commitErr);
+         // It is a violation of 2 PC protocol to try to abort the transaction after prepare
+         return commitErr;
+//         abortErr = abortTransaction(transactionId);
+//         if (LOG.isDebugEnabled()) LOG.debug("tryCommit commit failed and was aborted. Commit error " +
+//                   commitErr + ", Abort error " + abortErr);
        }
 
        if (LOG.isTraceEnabled()) LOG.trace("TEMP tryCommit Calling CompleteRequest() Txid :" + transactionId);
 
        err = completeRequest(transactionId);
-       if (err != TransReturnCode.RET_OK.getShort())
-         if (LOG.isDebugEnabled()) LOG.debug("tryCommit completeRequest failed with error " + err);
-
+       if (err != TransReturnCode.RET_OK.getShort()){
+         if (LOG.isDebugEnabled()) LOG.debug("tryCommit completeRequest for transaction " + transactionId + " failed with error " + err);
+       }
      } catch(Exception e) {
        mapTransactionStates.remove(transactionId);
        LOG.error("Returning from HBaseTxClient:tryCommit, ts: EXCEPTION" + " txid: " + transactionId);
@@ -758,10 +763,10 @@ public class HBaseTxClient {
 
     public short callRegisterRegion(long transactionId,
                                     long startId,
-                    int  pv_port,
-                    byte[] pv_hostname,
-                    long pv_startcode,
-                    byte[] pv_regionInfo) throws Exception {
+                                    int  pv_port,
+                                    byte[] pv_hostname,
+                                    long pv_startcode,
+                                    byte[] pv_regionInfo) throws Exception {
        String hostname    = new String(pv_hostname);
        if (LOG.isTraceEnabled()) LOG.trace("Enter callRegisterRegion, txid: [" + transactionId + "], startId: " + startId + ", port: "
            + pv_port + ", hostname: " + hostname + ", reg info len: " + pv_regionInfo.length + " " + new String(pv_regionInfo, "UTF-8"));
@@ -863,15 +868,28 @@ public class HBaseTxClient {
           LOG.error("addControlPoint IOException " + e);
           throw e;
       }
+      Long lowestStartId = Long.MAX_VALUE;
+      for(ConcurrentHashMap.Entry<Long, TransactionState> entry : mapTransactionStates.entrySet()){
+          TransactionState value;
+          value = entry.getValue();
+          long ts = value.getStartId();
+          if( ts < lowestStartId) lowestStartId = ts;
+      }
+      if(lowestStartId < Long.MAX_VALUE)
+      {
+          tmZK.createGCzNode(Bytes.toBytes(lowestStartId));
+      }
       if (LOG.isTraceEnabled()) LOG.trace("Exit addControlPoint, returning: " + result);
       return result;
    }
 
      /**
-      * Thread to gather recovery information for regions that need to be recovered
+      * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 10000; // Initially set to run every 10sec
+             final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
+             private int sleepTimeInt = 0;
+             private boolean skipSleep = false;
              private TmAuditTlog audit;
              private HBaseTmZK zookeeper;
              private TransactionManager txnManager;
@@ -913,6 +931,13 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
+
+                          String sleepTime = System.getenv("TMRECOV_SLEEP");
+                          if (sleepTime != null) {
+                                this.sleepTimeInt = Integer.parseInt(sleepTime);
+                                if(LOG.isDebugEnabled()) LOG.debug("Recovery thread sleep set to: " +
+                                                                   this.sleepTimeInt + "ms");
+                          }
              }
 
              public void stopThread() {
@@ -958,13 +983,10 @@ public class HBaseTxClient {
 
             @Override
              public void run() {
-                int sleepTimeInt = 0;
-                String sleepTime = System.getenv("TMRECOV_SLEEP");
-                if (sleepTime != null)
-                    sleepTimeInt = Integer.parseInt(sleepTime);
 
                 while (this.continueThread) {
                     try {
+                        skipSleep = false;
                         Map<String, byte[]> regions = null;
                         Map<Long, TransactionState> transactionStates =
                                 new HashMap<Long, TransactionState>();
@@ -981,6 +1003,7 @@ public class HBaseTxClient {
                         }
 
                         if(regions != null) {
+                            skipSleep = true;
                             recoveryIterations++;
 
                             if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt region size " + regions.size());
@@ -1140,7 +1163,7 @@ public class HBaseTxClient {
                                         txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
                                         if(useTlog && useForgotten) {
                                             long nextAsn = tLog.getNextAuditSeqNum((int)(txID >> 32));
-                                            tLog.putSingleRecord(txID, "FORGOTTEN", null, forceForgotten, nextAsn);
+                                            tLog.putSingleRecord(txID, ts.getCommitId(), "FORGOTTEN", null, forceForgotten, nextAsn);
                                         }
                                     } else if (ts.getStatus().equals(TransState.STATE_ABORTED.toString())) {
                                         if (LOG.isDebugEnabled())
@@ -1183,10 +1206,12 @@ public class HBaseTxClient {
                         }
                         try {
                             if(continueThread) {
-                                if (sleepTimeInt > 0)
-                                    Thread.sleep(sleepTimeInt);
-                                else
-                                    Thread.sleep(SLEEP_DELAY);
+                                if(!skipSleep) {
+                                    if (sleepTimeInt > 0)
+                                        Thread.sleep(sleepTimeInt);
+                                    else
+                                        Thread.sleep(SLEEP_DELAY);
+                                }
                             }
                             retryCount = 0;
                         } catch (Exception e) {

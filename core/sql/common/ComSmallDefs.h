@@ -1951,5 +1951,6 @@ ComUID read_ComUID_with_text(FILE *fp, char *text);
 ostream & operator<<(ostream &s, const ComUID &uid);
 
 const char* comObjectTypeLit(ComObjectType objType);
+const char* comObjectTypeName(ComObjectType objType);
 
 #endif // COMSMALLDEFS_H

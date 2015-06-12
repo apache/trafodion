@@ -1,0 +1,675 @@
+>>
+>>-- Run Tests
+>>	set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>	obey TESTMV226(TEST1);
+>>-------------------------------------------------
+>>INSERT INTO test226_A 
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   1,4 ),(  3,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_C
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>delete from test226_A
++>where a=2;
+
+--- 1 row(s) deleted.
+>>
+>>delete from test226_B
++>where a=3;
+
+--- 1 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   11,4 ),
++>          (  12,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   11,7 ),
++>          (  13,8);
+
+--- 2 row(s) inserted.
+>>
+>>Create MVGroup MVG1_226;
+
+--- SQL operation complete.
+>>Alter MVGroup MVG1_226
++>  Add T_226_MV2,T_226_MV3;
+
+--- SQL operation complete.
+>>
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>refresh MVGroup MVG1_226 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_C.
+Finished the log cleanup of table CATMVS.MVSCHM.T_226_MV1.
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_C...
+Starting the log cleanup of table CATMVS.MVSCHM.T_226_MV1...
+The materialized view CATMVS.MVSCHM.T_226_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV2 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_226_MV3 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV3 is being refreshed (by recompute) in a single transaction...
+>>
+>>-- Expected Epochs increased (Bigger)
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>PREPARE stat1 FROM 
++>	select sum(Sb) as SSb,T_226_MV1.b
++>	from T_226_MV1,test226_C
++>	where test226_C.a = T_226_MV1.a
++>        group by T_226_MV1.b
++>		order by T_226_MV1.b;
+
+--- SQL command prepared.
+>>
+>>
+>>PREPARE stat2 FROM 
++>	select * from T_226_MV2
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat2 FROM 
++>	select * from T_226_MV3
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from temp1;
+
+--- 1 row(s) deleted.
+>>-------------------------------------------------
+>>	obey TESTMV226(TEST2);
+>>-------------------------------------------------
+>>
+>>delete from test226_A ;
+
+--- 3 row(s) deleted.
+>>delete from test226_B ;
+
+--- 3 row(s) deleted.
+>>delete from test226_C ;
+
+--- 2 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   1,4 ),(  3,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_C
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>delete from test226_A
++>where a=2;
+
+--- 1 row(s) deleted.
+>>
+>>delete from test226_B
++>where a=3;
+
+--- 1 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   11,4 ),
++>          (  12,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   11,7 ),
++>          (  13,8);
+
+--- 2 row(s) inserted.
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>refresh T_226_MV2 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_C.
+Finished the log cleanup of table CATMVS.MVSCHM.T_226_MV1.
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_C...
+Starting the log cleanup of table CATMVS.MVSCHM.T_226_MV1...
+The materialized view CATMVS.MVSCHM.T_226_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV2 is being refreshed in a single transaction...
+>>
+>>refresh T_226_MV3 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+The materialized view CATMVS.MVSCHM.T_226_MV3 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV3 is being refreshed (by recompute) in a single transaction...
+>>
+>>-- Expected Epochs increased (Bigger)
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>PREPARE stat1 FROM 
++>	select sum(Sb) as SSb,T_226_MV1.b
++>	from T_226_MV1,test226_C
++>	where test226_C.a = T_226_MV1.a
++>        group by T_226_MV1.b
++>		order by T_226_MV1.b;
+
+--- SQL command prepared.
+>>
+>>
+>>PREPARE stat2 FROM 
++>	select * from T_226_MV2
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat2 FROM 
++>	select * from T_226_MV3
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from temp1;
+
+--- 1 row(s) deleted.
+>>-------------------------------------------------
+>>	obey TESTMV226(TEST3);
+>>-------------------------------------------------
+>>delete from test226_A ;
+
+--- 3 row(s) deleted.
+>>delete from test226_B ;
+
+--- 3 row(s) deleted.
+>>delete from test226_C ;
+
+--- 2 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   1,4 ),(  3,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_C
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>delete from test226_A
++>where a=2;
+
+--- 1 row(s) deleted.
+>>
+>>delete from test226_B
++>where a=3;
+
+--- 1 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   11,4 ),
++>          (  12,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   11,7 ),
++>          (  13,8);
+
+--- 2 row(s) inserted.
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>refresh T_226_MV2 cascade outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_C.
+Finished the log cleanup of table CATMVS.MVSCHM.T_226_MV1.
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_C...
+Starting the log cleanup of table CATMVS.MVSCHM.T_226_MV1...
+The materialized view CATMVS.MVSCHM.T_226_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV2 is being refreshed in a single transaction...
+>>
+>>-- Expected Epochs increased (Bigger)
+>>set param ?table_name 'T_226_MV1';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>PREPARE stat1 FROM 
++>	select sum(Sb) as SSb,T_226_MV1.b
++>	from T_226_MV1,test226_C
++>	where test226_C.a = T_226_MV1.a
++>        group by T_226_MV1.b
++>		order by T_226_MV1.b;
+
+--- SQL command prepared.
+>>
+>>
+>>PREPARE stat2 FROM 
++>	select * from T_226_MV2
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>delete from temp1;
+
+--- 1 row(s) deleted.
+>>-------------------------------------------------
+>>	obey TESTMV226(TEST4);
+>>-------------------------------------------------
+>>
+>>refresh T_226_MV4 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_A.
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_A...
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_B...
+The materialized view CATMVS.MVSCHM.T_226_MV4 has been refreshed from 2 deltas in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV4 is being refreshed in a single transaction...
+>>
+>>delete from test226_A ;
+
+--- 3 row(s) deleted.
+>>delete from test226_B ;
+
+--- 3 row(s) deleted.
+>>delete from test226_C ;
+
+--- 2 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   1,4 ),(  3,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_C
++>   VALUES (   1,2 ),(  2,3);
+
+--- 2 row(s) inserted.
+>>
+>>delete from test226_A
++>where a=2;
+
+--- 1 row(s) deleted.
+>>
+>>delete from test226_B
++>where a=3;
+
+--- 1 row(s) deleted.
+>>
+>>INSERT INTO test226_A 
++>   VALUES (   11,4 ),
++>          (  12,5);
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO test226_B
++>   VALUES (   11,7 ),
++>          (  13,8);
+
+--- 2 row(s) inserted.
+>>
+>>Create MVGroup MVG2_226;
+
+--- SQL operation complete.
+>>Alter MVGroup MVG2_226
++>  Add T_226_MV2,T_226_MV4;
+
+--- SQL operation complete.
+>>
+>>set param ?table_name 'T_226_MV1';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>set param ?table_name 'TEST226_A';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>refresh MVGroup MVG2_226 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_A.
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_B.
+Finished the log cleanup of table CATMVS.MVSCHM.TEST226_C.
+Finished the log cleanup of table CATMVS.MVSCHM.T_226_MV1.
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_A...
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_B...
+Starting the log cleanup of table CATMVS.MVSCHM.TEST226_C...
+Starting the log cleanup of table CATMVS.MVSCHM.T_226_MV1...
+The materialized view CATMVS.MVSCHM.T_226_MV2 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV2 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_226_MV4 has been refreshed from 2 deltas in a single transaction.
+The materialized view CATMVS.MVSCHM.T_226_MV4 is being refreshed in a single transaction...
+>>
+>>-- Expected Epochs increased (Bigger)
+>>set param ?table_name 'T_226_MV1';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name 'TEST226_A';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select A.a ,B.b,Sum(A.b) as Sb
++>	from test226_A A,test226_B B
++>	where A.a = B.a
++>        group by A.a,B.b
++>		order by A.a,B.b;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>	select * from T_226_MV4
++>	order by a,b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select sum(Sb) SSb,T_226_MV1.b b
++>	from T_226_MV1,test226_C
++>	where test226_C.a = T_226_MV1.a
++>        group by T_226_MV1.b
++>		order by b;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>	select * from T_226_MV2
++>	order by b;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>-- ------------------------------------------------------------------------------
+>>-- Check the drop statement on the way out
+>>
+>>obey TESTMV226(CLEAN_UP);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>refresh mvgroup MVG226_cancel cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>drop materialized view T_226_MV4;
+
+--- SQL operation complete.
+>>drop materialized view T_226_MV3;
+
+--- SQL operation complete.
+>>drop materialized view T_226_MV2;
+
+--- SQL operation complete.
+>>drop materialized view T_226_MV1;
+
+--- SQL operation complete.
+>>drop MVGroup MVG1_226;
+
+--- SQL operation complete.
+>>drop MVGroup MVG2_226;
+
+--- SQL operation complete.
+>>drop table test226_A;
+
+--- SQL operation complete.
+>>drop table test226_B;
+
+--- SQL operation complete.
+>>drop table test226_C;
+
+--- SQL operation complete.
+>>drop table temp1;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup  MVG226_cancel;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

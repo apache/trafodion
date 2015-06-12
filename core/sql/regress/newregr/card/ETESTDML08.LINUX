@@ -1,0 +1,1680 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>
+>>control query default cache_histograms '0';
+
+--- SQL operation complete.
+>>
+>>control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+--- SQL operation complete.
+>>
+>>-- Q1
+>>-- Hence uses default selectivity
+>>-- card - 3.33 E4
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from cube1 where 
++>(a,b,c) not in (select a,b,f from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.11E+004           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from cube1 where 
++>(a,b,c) not in (select a,b,f from cube1);
+Histograms for query showstats for query select count(*) from cube1 where  (a,b,c) not in (select a,b,f from cube1);
+**************************************************************
+VEGcolumn:
+
+ 146: VEGRef_146((CAT.HCUBE.CUBE1.F))
+Merge state:
+  57: CAT.HCUBE.CUBE1.F
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from cube1 where 
++>(a,b,c) not in (select a,b,f from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.11E+004           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from cube1 where 
++>(a,b,c) not in (select a,b,f from cube1);
+Histograms for query showstats for query select count(*) from cube1 where  (a,b,c) not in (select a,b,f from cube1);
+**************************************************************
+VEGcolumn:
+
+ 146: VEGRef_146((CAT.HCUBE.CUBE1.F))
+Merge state:
+  57: CAT.HCUBE.CUBE1.F
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 100.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.010000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 99.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      99.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q2
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from cube1 where 
++>(a) not in (select a from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+004           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from cube1 where 
++>(a) not in (select a from cube1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q3
+>>-- predicate  t8.a = t7.a
+>>-- leftUEC = 90, rightUEC = 99, leftRC = 90, hence uses default.
+>>
+>>-- numUec = 0.33 * 90 = 30
+>>-- card = 90 * 30 / 90 = 30
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from t7
++>where t7.c >= 1
++>and not exists (select *
++>                  from t8
++>                  where t8.a = t7.a)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+001           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>from t7
++>where t7.c >= 1
++>and not exists (select *
++>                  from t8
++>                  where t8.a = t7.a)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+001           
+
+--- 1 row(s) selected.
+>>
+>>-- Q4
+>>-- Same as in Q3, except that T7 and T8 are interchanged
+>>-- card = 841
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t8.c
++>from t8
++>where t8.c >= 1
++>and not exists (select *
++>                  from t7
++>                  where t8.a = t7.a)
++>group by t8.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   8.41E+002           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t8.c
++>from t8
++>where t8.c >= 1
++>and not exists (select *
++>                  from t7
++>                  where t8.a = t7.a)
++>group by t8.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   8.41E+002           
+
+--- 1 row(s) selected.
+>>
+>>-- Q5 
+>>-- predicate is not((VEGRef_55((CAT.HCUBE.T2.B)) > VEGRef_34((CAT.HCUBE.T1.A))) is true)
+>>-- hence uses default selectivity
+>>
+>>-- card - 3.33 (per probe) and 334
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>        select t1.a from t1, t4
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>          where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b
++>        );
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+000           
+A_SEMI_JOIN                   3.34E+002           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>        select t1.a from t1, t4
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>          where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b
++>        );
+Histograms for query showstats for query         select t1.a from t1, t4         where not exists (           select min(t2.a)           from t2           where t2.b > ALL (            select t1.a            from t3           )           group by t2.b         );
+**************************************************************
+VEGcolumn:
+
+  52: VEGRef_52((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 334.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 334.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      1.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      2.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      3.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      4.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      5.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      6.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      7.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      8.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      9.0000 ) : rows=33.400000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>        select t1.a from t1, t4
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>          where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b
++>        );
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+000           
+A_SEMI_JOIN                   3.34E+002           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>        select t1.a from t1, t4
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>          where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b
++>        );
+Histograms for query showstats for query         select t1.a from t1, t4         where not exists (           select min(t2.a)           from t2           where t2.b > ALL (            select t1.a            from t3           )           group by t2.b         );
+**************************************************************
+VEGcolumn:
+
+  52: VEGRef_52((CAT.HCUBE.T1.A))
+Merge state:
+   3: CAT.HCUBE.T1.A
+
+Applied preds:
+   TotalUEC = 10.000000 
+   Rowcount = 334.000000 
+
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 334.000000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      0.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      1.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      2.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      3.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      4.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      5.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      6.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      7.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      8.0000 ) : rows=33.400000,uec=1.000000 
+
+     Bound  <=      (      9.0000 ) : rows=33.400000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q6
+>>-- same predicate as in Q3
+>>-- card - 3.34 (per probe) and 34
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>        select t1.a from t1
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>         where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b, t1.a
++>        );
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.40E+000           
+A_SEMI_JOIN                   3.40E+001           
+
+--- 2 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>        select t1.a from t1
++>        where not exists (
++>          select min(t2.a)
++>          from t2
++>         where t2.b > ALL (
++>           select t1.a
++>           from t3
++>          )
++>          group by t2.b, t1.a
++>        );
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.40E+000           
+A_SEMI_JOIN                   3.40E+001           
+
+--- 2 row(s) selected.
+>>
+>>-- Q7
+>>-- card - 1000
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where not exists (select * from t10);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where not exists (select * from t10);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q8
+>>-- leftUEC = 10, rightUEC = 9, hence uses defaultSel * leftUec to compute card
+>>-- card - 3
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where t8.a in (select a from t4 where not (
++>exists (select a from t6 where a=t4.a)));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where t8.a in (select a from t4 where not (
++>exists (select a from t6 where a=t4.a)));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- Q9
+>>-- card - 334
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>> -- avoid nested_joins that are of same cost
+>>prepare xx from
++>select * from t8 where (a >=  all (select a from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+002           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from t8 where (a >=  all (select a from t10));
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.33E+002           
+
+--- 1 row(s) selected.
+>>
+>>control query default nested_joins reset;
+
+--- SQL operation complete.
+>>
+>>-- Q10
+>>-- leftUEC = leftRC = 994, rightUEC = 9
+>>-- card - 994 * 994 / 990 = 994
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t8
++>where a not in (select b from t4 where b is not null)
++>  and a is not null;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   9.94E+002           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t8
++>where a not in (select b from t4 where b is not null)
++>  and a is not null;
+Histograms for query showstats for query select count(*) from t8 where a not in (select b from t4 where b is not null)   and a is not null;
+**************************************************************
+VEGcolumn:
+
+  53: VEGRef_53((CAT.HCUBE.T4.A))
+Merge state:
+  26: CAT.HCUBE.T4.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t8
++>where a not in (select b from t4 where b is not null)
++>  and a is not null;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   9.94E+002           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from t8
++>where a not in (select b from t4 where b is not null)
++>  and a is not null;
+Histograms for query showstats for query select count(*) from t8 where a not in (select b from t4 where b is not null)   and a is not null;
+**************************************************************
+VEGcolumn:
+
+  53: VEGRef_53((CAT.HCUBE.T4.A))
+Merge state:
+  26: CAT.HCUBE.T4.A
+
+Applied preds:
+***UNIQUE COLUMN***
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 10.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.100000 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 9.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      9.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>set schema cat.mcrand;
+
+--- SQL operation complete.
+>>
+>>-- Q11
+>>-- leftRC = leftUEC = 1, rightUEC = 90
+>>-- card = 1 * 0.33 / 1 = 0.33 -> 1
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select  count(*)
++>                 from ten1000
++>                 where ten1000.a=5 and
++>                          not exists (select rc2.x  from rc2
++>                                      where   rc2.y = ten1000.d  );
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select  count(*)
++>                 from ten1000
++>                 where ten1000.a=5 and
++>                          not exists (select rc2.x  from rc2
++>                                      where   rc2.y = ten1000.d  );
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- Q12
+>>-- Same as in Q11 except that the local predicate is > 5, ensuring that 
+>>-- the selectivity from this predicate is low
+>>-- card 9.87 E3
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select  count(*)
++>                 from ten1000
++>                 where ten1000.a>5 and
++>                          not exists (select rc2.x  from rc2
++>                                      where   rc2.y = ten1000.d  );
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   9.87E+003           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select  count(*)
++>                 from ten1000
++>                 where ten1000.a>5 and
++>                          not exists (select rc2.x  from rc2
++>                                      where   rc2.y = ten1000.d  );
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   9.87E+003           
+
+--- 1 row(s) selected.
+>>
+>>set schema tpch.sch;
+
+--- SQL operation complete.
+>>
+>>-- Q13
+>>-- leftUEC - 5798005, rightUEC = 150M
+>>-- card - 5798005 * 0.33 = 1.91 E6
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>SELECT COUNT(*) 
++>FROM orders
++>WHERE o_orderdate >= DATE '1993-07-01'
++>      AND o_orderdate < DATE '1993-07-01' + INTERVAL '3' MONTH
++>      AND NOT EXISTS (SELECT *
++>                  FROM lineitem
++>                  WHERE l_orderkey = o_orderkey
++>                        AND l_commitdate < l_receiptdate)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.93E+006           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>SELECT COUNT(*) 
++>FROM orders
++>WHERE o_orderdate >= DATE '1993-07-01'
++>      AND o_orderdate < DATE '1993-07-01' + INTERVAL '3' MONTH
++>      AND NOT EXISTS (SELECT *
++>                  FROM lineitem
++>                  WHERE l_orderkey = o_orderkey
++>                        AND l_commitdate < l_receiptdate)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.93E+006           
+
+--- 1 row(s) selected.
+>>
+>>-- Q14
+>>-- leftUEC = rightUEC = 150M, leftRC = 600M (approx)
+>>-- card - 600E6 * 150 E6 * 0.33 / 150 E6 = 1.99E8
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>SELECT count(*) 
++>FROM supplier, lineitem l1
++>WHERE s_suppkey = l1.l_suppkey
++>  AND EXISTS (SELECT *
++>              FROM lineitem l2
++>              WHERE l2.l_orderkey = l1.l_orderkey
++>                AND l2.l_suppkey <> l1.l_suppkey)
++>  AND NOT EXISTS (SELECT *
++>                  FROM lineitem l3
++>                  WHERE l3.l_orderkey = l1.l_orderkey
++>                    AND l3.l_suppkey <> l1.l_suppkey
++>                    AND l3.l_receiptdate > l3.l_commitdate)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.99E+008           
+A_SEMI_JOIN                   1.99E+008           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>SELECT count(*) 
++>FROM supplier, lineitem l1
++>WHERE s_suppkey = l1.l_suppkey
++>  AND EXISTS (SELECT *
++>              FROM lineitem l2
++>              WHERE l2.l_orderkey = l1.l_orderkey
++>                AND l2.l_suppkey <> l1.l_suppkey)
++>  AND NOT EXISTS (SELECT *
++>                  FROM lineitem l3
++>                  WHERE l3.l_orderkey = l1.l_orderkey
++>                    AND l3.l_suppkey <> l1.l_suppkey
++>                    AND l3.l_receiptdate > l3.l_commitdate)
++>;
+Histograms for query showstats for query SELECT count(*)  FROM supplier, lineitem l1 WHERE s_suppkey = l1.l_suppkey   AND EXISTS (SELECT *               FROM lineitem l2               WHERE l2.l_orderkey = l1.l_orderkey                 AND l2.l_suppkey <> l1.l_suppkey)   AND NOT EXISTS (SELECT *                   FROM lineitem l3                   WHERE l3.l_orderkey = l1.l_orderkey                     AND l3.l_suppkey <> l1.l_suppkey                     AND l3.l_receiptdate > l3.l_commitdate) ;
+**************************************************************
+VEGcolumn:
+
+ 548: VEGRef_548((L3.L_RECEIPTDATE))
+Merge state:
+ 282: L3.L_RECEIPTDATE
+
+Applied preds:
+
+ 566: (VEGRef_548((L3.L_RECEIPTDATE)) > VEGRef_545((L3.L_COMMITDATE)))
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 2555.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000416 
+   Encoded MinValue = ( 62830080000.0000 )
+
+   Encoded MaxValue = ( 63050745600.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      62830080000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      62843558400.0000
+ ) : rows=0.034286,uec=0.034286 
+     Bound  <=      (
+     63037008000.0000 ) : rows=0.930601,uec=0.930601 
+     Bound  <=
+     (      63050745600.0000 ) : rows=0.035114,uec=0.035114 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>SELECT count(*) 
++>FROM supplier, lineitem l1
++>WHERE s_suppkey = l1.l_suppkey
++>  AND EXISTS (SELECT *
++>              FROM lineitem l2
++>              WHERE l2.l_orderkey = l1.l_orderkey
++>                AND l2.l_suppkey <> l1.l_suppkey)
++>  AND NOT EXISTS (SELECT *
++>                  FROM lineitem l3
++>                  WHERE l3.l_orderkey = l1.l_orderkey
++>                    AND l3.l_suppkey <> l1.l_suppkey
++>                    AND l3.l_receiptdate > l3.l_commitdate)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.99E+008           
+A_SEMI_JOIN                   1.99E+008           
+
+--- 2 row(s) selected.
+>>
+>>showstats for query
++>SELECT count(*) 
++>FROM supplier, lineitem l1
++>WHERE s_suppkey = l1.l_suppkey
++>  AND EXISTS (SELECT *
++>              FROM lineitem l2
++>              WHERE l2.l_orderkey = l1.l_orderkey
++>                AND l2.l_suppkey <> l1.l_suppkey)
++>  AND NOT EXISTS (SELECT *
++>                  FROM lineitem l3
++>                  WHERE l3.l_orderkey = l1.l_orderkey
++>                    AND l3.l_suppkey <> l1.l_suppkey
++>                    AND l3.l_receiptdate > l3.l_commitdate)
++>;
+Histograms for query showstats for query SELECT count(*)  FROM supplier, lineitem l1 WHERE s_suppkey = l1.l_suppkey   AND EXISTS (SELECT *               FROM lineitem l2               WHERE l2.l_orderkey = l1.l_orderkey                 AND l2.l_suppkey <> l1.l_suppkey)   AND NOT EXISTS (SELECT *                   FROM lineitem l3                   WHERE l3.l_orderkey = l1.l_orderkey                     AND l3.l_suppkey <> l1.l_suppkey                     AND l3.l_receiptdate > l3.l_commitdate) ;
+**************************************************************
+VEGcolumn:
+
+ 548: VEGRef_548((L3.L_RECEIPTDATE))
+Merge state:
+ 282: L3.L_RECEIPTDATE
+
+Applied preds:
+
+ 566: (VEGRef_548((L3.L_RECEIPTDATE)) > VEGRef_545((L3.L_COMMITDATE)))
+
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 2555.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000416 
+   Encoded MinValue = ( 62830080000.0000 )
+
+   Encoded MaxValue = ( 63050745600.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      62830080000.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (      62843558400.0000
+ ) : rows=0.034286,uec=0.034286 
+     Bound  <=      (
+     63037008000.0000 ) : rows=0.930601,uec=0.930601 
+     Bound  <=
+     (      63050745600.0000 ) : rows=0.035114,uec=0.035114 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q15
+>>-- leftUEC - 150E6, leftRC - 200E6, rightUC - 150E6
+>>-- card - 200E6 * (150E6 * 0.33) / 150 E6 = 6.65 E7
+>>
+>>control query default hist_optimistic_card_optimization '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select
++>  count(*)
++>from
++>  lineitem l1
++>where
++>  l1.l_receiptdate > l1.l_commitdate
++>  and not exists (
++>              select *
++>              from
++>                lineitem l3
++>              where
++>                l3.l_orderkey = l1.l_orderkey
++>                and
++>                l3.l_suppkey <> l1.l_suppkey
++>                and
++>                l3.l_receiptdate > l3.l_commitdate
++>  )
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   6.65E+007           
+
+--- 1 row(s) selected.
+>>
+>>control query default hist_optimistic_card_optimization reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select
++>  count(*)
++>from
++>  lineitem l1
++>where
++>  l1.l_receiptdate > l1.l_commitdate
++>  and not exists (
++>              select *
++>              from
++>                lineitem l3
++>              where
++>                l3.l_orderkey = l1.l_orderkey
++>                and
++>                l3.l_suppkey <> l1.l_suppkey
++>                and
++>                l3.l_receiptdate > l3.l_commitdate
++>  )
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   6.65E+007           
+
+--- 1 row(s) selected.
+>>
+>>-- Semi join MC cardinalities. The fix has gone in R2,4 SP2. 
+>>-- After the 2.4 SP2 merge we should see the following cardinalities
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>-- Q16
+>>-- join when the outer is unique and inner is not. There is no reduction on either side
+>>-- MC cardinality is 1000, which gets uplifted to SC cardinality of 10,000 
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,b,c,e) in (select a,b,d,e from cube2);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q17
+>>-- MC_cardinality = 1000, SC_cardinality = 1, min Single Column Join RC - 10
+>>
+>>prepare xx from 
++>select count(*) from t10 where (a,b) in (select a,b from cube2);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+001           
+
+--- 1 row(s) selected.
+>>
+>>-- Q18
+>>-- join when the outer is unique and inner is not. 
+>>-- There is reduction on the outer side on the joining column.
+>>-- MC_cardinality = 1000, SC_cardinality = 1000, 
+>>-- min Single Column Join RC - 1000
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,b,c,e) in (select a,b,d,e from cube2) and cube1.a = 5;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q19
+>>-- join when the outer is unique and inner is not. 
+>>-- There is reduction on the inner side  on the joining column
+>>-- MC_cardinality = 1000, SC_cardinality = 1000, 
+>>-- min Single Column Join RC - 1000
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,b,c,e) in 
++> (select a,b,d,e from cube2  where cube2.a = 5);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from cube1 where (a,b,c,e) in 
++> (select a,b,d,e from cube2  where cube2.a = 5);
+Histograms for query showstats for query select count(*) from cube1 where (a,b,c,e) in   (select a,b,d,e from cube2  where cube2.a = 5);
+**************************************************************
+VEGcolumn:
+
+ 148: VEGRef_148((CAT.HCUBE.CUBE2.F))
+Merge state:
+  58: CAT.HCUBE.CUBE2.F
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.006667 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q20
+>>-- join when the outer is unique and inner is not. 
+>>-- There is reduction on the both sides  on the joining column
+>>-- MC_cardinality = 5000, SC_cardinality = 5000, 
+>>-- min Single Column Join RC - 5000
+>>
+>>prepare xx from select count(*) from cube1 
++> where (b,c,e) in (select a,b,e from cube2) and cube1.d > 4;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   5.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q21
+>>-- join when the outer is unique and inner is not. 
+>>-- There is indirect reduction on the outer side 
+>>-- MC_cardinality = 100, SC_cardinality = 1000, min Single Column Join RC - 1000
+>>-- MC cardinality goes below SC_cardinality when right MC UEC is lower than the left MC UEC
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,f) in (select a,d from cube2) and cube1.d = 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q22
+>>-- MC_cardinality = 1000, SC_cardinality = 10000, 
+>>-- min Single Column Join RC - 10000
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,f) in (select a,d from cube2 where b = 1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q23
+>>-- join when the outer is unique and inner is not. 
+>>-- There is  indirect reduction on the inner side
+>>-- MC_cardinality = 1000, SC_cardinality = 10, 
+>>-- min Single Column Join RC - 100K
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,b,c,e) in 
++> (select a,b,d,e from cube2  where cube2.c = 1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+--- 0 row(s) selected.
+>>
+>>-- Q24
+>>-- join when the outer is unique and inner is not. 
+>>-- There is  indirect reduction on the both sides
+>>-- MC_cardinality = 100, SC_cardinality = 1, min Single Column Join RC - 100K
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (a,b,c,e) in 
++> (select a,b,d,e from cube2  where cube2.c = 50) and cube1.d = 1;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+--- 0 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from cube1 where (a,b,c,e) in 
++> (select a,b,d,e from cube2  where cube2.c = 50) and cube1.d = 1;
+Histograms for query showstats for query select count(*) from cube1 where (a,b,c,e) in   (select a,b,d,e from cube2  where cube2.c = 50) and cube1.d = 1;
+**************************************************************
+VEGcolumn:
+
+ 152: VEGRef_152((CAT.HCUBE.CUBE2.F))
+Merge state:
+  58: CAT.HCUBE.CUBE2.F
+
+Applied preds:
+   TotalUEC = 1.000000 
+   Rowcount = 1.000000 
+
+   BaseUEC  = 150.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.006667 
+   Encoded MinValue = ( 0.0000 )
+
+   Encoded MaxValue = ( 149.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      0.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      149.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q25
+>>-- MC_cardinality = 1000, SC_cardinality = 10000, 
+>>-- min Single Column Join RC - 10K
+>>
+>>prepare xx from 
++>select count(*) from cube1 where (b,c,d) in (select a,b,d from cube2);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q26
+>>-- MC_cardinality = 1000, SC_cardinality = 1000, 
+>>-- min Single Column Join RC - 10K
+>>prepare xx from 
++>select count(*) from cube1 where (f,a,b) in (select a,b,d from cube2);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+003           
+
+--- 1 row(s) selected.
+>>
+>>-- Q27
+>>-- MC_cardinality = 1000, SC_cardinality = 10K, 
+>>-- min Single Column Join RC - 10K
+>>prepare xx from 
++>select count(*) from cube1 where (e,a) in (select d,a from cube2);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>set schema cat.mcrand;
+
+--- SQL operation complete.
+>>
+>>-- Q28
+>>-- MC_cardinality = 30K, SC_cardinality = 30K, min Single Column Join RC - 30K
+>>prepare xx from select count(*) from facts where (x,y) in (select x,z from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q29
+>>-- MC_cardinality = 10K, SC_cardinality = 110, min Single Column Join RC - 1010
+>>prepare xx from 
++>select count(*) from facts where (xz,xy) in (select x,z from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.01E+003           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from facts where (xz,xy) in (select x,z from randcols);
+Histograms for query showstats for query select count(*) from facts where (xz,xy) in (select x,z from randcols);
+**************************************************************
+VEGcolumn:
+
+ 169: VEGRef_169((CAT.MCRAND.RANDCOLS.SYSKEY))
+Merge state:
+
+  69: CAT.MCRAND.RANDCOLS.SYSKEY
+Applied preds:
+***FAKE*** histogram
+
+***Histogram with NO statistics
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 100000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000033 
+   Encoded MinValue = (
+-9223372036854775808.0000 )
+   Encoded MaxValue = (
+9223372036854775808.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      -9223372036854775808.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     9223372036854775808.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q30
+>>-- MC_cardinality = 9900, SC_cardinality = 110, min Single Column Join RC - 1010
+>>prepare xx from 
++>select count(*) from facts where (xz,xy) in (select x,y from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   9.90E+002           
+
+--- 1 row(s) selected.
+>>
+>>-- Q31
+>>-- MC_cardinality = 30K, SC_cardinality = 30K, min Single Column Join RC - 30K
+>>prepare xx from 
++>select count(*) from facts where (x,y,z) in (select x,y,z from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q32
+>>-- MC_cardinality = 30K, SC_cardinality = 26K, min Single Column Join RC - 26K
+>>prepare xx from 
++>select count(*) from facts where (x,y,xpy) in (select x,y,z from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   2.58E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q33
+>>-- MC_cardinality = 3151, SC_cardinality = 30K, min Single Column Join RC - 30K
+>>prepare xx from 
++>select count(*) from randcols where (x,y,z) in (select x,y,xpy from facts);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   3.03E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- Q34
+>>-- MC_cardinality = 100K, SC_cardinality = 100K, min Single Column Join RC - 100K
+>>prepare xx from 
++>select count(*) from randcols where (x,y,z) in (select x,y,z from mc1);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>showstats for query
++>select count(*) from randcols where (x,y,z) in (select x,y,z from mc1);
+Histograms for query showstats for query select count(*) from randcols where (x,y,z) in (select x,y,z from mc1);
+**************************************************************
+VEGcolumn:
+
+  51: VEGRef_51((CAT.MCRAND.MC1.SYSKEY))
+Merge state:
+
+  18: CAT.MCRAND.MC1.SYSKEY
+Applied preds:
+   TotalUEC = 1.000000 
+
+   Rowcount = 1.000000 
+   BaseUEC  = 100000.000000 (pre-current-join-uec)
+
+   Max Frequency = 0.000010 
+   Encoded MinValue = (
+216172782204119296.0000 )
+   Encoded MaxValue = ( 216172782204219296.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      216172782204119296.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     216172782204219296.0000 ) : rows=1.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Q35
+>>-- MC_cardinality = 100K, SC_cardinality = 15K, min Single Column Join RC - 28K
+>>prepare xx from 
++>select count(*) from mc1 where (x,y,z) in (select x,y,z from randcols);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+(EXPR)       TAB_NAME         Expected Cardinality
+-----------  ---------------  --------------------
+
+A_SEMI_JOIN                   2.79E+004           
+
+--- 1 row(s) selected.
+>>
+>>log;

@@ -1,0 +1,1376 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1999-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+#include <iostream.h>
+#include <stdlib.h>
+#include <string.h>
+#include "Pseudo.h"
+#include "GenColumn.h"
+#include "GenTable.h"
+
+//--------------------------------------------------------
+//  Column values interpreted as null for certain columns.
+//--------------------------------------------------------
+long intNullVal_50p       = 299;
+char charNullVal_100[]    = "DY";
+
+//------------------------------------------------------------
+//  Seed values for priming random generators for each column.
+//------------------------------------------------------------
+const long seedSInt16_10    =   373;
+const long seedSInt32_100   =   769;
+const long seedSInt32_50p   =  1531;
+const long seedSInt32_uniq  =  2309;
+const long seedUInt16_10    =  3167;
+const long seedUInt32_100   =  3851;
+const long seedUInt32_50p   =  4547;
+const long seedUInt32_uniq  =  5351;
+const long seedInt64_100    =  6029;
+const long seedInt64_uniq   =  6833;
+const long seedChar_10      =  7529;
+const long seedChar_100     =  8317;
+const long seedChar_50p     =  9001;
+const long seedChar_uniq    =  9749;
+const long seedUNum_10      = 10513;
+const long seedSNum_100     = 11003;
+const long seedUNum_50p     = 11527;
+const long seedSNum_uniq    = 12007;
+const long seedDate_12      = 12413;
+const long seedDate_200     = 13291;
+const long seedDate_uniq    = 13597;
+const long seedVarchar_100  = 14303;
+const long seedVarchar_uniq = 14931;
+
+//--------------------------------------------------------
+//  Columns available for use in generating table scripts.
+//--------------------------------------------------------
+const long    kColumnCount = 23;
+AbstColumnPtr columns[kColumnCount];
+AbstColumnPtr colSInt16_10;
+AbstColumnPtr colSInt32_100;
+AbstColumnPtr colSInt32_50p;
+AbstColumnPtr colSInt32_uniq;
+AbstColumnPtr colUInt16_10;
+AbstColumnPtr colUInt32_100;
+AbstColumnPtr colUInt32_50p;
+AbstColumnPtr colUInt32_uniq;
+AbstColumnPtr colInt64_100;
+AbstColumnPtr colInt64_uniq;
+AbstColumnPtr colChar_10;
+AbstColumnPtr colChar_100;
+AbstColumnPtr colChar_50p;
+AbstColumnPtr colChar_uniq;
+AbstColumnPtr colUNum_10;
+AbstColumnPtr colSNum_100;
+AbstColumnPtr colUNum_50p;
+AbstColumnPtr colSNum_uniq;
+AbstColumnPtr colDate_12;
+AbstColumnPtr colDate_200;
+AbstColumnPtr colDate_uniq;
+AbstColumnPtr colVarchar_100;
+AbstColumnPtr colVarchar_uniq;
+
+void
+resetColumns()
+{
+  for (long idx = 0; idx < kColumnCount; idx++)
+    {
+      delete columns[idx];
+      columns[idx] = 0;
+    }
+
+  colSInt16_10    = 0;
+  colSInt32_100   = 0;
+  colSInt32_50p   = 0;
+  colSInt32_uniq  = 0;
+  colUInt16_10    = 0;
+  colUInt32_100   = 0;
+  colUInt32_50p   = 0;
+  colUInt32_uniq  = 0;
+  colInt64_100    = 0;
+  colInt64_uniq   = 0;
+  colChar_10      = 0;
+  colChar_100     = 0;
+  colChar_50p     = 0;
+  colChar_uniq    = 0;
+  colUNum_10      = 0;
+  colSNum_100     = 0;
+  colUNum_50p     = 0;
+  colSNum_uniq    = 0;
+  colDate_12      = 0;
+  colDate_200     = 0;
+  colDate_uniq    = 0;
+  colVarchar_100  = 0;
+  colVarchar_uniq = 0;
+
+} // resetColumns()
+
+void
+genUTAB00(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "UTAB00";
+  
+  long       keyColumns[]         = {3};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 1, 2, 4, 5, 6, 7, 8, 9,10,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(seedUInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt16_10;
+  columns[ 1] = colSInt32_100;
+  columns[ 2] = colSInt32_50p;
+  columns[ 3] = colSInt32_uniq;
+  columns[ 4] = colUInt16_10;
+  columns[ 5] = colUInt32_100;
+  columns[ 6] = colUInt32_50p;
+  columns[ 7] = colUInt32_uniq;
+  columns[ 8] = colInt64_100;
+  columns[ 9] = colInt64_uniq;
+  columns[10] = colChar_10;
+  columns[11] = colChar_100;
+  columns[12] = colChar_50p;
+  columns[13] = colChar_uniq;
+  columns[14] = colUNum_10;
+  columns[15] = colSNum_100;
+  columns[16] = colUNum_50p;
+  columns[17] = colSNum_uniq;
+  columns[18] = colDate_12;
+  columns[19] = colDate_200;
+  columns[20] = colDate_uniq;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genUTAB00()
+
+void
+genPTAB00(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB00";
+  
+  long       keyColumns[]         = {7};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 1, 2, 3, 4, 5, 6, 8, 9,10,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(seedUInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt16_10;
+  columns[ 1] = colUInt16_10;
+  columns[ 2] = colSInt32_100;
+  columns[ 3] = colUInt32_100;
+  columns[ 4] = colUInt32_50p;
+  columns[ 5] = colSInt32_50p;
+  columns[ 6] = colUInt32_uniq;
+  columns[ 7] = colSInt32_uniq;
+  columns[ 8] = colInt64_100;
+  columns[ 9] = colInt64_uniq;
+  columns[10] = colChar_10;
+  columns[11] = colChar_100;
+  columns[12] = colChar_50p;
+  columns[13] = colChar_uniq;
+  columns[14] = colUNum_10;
+  columns[15] = colSNum_100;
+  columns[16] = colUNum_50p;
+  columns[17] = colSNum_uniq;
+  columns[18] = colDate_12;
+  columns[19] = colDate_200;
+  columns[20] = colDate_uniq;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB00()
+
+void
+genPTAB01(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB01";
+  
+  long       keyColumns[]         = {10};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(seedSInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt16_10;
+  columns[ 1] = colUInt16_10;
+  columns[ 2] = colChar_10;
+  columns[ 3] = colSInt32_100;
+  columns[ 4] = colChar_100;
+  columns[ 5] = colUInt32_100;
+  columns[ 6] = colChar_50p;
+  columns[ 7] = colUInt32_50p;
+  columns[ 8] = colSInt32_50p;
+  columns[ 9] = colChar_uniq;
+  columns[10] = colUInt32_uniq;
+  columns[11] = colSInt32_uniq;
+  columns[12] = colInt64_100;
+  columns[13] = colInt64_uniq;
+  columns[14] = colUNum_10;
+  columns[15] = colSNum_100;
+  columns[16] = colUNum_50p;
+  columns[17] = colSNum_uniq;
+  columns[18] = colDate_12;
+  columns[19] = colDate_200;
+  columns[20] = colDate_uniq;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB01()
+
+void
+genPTAB02(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB02";
+  
+  long       keyColumns[]         = {17};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,
+                                11,12,13,14,15,16,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(seedSInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(seedUInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt16_10;
+  columns[ 1] = colUInt16_10;
+  columns[ 2] = colChar_10;
+  columns[ 3] = colUNum_10;
+  columns[ 4] = colSInt32_100;
+  columns[ 5] = colChar_100;
+  columns[ 6] = colUInt32_100;
+  columns[ 7] = colSNum_100;
+  columns[ 8] = colChar_50p;
+  columns[ 9] = colUInt32_50p;
+  columns[10] = colSInt32_50p;
+  columns[11] = colUNum_50p;
+  columns[12] = colChar_uniq;
+  columns[13] = colUInt32_uniq;
+  columns[14] = colSInt32_uniq;
+  columns[15] = colSNum_uniq;
+  columns[16] = colInt64_100;
+  columns[17] = colInt64_uniq;
+  columns[18] = colDate_12;
+  columns[19] = colDate_200;
+  columns[20] = colDate_uniq;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB02()
+
+void
+genPTAB03(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB03";
+  
+  long       keyColumns[]         = {0};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(seedUInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt32_uniq;
+  columns[ 1] = colUInt32_uniq;
+  columns[ 2] = colSNum_uniq;
+  columns[ 3] = colInt64_uniq;
+  columns[ 4] = colChar_uniq;
+  columns[ 5] = colDate_uniq;
+  columns[ 6] = colSInt16_10;
+  columns[ 7] = colUInt16_10;
+  columns[ 8] = colChar_10;
+  columns[ 9] = colUNum_10;
+  columns[10] = colSInt32_100;
+  columns[11] = colChar_100;
+  columns[12] = colUInt32_100;
+  columns[13] = colSNum_100;
+  columns[14] = colChar_50p;
+  columns[15] = colUInt32_50p;
+  columns[16] = colSInt32_50p;
+  columns[17] = colUNum_50p;
+  columns[18] = colInt64_100;
+  columns[19] = colDate_12;
+  columns[20] = colDate_200;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB03()
+
+void
+genPTAB04(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB03";
+  
+  long       keyColumns[]         = {1};
+  long       keyColumnNumValues[] = {totalRowCount};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 2, 3, 4, 5, 6, 7, 8, 9,10,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(seedSInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(seedSInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colUInt16_10    = new IntColumn(seedUInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt32_uniq;
+  columns[ 1] = colUInt32_uniq;
+  columns[ 2] = colSNum_uniq;
+  columns[ 3] = colInt64_uniq;
+  columns[ 4] = colChar_uniq;
+  columns[ 5] = colDate_uniq;
+  columns[ 6] = colSInt16_10;
+  columns[ 7] = colUInt16_10;
+  columns[ 8] = colChar_10;
+  columns[ 9] = colUNum_10;
+  columns[10] = colSInt32_100;
+  columns[11] = colChar_100;
+  columns[12] = colUInt32_100;
+  columns[13] = colSNum_100;
+  columns[14] = colChar_50p;
+  columns[15] = colUInt32_50p;
+  columns[16] = colSInt32_50p;
+  columns[17] = colUNum_50p;
+  columns[18] = colInt64_100;
+  columns[19] = colDate_12;
+  columns[20] = colDate_200;
+  columns[21] = colVarchar_100;
+  columns[22] = colVarchar_uniq;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB04()
+
+void
+genPTAB05(long pNumOfInserts, long pRowsPerInsert)
+{
+
+  long totalRowCount = pNumOfInserts * pRowsPerInsert;
+
+  char tableName[] = "PTAB05";
+  
+  long       keyColumns[]         = {10,1};
+  long       keyColumnNumValues[] = {100,10};
+  const long keyColumnCount = sizeof(keyColumns) / sizeof(long);
+
+  long       nonKeyColumns[] = { 0, 2, 3, 4, 5, 6, 7, 8, 9,11,
+                                12,13,14,15,16,17,18,19,20,21,22};
+  const long nonKeyColumnCount = sizeof (nonKeyColumns) / sizeof(long);
+
+  const long columnCount = keyColumnCount + nonKeyColumnCount;
+
+  colSInt16_10    = new IntColumn(seedSInt16_10,
+                                  totalRowCount,
+                                  10);
+
+  colSInt32_100   = new IntColumn(100);
+
+  colSInt32_50p   = new IntColumn(seedSInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colSInt32_uniq  = new IntColumn(seedSInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colUInt16_10    = new IntColumn(10);
+
+  colUInt32_100   = new IntColumn(seedUInt32_100,
+                                  totalRowCount,
+                                  100);
+
+  colUInt32_50p   = new IntColumn(seedUInt32_50p,
+                                  totalRowCount,
+                                  totalRowCount/2,
+                                  &intNullVal_50p);
+
+  colUInt32_uniq  = new IntColumn(seedUInt32_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colInt64_100    = new IntColumn(seedInt64_100,
+                                  totalRowCount,
+                                  100);
+
+  colInt64_uniq   = new IntColumn(seedInt64_uniq,
+                                  totalRowCount,
+                                  totalRowCount);
+
+  colChar_10      = new CharColumn(seedChar_10,
+                                   totalRowCount,
+                                   2,
+                                   5,
+                                   8);
+
+  colChar_100     = new CharColumn(seedChar_100,
+                                   totalRowCount,
+                                   4,
+                                   25,
+                                   8,
+                                   charNullVal_100);
+
+  colChar_50p     = new CharColumn(seedUNum_50p,
+                                   totalRowCount,
+                                   12,
+                                   25,
+                                   8);
+
+  colChar_uniq    = new CharColumn(seedChar_uniq,
+                                   totalRowCount,
+                                   24,
+                                   25,
+                                   8);
+
+  colUNum_10      = new FixedPointColumn(seedUNum_10,
+                                         totalRowCount,
+                                         10,
+                                         6);
+
+  colSNum_100     = new FixedPointColumn(seedSNum_100,
+                                         totalRowCount,
+                                         100,
+                                         6);
+
+  colUNum_50p     = new FixedPointColumn(seedUNum_50p,
+                                         totalRowCount,
+                                         totalRowCount/2,
+                                         6);
+
+  colSNum_uniq    = new FixedPointColumn(seedSNum_uniq,
+                                         totalRowCount,
+                                         totalRowCount,
+                                         6);
+
+  colDate_12      = new DateColumn(seedDate_12,
+                                   totalRowCount,
+                                   12);
+
+  colDate_200     = new DateColumn(seedDate_200,
+                                   totalRowCount,
+                                   200);
+
+  colDate_uniq    = new DateColumn(seedDate_uniq,
+                                   totalRowCount,
+                                   totalRowCount);
+
+  colVarchar_100  = new VarcharColumn(seedVarchar_100,
+                                      totalRowCount,
+                                      4,
+                                      25,
+                                      16,
+                                      8);
+
+  colVarchar_uniq = new VarcharColumn(seedVarchar_uniq,
+                                      totalRowCount,
+                                      24,
+                                      25,
+                                      50,
+                                      8);
+
+  columns[ 0] = colSInt16_10;
+  columns[ 1] = colUInt16_10;
+  columns[ 2] = colChar_10;
+  columns[ 3] = colUNum_10;
+  columns[ 4] = colSInt32_uniq;
+  columns[ 5] = colUInt32_uniq;
+  columns[ 6] = colSNum_uniq;
+  columns[ 7] = colInt64_uniq;
+  columns[ 8] = colChar_uniq;
+  columns[ 9] = colDate_uniq;
+  columns[10] = colSInt32_100;
+  columns[11] = colChar_100;
+  columns[12] = colUInt32_100;
+  columns[13] = colSNum_100;
+  columns[14] = colInt64_100;
+  columns[15] = colUInt32_50p;
+  columns[16] = colSInt32_50p;
+  columns[17] = colUNum_50p;
+  columns[18] = colChar_50p;
+  columns[19] = colDate_12;
+  columns[20] = colDate_200;
+  columns[21] = colVarchar_uniq;
+  columns[22] = colVarchar_100;
+
+  TableScriptGenerator tsg(tableName,
+                           pNumOfInserts,
+                           pRowsPerInsert,
+                           kColumnCount,
+                           columns,
+                           keyColumnCount,
+                           keyColumns,
+                           keyColumnNumValues,
+                           nonKeyColumnCount,
+                           nonKeyColumns);
+
+  tsg.generateTableScript();
+
+  resetColumns();
+
+} // genPTAB05()
+
+void
+genPTAB06(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB06 not yet implemented" << endl;
+} // genPTAB06()
+
+void
+genPTAB07(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB07 not yet implemented" << endl;
+} // genPTAB07()
+
+void
+genPTAB08(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB08 not yet implemented" << endl;
+} // genPTAB08()
+
+void
+genPTAB09(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB09 not yet implemented" << endl;
+} // genPTAB09()
+
+void
+genPTAB10(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB10 not yet implemented" << endl;
+} // genPTAB10()
+
+void
+genPTAB11(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB11 not yet implemented" << endl;
+} // genPTAB11()
+
+void
+genPTAB12(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB12 not yet implemented" << endl;
+} // genPTAB12()
+
+void
+genPTAB13(long pNumOfInserts, long pRowsPerInsert)
+{
+  cout << "genPTAB13 not yet implemented" << endl;
+} // genPTAB13()
+
+void main () {
+
+  genUTAB00(6,100);
+  genPTAB00(6,100);
+  genPTAB01(6,100);
+  genPTAB02(6,100);
+  genPTAB03(6,100);
+  genPTAB04(6,100);
+  genPTAB05(6,100);
+  genPTAB06(6,100);
+  genPTAB07(6,100);
+  genPTAB08(6,100);
+  genPTAB09(6,100);
+  genPTAB10(6,100);
+  genPTAB11(6,100);
+  genPTAB12(6,100);
+  genPTAB13(6,100);
+
+}

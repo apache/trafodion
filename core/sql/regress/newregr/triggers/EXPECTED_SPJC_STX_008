@@ -1,0 +1,49 @@
+>>obey TEST_SPJC_STX_008(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger with a CALL triggered action with host
+>>-- variable/paramter
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_008 AFTER DELETE ON
++>TAB01_SPJC_STX_008
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_008',
++>		:p1, :p2, :p3, :p4);
+
+*** ERROR[3049] Host variables, such as :p1, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p2, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p3, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p4, are not allowed in a dynamic compilation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Statement trigger with a CALL triggered action with host
+>>-- variable/paramter
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG02_SPJC_STX_008 AFTER UPDATE ON
++>TAB01_SPJC_STX_008 REFERENCING NEW TABLE AS NT, OLD TABLE AS OT
++>FOR EACH STATEMENT
++>	CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_008',
++>		:p4, :p3, :p2, :p1);
+
+*** ERROR[3049] Host variables, such as :p4, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p3, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p2, are not allowed in a dynamic compilation.
+
+*** ERROR[3049] Host variables, such as :p1, are not allowed in a dynamic compilation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

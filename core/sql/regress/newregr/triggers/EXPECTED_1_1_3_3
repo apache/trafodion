@@ -1,0 +1,38 @@
+>>obey TEST_1_1_3_3(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- NOTE: the following DDLs should fail
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER trig33 AFTER INSERT
++>	ON tab1A
++>	REFERENCING OLD AS oldTable
++>	FOR EACH ROW
++>
++>		INSERT INTO tab1B VALUES (100000, 100000);
+
+*** ERROR[11012] An INSERT trigger cannot reference OLD values.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>CREATE TRIGGER trig33 AFTER DELETE
++>	ON tab1A
++>	REFERENCING NEW AS newTable
++>	FOR EACH ROW
++>
++>		INSERT INTO tab1B VALUES (100000, 100000);
+
+*** ERROR[11013] A DELETE trigger cannot reference NEW values.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--------------------------------------------------------
+>>LOG;
