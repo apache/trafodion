@@ -176,6 +176,23 @@ public class HBaseTmZK implements Abortable{
               throw new IOException("HBaseTmZK:createRecoveryzNode: ZKW Unable to create recovery zNode: " + zkNode + " , throwing IOException " + e);
            }
         }
+        /**
+         ** @param data
+         ** #throws IOException
+         **/
+        public void createGCzNode(byte [] data) throws IOException {
+            String zNodeGCPath = "/hbase/Trafodion/GC";
+            try {
+                if (ZKUtil.checkExists(zooKeeper, zNodeGCPath) == -1) {
+                   if (LOG.isTraceEnabled()) LOG.trace("Trafodion table data clean up no znode path created " + zNodeGCPath);
+                    ZKUtil.createWithParents(zooKeeper, zNodeGCPath);
+                }
+                String zNodeKey = dtmID+"";
+                ZKUtil.createSetData(zooKeeper, zNodeGCPath + "/" + zNodeKey, data);
+            } catch (KeeperException e) {
+                throw new IOException("HBaseTmZK:createGCzNode: ZKW Unable to create GC zNode: " + zNodeGCPath +"  , throwing IOException " + e);
+            }
+        }
 
 	/**
 	 * @param node

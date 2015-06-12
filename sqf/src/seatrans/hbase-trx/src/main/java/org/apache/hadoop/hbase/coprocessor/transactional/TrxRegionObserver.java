@@ -58,6 +58,19 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.zookeeper.KeeperException;
+import org.apache.hadoop.hbase.client.DtmConst;
+import org.apache.hadoop.hbase.client.SsccConst;
+import org.apache.hadoop.hbase.regionserver.Store;
+import org.apache.hadoop.hbase.regionserver.StoreFile;
+import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest;
+import org.apache.hadoop.hbase.regionserver.RegionScanner;
+import org.apache.hadoop.hbase.regionserver.InternalScanner;
+import org.apache.hadoop.hbase.regionserver.ScanType;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Mutation;
+import java.util.ListIterator;
+import org.apache.hadoop.hbase.Cell;
+
 
 public class TrxRegionObserver extends BaseRegionObserver {
 
@@ -619,4 +632,134 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
         transactionsRefMap.remove(regionName+trxkeycommitPendingTransactions);
         transactionsRefMap.remove(regionName+trxkeyClosingVar);
     }
+
+    protected InternalScanner getWrappedScanner(final long lowStartId, final InternalScanner s) {
+
+         return new InternalScanner() {
+             int versionCount = 0;
+             @Override
+             public boolean next(List<Cell> results) throws IOException {
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("preCompact: call next without limit");
+                }
+                boolean ret=true;
+                boolean skip=false;
+                ConcurrentHashMap<String, Integer>  verCountByCol = new ConcurrentHashMap<String,Integer>();
+                try {
+                    ret = s.next(results);
+                    if(ret == false) return ret;
+                    ListIterator<Cell> cellIter = null;
+                    for( cellIter = results.listIterator(); cellIter.hasNext();) {
+                        Cell c = cellIter.next();
+                        String key=Bytes.toString(CellUtil.cloneQualifier(c));
+                        int vCount = 0;
+                        long t = c.getTimestamp();
+                        if (LOG.isTraceEnabled())  LOG.trace("preCompact: get c timestamp "+ t + " lowest is " + lowStartId + " for col " + key);
+                        if ( t < lowStartId ) {
+                            if(verCountByCol.containsKey(key) == true)
+                            {
+                                 vCount = verCountByCol.get(key);
+                                 vCount++;
+                                 verCountByCol.put(key,vCount);
+                            }
+                            else
+                            {
+                                 vCount = 1;
+                                 verCountByCol.put(key,vCount);
+                            }
+                            if (vCount > 1) {  //this is a unneed version
+                                cellIter.remove();
+                            }
+                         }
+                     }
+                } catch (Throwable t) {
+                    throw new IOException("scanner next exception" );
+                }
+                return ret;
+             }
+
+            @Override
+            public void close() throws IOException {
+                s.close();
+            }
+
+            @Override
+            public boolean next(List<Cell> result, int limit) throws IOException {
+                if (LOG.isTraceEnabled()) LOG.trace("preCompact: call next with limit " + limit);
+                boolean ret=true;
+                boolean skip=false;
+                ConcurrentHashMap<String, Integer>  verCountByCol = new ConcurrentHashMap<String,Integer>();
+                try {
+                    ret = s.next(result,limit);
+                    if(ret == false) return ret;
+                    ListIterator<Cell> cellIter = null;
+                    for( cellIter = result.listIterator(); cellIter.hasNext();) {
+                        Cell c = cellIter.next();
+                        String key=Bytes.toString(CellUtil.cloneQualifier(c));
+                        int vCount = 0;
+                        long t = c.getTimestamp();
+                        if (LOG.isTraceEnabled())  LOG.trace("preCompact: get c timestamp "+ t + " lowest is " + lowStartId + " for col " + key);
+                        if ( t < lowStartId ) {
+                            if(verCountByCol.containsKey(key) == true)
+                            {
+                                 vCount = verCountByCol.get(key);
+                                 vCount++;
+                                 verCountByCol.put(key,vCount);
+                            }
+                            else
+                            {
+                                 vCount = 1;
+                                 verCountByCol.put(key,vCount);
+                            }
+                            if (vCount > 1) {  //this is a unneed version
+                                cellIter.remove();
+                            }
+                         }
+                     }
+                } catch (Throwable t) {
+                    throw new IOException("scanner next exception" );
+                }
+                return ret;
+            }
+         };
+    }
+
+    @Override
+    public InternalScanner preCompact(ObserverContext<RegionCoprocessorEnvironment> e,
+                 Store store,
+                 InternalScanner scanner,
+                 ScanType scanType,
+                 CompactionRequest request) throws IOException {
+
+        //check if it is major compaction
+        if( request.isMajor() == false ) return scanner;
+ 
+        //get lowStartId from ZooKeeper
+
+        String zNodeGCPath = "/hbase/Trafodion/GC";
+        long lowStartId = Long.MAX_VALUE;
+
+        try{
+            List<String> allTms = ZKUtil.listChildrenNoWatch(zkw1,zNodeGCPath);
+            if(allTms != null) {
+                // find lowest startID
+                for( String tm : allTms){
+                    byte[] v = ZKUtil.getData(zkw1,zNodeGCPath+"/"+tm);
+                    long ts = Bytes.toLong(v);
+                    if( ts < lowStartId ) lowStartId= ts;
+                }
+            }
+        }catch (KeeperException ee) {
+            throw new IOException("Trafodion Region Observer GC: ZKW Unable to check GC znode, throw IOException ", ee);
+        }
+        catch(Exception ie) {  //Different distribution required different exception to catch, catch everything here
+            throw new IOException("Trafodion Region Observer GC: ZKW Unable to check GC znode, throw IOException ", ie);
+        }  
+
+        if(lowStartId ==  Long.MAX_VALUE || lowStartId == -1) //This is not SSCC or no start id is avaiable
+            return scanner;
+
+        return getWrappedScanner(lowStartId , scanner); 
+    }
+
 } // end of TrxRegionObserver Class
