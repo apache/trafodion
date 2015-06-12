@@ -378,6 +378,8 @@ static bool hasGrantedColumnPriv(
    std::string & privilege,
    std::vector<ColPrivEntry> & grantedColPrivs);   
   
+static bool isDelimited( const std::string &identifier);
+
 // *****************************************************************************
 //    PrivMgrPrivileges methods
 // *****************************************************************************
@@ -3805,6 +3807,10 @@ static PrivStatus buildPrivText(
   std::string grantWGOStmt;
   std::string objectText("ON ");
   
+  // Append object type if not base table or view
+  if (objectInfo.getObjectType() != COM_BASE_TABLE_OBJECT &&
+      objectInfo.getObjectType() != COM_VIEW_OBJECT)
+    objectText += comObjectTypeName(objectInfo.getObjectType());
   objectText += objectInfo.getObjectName() + " TO ";
   
   std::string lastGranteeName;
@@ -3843,7 +3849,12 @@ static PrivStatus buildPrivText(
          grantorName = row.grantorName_;
          PrivObjectBitmap privsBitmap = row.privsBitmap_;
          PrivObjectBitmap wgoBitmap = row.grantableBitmap_;
+         bool delimited = isDelimited(row.granteeName_);
+         if (delimited)
+           objectGranteeText += "\"";
          objectGranteeText += row.granteeName_;
+         if (delimited)
+           objectGranteeText += "\"";
          for (size_t p = FIRST_DML_PRIV; p <= LAST_DML_PRIV; p++ )
             if (privsBitmap.test(p))
             {
@@ -3887,7 +3898,12 @@ static PrivStatus buildPrivText(
             lastGranteeID = row.granteeID_;
             lastGranteeName = row.granteeName_;
          }   
+         bool delimited = isDelimited(lastGranteeName);
+         if (delimited)
+           objectGranteeText += "\"";
          objectGranteeText += lastGranteeName;
+         if (delimited)
+           objectGranteeText += "\"";
          
          // Get the column name for the row
          const std::vector<std::string> &columnList = objectInfo.getColumnList();
@@ -4028,7 +4044,12 @@ void static buildGrantText(
        grantorID != SYSTEM_AUTH_ID)
     {
       grantText += " GRANTED BY ";
+      bool delimited = isDelimited(grantorName);
+      if (delimited)
+        grantText += "\"";
       grantText += grantorName;
+      if (delimited)
+        grantText += "\"";
     }
 
     grantText += ";\n";
@@ -4619,6 +4640,40 @@ static bool hasGrantedColumnPriv(
   
 }
 //*********************** End of hasGrantedColumnPriv **************************
+   
+// *****************************************************************************
+// *                                                                           *
+// * Function: isDelimited                                                     *
+// *                                                                           *
+// *   This function checks the passed in string for characters other than     *
+// *   alphanumeric and underscore characters.  If so, the name is delimited   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <strToScan>                  const std::string &                In       *
+// *    is the string to search for delimited characters                       *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: the passed in string contains delimited characters                 *
+// * false: the passed in string contains no delimited characters              *
+// *                                                                           *
+// *****************************************************************************
+static bool isDelimited( const std::string &strToScan)
+{
+  char firstChar = strToScan[0];
+  if (isdigit(firstChar) || strToScan[0] == '_' )
+    return true;
+  string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+  size_t found = strToScan.find_first_not_of(validChars);
+  if (found == string::npos)
+    return false;
+  return true;
+}
+//*********************** End of isDelimited ***********************************
    
 
 // *****************************************************************************

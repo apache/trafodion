@@ -84,7 +84,7 @@ PrivMgr::PrivMgr()
 : trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
   metadataLocation_ ("TRAFODION.\"_PRIVMGR_MD_\""),
   pDiags_(CmpCommon::diags()),
-  authorizationEnabled_(PRIV_INITIALIZE_UNKNOWN)
+  authorizationEnabled_(PRIV_INITIALIZED)
 {}
 
 // -----------------------------------------------------------------------

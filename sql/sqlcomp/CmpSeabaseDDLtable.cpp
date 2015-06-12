@@ -7719,13 +7719,18 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
+   if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+     return NULL;
   Int64 libUID = getObjectUIDandOwners(&cliInterface, 
                                        catName.data(), schName.data(),
                                        libraryName.data(),
                                        COM_LIBRARY_OBJECT,
                                        objectOwner, schemaOwner);
   if (libUID == -1)
-     return NULL;
+    {
+      switchBackCompiler();
+      return NULL;
+    }
      
   str_sprintf(buf, "SELECT library_filename, version "
                    "FROM %s.\"%s\".%s "
@@ -7737,6 +7742,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   if (cliRC < 0)
   {
      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+     switchBackCompiler();
      return NULL;
   }
 
@@ -7744,15 +7750,18 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+     switchBackCompiler();
      return NULL;
   }
   if (cliRC == 100) // did not find the row
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                          << DgString0(libraryName);
+     switchBackCompiler();
      return NULL;
   }
 
+  switchBackCompiler();
   char * ptr = NULL;
   Lng32 len = 0;
 
@@ -7769,6 +7778,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   libraryInfo->library_version = *(Int32 *)ptr;
   libraryInfo->object_owner_id = objectOwner;
   libraryInfo->schema_owner_id = schemaOwner;
+  libraryInfo->library_UID = libUID;
   
   desc_struct *library_desc = Generator::createVirtualLibraryDesc(
             libraryName.data(),

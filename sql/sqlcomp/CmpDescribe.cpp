@@ -680,12 +680,21 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
        PrivMgrCommands privMgrInterface(privMDLoc,CmpCommon::diags());
 
        //get description in REGISTER, CREATE, GRANT statements.
+       CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+       if (cmpSBD.switchCompiler())
+       {
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return -1;
+       }
+
        if(!privMgrInterface.describeComponents(d->getComponentName().data(), outlines))
        {
            *CmpCommon::diags() << DgSqlCode(-CAT_TABLE_DOES_NOT_EXIST_ERROR)
                         << DgTableName(d->getComponentName().data());
+           cmpSBD.switchBackCompiler();
            return -1;
        }
+       cmpSBD.switchBackCompiler();
            
        for(int i = 0; i < outlines.size(); i++)
          outputLine(space, outlines[i].c_str(), 0);
@@ -2572,6 +2581,9 @@ short CmpDescribeSeabaseTable (
   // emit an initial newline
   outputShortLine(space, " ");
 
+  // Used for context switches
+  CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
   // Verify that user can perform the describe command
   // No need to check privileges for create like operations (type 3)
   // since the create code performs authorization checks
@@ -2591,16 +2603,13 @@ short CmpDescribeSeabaseTable (
           PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(), 
                                         PrivMgr::PRIV_INITIALIZED);
 
-          CmpSeabaseDDL cmpSBD((NAHeap*)heap);
 
           // we should switch to another CI only if we are in an embedded CI
           if (cmpSBD.switchCompiler())
-            {
-              // failed to switch/create compiler context.
-              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-              
-              return -1;
-            }
+          {
+             *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+             return -1;
+          }
  
           PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                            ComUser::getCurrentUser(),
@@ -2646,11 +2655,20 @@ short CmpDescribeSeabaseTable (
                                       PrivMgr::PRIV_INITIALIZED);
         std::string privilegeText;
         PrivMgrObjectInfo objectInfo(naTable);
+        if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
+ 
         if (privInterface.describePrivileges(objectInfo, privilegeText))
         {
           outputShortLine(space, " ");
           outputLine(space, privilegeText.c_str(), 0);
         }
+
+        cmpSBD.switchBackCompiler();
       }
 
       outbuflen = space.getAllocatedSpaceSize();
@@ -3196,11 +3214,19 @@ short CmpDescribeSeabaseTable (
                                     PrivMgr::PRIV_INITIALIZED);
       PrivMgrObjectInfo objectInfo(naTable);
       std::string privilegeText;
+      if (cmpSBD.switchCompiler())
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+        return -1;
+      }
+ 
       if (privInterface.describePrivileges(objectInfo, privilegeText))
       {
         outputShortLine(space, " ");
         outputLine(space, privilegeText.c_str(), 0);
       }
+
+      cmpSBD.switchBackCompiler();
     }
   }
 
@@ -3301,11 +3327,20 @@ short CmpDescribeSequence(
 
     std::string privilegeText;
     PrivMgrObjectInfo objectInfo(naTable); 
+    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+    if (cmpSBD.switchCompiler())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+      return -1;
+    }
+ 
     if (privInterface.describePrivileges(objectInfo, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);
     }
+
+    cmpSBD.switchBackCompiler();
   }
 
   if (! inSpace)
@@ -3477,9 +3512,17 @@ PrivMgrCommands privInterface(privMgrMDLoc.data(),CmpCommon::diags());
    if (CmpCommon::context()->isAuthorizationEnabled())
    {
       PrivMgrUserPrivs privs;
+      if (cmpSBD.switchCompiler())
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+        return -1  ;
+      }
+
       PrivStatus retcode = privInterface.getPrivileges(libraryUID, 
                                                        ComUser::getCurrentUser(), 
                                                        privs);
+
+      cmpSBD.switchBackCompiler();
 
       // Verify user can perform the SHOWDDL LIBRARY command on the specified library.
       if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_LIBRARY,&privs,
@@ -3492,8 +3535,8 @@ Space * space = &localSpace;
 
 char buf[1000];
 
-   sprintf(buf,"CREATE LIBRARY \"%s\" FILE '%s'",
-           tDesc->body.library_desc.libraryName, tDesc->body.library_desc.libraryFilename);
+   sprintf(buf,"CREATE LIBRARY %s FILE '%s'",
+           extLibraryName.data(), tDesc->body.library_desc.libraryFilename);
            
    outputShortLine(*space,buf);
    outputShortLine(*space,";");
@@ -3516,18 +3559,25 @@ char buf[1000];
                                     std::string(privMgrMDLoc.data()),
                                     CmpCommon::diags());
 
-      std::string objectName(tDesc->body.library_desc.libraryName);
       std::string privilegeText;
       PrivMgrObjectInfo objectInfo (
-        libraryUID, objectName,
+        libraryUID, extLibraryName.data(),
         tDesc->body.library_desc.libraryOwnerID,
         tDesc->body.library_desc.librarySchemaOwnerID,
         COM_LIBRARY_OBJECT );
+      if (cmpSBD.switchCompiler())
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          return -1;
+        }
+ 
       if (privInterface.describePrivileges(objectInfo,privilegeText))
       {
          outputShortLine(*space," ");
          outputLine(*space,privilegeText.c_str(),0);
       }
+
+      cmpSBD.switchBackCompiler();
    }
 
    outbuflen = space->getAllocatedSpaceSize();
@@ -4028,11 +4078,22 @@ short CmpDescribeRoutine (const CorrName   & cn,
       (int32_t)routine->getObjectOwner(),
       (int32_t)routine->getSchemaOwner(),
       COM_USER_DEFINED_ROUTINE_OBJECT);
+
+
+    CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+    if (cmpSBD.switchCompiler())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+      return -1;
+    }
+ 
     if (privInterface.describePrivileges(objectInfo, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);
     }
+
+    cmpSBD.switchBackCompiler();
   }
 
 

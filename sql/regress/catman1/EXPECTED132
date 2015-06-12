@@ -845,14 +845,14 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
   LARGEINT
 ;
 
--- GRANT USAGE ON TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
+-- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:18:58 2015
+-- Definition current  Tue Jun  9 13:26:10 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -868,7 +868,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:19:00 2015
+-- Definition current  Tue Jun  9 13:26:12 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -884,7 +884,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Wed May 13 15:19:02 2015
+-- Definition current  Tue Jun  9 13:26:12 2015
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -898,7 +898,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Wed May 13 15:19:03 2015
+-- Definition current  Tue Jun  9 13:26:13 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -968,7 +968,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_GAMES ADD CONSTRAINT
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:19:35 2015
+-- Definition current  Tue Jun  9 13:26:25 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1155,14 +1155,14 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
   LARGEINT
 ;
 
--- GRANT USAGE ON TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
+-- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:20:36 2015
+-- Definition current  Tue Jun  9 13:26:49 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1178,7 +1178,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:20:36 2015
+-- Definition current  Tue Jun  9 13:26:49 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1194,7 +1194,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Wed May 13 15:20:36 2015
+-- Definition current  Tue Jun  9 13:26:49 2015
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1208,7 +1208,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Wed May 13 15:20:36 2015
+-- Definition current  Tue Jun  9 13:26:49 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1288,7 +1288,7 @@ ALTER TABLE TRAFODION.T132SCH.T132_TEAMS ADD CONSTRAINT
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:21:11 2015
+-- Definition current  Tue Jun  9 13:27:05 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1429,14 +1429,14 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
   LARGEINT
 ;
 
--- GRANT USAGE ON TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
+-- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:21:43 2015
+-- Definition current  Tue Jun  9 13:27:18 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1452,7 +1452,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:21:43 2015
+-- Definition current  Tue Jun  9 13:27:18 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1468,7 +1468,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Wed May 13 15:21:43 2015
+-- Definition current  Tue Jun  9 13:27:18 2015
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1482,7 +1482,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Wed May 13 15:21:43 2015
+-- Definition current  Tue Jun  9 13:27:18 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1588,14 +1588,14 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
   LARGEINT
 ;
 
--- GRANT USAGE ON TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
+-- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:22:13 2015
+-- Definition current  Tue Jun  9 13:27:30 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1611,7 +1611,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:22:13 2015
+-- Definition current  Tue Jun  9 13:27:30 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1627,7 +1627,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Wed May 13 15:22:13 2015
+-- Definition current  Tue Jun  9 13:27:30 2015
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1641,7 +1641,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Wed May 13 15:22:14 2015
+-- Definition current  Tue Jun  9 13:27:30 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1747,14 +1747,14 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
   LARGEINT
 ;
 
--- GRANT USAGE ON TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
+-- GRANT USAGE ON SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>
 >>invoke t132_games;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_GAMES
--- Definition current  Wed May 13 15:22:44 2015
+-- Definition current  Tue Jun  9 13:27:42 2015
 
   (
     HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1770,7 +1770,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_teams;
 
 -- Definition of Trafodion table TRAFODION.T132SCH.T132_TEAMS
--- Definition current  Wed May 13 15:22:44 2015
+-- Definition current  Tue Jun  9 13:27:42 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1786,7 +1786,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_giants_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_GIANTS_GAMES
--- Definition current  Wed May 13 15:22:44 2015
+-- Definition current  Tue Jun  9 13:27:42 2015
 
   (
     GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1800,7 +1800,7 @@ CREATE SEQUENCE TRAFODION.T132SCH.T132_TEAM_NUMBER_SEQUENCE
 >>invoke t132_home_teams_games;
 
 -- Definition of Trafodion view TRAFODION.T132SCH.T132_HOME_TEAMS_GAMES
--- Definition current  Wed May 13 15:22:44 2015
+-- Definition current  Tue Jun  9 13:27:42 2015
 
   (
     TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1960,26 +1960,26 @@ End of MXCI Session
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 105337823736858424
+Table ID: 7949808211865731
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 118023834      8           8           8 SYSKEY
- 118023831      8           8           8 C1
- 118023824      8           8           8 C2
+ 228886802      8           8           8 SYSKEY
+ 228886799      8           8           8 C1
+ 228886792      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 105337823736858511
+Table ID: 7949808211865799
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 126284128      8           8           8 SYSKEY
- 126284123      8           8           8 C1
- 126284118      8           8           8 C2
+ 230813300      8           8           8 SYSKEY
+ 230813295      8           8           8 C1
+ 230813290      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2085,26 +2085,26 @@ MANAGE_STATISTICS
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 105337823736858424
+Table ID: 7949808211865731
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 118023835      8           8           8 SYSKEY
- 118023830      8           8           8 C1
- 118023825      8           8           8 C2
+ 228886803      8           8           8 SYSKEY
+ 228886798      8           8           8 C1
+ 228886793      8           8           8 C2
 
 
 --- SQL operation complete.
 >>showstats for table t132t2 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T2
-Table ID: 105337823736858511
+Table ID: 7949808211865799
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 126284129      8           8           8 SYSKEY
- 126284122      8           8           8 C1
- 126284119      8           8           8 C2
+ 230813301      8           8           8 SYSKEY
+ 230813294      8           8           8 C1
+ 230813291      8           8           8 C2
 
 
 --- SQL operation complete.
@@ -2165,13 +2165,13 @@ CREATE TABLE TRAFODION.T132SCH.T132T1
 >>showstats for table t132t1 on every column;
 
 Histogram data for Table TRAFODION.T132SCH.T132T1
-Table ID: 105337823736858424
+Table ID: 7949808211865731
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
- 118023835      8           8           8 SYSKEY
- 118023830      8           8           8 C1
- 118023825      8           8           8 C2
+ 228886803      8           8           8 SYSKEY
+ 228886798      8           8           8 C1
+ 228886793      8           8           8 C2
 
 
 --- SQL operation complete.
