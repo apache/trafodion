@@ -321,6 +321,7 @@ public class SsccTransactionState extends TransactionState{
 
             // Status is empty: no active update of this row, so need to check the commit version
             // or status is not empty but current transaction not update it, still need to check the commit version
+            boolean versionIsDelete=false;
             for(Cell v: versionList) {
                     version=CellUtil.cloneValue(v);
                     commitId=v.getTimestamp();
@@ -345,8 +346,7 @@ public class SsccTransactionState extends TransactionState{
                                 allcollist = byteMerger(allcollist,colVBytes);
                             }
                         }
-
-                        if(indexOf(allcollist,matcher) != -1) 
+                        if(indexOf(allcollist,matcher) != -1  || allcollist.length == 0)
                         {
                             sameCommit = true;
                             if(LOG.isTraceEnabled()) LOG.trace("handleResult: check version item cid: " + commitId );
@@ -355,6 +355,7 @@ public class SsccTransactionState extends TransactionState{
                             {
                                 maxCommitId= commitId;
                                 maxStartId = SsccConst.getVersionStartID(version);
+                                versionIsDelete = SsccConst.isDeleteVersion(version);
                             }
                         }
                         else {
@@ -373,7 +374,7 @@ public class SsccTransactionState extends TransactionState{
                if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell is out of MAX_VERSION window check, returning true");
                return true;
             }
-            finalret = (maxStartId == thisTs);
+            finalret = (maxStartId == thisTs) && (versionIsDelete == false) ;
             if(LOG.isTraceEnabled()) LOG.trace("handleResult: finally return " + finalret + " maxId is " + maxStartId + " thisTs is " + thisTs);
         }
         catch( Exception e) {
