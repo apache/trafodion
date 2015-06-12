@@ -1648,6 +1648,41 @@ public class TestBasic
         }
 	}
 
+	@Test
+	public void JDBCBasic27() throws InterruptedException, SQLException {
+		String comment[]= {"/* test case**/ ","/*test case  */ \n ","/*\n*/ ","/* test case* test\n case\n* test case**/ ","/**/ "};
+		String tableName="qatabmeta";
+		Connection conn = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		try {
+			conn = Utils.getUserConnection();
+			stmt = conn.createStatement();
+			for (int num=0;num<comment.length;num++)
+			{
+	    		stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
+		  		try {
+		            stmt.executeUpdate("drop table " + tableName);
+		  		} catch (SQLException e){}
+	            stmt.executeUpdate("create table " + tableName + " (c1 char(20), c2 smallint, c3 integer)");
+	            stmt.executeUpdate("insert into " + tableName + " values('Moe', 100, 223), ('Curly', 34, 444), ('Larry', 100, 999), ('Moe', 12, 333), ('Moe', 98, 987), ('Moe', 54, 212)");
+                rs = stmt.executeQuery(comment[num]+"  select * from " +tableName);
+				ResultSetMetaData rsMD;
+				rsMD = rs.getMetaData();
+				assertEquals("No. of Columns ", 3, rsMD.getColumnCount());
+				stmt.executeUpdate("drop table " + tableName);
+			}
+			System.out.println("JDBCBasic27: Passed");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			fail("Exception in test JDBCMeta.." + ex.getMessage());
+		} finally {
+			rs.close();
+			stmt.close();
+			conn.close();
+		}
+	}
+
 	public static void handleBatchUpdateException(BatchUpdateException e) 
 	{
       int[] bueUpdateCount = e.getUpdateCounts();
