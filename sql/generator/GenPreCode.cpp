@@ -5407,7 +5407,6 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	    } // lob
 	}
     }
-  // sss #endif
 
 
   if ((getInsertType() == Insert::SIMPLE_INSERT)  &&
@@ -8748,7 +8747,6 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
       
       child(0) = lc;
     }
-  // sss #endif
 
   if (getArity() > 1)
     {
@@ -9444,11 +9442,12 @@ ItemExpr * LOBconvert::preCodeGen(Generator * generator)
   
   return LOBoper::preCodeGen(generator);
 }
+
+
 ItemExpr * LOBupdate::preCodeGen(Generator * generator)
 {
   return LOBoper::preCodeGen(generator);
 }
-// sss #endif
 
 ItemExpr * MathFunc::preCodeGen(Generator * generator)
 {

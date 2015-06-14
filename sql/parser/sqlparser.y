@@ -12574,18 +12574,14 @@ insert_obj_to_lob_function :
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
-				}
-                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
-			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::FILE_, FALSE);
-				}
+				}			       
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
 				}
-                          | TOK_FILETOLOB '(' literal ')'
+                          | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
-                                  YYERROR;
+                                  
                                   $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::FILE_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ')'
@@ -12615,10 +12611,12 @@ update_obj_to_lob_function :
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ',' TOK_APPEND ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, TRUE);
 				}
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
@@ -12666,17 +12664,18 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBselect( $3, $5, LOBoper::FILE_);
 				  
 				}
+                         
 			  | TOK_LOBTOSTRING '(' value_expression ')'
 			        {
 				  
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,LOBoper::STRING_);
 				 
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
 			        {
 				 
 				  Int64 tgtSize = atoInt64($5->data());
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_, (Lng32)tgtSize);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,  LOBoper::STRING_, (Lng32)tgtSize);
 				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' TOK_EXTRACT ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
@@ -12693,6 +12692,7 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBextract( $3, (Lng32)rowSize);
 				  
 				}
+                           
 
 table_value_constructor : TOK_VALUES '(' insert_value_expression_list ')' 
 				{
@@ -15531,7 +15531,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
-		    ExeUtilLobExtract::TO_STRING_,
+		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
 		    NULL, NULL, 0, 0);
 
 		 $$ = lle;
@@ -15585,10 +15585,11 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 $$ = lle;
 	       }
 
-               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ')'
+              
+            | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING  ','  QUOTED_STRING ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file');
+                 // extract lobtofile (lob 'abc',  'file');
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15596,16 +15597,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 0 /* truncate*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE  ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_CREATE  ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15613,16 +15615,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 0 /* truncate */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING ,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
+               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ','  QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
                {
                  // if file exists, append. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15630,16 +15633,18 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 1 /* append */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0,
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_APPEND ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_APPEND ')'
                {
                  // if file exists, append. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file', append);
+                 // extract lobtofile (lob 'abc',  'file', append);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15647,8 +15652,10 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 1 /*append*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }

@@ -127,12 +127,16 @@ LIBHDFS_INC=-I$(HADOOP_INC_DIR)
 LIBHDFS_LIB=-ljvm -lhdfs
 LIBHDFS_SO=libhdfs.so
 
+LIBCURL_INC=-I/usr/include
+LIBCURL_LIB=-lcurl
+LIBCURL_SO=libcurl.so
+
 THRIFT_INC=-I$(THRIFT_INC_DIR) -I$(THRIFT_INC_DIR)/thrift
 THRIFT_LIB=-lthrift
 THRIFT_SO=libthrift-*.so
 
 # for now, include these libs (copied to our local lib dir) everywhere
-GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB)
+GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB) $(LIBCURL_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
@@ -221,6 +225,7 @@ SYS_INCLUDES :=
 	-I$(NSK_SQ)/export/include \
         -I$(PROTOBUFS_INC) \
 	$(LIBHDFS_INC) $(THRIFT_INC)				   \
+	$(LIBCURL_INC)	\
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
 
@@ -491,7 +496,8 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 copytoolslibs:
 	mkdir -p $(NSKLIB)
 	(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
-	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
+	          $(THRIFT_LIB_DIR)/$(THRIFT_SO) \
+		  $(CURL_LIB_DIR)/$(LIBCURL_SO);	\
 	 do\
 	   cp -Pf $$i* $(NSKLIB); \
 	 done\

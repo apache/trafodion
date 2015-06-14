@@ -2197,8 +2197,8 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
  char * handle,
  Lng32 handleLen,
  ExtractToType toType,
- Int64 size,
- Int64 size2,
+ Int64 intParam1,
+ Int64 intParam2,
  Lng32 lobStorageType,
  char * stringParam1,
  char * stringParam2,
@@ -2228,17 +2228,31 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
     handle_(handle),
     handleLen_(handleLen),
     toType_((short)toType),
-    size_(size),
-    size2_(size2),
     lobStorageType_(lobStorageType),
     stringParam1_(stringParam1),
     stringParam2_(stringParam2),
     stringParam3_(stringParam3),
     lobHdfsServer_(lobHdfsServer),
     lobHdfsPort_(lobHdfsPort),
+    rowSize_(0),
+    bufSize_(0),
     flags_(0)
 {
   setNodeType(ComTdb::ex_LOB_EXTRACT);
+  if ((toType_ == ExtractToType::TO_BUFFER_) || (toType_ == ExtractToType::TO_STRING_))
+    {
+      // intparam1 contains the rowsize passed in via syntax
+      // intparam2 constains the total buf size user has allocated
+      rowSize_ = intParam1;
+      bufSize_ = intParam2;
+    }
+    else if (toType_ == ExtractToType::TO_FILE_)
+      {
+	// rowSize_ is irrelevant since the whole lob will be read into the output file
+	// bufSize_ is not passed in by user. It is a CQD value LOB_OUTPUT_SIZE
+	
+      }
+
 }
 
 Long ComTdbExeUtilLobExtract::pack(void * space)

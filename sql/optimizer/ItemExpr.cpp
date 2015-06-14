@@ -12636,7 +12636,7 @@ ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) LOBconvert(NULL, obj_, tgtSize_);
+    result = new (outHeap) LOBconvert(NULL,obj_,tgtSize_);
   else
     result = derivedNode;
 

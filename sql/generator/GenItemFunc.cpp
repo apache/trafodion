@@ -2831,9 +2831,9 @@ short LOBinsert::codeGen(Generator * generator)
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
-
+  li->setLobMaxSize(getLobMaxSize());
   generator->getExpGenerator()->linkClause(this, li);
- 
+  
   return 0;
 }
 
@@ -2897,7 +2897,7 @@ short LOBupdate::codeGen(Generator * generator)
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
-
+  lu->setLobMaxSize(getLobMaxSize());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2916,11 +2916,10 @@ short LOBselect::codeGen(Generator * generator)
     new(generator->getSpace()) ExpLOBselect(getOperatorType(), 
 					    attr, 
 					    space);
-
   ls->lobNum() = lobNum();
   ls->setLobStorageType(lobStorageType());
   ls->setLobStorageLocation((char*)lobStorageLocation().data());
-  
+ 
   generator->getExpGenerator()->linkClause(this, ls);
  
   return 0;
@@ -2972,13 +2971,12 @@ short LOBconvert::codeGen(Generator * generator)
     lc->setToString(TRUE);
   else if (obj_ == LOB_)
     lc->setToLob(TRUE);
-
+ 
   lc->lobNum() = lobNum();
   lc->setLobStorageType(lobStorageType());
   lc->setLobStorageLocation((char*)lobStorageLocation().data());
-
   generator->getExpGenerator()->linkClause(this, lc);
- 
+  lc->setConvertSize(getTgtSize());
   return 0;
 }
 

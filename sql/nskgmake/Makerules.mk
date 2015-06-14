@@ -383,5 +383,5 @@ clean:
 	@rm -rf $(LOGFILE) $(LOGFILE).old
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
-	@cd ..; mvn clean
+	@cd ..; $(MAVEN) clean
 

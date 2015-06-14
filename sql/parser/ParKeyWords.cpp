@@ -586,6 +586,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("LOADTOLOB",          TOK_LOADTOLOB,   NONRESTOKEN_),
   ParKeyWord("LOAD_ID",            TOK_LOAD_ID,     NONRESTOKEN_),
   ParKeyWord("LOB",                TOK_LOB,         NONRESTOKEN_),
+  ParKeyWord("LOBLENGTH",          TOK_LOBLENGTH,   NONRESTOKEN_),
   ParKeyWord("LOBTOBUFFER",        TOK_LOBTOBUFFER, NONRESTOKEN_),
   ParKeyWord("LOBTOFILE",          TOK_LOBTOFILE, NONRESTOKEN_),
   ParKeyWord("LOBTOSTRING",        TOK_LOBTOSTRING, NONRESTOKEN_),

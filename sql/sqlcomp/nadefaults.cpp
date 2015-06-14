@@ -2049,8 +2049,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  
-  // default size is 2 G  (2000 M)
-  DDint__(LOB_MAX_SIZE,                         "2000"),
+  // default size is 1 G  (1000 M)
+  DDint__(LOB_MAX_SIZE,                         "1000"),
+  // default size is 32000. Change this to extract more data into memory.
+  DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
   DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
 
@@ -6872,6 +6874,12 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok  == DF_NONE || tok == DF_SUFFIX || tok == DF_LATEST)
         isValid = TRUE;
     break;
+
+    case LOB_OUTPUT_SIZE:
+      if (tok >=0  && tok <= 512000)
+	isValid = TRUE;
+      break;
+
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;

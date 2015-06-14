@@ -2703,7 +2703,8 @@ public:
                      2, val1Ptr, val2Ptr),
    obj_(obj),
    lobNum_(-1),
-   lobStorageType_(Lob_Invalid_Storage)
+   lobStorageType_(Lob_Invalid_Storage),
+   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE))
    {}
 
  // copyTopNode method
@@ -2730,13 +2731,15 @@ public:
   short &lobNum() {return lobNum_; }
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
-
+  Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
+  
  protected:
   ObjectType obj_;
 
   short lobNum_;
   LobsStorage lobStorageType_;
   NAString lobStorageLocation_;
+  Int64 lobMaxSize_; // In MB units
   
 }; // LOBoper
 
@@ -2749,7 +2752,7 @@ class LOBinsert : public LOBoper
 	   ObjectType fromObj, 
 	   NABoolean isAppend = FALSE,
 	   OperatorTypeEnum otype = ITM_LOBINSERT)
-   : LOBoper(otype, val1Ptr, val2Ptr, fromObj),
+   : LOBoper(otype, val1Ptr, val2Ptr,fromObj),
     objectUID_(-1),
     append_(isAppend),
     lobSize_(0),
@@ -2806,21 +2809,22 @@ class LOBselect : public LOBoper
   
  LOBselect(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ObjectType toObj)
    : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr, toObj)
-    {};
+    {
+    };
   
   // copyTopNode method
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   
   ItemExpr *bindNode(BindWA *bindWA);
-  
+ 
   // a virtual function for type propagating the node
-  //  virtual const NAType * synthesizeType();
-
+ 
   // method to do code generation
   virtual short codeGen(Generator*);
-
+  
  private:
+ 
 }; // class LOBselect
 
 class LOBdelete : public LOBoper
@@ -2890,9 +2894,9 @@ class LOBconvert : public LOBoper
 {
  public:
   
- LOBconvert(ItemExpr *val1Ptr, ObjectType toObj, Lng32 tgtSize = 1000)
-   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL, toObj),
-    tgtSize_(tgtSize)
+ LOBconvert(ItemExpr *val1Ptr, ObjectType toObj,  Lng32 tgtSize = 32000) 
+   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,toObj),
+    tgtSize_(tgtSize)     
     {};
   
   // copyTopNode method
@@ -2911,6 +2915,7 @@ class LOBconvert : public LOBoper
   Lng32 getTgtSize() { return tgtSize_; }
  private:
   Lng32 tgtSize_;
+ 
 }; // class LOBconvert
 
 class LOBconvertHandle : public LOBoper
@@ -2918,7 +2923,7 @@ class LOBconvertHandle : public LOBoper
  public:
   
  LOBconvertHandle(ItemExpr *val1Ptr, ObjectType toObj)
-   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL, toObj)
+   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL,toObj)
     {};
   
   // copyTopNode method
@@ -2957,7 +2962,7 @@ class LOBextract : public LOBoper
  public:
   
  LOBextract(ItemExpr *val1Ptr, Lng32 tgtSize = 1000)
-    : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL, EXTRACT_),
+   : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL,EXTRACT_),
     tgtSize_(tgtSize)
     {};
   

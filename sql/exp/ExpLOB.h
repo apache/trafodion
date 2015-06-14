@@ -296,7 +296,8 @@ public:
   void setDescSchNameLen(short v) { descSchNameLen_ = v; }
   
   virtual Lng32 initClause();
-
+  void setLobMaxSize(Int64 maxsize) { lobMaxSize_ = maxsize;}
+  Int64 getLobMaxSize() { return lobMaxSize_;}
  protected:
   typedef enum
   {
@@ -382,6 +383,7 @@ protected:
   short descSchNameLen_;
   char  descSchName_[510];
   
+  Int64 lobMaxSize_;
   //  NABasicPtr lobStorageLocation_;
 }
 ;
@@ -481,7 +483,6 @@ class ExpLOBiud : public ExpLOBoper {
   };
 
   Lng32 liudFlags_;
-
   char filler1_[4];
 };
 
@@ -658,11 +659,53 @@ public:
 
   virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+   NA_EIDPROC NABoolean toLob()
+  {
+    return ((lsFlags_ & TO_LOB) != 0);
+  };
 
+  NA_EIDPROC inline void setToLob(NABoolean v)
+  {
+    (v) ? lsFlags_ |= TO_LOB: lsFlags_ &= ~TO_LOB;
+  };
+  NA_EIDPROC NABoolean toFile()
+  {
+    return ((lsFlags_ & TO_FILE) != 0);
+  };
+
+  NA_EIDPROC inline void setToFile(NABoolean v)
+  {
+    (v) ? lsFlags_ |= TO_FILE: lsFlags_ &= ~TO_FILE;
+  };
+  void setTgtFile(char *tgtFile)
+  {
+    strcpy(tgtFile_,tgtFile);
+  }
+  char *getTgtFile()
+  {
+    return tgtFile_;
+  }
+  void setTgtLocation(char *tgtLoc)
+  {
+    strcpy(tgtLocation_,tgtLoc);
+  }
+  char *getTgtLocation()
+  {
+    return tgtLocation_;
+  }
  private:
-
+   enum
+  {
+    
+    TO_LOB             = 0x0001,
+    TO_FILE            = 0x0002
+  };
+ 
+ 
   Lng32 lsFlags_;
   char  filler1_[4];
+  char tgtLocation_[512];
+  char tgtFile_[512];
 };
 
 class ExpLOBconvert : public ExpLOBoper {
@@ -717,16 +760,45 @@ public:
   {
     (v) ? lcFlags_ |= TO_LOB: lcFlags_ &= ~TO_LOB;
   };
- private:
-  enum
+  NA_EIDPROC NABoolean toFile()
   {
-    TO_STRING          = 0x0001,
-    TO_LOB             = 0x0002
+    return ((lcFlags_ & TO_FILE) != 0);
   };
 
+  NA_EIDPROC inline void setToFile(NABoolean v)
+  {
+    (v) ? lcFlags_ |= TO_FILE: lcFlags_ &= ~TO_FILE;
+  };
+   void setConvertSize(Int64 size)
+  {
+    convertSize_ = size;
+  }
+  Int64 getConvertSize()
+  {
+    return convertSize_;
+  }
+  void setTgtFile(char *tgtFile)
+  {
+    tgtFileName_ = tgtFile;
+  }
+  char *getTgtFile()
+  {
+    return tgtFileName_;
+  }
+
+private:
+  enum
+  { 
+    TO_STRING          = 0x0001,
+    TO_LOB             = 0x0002,
+    TO_FILE            = 0x0004
+  };
+ 
 
   Lng32 lcFlags_;
   char  filler1_[4];
+  Int64 convertSize_;
+  char * tgtFileName_;
 };
 
 class ExpLOBconvertHandle : public ExpLOBoper {
@@ -752,7 +824,7 @@ public:
   {
     return 1;
   }
-
+ 
   virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
