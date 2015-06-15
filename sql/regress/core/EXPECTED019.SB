@@ -334,6 +334,44 @@ I            J
 
 --- 1000 row(s) inserted.
 >>
+>>-- upsertx queries test index maintenance corruption for upsert
+>>upsert into upsertx
++>select num, num+100, num+100
++>from (select 10*e1 + e0
++>      from (values (0)) seed(s)
++>      transpose 0,1,2,3,4,5,6,7,8,9 as e0
++>      transpose 0,1,2,3,4,5,6,7,8,9 as e1) t(num);
+
+--- 100 row(s) inserted.
+>>
+>>upsert into upsertx
++>select 10*num, 10*num+200, 10*num+200
++>from (select e0
++>      from (values (0)) seed(s)
++>      transpose 0,1,2,3,4,5,6,7,8,9 as e0) t(num);
+
+--- 10 row(s) inserted.
+>>
+>>select count(*) from upsertx;
+
+(EXPR)              
+--------------------
+
+                 100
+
+--- 1 row(s) selected.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select count(*) from table(index_table UPSERTIX1);
+
+(EXPR)              
+--------------------
+
+                 100
+
+--- 1 row(s) selected.
+>>
 >>-- test SHOWPLAN, the regression tool can report core file if generated
 >>log;
 >>
@@ -401,7 +439,7 @@ I            J
 VARIABLE_INFO
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-statsRowType: 6 DOP: 0 OperCpuTime: 1209367 RetOK: 271 RetCallAgain: 2 Memory: 61865984 IOBytes: 233046016 ClusterSplits: 7 HashLoops: 56 NumClusters: 22 ResidentClusters: 5 TotNumBuckets: 32 TotHashTableSize: 96468992 TotWriteIOs: 215 TotReadIOs: 674 MinClusterRows: 39 MaxClusterRows: 200192 ClusterRowsVar: 3551966208 ClusterNo: 0 NumBuckets: 4 ActRows: 200192 NumChains: 146142 MaxChain: 7 VarChain: 0 ClusterNo: 1 NumBuckets: 4 ActRows: 200106 NumChains: 146243 MaxChain: 7 VarChain: 0 ClusterNo: 2 NumBuckets: 2 ActRows: 99908 NumChains: 11430 MaxChain: 3 VarChain: 0 ClusterNo: 3 NumBuckets: 2 ActRows: 96 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 4 NumBuckets: 2 ActRows: 100183 NumChains: 11488 MaxChain: 3 VarChain: 0 ClusterNo: 5 NumBuckets: 2 ActRows: 100 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 6 NumBuckets: 1 ActRows: 49869 NumChains: 2154 MaxChain: 2 VarChain: 0 ClusterNo: 7 NumBuckets: 1 ActRows: 60 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 8 NumBuckets: 1 ActRows: 50362 NumChains: 2312 MaxChain: 2 VarChain: 0 ClusterNo: 9 NumBuckets: 1 ActRows: 39 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 10 NumBuckets: 1 ActRows: 50148 NumChains: 2164 MaxChain: 2 VarChain: 0 ClusterNo: 11 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 12 NumBuckets: 1 ActRows: 49983 NumChains: 2188 MaxChain: 3 VarChain: 0 ClusterNo: 13 NumBuckets: 1 ActRows: 44 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 14 NumBuckets: 1 ActRows: 49798 NumChains: 3413 MaxChain: 3 VarChain: 0 ClusterNo: 15 NumBuckets: 1 ActRows: 47 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 16 NumBuckets: 1 ActRows: 49938 NumChains: 3487 MaxChain: 3 VarChain: 0 ClusterNo: 17 NumBuckets: 1 ActRows: 43 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 18 NumBuckets: 1 ActRows: 49815 NumChains: 3508 MaxChain: 3 VarChain: 0 ClusterNo: 19 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 20 NumBuckets: 1 ActRows: 49698 NumChains: 3334 MaxChain: 3 VarChain: 0 ClusterNo: 21 NumBuckets: 1 ActRows: 59 NumChains: 0 MaxChain: 0 VarChain: 0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+statsRowType: 6 DOP: 0 OperCpuTime: 1224104 RetOK: 271 RetCallAgain: 2 Memory: 61865984 IOBytes: 233046016 ClusterSplits: 7 HashLoops: 56 NumClusters: 22 ResidentClusters: 5 TotNumBuckets: 32 TotHashTableSize: 96468992 TotWriteIOs: 215 TotReadIOs: 674 MinClusterRows: 39 MaxClusterRows: 200192 ClusterRowsVar: 3551966208 ClusterNo: 0 NumBuckets: 4 ActRows: 200192 NumChains: 146142 MaxChain: 7 VarChain: 0 ClusterNo: 1 NumBuckets: 4 ActRows: 200106 NumChains: 146243 MaxChain: 7 VarChain: 0 ClusterNo: 2 NumBuckets: 2 ActRows: 99908 NumChains: 11430 MaxChain: 3 VarChain: 0 ClusterNo: 3 NumBuckets: 2 ActRows: 96 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 4 NumBuckets: 2 ActRows: 100183 NumChains: 11488 MaxChain: 3 VarChain: 0 ClusterNo: 5 NumBuckets: 2 ActRows: 100 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 6 NumBuckets: 1 ActRows: 49869 NumChains: 2154 MaxChain: 2 VarChain: 0 ClusterNo: 7 NumBuckets: 1 ActRows: 60 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 8 NumBuckets: 1 ActRows: 50362 NumChains: 2312 MaxChain: 2 VarChain: 0 ClusterNo: 9 NumBuckets: 1 ActRows: 39 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 10 NumBuckets: 1 ActRows: 50148 NumChains: 2164 MaxChain: 2 VarChain: 0 ClusterNo: 11 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 12 NumBuckets: 1 ActRows: 49983 NumChains: 2188 MaxChain: 3 VarChain: 0 ClusterNo: 13 NumBuckets: 1 ActRows: 44 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 14 NumBuckets: 1 ActRows: 49798 NumChains: 3413 MaxChain: 3 VarChain: 0 ClusterNo: 15 NumBuckets: 1 ActRows: 47 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 16 NumBuckets: 1 ActRows: 49938 NumChains: 3487 MaxChain: 3 VarChain: 0 ClusterNo: 17 NumBuckets: 1 ActRows: 43 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 18 NumBuckets: 1 ActRows: 49815 NumChains: 3508 MaxChain: 3 VarChain: 0 ClusterNo: 19 NumBuckets: 1 ActRows: 48 NumChains: 0 MaxChain: 0 VarChain: 0 ClusterNo: 20 NumBuckets: 1 ActRows: 49698 NumChains: 3334 MaxChain: 3 VarChain: 0 ClusterNo: 21 NumBuckets: 1 ActRows: 59 NumChains: 0 MaxChain: 0 VarChain: 0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 
 --- 1 row(s) selected.
 >>
@@ -544,9 +582,9 @@ statsRowType: 6 DOP: 0 OperCpuTime: 1209367 RetOK: 271 RetCallAgain: 2 Memory: 6
 --- 10000 row(s) updated.
 >>
 >>-- Repeat the above test, this time with duplicates
->>delete from t019_g;
+>>purgedata t019_g;
 
---- 100000 row(s) deleted.
+--- SQL operation complete.
 >>#ifdef SEABASE_REGRESS
 >>control query shape nested_join(hash_groupby(scan), insert);
 

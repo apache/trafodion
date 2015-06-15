@@ -10085,7 +10085,11 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     }
 
   }
-  if (NOT (isMerge() || noIMneeded()))
+  if (isUpsertThatNeedsMerge()) {
+    boundExpr = xformUpsertToMerge(bindWA);
+    return boundExpr;
+  }
+  else if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10123,6 +10127,131 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
   return boundExpr;
 } // Insert::bindNode()
+
+/* Upsert into a table with an index is converted into a Merge to avoid
+the problem described in LP 1460771. An upsert may overwrite an existing row
+in the base table (identical to the update when matched clause of Merge) or
+it may insert a new row into the base table (identical to insert when not
+matched clause of merge). If the upsert caused a row to be updated in the 
+base table then the old version of the row will have to be deleted from 
+indexes, and a new version inserted. Upsert is being transformed to merge
+so that we can delete the old version of an updated row from the index.
+*/
+NABoolean Insert::isUpsertThatNeedsMerge() const
+{
+  if (!isUpsert() || 
+      getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
+      !(getTableDesc()->hasSecondaryIndexes()))
+    return FALSE;
+
+  return TRUE;
+}
+RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
+{
+
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+		    
+  Scan * inputScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  ItemExpr * setAssign = NULL;
+  ItemExpr * setAssignPrev = NULL;
+  ItemExpr * insertVal = NULL;
+  ItemExpr * insertValPrev = NULL;
+  ItemExpr * insertCol = NULL;
+  ItemExpr * insertColPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  int setCount = 0;
+  ValueIdSet myOuterRefs;
+
+  for (CollIndex i = 0; i<tableCols.entries(); i++)
+  {
+    baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+    if (baseCol->getNAColumn()->isSystemColumn())
+      continue;
+
+    targetColRef = new(bindWA->wHeap()) ColReference(
+         new(bindWA->wHeap()) ColRefName(
+              baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    if (baseCol->getNAColumn()->isClusteringKey())
+    {
+      keyPredPrev = keyPred;
+      keyPred = new (bindWA->wHeap())
+        BiRelat(ITM_EQUAL, targetColRef, 
+                sourceVals[i].getItemExpr());
+      predCount++;
+      if (predCount > 1) 
+      {
+         keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+                                                keyPredPrev,
+                                                keyPred);  
+      }
+    }
+    else
+    {
+      setAssignPrev = setAssign;
+      setAssign = new (bindWA->wHeap())
+        Assign(targetColRef, sourceVals[i].getItemExpr());
+      setCount++;
+      if (setCount > 1) 
+      {
+        setAssign = new(bindWA->wHeap()) ItemList(setAssign,setAssignPrev);
+      }
+    }
+    myOuterRefs += sourceVals[i];
+
+    insertValPrev = insertVal;
+    insertColPrev = insertCol ;
+    insertVal = sourceVals[i].getItemExpr();
+    insertCol =  new(bindWA->wHeap()) ColReference(
+                     new(bindWA->wHeap()) ColRefName(
+                          baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    if (i > 0) 
+    {
+      insertVal = new(bindWA->wHeap()) ItemList(insertVal,insertValPrev);
+      insertCol = new(bindWA->wHeap()) ItemList(insertCol,insertColPrev);
+    }
+  }   
+  inputScan->addSelPredTree(keyPred);
+  RelExpr * re = NULL;
+
+  re = new (bindWA->wHeap())
+    MergeUpdate(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()),
+                NULL,
+                REL_UNARY_UPDATE,
+                inputScan,
+                setAssign,
+                insertCol, 
+                insertVal,
+                bindWA->wHeap(),
+                NULL);
+
+  ValueIdSet debugSet;
+  if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
+  {
+    re = new(bindWA->wHeap()) Join
+      (child(0), re, REL_TSJ_FLOW, NULL);
+    ((Join*)re)->doNotTransformToTSJ();
+    ((Join*)re)->setTSJForMerge(TRUE);	
+    ((Join*)re)->setTSJForMergeWithInsert(TRUE);
+    ((Join*)re)->setTSJForWrite(TRUE);
+    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+  } 
+  
+  re = re->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return re;
+}
 
 RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 {
@@ -11179,8 +11308,15 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    // scan for satisfying order requirements specified by an order by clause
    // on new columns, e.g.
    // select * from (update t set y = y + 1 return new.a) t order by a;
+   // we cannot get the benefit of this VEG for a merge statement when IM is required
+   // allowing a VEG in this case causes corruption on base table key values because
+   // we use the "old" value of key column from fetchReturnedExpr, which can be junk
+   // in case there is no row to update/delete, and a brand bew row is being inserted
 
-   if (NOT onRollback){
+   NABoolean mergeWithIndex = isMerge() && getTableDesc()->hasSecondaryIndexes() ;
+
+
+   if ((NOT onRollback) && (NOT mergeWithIndex)){
      for (i = 0;i < totalColCount; i++){
        if (!(holeyArray.used(i))){
          oldToNewMap().addMapEntry(
