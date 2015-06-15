@@ -22,6 +22,7 @@ DEST=/designs/seaquest/$USER/traf
 mkdir -p $DEST/sqf/export/bin64
 mkdir -p $DEST/sqf/export/lib
 mkdir -p $DEST/sqf/export/lib64
+mkdir -p $DEST/sqf/gdb
 mkdir -p $DEST/sqf/src/seabed/test
 mkdir -p $DEST/sqf/sql/scripts
 mkdir -p $DEST/sqf/tools
@@ -31,6 +32,8 @@ bin64list="hydra_pmi_proxy idtmsrv mondump monitor mpirun pstartd shell sqid sqi
 lib64list="liblog4cpp.so libsbfs.so libsblogalt.so libsbms.so libsbsautil.so libsbutil.so libsbztmsfsutil.so libsbztutilp.so libsbztutil.so"
 scriptslist="createConfigDb cstat pstat showConfigDb sqconfigdb.pm sqipcrm sqnodestatus sqnodes.pm sqpersist.pm sqsystem.pm"
 
+echo cp -pu $MY_SQROOT/gdb/ $DEST/sqf/gdb
+cp -pu $MY_SQROOT/gdb/* $DEST/sqf/gdb
 echo cp -pu  $MY_SQROOT/sq*sh $DEST/sqf
 cp -pu  $MY_SQROOT/sq*sh $DEST/sqf
 echo cp -pu  $MY_SQROOT/export/bin64/ $DEST/sqf/export/bin64
