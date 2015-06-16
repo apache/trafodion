@@ -1247,6 +1247,9 @@ short HbaseDelete::codeGen(Generator * generator)
 		      keyColValTuppIndex,
 		      0, // hbaseFilterValTuppIndex
 
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
+
 		      tdbListOfRangeRows,
 		      tdbListOfUniqueRows,
 		      listOfFetchedColNames,
@@ -2068,6 +2071,9 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      keyColValTuppIndex,
 		      0, // hbaseFilterValTuppIndex
 
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
+
 		      tdbListOfRangeRows,
 		      tdbListOfUniqueRows,
 		      listOfFetchedColNames,
@@ -2711,6 +2717,9 @@ short HbaseInsert::codeGen(Generator *generator)
 		      0, // keyTuppIndex
 		      0, // keyColValTuppIndex
 		      0, // hbaseFilterValTuppIndex
+
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
 
 		      NULL,
 		      NULL, //tdbListOfDelRows,

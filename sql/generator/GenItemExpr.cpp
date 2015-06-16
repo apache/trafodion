@@ -108,6 +108,9 @@ void ItemExpr::codegen_and_set_attributes(Generator * generator,
 {
   for (short i=0; i<num_attrs-1; i++) // here num_attrs-1 refers to Arity()
   {
+    if (! child(i))
+      continue;
+
     generator->getExpGenerator()->setClauseLinked(FALSE);
     // Needs revalidation
     if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
@@ -120,13 +123,6 @@ void ItemExpr::codegen_and_set_attributes(Generator * generator,
     child(i)->codeGen(generator);
     attr[i+1] = generator->getAttr(child(i));
     generator->getExpGenerator()->setClauseLinked(FALSE);
-
-    //    if (child(i)->castToItemExpr()->getClause())
-    // attr[i+1] = child(i)->castToItemExpr()->getClause()->getOperand(0);
-    // else
-    //  attr[i+1] = generator->getMapInfo(child(i)->
-    //		castToItemExpr()->getValueId())
-    //	->getAttr();
   }
 } // ItemExpr::codegen_and_set_attributes()
 

@@ -3317,6 +3317,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
 
+  DDint__(TRAF_NUM_HBASE_VERSIONS,                     "0"),
+
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),

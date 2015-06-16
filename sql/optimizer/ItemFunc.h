@@ -5314,6 +5314,180 @@ public:
   NAList<HbaseColumnCreateOptions*> * hccol_;
 }; // class HbaseColumnCreate
 
+class HbaseTimestamp : public BuiltinFunction
+{
+public:
+ HbaseTimestamp(ItemExpr * col)
+   : BuiltinFunction(ITM_HBASE_TIMESTAMP,
+                     CmpCommon::statementHeap(), 1, NULL),
+    col_(col),
+    tsVals_(NULL),
+    colIndex_(-1)
+    {}
+  
+  virtual ~HbaseTimestamp();
+  
+  virtual NABoolean isCovered
+    (const ValueIdSet& newExternalInputs,
+     const GroupAttributes& coveringGA,
+     ValueIdSet& referencedInputs,
+     ValueIdSet& coveredSubExpr,
+     ValueIdSet& unCoveredExpr) const;
+
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+
+  virtual NABoolean isCacheableExpr(CacheWA& cwa)
+    { return TRUE; }
+
+  // append an ascii-version of ItemExpr into cachewa.qryText_
+  virtual void generateCacheKey(CacheWA& cwa) const;
+
+  virtual const NAType * synthesizeType();
+  
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  virtual ItemExpr * preCodeGen(Generator * generator);
+
+  virtual short codeGen(Generator*);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+  {
+    return "HBASE_TIMESTAMP";
+  };
+  
+  void setColIndex(Lng32 idx) { colIndex_ = idx;}
+  Lng32 getColIndex() { return colIndex_; }
+
+  const ItemExpr * col() const { return col_; }
+  const ItemExpr * tsVals() { return tsVals_; }
+ private:
+  ItemExpr * col_;
+  ItemExpr * tsVals_;
+
+  Lng32 colIndex_;
+
+  NAString colName_;
+}; // class HbaseTimestamp
+
+class HbaseTimestampRef : public BuiltinFunction
+{
+public:
+ HbaseTimestampRef(ItemExpr * col)
+   : BuiltinFunction(ITM_HBASE_TIMESTAMP_REF,
+                     CmpCommon::statementHeap()),
+    col_(col)
+    {}
+  
+  virtual ~HbaseTimestampRef();
+  
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  virtual short codeGen(Generator*);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+  {
+    return "HBASE_TIMESTAMP_REF";
+  };
+  
+ private:
+  ItemExpr * col_;
+}; // class HbaseTimestampRef
+
+class HbaseVersion : public BuiltinFunction
+{
+public:
+ HbaseVersion(ItemExpr * col)
+   : BuiltinFunction(ITM_HBASE_VERSION,
+                     CmpCommon::statementHeap(), 1, NULL),
+    col_(col),
+    tsVals_(NULL),
+    colIndex_(-1)
+    {}
+  
+  virtual ~HbaseVersion();
+  
+  virtual NABoolean isCovered
+    (const ValueIdSet& newExternalInputs,
+     const GroupAttributes& coveringGA,
+     ValueIdSet& referencedInputs,
+     ValueIdSet& coveredSubExpr,
+     ValueIdSet& unCoveredExpr) const;
+
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+
+  virtual NABoolean isCacheableExpr(CacheWA& cwa)
+    { return TRUE; }
+
+  // append an ascii-version of ItemExpr into cachewa.qryText_
+  virtual void generateCacheKey(CacheWA& cwa) const;
+
+  virtual const NAType * synthesizeType();
+  
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  virtual ItemExpr * preCodeGen(Generator * generator);
+
+  virtual short codeGen(Generator*);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+  {
+    return "HBASE_VERSION";
+  };
+  
+  void setColIndex(Lng32 idx) { colIndex_ = idx;}
+  Lng32 getColIndex() { return colIndex_; }
+
+  const ItemExpr * col() const { return col_; }
+  const ItemExpr * tsVals() { return tsVals_; }
+ private:
+  ItemExpr * col_;
+  ItemExpr * tsVals_;
+
+  Lng32 colIndex_;
+
+  NAString colName_;
+}; // class HbaseVersion
+
+class HbaseVersionRef : public BuiltinFunction
+{
+public:
+ HbaseVersionRef(ItemExpr * col)
+   : BuiltinFunction(ITM_HBASE_VERSION_REF,
+                     CmpCommon::statementHeap()),
+    col_(col)
+    {}
+  
+  virtual ~HbaseVersionRef();
+  
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  virtual short codeGen(Generator*);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+  {
+    return "HBASE_VERSION_REF";
+  };
+  
+ private:
+  ItemExpr * col_;
+}; // class HbaseVersionRef
+
 // generate a sequence number in a dml query.
 class SequenceValue : public BuiltinFunction
 {

@@ -12777,6 +12777,7 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
 
   if (nodeIsBound())
     return getValueId().getItemExpr();
+
   // Binds self; Binds children; SequenceValue::synthesize();
   boundExpr = Function::bindNode(bindWA);
   if (bindWA->errStatus()) 
@@ -12796,6 +12797,192 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
   Assign_SqlParser_Flags (savedParserFlags);
 
   return boundExpr;
+}
+
+ItemExpr *HbaseTimestamp::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  NAColumn * nac = ((BaseColumn*)col_)->getNAColumn();
+  if (! nac)
+    return NULL;
+
+  colName_ = nac->getColName();
+
+  NAType * tsValsType = 
+    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+  tsVals_ = 
+    new (bindWA->wHeap()) NATypeToItem(tsValsType);
+  
+  tsVals_ = tsVals_->bindNode(bindWA);
+  if (! tsVals_ || bindWA->errStatus())
+    return NULL;
+
+  // Binds self; Binds children; HbaseTimestamp::synthesize();
+  boundExpr = Function::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return boundExpr;
+}
+
+ItemExpr *HbaseTimestampRef::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  BaseColumn * bc = (BaseColumn*)col_;
+
+  if ((bc->getTableDesc()->getNATable()->isHiveTable()) ||
+      (bc->getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+    {
+      if (bc->getTableDesc()->getNATable()->isHiveTable())
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on a Hive table.");
+      else
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on an aligned format table.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  if (bc->getTableDesc()->hbaseTSList().entries() == 0)
+    {
+      for (CollIndex i = 0; i < bc->getTableDesc()->getColumnList().entries(); i++) 
+        {
+          ItemExpr *baseCol = bc->getTableDesc()->getColumnList()[i].getItemExpr();
+          HbaseTimestamp * hbtCol = 
+            new (bindWA->wHeap()) HbaseTimestamp(baseCol);
+          hbtCol->bindNode(bindWA);
+          if (bindWA->errStatus()) 
+            return NULL;
+          bc->getTableDesc()->hbaseTSList().insert(hbtCol->getValueId());
+        }
+    }
+
+  ValueId valId = bc->getTableDesc()->hbaseTSList()[bc->getColNumber()];
+  setValueId(valId);
+  
+  bindSelf(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return valId.getItemExpr();
+}
+
+ItemExpr *HbaseVersion::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  NAColumn * nac = ((BaseColumn*)col_)->getNAColumn();
+  if (! nac)
+    return NULL;
+
+  colName_ = nac->getColName();
+
+  NAType * tsValsType = 
+    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+  tsVals_ = 
+    new (bindWA->wHeap()) NATypeToItem(tsValsType);
+  
+  tsVals_ = tsVals_->bindNode(bindWA);
+  if (! tsVals_ || bindWA->errStatus())
+    return NULL;
+
+  // Binds self; Binds children; HbaseVersion::synthesize();
+  boundExpr = Function::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return boundExpr;
+}
+
+ItemExpr *HbaseVersionRef::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  BaseColumn * bc = (BaseColumn*)col_;
+
+  if ((bc->getTableDesc()->getNATable()->isHiveTable()) ||
+      (bc->getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+    {
+      if (bc->getTableDesc()->getNATable()->isHiveTable())
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on a Hive table.");
+      else
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on an aligned format table.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  if (bc->getTableDesc()->hbaseVersionList().entries() == 0)
+    {
+      for (CollIndex i = 0; i < bc->getTableDesc()->getColumnList().entries(); i++) 
+        {
+          ItemExpr *baseCol = bc->getTableDesc()->getColumnList()[i].getItemExpr();
+          HbaseVersion * hbtCol = 
+            new (bindWA->wHeap()) HbaseVersion(baseCol);
+          hbtCol->bindNode(bindWA);
+          if (bindWA->errStatus()) 
+            return NULL;
+          bc->getTableDesc()->hbaseVersionList().insert(hbtCol->getValueId());
+        }
+    }
+
+  ValueId valId = bc->getTableDesc()->hbaseVersionList()[bc->getColNumber()];
+  setValueId(valId);
+  
+  bindSelf(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return valId.getItemExpr();
 }
 
 ItemExpr *RowNumFunc::bindNode(BindWA *bindWA)
@@ -12874,4 +13061,3 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
   return FALSE;
 }
-

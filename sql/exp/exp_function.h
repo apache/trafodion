@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3798,6 +3798,50 @@ enum
 
   UInt32 flags_;
   char filler1_[4];
+  // ---------------------------------------------------------------------
+};
+
+class ExFunctionHbaseTimestamp : public ex_function_clause {
+public:
+  ExFunctionHbaseTimestamp(OperatorTypeEnum oper_type,
+                           Attributes ** attr,
+                           Lng32 colIndex,
+                           Space * space);
+  ExFunctionHbaseTimestamp();
+
+ void displayContents(Space * space, const char * displayStr, 
+                      Int32 clauseNum, char * constsArea);
+ 
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+                                ComDiagsArea** = 0);  
+  
+  virtual short getClassSize() { return (short)sizeof(*this); }
+
+ private:
+  Lng32 colIndex_;
+  ULng32 flags_;
+  // ---------------------------------------------------------------------
+};
+
+class ExFunctionHbaseVersion : public ex_function_clause {
+public:
+  ExFunctionHbaseVersion(OperatorTypeEnum oper_type,
+                           Attributes ** attr,
+                           Lng32 colIndex,
+                           Space * space);
+  ExFunctionHbaseVersion();
+
+ void displayContents(Space * space, const char * displayStr, 
+                      Int32 clauseNum, char * constsArea);
+ 
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+                                ComDiagsArea** = 0);  
+  
+  virtual short getClassSize() { return (short)sizeof(*this); }
+
+ private:
+  Lng32 colIndex_;
+  ULng32 flags_;
   // ---------------------------------------------------------------------
 };
 

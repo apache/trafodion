@@ -156,7 +156,8 @@ class ExpHbaseInterface : public NABasicObject
 			 Lng32 snapTimeout = 0,
 			 char * snapName = NULL,
 			 char * tmpLoc = NULL,
-			 Lng32 espNum=0) = 0;
+			 Lng32 espNum=0,
+                         Lng32 versions = 0) = 0;
 
   virtual Lng32 scanClose() = 0;
 
@@ -211,7 +212,7 @@ class ExpHbaseInterface : public NABasicObject
               short &colNameLen,
               Int64 &timestamp) = 0;
  
-  virtual Lng32 getNumCols(int &numCols) = 0;
+  virtual Lng32 getNumCellsPerRow(int &numCells) = 0;
  
   virtual Lng32 getRowID(HbaseStr &rowID) = 0;
  
@@ -463,7 +464,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 Lng32 snapTimeout = 0,
 			 char * snapName = NULL,
 			 char * tmpLoc = NULL,
-			 Lng32 espNum = 0);
+			 Lng32 espNum = 0,
+                         Lng32 versions = 0);
 
   virtual Lng32 scanClose();
 
@@ -508,7 +510,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
               short &colNameLen,
               Int64 &timestamp);
 
-  virtual Lng32 getNumCols(int &numCols);
+  virtual Lng32 getNumCellsPerRow(int &numCells);
 
   virtual Lng32 getRowID(HbaseStr &rowID);
 

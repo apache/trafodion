@@ -167,6 +167,8 @@ public:
   NAList<HbaseCreateOption*> * hbaseCreateOptions() const
     { return hbaseCreateOptions_;}
 
+  Lng32 numMaxVersions() const { return numMaxVersions_; } 
+
   // ---------------------------------------------------------------------
   // Mutator functions
   // ---------------------------------------------------------------------
@@ -457,6 +459,10 @@ private:
 
   // number of salted partitions specified at table create time.
   Lng32 numSaltPartns_;
+
+  // if table was created with max versions greater than 1 using
+  // hbase_options clause.
+  Lng32 numMaxVersions_;
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions_;
   

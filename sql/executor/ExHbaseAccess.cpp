@@ -233,6 +233,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , hbaseFilterColumns_(glob ? glob->getDefaultHeap() : NULL)
   , hbaseFilterOps_(glob ? glob->getDefaultHeap() : NULL)
   , hbaseFilterValues_(glob ? glob->getDefaultHeap() : NULL)
+  , colValVec_(NULL)
+  , colValVecSize_(0)
+  , colValEntry_(0)
 {
   Space * space = (glob ? glob->getSpace() : NULL);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
@@ -273,6 +276,12 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 
       if (hbaseAccessTdb.hbaseFilterValTuppIndex_ > 0)      
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.hbaseFilterValTuppIndex_), 0);
+
+      if (hbaseAccessTdb.hbaseTimestampTuppIndex_ > 0)      
+	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.hbaseTimestampTuppIndex_), 0);
+
+      if (hbaseAccessTdb.hbaseVersionTuppIndex_ > 0)      
+	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.hbaseVersionTuppIndex_), 0);
 
     }
 
@@ -344,6 +353,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   asciiRow_ = NULL;
   asciiRowMissingCols_ = NULL;
   latestTimestampForCols_ = NULL;
+  latestVersionNumForCols_ = NULL;
   convertRow_ = NULL;
   updateRow_ = NULL;
   mergeInsertRow_ = NULL;
@@ -365,6 +375,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 	new(glob->getDefaultHeap()) 
 	char[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()];
       latestTimestampForCols_ = new(glob->getDefaultHeap()) 
+	long[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()] ;
+      latestVersionNumForCols_ = new(glob->getDefaultHeap()) 
 	long[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()] ;
     }
 
@@ -963,9 +975,14 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
 	hbaseAccessTdb().listOfFetchedColNames()->position();
         idx = -1;
       }
-      short len = *(short*)hbaseAccessTdb().listOfFetchedColNames()->getCurr();
-      char * currName = 
-	&((char*)hbaseAccessTdb().listOfFetchedColNames()->getCurr())[sizeof(short)];
+
+      // currNamePtr points to:
+      // 2 bytes len, len bytes colname.
+      char * currNamePtr = (char*)hbaseAccessTdb().listOfFetchedColNames()->getCurr();
+      short len = *(short*)currNamePtr;
+      currNamePtr += sizeof(short);
+      char * currName = currNamePtr;
+      //	&((char*)hbaseAccessTdb().listOfFetchedColNames()->getCurr())[sizeof(short)];
 
       if ((colNameLen == len) &&
 	  (memcmp(colName, currName, len) == 0))
@@ -992,7 +1009,13 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
   if (hbaseAccessTdb().alignedFormat())
     retcode = createSQRowFromAlignedFormat();
   else
-    retcode = createSQRowFromHbaseFormat();
+    {
+      if (hbaseAccessTdb().multiVersions())
+        retcode = createSQRowFromHbaseFormatMulti();
+      else
+        retcode = createSQRowFromHbaseFormat();
+    }
+
    return retcode;
 }
 
@@ -1017,8 +1040,12 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
   // initialize as missing cols.
   // TBD: can optimize to skip this step if there are no nullable and no added cols
   memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
-    // initialize latest timestamp to 0 for every column
+
+  // initialize latest timestamp to 0 for every column
   memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
+
+  // initialize latest version to 0 for every column
+  memset(latestVersionNumForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
   
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
@@ -1030,16 +1057,16 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
   short colNameLen;
   BYTE nullVal;
   Lng32 retcode;
-  int numCols; 
-  retcode = ehi_->getNumCols(numCols);
+  int numCells; 
+  retcode = ehi_->getNumCellsPerRow(numCells);
   if (retcode == HBASE_ACCESS_NO_ROW)
      return retcode ;
   if (retcode != HBASE_ACCESS_SUCCESS)
   {
-     setupError(retcode, "", "getNumCols()");
+     setupError(retcode, "", "getNumCellsPerRow()");
      return retcode;
   }
-  for (int colNo= 0; colNo < numCols; colNo++)
+  for (int colNo= 0; colNo < numCells; colNo++)
   {
       retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
       if (retcode != HBASE_ACCESS_SUCCESS)
@@ -1058,9 +1085,12 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
       if (timestamp > latestTimestampForCols_[idx])
         latestTimestampForCols_[idx] = timestamp;
 
+      latestVersionNumForCols_[idx] = 1;
+
       Attributes * attr = asciiSourceTD->getAttr(idx);
       if (! attr)
          ex_assert(FALSE, "Attr not found -1");
+
       // copy to asciiRow only if this is the latest version seen so far
       // for this column. On 6/10/2014 we get two versions for a newly
       // updated column that has not been committed yet.
@@ -1139,6 +1169,362 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
     .setDataPointer(convertRow_);
   workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
     .setDataPointer(asciiRow_);
+  if (hbaseAccessTdb().hbaseTimestampTuppIndex_ > 0)
+    {
+      workAtp_->getTupp(hbaseAccessTdb().hbaseTimestampTuppIndex_) 
+        .setDataPointer((char*)latestTimestampForCols_);
+    }
+  if (hbaseAccessTdb().hbaseVersionTuppIndex_ > 0)
+    {
+      workAtp_->getTupp(hbaseAccessTdb().hbaseVersionTuppIndex_) 
+        .setDataPointer((char*)latestVersionNumForCols_);
+    }
+
+  if (convertExpr())
+    {
+      ex_expr::exp_return_type evalRetCode =
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+      if (evalRetCode == ex_expr::EXPR_ERROR)
+	{
+	  return -1;
+	}
+    }
+
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////
+// hbase JNI returns all versions of cell values for each row id as a single list.
+//
+// Example:
+//  a row has 3 columns, C1, C2, C3.
+//  C1 has 3 cell versions, C2 has 1 version, C3 has 2 versions.
+//  Returned cell values from hbase will be:
+//    C1V1, C1V2, C1V3, C2V1, C3V1, C3V2
+//
+// These cell values will be transformed and returned as 3 rows:
+//    RowVersion1: C1V1  C2V1 C3V1
+//    RowVersion2: C1V2  C2V1 C3V2
+//    RowVersion3: C1V3  C2V1 C3V2
+//
+// Method setupSQMultiVersionRow does this transformation and creates 
+// an array with multiple rows.
+// Method createSQRowFromHbaseFormatMulti() loops through this array
+// and returns these 3 rows.
+// 
+// colValVec:  one entry for each fetched column. Each column can have
+//                   max numVers versions. numVers is specified by user at compile time.
+//
+// For each column entry:
+//          colValVec_[i].numVersions_: number of versions 
+//          colValVec_[i].versionArray_:  array of numVers pointer entries.
+//                                                Each entry points to a column version, if one exists
+//          colValVec_[i].timestampArray_:  array of timestamp values, if timestamp is
+//                                                to be returned.
+//                                                Each entry contains timestamp for that version.
+//          colValVec_[i].versionNumArray_:  array of version numbers, if version is
+//                                                to be returned.
+//                                                Each entry contains version num for that version.
+//
+//
+/////////////////////////////////////////////////////////////////////////
+Lng32 ExHbaseAccessTcb::setupSQMultiVersionRow()
+{
+  // no columns are being fetched from hbase, do not create a row. TBD for RAW.
+  Lng32 numFetchedCols = hbaseAccessTdb().listOfFetchedColNames()->numEntries();
+  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
+    return 0;
+
+  hbaseAccessTdb().listOfFetchedColNames()->position();
+  Lng32 idx = -1;
+
+  ExpTupleDesc * asciiSourceTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().asciiTuppIndex_);
+  Attributes * attr = NULL;
+
+  char *colVal; 
+  Lng32 colValLen;
+  long timestamp;
+  char *colName;
+  short colNameLen;
+  BYTE nullVal;
+  Lng32 retcode;
+  int numCells; 
+  retcode = ehi_->getNumCellsPerRow(numCells);
+  if (retcode == HBASE_ACCESS_NO_ROW)
+    return retcode ;
+  
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    {
+      setupError(retcode, "", "getNumCellsPerRow()");
+      return retcode;
+    }
+  
+  if (colValVec_ == NULL)
+    {
+      colValVec_ = new(getHeap()) ColValVec[numFetchedCols];
+        
+      for (int i = 0; i < numFetchedCols; i++)
+        {
+          Lng32 numVers = hbaseAccessTdb().getHbaseAccessOptions()->getNumVersions();
+          if (numVers == -2)
+            numVers = 100;
+          char ** v = new(getHeap()) char*[numVers];
+
+          colValVec_[i].numVersions_ = 0;
+          colValVec_[i].versionArray_ = v;
+          if (hbaseAccessTdb().isHbaseTimestampNeeded())
+            {
+              colValVec_[i].timestampArray_ = new(getHeap()) Int64[numVers];
+            }
+
+          if (hbaseAccessTdb().isHbaseVersionNeeded())
+            {
+              colValVec_[i].versionNumArray_ = new(getHeap()) Int64[numVers];
+            }
+
+          for (int j = 0; j < numVers; j++)
+            {
+              colValVec_[i].versionArray_[j] = NULL;
+
+              if (hbaseAccessTdb().isHbaseTimestampNeeded())
+                colValVec_[i].timestampArray_[j] = 0;
+
+              if (hbaseAccessTdb().isHbaseVersionNeeded())
+                colValVec_[i].versionNumArray_[j] = 0;
+            }
+        }
+    }
+  else
+    {
+      for (int i = 0; i < numFetchedCols; i++)
+        {
+          colValVec_[i].numVersions_ = 0;
+        }
+    }
+  colValVecSize_ = 0;
+
+  std::string prevColName;
+  int colValPos = 0;
+  for (int colNo= 0; colNo < numCells; colNo++)
+    {
+      retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
+      if (retcode != HBASE_ACCESS_SUCCESS)
+        {
+          setupError(retcode, "", "getColName()");
+          return retcode;
+        }
+      
+     if (prevColName.empty())
+        {
+          prevColName.assign(colName, colNameLen);
+          colValPos = 0;
+        }
+      else if  (std::string(colName, colNameLen) == prevColName)
+        {
+          colValPos++;
+        }
+      else // colName != prevColName
+        {
+          colValPos = 0;
+          prevColName = std::string(colName, colNameLen);
+        }
+
+     // if col name changed, find idx into attributes array.
+     // otherwise, use previous idx. This avoids looping over listOfFetchedColNames
+     // in getColPos.
+     if (colValPos == 0) 
+       {
+         if (! getColPos(colName, colNameLen, idx)) // not found
+           { 
+             ex_assert(FALSE, "Error in getColPos()");
+           }
+       }
+
+      Attributes * attr = asciiSourceTD->getAttr(idx);
+      if (! attr)
+         ex_assert(FALSE, "Attr not found -1");
+      
+       char ** colValEntries = colValVec_[idx].versionArray_;
+      if (colValEntries[colValPos] == NULL)
+        {
+          Lng32 colValAllocLen = ((attr->getNullFlag() ? sizeof(short) : 0) +
+                                  sizeof(Lng32) + attr->getLength());
+          colVal = new(getHeap()) char[colValAllocLen];
+          colValEntries[colValPos] = colVal;
+          colValVec_[idx].numVersions_++;
+        }
+      else
+        {
+          colVal = colValEntries[colValPos];
+          colValVec_[idx].numVersions_++;
+        }
+
+      if (colValVec_[idx].numVersions_ > colValVecSize_)
+        colValVecSize_ = colValVec_[idx].numVersions_;
+      
+      char * nullData = (attr->getNullFlag() ? (char*)colVal : NULL);
+      char * vcLen = (char*)colVal + (nullData ? sizeof(short) : 0);
+      char * colData = vcLen + sizeof(Lng32);
+      colValLen = attr->getLength();
+      retcode = ehi_->getColVal(colNo, (BYTE*)colData, colValLen, 
+                                attr->getNullFlag(), nullVal);
+
+      if (retcode != HBASE_ACCESS_SUCCESS)
+        {
+          setupError(retcode, "", "getColVal()");
+          return retcode;
+        }
+
+      if (nullData)
+        {
+          if (nullVal)
+            *(short*)nullData = -1;
+          else
+            *(short*)nullData = 0;
+        }
+      *(Lng32*)vcLen = colValLen;
+
+      if (hbaseAccessTdb().isHbaseTimestampNeeded())
+        colValVec_[idx].timestampArray_[colValPos] = timestamp;
+
+      if (hbaseAccessTdb().isHbaseVersionNeeded())
+        colValVec_[idx].versionNumArray_[colValPos] = colValPos+1;
+    }
+
+  colValEntry_ = 0;
+
+  return 0;
+}
+
+Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormatMulti()
+{
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  Lng32 numFetchedCols = hbaseAccessTdb().listOfFetchedColNames()->numEntries();
+
+  ExpTupleDesc * asciiSourceTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().asciiTuppIndex_);
+
+  ExpTupleDesc * convertTuppTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().convertTuppIndex_);
+
+  if (colValEntry_ >= colValVecSize_)
+    return HBASE_ACCESS_NO_ROW;
+
+  // initialize as missing cols.
+  memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
+
+  Lng32 retcode;
+
+  Attributes * attr = NULL;
+  for (int idx = 0; idx < numFetchedCols; idx++)
+    {
+      attr = asciiSourceTD->getAttr(idx);
+ 
+      char ** colValEntries = colValVec_[idx].versionArray_;
+      Lng32 numColValEntries = colValVec_[idx].numVersions_;
+      if (numColValEntries > 0)
+        {
+          // not missing any more
+          asciiRowMissingCols_[idx] = 0;
+
+          Lng32 entryPos =
+            (colValEntry_ >= numColValEntries ? colValEntry_ - 1 : colValEntry_);
+          char *s = colValEntries[entryPos];
+          char * colVal = (char*)s;
+          char * nullData = NULL;
+          if (attr->getNullFlag())
+            {
+              nullData = colVal;
+              if (*(short*)nullData)
+                *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
+              else
+                *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
+            }
+          
+          char * vcLen = (char*)colVal + (nullData ? sizeof(short) : 0);
+          Lng32 colDataLen = *(Lng32*)vcLen;
+          if (attr->getVCIndicatorLength() > 0)
+            {
+              if (attr->getVCIndicatorLength() == sizeof(short))
+                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colDataLen; 
+              else
+                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colDataLen; 
+            }
+
+          char * colData = vcLen + sizeof(Lng32);
+
+          colVal = &asciiRow_[attr->getOffset()];
+          memcpy(colVal, colData, colDataLen);
+
+          if (hbaseAccessTdb().isHbaseTimestampNeeded())
+            latestTimestampForCols_[idx] = colValVec_[idx].timestampArray_[entryPos];
+
+          if (hbaseAccessTdb().isHbaseVersionNeeded())
+            latestVersionNumForCols_[idx] = colValVec_[idx].versionNumArray_[entryPos];
+        }
+    }
+
+  // fill in null or default values for missing cols.
+  for (int idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
+    {
+      if (asciiRowMissingCols_[idx] == 1) // missing
+	{
+	  attr = asciiSourceTD->getAttr(idx);
+	  if (! attr)
+             ex_assert(FALSE, "Attr not found -2");
+	  
+	  char * defVal = attr->getDefaultValue();
+	  char * defValPtr = defVal;
+	  short nullVal = 0;
+	  if (attr->getNullFlag())
+	    {
+	      nullVal = *(short*)defVal;
+	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
+	      
+	      defValPtr += 2;
+	    }
+	  
+          Lng32 copyLen;
+	  if (! nullVal)
+	    {
+	      if (attr->getVCIndicatorLength() > 0)
+		{
+		 copyLen = *(short*)defValPtr;
+		  if (attr->getVCIndicatorLength() == sizeof(short))
+		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
+		  else
+		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
+		  defValPtr += attr->getVCIndicatorLength();
+		}
+	        else
+		{
+		  copyLen = attr->getLength();
+                }
+		char *destPtr = &asciiRow_[attr->getOffset()];
+		str_cpy_all(destPtr, defValPtr, copyLen);
+	    } // not nullVal
+	} // missing col
+    }
+
+  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+    .setDataPointer(convertRow_);
+  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
+    .setDataPointer(asciiRow_);
+  if (hbaseAccessTdb().hbaseTimestampTuppIndex_ > 0)
+    {
+      workAtp_->getTupp(hbaseAccessTdb().hbaseTimestampTuppIndex_) 
+        .setDataPointer((char*)latestTimestampForCols_);
+    }
+  if (hbaseAccessTdb().hbaseVersionTuppIndex_ > 0)
+    {
+      workAtp_->getTupp(hbaseAccessTdb().hbaseVersionTuppIndex_) 
+        .setDataPointer((char*)latestVersionNumForCols_);
+    }
   
   if (convertExpr())
     {
@@ -1149,6 +1535,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 	  return -1;
 	}
     }
+
+  colValEntry_++;
 
   return 0;
 }
@@ -1184,26 +1572,26 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
   short colNameLen;
   BYTE nullVal;
   Lng32 retcode;
-  int numCols; 
-  retcode = ehi_->getNumCols(numCols);
+  int numCells; 
+  retcode = ehi_->getNumCellsPerRow(numCells);
   if (retcode == HBASE_ACCESS_NO_ROW)
      return retcode ;
 
   if (retcode != HBASE_ACCESS_SUCCESS)
   {
-     setupError(retcode, "", "getNumCols()");
+     setupError(retcode, "", "getNumCellsPerRow()");
      return retcode;
   }
 
   // aligned format should only return one column.
-  if (numCols > 2)
+  if (numCells > 2)
     {
       // error
       return -HBASE_CREATE_ROW_ERROR;
     }
 
   Lng32 asciiRowLen = hbaseAccessTdb().asciiRowLen_;
-  for (int colNo= 0; colNo < numCols; colNo++)
+  for (int colNo= 0; colNo < numCells; colNo++)
   {
     retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
     if (retcode != HBASE_ACCESS_SUCCESS)
@@ -1508,10 +1896,20 @@ void ExHbaseAccessTcb::setupPrevRowId()
   prevRowId_.len = rowId_.len;
   if (rowwiseRow_)
     {
-      //      rowwiseRow_[0] = 0;
       rowwiseRowLen_ = 0;
     }
 }  
+
+void ExHbaseAccessTcb::extractColNameFields
+(char * inValPtr, short &colNameLen, char* &colName)
+{
+  // inValPtr points to:
+  // 2 bytes len, len bytes colname.
+  char * currPtr = inValPtr;
+  colNameLen = *(short*)currPtr;
+  currPtr += sizeof(short);
+  colName = currPtr;
+}
 
 Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
 					    LIST(HbaseStr) &columns)
@@ -1522,9 +1920,11 @@ Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
       HbaseStr colNameText;
       for (Lng32 i = 0; i < listOfColNames->numEntries(); i++)
 	{
-	  short colNameLen = *(short*)listOfColNames->getCurr();
-	  char * colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
-	  
+          short colNameLen;
+          char * colName;
+          extractColNameFields((char*)listOfColNames->getCurr(),
+                               colNameLen, colName);
+ 
 	  listOfColNames->advance();
 	  
 	  colNameText.val = colName;
@@ -1544,9 +1944,11 @@ Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
       listOfColNames->position();
       for (Lng32 i = 0; i < listOfColNames->numEntries(); i++)
 	{
-	  short colNameLen = *(short*)listOfColNames->getCurr();
-	  const char * colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
-	  
+          short colNameLen;
+          char * colName;
+          extractColNameFields((char*)listOfColNames->getCurr(),
+                               colNameLen, colName);
+ 
 	  listOfColNames->advance();
 	  
           NAString colNameText(colName, colNameLen, getHeap());
@@ -2086,8 +2488,8 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
 	{
          if (!posVec)
          {
-	   colNameLen = *(short*)listOfColNames->getCurr();
-	   colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
+           extractColNameFields((char*)listOfColNames->getCurr(),
+                                colNameLen, colName);
          }
          else
          {
@@ -2223,8 +2625,9 @@ short ExHbaseAccessTcb::createDirectAlignedRowBuffer( UInt16 tuppIndex,
   rowCurPtr += sizeof(short);
   listOfColNames->position();
   
-  colNameLen = *(short*)listOfColNames->getCurr();
-  colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
+  extractColNameFields((char*)listOfColNames->getCurr(),
+                       colNameLen, colName);
+  
   colVal = tuppRow; 
   
   colValLen =  insertRowlen_;
@@ -2494,7 +2897,6 @@ ExWorkProcRetcode ExHbaseTaskTcb::work(short &rc)
 
   return WORK_OK;
 }
-
 
 ExHbaseAccessBulkLoadTaskTcb::ExHbaseAccessBulkLoadTaskTcb(const ExHbaseAccessTdb &hbaseAccessTdb, ex_globals * glob) :
     ExHbaseAccessTcb(hbaseAccessTdb, glob), step_(NOT_STARTED)

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -194,7 +194,9 @@ public:
     FUNC_CAST_TYPE = 112,
     FUNC_SEQUENCE_VALUE = 113,
     FUNC_PIVOT_GROUP = 114,
-    FUNC_ROWNUM    = 115
+    FUNC_ROWNUM    = 115,
+    FUNC_HBASE_TIMESTAMP     = 116,
+    FUNC_HBASE_VERSION = 117
   };
 
   // max number of operands (including result) in a clause.
