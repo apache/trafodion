@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,30 +15,17 @@
 //  limitations under the License.
 //
 // @@@ END COPYRIGHT @@@
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-
 
 #include "sqtypes.h"
 #include <stdio.h>
 #include <string.h>
 #define SECLIBAPI
 
-
-#endif /* _WIN32 */
-
-/* Begin: from inc\rosetta\rosgen.h */
-
-
 DLLEXPORT int_16/*usr*//*prv*/TRANSIDTOTEXT
 (fixed_0        TransID,     /* IN : Required. */
-
- char			 *Text,        /* OUT: Required. */
-
+ char          *Text,        /* OUT: Required. */
  int_16         TextByteLen, /* IN : Required.  Range: >2. */
-
- int_16        *BytesUsed) /**/
+ int_16        *BytesUsed)   /**/
 /* This procedure converts an internal format transid to its external ascii*/
 /* form.  The 'TextByteLen' parameter indicates how many bytes are in 'Text'.*/
 /* The 'BytesUsed' parameter returns the number of bytes used in the 'Text'*/
