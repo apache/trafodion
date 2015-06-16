@@ -27,35 +27,6 @@ using namespace std;
 #include "monlogging.h"
 #include "persistconfig.h"
 
-
-const char *PersistTypeString( PersistType_t type )
-{
-    const char *str;
-    
-    switch( type )
-    {
-        case PersistType_DTM:
-            str = "DTM";
-            break;
-        case PersistType_TSID:
-            str = "TSID";
-            break;
-        case PersistType_SSCP:
-            str = "SSCP";
-            break;
-        case PersistType_SSMP:
-            str = "SSMP";
-            break;
-        case PersistType_LOB:
-            str = "LOB";
-            break;
-        default:
-            str = "PersistType_Undefined";
-    }
-
-    return( str );
-}
-
 const char *FormatNidString( FormatNid_t type )
 {
     const char *str;
@@ -98,19 +69,19 @@ const char *FormatZidString( FormatZid_t type )
 //  Persistent Process Configuration
 ///////////////////////////////////////////////////////////////////////////////
 
-CPersistConfig::CPersistConfig( PersistType_t persistType
-                              , const char   *processNamePrefix
-                              , const char   *processNameFormat
-                              , const char   *stdoutPrefix
-                              , const char   *stdoutFormat
-                              , const char   *programName
-                              , const char   *zidFormat
-                              , PROCESSTYPE   processType
-                              , bool          requiresDTM
-                              , int           persistRetries
-                              , int           persistWindow
+CPersistConfig::CPersistConfig( const char  *persistPrefix
+                              , const char  *processNamePrefix
+                              , const char  *processNameFormat
+                              , const char  *stdoutPrefix
+                              , const char  *stdoutFormat
+                              , const char  *programName
+                              , const char  *zidFormat
+                              , PROCESSTYPE  processType
+                              , bool         requiresDTM
+                              , int          persistRetries
+                              , int          persistWindow
                               )
-              : persistType_(persistType)
+              : persistPrefix_(persistPrefix)
               , processNamePrefix_(processNamePrefix)
               , processNameFormat_(processNameFormat)
               , stdoutPrefix_(stdoutPrefix)
@@ -202,7 +173,7 @@ CPersistConfigContainer::~CPersistConfigContainer(void)
     TRACE_EXIT;
 }
 
-CPersistConfig *CPersistConfigContainer::AddPersistConfig( PersistType_t persistType
+CPersistConfig *CPersistConfigContainer::AddPersistConfig( const char  *persistPrefix
                                                          , const char  *processNamePrefix
                                                          , const char  *processNameFormat
                                                          , const char  *stdoutPrefix
@@ -218,7 +189,7 @@ CPersistConfig *CPersistConfigContainer::AddPersistConfig( PersistType_t persist
     const char method_name[] = "CPersistConfigContainer::AddPersistConfig";
     TRACE_ENTRY;
 
-    CPersistConfig *persistConfig = new CPersistConfig( persistType
+    CPersistConfig *persistConfig = new CPersistConfig( persistPrefix
                                                       , processNamePrefix
                                                       , processNameFormat
                                                       , stdoutPrefix
@@ -273,7 +244,7 @@ void CPersistConfigContainer::DeletePersistConfig( CPersistConfig *persistConfig
     delete persistConfig;
 }
 
-CPersistConfig *CPersistConfigContainer::GetPersistConfig( PersistType_t persistType )
+CPersistConfig *CPersistConfigContainer::GetPersistConfig( const char *persistPrefix )
 {
     CPersistConfig *config = head_;
 
@@ -282,7 +253,7 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( PersistType_t persist
 
     while ( config )
     {
-        if ( config->GetPersistType() == persistType )
+        if (strcasecmp( config->GetPersistPrefix(), persistPrefix) == 0)
         {
             break;
         }

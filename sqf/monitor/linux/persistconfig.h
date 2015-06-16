@@ -35,16 +35,6 @@ using namespace std;
 
 typedef enum 
 {
-     PersistType_Undefined=0
-   , PersistType_DTM
-   , PersistType_TSID
-   , PersistType_SSCP
-   , PersistType_SSMP
-   , PersistType_LOB
-} PersistType_t; 
-
-typedef enum 
-{
      Nid_Undefined=0
    , Nid_ALL          // %nid+
    , Nid_RELATIVE     // %nid
@@ -67,7 +57,7 @@ public:
     CPersistConfigContainer( void );
     ~CPersistConfigContainer( void );
 
-    CPersistConfig *AddPersistConfig( PersistType_t persistType
+    CPersistConfig *AddPersistConfig( const char  *persistPrefix
                                     , const char  *processNamePrefix
                                     , const char  *processNameFormat
                                     , const char  *stdoutPrefix
@@ -81,7 +71,7 @@ public:
                                     );
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
-    CPersistConfig *GetPersistConfig( PersistType_t persistType );
+    CPersistConfig *GetPersistConfig( const char *persistPrefix );
     inline int    GetPersistConfigCount( void ) { return ( persistsCount_ ); }
 
 protected:
@@ -98,7 +88,7 @@ private:
 
 class CPersistConfig
 {
-    friend CPersistConfig *CPersistConfigContainer::AddPersistConfig( PersistType_t persistType
+    friend CPersistConfig *CPersistConfigContainer::AddPersistConfig( const char  *persistPrefix
                                                                     , const char  *processNamePrefix
                                                                     , const char  *processNameFormat
                                                                     , const char  *stdoutPrefix
@@ -112,23 +102,23 @@ class CPersistConfig
                                                                     );
     friend void CPersistConfigContainer::DeletePersistConfig( CPersistConfig *persistConfig );
 public:
-    CPersistConfig( PersistType_t persistType
-                  , const char   *processNamePrefix
-                  , const char   *processNameFormat
-                  , const char   *stdoutPrefix
-                  , const char   *stdoutFormat
-                  , const char   *programName
-                  , const char   *zidFormat
-                  , PROCESSTYPE   processType
-                  , bool          requiresDTM
-                  , int           persistRetries
-                  , int           persistWindow
+    CPersistConfig( const char  *persistPrefix
+                  , const char  *processNamePrefix
+                  , const char  *processNameFormat
+                  , const char  *stdoutPrefix
+                  , const char  *stdoutFormat
+                  , const char  *programName
+                  , const char  *zidFormat
+                  , PROCESSTYPE  processType
+                  , bool         requiresDTM
+                  , int          persistRetries
+                  , int          persistWindow
                   );
     ~CPersistConfig( void );
 
     inline CPersistConfig *GetNext( void ){ return( next_); }
 
-    inline PersistType_t GetPersistType( void ) { return( persistType_ ); }
+    inline const char   *GetPersistPrefix( void ) { return( persistPrefix_.c_str() ); }
     inline const char   *GetProcessNamePrefix( void ) { return( processNamePrefix_.c_str() ); }
     inline const char   *GetProcessNameFormat( void ) { return( processNameFormat_.c_str() ); }
     inline FormatNid_t   GetProcessNameNidFormat( void ) { return( processNameNidFormat_ ); }
@@ -145,7 +135,7 @@ public:
 
 protected:
 private:
-    PersistType_t   persistType_;
+    string          persistPrefix_;
     string          processNamePrefix_;
     string          processNameFormat_;
     string          stdoutPrefix_;

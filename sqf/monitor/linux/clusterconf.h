@@ -31,6 +31,7 @@
 #include "persistconfig.h"
 
 #define MAX_TOKEN   132
+#define PERSIST_PROCESS_KEYS       "PERSIST_PROCESS_KEYS"
 #define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
 #define PERSIST_PROCESS_TYPE_KEY   "PROCESS_TYPE"
 #define PERSIST_PROGRAM_NAME_KEY   "PROGRAM_NAME"
@@ -48,9 +49,10 @@ public:
     CClusterConfig( void );
     ~CClusterConfig( void );
 
-    bool  Initialize( void );
-    bool  LoadConfig( void );
-    inline bool IsConfigReady( void ) { return ( configReady_ ); }
+    inline sqlite3 *GetConfigDb( void ){ return ( db_ ); }
+    bool            Initialize( void );
+    bool            LoadConfig( void );
+    inline bool     IsConfigReady( void ) { return ( configReady_ ); }
 
 protected:
 private:
@@ -96,8 +98,7 @@ private:
     sqlite3   *db_;
 
     void  AddNodeConfiguration( bool spareNode );
-    void  AddPersistConfiguration( PersistType_t   persistType );
-    PersistType_t GetPersistType( const char *processkey );
+    void  AddPersistConfiguration( void );
     PROCESSTYPE GetProcessType( const char *processtype );
     bool  ProcessLNode( int nid
                       , int pnid
@@ -113,7 +114,7 @@ private:
                       , int excfirstcore
                       , int exclastcore
                       , int spnid );
-    bool  ProcessPersist( PersistType_t   persistType );
+    bool  ProcessPersist( void );
     bool  ProcessPersistData( const char *persistkey
                             , const char *persistvalue );
 };

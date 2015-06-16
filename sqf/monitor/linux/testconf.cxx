@@ -56,7 +56,6 @@ char Node_name[MPI_MAX_PROCESSOR_NAME];
 int MyPNID = -1;
 long trace_settings = 0;
 
-const char *PersistTypeString( PersistType_t type );
 const char *FormatNidString( FormatNid_t type );
 const char *FormatZidString( FormatZid_t type );
 
@@ -438,7 +437,7 @@ int TestClusterConfig( void )
                             "   requiresDTM = %s\n"
                             "   retries     = {%d:%d}\n"
                             "   zid         = {%s} (%s)\n"
-                          , PersistTypeString(persistConfig->GetPersistType())
+                          , persistConfig->GetPersistPrefix()
                           , persistConfig->GetProcessNamePrefix()
                           , persistConfig->GetProcessNameFormat()
                           , FormatNidString(persistConfig->GetProcessNameNidFormat())
@@ -512,7 +511,7 @@ int main( int argc, char *argv[] )
     }
 
     printf( "BEGIN Unit Test\n\n" );
-    
+
     if ( ClusterConfigTest )
     {
         error = TestClusterConfig( );

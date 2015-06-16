@@ -79,7 +79,7 @@ INCLUDES+= -I../../inc
 INCLUDES+= -I../../../log4cpp/$(LOG4CPP_VER)/include
 INCLUDES+= -I../../commonLogger
 
-LIBS+=  -lsqlite3
+LIBS +=  -lsqlite3
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS

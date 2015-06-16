@@ -38,9 +38,12 @@ using namespace std;
 #include "seabed/trace.h"
 #include "montrace.h"
 #include "monlogging.h"
+#include "config.h"
+#include "pnode.h"
 #include "clusterconf.h"
 
-const char *PersistTypeString( PersistType_t type );
+extern CNodeContainer *Nodes;
+extern CConfigContainer *Config;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Cluster Configuration
@@ -114,7 +117,9 @@ bool CClusterConfig::Initialize( void )
     // Open the configuration database file
     snprintf( dbase, sizeof(dbase)
             , "%s/sql/scripts/sqconfig.db", getenv("MY_SQROOT"));
-    int rc = sqlite3_open_v2(dbase, &db_, SQLITE_OPEN_READONLY, NULL);
+    int rc = sqlite3_open_v2( dbase, &db_
+                            , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
+                            , NULL);
     if ( rc )
     {
         db_ = NULL;
@@ -136,7 +141,7 @@ bool CClusterConfig::Initialize( void )
 
     if ( db_ != NULL )
     {
-        rc = sqlite3_busy_timeout(db_, 500);
+        rc = sqlite3_busy_timeout(db_, 1000);
         if ( rc )
         {
             char la_buf[MON_STRING_BUF_SIZE];
@@ -295,6 +300,12 @@ bool CClusterConfig::LoadConfig( void )
         }
         else if ( rc == SQLITE_DONE )
         {
+            // Destroy prepared statement object
+            if ( prepLnodeStmt != NULL )
+            {
+                sqlite3_finalize(prepLnodeStmt);
+            }
+
             if ( trace_settings & TRACE_INIT )
             {
                 trace_printf("%s@%d Finished processing logical nodes.\n",
@@ -360,6 +371,12 @@ bool CClusterConfig::LoadConfig( void )
         }
         else if ( rc == SQLITE_DONE )
         {
+            // Destroy prepared statement object
+            if ( prepSnodeStmt != NULL )
+            {
+                sqlite3_finalize(prepSnodeStmt);
+            }
+
             if ( trace_settings & TRACE_INIT )
             {
                 trace_printf("%s@%d Finished processing spare nodes.\n",
@@ -416,6 +433,7 @@ bool CClusterConfig::LoadConfig( void )
         // Process each key in the vector
         for (pkit = pkeysVector_.begin(); pkit < pkeysVector_.end(); pkit++ )
         {
+            strncpy(persistPrefix_, pkit->c_str(), sizeof(persistPrefix_));
             processNamePrefix_[0] = '\0';
             processNameFormat_[0] = '\0';
             stdoutPrefix_[0] = '\0';
@@ -426,8 +444,7 @@ bool CClusterConfig::LoadConfig( void )
             requiresDTM_ = false;
             persistRetries_ = 0;
             persistWindow_ = 0;
-            PersistType_t   persistType = GetPersistType( pkit->c_str() );
-            if ( ! ProcessPersist( persistType ) )
+            if ( ! ProcessPersist() )
             {
                 char la_buf[MON_STRING_BUF_SIZE];
                 snprintf( la_buf, sizeof(la_buf)
@@ -436,7 +453,12 @@ bool CClusterConfig::LoadConfig( void )
                 mon_log_write(MON_CLUSTERCONF_LOAD_8, SQ_LOG_CRIT, la_buf);
             }
 
-            AddPersistConfiguration( persistType );
+            AddPersistConfiguration();
+        }
+        // Destroy prepared statement object
+        if ( prepPersistKeysStmt != NULL )
+        {
+            sqlite3_finalize(prepPersistKeysStmt);
         }
     }
     else
@@ -513,7 +535,7 @@ void CClusterConfig::AddNodeConfiguration( bool spareNode )
     TRACE_EXIT;
 }
 
-void CClusterConfig::AddPersistConfiguration( PersistType_t persistType )
+void CClusterConfig::AddPersistConfiguration( void )
 {
     const char method_name[] = "CClusterConfig::AddPersistConfiguration";
     TRACE_ENTRY;
@@ -522,10 +544,10 @@ void CClusterConfig::AddPersistConfiguration( PersistType_t persistType )
     {
         trace_printf( "%s@%d persistkey=%s\n"
                     , method_name, __LINE__
-                    , PersistTypeString( persistType ) );
+                    , persistPrefix_ );
     }
 
-    persistConfig_ = AddPersistConfig( persistType
+    persistConfig_ = AddPersistConfig( persistPrefix_
                                      , processNamePrefix_
                                      , processNameFormat_
                                      , stdoutPrefix_
@@ -540,32 +562,6 @@ void CClusterConfig::AddPersistConfiguration( PersistType_t persistType )
     TRACE_EXIT;
 }
 
-PersistType_t CClusterConfig::GetPersistType( const char *processkey )
-{
-    if (strcmp( "DTM", processkey) == 0)
-    {
-        return(PersistType_DTM);
-    }
-    else if (strcmp( "TSID", processkey) == 0)
-    {
-        return(PersistType_TSID);
-    }
-    else if (strcmp( "SSCP", processkey) == 0)
-    {
-        return(PersistType_SSCP);
-    }
-    else if (strcmp( "SSMP", processkey) == 0)
-    {
-        return(PersistType_SSMP);
-    }
-    else if (strcmp( "LOB", processkey) == 0)
-    {
-        return(PersistType_LOB);
-    }
-
-    return(PersistType_Undefined);
-}
-
 PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
 {
     if (strcmp( "DTM", processtype) == 0)
@@ -575,6 +571,18 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
     else if (strcmp( "GENERIC", processtype) == 0)
     {
         return(ProcessType_Generic);
+    }
+    else if (strcmp( "MXOSRVR", processtype) == 0)
+    {
+        return(ProcessType_MXOSRVR);
+    }
+    else if (strcmp( "SPX", processtype) == 0)
+    {
+        return(ProcessType_SPX);
+    }
+    else if (strcmp( "SMS", processtype) == 0)
+    {
+        return(ProcessType_SMS);
     }
     else if (strcmp( "SSMP", processtype) == 0)
     {
@@ -750,6 +758,12 @@ bool CClusterConfig::ProcessSNode( int pnid
             }
             else if ( rc == SQLITE_DONE )
             {
+                // Destroy prepared statement object
+                if ( prepSnodeStmt != NULL )
+                {
+                    sqlite3_finalize(prepSnodeStmt);
+                }
+
                 if ( trace_settings & TRACE_INIT )
                 {
                     trace_printf("%s@%d Finished processing spared node set.\n",
@@ -774,7 +788,7 @@ bool CClusterConfig::ProcessSNode( int pnid
     return( true );
 }
 
-bool CClusterConfig::ProcessPersist( PersistType_t persistType )
+bool CClusterConfig::ProcessPersist( void )
 {
     const char method_name[] = "CClusterConfig::ProcessPersist";
     TRACE_ENTRY;
@@ -790,109 +804,103 @@ bool CClusterConfig::ProcessPersist( PersistType_t persistType )
     {
         trace_printf( "%s@%d processkey=%s\n"
                     , method_name, __LINE__
-                    , PersistTypeString( persistType ) );
+                    , persistPrefix_ );
     }
     
-    snprintf( param, sizeof(param), "%s_%%", PersistTypeString( persistType ) );
+    snprintf( param, sizeof(param), "%s_%%", persistPrefix_ );
 
-    if ( persistType != PersistType_Undefined )
+    // Prepare select persistent process for the key
+    selPersistStmt = "select p.keyName, p.valueName"
+                     " from monRegPersistData p"
+                     "  where p.keyName like ?";
+
+    rc = sqlite3_prepare_v2( db_
+                           , selPersistStmt
+                           , strlen(selPersistStmt)+1
+                           , &prepPersistStmt
+                           , NULL);
+    if ( rc != SQLITE_OK )
     {
-        // Prepare select persistent process for the key
-        selPersistStmt = "select p.keyName, p.valueName"
-                         " from monRegPersistData p"
-                         "  where p.keyName like ?";
-    
-        rc = sqlite3_prepare_v2( db_
-                               , selPersistStmt
-                               , strlen(selPersistStmt)+1
-                               , &prepPersistStmt
-                               , NULL);
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] prepare persistent process failed, %s\n"
+                , method_name,  sqlite3_errmsg(db_) );
+        mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_1, SQ_LOG_CRIT, la_buf );
+        abort();
+    }
+    else
+    {   // Set key in prepared statement
+        rc = sqlite3_bind_text( prepPersistStmt, 1, param, -1, SQLITE_STATIC );
         if ( rc != SQLITE_OK )
         {
             char la_buf[MON_STRING_BUF_SIZE];
             snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] prepare persistent process failed, %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_1, SQ_LOG_CRIT, la_buf );
+                    , "[%s] sqlite3_bind_text persistent processkey (%s) failed: %s\n"
+                    , method_name, param,  sqlite3_errmsg(db_) );
+            mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_2, SQ_LOG_CRIT, la_buf );
             abort();
         }
-        else
-        {   // Set key in prepared statement
-            rc = sqlite3_bind_text( prepPersistStmt, 1, param, -1, SQLITE_STATIC );
-            if ( rc != SQLITE_OK )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s] sqlite3_bind_text persistent processkey (%s) failed: %s\n"
-                        , method_name, PersistTypeString( persistType ),  sqlite3_errmsg(db_) );
-                mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_2, SQ_LOG_CRIT, la_buf );
-                abort();
-            }
-        }
-
-        // Process each persist key value pair
-        while ( 1 )
-        {
-            rc = sqlite3_step( prepPersistStmt );
-            if ( rc == SQLITE_ROW )
-            {  // Process row
-                int colCount = sqlite3_column_count(prepPersistStmt);
-                if ( trace_settings & TRACE_INIT )
-                {
-                    trace_printf("%s@%d sqlite3_column_count=%d\n",
-                                 method_name, __LINE__, colCount);
-                    for (int i=0; i<colCount; ++i)
-                    {
-                        trace_printf("%s@%d column %d is %s\n",
-                                     method_name, __LINE__, i,
-                                     sqlite3_column_name(prepPersistStmt, i));
-                    }
-                }
-
-                persistKey = (const char *) sqlite3_column_text(prepPersistStmt, 0);
-                persistValue = (const char *) sqlite3_column_text(prepPersistStmt, 1);
-
-                // Parse the value based on the key
-                if ( ! ProcessPersistData( persistKey, persistValue ) )
-                {
-                    char la_buf[MON_STRING_BUF_SIZE];
-                    snprintf( la_buf, sizeof(la_buf)
-                            , "[%s], Error: Invalid persist key value in "
-                              "configuration, key=%s, value=%s\n"
-                            , method_name, persistKey, persistValue );
-                    mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_3, SQ_LOG_CRIT, la_buf);
-                    abort();
-                }
-            }
-            else if ( rc == SQLITE_DONE )
-            {
-                if ( trace_settings & TRACE_INIT )
-                {
-                    trace_printf( "%s@%d Finished processing persistent process configuration.\n"
-                                , method_name, __LINE__);
-                }
-
-                break;
-            }
-            else
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s] Configuration database select persistent process failed, %s\n"
-                        , method_name,  sqlite3_errmsg(db_) );
-                mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_4, SQ_LOG_CRIT, la_buf);
-                abort();
-            }
-        }
     }
-    else
+
+    // Process each persist key value pair
+    while ( 1 )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s] Invalid persist process key type\n"
-                , method_name );
-        mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_5, SQ_LOG_CRIT, la_buf);
-        abort();
+        rc = sqlite3_step( prepPersistStmt );
+        if ( rc == SQLITE_ROW )
+        {  // Process row
+            int colCount = sqlite3_column_count(prepPersistStmt);
+            if ( trace_settings & TRACE_INIT )
+            {
+                trace_printf("%s@%d sqlite3_column_count=%d\n",
+                             method_name, __LINE__, colCount);
+                for (int i=0; i<colCount; ++i)
+                {
+                    trace_printf("%s@%d column %d is %s\n",
+                                 method_name, __LINE__, i,
+                                 sqlite3_column_name(prepPersistStmt, i));
+                }
+            }
+
+            persistKey = (const char *) sqlite3_column_text(prepPersistStmt, 0);
+            persistValue = (const char *) sqlite3_column_text(prepPersistStmt, 1);
+
+            // Parse the value based on the key
+            if ( ! ProcessPersistData( persistKey, persistValue ) )
+            {
+                char la_buf[MON_STRING_BUF_SIZE];
+                snprintf( la_buf, sizeof(la_buf)
+                        , "[%s], Error: Invalid persist key value in "
+                          "configuration, key=%s, value=%s\n"
+                        , method_name, persistKey, persistValue );
+                mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_3, SQ_LOG_CRIT, la_buf);
+                abort();
+            }
+        }
+        else if ( rc == SQLITE_DONE )
+        {
+            // Destroy prepared statement object
+            if ( prepPersistStmt != NULL )
+            {
+                sqlite3_finalize(prepPersistStmt);
+            }
+
+            if ( trace_settings & TRACE_INIT )
+            {
+                trace_printf( "%s@%d Finished processing persistent process configuration.\n"
+                            , method_name, __LINE__);
+            }
+
+            break;
+        }
+        else
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Configuration database select persistent process failed, %s\n"
+                    , method_name,  sqlite3_errmsg(db_) );
+            mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_4, SQ_LOG_CRIT, la_buf);
+            abort();
+        }
     }
 
     TRACE_EXIT;
@@ -905,7 +913,6 @@ bool CClusterConfig::ProcessPersistData( const char *persistkey
     const char method_name[] = "CClusterConfig::ProcessPersistData";
     TRACE_ENTRY;
 
-    char value[MAX_PERSIST_KEY_STR];
     char workValue[MAX_PERSIST_KEY_STR];
     char *pch;
     char *token1;
@@ -914,7 +921,6 @@ bool CClusterConfig::ProcessPersistData( const char *persistkey
     static const char *delimComma = ",";
     static const char *delimPercent = "%";
     static int chPercent = '%';
-    int  rc;
 
     if ( trace_settings & TRACE_INIT )
     {
