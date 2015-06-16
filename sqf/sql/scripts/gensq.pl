@@ -326,12 +326,20 @@ sub genIDTMSrv {
         printIDTMScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
         printIDTMScript(1, "sqshell -a <<eof\n");
         printIDTMScript(1, "\n! Start TSID\n");
-        for ($i=0; $i < $SQ_IDTMSRV; $i++) {
-            printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
-            sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
-            printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
-            sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
-            printIDTMScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
+        if ($SQ_IDTMSRV == 1) {
+            printIDTMScript(1, "set {process \\\$TSID } PERSIST_RETRIES=2,30\n");
+            sqconfigdb::addDbProcData('$TSID', "PERSIST_RETRIES", "2,30");
+            printIDTMScript(1, "set {process \\\$TSID } PERSIST_ZONES=$l_pn\n");
+            sqconfigdb::addDbProcData('$TSID', "PERSIST_ZONES", "$l_pn");
+            printIDTMScript(1, "exec {nowait, name \\\$TSID, nid 0, out stdout_idtmsrv} idtmsrv\n");
+        } else {
+            for ($i=0; $i < $SQ_IDTMSRV; $i++) {
+                printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
+                sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
+                printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
+                sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
+                printIDTMScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
+            }
         }
         printIDTMScript(1, "delay 1\n");
         printIDTMScript(1, "exit\n");
@@ -414,20 +422,20 @@ sub genSSMPCommand {
     my $l_program_name         = @_[2];
     my $l_retries              = @_[3];
 
-    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n",
+    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_RETRIES=$l_retries,60\n",
                             $l_process_name_prefix,
                             $l_nid);
     printRMSScript(2, $l_string);
 
-    my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
+    my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", $l_process_name_prefix, $l_nid);
     printRMSStopScript(2, $l_stopString);
 
-    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
+    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_ZONES=$l_nid,$l_nid \n",
                             $l_process_name_prefix,
                             $l_nid);
     printRMSScript(2, $l_string);
 
-    my $l_string =  sprintf("\texec {type ssmp, nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n",
+    my $l_string =  sprintf("\texec {type ssmp, nowait, nid $l_nid, name \\\$%s%d, out stdout_%s%d } %s\n",
                             $l_process_name_prefix,
                             $l_nid,
                             $l_process_name_prefix,
@@ -436,8 +444,8 @@ sub genSSMPCommand {
                             );
     printRMSScript(2, $l_string);
 
-    my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
-    my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
+    my $l_procname = sprintf('$%s%d', $l_process_name_prefix, $l_nid);
+    my $l_stdout = sprintf('stdout_%s%d', $l_process_name_prefix, $l_nid);
     sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
     sqconfigdb::addDbProcDef( $ProcessType_SSMP, $l_procname, $l_nid, $l_program_name,
                               $l_stdout, "" );
@@ -450,20 +458,20 @@ sub genSSCPCommand {
     my $l_program_name         = @_[2];
     my $l_retries              = @_[3];
 
-    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n",
+    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_RETRIES=$l_retries,60\n",
                             $l_process_name_prefix,
                             $l_nid);
     printRMSScript(3, $l_string);
 
-    my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
+    my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", $l_process_name_prefix, $l_nid);
     printRMSStopScript(3, $l_stopString);
 
-    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
+    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_ZONES=$l_nid,$l_nid \n",
                             $l_process_name_prefix,
                             $l_nid);
     printRMSScript(3, $l_string);
 
-    my $l_string =  sprintf("\texec {nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n",
+    my $l_string =  sprintf("\texec {nowait, nid $l_nid, name \\\$%s%d, out stdout_%s%d } %s\n",
                             $l_process_name_prefix,
                             $l_nid,
                             $l_process_name_prefix,
@@ -472,8 +480,8 @@ sub genSSCPCommand {
                             );
     printRMSScript(3, $l_string);
 
-    my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
-    my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
+    my $l_procname = sprintf('$%s%d', $l_process_name_prefix, $l_nid);
+    my $l_stdout = sprintf('stdout_%s%d', $l_process_name_prefix, $l_nid);
     sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
     sqconfigdb::addDbProcDef( $ProcessType_Generic, $l_procname, $l_nid, $l_program_name,
                               $l_stdout, "" );

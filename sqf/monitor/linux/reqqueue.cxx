@@ -2607,6 +2607,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request = new CExtPNodeInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
+
         case ReqType_Set:
             request = new CExtSetReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3542,6 +3543,7 @@ const bool CReqQueue::reqConcurrent[] = {
    true,     // ReqType_Exit
    true,     // ReqType_Get
    true,     // ReqType_Kill
+   true,     // ReqType_MonStats
    false,    // ReqType_Mount
    true,     // ReqType_NewProcess
    false,    // ReqType_NodeDown
@@ -3551,6 +3553,7 @@ const bool CReqQueue::reqConcurrent[] = {
    true,     // ReqType_Notify
    true,     // ReqType_Open
    true,     // ReqType_OpenInfo
+   true,     // ReqType_PNodeInfo
    true,     // ReqType_ProcessInfo
    true,     // ReqType_ProcessInfoCont
    true,     // ReqType_Set
@@ -3558,10 +3561,10 @@ const bool CReqQueue::reqConcurrent[] = {
    true,     // ReqType_Startup
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
+   false,    // ReqType_TmReady
    false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
-   true,     // ReqType_MonStats
    true      // ReqType_ZoneInfo
 };
 #endif
@@ -3576,6 +3579,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Exit
    true,     // ReqType_Get
    false,    // ReqType_Kill
+   false,    // ReqType_MonStats
    false,    // ReqType_Mount
    false,    // ReqType_NewProcess
    false,    // ReqType_NodeDown
@@ -3597,7 +3601,6 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
-   false,    // ReqType_MonStats
    false,    // ReqType_ZoneInfo
    false     // ReqType_Invalid
 };
@@ -3631,6 +3634,7 @@ const char * CReqQueue::svcReqType[] = {
     "Exit",
     "Get",
     "Kill",
+    "MonStats",
     "Mount",
     "NewProcess",
     "NodeDown",
@@ -3652,7 +3656,6 @@ const char * CReqQueue::svcReqType[] = {
     "TmSeqNum",
     "TmSync",
     "TransInfo",
-    "MonStats",
     "ZoneInfo"
 };
 

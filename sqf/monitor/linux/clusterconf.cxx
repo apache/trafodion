@@ -115,11 +115,18 @@ bool CClusterConfig::Initialize( void )
     char dbase[MAX_PROCESS_PATH];
 
     // Open the configuration database file
-    snprintf( dbase, sizeof(dbase)
-            , "%s/sql/scripts/sqconfig.db", getenv("MY_SQROOT"));
+    char *configenv = getenv("SQ_CONFIGDB");
+    if (configenv != NULL)
+    {
+        snprintf( dbase, sizeof(dbase), "%s", configenv);
+    }
+    else
+    {
+        snprintf( dbase, sizeof(dbase)
+                , "%s/sql/scripts/sqconfig.db", getenv("MY_SQROOT"));
+    }
     int rc = sqlite3_open_v2( dbase, &db_
                             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
-                            , NULL);
     if ( rc )
     {
         db_ = NULL;

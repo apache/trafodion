@@ -76,3 +76,4 @@ if [ "$clustern" = "-cluster" ]; then
 	fi
 fi
 export SQ_SHELL_NOCWD=1
+export SQ_CONFIGDB=$PWD/sqconfig.db

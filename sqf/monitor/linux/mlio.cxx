@@ -527,8 +527,8 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
                     ++it;
 
                     if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
-                        trace_printf( "%s@%d Sending notice to pid=%d:%d\n",
-                                      method_name, __LINE__, pv.pv.pid, pv.pv.verifier );
+                        trace_printf( "%s@%d Sending notice to pid=%d:%d, t=%d\n",
+                                      method_name, __LINE__, pv.pv.pid, pv.pv.verifier, msg->msg.type );
 
                     // send a notice ready control message to the client
                     rc = sendCtlMsg( pv.pv.pid, MC_NoticeReady, msg->trailer.index );
@@ -602,8 +602,8 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
  
             if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
             {
-                trace_printf( "%s@%d Sending notice to process %d:%d\n",
-                              method_name, __LINE__, pn.pid, pn.verifier );
+                trace_printf( "%s@%d Sending notice to process %d:%d, t=%d\n",
+                              method_name, __LINE__, pn.pid, pn.verifier, msg->msg.type );
             }
 
             rc = sendCtlMsg( pn.pid, MC_NoticeReady, msg->trailer.index );
