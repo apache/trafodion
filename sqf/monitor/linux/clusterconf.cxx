@@ -127,6 +127,7 @@ bool CClusterConfig::Initialize( void )
     }
     int rc = sqlite3_open_v2( dbase, &db_
                             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
+                            , NULL);
     if ( rc )
     {
         db_ = NULL;
