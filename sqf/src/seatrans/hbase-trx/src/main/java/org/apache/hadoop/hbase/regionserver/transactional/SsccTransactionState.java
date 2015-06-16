@@ -346,7 +346,12 @@ public class SsccTransactionState extends TransactionState{
                                 allcollist = byteMerger(allcollist,colVBytes);
                             }
                         }
-                        if(indexOf(allcollist,matcher) != -1  || allcollist.length == 0)
+                        boolean allocListIsNull = false;
+                        if( allcollist == null) allocListIsNull = true;
+                        else {
+                            if(allcollist.length == 0)  allocListIsNull = true;
+                        }
+                        if(indexOf(allcollist,matcher) != -1  || allocListIsNull == true)
                         {
                             sameCommit = true;
                             if(LOG.isTraceEnabled()) LOG.trace("handleResult: check version item cid: " + commitId );
