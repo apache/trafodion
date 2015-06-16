@@ -7324,7 +7324,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   desc_struct * tableDesc = NULL;
   NAString schNameL = "\"";
   schNameL += schName;
-  schNameL += "\"";
+  schNameL += "\"";  // transforms internal format schName to external format
 
   ComObjectName coName(catName, schNameL, objName);
   NAString extTableName = coName.getExternalName(TRUE);
@@ -7370,7 +7370,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   else
     return NULL;
   
-  ComObjectName coConstrName(catName, schName, constrName);
+  ComObjectName coConstrName(catName, schNameL, constrName);
   NAString * extConstrName = 
     new(STMTHEAP) NAString(coConstrName.getExternalName(TRUE));
   
