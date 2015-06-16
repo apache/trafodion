@@ -311,7 +311,9 @@ eof
      grep FAILED $PWD/dtmTest.lst
  fi
 else
- echo "DTM is not configured as a persistent process. Skipping test 6!"
+   if ( ([ $test '==' -1 ] || [ $test '==' 6 ]) ); then
+     echo "DTM is not configured as a persistent process. Skipping test 6!"
+   fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
