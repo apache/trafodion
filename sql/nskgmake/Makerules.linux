@@ -496,8 +496,7 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 copytoolslibs:
 	mkdir -p $(NSKLIB)
 	(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
-	          $(THRIFT_LIB_DIR)/$(THRIFT_SO) \
-		  $(CURL_LIB_DIR)/$(LIBCURL_SO);	\
+	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
 	 do\
 	   cp -Pf $$i* $(NSKLIB); \
 	 done\
