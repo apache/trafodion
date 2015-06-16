@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 #include "ResStatistics.h"
 #include "srvrcommon.h"
 #include <tr1/memory>
+#include "PubInterface.h"
 
 struct passSession
 {

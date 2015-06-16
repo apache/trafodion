@@ -49,20 +49,6 @@ using namespace std;
 
 void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info);
 
-void UpdateStringText(string& textStr)
-{
-	int pos = 0;
-	while (pos != -1)
-	{
-		pos = textStr.find("'", pos);
-		if (pos != -1)
-		{
-			if(textStr.substr(pos, 2).compare("''") != 0)
-				textStr.insert(pos, "'");
-			pos = pos + 2;
-		}
-	}
-}
 
 extern ResStatisticsSession   *resStatSession;
 
@@ -2401,6 +2387,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_session_id = srvrGlobal->sessionId;
 	pQuery_info->m_client_name = srvrGlobal->ClientComputerName;
 	pQuery_info->m_application_name = srvrGlobal->ApplicationName;
+    UpdateStringText(pQuery_info->m_application_name);
 	pQuery_info->m_statement_id = statementId;
 	pQuery_info->m_statement_type = getStatementType(pSrvrStmt->sqlQueryType);
 	//SUBMIT_UTC_TS=EXEC_START_UTC_TS for now
