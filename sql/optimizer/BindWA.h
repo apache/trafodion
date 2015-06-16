@@ -1647,7 +1647,7 @@ public:
   inline void setISPExecLocation(const NAString & locationStr) { ISPExecLocation_ = locationStr; }
 
   const NAString & getISPExecLocation() const { return ISPExecLocation_ ;}
-  
+
 private:
 
   // --------------------------------------------------------------------
@@ -1952,6 +1952,7 @@ private:
   NABoolean hasCallStmts_;
 
   NAString ISPExecLocation_;
+
 }; // class BindWA
 
 class HbaseColUsageInfo : public NABasicObject

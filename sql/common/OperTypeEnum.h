@@ -729,6 +729,11 @@ enum OperatorTypeEnum {
                         // return number of the row being returned. Starts at 1
                         ITM_ROWNUM = 2512,
 
+                        ITM_HBASE_TIMESTAMP = 2513,
+                        ITM_HBASE_TIMESTAMP_REF = 2514,
+                        ITM_HBASE_VERSION = 2515,
+                        ITM_HBASE_VERSION_REF = 2516,
+
                         // list of item expressions
                         ITM_ITEM_LIST = 2550,
 

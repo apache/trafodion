@@ -3598,23 +3598,27 @@ const NAString TableAnalysis::getText() const
   {
     result += ">>>> " + x.colAnalysis()->getText();
   }
-  const CANodeIdSet &predecessors = caNodeAnalysis_->getJBBC()->getPredecessorJBBCs();
 
-  if (predecessors.entries() > 0)
-  {
-    char buf[12];
-    NABoolean first = TRUE;
-    result += "predecessor JBBCs: {";
-    for (CANodeId x=predecessors.init(); predecessors.next(x); predecessors.advance(x))
+  if (caNodeAnalysis_ && caNodeAnalysis_->getJBBC())
     {
-      if (!first)
-        result += ", ";
-      first = FALSE;
-      snprintf(buf, sizeof(buf), "%d", x.toUInt32());
-      result += buf;
+      const CANodeIdSet &predecessors = caNodeAnalysis_->getJBBC()->getPredecessorJBBCs();
+      
+      if (predecessors.entries() > 0)
+        {
+          char buf[12];
+          NABoolean first = TRUE;
+          result += "predecessor JBBCs: {";
+          for (CANodeId x=predecessors.init(); predecessors.next(x); predecessors.advance(x))
+            {
+              if (!first)
+                result += ", ";
+              first = FALSE;
+              snprintf(buf, sizeof(buf), "%d", x.toUInt32());
+              result += buf;
+            }
+          result += "}";
+        }
     }
-    result += "}";
-  }
 
   result += "\nIndexOnly Access Paths: \n";
   for (CollIndex i=0; i<indexOnlyAccessPaths_.entries(); i++)

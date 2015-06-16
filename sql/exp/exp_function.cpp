@@ -181,6 +181,8 @@ ExFunctionHbaseColumnsDisplay::ExFunctionHbaseColumnsDisplay() {};
 ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate() {};
 ExFunctionCastType::ExFunctionCastType() {};
 ExFunctionSequenceValue::ExFunctionSequenceValue() {};
+ExFunctionHbaseTimestamp::ExFunctionHbaseTimestamp() {};
+ExFunctionHbaseVersion::ExFunctionHbaseVersion() {};
 ExFunctionSVariance::ExFunctionSVariance(){};
 ExFunctionSStddev::ExFunctionSStddev(){};
 ExpRaiseErrorFunction::ExpRaiseErrorFunction(){};
@@ -606,6 +608,28 @@ ExFunctionSequenceValue::ExFunctionSequenceValue(OperatorTypeEnum oper_type,
 						 Space * space)
   : ex_function_clause(oper_type, 1, attr, space),
     sga_(sga),
+    flags_(0)
+{
+};
+
+ExFunctionHbaseTimestamp::ExFunctionHbaseTimestamp(
+                                                   OperatorTypeEnum oper_type,
+                                                   Attributes ** attr, 
+                                                   Lng32 colIndex,
+                                                   Space * space)
+  : ex_function_clause(oper_type, 2, attr, space),
+    colIndex_(colIndex),
+    flags_(0)
+{
+};
+
+ExFunctionHbaseVersion::ExFunctionHbaseVersion(
+                                                   OperatorTypeEnum oper_type,
+                                                   Attributes ** attr, 
+                                                   Lng32 colIndex,
+                                                   Space * space)
+  : ex_function_clause(oper_type, 2, attr, space),
+    colIndex_(colIndex),
     flags_(0)
 {
 };
@@ -6998,6 +7022,40 @@ ExFunctionSequenceValue::eval(char *op_data[], CollHeap *heap,
     }
 
   *(Int64*)result = seqVal;
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type 
+ExFunctionHbaseTimestamp::eval(char *op_data[], CollHeap *heap, 
+                               ComDiagsArea **diagsArea)
+{
+  short rc = 0;
+
+  // op_data[0] points to result. 
+  Attributes *resultAttr   = getOperand(0);
+  char * result =  op_data[0];
+
+  Int64 * hbaseTS = (Int64*)op_data[1];
+
+  *(Int64*)result = hbaseTS[colIndex_];
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type 
+ExFunctionHbaseVersion::eval(char *op_data[], CollHeap *heap, 
+                               ComDiagsArea **diagsArea)
+{
+  short rc = 0;
+
+  // op_data[0] points to result. 
+  Attributes *resultAttr   = getOperand(0);
+  char * result =  op_data[0];
+
+  Int64 * hbaseVersion = (Int64*)op_data[1];
+
+  *(Int64*)result = hbaseVersion[colIndex_];
 
   return ex_expr::EXPR_OK;
 }

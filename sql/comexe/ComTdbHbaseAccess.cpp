@@ -73,6 +73,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     const UInt16 keyColValTuppIndex,
 				     const UInt16 hbaseFilterValTuppIndex,
 
+                                     const UInt16 hbaseTimestampTuppIndex,
+                                     const UInt16 hbaseVersionTuppIndex,
+ 
 				     Queue * listOfScanRows,
 				     Queue * listOfGetRows,
 				     Queue * listOfFetchedColNames,
@@ -94,7 +97,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
                                      char * zkPort,
 				     HbasePerfAttributes * hbasePerfAttributes,
 				     Float32 samplingRate,
-				     HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes
+				     HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes,
+
+                                     HbaseAccessOptions * hbaseAccessOptions
 
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
@@ -153,6 +158,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   keyColValTuppIndex_(keyColValTuppIndex),
   hbaseFilterValTuppIndex_(hbaseFilterValTuppIndex),
 
+  hbaseTimestampTuppIndex_(hbaseTimestampTuppIndex),
+  hbaseVersionTuppIndex_(hbaseVersionTuppIndex),
+
   listOfScanRows_(listOfScanRows),
   listOfGetRows_(listOfGetRows),
   listOfFetchedColNames_(listOfFetchedColNames),
@@ -178,7 +186,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   loggingLocation_(NULL),
   samplingRate_(samplingRate),
   sampleLocation_(NULL),
-  hbaseRowsetVsbbSize_(0)
+  hbaseRowsetVsbbSize_(0),
+
+  hbaseAccessOptions_(hbaseAccessOptions)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -254,6 +264,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   keyColValTuppIndex_(0),
   hbaseFilterValTuppIndex_(0),
 
+  hbaseTimestampTuppIndex_(0),
+  hbaseVersionTuppIndex_(0),
+
   listOfScanRows_(NULL),
   listOfGetRows_(NULL),
   listOfFetchedColNames_(NULL),
@@ -279,7 +292,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   LoadPrepLocation_(NULL),
   samplingRate_(-1),
   sampleLocation_(NULL),
-  hbaseRowsetVsbbSize_(0)
+  hbaseRowsetVsbbSize_(0),
+
+  hbaseAccessOptions_(NULL)
 {
 }
 
@@ -408,6 +423,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   sampleLocation_.pack(space);
   LoadPrepLocation_.pack(space);
   hbaseSnapshotScanAttributes_.pack(space);
+  hbaseAccessOptions_.pack(space);
+
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -473,6 +490,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(sampleLocation_.unpack(base)) return -1;
   if(LoadPrepLocation_.unpack(base)) return -1;
   if (hbaseSnapshotScanAttributes_.unpack(base,reallocator)) return -1;
+  if (hbaseAccessOptions_.unpack(base, reallocator)) return -1;
 
   // unpack elements in listOfScanRows_
   if(listOfScanRows_.unpack(base, reallocator)) return -1;
@@ -900,6 +918,10 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		  mergeInsertRowIdTuppIndex_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
+      str_sprintf(buf, "hbaseTimestampTI_ = %d, hbaseVersionTI_ = %d",
+                  hbaseTimestampTuppIndex_, hbaseVersionTuppIndex_);
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
       str_sprintf(buf, "asciiRowLen_ = %d, convertRowLen_ = %d, rowIdLen_ = %d, outputRowLen_ = %d", 
 		  asciiRowLen_, convertRowLen_, rowIdLen_, outputRowLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -917,6 +939,12 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 
       str_sprintf(buf, "server_ = %s, zkPort_ = %s", server(), zkPort());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+      if ((getHbaseAccessOptions()) && (getHbaseAccessOptions()->multiVersions()))
+        {
+          str_sprintf(buf, "numVersions = %d", getHbaseAccessOptions()->getNumVersions());
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
 
       if (listOfFetchedColNames())
 	{
@@ -1127,7 +1155,7 @@ ComTdbHbaseCoProcAccess::ComTdbHbaseCoProcAccess(
 		      projExpr,
 		      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 		      0, projRowLen, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0,
+		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0, 0, 0,
 		      NULL, NULL, listOfColNames, NULL, NULL, 
 		      NULL, NULL,
 		      workCriDesc,

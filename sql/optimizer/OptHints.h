@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -74,6 +74,25 @@ protected:
   double         selectivity_; // table's hinted selectivity or -1
   double         cardinality_; // table's hinted cardinality or -1
 }; // Hint
+
+class HbaseAccessOptions : public NABasicObject
+{
+ public:
+  HbaseAccessOptions(Lng32 v, NAMemory *h=HEAP)
+    : hbaseVersions_(v)
+  {}
+
+  Lng32 getHbaseVersions() { return hbaseVersions_; }
+  void setHbaseVersions(Lng32 v){ hbaseVersions_ = v;}
+
+  NABoolean isMaxVersions() { return (hbaseVersions_ == -1); }
+  NABoolean isAllVersions() { return (hbaseVersions_ == -2); }
+ private:
+  // -1, get max versions allowed. 
+  // -2, get all versions including ones marked for delete (RAW in hbase)
+  //  N,  get max N versions.
+  Lng32 hbaseVersions_;
+};
 
 // -----------------------------------------------------------------------
 

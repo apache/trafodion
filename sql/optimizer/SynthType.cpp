@@ -6391,6 +6391,25 @@ const NAType * SequenceValue::synthesizeType()
   return type;
 }
 
+const NAType * HbaseTimestamp::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE,  
+                              col_->getValueId().getType().supportsSQLnull());
+
+  return type;
+}
+
+const NAType * HbaseVersion::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE, FALSE); 
+
+  return type;
+}
+
 const NAType * RowNumFunc::synthesizeType()
 {
   NAType * type = NULL;
@@ -6399,8 +6418,6 @@ const NAType * RowNumFunc::synthesizeType()
 
   return type;
 }
-
-
 
 const NAType *LOBoper::synthesizeType()
 {

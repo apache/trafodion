@@ -3050,3 +3050,80 @@ short SequenceValue::codeGen(Generator * generator)
   return 0;
 }
 
+short HbaseTimestamp::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  MapInfo * hbtMapInfo = generator->getMapInfoAsIs(getValueId());
+  if (hbtMapInfo && hbtMapInfo->isCodeGenerated())
+    return 0;
+
+  Space * space = generator->getSpace();
+  
+  setChild(0, tsVals_);
+
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExFunctionHbaseTimestamp * hbt =
+    new(generator->getSpace()) ExFunctionHbaseTimestamp
+    (getOperatorType(), 
+     attr, 
+     colIndex_,
+     space);
+
+  if (hbt)
+    generator->getExpGenerator()->linkClause(this, hbt);
+
+  setChild(0, NULL);
+
+  hbtMapInfo->codeGenerated();
+
+  return 0;
+}
+
+short HbaseTimestampRef::codeGen(Generator * generator)
+{
+  GenAssert(0, "HbaseTimestampRef::codeGen. Should not reach here.");
+
+  return 0;
+}
+
+short HbaseVersion::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  MapInfo * hbtMapInfo = generator->getMapInfoAsIs(getValueId());
+  if (hbtMapInfo && hbtMapInfo->isCodeGenerated())
+    return 0;
+
+  Space * space = generator->getSpace();
+  
+  setChild(0, tsVals_);
+
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExFunctionHbaseVersion * hbt =
+    new(generator->getSpace()) ExFunctionHbaseVersion
+    (getOperatorType(), 
+     attr, 
+     colIndex_,
+     space);
+
+  if (hbt)
+    generator->getExpGenerator()->linkClause(this, hbt);
+
+  setChild(0, NULL);
+
+  hbtMapInfo->codeGenerated();
+
+  return 0;
+}
+
+short HbaseVersionRef::codeGen(Generator * generator)
+{
+  GenAssert(0, "HbaseVersionRef::codeGen. Should not reach here.");
+
+  return 0;
+}

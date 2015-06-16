@@ -1608,11 +1608,10 @@ static TableDesc *createTableDesc2(BindWA *bindWA,
   //
   CollIndex i = 0;
   for (i = 0; i < naTable->getColumnCount(); i++) {
-#pragma nowarn(1506)   // warning elimination
     BaseColumn *baseCol = new (bindWA->wHeap()) BaseColumn(tdesc, i);
-#pragma warn(1506)  // warning elimination
     baseCol->bindNode(bindWA);
-    if (bindWA->errStatus()) return NULL;
+    if (bindWA->errStatus()) 
+      return NULL;
     ValueId valId = baseCol->getValueId();
     tdesc->addToColumnList(valId);
   }
@@ -7561,8 +7560,9 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // as the output values that can be produced by this scan.
   //
   getGroupAttr()->addCharacteristicOutputs(getTableDesc()->getColumnList());
+  getGroupAttr()->addCharacteristicOutputs(getTableDesc()->hbaseTSList());
 
-  // MV --
+   // MV --
   if (getInliningInfo().isMVLoggingInlined())
     projectCurrentEpoch(bindWA);
 
@@ -7699,6 +7699,18 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      return NULL;
     }
   }
+
+   if (hbaseAccessOptions_)
+     {
+       if (hbaseAccessOptions_->isMaxVersions())
+         {
+           hbaseAccessOptions_->setHbaseVersions
+             (
+              getTableDesc()->getClusteringIndex()->getNAFileSet()->numMaxVersions()
+              );
+         }
+     }
+
   return boundExpr;
 } // Scan::bindNode()
 

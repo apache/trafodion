@@ -3717,6 +3717,12 @@ enum DefaultConstants
   // enable ESP-RegionServer colocation logic
   TRAF_ALLOW_ESP_COLOCATION,
 
+  // number of hbase versions of rows to be retrieved.
+  // -1, get max number of versions.
+  // -2, get all versions including those marked for deletion.
+  //  N, get N versions. N > 0
+  TRAF_NUM_HBASE_VERSIONS,
+
   // if set, index population step is skipped for external and internal index creates.
   // Should be set as an opt when objects are being
   // created in one session (create table, create index, add constraints, etc).
