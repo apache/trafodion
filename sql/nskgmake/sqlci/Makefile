@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@
 CPPSRC := SqlciMain.cpp \
 	MxciEHCallBack.cpp
 
-EARLY_DLLS:= -ljsig 
+EARLY_DLLS:= -ljsig
 
 DEP_LIBS += tdm_sqlcli sqlcilib arkcmp_dll
 
 CPPSRC += vprocsqlci.cpp
-
-INCLUDE_DIRS += sqlutils/inc
 
 SRCPATH := sqlci bin
 

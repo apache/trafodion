@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,26 +15,13 @@
 //  limitations under the License.
 //
 // @@@ END COPYRIGHT @@@
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#define TMFLIBAPI __declspec( dllexport )
-#else
-
 
 #include "sqtypes.h"
 
 #define DLLEXPORT
 #define TMFLIBAPI
 
-
-#endif
-
-
-
-/* From w:/sqlutils/br/tmfdrext.h */
 #define Boolean       short
-
-/* End: from inc\rosetta\rosgen.h */
 
 TMFLIBAPI int_16 ATTACHTMF()
 { return 0; }
@@ -67,7 +54,7 @@ TMFLIBAPI void /*prv*/TMFLIBFS_ATTACHTMF_()
    //------------------------------------------------------------------------------
    //
    // This function is called by the File System when the Trent array in the TFile
-   // of a user process is allocated.  It is assumed that when the File System 
+   // of a user process is allocated.  It is assumed that when the File System
    // invokes this function, the user process does not have any outstanding
    // transactions.  If the attach fails, the previous attachment is maintained or
    // NSKService will be brought down on this NT node.
@@ -141,7 +128,7 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_BEGINTRANS_
 // dif2perl 1 (delete):
 // dif2perl 1 (delete):    int_16   RetryOnResourceErrors) // IN: Specify 'True' to automatically retry the
 // dif2perl 1 delete END
-// dif2perl 1 insert BEGIN 
+// dif2perl 1 insert BEGIN
 */
 
    int_16  *TcbRef,  /* OUT: The transaction identifier of the new */
@@ -150,7 +137,7 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_BEGINTRANS_
    int_16   RetryOnResourceErrors,
                      /* IN: Specify 'True' to automatically retry the */
 /*
-// dif2perl 1 insert END 
+// dif2perl 1 insert END
 // dif2perl 1 update END
 */
                                    /*
@@ -191,8 +178,8 @@ TMFLIBAPI void /*prv*/TMFLIBFS_CLEANUPATTACH_
   (/*
    //----------------------------------------------------------------------------
    //
-   // This function is called by the FsCleanUp process on NT.  The FsCleanUp 
-   // process retreives the TmfSegmentNumber from the PCB of the terminated 
+   // This function is called by the FsCleanUp process on NT.  The FsCleanUp
+   // process retrieves the TmfSegmentNumber from the PCB of the terminated
    // and calls this function to perform an attach before calling
    // TMFLIBFS_ABORTALLTRANSACTIONS_.
    //
@@ -208,14 +195,14 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_CLOSE_
    //----------------------------------------------------------------------------
    //dif2perl patch 4 begin djw
    // This procedure is called by the File System when an RM file is being
-   // closed due to a user issueing a CLOSE or a process STOP.
+   // closed due to a user issuing a CLOSE or a process STOP.
    //
    // This procedure initiates the close processing of the RM file by calling
    // the TmfLibRm_Close_ procedure.
    //
    // Any error returned from the TmfLibRm_Close_ procedure is returned to
    // the caller. An error from this procedure indicates that there is an
-   // inconsistency in the interface between the TMF Libraray and File System.
+   // inconsistency in the interface between the TMF Library and File System.
    //
    // Other possible error is:
    //
@@ -480,7 +467,7 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_PREPARETOGOREMOTE_
    //   Prepares a transaction so the File System can send it to another
    //   system.
    //
-   //   TMF verifies the system is running TMF and is on a compatable
+   //   TMF verifies the system is running TMF and is on a compatible
    //   release, etc.  The system is added to the list of system
    //   participating in the transaction.
    //
@@ -708,7 +695,7 @@ TMFLIBAPI void/*prv*/TMFLIBFS_TRANSLEAVINGPROCESS_
    //
    //   File System folks: Please call this routine.
    //
-   //   Well, perhaps more explaination is needed.  You must call this
+   //   Well, perhaps more explanation is needed.  You must call this
    //   routine before a transaction leaves a process for the first time.
    //   This includes I/Os, checkpoints, 'GETSYNCINFO' calls, etc.
    //
@@ -764,7 +751,7 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_WAITFORSUSPENDACK_
    //   This procedure waits for all the acknowledgments for the SUSPEND PIO packets.
    //
    //   If there are SUSPEND operations pending when this procedure is called,
-   //   the process will delay for 10 milliseconds and check if the SUSPEND   
+   //   the process will delay for 10 milliseconds and check if the SUSPEND
    //   operations have completed. This will continue till all the SUSPEND
    //	operations have completed.
    //
@@ -798,7 +785,7 @@ TMFLIBAPI int_16/*prv*/TMFLIBFS_WAITFORRESUMERESULT_
    //   process tries to resume a transaction, a ResumeTx PIO packet is sent
    //   to the broadcast owner CPU. After validating this request, the broadcast
    //   CPU sends back a ResumeTxResult PIO packet giving the result of the
-   //   resume opertaion.
+   //   resume operation.
    //
    //   This routine returns the error associated with the Resume operation.
    //
