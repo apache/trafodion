@@ -570,7 +570,7 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     createMetricQueryTable,  sizeof(createMetricQueryTable),
     createOldReposMetricQueryTable,  sizeof(createOldReposMetricQueryTable),
     NULL, 0,
-    TRUE, 
+    FALSE, 
 
     "instance_id,"
     "tenant_id,"
@@ -831,14 +831,14 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
     createMetricSessionTable,  sizeof(createMetricSessionTable),
     createOldReposMetricSessionTable,  sizeof(createOldReposMetricSessionTable),
     NULL, 0,
-    TRUE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
+    FALSE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   // REPOS_METRIC_QUERY_AGGR_TABLE
   { REPOS_METRIC_QUERY_AGGR_TABLE,  TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS,
     createMetricQueryAggrTable,  sizeof(createMetricQueryAggrTable),
     createOldReposMetricQueryAggrTable,  sizeof(createOldReposMetricQueryAggrTable),
     NULL, 0,
-    TRUE, 
+    FALSE, 
 
     // INSERTED columns
     "instance_id, tenant_id, component_id, process_id, thread_id, node_id, pnid_id, host_id,"
