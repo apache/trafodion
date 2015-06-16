@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -427,6 +427,14 @@ short qrysrvcExecuteFinished(
 }
 
 #else
+short qrysrvc_ExecuteFinished(
+				  const char *stmtLabel
+				, const long stmtHandle
+				, const bool bCheckSqlQueryType
+				, const short error_code
+				, const bool bFetch
+				, const bool bException
+				, const bool bErase);
 
 short qrysrvcExecuteFinished(
 				  const char *stmtLabel
@@ -438,8 +446,15 @@ short qrysrvcExecuteFinished(
 				, const bool bErase = true
 )
 {
-	
-	return 0;
+
+	return qrysrvc_ExecuteFinished(
+				  stmtLabel
+				, stmtHandle
+				, bCheckSqlQueryType
+				, error_code
+				, bFetch
+				, bException
+				, bErase);
 }
 
 #endif
