@@ -202,7 +202,7 @@ done
 # it doesn't hurt if it was already enabled and we try to enable it again
 $TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
 
-package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite"
+package_list="log4cxx java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite"
 package_list+=" expect perl-DBD-SQLite* protobuf xerces-c "
 package_list+=" libiodbc unixODBC tigervnc-server firefox "
 package_list+=" pixman libXfont libX11 perl-Params-Validate perl-Time-HiRes gzip"
