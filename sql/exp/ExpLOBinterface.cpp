@@ -834,7 +834,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                    waitedOp,
 		   lobGlob,
 		   0,
-		   NULL, 0,0,0,0,
+		   NULL, 0,0,0,0,0,
                    openType
 		   );
 
