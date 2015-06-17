@@ -9423,7 +9423,21 @@ short qrysrvc_ExecuteFinished(
 
 	// Update the query status
 	if (pSrvrStmt->m_bqueryFinish)
+	{
 		pSrvrStmt->m_state = QUERY_COMPLETED;
+		if (pSrvrStmt->sqlWarningOrError)
+		{
+			Int32 sqlError = *(Int32 *)(pSrvrStmt->sqlWarningOrError+8);
+			if (sqlError == -8007)
+			{
+				pSrvrStmt->m_state = QUERY_COMPLETED_BY_ADMIN_SERVER;
+			}
+		}
+		else if (STMTSTAT_CLOSE == pSrvrStmt->inState)
+		{
+			pSrvrStmt->m_state = QUERY_COMPLETED_BY_CLIENT;
+		}
+	}
 
 	if (resStatStatement != NULL)
 	{

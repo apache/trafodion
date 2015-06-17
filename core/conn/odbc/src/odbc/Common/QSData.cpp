@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -394,6 +394,7 @@ string getQueryStateString(const QUERY_STATE state)
 	case QUERY_COMPLETED_NDCS_CLOSE:
 	case QUERY_COMPLETED_NDCS_PREPARE:
 	case QUERY_COMPLETED_NDCS_WMS_ERROR:
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:
 		return FMT_COMPLETED; 
 		break;
 	case QUERY_REJECTED:
@@ -485,6 +486,7 @@ string getQuerySubStateString(const QUERY_STATE state)
 	case QUERY_COMPLETED_EXEC_TIMEOUT:			return FMT_EXEC_TIMEOUT;
 //
 	case QUERY_COMPLETED_BY_ADMIN:				return FMT_CANCELLED_BY_ADMIN;
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:       return FMT_CANCELLED_BY_ADMIN_SERVER;
 	case QUERY_COMPLETED_BY_CLIENT:				return FMT_CANCELLED_BY_CLIENT;
 //
 	case QUERY_COMPLETED_QUERY_NOT_FOUND:		return FMT_QUERY_NOT_FOUND;
