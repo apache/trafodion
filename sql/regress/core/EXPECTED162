@@ -1,0 +1,1602 @@
+>>obey TEST162(setup);
+>>--------------------------------------------------------------------------
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '20' ;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST162(tests);
+>>--------------------------------------------------------------------------
+>>
+>>select count(*) from customer ;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_address ;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from date_dim ;
+
+(EXPR)              
+--------------------
+
+               73049
+
+--- 1 row(s) selected.
+>>select count(*) from household_demographics ;
+
+(EXPR)              
+--------------------
+
+                7200
+
+--- 1 row(s) selected.
+>>select count(*) from item ;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>select count(*) from promotion ;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>select count(*) from store ;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>select count(*) from time_dim ;
+
+(EXPR)              
+--------------------
+
+               86400
+
+--- 1 row(s) selected.
+>>
+>>-- these two don't seem to work
+>>--select count(*) from store_sales ;
+>>--select count(*) from customer_demographics ;
+>>
+>>select c_customer_sk from customer where c_customer_sk < 100;
+
+*** WARNING[6008] Statistics for column (C_CUSTOMER_SK) from table HIVE.HIVE.CUSTOMER were not available. As a result, the access path chosen might not be the best possible.
+
+C_CUSTOMER_SK
+-------------
+
+            1
+            2
+            3
+            4
+            5
+            6
+            7
+            8
+            9
+           10
+           11
+           12
+           13
+           14
+           15
+           16
+           17
+           18
+           19
+           20
+           21
+           22
+           23
+           24
+           25
+           26
+           27
+           28
+           29
+           30
+           31
+           32
+           33
+           34
+           35
+           36
+           37
+           38
+           39
+           40
+           41
+           42
+           43
+           44
+           45
+           46
+           47
+           48
+           49
+           50
+           51
+           52
+           53
+           54
+           55
+           56
+           57
+           58
+           59
+           60
+           61
+           62
+           63
+           64
+           65
+           66
+           67
+           68
+           69
+           70
+           71
+           72
+           73
+           74
+           75
+           76
+           77
+           78
+           79
+           80
+           81
+           82
+           83
+           84
+           85
+           86
+           87
+           88
+           89
+           90
+           91
+           92
+           93
+           94
+           95
+           96
+           97
+           98
+           99
+
+--- 99 row(s) selected.
+>>
+>>select ca_gmt_offset from customer_address where ca_gmt_offset < -8;
+
+*** WARNING[6008] Statistics for column (CA_GMT_OFFSET) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
+
+CA_GMT_OFFSET  
+---------------
+
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-1.0000000E+001
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+-9.0000000E+000
+
+--- 428 row(s) selected.
+>>
+>>select [first 100] hd_buy_potential from household_demographics ;
+
+HD_BUY_POTENTIAL    
+--------------------
+
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+0-500               
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+501-1000            
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+1001-5000           
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+5001-10000          
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+>10000              
+Unknown             
+
+--- 100 row(s) selected.
+>>
+>>select * from promotion ;
+
+P_PROMO_SK   P_PROMO_ID            P_START_DATE_SK  P_END_DATE_SK  P_ITEM_SK    P_COST           P_RESPONSE_TARGET  P_PROMO_NAME          P_CHANNEL_DMAIL       P_CHANNEL_EMAIL       P_CHANNEL_CATALOG     P_CHANNEL_TV          P_CHANNEL_RADIO       P_CHANNEL_PRESS       P_CHANNEL_EVENT       P_CHANNEL_DEMO        P_CHANNEL_DETAILS     P_PURPOSE             P_DISCOUNT_ACTIVE
+-----------  --------------------  ---------------  -------------  -----------  ---------------  -----------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------
+
+          1  AAAAAAAABAAAAAAA              2450164        2450185        10022   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Men will not say mer  Unknown               N                   
+          2  AAAAAAAACAAAAAAA              2450118        2450150         2410   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     So willing buildings  Unknown               N                   
+          3  AAAAAAAADAAAAAAA              2450675        2450712        10843   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Companies shall not   Unknown               N                   
+          4  AAAAAAAAEAAAAAAA              2450633        2450646         9794   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     High, good shoulders  Unknown               N                   
+          5  AAAAAAAAFAAAAAAA              2450347        2450357         6655   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Huge, competent stru  Unknown               N                   
+          6  AAAAAAAAGAAAAAAA              2450516        2450561         9464   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Boards might not rev  Unknown               N                   
+          7  AAAAAAAAHAAAAAAA              2450123        2450132        14527   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Effects used to pref  Unknown               N                   
+          8  AAAAAAAAIAAAAAAA              2450350        2450409          304   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Offences feel only o  Unknown               N                   
+          9  AAAAAAAAJAAAAAAA              2450192        2450248         3439   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     External forces shal  Unknown               N                   
+         10  AAAAAAAAKAAAAAAA              2450324        2450365         3314   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Only local achieveme  Unknown               N                   
+         11  AAAAAAAALAAAAAAA                    ?              ?            ?   1.0000000E+003                  ?  ought                 ?                     ?                     ?                     ?                     N                     ?                     N                     N                     Teachers shall not m  Unknown               N                   
+         12  AAAAAAAAMAAAAAAA              2450153        2450169         6688   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Also only times woul  Unknown               N                   
+         13  AAAAAAAANAAAAAAA              2450316        2450365        11354   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Years shall not go l  Unknown               N                   
+         14  AAAAAAAAOAAAAAAA              2450236        2450282        14480   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Adults would not del  Unknown               N                   
+         15  AAAAAAAAPAAAAAAA                    ?              ?            ?   1.0000000E+003                  ?  anti                  Y                     ?                     N                     N                     ?                     N                     N                     N                     Old elements would s  Unknown               N                   
+         16  AAAAAAAAABAAAAAA              2450342        2450351        11899   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Sudden, wooden theor  Unknown               N                   
+         17  AAAAAAAABBAAAAAA              2450360        2450406        15529   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Almost old churches   Unknown               N                   
+         18  AAAAAAAACBAAAAAA              2450581        2450592         8599   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     National communities  Unknown               N                   
+         19  AAAAAAAADBAAAAAA              2450623        2450640         5185   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Young families act.   Unknown               N                   
+         20  AAAAAAAAEBAAAAAA              2450531        2450545        17860   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Usually common cours  Unknown               N                   
+         21  AAAAAAAAFBAAAAAA              2450895        2450904         3632   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     British tensions sho  Unknown               N                   
+         22  AAAAAAAAGBAAAAAA              2450596        2450629         8044   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Powers ought to allo  Unknown               N                   
+         23  AAAAAAAAHBAAAAAA              2450478        2450493         4321   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     As main privileges c  Unknown               N                   
+         24  AAAAAAAAIBAAAAAA              2450719        2450773        12004   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Words appear technic  Unknown               N                   
+         25  AAAAAAAAJBAAAAAA              2450757        2450780        16328   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Scenes might make hi  Unknown               N                   
+         26  AAAAAAAAKBAAAAAA              2450528        2450545         8600   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Legal discussions mu  Unknown               N                   
+         27  AAAAAAAALBAAAAAA              2450849        2450879        15421   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Mental men go britis  Unknown               N                   
+         28  AAAAAAAAMBAAAAAA              2450816        2450856         1885                ?                  1  ?                     N                     N                     N                     N                     N                     ?                     N                     N                     Successful opportuni  Unknown               ?                   
+         29  AAAAAAAANBAAAAAA              2450696        2450732        14660   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Residential, necessa  Unknown               N                   
+         30  AAAAAAAAOBAAAAAA              2450718        2450762        10987   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Flowers used to stop  Unknown               N                   
+         31  AAAAAAAAPBAAAAAA              2450848        2450880        11990   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Broad times might sa  Unknown               N                   
+         32  AAAAAAAAACAAAAAA              2450132        2450178         4184   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Bad matters offer un  Unknown               N                   
+         33  AAAAAAAABCAAAAAA              2450483        2450485         9607   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Post-war subjects ad  Unknown               N                   
+         34  AAAAAAAACCAAAAAA              2450584        2450610         1652   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Strong cells could d  Unknown               N                   
+         35  AAAAAAAADCAAAAAA              2450890        2450912        15751   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Ideas register hence  Unknown               N                   
+         36  AAAAAAAAECAAAAAA              2450577        2450605         1418   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Companies might stay  Unknown               N                   
+         37  AAAAAAAAFCAAAAAA              2450609        2450669         4202   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Studies make little   Unknown               N                   
+         38  AAAAAAAAGCAAAAAA              2450542        2450593         4222   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Exercises would not   Unknown               N                   
+         39  AAAAAAAAHCAAAAAA              2450575        2450580        14990   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Further final words   Unknown               N                   
+         40  AAAAAAAAICAAAAAA              2450125        2450158        17209   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Deaf, tall members c  Unknown               N                   
+         41  AAAAAAAAJCAAAAAA              2450694        2450719        17384   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     There main cards try  Unknown               N                   
+         42  AAAAAAAAKCAAAAAA              2450320        2450334         4166   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Good, very problems   Unknown               N                   
+         43  AAAAAAAALCAAAAAA              2450704        2450738        10000   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Probably typical eye  Unknown               N                   
+         44  AAAAAAAAMCAAAAAA              2450469        2450481        14440   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Roads would not gras  Unknown               N                   
+         45  AAAAAAAANCAAAAAA              2450327        2450360         5660   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Wrong, popular issue  Unknown               N                   
+         46  AAAAAAAAOCAAAAAA              2450776        2450828         3271   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Warm decisions could  Unknown               N                   
+         47  AAAAAAAAPCAAAAAA              2450196        2450200         5689   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Large, general point  Unknown               N                   
+         48  AAAAAAAAADAAAAAA              2450783        2450807         3955   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Losses must suspect   Unknown               N                   
+         49  AAAAAAAABDAAAAAA              2450254        2450289        16123   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Then particular farm  Unknown               N                   
+         50  AAAAAAAACDAAAAAA              2450799        2450806         8722   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Favorite, united sal  Unknown               N                   
+         51  AAAAAAAADDAAAAAA              2450401        2450438        11288   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Now liberal characte  Unknown               N                   
+         52  AAAAAAAAEDAAAAAA              2450272        2450320         3280   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Authorities must pur  Unknown               N                   
+         53  AAAAAAAAFDAAAAAA              2450794        2450798        13370   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Free hospitals canno  Unknown               N                   
+         54  AAAAAAAAGDAAAAAA              2450687        2450702        17707   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Claims would not avo  Unknown               N                   
+         55  AAAAAAAAHDAAAAAA              2450622        2450677        12104   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Recent, southern lis  Unknown               N                   
+         56  AAAAAAAAIDAAAAAA              2450838        2450888        17563   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Procedures can call   Unknown               N                   
+         57  AAAAAAAAJDAAAAAA              2450834        2450842        12247   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Hours discriminate t  Unknown               N                   
+         58  AAAAAAAAKDAAAAAA                    ?        2450797        12404   1.0000000E+003                  ?  eing                  Y                     N                     N                     N                     ?                     N                     ?                     ?                     ?                     ?                     ?                   
+         59  AAAAAAAALDAAAAAA              2450273        2450322         5102   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Strong samples parti  Unknown               N                   
+         60  AAAAAAAAMDAAAAAA              2450646        2450676        12076   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Yards write too only  Unknown               N                   
+         61  AAAAAAAANDAAAAAA              2450619        2450667        14864   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Necessary men shall   Unknown               N                   
+         62  AAAAAAAAODAAAAAA              2450296        2450342          356   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Only prepared minute  Unknown               N                   
+         63  AAAAAAAAPDAAAAAA              2450248        2450295         3715   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Likely, permanent ri  Unknown               N                   
+         64  AAAAAAAAAEAAAAAA              2450498        2450519         1867   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Costs would not oper  Unknown               N                   
+         65  AAAAAAAABEAAAAAA              2450775        2450816         3740   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Usually local days b  Unknown               N                   
+         66  AAAAAAAACEAAAAAA              2450486        2450504         4886   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Yet unaware methods   Unknown               N                   
+         67  AAAAAAAADEAAAAAA              2450262        2450314         6724   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Statutory states wil  Unknown               N                   
+         68  AAAAAAAAEEAAAAAA              2450851        2450893         1210   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Reasonably additiona  Unknown               N                   
+         69  AAAAAAAAFEAAAAAA              2450202        2450219         7471   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     All right able inter  Unknown               N                   
+         70  AAAAAAAAGEAAAAAA              2450679        2450735         3571   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Commercial, cool cel  Unknown               N                   
+         71  AAAAAAAAHEAAAAAA              2450347              ?            ?                ?                  ?  ?                     Y                     ?                     N                     ?                     N                     N                     N                     N                     Impossible programme  ?                     ?                   
+         72  AAAAAAAAIEAAAAAA              2450347        2450373         6662   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Beautiful, british t  Unknown               N                   
+         73  AAAAAAAAJEAAAAAA              2450578        2450637         9032   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Tremendous, social t  Unknown               N                   
+         74  AAAAAAAAKEAAAAAA              2450425        2450456        13904   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Decent bodies grant   Unknown               N                   
+         75  AAAAAAAALEAAAAAA              2450241        2450257         7630   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Sudden weeks dwell f  Unknown               N                   
+         76  AAAAAAAAMEAAAAAA              2450363        2450381          295   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Other, secondary int  Unknown               N                   
+         77  AAAAAAAANEAAAAAA              2450711        2450736         3343   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Characters translate  Unknown               N                   
+         78  AAAAAAAAOEAAAAAA              2450454        2450513         5356   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Standard studies ari  Unknown               N                   
+         79  AAAAAAAAPEAAAAAA              2450474        2450497         3736   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Devices might not pr  Unknown               N                   
+         80  AAAAAAAAAFAAAAAA              2450891        2450910         4148   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Roles might not seem  Unknown               N                   
+         81  AAAAAAAABFAAAAAA              2450235        2450283         4010   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Accused, dual women   Unknown               N                   
+         82  AAAAAAAACFAAAAAA              2450685        2450718        12373   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Economic, subject ma  Unknown               N                   
+         83  AAAAAAAADFAAAAAA              2450175        2450235        10738   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Original, huge proje  Unknown               N                   
+         84  AAAAAAAAEFAAAAAA              2450900        2450954        16621   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Houses watch machine  Unknown               N                   
+         85  AAAAAAAAFFAAAAAA              2450696        2450706        16894   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Only red systems rin  Unknown               N                   
+         86  AAAAAAAAGFAAAAAA              2450745        2450787        11761   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Incentives could not  Unknown               N                   
+         87  AAAAAAAAHFAAAAAA              2450712        2450730        16600   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Numbers drive howeve  Unknown               N                   
+         88  AAAAAAAAIFAAAAAA              2450102        2450151        12728   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Chosen players try f  Unknown               N                   
+         89  AAAAAAAAJFAAAAAA              2450649        2450658         8566   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Cultural, obvious co  Unknown               N                   
+         90  AAAAAAAAKFAAAAAA              2450587        2450615         8527   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Labour children repl  Unknown               N                   
+         91  AAAAAAAALFAAAAAA              2450723        2450742         2326   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Other, standard pupi  Unknown               N                   
+         92  AAAAAAAAMFAAAAAA              2450737        2450748        13580   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Jobs may not train e  Unknown               N                   
+         93  AAAAAAAANFAAAAAA              2450125        2450154         4790   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Monthly ambitions co  Unknown               N                   
+         94  AAAAAAAAOFAAAAAA              2450567        2450598           28   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Small ladies shall w  Unknown               N                   
+         95  AAAAAAAAPFAAAAAA              2450370        2450397          199   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Long travellers ough  Unknown               N                   
+         96  AAAAAAAAAGAAAAAA              2450710        2450752        16226   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Little new boys wear  Unknown               N                   
+         97  AAAAAAAABGAAAAAA              2450660        2450685        16952   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     New, severe employee  Unknown               N                   
+         98  AAAAAAAACGAAAAAA              2450384        2450387        10414   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Periods shall not ne  Unknown               N                   
+         99  AAAAAAAADGAAAAAA              2450742        2450799         7544   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     White, easy shoulder  Unknown               N                   
+        100  AAAAAAAAEGAAAAAA              2450508        2450562        10645   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Villages go more. Mi  Unknown               N                   
+        101  AAAAAAAAFGAAAAAA                    ?        2450811            ?                ?                  ?  ?                     ?                     N                     N                     ?                     ?                     ?                     N                     N                     Reports would make a  Unknown               N                   
+        102  AAAAAAAAGGAAAAAA              2450608        2450614         9614   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Medieval fires may r  Unknown               N                   
+        103  AAAAAAAAHGAAAAAA              2450499        2450525        12688   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Still ready eyes wil  Unknown               N                   
+        104  AAAAAAAAIGAAAAAA              2450276        2450293         2461   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Years will sum alway  Unknown               N                   
+        105  AAAAAAAAJGAAAAAA              2450873        2450912        14182   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Other definitions pr  Unknown               N                   
+        106  AAAAAAAAKGAAAAAA              2450858        2450872         3754   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Long large problems   Unknown               N                   
+        107  AAAAAAAALGAAAAAA              2450749        2450758        10574   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Good, foreign proble  Unknown               N                   
+        108  AAAAAAAAMGAAAAAA              2450224        2450257          274   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     High, tiny sides may  Unknown               N                   
+        109  AAAAAAAANGAAAAAA              2450455        2450467         8302   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Reasonable posts bec  Unknown               N                   
+        110  AAAAAAAAOGAAAAAA              2450852        2450905        15568   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Huge, european users  Unknown               N                   
+        111  AAAAAAAAPGAAAAAA              2450758        2450816         2462   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Huge, early keys com  Unknown               N                   
+        112  AAAAAAAAAHAAAAAA              2450870        2450916         7640   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Greek, young minutes  Unknown               N                   
+        113  AAAAAAAABHAAAAAA              2450226        2450276        13916   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Warm hands know as m  Unknown               N                   
+        114  AAAAAAAACHAAAAAA              2450687        2450720        13507   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     New, necessary kilom  Unknown               N                   
+        115  AAAAAAAADHAAAAAA              2450727        2450751        15002   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Personal wounds see   Unknown               N                   
+        116  AAAAAAAAEHAAAAAA              2450352        2450361         9187   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Bad, close tories co  Unknown               N                   
+        117  AAAAAAAAFHAAAAAA              2450285        2450308         8854   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Extreme centres will  Unknown               N                   
+        118  AAAAAAAAGHAAAAAA              2450460        2450471         7183   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Very proposed pressu  Unknown               N                   
+        119  AAAAAAAAHHAAAAAA              2450224        2450236        13903   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Similar ideas go ori  Unknown               N                   
+        120  AAAAAAAAIHAAAAAA              2450302        2450341         5578   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Children shall come   Unknown               N                   
+        121  AAAAAAAAJHAAAAAA              2450752        2450769         1648   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Essentially nervous   Unknown               N                   
+        122  AAAAAAAAKHAAAAAA              2450422        2450452         6778   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     In order certain est  Unknown               N                   
+        123  AAAAAAAALHAAAAAA              2450628        2450673         2132   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     English, other follo  Unknown               N                   
+        124  AAAAAAAAMHAAAAAA              2450517        2450565         7051   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Institutional, new m  Unknown               N                   
+        125  AAAAAAAANHAAAAAA              2450704        2450719         6439   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Societies would just  Unknown               N                   
+        126  AAAAAAAAOHAAAAAA              2450840        2450852         7039   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Drivers could overco  Unknown               N                   
+        127  AAAAAAAAPHAAAAAA              2450802        2450836        13510   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Now obvious players   Unknown               N                   
+        128  AAAAAAAAAIAAAAAA              2450373        2450398         9080   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Too possible curtain  Unknown               N                   
+        129  AAAAAAAABIAAAAAA              2450357        2450373          614   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Comments can release  Unknown               N                   
+        130  AAAAAAAACIAAAAAA              2450219        2450236        13598   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Years arrange just t  Unknown               N                   
+        131  AAAAAAAADIAAAAAA              2450305        2450313         3793   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Unable children cann  Unknown               N                   
+        132  AAAAAAAAEIAAAAAA              2450231        2450240         4219   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Warm, blue officers   Unknown               N                   
+        133  AAAAAAAAFIAAAAAA              2450587        2450593          854   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Charming, negative h  Unknown               N                   
+        134  AAAAAAAAGIAAAAAA              2450479        2450501        10922   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Skills can say very   Unknown               N                   
+        135  AAAAAAAAHIAAAAAA              2450607        2450624         9748   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Officers will allow   Unknown               N                   
+        136  AAAAAAAAIIAAAAAA              2450701        2450710        13849   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Mountains would want  Unknown               N                   
+        137  AAAAAAAAJIAAAAAA              2450123        2450177        15872   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Finally capable rate  Unknown               N                   
+        138  AAAAAAAAKIAAAAAA              2450758        2450760        12814   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     So reasonable wages   Unknown               N                   
+        139  AAAAAAAALIAAAAAA              2450365        2450383         5882   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Then relevant change  Unknown               N                   
+        140  AAAAAAAAMIAAAAAA              2450655        2450708        12968   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Tiny days must feel   Unknown               N                   
+        141  AAAAAAAANIAAAAAA              2450301        2450353        13100   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     As political structu  Unknown               N                   
+        142  AAAAAAAAOIAAAAAA              2450358        2450385        12956   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Well female movement  Unknown               N                   
+        143  AAAAAAAAPIAAAAAA              2450828        2450854        13006   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Hands sink good soci  Unknown               N                   
+        144  AAAAAAAAAJAAAAAA              2450780        2450830        15688   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Reasonably social im  Unknown               N                   
+        145  AAAAAAAABJAAAAAA              2450715        2450756        10406   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Sorry, unlikely prac  Unknown               N                   
+        146  AAAAAAAACJAAAAAA              2450200        2450236         8119   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Direct, added region  Unknown               N                   
+        147  AAAAAAAADJAAAAAA              2450767        2450827        15925   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Years project groups  Unknown               N                   
+        148  AAAAAAAAEJAAAAAA              2450291        2450345        11275   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Just wrong samples s  Unknown               N                   
+        149  AAAAAAAAFJAAAAAA              2450739        2450797        17719   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Public fields may cl  Unknown               N                   
+        150  AAAAAAAAGJAAAAAA              2450860        2450915         9578   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Nearby figures would  Unknown               N                   
+        151  AAAAAAAAHJAAAAAA              2450707        2450751         4408   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Much financial centu  Unknown               N                   
+        152  AAAAAAAAIJAAAAAA              2450564        2450573         2314   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Over dependent topic  Unknown               N                   
+        153  AAAAAAAAJJAAAAAA              2450712        2450725        16514   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Organisations make a  Unknown               N                   
+        154  AAAAAAAAKJAAAAAA              2450869        2450898         2674   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Following, current m  Unknown               N                   
+        155  AAAAAAAALJAAAAAA              2450409        2450419          202   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Expectations stop ex  Unknown               N                   
+        156  AAAAAAAAMJAAAAAA              2450681        2450732         7975   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Executive, poor jobs  Unknown               N                   
+        157  AAAAAAAANJAAAAAA              2450389        2450445         6079   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Certainly pleasant f  Unknown               N                   
+        158  AAAAAAAAOJAAAAAA              2450350        2450390        17863   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Levels must not tran  Unknown               N                   
+        159  AAAAAAAAPJAAAAAA              2450682        2450700           58   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Regional schemes wou  Unknown               N                   
+        160  AAAAAAAAAKAAAAAA              2450583        2450642        13144   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Blocks generate stil  Unknown               N                   
+        161  AAAAAAAABKAAAAAA              2450900        2450955          680   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Concepts might live   Unknown               N                   
+        162  AAAAAAAACKAAAAAA              2450532        2450557        11194   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Once short boots ple  Unknown               N                   
+        163  AAAAAAAADKAAAAAA              2450102        2450142         5038   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Glasses tell even as  Unknown               N                   
+        164  AAAAAAAAEKAAAAAA              2450423        2450453        17593   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Available, blue hour  Unknown               N                   
+        165  AAAAAAAAFKAAAAAA              2450854        2450894         3166   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Over responsible dem  Unknown               N                   
+        166  AAAAAAAAGKAAAAAA              2450365        2450383         6652   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Others matter seriou  Unknown               N                   
+        167  AAAAAAAAHKAAAAAA              2450648        2450651         3922   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Urban abilities woul  Unknown               N                   
+        168  AAAAAAAAIKAAAAAA              2450271        2450331        17422   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Slightly technical d  Unknown               N                   
+        169  AAAAAAAAJKAAAAAA              2450716        2450774         1726   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Great chapters would  Unknown               N                   
+        170  AAAAAAAAKKAAAAAA              2450702        2450724        17498   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Alternatives induce   Unknown               N                   
+        171  AAAAAAAALKAAAAAA              2450635        2450642         5383   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Needs count from a s  Unknown               N                   
+        172  AAAAAAAAMKAAAAAA              2450735        2450785        10030   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Complete decisions w  Unknown               N                   
+        173  AAAAAAAANKAAAAAA              2450172        2450199        12698   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Constitutional mater  Unknown               N                   
+        174  AAAAAAAAOKAAAAAA              2450463        2450474        17428   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Young, funny lines s  Unknown               N                   
+        175  AAAAAAAAPKAAAAAA              2450675        2450704         6982   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Signs hear moreover   Unknown               N                   
+        176  AAAAAAAAALAAAAAA              2450487        2450498        16496   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Only british areas u  Unknown               N                   
+        177  AAAAAAAABLAAAAAA              2450729        2450733         4483   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Models would love hi  Unknown               N                   
+        178  AAAAAAAACLAAAAAA              2450345        2450392        15134   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Right obvious pounds  Unknown               N                   
+        179  AAAAAAAADLAAAAAA              2450230        2450281        12496   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Left, encouraging bi  Unknown               N                   
+        180  AAAAAAAAELAAAAAA              2450471        2450484        12517   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Significant children  Unknown               N                   
+        181  AAAAAAAAFLAAAAAA              2450649        2450673        11653   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Away due moments wil  Unknown               N                   
+        182  AAAAAAAAGLAAAAAA              2450703        2450731         2734   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Other, full members   Unknown               N                   
+        183  AAAAAAAAHLAAAAAA              2450777        2450824         2420   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Increases could not   Unknown               N                   
+        184  AAAAAAAAILAAAAAA              2450241        2450300        12238   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Favourably visible c  Unknown               N                   
+        185  AAAAAAAAJLAAAAAA              2450688        2450702        15091   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Fingers help monthly  Unknown               N                   
+        186  AAAAAAAAKLAAAAAA              2450627        2450643         5512   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Effectively appropri  Unknown               N                   
+        187  AAAAAAAALLAAAAAA              2450484        2450530         4798   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Enough detailed mont  Unknown               N                   
+        188  AAAAAAAAMLAAAAAA              2450385        2450413        14246   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Machines open only u  Unknown               N                   
+        189  AAAAAAAANLAAAAAA              2450420        2450456        12550   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Junior activities di  Unknown               N                   
+        190  AAAAAAAAOLAAAAAA              2450512        2450563        15151   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Customers live now.   Unknown               N                   
+        191  AAAAAAAAPLAAAAAA              2450126        2450160         7993   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Experiences must not  Unknown               N                   
+        192  AAAAAAAAAMAAAAAA              2450556        2450573         3026   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Days come for a quar  Unknown               N                   
+        193  AAAAAAAABMAAAAAA              2450259        2450309         8780   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Terms should not kno  Unknown               N                   
+        194  AAAAAAAACMAAAAAA              2450664        2450723          289   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Cultural deaths coul  Unknown               N                   
+        195  AAAAAAAADMAAAAAA              2450543        2450601         5167   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Conventions make imm  Unknown               N                   
+        196  AAAAAAAAEMAAAAAA              2450315              ?            ?                ?                  1  ?                     Y                     ?                     ?                     N                     N                     ?                     ?                     N                     Able patients will l  ?                     ?                   
+        197  AAAAAAAAFMAAAAAA              2450299              ?        10550                ?                  1  ?                     ?                     N                     N                     N                     N                     ?                     ?                     ?                     ?                     Unknown               ?                   
+        198  AAAAAAAAGMAAAAAA              2450617        2450670        15439   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     German, crude expect  Unknown               N                   
+        199  AAAAAAAAHMAAAAAA              2450772        2450825         8587   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Powerful, considerab  Unknown               N                   
+        200  AAAAAAAAIMAAAAAA              2450215        2450237        12784   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Arts attend. Further  Unknown               N                   
+        201  AAAAAAAAJMAAAAAA              2450464        2450499         3445   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Square, unusual year  Unknown               N                   
+        202  AAAAAAAAKMAAAAAA              2450913        2450922         3883   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Strong, traditional   Unknown               N                   
+        203  AAAAAAAALMAAAAAA              2450337        2450365        17569   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Completely brave cha  Unknown               N                   
+        204  AAAAAAAAMMAAAAAA              2450692        2450736         1564   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Sideways numerous de  Unknown               N                   
+        205  AAAAAAAANMAAAAAA              2450133        2450160         9889   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Little hot condition  Unknown               N                   
+        206  AAAAAAAAOMAAAAAA              2450715        2450733         9829   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     Final workers resign  Unknown               N                   
+        207  AAAAAAAAPMAAAAAA              2450699        2450704         4273   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Economic, profession  Unknown               N                   
+        208  AAAAAAAAANAAAAAA              2450420        2450464         5348   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Heavy, main circumst  Unknown               N                   
+        209  AAAAAAAABNAAAAAA              2450563        2450580         3430   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Hours open similarly  Unknown               N                   
+        210  AAAAAAAACNAAAAAA              2450847        2450892         7411   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     So new sports will n  Unknown               N                   
+        211  AAAAAAAADNAAAAAA              2450646        2450649         7508   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Public, running ladi  Unknown               N                   
+        212  AAAAAAAAENAAAAAA              2450781        2450834        10768   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Good decades take. P  Unknown               N                   
+        213  AAAAAAAAFNAAAAAA              2450403        2450415         6350   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     However powerful cri  Unknown               N                   
+        214  AAAAAAAAGNAAAAAA                    ?        2450779            ?   1.0000000E+003                  ?  ?                     N                     ?                     ?                     ?                     ?                     ?                     N                     N                     Pupils will meet mil  Unknown               N                   
+        215  AAAAAAAAHNAAAAAA              2450235        2450252         5840   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Apparent, experience  Unknown               N                   
+        216  AAAAAAAAINAAAAAA              2450885        2450898        13504   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Large, necessary car  Unknown               N                   
+        217  AAAAAAAAJNAAAAAA              2450265        2450316          466   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Also splendid terms   Unknown               N                   
+        218  AAAAAAAAKNAAAAAA              2450443        2450490        17338   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Great texts will blo  Unknown               N                   
+        219  AAAAAAAALNAAAAAA              2450821        2450859        12662   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Briefly old records   Unknown               N                   
+        220  AAAAAAAAMNAAAAAA              2450857        2450907        17108   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Also long refugees i  Unknown               N                   
+        221  AAAAAAAANNAAAAAA              2450134        2450182         2863   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Probable, available   Unknown               N                   
+        222  AAAAAAAAONAAAAAA              2450336        2450378          122   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Ways help. Everywher  Unknown               N                   
+        223  AAAAAAAAPNAAAAAA              2450671        2450721        11452   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Earlier traditional   Unknown               N                   
+        224  AAAAAAAAAOAAAAAA              2450135        2450140        13534   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Then general prefere  Unknown               N                   
+        225  AAAAAAAABOAAAAAA                    ?        2450434         6514   1.0000000E+003                  ?  anti                  ?                     N                     ?                     ?                     ?                     N                     ?                     ?                     Actual, very words u  ?                     ?                   
+        226  AAAAAAAACOAAAAAA              2450436        2450468         2848   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Signs must drink cer  Unknown               N                   
+        227  AAAAAAAADOAAAAAA              2450751        2450794         3697   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Arms can find social  Unknown               N                   
+        228  AAAAAAAAEOAAAAAA              2450337        2450354        11678   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Most basic walls use  Unknown               N                   
+        229  AAAAAAAAFOAAAAAA              2450146        2450188        10486   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Ships make never net  Unknown               N                   
+        230  AAAAAAAAGOAAAAAA              2450741        2450758        17480   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     References remember   Unknown               N                   
+        231  AAAAAAAAHOAAAAAA              2450177        2450186        13843   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Christians used to a  Unknown               N                   
+        232  AAAAAAAAIOAAAAAA              2450769        2450822        15055   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Travellers soak very  Unknown               N                   
+        233  AAAAAAAAJOAAAAAA              2450318        2450369         1094   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Young, valuable comp  Unknown               N                   
+        234  AAAAAAAAKOAAAAAA              2450299        2450354        15476   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Inadequate christian  Unknown               N                   
+        235  AAAAAAAALOAAAAAA              2450877        2450918         4910   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Bloody, useful unive  Unknown               N                   
+        236  AAAAAAAAMOAAAAAA              2450438        2450468         8095   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Months may not enjoy  Unknown               N                   
+        237  AAAAAAAANOAAAAAA              2450731        2450791         6722   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     True, major criteria  Unknown               N                   
+        238  AAAAAAAAOOAAAAAA              2450498        2450510        10280   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Others deal both com  Unknown               N                   
+        239  AAAAAAAAPOAAAAAA              2450627        2450680        17362   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Almost following str  Unknown               N                   
+        240  AAAAAAAAAPAAAAAA              2450764        2450815         4874   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Young, present frien  Unknown               N                   
+        241  AAAAAAAABPAAAAAA              2450580        2450596         3916   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Other years support   Unknown               N                   
+        242  AAAAAAAACPAAAAAA              2450393        2450396         5467   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Just victorian flowe  Unknown               N                   
+        243  AAAAAAAADPAAAAAA              2450809        2450865         1576   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Boys shall not rest   Unknown               N                   
+        244  AAAAAAAAEPAAAAAA              2450536        2450583        11725   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Unusual, key areas m  Unknown               N                   
+        245  AAAAAAAAFPAAAAAA              2450578        2450621        16075   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Alive substances can  Unknown               N                   
+        246  AAAAAAAAGPAAAAAA              2450452        2450463        13315   1.0000000E+003                  1  cally                 Y                     N                     N                     N                     N                     N                     N                     N                     However warm countri  Unknown               N                   
+        247  AAAAAAAAHPAAAAAA              2450100        2450145        12976   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Therefore distinguis  Unknown               N                   
+        248  AAAAAAAAIPAAAAAA              2450824        2450853        12451   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Other facts ensure l  Unknown               N                   
+        249  AAAAAAAAJPAAAAAA              2450467        2450523         4195   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Wrong materials shou  Unknown               N                   
+        250  AAAAAAAAKPAAAAAA              2450606              ?            ?                ?                  1  ?                     ?                     N                     N                     ?                     ?                     ?                     N                     N                     Private, political m  Unknown               ?                   
+        251  AAAAAAAALPAAAAAA              2450150        2450181         9187   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Other quarters used   Unknown               N                   
+        252  AAAAAAAAMPAAAAAA              2450290        2450319         1292   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Small characters cou  Unknown               N                   
+        253  AAAAAAAANPAAAAAA              2450337        2450364        13351   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Similar, true friend  Unknown               N                   
+        254  AAAAAAAAOPAAAAAA              2450673        2450717        11371   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Main designers will   Unknown               N                   
+        255  AAAAAAAAPPAAAAAA              2450738        2450795        10129   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Welsh, distinct pena  Unknown               N                   
+        256  AAAAAAAAAABAAAAA              2450265        2450303         3058   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Police shall put sea  Unknown               N                   
+        257  AAAAAAAABABAAAAA              2450789        2450821         8486   1.0000000E+003                  1  ation                 N                     N                     N                     N                     N                     N                     N                     N                     Books expect interna  Unknown               N                   
+        258  AAAAAAAACABAAAAA              2450687        2450732        16892   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Uncomfortable, total  Unknown               N                   
+        259  AAAAAAAADABAAAAA              2450293        2450335        11440   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     United rules recogni  Unknown               N                   
+        260  AAAAAAAAEABAAAAA              2450430        2450485        13129   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Phrases must wish ju  Unknown               N                   
+        261  AAAAAAAAFABAAAAA              2450243        2450268        14677   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Respectively similar  Unknown               N                   
+        262  AAAAAAAAGABAAAAA              2450849        2450868         2876   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Thus early wheels ke  Unknown               N                   
+        263  AAAAAAAAHABAAAAA              2450383        2450396         2116   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Public, old systems   Unknown               N                   
+        264  AAAAAAAAIABAAAAA              2450311        2450352        16609   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Other parts appear r  Unknown               N                   
+        265  AAAAAAAAJABAAAAA              2450225        2450236         8414   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Ideal camps cannot s  Unknown               N                   
+        266  AAAAAAAAKABAAAAA              2450408        2450412         6524   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Common changes assur  Unknown               N                   
+        267  AAAAAAAALABAAAAA              2450750        2450776        17926   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Premises sit in a te  Unknown               N                   
+        268  AAAAAAAAMABAAAAA              2450424        2450445         7258   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Rather average detai  Unknown               N                   
+        269  AAAAAAAANABAAAAA              2450256        2450283        10297   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Wide original seeds   Unknown               N                   
+        270  AAAAAAAAOABAAAAA              2450527        2450562         9244   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     Adequate, able eyes   Unknown               N                   
+        271  AAAAAAAAPABAAAAA              2450356        2450378        12736   1.0000000E+003                  1  ought                 Y                     N                     N                     N                     N                     N                     N                     N                     Never big houses sho  Unknown               N                   
+        272  AAAAAAAAABBAAAAA              2450377        2450380        14524   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     British leaders coul  Unknown               N                   
+        273  AAAAAAAABBBAAAAA              2450803        2450818         5138   1.0000000E+003                  1  pri                   Y                     N                     N                     N                     N                     N                     N                     N                     Pupils take only yea  Unknown               N                   
+        274  AAAAAAAACBBAAAAA              2450649        2450705         3856   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Little, other visits  Unknown               N                   
+        275  AAAAAAAADBBAAAAA              2450853        2450861         2798   1.0000000E+003                  1  anti                  N                     N                     N                     N                     N                     N                     N                     N                     Accountants reach es  Unknown               N                   
+        276  AAAAAAAAEBBAAAAA              2450196        2450210         5113   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Positive individuals  Unknown               N                   
+        277  AAAAAAAAFBBAAAAA              2450223        2450253         2581   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Large, dead miles ap  Unknown               N                   
+        278  AAAAAAAAGBBAAAAA              2450730        2450738         2842   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Again bad tickets ma  Unknown               N                   
+        279  AAAAAAAAHBBAAAAA              2450609        2450642        10910   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Effectively related   Unknown               N                   
+        280  AAAAAAAAIBBAAAAA              2450475        2450513        16424   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Mutual tourists let   Unknown               N                   
+        281  AAAAAAAAJBBAAAAA              2450740        2450746         4213   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Crucial cars ought t  Unknown               N                   
+        282  AAAAAAAAKBBAAAAA              2450659        2450702        11851   1.0000000E+003                  1  able                  N                     N                     N                     N                     N                     N                     N                     N                     Inc, superior teeth   Unknown               N                   
+        283  AAAAAAAALBBAAAAA              2450757        2450786         2870   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Recent, able boys mi  Unknown               N                   
+        284  AAAAAAAAMBBAAAAA              2450239        2450267         7066   1.0000000E+003                  1  ese                   N                     N                     N                     N                     N                     N                     N                     N                     Over stupid guidelin  Unknown               N                   
+        285  AAAAAAAANBBAAAAA              2450370        2450402        10982   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Perhaps real custome  Unknown               N                   
+        286  AAAAAAAAOBBAAAAA              2450728        2450747        17779   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Finally glad reasons  Unknown               N                   
+        287  AAAAAAAAPBBAAAAA              2450574        2450591         4568   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Rules say well-known  Unknown               N                   
+        288  AAAAAAAAACBAAAAA              2450539        2450578         1018   1.0000000E+003                  1  eing                  N                     N                     N                     N                     N                     N                     N                     N                     Lively colleagues av  Unknown               N                   
+        289  AAAAAAAABCBAAAAA              2450415        2450423         9037   1.0000000E+003                  1  n st                  N                     N                     N                     N                     N                     N                     N                     N                     Ways prevent at all   Unknown               N                   
+        290  AAAAAAAACCBAAAAA              2450375        2450415        16634   1.0000000E+003                  1  bar                   N                     N                     N                     N                     N                     N                     N                     N                     In order industrial   Unknown               N                   
+        291  AAAAAAAADCBAAAAA              2450646        2450653        10424   1.0000000E+003                  1  ought                 N                     N                     N                     N                     N                     N                     N                     N                     Fresh, slow benefits  Unknown               N                   
+        292  AAAAAAAAECBAAAAA              2450308        2450329         6548   1.0000000E+003                  1  able                  Y                     N                     N                     N                     N                     N                     N                     N                     Sources discover wor  Unknown               N                   
+        293  AAAAAAAAFCBAAAAA              2450569        2450616        13009   1.0000000E+003                  1  pri                   N                     N                     N                     N                     N                     N                     N                     N                     Miles might pay. Ave  Unknown               N                   
+        294  AAAAAAAAGCBAAAAA              2450759        2450762        11704   1.0000000E+003                  1  ese                   Y                     N                     N                     N                     N                     N                     N                     N                     Requests reappear as  Unknown               N                   
+        295  AAAAAAAAHCBAAAAA              2450889        2450944         8272   1.0000000E+003                  1  anti                  Y                     N                     N                     N                     N                     N                     N                     N                     Safe women change ol  Unknown               N                   
+        296  AAAAAAAAICBAAAAA              2450631        2450637        15518   1.0000000E+003                  1  cally                 N                     N                     N                     N                     N                     N                     N                     N                     Loose, extensive bod  Unknown               N                   
+        297  AAAAAAAAJCBAAAAA              2450217        2450250         5887   1.0000000E+003                  1  ation                 Y                     N                     N                     N                     N                     N                     N                     N                     Eventually general w  Unknown               N                   
+        298  AAAAAAAAKCBAAAAA              2450809        2450858        17287   1.0000000E+003                  1  eing                  Y                     N                     N                     N                     N                     N                     N                     N                     Teeth could go stand  Unknown               N                   
+        299  AAAAAAAALCBAAAAA              2450783        2450836         1292   1.0000000E+003                  1  n st                  Y                     N                     N                     N                     N                     N                     N                     N                     Women contrast never  Unknown               N                   
+        300  AAAAAAAAMCBAAAAA              2450488        2450522        16879   1.0000000E+003                  1  bar                   Y                     N                     N                     N                     N                     N                     N                     N                     Fine, british school  Unknown               N                   
+
+--- 300 row(s) selected.
+>>
+>>select t_time from time_dim where t_time > 100 and t_time < 200 ;
+
+*** WARNING[6008] Statistics for column (T_TIME) from table HIVE.HIVE.TIME_DIM were not available. As a result, the access path chosen might not be the best possible.
+
+T_TIME     
+-----------
+
+        101
+        102
+        103
+        104
+        105
+        106
+        107
+        108
+        109
+        110
+        111
+        112
+        113
+        114
+        115
+        116
+        117
+        118
+        119
+        120
+        121
+        122
+        123
+        124
+        125
+        126
+        127
+        128
+        129
+        130
+        131
+        132
+        133
+        134
+        135
+        136
+        137
+        138
+        139
+        140
+        141
+        142
+        143
+        144
+        145
+        146
+        147
+        148
+        149
+        150
+        151
+        152
+        153
+        154
+        155
+        156
+        157
+        158
+        159
+        160
+        161
+        162
+        163
+        164
+        165
+        166
+        167
+        168
+        169
+        170
+        171
+        172
+        173
+        174
+        175
+        176
+        177
+        178
+        179
+        180
+        181
+        182
+        183
+        184
+        185
+        186
+        187
+        188
+        189
+        190
+        191
+        192
+        193
+        194
+        195
+        196
+        197
+        198
+        199
+
+--- 99 row(s) selected.
+>>
+>>select * from store ;
+
+S_STORE_SK   S_STORE_ID            S_REC_START_DATE            S_REC_END_DATE              S_CLOSED_DATE_SK  S_STORE_NAME          S_NUMBER_EMPLOYEES  S_FLOOR_SPACE  S_HOURS               S_MANAGER             S_MARKET_ID  S_GEOGRAPHY_CLASS     S_MARKET_DESC         S_MARKET_MANAGER      S_DIVISION_ID  S_DIVISION_NAME       S_COMPANY_ID  S_COMPANY_NAME        S_STREET_NUMBER       S_STREET_NAME         S_STREET_TYPE         S_SUITE_NUMBER        S_CITY                S_COUNTY              S_STATE               S_ZIP                 S_COUNTRY             S_GMT_OFFSET     S_TAX_PRECENTAGE
+-----------  --------------------  --------------------------  --------------------------  ----------------  --------------------  ------------------  -------------  --------------------  --------------------  -----------  --------------------  --------------------  --------------------  -------------  --------------------  ------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  ---------------  ----------------
+
+          1  AAAAAAAABAAAAAAA      1997-03-13 00:00:00.000000  ?                                    2451189  ought                                245        5250760  8AM-4PM               William Ward                    2  Unknown               Enough high areas st  Charles Bartley                   1  Unknown                          1  Unknown               767                   Spring                Wy                    Suite 250             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          2  AAAAAAAACAAAAAAA      1997-03-13 00:00:00.000000  2000-03-12 00:00:00.000000                 ?  able                                 236        5285950  8AM-4PM               Scott Smith                     8  Unknown               Parliamentary candid  David Lamontagne                  1  Unknown                          1  Unknown               255                   Sycamore              Dr.                   Suite 410             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          3  AAAAAAAACAAAAAAA      2000-03-13 00:00:00.000000  ?                                          ?  able                                 236        7557959  8AM-4PM               Scott Smith                     7  Unknown               Impossible, true arm  David Lamontagne                  1  Unknown                          1  Unknown               877                   Park Laurel           Road                  Suite T               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          4  AAAAAAAAEAAAAAAA      1997-03-13 00:00:00.000000  1999-03-13 00:00:00.000000           2451044  ese                                  218        9341467  8AM-4PM               Edwin Adams                     4  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               27                    Lake                  Ln                    Suite 260             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          5  AAAAAAAAEAAAAAAA      1999-03-14 00:00:00.000000  2001-03-12 00:00:00.000000           2450910  anti                                 288        9078805  8AM-4PM               Edwin Adams                     8  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               27                    Lee 6th               Court                 Suite 80              Fairview              Williamson County     TN                    35709                 United States         -5.0000000E+000    2.9999999E-002
+          6  AAAAAAAAEAAAAAAA      2001-03-13 00:00:00.000000  ?                                          ?  cally                                229        9026222  8AM-4PM               Edwin Adams                    10  Unknown               Events would achieve  Thomas Pollack                    1  Unknown                          1  Unknown               220                   6th                   Lane                  Suite 140             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    2.9999999E-002
+          7  AAAAAAAAHAAAAAAA      1997-03-13 00:00:00.000000  ?                                          ?  ation                                297        8954883  8AM-4PM               David Thomas                    9  Unknown               Architects coul       Thomas Benton                     1  Unknown                          1  Unknown               811                   Lee                   Circle                Suite T               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    9.9999997E-003
+          8  AAAAAAAAIAAAAAAA      1997-03-13 00:00:00.000000  2000-03-12 00:00:00.000000                 ?  eing                                 278        6995995  8AM-4PM               Brett Yates                     2  Unknown               Various bars make mo  Dean Morrison                     1  Unknown                          1  Unknown               226                   12th                  Lane                  Suite D               Fairview              Williamson County     TN                    35709                 United States         -5.0000000E+000    7.9999998E-002
+          9  AAAAAAAAIAAAAAAA      2000-03-13 00:00:00.000000  ?                                          ?  eing                                 271        6995995  8AM-4PM               Brett Yates                     2  Unknown               Formal, psychologica  Dean Morrison                     1  Unknown                          1  Unknown               226                   Hill                  Boulevard             Suite 190             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    7.9999998E-002
+         10  AAAAAAAAKAAAAAAA      1997-03-13 00:00:00.000000  1999-03-13 00:00:00.000000                 ?  bar                                  294        9294113  8AM-4PM               Raymond Jacobs                  8  Unknown               Little expectations   Michael Wilson                    1  Unknown                          1  Unknown               175                   4th                   Court                 Suite C               Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    5.9999998E-002
+         11  AAAAAAAAKAAAAAAA      1999-03-14 00:00:00.000000  2001-03-12 00:00:00.000000                 ?  ought                                294        9294113  8AM-4PM               Raymond Jacobs                  6  Unknown               Mysterious employe    Michael Wilson                    1  Unknown                          1  Unknown               175                   Park Green            Court                 Suite 160             Midway                Williamson County     TN                    31904                 United States         -5.0000000E+000    1.0999999E-002
+         12  AAAAAAAAKAAAAAAA      2001-03-13 00:00:00.000000  ?                                          ?  ought                                294        5219562  8AM-12AM              Robert Thompson                 6  Unknown               Events develop i      Dustin Kelly                      1  Unknown                          1  Unknown               337                   College               Boulevard             Suite 100             Fairview              Williamson County     TN                    31904                 United States         -5.0000000E+000    9.9999997E-003
+
+--- 12 row(s) selected.
+>>
+>>select d_date from date_dim where d_date > cast('2099-01-01' as timestamp);
+
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
+
+D_DATE                    
+--------------------------
+
+2099-01-02 00:00:00.000000
+2099-01-03 00:00:00.000000
+2099-01-04 00:00:00.000000
+2099-01-05 00:00:00.000000
+2099-01-06 00:00:00.000000
+2099-01-07 00:00:00.000000
+2099-01-08 00:00:00.000000
+2099-01-09 00:00:00.000000
+2099-01-10 00:00:00.000000
+2099-01-11 00:00:00.000000
+2099-01-12 00:00:00.000000
+2099-01-13 00:00:00.000000
+2099-01-14 00:00:00.000000
+2099-01-15 00:00:00.000000
+2099-01-16 00:00:00.000000
+2099-01-17 00:00:00.000000
+2099-01-18 00:00:00.000000
+2099-01-19 00:00:00.000000
+2099-01-20 00:00:00.000000
+2099-01-21 00:00:00.000000
+2099-01-22 00:00:00.000000
+2099-01-23 00:00:00.000000
+2099-01-24 00:00:00.000000
+2099-01-25 00:00:00.000000
+2099-01-26 00:00:00.000000
+2099-01-27 00:00:00.000000
+2099-01-28 00:00:00.000000
+2099-01-29 00:00:00.000000
+2099-01-30 00:00:00.000000
+2099-01-31 00:00:00.000000
+2099-02-01 00:00:00.000000
+2099-02-02 00:00:00.000000
+2099-02-03 00:00:00.000000
+2099-02-04 00:00:00.000000
+2099-02-05 00:00:00.000000
+2099-02-06 00:00:00.000000
+2099-02-07 00:00:00.000000
+2099-02-08 00:00:00.000000
+2099-02-09 00:00:00.000000
+2099-02-10 00:00:00.000000
+2099-02-11 00:00:00.000000
+2099-02-12 00:00:00.000000
+2099-02-13 00:00:00.000000
+2099-02-14 00:00:00.000000
+2099-02-15 00:00:00.000000
+2099-02-16 00:00:00.000000
+2099-02-17 00:00:00.000000
+2099-02-18 00:00:00.000000
+2099-02-19 00:00:00.000000
+2099-02-20 00:00:00.000000
+2099-02-21 00:00:00.000000
+2099-02-22 00:00:00.000000
+2099-02-23 00:00:00.000000
+2099-02-24 00:00:00.000000
+2099-02-25 00:00:00.000000
+2099-02-26 00:00:00.000000
+2099-02-27 00:00:00.000000
+2099-02-28 00:00:00.000000
+2099-03-01 00:00:00.000000
+2099-03-02 00:00:00.000000
+2099-03-03 00:00:00.000000
+2099-03-04 00:00:00.000000
+2099-03-05 00:00:00.000000
+2099-03-06 00:00:00.000000
+2099-03-07 00:00:00.000000
+2099-03-08 00:00:00.000000
+2099-03-09 00:00:00.000000
+2099-03-10 00:00:00.000000
+2099-03-11 00:00:00.000000
+2099-03-12 00:00:00.000000
+2099-03-13 00:00:00.000000
+2099-03-14 00:00:00.000000
+2099-03-15 00:00:00.000000
+2099-03-16 00:00:00.000000
+2099-03-17 00:00:00.000000
+2099-03-18 00:00:00.000000
+2099-03-19 00:00:00.000000
+2099-03-20 00:00:00.000000
+2099-03-21 00:00:00.000000
+2099-03-22 00:00:00.000000
+2099-03-23 00:00:00.000000
+2099-03-24 00:00:00.000000
+2099-03-25 00:00:00.000000
+2099-03-26 00:00:00.000000
+2099-03-27 00:00:00.000000
+2099-03-28 00:00:00.000000
+2099-03-29 00:00:00.000000
+2099-03-30 00:00:00.000000
+2099-03-31 00:00:00.000000
+2099-04-01 00:00:00.000000
+2099-04-02 00:00:00.000000
+2099-04-03 00:00:00.000000
+2099-04-04 00:00:00.000000
+2099-04-05 00:00:00.000000
+2099-04-06 00:00:00.000000
+2099-04-07 00:00:00.000000
+2099-04-08 00:00:00.000000
+2099-04-09 00:00:00.000000
+2099-04-10 00:00:00.000000
+2099-04-11 00:00:00.000000
+2099-04-12 00:00:00.000000
+2099-04-13 00:00:00.000000
+2099-04-14 00:00:00.000000
+2099-04-15 00:00:00.000000
+2099-04-16 00:00:00.000000
+2099-04-17 00:00:00.000000
+2099-04-18 00:00:00.000000
+2099-04-19 00:00:00.000000
+2099-04-20 00:00:00.000000
+2099-04-21 00:00:00.000000
+2099-04-22 00:00:00.000000
+2099-04-23 00:00:00.000000
+2099-04-24 00:00:00.000000
+2099-04-25 00:00:00.000000
+2099-04-26 00:00:00.000000
+2099-04-27 00:00:00.000000
+2099-04-28 00:00:00.000000
+2099-04-29 00:00:00.000000
+2099-04-30 00:00:00.000000
+2099-05-01 00:00:00.000000
+2099-05-02 00:00:00.000000
+2099-05-03 00:00:00.000000
+2099-05-04 00:00:00.000000
+2099-05-05 00:00:00.000000
+2099-05-06 00:00:00.000000
+2099-05-07 00:00:00.000000
+2099-05-08 00:00:00.000000
+2099-05-09 00:00:00.000000
+2099-05-10 00:00:00.000000
+2099-05-11 00:00:00.000000
+2099-05-12 00:00:00.000000
+2099-05-13 00:00:00.000000
+2099-05-14 00:00:00.000000
+2099-05-15 00:00:00.000000
+2099-05-16 00:00:00.000000
+2099-05-17 00:00:00.000000
+2099-05-18 00:00:00.000000
+2099-05-19 00:00:00.000000
+2099-05-20 00:00:00.000000
+2099-05-21 00:00:00.000000
+2099-05-22 00:00:00.000000
+2099-05-23 00:00:00.000000
+2099-05-24 00:00:00.000000
+2099-05-25 00:00:00.000000
+2099-05-26 00:00:00.000000
+2099-05-27 00:00:00.000000
+2099-05-28 00:00:00.000000
+2099-05-29 00:00:00.000000
+2099-05-30 00:00:00.000000
+2099-05-31 00:00:00.000000
+2099-06-01 00:00:00.000000
+2099-06-02 00:00:00.000000
+2099-06-03 00:00:00.000000
+2099-06-04 00:00:00.000000
+2099-06-05 00:00:00.000000
+2099-06-06 00:00:00.000000
+2099-06-07 00:00:00.000000
+2099-06-08 00:00:00.000000
+2099-06-09 00:00:00.000000
+2099-06-10 00:00:00.000000
+2099-06-11 00:00:00.000000
+2099-06-12 00:00:00.000000
+2099-06-13 00:00:00.000000
+2099-06-14 00:00:00.000000
+2099-06-15 00:00:00.000000
+2099-06-16 00:00:00.000000
+2099-06-17 00:00:00.000000
+2099-06-18 00:00:00.000000
+2099-06-19 00:00:00.000000
+2099-06-20 00:00:00.000000
+2099-06-21 00:00:00.000000
+2099-06-22 00:00:00.000000
+2099-06-23 00:00:00.000000
+2099-06-24 00:00:00.000000
+2099-06-25 00:00:00.000000
+2099-06-26 00:00:00.000000
+2099-06-27 00:00:00.000000
+2099-06-28 00:00:00.000000
+2099-06-29 00:00:00.000000
+2099-06-30 00:00:00.000000
+2099-07-01 00:00:00.000000
+2099-07-02 00:00:00.000000
+2099-07-03 00:00:00.000000
+2099-07-04 00:00:00.000000
+2099-07-05 00:00:00.000000
+2099-07-06 00:00:00.000000
+2099-07-07 00:00:00.000000
+2099-07-08 00:00:00.000000
+2099-07-09 00:00:00.000000
+2099-07-10 00:00:00.000000
+2099-07-11 00:00:00.000000
+2099-07-12 00:00:00.000000
+2099-07-13 00:00:00.000000
+2099-07-14 00:00:00.000000
+2099-07-15 00:00:00.000000
+2099-07-16 00:00:00.000000
+2099-07-17 00:00:00.000000
+2099-07-18 00:00:00.000000
+2099-07-19 00:00:00.000000
+2099-07-20 00:00:00.000000
+2099-07-21 00:00:00.000000
+2099-07-22 00:00:00.000000
+2099-07-23 00:00:00.000000
+2099-07-24 00:00:00.000000
+2099-07-25 00:00:00.000000
+2099-07-26 00:00:00.000000
+2099-07-27 00:00:00.000000
+2099-07-28 00:00:00.000000
+2099-07-29 00:00:00.000000
+2099-07-30 00:00:00.000000
+2099-07-31 00:00:00.000000
+2099-08-01 00:00:00.000000
+2099-08-02 00:00:00.000000
+2099-08-03 00:00:00.000000
+2099-08-04 00:00:00.000000
+2099-08-05 00:00:00.000000
+2099-08-06 00:00:00.000000
+2099-08-07 00:00:00.000000
+2099-08-08 00:00:00.000000
+2099-08-09 00:00:00.000000
+2099-08-10 00:00:00.000000
+2099-08-11 00:00:00.000000
+2099-08-12 00:00:00.000000
+2099-08-13 00:00:00.000000
+2099-08-14 00:00:00.000000
+2099-08-15 00:00:00.000000
+2099-08-16 00:00:00.000000
+2099-08-17 00:00:00.000000
+2099-08-18 00:00:00.000000
+2099-08-19 00:00:00.000000
+2099-08-20 00:00:00.000000
+2099-08-21 00:00:00.000000
+2099-08-22 00:00:00.000000
+2099-08-23 00:00:00.000000
+2099-08-24 00:00:00.000000
+2099-08-25 00:00:00.000000
+2099-08-26 00:00:00.000000
+2099-08-27 00:00:00.000000
+2099-08-28 00:00:00.000000
+2099-08-29 00:00:00.000000
+2099-08-30 00:00:00.000000
+2099-08-31 00:00:00.000000
+2099-09-01 00:00:00.000000
+2099-09-02 00:00:00.000000
+2099-09-03 00:00:00.000000
+2099-09-04 00:00:00.000000
+2099-09-05 00:00:00.000000
+2099-09-06 00:00:00.000000
+2099-09-07 00:00:00.000000
+2099-09-08 00:00:00.000000
+2099-09-09 00:00:00.000000
+2099-09-10 00:00:00.000000
+2099-09-11 00:00:00.000000
+2099-09-12 00:00:00.000000
+2099-09-13 00:00:00.000000
+2099-09-14 00:00:00.000000
+2099-09-15 00:00:00.000000
+2099-09-16 00:00:00.000000
+2099-09-17 00:00:00.000000
+2099-09-18 00:00:00.000000
+2099-09-19 00:00:00.000000
+2099-09-20 00:00:00.000000
+2099-09-21 00:00:00.000000
+2099-09-22 00:00:00.000000
+2099-09-23 00:00:00.000000
+2099-09-24 00:00:00.000000
+2099-09-25 00:00:00.000000
+2099-09-26 00:00:00.000000
+2099-09-27 00:00:00.000000
+2099-09-28 00:00:00.000000
+2099-09-29 00:00:00.000000
+2099-09-30 00:00:00.000000
+2099-10-01 00:00:00.000000
+2099-10-02 00:00:00.000000
+2099-10-03 00:00:00.000000
+2099-10-04 00:00:00.000000
+2099-10-05 00:00:00.000000
+2099-10-06 00:00:00.000000
+2099-10-07 00:00:00.000000
+2099-10-08 00:00:00.000000
+2099-10-09 00:00:00.000000
+2099-10-10 00:00:00.000000
+2099-10-11 00:00:00.000000
+2099-10-12 00:00:00.000000
+2099-10-13 00:00:00.000000
+2099-10-14 00:00:00.000000
+2099-10-15 00:00:00.000000
+2099-10-16 00:00:00.000000
+2099-10-17 00:00:00.000000
+2099-10-18 00:00:00.000000
+2099-10-19 00:00:00.000000
+2099-10-20 00:00:00.000000
+2099-10-21 00:00:00.000000
+2099-10-22 00:00:00.000000
+2099-10-23 00:00:00.000000
+2099-10-24 00:00:00.000000
+2099-10-25 00:00:00.000000
+2099-10-26 00:00:00.000000
+2099-10-27 00:00:00.000000
+2099-10-28 00:00:00.000000
+2099-10-29 00:00:00.000000
+2099-10-30 00:00:00.000000
+2099-10-31 00:00:00.000000
+2099-11-01 00:00:00.000000
+2099-11-02 00:00:00.000000
+2099-11-03 00:00:00.000000
+2099-11-04 00:00:00.000000
+2099-11-05 00:00:00.000000
+2099-11-06 00:00:00.000000
+2099-11-07 00:00:00.000000
+2099-11-08 00:00:00.000000
+2099-11-09 00:00:00.000000
+2099-11-10 00:00:00.000000
+2099-11-11 00:00:00.000000
+2099-11-12 00:00:00.000000
+2099-11-13 00:00:00.000000
+2099-11-14 00:00:00.000000
+2099-11-15 00:00:00.000000
+2099-11-16 00:00:00.000000
+2099-11-17 00:00:00.000000
+2099-11-18 00:00:00.000000
+2099-11-19 00:00:00.000000
+2099-11-20 00:00:00.000000
+2099-11-21 00:00:00.000000
+2099-11-22 00:00:00.000000
+2099-11-23 00:00:00.000000
+2099-11-24 00:00:00.000000
+2099-11-25 00:00:00.000000
+2099-11-26 00:00:00.000000
+2099-11-27 00:00:00.000000
+2099-11-28 00:00:00.000000
+2099-11-29 00:00:00.000000
+2099-11-30 00:00:00.000000
+2099-12-01 00:00:00.000000
+2099-12-02 00:00:00.000000
+2099-12-03 00:00:00.000000
+2099-12-04 00:00:00.000000
+2099-12-05 00:00:00.000000
+2099-12-06 00:00:00.000000
+2099-12-07 00:00:00.000000
+2099-12-08 00:00:00.000000
+2099-12-09 00:00:00.000000
+2099-12-10 00:00:00.000000
+2099-12-11 00:00:00.000000
+2099-12-12 00:00:00.000000
+2099-12-13 00:00:00.000000
+2099-12-14 00:00:00.000000
+2099-12-15 00:00:00.000000
+2099-12-16 00:00:00.000000
+2099-12-17 00:00:00.000000
+2099-12-18 00:00:00.000000
+2099-12-19 00:00:00.000000
+2099-12-20 00:00:00.000000
+2099-12-21 00:00:00.000000
+2099-12-22 00:00:00.000000
+2099-12-23 00:00:00.000000
+2099-12-24 00:00:00.000000
+2099-12-25 00:00:00.000000
+2099-12-26 00:00:00.000000
+2099-12-27 00:00:00.000000
+2099-12-28 00:00:00.000000
+2099-12-29 00:00:00.000000
+2099-12-30 00:00:00.000000
+2099-12-31 00:00:00.000000
+2100-01-01 00:00:00.000000
+
+--- 365 row(s) selected.
+>>
+>>select [first 10] i_item_desc from item ;
+
+I_ITEM_DESC         
+--------------------
+
+Powers will not get 
+False opportunities 
+False opportunities 
+Normal systems would
+Normal systems would
+Normal systems would
+Anxious accounts mus
+F                   
+F                   
+Classical services g
+
+--- 10 row(s) selected.
+>>
+>>-- seems to crash in java sometimes 
+>>--select * from promotion ; 
+>>
+>>--incorrect row count
+>>--select  cd_dep_employed_count from customer_demographics ;
+>>
+>>-- getting a parallel plan
+>>--select ss_quantity from store_sales ; 
+>>
+>>cqd DETAILED_STATISTICS 'ALL';
+
+--- SQL operation complete.
+>>select count(C_CUSTOMER_SK) from hive.customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from table(statistics(NULL,NULL));
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>cqd DETAILED_STATISTICS 'RESET';
+
+--- SQL operation complete.
+>>log;
