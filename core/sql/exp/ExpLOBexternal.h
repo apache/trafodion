@@ -87,7 +87,10 @@ enum LOBcliQueryType
     LOB_DATA_LOAD,
 
     // returns data into output buffer
-    LOB_DATA_EXTRACT
+    LOB_DATA_EXTRACT,
+
+    // returns length of lob given a lobhandle
+    LOB_CLI_SELECT_LOBLENGTH
   };
 
 enum LOBcliQueryPhase

@@ -52,6 +52,8 @@
 
 #include "CommonLogger.h"
 #include "zookeeper/zookeeper.h"
+#include "PubInterface.h"
+
 // +++ Move below to srvrGlobal if needed
 
 //ZK_GLOBAL_Def zkGlobals;
@@ -1279,7 +1281,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 			{			    
 				//support positive & minus
 				number=atoi(argv[count]);				
-				if(number >= 10)
+                if(number >= MIN_INTERVAL)
 					aggrInterval = number;				
 			}	
 			else
@@ -1294,7 +1296,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 			if (++count < argc)
 			{
 				number=atoi(argv[count]);				
-				if(!(number >0 && number<10))
+                if(!(number >0 && number<MIN_INTERVAL))
 					queryPubThreshold = number;				
 			}	
 			else

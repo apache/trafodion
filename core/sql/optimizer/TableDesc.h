@@ -168,6 +168,10 @@ public:
   void setSelectivityHint(SelectivityHint *hint)      {selectivityHint_ = hint; }
   void setCardinalityHint(CardinalityHint *hint)      {cardinalityHint_ = hint; }
   void setPrimaryKeyColumns();
+
+  ValueIdList &hbaseTSList() { return hbaseTSList_; }
+  ValueIdList &hbaseVersionList() { return hbaseVersionList_; }
+
   // ---------------------------------------------------------------------
   // Needed by Collections classes
   // ---------------------------------------------------------------------
@@ -312,6 +316,19 @@ private:
   // Lock mode
   // CONTROLs that are in effect
   // ---------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // A List of ValueIds for hbase timestamp values for each of the column
+  // in colList_.
+  // ---------------------------------------------------------------------
+  ValueIdList  hbaseTSList_;
+
+  // ---------------------------------------------------------------------
+  // A List of ValueIds for hbase version values for each of the column
+  // in colList_.
+  // ---------------------------------------------------------------------
+  ValueIdList  hbaseVersionList_;
+
 
 }; // class TableDesc
 

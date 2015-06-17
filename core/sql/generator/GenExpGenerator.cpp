@@ -735,8 +735,9 @@ void ExpGenerator::copyDefaultValues(
 				     ExpTupleDesc * tgtTupleDesc,
 				     ExpTupleDesc * srcTupleDesc)
 {
-
-  for (CollIndex i = 0; i < srcTupleDesc->numAttrs(); i++)
+  Lng32 numAttrs = MINOF(srcTupleDesc->numAttrs(), tgtTupleDesc->numAttrs());
+  //  for (CollIndex i = 0; i < srcTupleDesc->numAttrs(); i++)
+  for (CollIndex i = 0; i < numAttrs; i++)
     {
       Attributes * srcAttr = srcTupleDesc->getAttr(i);
       Attributes * tgtAttr = tgtTupleDesc->getAttr(i);
@@ -5434,6 +5435,10 @@ short ExpGenerator::genItemExpr(ItemExpr * item_expr, Attributes *** out_attr,
     numAttrs *= 2;
 
   Attributes ** attr = new(wHeap()) Attributes * [numAttrs];
+  for (Int32 i = 0; i < numAttrs; i++)
+    {
+      attr[i] = NULL;
+    }
 
   /* assign result attributes*/
   //  attr[0] = map_table->getMapInfo(item_expr->getValueId())->getAttr();
@@ -5446,24 +5451,20 @@ short ExpGenerator::genItemExpr(ItemExpr * item_expr, Attributes *** out_attr,
 
   if (getShowplan())
     {
-#pragma nowarn(1506)   // warning elimination
       attr[0+num_attrs] =
 	new(wHeap()) ShowplanAttributes(item_expr->getValueId(),
 					convertNAString(item_expr->getText(),
 							generator->wHeap()));
-#pragma warn(1506)  // warning elimination
 
       attr[0]->setShowplan();
 
       for (short i = 0; i < num_attrs - 1; i++)
 	{
-#pragma nowarn(1506)   // warning elimination
 	  attr[i+1+num_attrs] =
 	    new(wHeap())
 	    ShowplanAttributes(item_expr->child(i)->getValueId(),
 			       convertNAString(item_expr->child(i)->getText(),
 					       generator->wHeap()));
-#pragma warn(1506)  // warning elimination
 	}
     }
 

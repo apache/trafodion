@@ -113,7 +113,7 @@ CPPSRC := Allocator.cpp \
         JavaObjectInterface.cpp \
         SequenceFileReader.cpp \
         OrcFileReader.cpp \
-        HBaseClient_JNI.cpp 
+        HBaseClient_JNI.cpp
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \
 	CancelBroker.cpp \
@@ -129,14 +129,12 @@ CPPSRC += vers_libexecutor.cpp \
 	ExSMExitHandler.cpp \
 	ExSMShortMessage.cpp \
 	ExSMReadyList.cpp \
-        ExFastTransport.cpp 
-
-INCLUDE_DIRS := sqlutils/SQ_tseInterface
+	ExFastTransport.cpp
 
 ifneq ($(SP_DIS),)
-EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so 
+EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so
 endif
-SYS_LIBS := -lrt -lpthread 
+SYS_LIBS := -lrt -lpthread
 SRCPATH := bin executor runtimestats porting_layer qmscommon
 
 EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so
@@ -149,7 +147,7 @@ ORCPACKAGE := org/apache/hadoop/hive/ql/io/orc
 JARPREFIX := trafodion-HBaseAccess-$(TRAFODION_VER)
 
 JSRC := RowToInsert.java \
-	RowsToInsert.java \
+        RowsToInsert.java \
         ResultIterator.java \
         StringArrayList.java \
         ByteArrayList.java \
@@ -158,9 +156,9 @@ JSRC := RowToInsert.java \
         SequenceFileReader.java \
         HTableClient.java \
         HBaseClient.java \
-	HiveClient.java \
+        HiveClient.java \
         HBulkLoadClient.java \
-	OrcFileReader.java 
+        OrcFileReader.java
 
 # Set up explicit dependencies (necessary for parallel builds... and for correctness).
 $(TARGOBJDIR)/java/$(PACKAGE)/HTableClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowToInsert.class

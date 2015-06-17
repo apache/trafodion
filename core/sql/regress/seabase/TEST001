@@ -1,0 +1,51 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- Tests for hbase timestamp and hbase version functionality
+
+obey TEST001(clean_up);
+
+log LOG001 clear;
+obey TEST001(setup);
+obey TEST001(dml);
+log;
+exit;
+
+?section setup
+create table t001t1(a int not null primary key, b int, c int default 10 not null)
+   hbase_options (max_versions = '3');
+
+?section dml
+select * from t001t1 {versions max};
+insert into t001t1 values (1,1,1);
+select * from t001t1 {versions max};
+insert into t001t1(a) values (2);
+select * from t001t1 {versions max};
+update t001t1 set b = 2;
+select * from t001t1 {versions 4};
+select * from t001t1 {versions max};
+
+cqd traf_num_hbase_versions '-1';
+select * from t001t1;
+
+select hbase_version(a), hbase_timestamp(a),  hbase_version(b), hbase_timestamp(b),
+   hbase_version(c), hbase_timestamp(c) from t001t1;
+
+
+?section clean_up
+drop table t001t1;

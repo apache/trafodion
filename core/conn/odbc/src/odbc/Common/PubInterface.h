@@ -1,7 +1,7 @@
 // ===============================================================================================
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 
 #include <sqlcli.h>
 
+#define MIN_INTERVAL 10
+
 struct collect_info
 {
     char					        clientId[MAX_COMPUTERNAME_LENGTH*4 + 1];
@@ -46,6 +48,7 @@ struct collect_info
     unsigned long					authenticationConnectionTime;
     unsigned long					authenticationTime;
 };
+extern void UpdateStringText(string& textStr);
 
 extern void SendEventMsg(
 		  DWORD EventId

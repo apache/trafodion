@@ -1187,6 +1187,14 @@ void Scan::generateCacheKey(CacheWA &cwa) const
   if (getTableDesc()->getNATable()->isAnMPTableWithAnsiName()) {
     cwa += AM_AN_MPALIAS_QUERY;
   }
+
+  if (getHbaseAccessOptions())
+    {
+      cwa += " hbaseVersions: ";
+      char numVersions[20];
+      sprintf(numVersions, " %d", getHbaseAccessOptions()->getHbaseVersions());
+      cwa += numVersions ;
+    }
 }
 
 // is this entire expression cacheable after this phase?

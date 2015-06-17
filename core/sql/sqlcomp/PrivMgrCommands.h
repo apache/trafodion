@@ -515,7 +515,10 @@ public:
    
    PrivStatus initializeAuthorizationMetadata(
       const std::string &objectsLocation,
-      const std::string &authsLocation);
+      const std::string &authsLocation,
+      const std::string &colsLocation,
+      std::vector<std::string> &tablesCreated,
+      std::vector<std::string> &tablesUpgraded);
 
    PrivStatus insertPrivRowsForObject(
       const int64_t objectUID,
@@ -567,7 +570,6 @@ public:
       const std::string & componentName,
       PrivDropBehavior dropBehavior);
 
-   PrivStatus upgradeAuthorizationMetadata();
     // -------------------------------------------------------------------
     // Accessors:
     // -------------------------------------------------------------------

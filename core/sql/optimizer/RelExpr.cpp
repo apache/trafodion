@@ -8095,7 +8095,11 @@ void Scan::getPotentialOutputValues(ValueIdSet & outputValues) const
   // as the output values that can be produced by this scan.
   //
   if (potentialOutputs_.isEmpty())
-    outputValues.insertList( getTableDesc()->getColumnList() );
+    {
+      outputValues.insertList( getTableDesc()->getColumnList() );
+      outputValues.insertList( getTableDesc()->hbaseTSList() );
+      outputValues.insertList( getTableDesc()->hbaseVersionList() );
+    }
   else
     outputValues = potentialOutputs_;
 
@@ -8208,6 +8212,8 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setExtraOutputColumns(getExtraOutputColumns());
   result->isRewrittenMV_ = isRewrittenMV_;
   result->matchingMVs_ = matchingMVs_;
+
+  result->hbaseAccessOptions_ = hbaseAccessOptions_;
 
   // don't copy values that can be calculated by addIndexInfo()
   // (could be done, but we are lazy and just call addIndexInfo() again)
@@ -9682,41 +9688,6 @@ NABoolean FileScan::isLogical() const  { return FALSE; }
 
 NABoolean FileScan::isPhysical() const { return TRUE;  }
 
-void FileScan::computeRetrievedCols()
-{
-  GroupAttributes     fakeGA;
-  ValueIdSet          requiredValueIds(getGroupAttr()->
-				       getCharacteristicOutputs());
-  ValueIdSet          coveredExprs;
-
-  // ---------------------------------------------------------------------
-  // Make fake group attributes with all inputs that are available to
-  // the file scan node and with no "native" values.
-  // Then call the "coverTest" method, offering it all the index columns
-  // as additional inputs. "coverTest" will mark those index columns that
-  // it actually needs to satisfy the required value ids, and that is
-  // what we actually want. The actual cover test should always succeed,
-  // otherwise the FileScan node would have been inconsistent.
-  // ---------------------------------------------------------------------
-
-  fakeGA.addCharacteristicInputs(getGroupAttr()->getCharacteristicInputs());
-  requiredValueIds += selectionPred();
-  requiredValueIds += executorPred();
-
-  fakeGA.coverTest(requiredValueIds,              // char outputs + preds
-		   indexDesc_->getIndexColumns(), // all index columns
-		   coveredExprs,                  // dummy parameter
-		   retrievedCols_);               // needed index cols
-
-  //
-  // *** This CMPASSERT goes off sometimes, indicating an actual problem.
-  // Hans has agreed to look into it (10/18/96) but I (brass) am
-  // commenting it out for now, for sake of my time in doing a checking.
-  //
-  //  CMPASSERT(coveredExprs == requiredValueIds);
-
-}
-
 PlanPriority FileScan::computeOperatorPriority
 (const Context* context,
  PlanWorkSpace *pws,
@@ -10197,8 +10168,12 @@ void HbaseAccess::getPotentialOutputValues(
      ValueIdSet & outputValues) const
 {
   outputValues.clear();
+
   // since this is a physical operator, it only generates the index columns
   outputValues.insertList( getIndexDesc()->getIndexColumns() );
+  outputValues.insertList( getTableDesc()->hbaseTSList() );
+  outputValues.insertList( getTableDesc()->hbaseVersionList() );
+  
 } // HbaseAccess::getPotentialOutputValues()
 
 void

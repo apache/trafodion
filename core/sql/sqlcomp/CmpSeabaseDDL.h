@@ -1053,9 +1053,13 @@ class CmpSeabaseDDL
   void createSeabaseSchemaObjects();
   void updateVersion();
 
-  void initSeabaseAuthorization();
-  void dropSeabaseAuthorization();
-  void dropSeabaseAuthorization(NAString schemaName);
+  short createPrivMgrRepos(ExeCliInterface *cliInterface);
+  short initSeabaseAuthorization(ExeCliInterface *cliInterface,
+                                std::vector<std::string> &tablesCreated,
+                                std::vector<std::string> &tablesUpgraded);
+
+  void dropSeabaseAuthorization(ExeCliInterface *cliInterface);
+
   NABoolean insertPrivMgrInfo(const Int64 objUID,
                               const NAString &objName,
                               const ComObjectType objectType,

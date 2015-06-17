@@ -92,7 +92,7 @@ enum E_GetSQLInfoType {
 #define CmdDll "libzcmd.so"
 
 #define HPDCI_APPLICATION	"HPDCI"
-#define MIN_INTERVAL 10
+
 
 bool ChkDsExists(char* dsname,char* PrimaryCatalog, int& retcode);
 bool CheckUserPerm(char* PrimaryCatalog,long& uid);

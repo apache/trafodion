@@ -73,6 +73,9 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
   Int32 nNullableInputs = 0;
   Int32 i = 0;
   for(i=0; i<getNumOperands(); i++) {
+    if (! attrs[i])
+      continue;
+
     if((i>0) && attrs[i]->getNullFlag())
       nNullableInputs++;
   }
@@ -101,6 +104,9 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
   Int32 varchar = 0;
   for(i=0; i<getNumOperands(); i++) 
   {
+    if (! attrs[i])
+      continue;
+
     if(attrs[i]->getVCIndicatorLength() > 0) 
       varchar = 1;
   }
@@ -140,6 +146,9 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
     // stack, otherwise a non-zero.
     //
     for(i=1; i<getNumOperands(); i++) {
+      if (! attrs[i])
+        continue;
+
       if(attrs[i]->getNullFlag())
       {
         if ( attrs[i]->isSQLMXAlignedFormat() )
@@ -180,7 +189,7 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
     {
       // For indirect varchars, the data address is loaded at the same time
       // as the VCLen Address.
-      if( ! attrs[i]->isIndirectVC())
+      if( attrs[i] && (! attrs[i]->isIndirectVC()))
         code.append(PCode::loadOpDataDataAddress(attrs[i], i, space));
     }
 

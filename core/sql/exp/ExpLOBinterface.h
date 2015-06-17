@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -135,15 +135,17 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    Int64 xnId,
 
 			    Int64 &tgtDescSyskey,
+			    LobsOper lo,
 
 			    Lng32 * cliError = 0,
 
 			    LobsSubOper so = Lob_Memory,
-			    Lng32 checkStatus = 0,
 			    Lng32 waited = 0,
 
 			    char * srcLobData = NULL, 
 			    Int64  srcLobLen  = 0,
+			    Int64 lobMaxSize = 2000*1024*1024,
+			    
 			    int    bufferSize = 0,
 			    short  replication =0,
 			    int    blocksize=0
@@ -201,7 +203,8 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS);
+				  Int64 srcDescTS
+				  );
 
 Lng32 ExpLOBInterfaceDelete(void * lobGlob, 
 			    char * lobHdfsServer ,
@@ -226,7 +229,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 handleLen,
 			    char * lobHandle,
 			    Int64 &requestTag,
-
+                            LobsSubOper so,
 			    Int64 xnId,
 			    Lng32 checkStatus,
 			    Lng32 waited,

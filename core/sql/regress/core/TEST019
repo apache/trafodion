@@ -1,7 +1,7 @@
 -- Test: TEST019 (Core)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 -- Expected file: EXPECTED019
 -- Filter file: FILTER019
 -- Tables created: t019t1, t019t2, t019_starter
---                 t019_a, t019_b, t019_c, t019_d, t019_e, t019_f, t019_g
+--                 t019_a, t019_b, t019_c, t019_d, t019_e, t019_f, t019_g, upsertx
 -- Limitations: Only tests overflow in the master executor
 -- Revision history:
 --     (1/28/02) - Copied from fullstack/TEST019
@@ -97,6 +97,10 @@ create table t019_f (sums int not null) no partition ;
 create table t019_g 
   (uniqb int not null,
    str1  varchar(50) not null) no partition ;
+
+create table upsertx(id int not null, a int, b int,
+                          primary key (id));
+create index upsertix1 on upsertx(a);
 
 
 
@@ -442,6 +446,24 @@ insert into t019_c
     transpose 0,1,2,3,4,5,6,7,8,9 as x1
   ;
 
+-- upsertx queries test index maintenance corruption for upsert
+upsert into upsertx
+select num, num+100, num+100
+from (select 10*e1 + e0
+      from (values (0)) seed(s)
+      transpose 0,1,2,3,4,5,6,7,8,9 as e0
+      transpose 0,1,2,3,4,5,6,7,8,9 as e1) t(num);
+
+upsert into upsertx
+select 10*num, 10*num+200, 10*num+200
+from (select e0
+      from (values (0)) seed(s)
+      transpose 0,1,2,3,4,5,6,7,8,9 as e0) t(num);
+
+select count(*) from upsertx;
+set parserflags 1;
+select count(*) from table(index_table UPSERTIX1);
+
 -- test SHOWPLAN, the regression tool can report core file if generated
 log;
 SHOWPLAN
@@ -615,7 +637,7 @@ select  count(VAL3)
 update t019_e set uniqb = uniqb + 25 where mod(uniqb,10) = 0;
 
 -- Repeat the above test, this time with duplicates
-delete from t019_g;
+purgedata t019_g;
 #ifdef SEABASE_REGRESS
 control query shape nested_join(hash_groupby(scan), insert);
 #else
@@ -723,4 +745,6 @@ drop table t019_d;
 drop table t019_e;
 drop table t019_f;
 drop table t019_g;
+
+drop table upsertx;
 

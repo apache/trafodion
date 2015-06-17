@@ -1,7 +1,7 @@
 // ===============================================================================================
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,6 +33,22 @@ static bool	gv_trace_ems_dll = false;
 static bool	gv_trace_legacy_dll = false;
 
 static std::string MXOSRVR_COMPONENT = "MXOSRVR";
+
+void UpdateStringText(string& textStr)
+{
+    int pos = 0;
+    while (pos != -1)
+    {
+        pos = textStr.find("'", pos);
+        if (pos != -1)
+        {
+            if(textStr.substr(pos, 2).compare("''") != 0)
+                textStr.insert(pos, "'");
+			pos = pos + 2;
+        }
+    }
+}
+
 inline long getLongEventId(int type, int component_id, int event_id, int max_len)
 {
    char *buff = new char[max_len+1];

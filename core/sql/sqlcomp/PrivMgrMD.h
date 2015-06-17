@@ -114,11 +114,13 @@ class PrivMgrMDAdmin : public PrivMgr
     // -------------------------------------------------------------------
     inline std::string getMetadataLocation (void) {return metadataLocation_;}
     PrivStatus initializeComponentPrivileges();
-    PrivStatus initializeMetadata(const std::string &objectsLocation,
-                                  const std::string &authsLocation);
+    PrivStatus initializeMetadata(
+      const std::string &objectsLocation,
+      const std::string &authsLocation,
+      const std::string &colsLocation,
+      std::vector<std::string> &tablesCreated,
+      std::vector<std::string> &tablesUpgraded);
     PrivStatus dropMetadata(const std::vector<std::string> &objectsToDrop);
-    PrivStatus upgradeMetadata();
-
 
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
@@ -163,6 +165,13 @@ class PrivMgrMDAdmin : public PrivMgr
        const std::string &authsLocation,
        const bool shouldPopulateObjectPrivs,
        const bool shouldPopulateRoleGrants);
+
+    PrivStatus upgradeMetadata (
+      const PrivMgrTableStruct &tableDefinition,
+      ExeCliInterface &cliInterface,
+      const std::string &objectsLocation,
+      const std::string &colsLocation);
+
 
 }; // class PrivMgrMDAdmin
 

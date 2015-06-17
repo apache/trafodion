@@ -78,12 +78,36 @@ NABoolean CmpSeabaseMDupgrade::isReposUpgradeNeeded()
       if (mdti.upgradeNeeded)
         return TRUE;
     }
-
   return FALSE;
 }
 
+// ----------------------------------------------------------------------------
+// isPrivsUpgradeNeeded
+//
+// Checks to see PrivMgr metadata tables need to be upgraded
+// returns:
+//   TRUE - upgrade maybe needed
+//   FALSE - upgrade not needed
+// ----------------------------------------------------------------------------
 NABoolean CmpSeabaseMDupgrade::isPrivsUpgradeNeeded()
 {
+  // If PrivMgr tables don't exist (0), then authorization is not enabled
+  NABoolean checkAllTables = FALSE;
+  if (isPrivMgrMetadataInitialized(&ActiveSchemaDB()->getDefaults(), checkAllTables) == 0)
+  {
+    // During a Trafodion upgrade, the customer can choose to enable security 
+    // features through a new installation option.  When chosen, the installer 
+    // sets the environment variable TRAFODION_ENABLE_AUTHENTICATION to YES.
+    // Check to see if this envvar has been set:
+    char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+    if (env)
+       return (strcmp(env, "YES") == 0) ? TRUE : FALSE;
+
+    // authorization is not enabled -> no need to upgrade
+    return FALSE;
+  }
+
+  // Otherwise assume upgrade is required
   return TRUE;
 }
 
@@ -1497,6 +1521,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		
 	      case 1:
 		{
+                  NAString privMgrDoneMsg;
 		  if (xnInProgress(&cliInterface))
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
@@ -1518,7 +1543,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  cliRC = upgradePrivMgr();
+		  cliRC = upgradePrivMgr(&cliInterface, privMgrDoneMsg);
 		  if (cliRC != 0)
 		    {
 		      mdui->setStep(UPGRADE_FAILED);
@@ -1538,7 +1563,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  mdui->setMsg("Update Priv Mgr: done");
+		  mdui->setMsg(privMgrDoneMsg.data());
 		  mdui->setStep(UPGRADE_REPOS);
 		  mdui->setSubstep(0);
 		  mdui->setEndStep(TRUE);
@@ -2386,60 +2411,53 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
   return -1;
 }
 
-short CmpSeabaseMDupgrade::upgradePrivMgr()
+// ----------------------------------------------------------------------------
+// method: upgradePrivMgr
+//
+// This method upgrades the privilege manager repository
+//
+// Params:
+//   cliInterface - pointer to a CLI helper class
+//   privMgrDoneMsg - message indicating the result
+//
+// returns:
+//   0 - successful
+//  -1 - failed
+//
+// The diags area is populated with any unexpected errors
+// ----------------------------------------------------------------------------
+short CmpSeabaseMDupgrade::upgradePrivMgr (
+  ExeCliInterface *cliInterface, 
+  NAString &privMgrDoneMsg)
 {
-   NABoolean authCurrentlyEnabled = FALSE;
-   NAString privMgrName = getSystemCatalog() +
-                          NAString(".") +
-                          NAString(SEABASE_OLD_PRIVMGR_SCHEMA) +
-                          NAString(".OBJECT_PRIVILEGES");
+  std::vector<std::string> tablesCreated;
+  std::vector<std::string> tablesUpgraded;
 
-   // See if authorization is currently enabled by checking for the
-   // existence of the TRAFODION.PRIVMGR_MD.OBJECT_PRIVILEGES table.
-   ExpHbaseInterface * ehi = allocEHI();
-   if (existsInHbase(privMgrName, ehi)  == 1)
-      authCurrentlyEnabled = TRUE;
-   deallocEHI(ehi);
+  // initSeabaseAuthorization will create or upgrade PrivMgr metadata tables
+  if (initSeabaseAuthorization(cliInterface, tablesCreated, tablesUpgraded) < 0)
+    return -1;
 
-   // During a Trafodion upgrade, the customer can choose to enable security 
-   // features through a new installation option.  When chosen, the installer 
-   // sets the environment variable TRAFODION_ENABLE_AUTHENTICATION to YES
-   char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
-   NABoolean securityFeaturesEnabled = FALSE;
-   if (env)
-      securityFeaturesEnabled = (strcmp(env, "YES") == 0) ? TRUE : FALSE;
-
-   // Upgrade privmgr based on following table:
-   //
-   // --------------------  -----------------------  ------ 
-   //   ** flag **               ** flag **         
-   // authCurrentlyEnabled  securityFeaturesEnabled  action
-   // --------------------  -----------------------  ------
-   //
-   //  TRUE                  YES                      D, E
-   //  TRUE                  NO                       D, E
-   //  FALSE                 YES                      E
-   //  FALSE                 NO                       --
-
-   //      D  => drop existing privilege infrastructure
-   //      E  => enable privilege infrastructure
-   //      -- => do nothing
-
-   // If authorization is currently enabled - disable it
-   if (authCurrentlyEnabled)
-   {
-      dropSeabaseAuthorization(SEABASE_OLD_PRIVMGR_SCHEMA);
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+  // Report which tables were created and which were upgraded
+  if (tablesCreated.size() > 0)
+    privMgrDoneMsg += "  Privilege manager tables created: ";
+    {
+      for (int i = 0; i < tablesCreated.size(); i++)
         {
-          return -1;
+          privMgrDoneMsg += tablesCreated[i].c_str();
+          privMgrDoneMsg += " ";
         }
-   }
+    }
 
-   if (securityFeaturesEnabled || authCurrentlyEnabled)
-   {
-      initSeabaseAuthorization();
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
-        return -1;
-   }
-   return 0;
+  if (tablesUpgraded.size() > 0)
+    {
+      privMgrDoneMsg +=  "\n  Privilege manager tables upgraded: ";
+      for (int i = 0; i < tablesUpgraded.size(); i++)
+        {
+          privMgrDoneMsg += tablesUpgraded[i].c_str();
+          privMgrDoneMsg += " ";
+        }
+    }
+  privMgrDoneMsg += "\nUpgrade Priv Mgr: ended";
+
+  return 0;
 }
