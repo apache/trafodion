@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
     SB_Timer::Tics        ts3_tics;
     TAD                   zargs[] = {
       { "-client",    TA_Bool, TA_NOMAX,    &client    },
+      { "-cluster",   TA_Ign,  TA_NOMAX,    NULL       },
       { "-trace",     TA_Bool, TA_NOMAX,    &trace     },
       { "-v",         TA_Bool, TA_NOMAX,    &verbose   },
       { "-verbose",   TA_Ign,  TA_NOMAX,    NULL       },

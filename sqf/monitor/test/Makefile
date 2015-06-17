@@ -36,6 +36,7 @@ CLIENTOBJS	+= $(MONOUTDIR)/monclio.o
 CLIENTOBJS	+= $(MONOUTDIR)/clusterconf.o
 CLIENTOBJS	+= $(MONOUTDIR)/lnodeconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/pnodeconfig.o
+CLIENTOBJS	+= $(MONOUTDIR)/persistconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/trace.o
 CLIENTOBJS	+= $(MONOUTDIR)/otrace.o
 CLIENTOBJS	+= $(MONOUTDIR)/threadtls.o

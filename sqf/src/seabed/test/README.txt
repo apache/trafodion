@@ -32,3 +32,7 @@ To use goall:
 To run an individual test, e.g. t<number>:
   go<number> [-cluster] [-verbose]
 
+An adhoc cluster (set of workstations using nfs) can be 
+used by creating a nmap.conf file which contains a list of hosts
+for the cluster (one host per line).
+'goall -cluster -verbose' can then be used to run the tests.

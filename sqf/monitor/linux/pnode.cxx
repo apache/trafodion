@@ -1105,8 +1105,8 @@ void CNode::StartWatchdogProcess( void )
     CProcess * watchdogProcess;
     CConfigGroup *group;
     
-    snprintf( name, sizeof(name), "$WDG%03d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_WDG%03d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$WDG%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_WDG%d", MyNode->GetZone() );
 
     group = Config->GetGroup( name );
     if (group==NULL)
@@ -1198,8 +1198,8 @@ void CNode::StartPStartDProcess( void )
     CProcess * pstartdProcess;
     CConfigGroup *group;
     
-    snprintf( name, sizeof(name), "$PSD%03d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_PSD%03d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$PSD%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_PSD%d", MyNode->GetZone() );
 
     group = Config->GetGroup( name );
     if (group==NULL)

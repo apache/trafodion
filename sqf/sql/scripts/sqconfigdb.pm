@@ -19,6 +19,7 @@
 #
 
 use strict;
+use warnings;
 use DBI;
 use Exporter ();
 
@@ -34,7 +35,7 @@ sub addDbKeyName {
         return;
     }
 
-    my $key = @_[0];
+    my $key = $_[0];
 
     my $insDbKeyStmt
         = $DBH->prepare("insert into monRegKeyName (keyName) values ( ? );");
@@ -73,7 +74,7 @@ sub addDbProcName {
         return;
     }
 
-    my $name = @_[0];
+    my $name = $_[0];
 
     my $insDbProcNameStmt
         = $DBH->prepare("insert into monRegProcName (procName) values ( ? );");
@@ -101,8 +102,8 @@ sub addDbClusterData {
         return;
     }
 
-    my $key = @_[0];
-    my $dataValue = @_[1];
+    my $key = $_[0];
+    my $dataValue = $_[1];
 
     addDbKeyName($key);
 
@@ -122,9 +123,9 @@ sub addDbProcData {
         return;
     }
 
-    my $procName = @_[0];
-    my $key = @_[1];
-    my $dataValue = @_[2];
+    my $procName = $_[0];
+    my $key = $_[1];
+    my $dataValue = $_[2];
 
     addDbKeyName($key);
     addDbProcName($procName);
@@ -146,12 +147,12 @@ sub addDbProcDef {
         return;
     }
 
-    my $procType    = @_[0];
-    my $procName    = @_[1];
-    my $procNid     = @_[2];
-    my $procProg    = @_[3];
-    my $procStdout  = @_[4];
-    my $procArgs    = @_[5];
+    my $procType    = $_[0];
+    my $procName    = $_[1];
+    my $procNid     = $_[2];
+    my $procProg    = $_[3];
+    my $procStdout  = $_[4];
+    my $procArgs    = $_[5];
 
     my $insDbProcDefStmt
         = $DBH->prepare("insert or replace into procs values ( ?, ?, ?, ?, ?, ? )");
@@ -172,9 +173,9 @@ sub addDbPersistProc {
         return;
     }
 
-    my $procName    = @_[0];
-    my $zone        = @_[1];
-    my $reqTm       = @_[2];
+    my $procName    = $_[0];
+    my $zone        = $_[1];
+    my $reqTm       = $_[2];
 
     my $insDbPersistStmt = $DBH->prepare("insert into persist values (?, ?, ?)");
 
@@ -183,6 +184,34 @@ sub addDbPersistProc {
     $insDbPersistStmt->bind_param(3, $reqTm);
 
     $insDbPersistStmt->execute;
+}
+
+sub addDbPersistData {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $keyName   = $_[0];
+    my $valueName = $_[1];
+
+    my $insDbPersistStmt = $DBH->prepare("insert into monRegPersistData values (?, ?)");
+
+    $insDbPersistStmt->bind_param(1, $keyName);
+    $insDbPersistStmt->bind_param(2, $valueName);
+
+    $insDbPersistStmt->execute;
+}
+
+sub delDbPersistData {
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $delDbPersistStmt = $DBH->prepare("delete from monRegPersistData");
+    $delDbPersistStmt->execute;
 }
 
 # Physical node table
@@ -195,10 +224,10 @@ sub addDbPNode {
 
     my $insDbPNodeStmt = $DBH->prepare("insert into pnode values (?, ?, ?, ?)");
 
-    my $nodeId          = @_[0];
-    my $nodeName        = @_[1];
-    my $firstExcCore    = @_[2];
-    my $lastExcCore     = @_[3];
+    my $nodeId          = $_[0];
+    my $nodeName        = $_[1];
+    my $firstExcCore    = $_[2];
+    my $lastExcCore     = $_[3];
 
     $insDbPNodeStmt->bind_param(1, $nodeId);
     $insDbPNodeStmt->bind_param(2, $nodeName);
@@ -218,12 +247,12 @@ sub addDbLNode {
 
     my $insDbLNodeStmt = $DBH->prepare("insert into lnode values (?, ?, ?, ?, ? , ?)");
 
-    my $lNodeId       = @_[0];
-    my $pNodeId       = @_[1];
-    my $numProcessors = @_[2];
-    my $roleSet       = @_[3];
-    my $firstCore     = @_[4];
-    my $lastCore      = @_[5];
+    my $lNodeId       = $_[0];
+    my $pNodeId       = $_[1];
+    my $numProcessors = $_[2];
+    my $roleSet       = $_[3];
+    my $firstCore     = $_[4];
+    my $lastCore      = $_[5];
 
     $insDbLNodeStmt->bind_param(1, $lNodeId);
     $insDbLNodeStmt->bind_param(2, $pNodeId);
@@ -245,11 +274,11 @@ sub addDbSpare {
 
     my $insDbSpareStmt = $DBH->prepare("insert into snode values (?, ?, ?, ?, ?)");
 
-    my $pNodeId       = @_[0];
-    my $nodeName      = @_[1];
-    my $firstCore     = @_[2];
-    my $lastCore      = @_[3];
-    my $sparedpNid    = @_[4];
+    my $pNodeId       = $_[0];
+    my $nodeName      = $_[1];
+    my $firstCore     = $_[2];
+    my $lastCore      = $_[3];
+    my $sparedpNid    = $_[4];
 
     $insDbSpareStmt->bind_param(1, $pNodeId);
     $insDbSpareStmt->bind_param(2, $nodeName);
@@ -258,6 +287,23 @@ sub addDbSpare {
     $insDbSpareStmt->bind_param(5, $sparedpNid);
 
     $insDbSpareStmt->execute;
+}
+
+sub listNodes {
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbListStmt = $DBH->prepare("select p.pNid, l.lNid, p.nodeName, l.firstCore, l.lastCore, l.processors, l.roles from pnode p, lnode l where p.pNid = l.pNid");
+
+    $insDbListStmt->execute;
+    my @rows;
+    my @row;
+    while (@row = $insDbListStmt->fetchrow_array()) {
+        push (@rows, @row);
+    }
+    return @rows;
 }
 
 sub openDb {

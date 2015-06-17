@@ -36,10 +36,23 @@ my $node_name;
 my $nid;
 my $pnid;
 my $role_set = 7;
+open(CONF, "<nmap.conf");
+my @node_names;
+my $ninx = 0;
+while (<CONF>) {
+	$node_names[$ninx] = $_;
+	$ninx++;
+}
 for $nid (0..$count-1) {
 	$pnid = $nid;
 	$name_inx = $pnid + 1;
 	$node_name = "n${name_inx}";
+	if ($ninx > 0) {
+		if ($nid < $ninx) {
+			$node_name = $node_names[$nid];
+			$node_name =~ s/^\s+|\s+$//g;
+		}
+	}
 	sqconfigdb::addDbPNode($pnid, $node_name, $first_excl, $last_excl);
 	sqconfigdb::addDbLNode($nid, $pnid, $num_proc, $role_set, $first_core, $last_core);
 }

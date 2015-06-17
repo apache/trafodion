@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( Exit_def ),            // ReqType_Exit
    sizeof(REQTYPE) + sizeof( Get_def ),             // ReqType_Get
    sizeof(REQTYPE) + sizeof( Kill_def ),            // ReqType_Kill
+   sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
    sizeof(REQTYPE) + sizeof( Mount_def ),           // ReqType_Mount
    sizeof(REQTYPE) + sizeof( NewProcess_def ),      // ReqType_NewProcess
    sizeof(REQTYPE) + sizeof( NodeDown_def ),        // ReqType_NodeDown
@@ -109,7 +110,6 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( int ),                 // ReqType_TmSeqNum
    sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
    sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
-   sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
    sizeof(REQTYPE) + sizeof( ZoneInfo_def )         // ReqType_ZoneInfo
 };
 
@@ -120,19 +120,19 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( Generic_reply_def ),     // ReplyType_Generic
    sizeof(REPLYTYPE) + sizeof( Dump_reply_def ),        // ReplyType_Dump
    sizeof(REPLYTYPE) + sizeof( Get_reply_def ),         // ReplyType_Get
+   sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
+   sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
    sizeof(REPLYTYPE) + sizeof( NewProcess_reply_def ),  // ReplyType_NewProcess
    sizeof(REPLYTYPE) + sizeof( NodeInfo_reply_def ),    // ReplyType_NodeInfo
-   sizeof(REPLYTYPE) + sizeof( PNodeInfo_reply_def ),   // ReplyType_PNodeInfo
-   sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
    sizeof(REPLYTYPE) + sizeof( Open_reply_def ),        // ReplyType_Open
    sizeof(REPLYTYPE) + sizeof( OpenInfo_reply_def ),    // ReplyType_OpenInfo
+   sizeof(REPLYTYPE) + sizeof( PNodeInfo_reply_def ),   // ReplyType_PNodeInfo
+   sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
+   sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
+   sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
    sizeof(REPLYTYPE) + sizeof( int ),                   // ReplyType_TmSeqNum
    sizeof(REPLYTYPE) + sizeof( TmSync_reply_def ),      // ReplyType_TmSync 
    sizeof(REPLYTYPE) + sizeof( TransInfo_reply_def ),   // ReplyType_TransInfo 
-   sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
-   sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
-   sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
-   sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
    sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def )     // ReplyType_ZoneInfo
 };
 
@@ -145,21 +145,24 @@ const int SQ_LocalIOToClient::requestSize[] = {
    sizeof(REQTYPE) + sizeof( Change_def ),            // MsgType_Change
    sizeof(REQTYPE) + sizeof( Close_def ),             // MsgType_Close
    sizeof(REQTYPE) + sizeof( Event_Notice_def ),      // MsgType_Event
+   sizeof(REQTYPE) + sizeof( NodeAdded_def ),         // MsgType_NodeAdded
+   sizeof(REQTYPE) + sizeof( NodeDeleted_def ),       // MsgType_NodeDeleted
    sizeof(REQTYPE) + sizeof( NodeDown_def ),          // MsgType_NodeDown
    sizeof(REQTYPE) + sizeof( NodeJoining_def ),       // MsgType_NodeJoining
-   sizeof(REQTYPE) + sizeof( NodePrepare_def ),       // MsgType_NodeQuiesce
+   sizeof(REQTYPE) + sizeof( NodePrepare_def ),       // MsgType_NodePrepare
    sizeof(REQTYPE) + sizeof( NodeQuiesce_def ),       // MsgType_NodeQuiesce
    sizeof(REQTYPE) + sizeof( NodeUp_def ),            // MsgType_NodeUp
    sizeof(REQTYPE) + sizeof( Open_def ),              // MsgType_Open
    sizeof(REQTYPE) + sizeof( NewProcess_Notice_def ), // MsgType_ProcessCreated
    sizeof(REQTYPE) + sizeof( ProcessDeath_def ),      // MsgType_ProcessDeath
+   sizeof(REQTYPE) + sizeof( NodeReInt_def ),         // MsgType_ReintegrationError
    0, // MsgType_Service
-   sizeof(REQTYPE) + sizeof( SpareUp_def ),           // MsgType_NodeJoining
    sizeof(REQTYPE) + sizeof( Shutdown_def ),          // MsgType_Shutdown
+   sizeof(REQTYPE) + sizeof( SpareUp_def ),           // MsgType_SpareUp
+   sizeof(REQTYPE) + sizeof( TmRestarted_def ),       // MsgType_TmRestarted
    sizeof(REQTYPE) + sizeof( TmSyncNotice_def ),      // MsgType_TmSyncAbort
    sizeof(REQTYPE) + sizeof( TmSyncNotice_def ),      // MsgType_TmSyncCommit
-   sizeof(REQTYPE) + sizeof( UnsolicitedTmSync_def ), // MsgType_UnsolicitedMessage
-   sizeof(REQTYPE) + sizeof( NodeReInt_def ),         // MsgType_ReintegrationError
+   sizeof(REQTYPE) + sizeof( UnsolicitedTmSync_def )  // MsgType_UnsolicitedMessage
 
 };
 
@@ -524,8 +527,8 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
                     ++it;
 
                     if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
-                        trace_printf( "%s@%d Sending notice to pid=%d:%d\n",
-                                      method_name, __LINE__, pv.pv.pid, pv.pv.verifier );
+                        trace_printf( "%s@%d Sending notice to pid=%d:%d, t=%d\n",
+                                      method_name, __LINE__, pv.pv.pid, pv.pv.verifier, msg->msg.type );
 
                     // send a notice ready control message to the client
                     rc = sendCtlMsg( pv.pv.pid, MC_NoticeReady, msg->trailer.index );
@@ -599,8 +602,8 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
  
             if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
             {
-                trace_printf( "%s@%d Sending notice to process %d:%d\n",
-                              method_name, __LINE__, pn.pid, pn.verifier );
+                trace_printf( "%s@%d Sending notice to process %d:%d, t=%d\n",
+                              method_name, __LINE__, pn.pid, pn.verifier, msg->msg.type );
             }
 
             rc = sendCtlMsg( pn.pid, MC_NoticeReady, msg->trailer.index );

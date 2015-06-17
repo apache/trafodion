@@ -420,7 +420,8 @@ class CExtProcInfoBase: public CExternalReq
     int ProcessInfo_BuildReply(CProcess *process,
                                struct message_def * msg,
                                PROCESSTYPE type,
-                               bool getDataForAllNodes);
+                               bool getDataForAllNodes,
+                               char *pattern);
 };
 
 class CExtProcInfoReq: public CExtProcInfoBase

@@ -79,7 +79,7 @@ INCLUDES+= -I../../inc
 INCLUDES+= -I../../../log4cpp/$(LOG4CPP_VER)/include
 INCLUDES+= -I../../commonLogger
 
-LIBS+=  -lsqlite3
+LIBS +=  -lsqlite3
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
@@ -105,6 +105,7 @@ MONITORSRC += lock.cxx
 MONITORSRC += clusterconf.cxx
 MONITORSRC += lnodeconfig.cxx
 MONITORSRC += pnodeconfig.cxx
+MONITORSRC += persistconfig.cxx
 MONITORSRC += lnode.cxx
 MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
@@ -164,6 +165,7 @@ MONITOROBJS += $(OUTDIR)/lock.o
 MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
+MONITOROBJS += $(OUTDIR)/persistconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
@@ -213,6 +215,7 @@ SHELLOBJS += $(OUTDIR)/versshell.o
 SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
+SHELLOBJS += $(OUTDIR)/persistconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -249,6 +252,7 @@ CLIENTOBJS += $(OUTDIR)/props.o
 CLIENTOBJS += $(OUTDIR)/clusterconf.o
 CLIENTOBJS += $(OUTDIR)/lnodeconfig.o
 CLIENTOBJS += $(OUTDIR)/pnodeconfig.o
+CLIENTOBJS += $(OUTDIR)/persistconfig.o
 
 MONWDTOBJS = $(OUTDIR)/monwdt.o
 MONWDTOBJS += $(OUTDIR)/versmwdt.o
@@ -392,7 +396,8 @@ $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 CONFOBJS = $(OUTDIR)/testconf.o \
 	$(OUTDIR)/clusterconf.o \
 	$(OUTDIR)/lnodeconfig.o \
-	$(OUTDIR)/pnodeconfig.o
+	$(OUTDIR)/pnodeconfig.o \
+	$(OUTDIR)/persistconfig.o
 
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'

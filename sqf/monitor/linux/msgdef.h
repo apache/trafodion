@@ -29,12 +29,7 @@
 
 // Compile options
 //#define DEBUGGING
-#define USE_ONE_SYNC_RECV_BUFFER
 #define NO_OPEN_CLOSE_NOTICES
-//#define USE_MEMORY_LOADBALANCING
-#define USE_CONFIG_DB
-
-#define VERSION "Monitor v0.12 2-17-2009" 
 
 #define SERVICE_TAG      1
 #define INTERNAL_TAG     2
@@ -78,6 +73,8 @@
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
 #define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PERSIST_KEY_STR   51
+#define MAX_PERSIST_VALUE_STR 51
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
@@ -232,6 +229,7 @@ typedef enum {
     ReqType_Exit,                           // process is exiting
     ReqType_Get,                            // Retrieve information from the registry
     ReqType_Kill,                           // stop and cleanup the identified process
+    ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
     ReqType_NodeDown,                       // request to take down the identified node
@@ -244,6 +242,7 @@ typedef enum {
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
+    ReqType_ProcessInfoPat,                 // process information request (pattern)
     ReqType_Set,                            // Add configuration infomation to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_Startup,                        // process startup notification
@@ -253,7 +252,6 @@ typedef enum {
     ReqType_TmSeqNum,                       // request the next TM cluster sequence number
     ReqType_TmSync,                         // request to sync data across all TM's in cluster
     ReqType_TransInfo,                      // request transaction enlistment information
-    ReqType_MonStats,                       // get monitor statistics
     ReqType_ZoneInfo,                       // zone information request 
 
     ReqType_Invalid                         // marks the end of the request
@@ -269,19 +267,19 @@ typedef enum {
     ReplyType_Generic=100,                  // general reply across message types
     ReplyType_Dump,                         // reply with dump info
     ReplyType_Get,                          // reply with configuration key/value pairs
+    ReplyType_MonStats,                     // reply with monitor statistics
+    ReplyType_Mount,                        // reply with mount info
     ReplyType_NewProcess,                   // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
-    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
-    ReplyType_ProcessInfo,                  // reply with info on list of processes
     ReplyType_Open,                         // reply with open server information
     ReplyType_OpenInfo,                     // reply with list of opens for a process
+    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
+    ReplyType_ProcessInfo,                  // reply with info on list of processes
+    ReplyType_Stfsd,                        // reply with stfsd info
+    ReplyType_Startup,                      // reply with startup info
     ReplyType_TmSeqNum,                     // reply with the next TM cluster sequence number
     ReplyType_TmSync,                       // reply from unsolicited TmSync message
     ReplyType_TransInfo,                    // reply with transaction enlistment process list
-    ReplyType_Stfsd,                        // reply with stfsd info
-    ReplyType_Startup,                      // reply with startup info
-    ReplyType_Mount,                        // reply with mount info
-    ReplyType_MonStats,                     // reply with monitor statistics
     ReplyType_ZoneInfo,                     // reply with info on list of zones
 
 
@@ -298,6 +296,8 @@ typedef enum {
     MsgType_Change=1,                       // registry information has changed notification
     MsgType_Close,                          // process close notification
     MsgType_Event,                          // generic event notification
+    MsgType_NodeAdded,                      // node is added notification
+    MsgType_NodeDeleted,                    // node is deleted notification
     MsgType_NodeDown,                       // node is down notification
     MsgType_NodeJoining,                    // node is joining notification
     MsgType_NodePrepare,                    // node prepare notification
@@ -306,14 +306,14 @@ typedef enum {
     MsgType_Open,                           // process open notification
     MsgType_ProcessCreated,                 // process creation completed notification
     MsgType_ProcessDeath,                   // process death notification
+    MsgType_ReintegrationError,             // Problem during node reintegration
     MsgType_Service,                        // request a service from the monitor
-    MsgType_SpareUp,                        // spare node is up notification
     MsgType_Shutdown,                       // system shutdown notification
+    MsgType_SpareUp,                        // spare node is up notification
     MsgType_TmRestarted,                    // DTM process restarted notification
     MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
     MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
     MsgType_UnsolicitedMessage,             // Outgoing monitor msg expecting a reply 
-    MsgType_ReintegrationError,             // Problem during node reintegration
 
     MsgType_Invalid                         // marks the end of the message
                                             // types, add any new message types 
@@ -539,6 +539,20 @@ struct NewProcess_Notice_def
     int  return_code;                       // mpi error code of spawn operation
 };
 
+struct NodeAdded_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+struct NodeDeleted_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
 struct NodeDown_def
 {
     int  nid;
@@ -608,49 +622,6 @@ struct NodeJoining_def
     int  pnid;
     char node_name[MPI_MAX_PROCESSOR_NAME];
     JOINING_PHASE  phase;
-};
-
-struct PNodeInfo_def
-{
-    int  nid;                               // node id of requesting process
-    int  pid;                               // process id of requesting process
-    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
-    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
-    int  last_pnid;                         // Last Physical Node ID returned
-    bool continuation;                      // true if continuation of earlier request
-};
-
-struct PNodeInfo_reply_def
-{
-    int num_nodes;                          // Number of logical nodes in the cluster
-    int num_pnodes;                         // Number of physical nodes in the cluster
-    int num_spares;                         // Number of spare nodes in the cluster
-    int num_available_spares;               // Number of currenly available spare nodes in the cluster
-    int num_returned;                       // Number of nodes returned
-    struct
-    {
-        int      pnid;                      // Node's Physical ID 
-        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
-        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
-        int      lnode_count;               // Number of logical nodes
-        int      process_count;             // Number of processes in executing on the node
-        bool     spare_node;                // True when physical node is spare
-        unsigned int memory_total;          // Node's total memory
-        unsigned int memory_free;           // Node's current free memory
-        unsigned int swap_free;             // Node's current free swap
-        unsigned int cache_free;            // Node's current free buffer/cache
-        unsigned int memory_active;         // Node's memory in active use
-        unsigned int memory_inactive;       // Node's memory available for reclamation
-        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
-        unsigned int memory_writeback;      // Node's memory being written to disk
-        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
-        unsigned int btime;                 // Boot time (secs since 1/1/1970)
-        int      cores;                     // Number of processors in physical node
-    } node[MAX_NODE_LIST];
-    int return_code;                        // error returned to sender
-    int last_pnid;                          // Last Physical Node ID returned
-    bool integrating;                       // true if re-integration in progress in local monitor
-    bool continuation;                      // true if continuation of earlier request
 };
 
 struct NodePrepare_def
@@ -759,6 +730,49 @@ struct OpenInfo_reply_def
     int  return_code;                       // error returned to sender
 };
 
+struct PNodeInfo_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
+    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
+    int  last_pnid;                         // Last Physical Node ID returned
+    bool continuation;                      // true if continuation of earlier request
+};
+
+struct PNodeInfo_reply_def
+{
+    int num_nodes;                          // Number of logical nodes in the cluster
+    int num_pnodes;                         // Number of physical nodes in the cluster
+    int num_spares;                         // Number of spare nodes in the cluster
+    int num_available_spares;               // Number of currenly available spare nodes in the cluster
+    int num_returned;                       // Number of nodes returned
+    struct
+    {
+        int      pnid;                      // Node's Physical ID
+        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
+        int      lnode_count;               // Number of logical nodes
+        int      process_count;             // Number of processes in executing on the node
+        bool     spare_node;                // True when physical node is spare
+        unsigned int memory_total;          // Node's total memory
+        unsigned int memory_free;           // Node's current free memory
+        unsigned int swap_free;             // Node's current free swap
+        unsigned int cache_free;            // Node's current free buffer/cache
+        unsigned int memory_active;         // Node's memory in active use
+        unsigned int memory_inactive;       // Node's memory available for reclamation
+        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
+        unsigned int memory_writeback;      // Node's memory being written to disk
+        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
+        unsigned int btime;                 // Boot time (secs since 1/1/1970)
+        int      cores;                     // Number of processors in physical node
+    } node[MAX_NODE_LIST];
+    int return_code;                        // error returned to sender
+    int last_pnid;                          // Last Physical Node ID returned
+    bool integrating;                       // true if re-integration in progress in local monitor
+    bool continuation;                      // true if continuation of earlier request
+};
+
 struct ProcessDeath_def
 {
     int nid;                                // dead process's node id
@@ -783,6 +797,7 @@ struct ProcessInfo_def
     int  target_pid;                        // Process id of process for status request (-1 for all)
     Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
     char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
+    char target_process_pattern[MAX_PROCESS_NAME]; // Name of process pattern for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
 
@@ -1057,6 +1072,8 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
+        struct NodeAdded_def         added;
+        struct NodeDeleted_def       deleted;
     } u;
 };
 
