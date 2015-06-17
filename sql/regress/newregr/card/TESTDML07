@@ -1,0 +1,590 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML07 (Cardinality)
+-- Functionality: Uses HPIT database to test various cardinalities.
+-- Expected Files: ETESTDML07.
+-- History: Created on 12/10/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+control query default osim_simulation_loc './hpit';
+
+control query default create_objects_in_metadata_only 'on';
+
+control query default query_cache '0';
+
+cqd HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+control query default cache_histograms '0';
+obey $$REGRTSTDIR$$/hpit/CQDS;
+
+cqd USTAT_AUTOMATION_INTERVAL '0';
+
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator like '%CROSS_PRODUCT%')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+log ATESTDML07 clear;
+
+set schema BENCH9X4.HPITD;
+
+-- Query 1
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
+where fact.CTRY_KY = geo.CTRY_KY 
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  ;
+
+execute explainCard;
+
+showstats for query
+select geo.CTRY_KY, prod.PROD_LN_KY 
+from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
+where fact.CTRY_KY = geo.CTRY_KY 
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  ;
+
+-- Query 2
+control query shape implicit enforcers sort_groupby(sort_groupby(
+hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'))));
+
+prepare xx from
+Select count(*) from PERF_SUM_F fact, CTRY_D geo
+Where fact.CTRY_KY = geo.CTRY_KY 
+AND geo.ISO_CTRY_NM = _UCS2'United States';
+
+execute explainCard;
+
+-- Query 3
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(path 'BENCH9X4.HPITD.PROD_LN_PERF_TRCKG_F'),
+scan(path 'BENCH9X4.HPITD.CTRY_D')),
+scan(path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+prepare xx from
+select * from PROD_LN_PERF_TRCKG_F , CTRY_D , DT_MTH_D  
+where PROD_LN_PERF_TRCKG_F.CTRY_KY = CTRY_D.CTRY_KY and PROD_LN_PERF_TRCKG_F.DT_MTH_KY = DT_MTH_D.DT_MTH_KY ;
+
+execute explainCard;
+
+-- Query 4
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY  
+and dmth.FISC_YR_NM in('FY2007','FY2008')  ;
+
+execute explainCard;
+
+-- Query 5
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo 
+where fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+execute explainCard;
+
+showstats for query
+select fact.ctry_ky from PERF_SUM_F fact, CTRY_D geo 
+where fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+-- Query 6
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+execute explainCard;
+
+-- Query 7
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
+where fact.CTRY_KY = geo.CTRY_KY 
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and geo.ISO_CTRY_NM = _UCS2'United States'  
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+execute explainCard;
+
+-- Query 8
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust 
+where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY and AL1.SO_TYPE_KY = 12  
+and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
+and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN' and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+
+execute explainCard;
+
+-- Query 9
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, RTE_TO_MKT_D rtm 
+where rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
+and AL1.SO_TYPE_KY = 12  
+and rtm.SLS_CHNL_RTE_CD = 'B1' ;
+
+execute explainCard;
+
+-- Query 10
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo 
+where fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+execute explainCard;
+
+showstats for query
+select geo.iso_ctry_nm from PERF_SUM_F fact, CTRY_D geo 
+where fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+-- Query 11
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+execute explainCard;
+
+-- Query 12
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
+where fact.CTRY_KY = geo.CTRY_KY 
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and geo.ISO_CTRY_NM = _UCS2'United States'  
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+execute explainCard;
+
+-- Query 13
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, RTE_TO_MKT_D rtm 
+where rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
+and AL1.SO_TYPE_KY = 12  
+and rtm.SLS_CHNL_RTE_CD = 'B1' ;
+
+execute explainCard;
+
+-- Query 14
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo, RTE_TO_MKT_D rtm 
+where fact.CTRY_KY = geo.CTRY_KY 
+and fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
+and rtm.SLS_CHNL_RTE_NM = _UCS2'Direct' ;
+
+execute explainCard;
+
+-- Query 15
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'),
+hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')));
+
+prepare xx from
+select * from PERF_SUM_F fact, CUST_ACCT_HIER_D cust, CTRY_D geo 
+where fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
+and fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+execute explainCard;
+
+showstats for query
+select cust.CUST_ACCT_HIER_KY, geo.ISO_CTRY_NM 
+from PERF_SUM_F fact, CUST_ACCT_HIER_D cust, CTRY_D geo 
+where fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
+and fact.CTRY_KY = geo.CTRY_KY 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+-- Query 16
+control query shape implicit enforcers nested_join(
+ordered_cross_product(
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth, CTRY_D geo 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and fact.CTRY_KY = geo.CTRY_KY 
+and dmth.FISC_YR_QTR_CD = '2008Q4' 
+and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+execute explainCard;
+
+-- Query 17
+control query shape implicit enforcers hybrid_hash_join(
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'),
+hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth, CUST_ACCT_HIER_D cust 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
+and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+execute explainCard;
+
+-- Query 18
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth, PROD_LN_D prod 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and dmth.FISC_YR_QTR_CD = '2008Q4' 
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+execute explainCard;
+
+-- Query 19
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth, RTE_TO_MKT_D rtm 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY 
+and fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
+and dmth.FISC_YR_QTR_CD = '2008Q4' 
+and rtm.SLS_CHNL_RTE_NM = _UCS2'Direct' ;
+
+execute explainCard;
+
+-- Query 20
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, RTE_TO_MKT_D rtm, PROD_LN_D prod 
+where fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+execute explainCard;
+
+showstats for query
+select fact.RTE_TO_MKT_KY, fact.QTA_PROD_LN_KY 
+from PERF_SUM_F fact, RTE_TO_MKT_D rtm, PROD_LN_D prod 
+where fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+-- Query 21
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D')),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CTRY_D geo , DT_DAY_D AL6  
+where geo.CTRY_KY = AL1.CTRY_KY  
+and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
+and AL1.SO_TYPE_KY = 12  and AL6.FISC_YR_NM = 'FY2005' ;
+
+execute explainCard;
+
+-- Query 22
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CTRY_D geo , PROD_D_1 AL5 
+where geo.CTRY_KY = AL1.CTRY_KY  
+and AL5.PROD_KY = AL1.PROD_KY  
+and AL1.SO_TYPE_KY = 12  
+and geo.RGN_CD = 'REGAMECAS ' ;
+
+execute explainCard;
+
+-- Query 23
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CTRY_D geo , RTE_TO_MKT_D rtm 
+where geo.CTRY_KY = AL1.CTRY_KY  
+and rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
+and AL1.SO_TYPE_KY = 12  
+and geo.RGN_CD = 'REGAMECAS ' ;
+
+execute explainCard;
+
+-- Query 24
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, CTRY_D geo  
+where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
+and geo.CTRY_KY = AL1.CTRY_KY  
+and AL1.SO_TYPE_KY = 12  ;
+
+execute explainCard;
+
+-- Query 25
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
+scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, DT_DAY_D AL6  
+where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
+and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
+and AL1.SO_TYPE_KY = 12  
+and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
+and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'
+and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+
+execute explainCard;
+
+showstats for query 
+select AL1.FIN_CLOSE_DT_DAY_KY, cust.CUST_AMID_LVL_2_IND_VERT_CD 
+from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, DT_DAY_D AL6  
+where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
+and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
+and AL1.SO_TYPE_KY = 12  
+and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
+and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'
+and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+
+-- Query 26
+control query shape implicit enforcers hybrid_hash_join(
+hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
+scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1'));
+
+prepare xx from
+select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, PROD_D_1 AL5 
+where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
+and AL5.PROD_KY = AL1.PROD_KY  
+and AL1.SO_TYPE_KY = 12 ;
+
+execute explainCard;
+
+-- Query 27
+control query shape implicit enforcers hybrid_hash_join(nested_join(
+scan(path 'BENCH9X4.HPITD.DT_MTH_D'),
+scan(path 'BENCH9X4.HPITD.PROD_LN_PERF_TRCKG_F')),
+scan(path 'BENCH9X4.HPITD.CTRY_D'));
+
+prepare xx from
+select * from PROD_LN_PERF_TRCKG_F , CTRY_D , DT_MTH_D  
+where PROD_LN_PERF_TRCKG_F.CTRY_KY = CTRY_D.CTRY_KY and PROD_LN_PERF_TRCKG_F.DT_MTH_KY = DT_MTH_D.DT_MTH_KY 
+and DT_MTH_D.CLDR_YR_MTH_DSPLY_CD = '2005/01'  ;
+
+execute explainCard;
+
+-- Query 28
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, DT_MTH_D dmth, PROD_LN_D prod 
+where fact.DT_MTH_KY = dmth.DT_MTH_KY  
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and dmth.FISC_YR_NM in('FY2007','FY2008')  
+and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+execute explainCard;
+
+-- Query 29
+control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+prepare xx from
+select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
+where fact.CTRY_KY = geo.CTRY_KY  
+and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
+and geo.ISO_CTRY_NM = _UCS2'United States' ;
+
+execute explainCard;
+
+-- Query 30
+control query shape implicit enforcers hash_groupby(
+hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'AL1', path 'BENCH9X4.HPITD.TEMP_INDEX'),
+scan(TABLE 'AL4', path 'BENCH9X4.HPITD.RTE_TO_MKT_D')),
+scan(TABLE 'AL3', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'AL7', path 'BENCH9X4.HPITD.PROD_LN_D')),
+scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D')),
+scan(TABLE 'AL2', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
+scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1')));
+
+prepare xx from
+select count(*)
+FROM DLY_SO_SUM_F AL1,
+CUST_ACCT_HIER_D AL2,
+CTRY_D AL3,
+RTE_TO_MKT_D AL4,
+PROD_D_1 AL5,
+DT_DAY_D AL6,
+PROD_LN_D AL7
+WHERE (AL2.CUST_ACCT_HIER_KY=AL1.SLDT_CUST_ACCT_HIER_KY
+AND AL3.CTRY_KY=AL1.CTRY_KY
+AND AL4.RTE_TO_MKT_KY=AL1.RTE_TO_MKT_KY
+AND AL5.PROD_KY=AL1.PROD_KY
+AND AL1.FIN_CLOSE_DT_DAY_KY=AL6.DT_DAY_KY
+AND AL7.PROD_LN_KY=AL1.QTA_PROD_LN_KY)
+AND AL3.RGN_CD='REGAMECAS '
+AND AL6.FISC_YR_NM='FY2005'
+AND AL2.CUST_AMID_LVL_2_IND_VERT_CD='FIN'
+AND AL2.CUST_AMID_LVL_4_IND_VERT_CD='FIN'
+AND AL1.SO_TYPE_KY=12 AND AL4.SLS_CHNL_RTE_CD='B1'
+AND AL2.CUST_AMID_LVL_4_CLS_1_CD='COR'
+AND AL7.PROD_HIER_VALU_VOL_CD='1'
+GROUP BY AL5.SLS_PROD_NM, AL2.CUST_AMID_LVL_2_NM, AL6.FISC_MTH_YR_CD;;
+
+execute explainCard;
+
+showstats for query
+select count(*)
+FROM DLY_SO_SUM_F AL1,
+CUST_ACCT_HIER_D AL2,
+CTRY_D AL3,
+RTE_TO_MKT_D AL4,
+PROD_D_1 AL5,
+DT_DAY_D AL6,
+PROD_LN_D AL7
+WHERE (AL2.CUST_ACCT_HIER_KY=AL1.SLDT_CUST_ACCT_HIER_KY
+AND AL3.CTRY_KY=AL1.CTRY_KY
+AND AL4.RTE_TO_MKT_KY=AL1.RTE_TO_MKT_KY
+AND AL5.PROD_KY=AL1.PROD_KY
+AND AL1.FIN_CLOSE_DT_DAY_KY=AL6.DT_DAY_KY
+AND AL7.PROD_LN_KY=AL1.QTA_PROD_LN_KY)
+AND AL3.RGN_CD='REGAMECAS '
+AND AL6.FISC_YR_NM='FY2005'
+AND AL2.CUST_AMID_LVL_2_IND_VERT_CD='FIN'
+AND AL2.CUST_AMID_LVL_4_IND_VERT_CD='FIN'
+AND AL1.SO_TYPE_KY=12 AND AL4.SLS_CHNL_RTE_CD='B1'
+AND AL2.CUST_AMID_LVL_4_CLS_1_CD='COR'
+AND AL7.PROD_HIER_VALU_VOL_CD='1'
+GROUP BY AL5.SLS_PROD_NM, AL2.CUST_AMID_LVL_2_NM, AL6.FISC_MTH_YR_CD;;
+
+-- Query 31
+control query shape implicit enforcers hash_groupby(
+hash_groupby(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
+hybrid_hash_join(hybrid_hash_join(
+scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
+scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
+scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D')),
+scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
+scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
+scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'))));
+
+prepare xx from
+Select   count(*)
+From  PERF_SUM_F fact,  DT_MTH_D dmth,
+CUST_ACCT_HIER_D cust,  CTRY_D geo,
+RTE_TO_MKT_D rtm,  PROD_LN_D prod
+Where  fact.DT_MTH_KY = dmth.DT_MTH_KY
+AND  fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY
+AND  fact.CTRY_KY = geo.CTRY_KY
+AND  fact.QTA_PROD_LN_KY = prod.PROD_LN_KY
+AND  fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY
+AND  dmth.FISC_YR_NM in('FY2007','FY2008')
+AND  rtm.SLS_CHNL_RTE_NM = _UCS2'Direct'
+AND  prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'
+AND  geo.ISO_CTRY_NM = _UCS2'United States'
+Group By cust.CUST_AMID_LVL_4_NM ;;
+
+execute explainCard;
+
+LOG;
+exit;
+

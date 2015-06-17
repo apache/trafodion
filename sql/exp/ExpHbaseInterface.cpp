@@ -278,7 +278,7 @@ Lng32  ExpHbaseInterface::fetchAllRows(
      if (retcode != HBASE_ACCESS_SUCCESS)
         break;
      int numCols;
-     retcode = getNumCols(numCols);
+     retcode = getNumCellsPerRow(numCols);
      if (retcode == HBASE_ACCESS_SUCCESS)
      {	
         for (int colNo = 0; colNo < numCols; colNo++)
@@ -487,7 +487,8 @@ Lng32 ExpHbaseInterface_JNI::close()
 
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
-				    HBASE_NAMELIST& colFamNameList)
+				    HBASE_NAMELIST& colFamNameList,
+                                    NABoolean isMVCC)
 {
   if (client_ == NULL)
   {
@@ -495,7 +496,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
       return -HBASE_ACCESS_ERROR;
   }
     
-  retCode_ = client_->create(tblName.val, colFamNameList); 
+  retCode_ = client_->create(tblName.val, colFamNameList, isMVCC); 
   //close();
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
@@ -508,7 +509,8 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 				    NAText * hbaseCreateOptionsArray,
                                     int numSplits, int keyLength,
                                     const char ** splitValues,
-                                    NABoolean noXn)
+                                    NABoolean noXn,
+                                    NABoolean isMVCC)
 {
   if (client_ == NULL)
   {
@@ -523,12 +525,36 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
     transID = getTransactionIDFromContext();
  
   retCode_ = client_->create(tblName.val, hbaseCreateOptionsArray,
-                             numSplits, keyLength, splitValues, transID);
+                             numSplits, keyLength, splitValues, transID,
+                             isMVCC);
   //close();
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
     return -HBASE_CREATE_ERROR;
+}
+
+//----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
+				   NAText * hbaseCreateOptionsArray,
+                                   NABoolean noXn)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+  
+  Int64 transID = 0;
+  if (!noXn)
+    transID = getTransactionIDFromContext();
+ 
+  retCode_ = client_->alter(tblName.val, hbaseCreateOptionsArray, transID);
+
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_ALTER_ERROR;
 }
 
 //----------------------------------------------------------------------------
@@ -675,7 +701,8 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      Lng32 snapTimeout,
 				      char * snapName,
 				      char * tmpLoc,
-				      Lng32 espNum  )
+				      Lng32 espNum,
+                                      Lng32 versions)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc_ == NULL)
@@ -690,17 +717,18 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
   else
     transID = getTransactionIDFromContext();
   retCode_ = htc_->startScan(transID, startRow, stopRow, columns, timestamp, 
-					  cacheBlocks, numCacheRows, 
-                                          preFetch,
-					  inColNamesToFilter,
-					  inCompareOpList,
-					  inColValuesToCompare,
-					  samplePercent,
-					  useSnapshotScan,
-					  snapTimeout,
-					  snapName,
-					  tmpLoc,
-					  espNum);
+                             cacheBlocks, numCacheRows, 
+                             preFetch,
+                             inColNamesToFilter,
+                             inCompareOpList,
+                             inColValuesToCompare,
+                             samplePercent,
+                             useSnapshotScan,
+                             snapTimeout,
+                             snapName,
+                             tmpLoc,
+                             espNum,
+                             versions);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -1212,6 +1240,32 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
  }
 */
 
+Lng32 ExpHbaseInterface_JNI::isEmpty(
+                                     HbaseStr &tblName)
+{
+  Lng32 retcode;
+
+  retcode = init(hbs_);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+  
+  LIST(HbaseStr) columns(heap_);
+
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, 
+       NULL, NULL, NULL);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return -HBASE_OPEN_ERROR;
+
+  retcode = nextRow();
+
+  scanClose();
+  if (retcode == HBASE_ACCESS_EOD)
+    return 1; // isEmpty
+  else if (retcode == HBASE_ACCESS_SUCCESS)
+    return 0; // not empty
+
+  return -HBASE_ACCESS_ERROR; // error
+}
 
 //----------------------------------------------------------------------------
 // Avoid messing up the class data members (like htc_)
@@ -1448,11 +1502,11 @@ Lng32 ExpHbaseInterface_JNI::getRowID(HbaseStr &rowID)
   return HBASE_ACCESS_SUCCESS;
 }
 
-Lng32 ExpHbaseInterface_JNI::getNumCols(int &numCols)
+Lng32 ExpHbaseInterface_JNI::getNumCellsPerRow(int &numCells)
 {
   HTC_RetCode retCode = HTC_OK;
   if (htc_ != NULL)
-     retCode = htc_->getNumCols(numCols);
+     retCode = htc_->getNumCellsPerRow(numCells);
   else
      return HBC_ERROR_GET_HTC_EXCEPTION;
  
@@ -1535,6 +1589,22 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, estRC);
   return retCode_;
 }
+
+// get nodeNames of regions. this information will be used to co-locate ESPs
+Lng32 ExpHbaseInterface_JNI::getRegionsNodeName(const HbaseStr& tblName,
+                                                Int32 partns,
+                                                ARRAY(const char *)& nodeNames)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  retCode_ = client_->getRegionsNodeName(tblName.val, partns, nodeNames);
+  return retCode_;
+}
+
 
 // Get Hbase Table information. This will be generic function to get needed information
 // from Hbase layer. Currently index level and blocksize is being requested for use in

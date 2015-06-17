@@ -1,0 +1,306 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+ *** Test 1 - Expecting entire rowset insert to succeed ***
+Delete table data
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+10	100	1000	
+11	110	1100	
+12	120	1200	
+13	130	1300	
+14	140	1400	
+15	150	1500	
+16	160	1600	
+17	170	1700	
+18	180	1800	
+19	190	1900	
+20	200	2000	
+
+ *** Test 2 - Expecting -8102 on row 10         ***
+              Duplicate pk on column b and c    ***
+ ***          Only 19 rows should be inserted   ***
+Delete table data
+Start display diags
+Number of conditions  : 2
+Number of rows inserted: 19
+
+Condition number : 1
+ROW INDEX : 9
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+End display diags; SQLCODE = 30022
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+11	110	1100	
+12	120	1200	
+13	130	1300	
+14	140	1400	
+15	150	1500	
+16	160	1600	
+17	170	1700	
+18	180	1800	
+19	190	1900	
+20	200	2000	
+0	0	0	
+
+ *** Test 3 - Expecting -8102 on row 11            ***
+ ***          Duplicate unique index key on col a  ***
+ ***          Only 19 rows should be inserted      ***
+Delete table data
+Start display diags
+Number of conditions  : 2
+Number of rows inserted: 19
+
+Condition number : 1
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+End display diags; SQLCODE = 30022
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+10	100	1000	
+12	120	1200	
+13	130	1300	
+14	140	1400	
+15	150	1500	
+16	160	1600	
+17	170	1700	
+18	180	1800	
+19	190	1900	
+20	200	2000	
+0	0	0	
+
+ *** Test 4 - Expecting -8102 on row 12 and row 13       ***
+ ***          Duplicate unique index key on cols a and c ***
+ ***          Only 18 rows should be inserted            ***
+Delete table data
+Start display diags
+Number of conditions  : 3
+Number of rows inserted: 18
+
+Condition number : 1
+ROW INDEX : 11
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 12
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+End display diags; SQLCODE = 30022
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+10	100	1000	
+11	110	1100	
+14	140	1400	
+15	150	1500	
+16	160	1600	
+17	170	1700	
+18	180	1800	
+19	190	1900	
+20	200	2000	
+0	0	0	
+0	0	0	
+
+ *** Test 5 - Expecting -8102 on row 14 and 15                               ***
+ ***          Duplicate unique index key on col a and duplicate primary keys ***
+ ***          Only 18 rows should be inserted                                ***
+Delete table data
+Start display diags
+Number of conditions  : 3
+Number of rows inserted: 18
+
+Condition number : 1
+ROW INDEX : 14
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 13
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+End display diags; SQLCODE = 30022
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+10	100	1000	
+11	110	1100	
+12	120	1200	
+13	130	1300	
+16	160	1600	
+17	170	1700	
+18	180	1800	
+19	190	1900	
+20	200	2000	
+0	0	0	
+0	0	0	
+
+ *** Test 6 - Expecting -8102 on row 16, 17, and 18                                  ***
+ ***          Duplicate unique index keys on col a & c plus duplicate primary keys   ***
+ ***          Only 17 rows should be inserted                                        ***
+Delete table data
+Start display diags
+Number of conditions  : 4
+Number of rows inserted: 17
+
+Condition number : 1
+ROW INDEX : 16
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 15
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 17
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+End display diags; SQLCODE = 30022
+Verify the contents of base table
+a	b	c
+------	------	------
+1	10	100	
+2	20	200	
+3	30	300	
+4	40	400	
+5	50	500	
+6	60	600	
+7	70	700	
+8	80	800	
+9	90	900	
+10	100	1000	
+11	110	1100	
+12	120	1200	
+13	130	1300	
+14	140	1400	
+15	150	1500	
+19	190	1900	
+20	200	2000	
+0	0	0	
+0	0	0	
+0	0	0	

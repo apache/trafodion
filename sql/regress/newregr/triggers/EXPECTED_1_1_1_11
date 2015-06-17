@@ -1,0 +1,62 @@
+>>obey TEST_1_1_1_11(tests);
+>>
+>>--------------------------------------------------------
+>>-- TEST CASE
+>>--------------------------------------------------------
+>>CREATE TRIGGER atrig
++>AFTER UPDATE ON tab1A
++>REFERENCING OLD AS oldR, NEW AS newR FOR EACH ROW
++>WHEN (oldR.b IS NULL OR newR.d is NOT NULL)
++>Insert into tab1b values (newR.d, oldR.d);
+
+--- SQL operation complete.
+>>
+>>update tab1a set d=b+c;
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.ATRIG on table CAT1.SCHM.TAB1A has failed.
+
+--- 0 row(s) updated.
+>>-- should fail due to the NOT NULL in tab1b
+>>
+>>drop trigger atrig;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER atrig
++>AFTER UPDATE ON tab1A
++>REFERENCING OLD AS oldR, NEW AS newR FOR EACH ROW
++>WHEN (oldR.b IS NULL OR newR.d is NOT NULL)
++>Insert into cat3.schm.tab3a values (newR.d, oldR.d);
+
+--- SQL operation complete.
+>>
+>>update tab1a set d=b+c;
+
+--- 3 row(s) updated.
+>>
+>>select * from tab1a order by a;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            ?            3            ?  
+          2            3            ?            ?  
+          3            4            5            9  
+
+--- 3 row(s) selected.
+>> -- check results
+>>select * from cat3.schm.tab3a order by a;
+
+A            B            
+-----------  -----------  
+
+          9            ?  
+          ?            4  
+
+--- 2 row(s) selected.
+>> -- check results
+>>
+>>--------------------------------------------------------
+>>LOG;

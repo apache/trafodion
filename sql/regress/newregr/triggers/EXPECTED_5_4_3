@@ -1,0 +1,135 @@
+>>
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_4_3(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,1,1,1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,2,2,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,3,3,3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (1,1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (2,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (10,10);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig543a
+>>---------------------------------
+>>
+>>
+>>CREATE TRIGGER atrig543a
++>AFTER UPDATE OF (b) ON tab1A
++>UPDATE tab1B SET b=1000 WHERE b > 1000;
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig543b
+>>---------------------------------
+>>
+>>
+>>CREATE TRIGGER atrig543b
++>AFTER UPDATE OF (b) ON tab1B
++>UPDATE tab1A SET b=b+1;
+
+--- SQL operation complete.
+>>obey TEST_5_4_3(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+1;
+
+*** WARNING[11002] Trigger CAT1.SCHM_ALT.ATRIG543A on table CAT1.SCHM_ALT.TAB1A may be triggered recursively more than 16 times.
+
+*** ERROR[11003] Trigger CAT1.SCHM_ALT.ATRIG543A on table CAT1.SCHM_ALT.TAB1A was triggered recursively more than 16 times.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM_ALT.ATRIG543B on table CAT1.SCHM_ALT.TAB1B has failed.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            1            1            1  
+          2            2            2            2  
+          3            3            3            3  
+
+--- 3 row(s) selected.
+>> -- check result
+>>SELECT * FROM tab1B;
+
+A            B            
+-----------  -----------  
+
+          1            1  
+          2            2  
+         10           10  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_5_4_3(clean_up);
+>>
+>>DROP TRIGGER atrig543a;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig543b;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 3 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 3 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- end logging
+>>LOG;

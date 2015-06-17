@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -30,9 +30,10 @@ private:
    int32                iv_msgid;
    Tm_Rsp_Msg_Type     *ip_rsp;
    ushort               iv_rspSize;
+   char                *ip_buffer;
 
 public:
-   CTmTxMessage(Tm_Req_Msg_Type * pp_req, int32 pv_msgid = NULL_MSGID);
+   CTmTxMessage(Tm_Req_Msg_Type * pp_req, int32 pv_msgid = NULL_MSGID, char * pv_buffer=NULL);
    CTmTxMessage(short pv_reqType);
    CTmTxMessage(CTmTxMessage * pp_msg);
    ~CTmTxMessage();
@@ -53,6 +54,8 @@ public:
    int32 responseSize() {return iv_rspSize;}
 
    Tm_Rsp_Msg_Type * response() {return ip_rsp;}
+
+   char * getBuffer() {return ip_buffer;}
 };
 
 #endif //TMTXMSG_H_

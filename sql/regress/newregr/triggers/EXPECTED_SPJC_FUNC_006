@@ -1,0 +1,92 @@
+>>obey TEST_SPJC_FUNC_006(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: More than one cascading trigger
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_FUNC_006 AFTER DELETE ON
++>TAB01_SPJC_FUNC_006
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_FUNC_006 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER TRIG02_SPJC_FUNC_006 AFTER UPDATE ON
++>TAB01_SPJC_FUNC_006
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_FUNC_006 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>-- 	Cascading trigger on TAB02_SPJC_FUNC_006 to TAB03_SPJC_FUNC_006
+>>CREATE TRIGGER TRIG03_SPJC_FUNC_006 AFTER INSERT ON
++>TAB02_SPJC_FUNC_006
++>REFERENCING NEW ROW AS N
++>FOR EACH ROW
++>	INSERT INTO TAB03_SPJC_FUNC_006 VALUES (N.A, N.B, N.C, N.D);
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>-- original table
+>>select * from TAB01_SPJC_FUNC_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          8            6            4            2
+          3            6            9           12
+
+--- 3 row(s) selected.
+>>
+>>-- The tests
+>>
+>>BEGIN
++>--	triggers an insert of old values into TAB02_SPJC_FUNC_006
++>	DELETE FROM TAB01_SPJC_FUNC_006 where a = 8;
++>
++>--	triggers an insert of old values into TAB02_SPJC_FUNC_006
++>	UPDATE TAB01_SPJC_FUNC_006 set a = a + 1000 where a = 3;
++>END;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Result: TAB01_SPJC_FUNC_006 has two rows
+>>select * from TAB01_SPJC_FUNC_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+       1003            6            9           12
+
+--- 2 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_FUNC_006 has two rows
+>>select * from TAB02_SPJC_FUNC_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+          3            6            9           12
+
+--- 2 row(s) selected.
+>>
+>>-- Result: TAB03_SPJC_FUNC_006 has two rows
+>>select * from TAB03_SPJC_FUNC_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+          3            6            9           12
+
+--- 2 row(s) selected.
+>>------------------------------------------------------------------
+>>log;

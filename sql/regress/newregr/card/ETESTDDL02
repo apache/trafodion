@@ -1,0 +1,307 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>---------------------------------------------------------------------------
+>>control query default allow_rand_function 'on';
+
+--- SQL operation complete.
+>>
+>>create table x (x largeint not null not droppable, primary key(x));
+
+--- SQL operation complete.
+>>create table y (y largeint not null not droppable, primary key(y));
+
+--- SQL operation complete.
+>>create table z (z largeint not null not droppable, primary key(z));
+
+--- SQL operation complete.
+>>
+>>create table ten (x largeint);
+
+--- SQL operation complete.
+>>create table hundred (x largeint);
+
+--- SQL operation complete.
+>>create table thousand (x largeint);
+
+--- SQL operation complete.
+>>
+>>create table ten1000 
++>  (a largeint, 
++>   b largeint, 
++>   c largeint, 
++>   d largeint);
+
+--- SQL operation complete.
+>>
+>>create table hundred1000 
++>  (a largeint not null not droppable, 
++>   b largeint not null not droppable, 
++>   c largeint not null not droppable, 
++>   d largeint,
++>   primary key (a,b,c));
+
+--- SQL operation complete.
+>>
+>>insert into ten values(0);
+
+--- 1 row(s) inserted.
+>>insert into ten values(1);
+
+--- 1 row(s) inserted.
+>>insert into ten values(2);
+
+--- 1 row(s) inserted.
+>>insert into ten values(3);
+
+--- 1 row(s) inserted.
+>>insert into ten values(4);
+
+--- 1 row(s) inserted.
+>>insert into ten values(5);
+
+--- 1 row(s) inserted.
+>>insert into ten values(6);
+
+--- 1 row(s) inserted.
+>>insert into ten values(7);
+
+--- 1 row(s) inserted.
+>>insert into ten values(8);
+
+--- 1 row(s) inserted.
+>>insert into ten values(9);
+
+--- 1 row(s) inserted.
+>>
+>>insert into hundred
++>  (select ten1.x + 10*ten2.x from ten as ten1, ten as ten2);
+
+--- 100 row(s) inserted.
+>>
+>>insert into thousand
++>  (select ten.x + 10*hundred.x from ten, hundred);
+
+--- 1000 row(s) inserted.
+>>
+>>insert into x (select * from hundred);
+
+--- 100 row(s) inserted.
+>>insert into y (select * from hundred);
+
+--- 100 row(s) inserted.
+>>insert into z (select * from hundred);
+
+--- 100 row(s) inserted.
+>>
+>>-- 10,000 rows inserted. 
+>>insert into ten1000
++>  (select thousand.x+1000*ten.x, thousand.x, ten.x, thousand.x*5  from ten, thousand);
+
+--- 10000 row(s) inserted.
+>>
+>>update statistics for table ten1000 on every column;
+
+--- SQL operation complete.
+>>update statistics for table ten1000 on (b,c), (c,d), (a,b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (SYSKEY).
+
+--- SQL operation completed with warnings.
+>>
+>>-- 100,000 rows inserted. 
+>>insert into hundred1000
++>  (select thousand.x+1000*hundred.x,thousand.x, hundred.x, thousand.x*5 from thousand, hundred);
+
+--- 100000 row(s) inserted.
+>>
+>>update statistics for table hundred1000 on every column;
+
+--- SQL operation complete.
+>>
+>>update statistics for table hundred1000 on (b,c), (c,d);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (A),(A, B),(A, B, C).
+
+--- SQL operation completed with warnings.
+>>
+>>update statistics for table hundred1000 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>---------
+>>create table facts
++>  ( x largeint NO DEFAULT not null, 
++>    y largeint NO DEFAULT not null,
++>    z largeint NO DEFAULT not null,
++>    xpy largeint NO DEFAULT not null,
++>    xpz largeint NO DEFAULT not null,
++>    ypz largeint NO DEFAULT not null,
++>    xpypz largeint,
++>    xty largeint, xtz largeint, ytz largeint, xtytz largeint,
++>    x1 largeint, y1 largeint, z1 largeint,
++>    x2 largeint, y2 largeint, z2 largeint,
++>    fxy largeint, fxz largeint, fyz largeint,
++>    fxyz1 largeint, fxyz2 largeint, fxyz3 largeint,
++>    xy largeint, xz largeint, yz largeint, xyz largeint,
++>    primary key (x,y,z,xpy,xpz,ypz)) ;
+
+--- SQL operation complete.
+>>-- extent(1024,1024) maxextents 900;
+>>
+>>
+>>insert into facts
++>(select 
++>  x, y, z, 
++>  x+y, x+z, y+z, x+y+z, 
++>  x*y, x*y, y*z, x*y*z, 
++>  x, y, z,
++>  x*x, y*y, z*z,
++>  x*x+y*y, x+z*z, y+50*z, 
++>  x*x+y*y+z*z, x*y+y*z+z*x, x+y*z,
++>  x+100*y, y+100*z, z+100*x, x+100*y+10000*z
++> from x, y, z 
++> where z < 10 and y < 30
++>);
+
+--- 30000 row(s) inserted.
+>>
+>>update statistics for table facts on every column;
+
+--- SQL operation complete.
+>>
+>>update statistics for table facts on (x,y,z), (xy,xz), (x,y,xty), (x,y,xpy),
++>                                     (x,y,xy),(x,y,z,xtytz), (x,y,z,xyz),
++>                                     (x,y,xpy,xty), (y,xpy), (y, z),
++>                                     (fxy,fxz), (xz,yz), (xpy,xpz,xpypz);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (FXYZ3),(FXYZ2),(FXYZ1),(FYZ),(Z2),(Y2),(X2),(Z1),(Y1),(X1),(YTZ),(XTZ),(YPZ),(X, Y),(X, Y, Z, XPY),(X, Y, Z, XPY, XPZ),(X, Y, Z, XPY, XPZ, YPZ).
+
+--- SQL operation completed with warnings.
+>>
+>>update statistics for table facts create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>----------------
+>>create table randcols
++>  ( x largeint NO DEFAULT not null, 
++>    y largeint NO DEFAULT not null,
++>    z largeint NO DEFAULT not null);
+
+--- SQL operation complete.
+>>
+>>insert into randcols
++>  select mod(rand(6),100), mod(rand(21),99), mod(rand(38),101)
++>  from x, y, z 
++>  where z < 10;
+
+--- 100000 row(s) inserted.
+>>
+>>update statistics for table randcols on (x), (y), (z), (x,y), (x,y,z), (x,z), (y,z);
+
+--- SQL operation complete.
+>>
+>>update statistics for table randcols create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>-----------------
+>>create table rc2
++>  ( x largeint NO DEFAULT not null, 
++>    y largeint NO DEFAULT not null,
++>    z largeint NO DEFAULT not null);
+
+--- SQL operation complete.
+>>
+>>insert into rc2
++>  select mod(rand(3),50), mod(rand(11),90), mod(rand(18),101)
++>  from ten, x, hundred;
+
+--- 100000 row(s) inserted.
+>>
+>>update statistics for table rc2 on (x), (y), (z), (x,y), (x,z), (y,z), (x,y,z);
+
+--- SQL operation complete.
+>>
+>>update statistics for table rc2 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>-----------------
+>>create table mc1
++>  ( x largeint NO DEFAULT not null, 
++>    y largeint NO DEFAULT not null,
++>    z largeint NO DEFAULT not null);
+
+--- SQL operation complete.
+>>
+>>
+>>insert into mc1
++>  select x, x+10*mod(z,10), x+10*mod(y,20)
++>  from x, y, z 
++>  where z < 10;
+
+--- 100000 row(s) inserted.
+>>
+>>
+>>update statistics for table mc1 on every column;
+
+--- SQL operation complete.
+>>update statistics for table mc1 on (x,y), (x,z), (y,z), (x,y,z);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (SYSKEY).
+
+--- SQL operation completed with warnings.
+>>
+>>update statistics for table mc1 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>------------------
+>>create table mc2
++>  ( x largeint NO DEFAULT not null, 
++>    y largeint NO DEFAULT not null,
++>    z largeint NO DEFAULT not null);
+
+--- SQL operation complete.
+>>
+>>insert into mc2
++>  select x, x+mod(rand(6),10), x+10*mod(rand(21),20)
++>  from x, y, z 
++>  where z < 10;
+
+--- 100000 row(s) inserted.
+>>
+>>update statistics for table mc2 on every column;
+
+--- SQL operation complete.
+>>update statistics for table mc2 on (x,y), (x,z), (y,z), (x,y,z);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (SYSKEY).
+
+--- SQL operation completed with warnings.
+>>
+>>update statistics for table mc2 create sample random 50 percent;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

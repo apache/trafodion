@@ -254,19 +254,19 @@ Generator::Generator(CmpContext* currentCmpContext) :
   if ( logDirLen > 0 && CURROPTPCODECACHE->getPCDlogDirPath() == NULL )
   {
      CURROPTPCODECACHE->setPCDlogDirPath( &PCDLogDir );
+  }
 
 #define MAX_UNIQ_PART (8+4+16)
-     if ( logDirLen < (sizeof(NExLogPathNam_) - MAX_UNIQ_PART - 1 ) )
-     {
-       strncpy( NExLogPathNam_ , PCDLogDir.data(), logDirLen );
+  if ( logDirLen < (sizeof(NExLogPathNam_) - MAX_UNIQ_PART - 1 ) )
+  {
+    strncpy( NExLogPathNam_ , PCDLogDir.data(), logDirLen );
 
-       // Add a unique value to end of PCODE_DEBUG_LOGDIR name
-       sprintf( &NExLogPathNam_[logDirLen], "/NELOG.%x.%lx"
-              , CURROPTPCODECACHE->getUniqFileNamePid()
-              , CURROPTPCODECACHE->getUniqFileNameTime() );
+    // Add a unique value to end of PCODE_DEBUG_LOGDIR name
+    sprintf( &NExLogPathNam_[logDirLen], "/NELOG.%x.%lx"
+           , CURROPTPCODECACHE->getUniqFileNamePid()
+           , CURROPTPCODECACHE->getUniqFileNameTime() );
 
-       NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
-     }
+    NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
   }
 
   // Initialize other member variables.
@@ -774,10 +774,657 @@ const Space* Generator::getTopSpace() const
   return NULL;
 }
 
+//
+// Handle user specified ESP remapping case.  
+//
+// Return false if the specification is not correct. For spec, refer to
+// COMP_STRING_2 in the comment section for method remapESPAllocationAS().
+//
+NABoolean remapESPAllocationViaUserInputs(FragmentDir *fragDir,
+                              const char *espOrder,
+                              CollHeap *heap)
+{
+
+  CollIndex i;
+
+  // if CycleSegs TRUE, will cause each ESP layer to start with the next
+  // CPU in the list.
+  //
+  NABoolean cycleSegs =
+    (ActiveSchemaDB()->getDefaults()).getAsLong(CYCLIC_ESP_PLACEMENT);
+
+  
+  // Structures used to get the Super Node map for this query.
+  //
+  NAArray<CollIndex>* segmentList;
+  NAArray<NAList<CollIndex>*> *cpuList;
+  Int32 numCPUs;
+
+  //get active segments and their corresponding cpus
+  //
+  NABoolean error =
+    gpClusterInfo->getSuperNodemap(segmentList, cpuList, numCPUs);
+
+  ULng32 *utilcpus = new (heap) ULng32[numCPUs];
+  ULng32 *utilsegs = new (heap) ULng32[numCPUs];
+
+  // Parse the espOrderString is specified.
+  //
+  
+  // Indicates if the espOrderString is properly specified.
+  //
+  NABoolean espOrderOK = FALSE;
+  if(espOrder && *espOrder) {
+
+    espOrderOK = TRUE;
+    const char *espOrderp = espOrder;
+
+    for (i = 0; i < (CollIndex)numCPUs && espOrderOK && *espOrderp; i++) {
+
+      Lng32 seg = 0;
+      Lng32 cpu = 0;
+      Lng32 state = 0;
+
+      if(*espOrderp >= '0' && *espOrderp <= '9') {
+        state++;
+
+        seg = atoi(espOrderp);
+        while(*espOrderp >= '0' && *espOrderp <= '9')
+          espOrderp++;
+      }
+
+      if(*espOrderp == ':') {
+        espOrderp++;
+        state++;
+      }
+
+      if(*espOrderp >= '0' && *espOrderp <= '9') {
+        state++;
+
+        cpu = atoi(espOrderp);
+        while(*espOrderp >= '0' && *espOrderp <= '9')
+          espOrderp++;
+      }
+
+      if(*espOrderp == ',')
+        espOrderp++;
+
+      if(state == 3) {
+
+        utilcpus[i] = cpu;
+        utilsegs[i] = seg;
+
+      } else {
+        espOrderOK = FALSE;
+      }
+    }
+    
+  }
+  
+  Int32 numEntries = i;
+
+  if(!espOrderOK) {
+
+    return FALSE;
+
+  } else {
+    // Remap Each ESP fragment.
+    //
+
+    Int32 nextCPUToUse = 0;
+
+    for (i = 0; i < fragDir->entries(); i++) {
+      if (fragDir->getPartitioningFunction(i) != NULL &&
+          fragDir->getType(i) == FragmentDir::ESP)
+        {
+
+          // Get the node map for this ESP fragment.
+          //
+          NodeMap *nodeMap =
+            (NodeMap *)fragDir->getPartitioningFunction(i)->getNodeMap();
+          // If this node map qualified for remapping ...
+          //
+          if (nodeMap->getNumEntries() <= (CollIndex)numCPUs) {
+
+
+            // Copy the existing node map for this ESP fragment.
+            // Need to make a copy because this node map could be
+            // shared with other node maps.
+            //
+            nodeMap = nodeMap->copy(heap);
+            
+            // Reset for each ESP layer, unless cycleSegs was specified.
+            //
+            if(!cycleSegs)
+              nextCPUToUse = 0;
+
+            // Remap each entry in the node map for this fragment.
+            //
+            for(CollIndex j=0; j < nodeMap->getNumEntries(); j++) {
+
+              // The index into the CPU and Segment maps.  This
+              // cpuNumber is the number relative to the whole
+              // system (all segments)
+              //
+              ULng32 cpuNumber = nextCPUToUse++;
+
+              // Wrap around if at end of list.
+              //
+              if(nextCPUToUse == numEntries) {
+                nextCPUToUse = 0;
+              }
+
+              // Get the cpu based on the CPU map.
+              // This cpu is the cpu number for a specific segment.
+              //
+              Lng32 cpu = (Lng32)utilcpus[cpuNumber];
+              Lng32 seg = (Lng32)utilsegs[cpuNumber];
+
+              // Set the cpu and segment for this node map entry.
+              //
+              nodeMap->setNodeNumber(j, cpu);
+              nodeMap->setClusterNumber(j, seg);
+            }
+
+            // After remapping the node map (copy), make it the
+            // node map for this ESP fragment.
+            //
+            PartitioningFunction *partFunc = (PartitioningFunction *)
+              (fragDir->getPartitioningFunction(i));
+            partFunc->replaceNodeMap(nodeMap);
+
+          }
+        }
+      
+    }
+  }
+  return TRUE;
+}
+
+// remapESPAllocationAS: Called by RelRoot::codeGen()
+
+// Re-assign each ESP to a CPU for adaptive segmentation based on the
+// affinity value.
+//
+// To disable ESP remapping, set the CQD AFFINITY_VALUE to '-2' (default)
+// Settings for AFFINITY_VALUE:
+//
+//   -4 - Use session based remapping (use an affinity value based on
+//        the location of the MXCMP (and Master EXE)). On Linux, this 
+//        option is the same as -3 as the location of the mxsrvr processes
+//        are running on communication nodes which are different than
+//        the SQL nodes. It is difficult to know which SQL node to use
+//        when a connection is established on a communication node. This is
+//        the default.
+//   -3 - Use session based remapping (use an affinity value based on
+//        session ID)
+//   -2 - Disable ESP remapping 
+//   -1 - Use random ESP remapping (use a random affinity value)
+//   positive integer: remap ESPs based on given value.
+//
+// Other settings:
+//
+// CYCLIC_ESP_PLACEMENT - Use a different affinity value for each ESP
+// layer of the query.  The affinity value is incremented after each
+// ESP layer.
+//
+// DEFAULT_DEGREE_OF_PARALLELISM - Used to specify the
+// affinityGroupThreshold.  ESP layers that are smaller than the
+// affinityGroupThreshold will be placed randomly within the segment
+// specified by the affinity value.
+//
+// Experimental Settings:
+//
+// COMP_BOOL_171 - shiftESPs - Default OFF (FALSE).  If TRUE (ON),
+// then for ESP layers that use all CPUs, shift the ESP mapping within
+// each segment, based on the affinity value.  For example, a two
+// segment node map which uses all CPUs (\S1:0-15, S2:0-15) would be
+// remapped to : (\S1:3-15,0-2 \S2:3-15,0-2) for an affinity value of
+// 3.  Here the node map is shifted by three for each segment.
+//
+// COMP_BOOL_172 - shiftESPs2 - Default OFF (FALSE).  If TRUE (ON),
+// then for ESP layers that use all CPUs, shift the ESP mapping across
+// all segments, based on the affinity value.  For example, a two
+// segment node map which uses all CPUs (\S1:0-15, S2:0-15) would be
+// remapped to : (\S1:3-15 \S2:0-15 \S1:0-2) for an affinity value of
+// 3.  Here the node map is shifted by three across all segments.
+//
+// COMP_STRING_2 - remapString - Default empty (do not use remap
+// string).  If set, must be of the form:
+//
+//   "<seg_number>:<cpu_number>[,<seg_number>:<cpu_number>]..."
+//
+// and must contain numCPUs entries. Any deviation from this form will
+// cause it to be ignored.  If set properly, the string specifies a
+// different ordering of the CPUs for the purposes of remapping.  For
+// instance if the remapString were set to:
+// "1:0,1:8,1:1,1:9,1:2,1:10,1:3,1:11,...", then segment 1, CPU 0
+// would be treated as CPU 0, segment 1, CPU 8 would be treated as CPU
+// 1 and so on.  With this control, it is possible to map each
+// adaptive segment to any subset of CPUs.
+//
+void
+Generator::remapESPAllocationAS()
+{
+  // If set, defines a new ordering of the CPUs.
+  //
+  const char *espOrder =
+    ActiveSchemaDB()->getDefaults().getValue(COMP_STRING_2);
+
+  if(espOrder && *espOrder) {
+    if(remapESPAllocationViaUserInputs(fragmentDir_, espOrder, wHeap())) {
+      return;
+    }
+  }
+
+  CollIndex i;
+
+  Lng32 affinityDef = ActiveSchemaDB()->getDefaults().getAsLong(AFFINITY_VALUE);
+
+
+  // Check is ESP mapping is enabled.
+  // '-2' or less indicates that it is disabled.
+  //
+  if(affinityDef >= -1 || affinityDef == -3 || affinityDef == -4) {
+
+    // Affinity_value of '-1', use a random affinity value for this query.
+    //
+    NABoolean useRand = (affinityDef == -1);
+
+    NABoolean useSession = (affinityDef == -3);
+
+    NABoolean useLocation = (affinityDef == -4);
+
+    if ( useLocation ) {
+       useSession = TRUE;
+       useLocation = FALSE;
+    }
+
+    // if CycleSegs TRUE, will cause ESP layers after layersInCylce to use the
+    // next affinity_value.
+    //
+    ULng32 layersInCycle =
+      ((ActiveSchemaDB()->getDefaults()).getAsLong(CYCLIC_ESP_PLACEMENT));
+      
+    NABoolean cycleSegs = (layersInCycle > 0);
+
+    // Use CQD ESP_NUM_FRAGMENTS_WITH_QUOTAS when the multi-ESP is on. That is
+    // we will shift the layers within a SQ node subset <n> times before we
+    // advance to next SQ node subset. Here <n> is the value of the cqd
+    // ESP_NUM_FRAGMENTS_WITH_QUOTAS. When the layer (or fragment) contains BMOs, then, 
+    // the layer is counted twice.
+    // 
+    if ( CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) ==  DF_ON ) 
+      layersInCycle = 
+          (ActiveSchemaDB()->getDefaults()).getAsLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS);
+      
+    // if shiftESPs TRUE, then shift node map within each segment.
+    //
+    NABoolean shiftESPs =
+      (CmpCommon::getDefault(COMP_BOOL_171) == DF_ON);
+
+    // if shiftESPs TRUE, then shift node map across all segments.
+    //
+    NABoolean shiftESPs2 =
+      (CmpCommon::getDefault(COMP_BOOL_172) == DF_ON);
+
+    // If set, defines a new ordering of the CPUs.
+    //
+    const char *remap =
+      ActiveSchemaDB()->getDefaults().getValue(COMP_STRING_2);
+
+    // The affinityGroupThreshold, specifies the ESP layer size below
+    // which a random affinity value is used.
+    //
+    ULng32 affinityGroupThreshold =
+      ActiveSchemaDB()->getDefaults().getAsLong(DEFAULT_DEGREE_OF_PARALLELISM);
+
+    // Structures used to get the Super Node map for this query.
+    //
+    NAArray<CollIndex>* segmentList;
+    NAArray<NAList<CollIndex>*> *cpuList;
+    ULng32 numSegs;
+
+    //get active segments and their corresponding cpus
+    //
+    Int32 x;
+    NABoolean error =
+      gpClusterInfo->getSuperNodemap(segmentList, cpuList, x);
+
+    CollIndex espsPerNode = 
+           ActiveSchemaDB()->getDefaults().getNumOfESPsPerNode();
+
+    NABoolean fakeEnv;
+    Int32 numCPUs = 
+           ActiveSchemaDB()->getDefaults().getTotalNumOfESPsInCluster(fakeEnv);
+
+    // The number of physical segments used by this query.
+    //
+    numSegs = segmentList->entries();
+
+    // Adjust the affinityGroupThreshold so that numSegsThreshold will
+    // be a power of 2.
+    //
+    {
+      ULng32 agThreshold = numCPUs;
+
+      while (affinityGroupThreshold < agThreshold)
+        agThreshold /= 2;
+
+      affinityGroupThreshold = agThreshold;
+    }
+    if(!affinityGroupThreshold) affinityGroupThreshold = 1;
+
+    // The number of adaptive segments at the affinityGroupThreshold.
+    // (Should result in a value that is a power of 2).
+    //
+    ULng32 numSegsThreshold = (numCPUs/affinityGroupThreshold);
+
+    // The bit mask used to mask the specified part of the affinity value
+    // (as opposed to the random portion of the affinity value)
+    //
+    ULng32 nsThresholdMask = (numSegsThreshold - 1);
+
+    // Contruct a random affinity value.  Used when a random affinity
+    // value is requested and when the ESP layer size is less that the
+    // adjusted affinityGroupThreshold.
+    //
+    ULng32 randAffinity = (ULng32)(getPlanId() & 0x7FFFFFFF);
+    randAffinity = randAffinity ^ (ULng32)((Long)this);
+
+    // The affinity value to use for this query.
+    //
+    ULng32 affinity;
+    if (useRand) {
+      affinity = randAffinity;
+    } else if(useSession) {
+
+      const char *sessionId =
+        ActiveSchemaDB()->getDefaults().getValue(SESSION_ID);
+
+      Lng32 length = strlen(sessionId);
+
+      length = (length > 43 ? 43 : length);
+
+      affinity = ExHDPHash::hash(sessionId, ExHDPHash::NO_FLAGS, length);
+
+    } else if(useLocation) {
+
+      const char *sessionId =
+        ActiveSchemaDB()->getDefaults().getValue(SESSION_ID);
+
+      Lng32 length = strlen(sessionId);
+
+      Int64 segmentNum_l = 1;
+      Int64 cpu_l = 0;
+      Int64 pin_l = 0;
+      Int64 schemaNameCreateTime = 0;
+      Int64 sessionUniqNum;
+      Lng32 userNameLen = 0;
+      Lng32 userSessionNameLen = 0;
+
+      ComSqlId::extractSqlSessionIdAttrs((char *)sessionId,
+                                         length,
+                                         segmentNum_l,
+                                         cpu_l,
+                                         pin_l,
+                                         schemaNameCreateTime,
+                                         sessionUniqNum,
+                                         userNameLen, NULL,         // Not Used
+                                         userSessionNameLen, NULL); // Not Used
+
+      affinity = (ULng32)((segmentNum_l - 1) + (numSegs * cpu_l));
+
+    } else {
+      affinity = (ULng32)affinityDef;
+    }
+
+    // Save the affinity value in the Generator so it can be used by Explain.
+    //
+    setAffinityValueUsed(affinity);
+
+    // Create a CPU map based on the remapString if specified
+    // properly, or the super node map otherwise.
+    //
+    
+      // Allocate structures to hold the CPU and Segment maps.
+      // Allocate the segment used map.  Used to determine if a given
+      // ESP layer uses all segments.
+      //
+      ULng32 *cpus = new (wHeap()) ULng32[numCPUs];
+      ULng32 *segs = new (wHeap()) ULng32[numCPUs];
+      ULng32 *segsUsed = new (wHeap()) ULng32[numSegs];
+
+          CollIndex segment = 0;
+          CollIndex cpu = 0;
+
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+      OptDebug* optDbg=CmpCommon::context()->getOptDbg();
+      optDbg->stream() << "numCPUs=" << numCPUs << endl;
+      optDbg->stream() << "segment=" << segment << endl;
+      optDbg->stream() << "cpus array:" << endl;
+    }
+#endif
+
+          for (i = 0; i < (CollIndex)numCPUs; i++) {
+
+            cpus[i] = (*(*cpuList)[segment])[cpu];
+            segs[i] = (*segmentList)[segment];
+
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+      OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+      optDbg->stream() << "segment=" << segment  ;
+      optDbg->stream() << ", cpu=" << cpu << endl;
+      optDbg->stream() << "cpus[" << i << "]=" << cpus[i] << endl;
+    }
+#endif
+
+            // advance to next cpu
+            //
+            if((i % espsPerNode) == (espsPerNode-1))
+	       cpu++;
+            if (cpu >= (*cpuList)[segment]->entries() * espsPerNode) {
+              // gone thru all cpus in this segment. advance to next segment.
+              //
+              segment++;
+              cpu = 0;
+            }
+        }
+
+      ULng32 espLayersInCurrentCycle = 0;
+      
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+      OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+      optDbg->stream()
+	<< "Remap::" << endl
+	<< "affinity = " << affinity << endl
+	<< "numSegs = " << numSegs << endl
+	<< "numCPUs = " << numCPUs << endl
+	<< "cpus (0,1,5) = " << cpus[0] << " " << cpus[1] << " " << cpus[5] << endl
+	<< "entries = " << fragmentDir_->entries() << endl;
+    }
+#endif
+
+
+      // Remap Each ESP fragment.
+      //
+
+      for (i = 0; i < fragmentDir_->entries(); i++) {
+        if (fragmentDir_->getPartitioningFunction(i) != NULL &&
+            fragmentDir_->getType(i) == FragmentDir::ESP)
+          {
+
+            // Get the node map for this ESP fragment.
+            //
+            NodeMap *nodeMap =
+              (NodeMap *)fragmentDir_->getPartitioningFunction(i)->getNodeMap();
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+      OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+      optDbg->stream()
+	<< "NodeMap::" << endl
+	<< "entries = " << nodeMap->getNumEntries() << endl;
+    }
+#endif
+            // If this node map qualified for remapping ...
+            //
+            if ((nodeMap->getNumEntries() != 1) &&
+                (nodeMap->getNumEntries() <= (CollIndex)numCPUs)) {
+
+
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+      OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+      optDbg->stream()
+	<< "shiftESPs2 = " << shiftESPs2 << endl;
+    }
+#endif
+
+                // Contruct a new affinity value composed of the
+                // specified portion of the affinity value and the
+                // random portion for ESP layers less than the
+                // threshold.
+                //
+                ULng32 newAffinity =
+                  ((affinity & nsThresholdMask)|(randAffinity & ~nsThresholdMask));
+
+                // The skip distance between CPUs. (can also be
+                // thought of as the number of adaptive segments to
+                // choose from for this ESP layer. '
+                //
+                ULng32 skip = (numCPUs/nodeMap->getNumEntries());
+
+                // The starting offset for the node map.  Can also be
+                // thought of as the choice of adaptive segment for
+                // this ESP layer.
+                //
+                ULng32 offset = (newAffinity % skip);
+
+                // Make sure we do not contruct a map that would
+                // exceed the number of CPUs
+                //
+                GenAssert((skip * (nodeMap->getNumEntries()-1)) + offset
+                          < (CollIndex)numCPUs,
+                          "Bad Auto Remap Calculation");
+
+                // Copy the existing node map for this ESP fragment.
+                // Need to make a copy because this node map could be
+                // shared with other node maps.
+                //
+                nodeMap = nodeMap->copy(wHeap());
+
+#ifdef _DEBUG
+		if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+		    (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+                  OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+		  optDbg->stream()
+		    << "Remapping::" << endl
+		    << "skip = " << skip << endl
+		    << "offset = " << offset << endl;
+		}
+#endif
+
+                // Remap each entry in the node map for this fragment.
+                //
+                for(CollIndex j=0; j < nodeMap->getNumEntries(); j++) {
+
+                  // The index into the CPU and Segment maps.  This
+                  // cpuNumber is the number relative to the whole
+                  // system (all segments)
+                  //
+                  ULng32 cpuNumber = (j * skip) + offset;
+
+                  // If shiftESP2 is specified, circular shift Full ESP layers
+                  // across all segments based on the affinity value
+                  //
+                  if(shiftESPs2 &&
+                     (nodeMap->getNumEntries() == (CollIndex)numCPUs)) {
+
+                    cpuNumber = (cpuNumber + (newAffinity%numCPUs)) % numCPUs;
+                  }
+
+                  // Get the cpu based on the CPU map.
+                  // This cpu is the cpu number for a specific segment.
+                  //
+                  Lng32 cpu = (Lng32)cpus[cpuNumber];
+#ifdef _DEBUG
+		if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+		    (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+                  OptDebug* optDbg = CmpCommon::context()->getOptDbg();
+		  optDbg->stream()
+		    << " cpu = " << cpu << endl
+		    << " cpuNumber = " << cpuNumber << endl;
+		}
+#endif
+
+                  // If shiftESP is specified, circular shift Full ESP layers
+                  // within each segment based on the affinity value
+                  // (assume 16 CPUs per segment for now).
+                  //
+                  if(shiftESPs &&
+                     (nodeMap->getNumEntries() == (CollIndex)numCPUs)) {
+
+                    cpu = (cpu + (Lng32)(newAffinity%16)) % 16;
+
+                  }
+
+                  // Set the cpu and segment for this node map entry.
+                  //
+                  nodeMap->setNodeNumber(j, cpu);
+                  nodeMap->setClusterNumber(j, (Lng32)segs[cpuNumber]);
+                }
+
+                // After remapping the node map (copy), make it the
+                // node map for this ESP fragment.
+                //
+                PartitioningFunction *partFunc = (PartitioningFunction *)
+                  (fragmentDir_->getPartitioningFunction(i));
+                partFunc->replaceNodeMap(nodeMap);
+
+                espLayersInCurrentCycle++;
+
+                // Count an ESP fragment with BMOs twice. This is an 
+                // approximation to the real logic used in run-time to
+                // pack ESPs with BMO operators into ESP proceses. 
+                if ( fragmentDir_->getNumBMOs(i) > 0 )
+                   espLayersInCurrentCycle++;
+   
+                // If cycleSegs is specified, use a different affinity
+                // value for layersInCycle # of ESP layers.
+                //
+                if (cycleSegs &&
+                    (espLayersInCurrentCycle >= layersInCycle)) {
+                  affinity += espsPerNode;
+                  espLayersInCurrentCycle = 0;
+                }
+                
+                // Cycle the random affintity, rather than generating
+                // a new one each time
+                //
+                randAffinity += numSegsThreshold;
+            }
+          }
+      }
+      //     delete [] cpus;
+      //     delete [] segs;
+      //     delete [] segsUsed;
+      //     NADELETEBASIC(cpus, wHeap());
+      //     NADELETEBASIC(segs, wHeap());
+      //     NADELETEBASIC(segsUsed, wHeap());
+  }
+}
+
 
 // map ESPs randomly
-void
-Generator::remapESPAllocation()
+void Generator::remapESPAllocationRandomly()
 {
    if (!fragmentDir_ || !fragmentDir_->containsESPLayer())
      return; 
@@ -794,7 +1441,9 @@ Generator::remapESPAllocation()
 
        for (CollIndex j=0; j<nodeMap->getNumEntries(); j++) {
  
-         nodeMap->setNodeNumber(j, ANY_NODE);
+          // if ESP-RegionServer colocation logic is off, then assign any node
+         if (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_OFF)
+           nodeMap->setNodeNumber(j, ANY_NODE);
          nodeMap->setClusterNumber(j, 0);
 
        }
@@ -1455,6 +2104,8 @@ desc_struct *Generator::createVirtualLibraryDesc(
    strcpy(library_desc->body.library_desc.libraryFilename, libraryInfo->library_filename);
    library_desc->body.library_desc.libraryVersion = libraryInfo->library_version;
    library_desc->body.library_desc.libraryUID = libraryInfo->library_UID;
+   library_desc->body.library_desc.libraryOwnerID = libraryInfo->object_owner_id;
+   library_desc->body.library_desc.librarySchemaOwnerID = libraryInfo->schema_owner_id;
    
    return library_desc;
    
@@ -2397,7 +3048,8 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 }
 
 void Generator::setHBaseNumCacheRows(double estRowsAccessed,
-                                     ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+                                     ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                                     Float32 samplePercent)
 {
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
@@ -2413,13 +3065,34 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
   if (numProcesses == 0)
     numProcesses++;
   UInt32 rowsAccessedPerProcess = ceil(estRowsAccessed/numProcesses) ;
+  Lng32 cacheRows;
   if (rowsAccessedPerProcess < cacheMin)
-    hbpa->setNumCacheRows(cacheMin);
+    cacheRows = cacheMin;
   else if (rowsAccessedPerProcess < cacheMax)
-    hbpa->setNumCacheRows(rowsAccessedPerProcess);
+    cacheRows = rowsAccessedPerProcess;
   else
-      hbpa->setNumCacheRows(cacheMax);
-    
+    cacheRows = cacheMax;
+
+  // Reduce the scanner cache if necessary based on the sampling rate (usually
+  // only for Update Stats) so that it will return to the client once for every
+  // USTAT_HBASE_SAMPLE_RETURN_INTERVAL rows on average. This avoids long stays
+  // in the region server (and a possible OutOfOrderScannerNextException), where
+  // a random row filter is used for sampling.
+  if (cacheRows > cacheMin && samplePercent > 0.0)
+  {
+    ULng32 sampleReturnInterval =
+        ActiveSchemaDB()->getDefaults().getAsULong(USTAT_HBASE_SAMPLE_RETURN_INTERVAL);
+    Lng32 newScanCacheSize = (Lng32)(sampleReturnInterval * samplePercent);
+    if (newScanCacheSize < cacheRows)
+      {
+        if (newScanCacheSize >= cacheMin)
+          cacheRows = newScanCacheSize;
+        else
+          cacheRows = cacheMin;
+      }
+  }
+
+  hbpa->setNumCacheRows(cacheRows);
 }
 
 void Generator::setHBaseCacheBlocks(Int32 hbaseRowSize, double estRowsAccessed,

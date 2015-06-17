@@ -68,16 +68,14 @@ CPPSRC := BigNumHelper.cpp \
 	ExpSeqGen.cpp \
 	ExpSequenceFunction.cpp \
 	ExpSqlTupp.cpp \
-	Hbase_types.cpp 
-
-ifeq ($(TARGTYPE),linux)
+	Hbase_types.cpp
 
 CPPSRC += exp_ieee.cpp
 
 
 CPPSRC += vers_libtdm_sqlexp.cpp
 DEFS := -D_IEEE_FLOAT -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
-ifeq ($(ARCHBITS),64bit)
+
 #
 LLVM_OBJ_DIR := $(LLVM)/$(SQ_BUILD_TYPE)/lib
 #
@@ -118,33 +116,4 @@ EXTERN_OBJS +=  $(MY_SQROOT)/export/lib64/libudis86.so \
 	$(LLVM_OBJ_DIR)/libLLVMCore.a \
 	$(LLVM_OBJ_DIR)/libLLVMSupport.a
 
-else
-
-endif
-endif
-
-ifneq (,$(findstring $(TARGTYPE), oss yos))
-#DEFS := -DSQLCLI_LIB
-DEFS += -DSQLCLI_LIB
-endif
-
-ifeq ($(TARGTYPE),nt)
-CXXFLAGS := /Zm1000
-DEFS := -DEXP_DLL
-
-SYS_LIBS := $(IMAGEHELP) kernel32.lib user32.lib advapi32.lib
-EXTERN_OBJS := \
-	$(YLIBDIR)/tdm_nsklib.lib \
-	$(YLIBDIR)/tdm_security.lib \
-
-DEP_LIBS := common tdm_sqlexport porting_layer 
-endif
-
-SRCPATH := exp nskcre common
-
-ifeq ($(TARGTYPE),yos)
-INCLUDE_DIRS := g40ros/t9050
-endif
-
-INCLUDE_DIRS += nskcre  
-
+SRCPATH := exp common

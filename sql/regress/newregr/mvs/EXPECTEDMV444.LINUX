@@ -1,0 +1,46 @@
+>>
+>>-- Run Tests
+>>-- for Test1 please refer to comments in section Test1
+>>--  obey TESTMV444(Test1);
+>>  obey TESTMV444(Test2);
+>>-- wrong syntax
+>>-- FAIL
+>>update statistics for table (iud_log_table t444_t1) on (a, b);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+update statistics for table (iud_log_table t444_t1) on (a, b);
+                              ^ (31 characters from start of SQL statement)
+
+--- SQL operation failed with errors.
+>>
+>>-- FAIL
+>>update statistics for log table t444_t1 on every column;
+
+*** ERROR[9216] UPDATE STATISTICS cannot be on EVERY COLUMN for LOG tables. 
+
+--- SQL operation failed with errors.
+>>
+>>------------------------------------------------------------------------------
+>>--   obey TESTMV444(Test3); -- BUG 566
+>>
+>>-- Clean and Exit
+>>obey TESTMV444(clean_up);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>drop table (iud_log_table t444_t1);
+
+--- SQL operation complete.
+>>drop table t444_t2;
+
+--- SQL operation complete.
+>>drop table t444_t1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>log;

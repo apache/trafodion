@@ -35,10 +35,10 @@
 1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.
 1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
-1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only services ID can execute DROP SQL.
-1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SQL is not installed on system $0~string0.
+1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.
+1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1
 1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Not all user catalogs have been dropped from the system.
-1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The DROP SQL statement could not be executed.
+1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked.  You lack the grant option for the specified privilege(s).
 1040 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The use of ALTER on metadata tables is not permitted.
 1041 ZZZZZ 99999 BEGINNER MINOR DBADMIN The primary key has already been defined.
 1042 ZZZZZ 99999 BEGINNER MINOR DBADMIN All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.
@@ -1408,7 +1408,7 @@ $1~String1 --------------------------------
 4481 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on table or view $1~string1$2~string2.
 4482 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on user-defined routine $1~string1.
 4483 ZZZZZ 99999 BEGINNER MINOR LOGONLY This LOB conversion function is not allowed in the VALUES clause with multiple input value rows. Use it with a single value row.
-4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes are not supported yet with $0~String0. Disable the indexes and try again.
+4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY -- available --
 4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
 4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path: $0~String0  
@@ -2079,9 +2079,9 @@ $3~String1.
 11253 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~String0 (SQLSTATE $1~String1)
 11254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UDR $0~String0 overwrote its $1~String1 buffer at the $2~String2.
 11255 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in $0~String0 method in library $1~String1. Details: $2~String2.
-11256 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Internal error in communicating with UDR $0~String0 through the compiler interface in the $1~String1 phase ($2~String2). Details: $3~String3.
+11256 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Internal error in communicating with UDR $0~String0 through the object interface in the $1~String1 phase ($2~String2). Details: $3~String3.
 11257 ZZZZZ 99999 BEGINNER MINOR DBADMIN Routine entry point was validated, no routine was created.
-11258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in constructor of UDR class $1~String1.
+11258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in $0~String0 method of UDR $1~String1. Details: $2~String2.
 11299 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----Last Language Manager Error -----
 12000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----------  First Materialized Views error  ------------
 12001 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creation failed. The materialized view cannot be maintained incrementally.

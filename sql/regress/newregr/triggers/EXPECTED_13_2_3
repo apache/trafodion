@@ -1,0 +1,174 @@
+>>obey TEST_13_2_3(tests);
+>>
+>>control query default auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>prepare stmtTrg from
++>  delete from Xtab1;
+
+--- SQL command prepared.
+>>
+>>execute stmtTrg;
+
+--- 3 row(s) deleted.
+>>-- should update Xtab3
+>>select * from Xtab3;
+
+J            K          
+-----------  -----------
+
+          1           66
+          0           66
+
+--- 2 row(s) selected.
+>>
+>>insert into Xtab1 values (10,99);
+
+--- 1 row(s) inserted.
+>>insert into Xtab2 values (1099,10);
+
+--- 1 row(s) inserted.
+>>
+>>----
+>>-- modify Xtab1
+>>----
+>>alter table Xtab1 add column m int;
+
+--- SQL operation complete.
+>>
+>>-- open blown away
+>>-- should recompile, then update Xtab3
+>>execute stmtTrg;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.XTAB1.
+
+--- 1 row(s) deleted.
+>>
+>>-- momentarily disable preparser caching to avoid getting false negative from
+>>-- the select * from Xtab3 which would otherwise cause mxci to try to execute 
+>>-- with outdated query result describe info from a preparser cache hit whose
+>>-- plan is based on the old table Xtab3 that has only 2 instead of 3 columns
+>>--control query default query_text_cache 'off';
+>>select * from Xtab3;
+
+J            K          
+-----------  -----------
+
+          1         1099
+          0         1099
+
+--- 2 row(s) selected.
+>>--control query default query_text_cache 'on';
+>>
+>>-- Note: Uncomment/comment the following line to cause/stop  Bug 100
+>>insert into Xtab1 values (11,22,33);
+
+--- 1 row(s) inserted.
+>>insert into Xtab2 values (1500,10);
+
+--- 1 row(s) inserted.
+>>
+>>----
+>>-- modify Xtab3
+>>----
+>>alter table Xtab3 add column m int;
+
+--- SQL operation complete.
+>>
+>>-- open blown away
+>>execute stmtTrg;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.XTAB3.
+
+--- 1 row(s) deleted.
+>>-- should recompile, then update Xtab3
+>>----
+>>
+>>select * from Xtab3;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8575] Timestamp mismatch on table CAT1.SCHM.XTAB3.
+
+J            K            M          
+-----------  -----------  -----------
+
+          1         1500            ?
+          0         1500            ?
+
+--- 2 row(s) selected.
+>>
+>>insert into Xtab1 values (11,22,33);
+
+--- 1 row(s) inserted.
+>>insert into Xtab2 values (2000,10);
+
+--- 1 row(s) inserted.
+>>
+>>----
+>>-- modify Xtab2
+>>----
+>>alter table Xtab2 add column m int;
+
+--- SQL operation complete.
+>>
+>>-- open blown away
+>>execute stmtTrg;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.XTAB2.
+
+--- 1 row(s) deleted.
+>>-- should recompile, then update Xtab3 so that k=2000
+>>-- in both rows
+>>select * from Xtab3;
+
+J            K            M          
+-----------  -----------  -----------
+
+          1         2000            ?
+          0         2000            ?
+
+--- 2 row(s) selected.
+>>
+>>-- The same with a statement trigger with a Union node
+>>create trigger Ytrigger after insert on Xtab1 for each statement
++>  update Xtab3 set k=(select MAX(j) from Xtab2);
+
+--- SQL operation complete.
+>>prepare stmtTrg from
++>  insert into Xtab1 values(9,99,999);
+
+--- SQL command prepared.
+>>execute stmtTrg;
+
+--- 1 row(s) inserted.
+>>execute stmtTrg;
+
+--- 1 row(s) inserted.
+>>alter table Xtab2 add column mm int;
+
+--- SQL operation complete.
+>>-- open blown away
+>>execute stmtTrg;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8574] An OPEN was blown away on table CAT1.SCHM.XTAB2.
+
+--- 1 row(s) inserted.
+>>execute stmtTrg;
+
+--- 1 row(s) inserted.
+>>alter table Xtab3 add column mm int;
+
+--- SQL operation complete.
+>>
+>>-- The following "execute" would crash the executor (July 2000, Boaz)
+>>LOG;

@@ -163,7 +163,7 @@ public:
     ComDiagsArea *diagsArea = NULL) = 0;
 
   //////////////////////////////////////////////////////////////////////
-  // getRoutine service: Called by the SQL runtime (e.g., Exe), likely
+  // getObjRoutine service: Called by the SQL runtime (e.g., Exe), likely
   // during "fixup", to allocate a handle to an external routine. The 
   // returned handle is then used to invoke the external routine (see 
   // invokeRoutine).

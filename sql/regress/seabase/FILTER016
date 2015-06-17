@@ -35,5 +35,6 @@ s/\(PLAN_ID ..................\).*/PLAN_ID .................. <SOMEID>/g
 s/\(EST_OPER_COST ............\).*/EST_OPER_COST ............ <SOMECOST>/g
 s/\(EST_TOTAL_COST .........\).*/EST_TOTAL_COST ......... <SOMECOST>/g
 s/^\([ ]*TRAF_ALIGNED_ROW_FORMAT[ ]*[\.]*\) .*/\1 removed/g
+s/^\([ ]*TRAF_INDEX_CREATE_OPT[ ]*[\.]*\) .*/\1 removed/g
 
 " $fil

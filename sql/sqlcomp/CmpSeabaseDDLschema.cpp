@@ -323,6 +323,13 @@ Int32 objectOwner;
 Int32 schemaOwner;
 ComObjectType objectType;
 
+   CmpSeabaseDDL cmpSBD(STMTHEAP);
+   if (cmpSBD.switchCompiler())
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+      return false;
+   }
+
 Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
                                         catalogName.data(),
                                         schemaName.data(),
@@ -334,6 +341,7 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
                           << DgSchemaName(catalogName + "." + schemaName);
+      cmpSBD.switchBackCompiler();
       return false;
    }
       
@@ -346,6 +354,7 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
       *CmpCommon::diags() << DgSqlCode(-20235) // Error converting user ID.
                           << DgInt0(status)
                           << DgInt1(objectOwner);
+      cmpSBD.switchBackCompiler();
       return false;
    }
       
@@ -372,6 +381,7 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += username;
    output += "\";";
 
+   cmpSBD.switchBackCompiler();
    return true;
    
 }

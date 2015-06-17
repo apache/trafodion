@@ -54,810 +54,38 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
-// Specified in expected order of likelihood. See sql/common/ComSmallDefs 
-// for actual values.
-static const literalAndEnumStruct objectTypeConversionTable [] =
-{
-  {COM_BASE_TABLE_OBJECT, COM_BASE_TABLE_OBJECT_LIT},
-  {COM_INDEX_OBJECT, COM_INDEX_OBJECT_LIT},
-  {COM_VIEW_OBJECT, COM_VIEW_OBJECT_LIT},
-  {COM_STORED_PROCEDURE_OBJECT, COM_STORED_PROCEDURE_OBJECT_LIT},
-  {COM_USER_DEFINED_ROUTINE_OBJECT, COM_USER_DEFINED_ROUTINE_OBJECT_LIT},
-  {COM_UNIQUE_CONSTRAINT_OBJECT, COM_UNIQUE_CONSTRAINT_OBJECT_LIT},
-  {COM_NOT_NULL_CONSTRAINT_OBJECT, COM_NOT_NULL_CONSTRAINT_OBJECT_LIT},
-  {COM_CHECK_CONSTRAINT_OBJECT, COM_CHECK_CONSTRAINT_OBJECT_LIT},
-  {COM_PRIMARY_KEY_CONSTRAINT_OBJECT, COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT},
-  {COM_REFERENTIAL_CONSTRAINT_OBJECT, COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT},
-  {COM_TRIGGER_OBJECT, COM_TRIGGER_OBJECT_LIT},
-  {COM_LOCK_OBJECT, COM_LOCK_OBJECT_LIT},
-  {COM_LOB_TABLE_OBJECT, COM_LOB_TABLE_OBJECT_LIT},
-  {COM_TRIGGER_TABLE_OBJECT, COM_TRIGGER_TABLE_OBJECT_LIT},
-  {COM_SYNONYM_OBJECT, COM_SYNONYM_OBJECT_LIT},
-  {COM_PRIVATE_SCHEMA_OBJECT, COM_PRIVATE_SCHEMA_OBJECT_LIT},
-  {COM_SHARED_SCHEMA_OBJECT, COM_SHARED_SCHEMA_OBJECT_LIT},
-  {COM_LIBRARY_OBJECT, COM_LIBRARY_OBJECT_LIT},
-  {COM_EXCEPTION_TABLE_OBJECT, COM_EXCEPTION_TABLE_OBJECT_LIT},
-  {COM_SEQUENCE_GENERATOR_OBJECT, COM_SEQUENCE_GENERATOR_OBJECT_LIT},
-  {COM_UNKNOWN_OBJECT, COM_UNKNOWN_OBJECT_LIT}
-};
-
 // *****************************************************************************
-//    PrivMgr methods
+//    PrivMgrMDAdmin static methods
 // *****************************************************************************
-// -----------------------------------------------------------------------
-// Default Constructor
-// -----------------------------------------------------------------------
-PrivMgr::PrivMgr() 
-: trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
-  metadataLocation_ ("TRAFODION.\"_PRIVMGR_MD_\""),
-  pDiags_(CmpCommon::diags()),
-  authorizationEnabled_(PRIV_INITIALIZE_UNKNOWN)
-{}
 
-// -----------------------------------------------------------------------
-// Construct a PrivMgr object specifying a different metadata location
-// -----------------------------------------------------------------------
-  
+static bool compareTableDefs (
+  const char * tableNameOne,
+  const char * tableNameTwo,
+  const std::string &objectsLocation,
+  const std::string &colsLocation,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
 
-PrivMgr::PrivMgr( 
-   const std::string & metadataLocation,
-   ComDiagsArea * pDiags,
-   PrivMDStatus authorizationEnabled)
-: metadataLocation_ (metadataLocation),
-  pDiags_(pDiags),
-  authorizationEnabled_(authorizationEnabled)
-  
-{
+static int32_t createTable (
+  const char *tableName,
+  const TableDDLString *tableDDL,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
 
-  if (pDiags == NULL)
-     pDiags = CmpCommon::diags();
+static int32_t dropTable (
+  const char *objectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
 
-  setFlags();
-}
-
-PrivMgr::PrivMgr( 
-   const std::string & trafMetadataLocation,
-   const std::string & metadataLocation,
-   ComDiagsArea * pDiags,
-   PrivMDStatus authorizationEnabled)
-: trafMetadataLocation_ (trafMetadataLocation),
-  metadataLocation_ (metadataLocation),
-  pDiags_(pDiags),
-  authorizationEnabled_(authorizationEnabled)
-  
-{
-
-  if (pDiags == NULL)
-     pDiags = CmpCommon::diags();
-
-  setFlags();
-}
-
-
-// -----------------------------------------------------------------------
-// Copy constructor
-// -----------------------------------------------------------------------
-PrivMgr::PrivMgr(const PrivMgrMDAdmin &other)
-
-{
-
-  trafMetadataLocation_ = other.trafMetadataLocation_;
-  metadataLocation_ = other.metadataLocation_;
-  pDiags_ = other.pDiags_;
-  
-}
-
-// -----------------------------------------------------------------------
-// Destructor.
-// -----------------------------------------------------------------------
-
-PrivMgr::~PrivMgr() 
-{
-  resetFlags();
-}
-
-// ----------------------------------------------------------------------------
-// method:  authorizationEnabled
-//
-// Input:  pointer to the error structure
-//
-// Returns:
-//    PRIV_INITIALIZED means all metadata tables exist
-//    PRIV_UNINITIALIZED means no metadata tables exist
-//    PRIV_PARTIALLY_INITIALIZED means only part of the metadata tables exist
-//    PRIV_INITIALIZE_UNKNOWN means unable to retrieve metadata table info
-//
-// A cli error is put into the diags area if there is an error
-// ----------------------------------------------------------------------------
-PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled()
-{
-// Will require QI to reset on INITIALIZE AUTHORIZATION [,DROP]
-  // get the list of tables from the schema
-  // if the catalog name ever allows an embedded '.', this code will need 
-  // to change.
-  std::string metadataLocation = getMetadataLocation();
-  size_t period = metadataLocation.find(".");
-  std::string catName = metadataLocation.substr(0, period);
-  std::string schName = metadataLocation.substr(period+1);
-  char buf[1000];
-  sprintf(buf, "get tables in schema %s.%s, no header",
-              catName.c_str(), schName.c_str());
-
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
-  Queue * schemaQueue = NULL;
-
-// set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
-
-  int32_t cliRC =  cliInterface.fetchAllRows(schemaQueue, buf, 0, FALSE, FALSE, TRUE);
-  if (cliRC < 0)
-  {
-    cliInterface.retrieveSQLDiagnostics(pDiags_);
-    return PRIV_INITIALIZE_UNKNOWN;
-  }
-
-  if (cliRC == 100) // did not find the row
-  {
-    pDiags_->rewind(diagsMark);
-    return PRIV_UNINITIALIZED;
-  }
-
-  // Not sure how this can happen but code I cloned had the check
-  if (schemaQueue->numEntries() == 0)
-    return PRIV_UNINITIALIZED;
-
-  // Gather the returned list of tables in existingObjectList
-  std::set<std::string> existingObjectList;
-  schemaQueue->position();
-  for (int idx = 0; idx < schemaQueue->numEntries(); idx++)
-  {
-    OutputInfo * row = (OutputInfo*)schemaQueue->getNext();
-    std::string theName = row->get(0);
-    existingObjectList.insert(theName);
-  }
-
-  // Gather the list of expected tables in expectedObjectList
-  std::set<string> expectedObjectList;
-  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
-  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
-  {
-    const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
-    expectedObjectList.insert(tableDefinition.tableName);
-  }
-
-  // Compare the existing with the expected
-  std::set<string> diffsObjectList;
-  std::set_difference (expectedObjectList.begin(), expectedObjectList.end(),
-                       existingObjectList.begin(), existingObjectList.end(),
-                       std::inserter(diffsObjectList, diffsObjectList.end()));
-
-  // If the number of existing tables match the expected, diffsObjectList 
-  // is empty -> return initialized
-  if (diffsObjectList.empty())
-    return PRIV_INITIALIZED;
- 
-  // If the number of existing tables does not match the expected, 
-  // initialization is required -> return not initialized
-  if (existingObjectList.size() == diffsObjectList.size())
-    return PRIV_UNINITIALIZED;
- 
-  // Otherwise, mismatch is found, return partially initialized
-  return PRIV_PARTIALLY_INITIALIZED;
-}
+static int32_t renameTable (
+  const char *originalObjectName,
+  const char *newObjectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags);
 
 
 // *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::getSQLOperationName                                    *
-// *                                                                           *
-// *    Returns the operation name associated with the specified operation.    *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: const char                                                       *
-// *                                                                           *
-// *  If the operation exists, the corresponding name is returned, otherwise   *
-// *  the string "UNKNOWN" is returned.                                        *
-// *                                                                           *
-// *****************************************************************************
-const char * PrivMgr::getSQLOperationName(SQLOperation operation) 
-    
-{
-
-   switch (operation)
-   {
-      case SQLOperation::ALTER: return "ALTER";
-      case SQLOperation::ALTER_LIBRARY: return "ALTER_LIBRARY";
-      case SQLOperation::ALTER_ROUTINE: return "ALTER_ROUTINE";
-      case SQLOperation::ALTER_ROUTINE_ACTION: return "ALTER_ROUTINE_ACTION";
-      case SQLOperation::ALTER_SCHEMA: return "ALTER_SCHEMA";
-      case SQLOperation::ALTER_SEQUENCE: return "ALTER_SEQUENCE";
-      case SQLOperation::ALTER_SYNONYM: return "ALTER_SYNONYM";
-      case SQLOperation::ALTER_TABLE: return "ALTER_TABLE";
-      case SQLOperation::ALTER_TRIGGER: return "ALTER_TRIGGER";
-      case SQLOperation::ALTER_VIEW: return "ALTER_VIEW";
-      case SQLOperation::CREATE: return "CREATE";
-      case SQLOperation::CREATE_CATALOG: return "CREATE_CATALOG";
-      case SQLOperation::CREATE_INDEX: return "CREATE_INDEX";
-      case SQLOperation::CREATE_LIBRARY: return "CREATE_LIBRARY";
-      case SQLOperation::CREATE_PROCEDURE: return "CREATE_PROCEDURE";
-      case SQLOperation::CREATE_ROUTINE: return "CREATE_ROUTINE";
-      case SQLOperation::CREATE_ROUTINE_ACTION: return "CREATE_ROUTINE_ACTION";
-      case SQLOperation::CREATE_SCHEMA: return "CREATE_SCHEMA";
-      case SQLOperation::CREATE_SEQUENCE: return "CREATE_SEQUENCE";
-      case SQLOperation::CREATE_SYNONYM: return "CREATE_SYNONYM";
-      case SQLOperation::CREATE_TABLE: return "CREATE_TABLE";
-      case SQLOperation::CREATE_TRIGGER: return "CREATE_TRIGGER";
-      case SQLOperation::CREATE_VIEW: return "CREATE_VIEW";
-      case SQLOperation::DROP: return "DROP";
-      case SQLOperation::DROP_CATALOG: return "DROP_CATALOG";
-      case SQLOperation::DROP_INDEX: return "DROP_INDEX";
-      case SQLOperation::DROP_LIBRARY: return "DROP_LIBRARY";
-      case SQLOperation::DROP_PROCEDURE: return "DROP_PROCEDURE";
-      case SQLOperation::DROP_ROUTINE: return "DROP_ROUTINE";
-      case SQLOperation::DROP_ROUTINE_ACTION: return "DROP_ROUTINE_ACTION";
-      case SQLOperation::DROP_SCHEMA: return "DROP_SCHEMA";
-      case SQLOperation::DROP_SEQUENCE: return "DROP_SEQUENCE";
-      case SQLOperation::DROP_SYNONYM: return "DROP_SYNONYM";
-      case SQLOperation::DROP_TABLE: return "DROP_TABLE";
-      case SQLOperation::DROP_TRIGGER: return "DROP_TRIGGER";
-      case SQLOperation::DROP_VIEW: return "DROP_VIEW";
-      case SQLOperation::MANAGE_COMPONENTS: return "MANAGE_COMPONENTS";
-      case SQLOperation::MANAGE_LIBRARY: return "MANAGE_LIBRARY";
-      case SQLOperation::MANAGE_LOAD: return "MANAGE_LOAD";
-      case SQLOperation::MANAGE_ROLES: return "MANAGE_ROLES";
-      case SQLOperation::MANAGE_STATISTICS: return "MANAGE_STATISTICS";
-      case SQLOperation::MANAGE_USERS: return "MANAGE_USERS";
-      case SQLOperation::QUERY_ACTIVATE: return "QUERY_ACTIVATE";
-      case SQLOperation::QUERY_CANCEL: return "QUERY_CANCEL";
-      case SQLOperation::QUERY_SUSPEND: return "QUERY_SUSPEND";
-      case SQLOperation::REMAP_USER: return "REMAP_USER";
-      case SQLOperation::SHOW: return "SHOW";
-      case SQLOperation::USE_ALTERNATE_SCHEMA: return "USE_ALTERNATE_SCHEMA";
-      default:
-         return "UNKNOWN";   
-   }
-
-   return "UNKNOWN";   
-
-}    
-//******************** End of PrivMgr::getSQLOperationName *********************
-    
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::getSQLOperationCode                                    *
-// *                                                                           *
-// *    Returns the operation code associated with the specified operation.    *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: const char                                                       *
-// *                                                                           *
-// *  If the operation exists, the corresponding code is returned, otherwise   *
-// *  the string "  " is returned.                                             *
-// *                                                                           *
-// *****************************************************************************
-const char * PrivMgr::getSQLOperationCode(SQLOperation operation) 
-
-{
-
-   switch (operation)
-   {
-      case SQLOperation::ALTER: return "A0";
-      case SQLOperation::ALTER_LIBRARY: return "AL";
-      case SQLOperation::ALTER_ROUTINE: return "AR";
-      case SQLOperation::ALTER_ROUTINE_ACTION: return "AA";
-      case SQLOperation::ALTER_SCHEMA: return "AH";
-      case SQLOperation::ALTER_SEQUENCE: return "AQ";
-      case SQLOperation::ALTER_SYNONYM: return "AY";
-      case SQLOperation::ALTER_TABLE: return "AT";
-      case SQLOperation::ALTER_TRIGGER: return "AG";
-      case SQLOperation::ALTER_VIEW: return "AV";
-      case SQLOperation::CREATE: return "C0";
-      case SQLOperation::CREATE_CATALOG: return "CC";
-      case SQLOperation::CREATE_INDEX: return "CI";
-      case SQLOperation::CREATE_LIBRARY: return "CL";
-      case SQLOperation::CREATE_PROCEDURE: return "CP";
-      case SQLOperation::CREATE_ROUTINE: return "CR";
-      case SQLOperation::CREATE_ROUTINE_ACTION: return "CA";
-      case SQLOperation::CREATE_SCHEMA: return "CH";
-      case SQLOperation::CREATE_SEQUENCE: return "CQ";
-      case SQLOperation::CREATE_SYNONYM: return "CY";
-      case SQLOperation::CREATE_TABLE: return "CT";
-      case SQLOperation::CREATE_TRIGGER: return "CG";
-      case SQLOperation::CREATE_VIEW: return "CV";
-      case SQLOperation::DROP: return "D0";
-      case SQLOperation::DROP_CATALOG: return "DC";
-      case SQLOperation::DROP_INDEX: return "DI";
-      case SQLOperation::DROP_LIBRARY: return "DL";
-      case SQLOperation::DROP_PROCEDURE: return "DP";
-      case SQLOperation::DROP_ROUTINE: return "DR";
-      case SQLOperation::DROP_ROUTINE_ACTION: return "DA";
-      case SQLOperation::DROP_SCHEMA: return "DH";
-      case SQLOperation::DROP_SEQUENCE: return "DQ";
-      case SQLOperation::DROP_SYNONYM: return "DY";
-      case SQLOperation::DROP_TABLE: return "DT";
-      case SQLOperation::DROP_TRIGGER: return "DG";
-      case SQLOperation::DROP_VIEW: return "DV";
-      case SQLOperation::MANAGE_COMPONENTS: return "MC";
-      case SQLOperation::MANAGE_LIBRARY: return "ML";
-      case SQLOperation::MANAGE_LOAD: return "MT";
-      case SQLOperation::MANAGE_ROLES: return "MR";
-      case SQLOperation::MANAGE_STATISTICS: return "MS";
-      case SQLOperation::MANAGE_USERS: return "MU";
-      case SQLOperation::QUERY_ACTIVATE: return "QA";
-      case SQLOperation::QUERY_CANCEL: return "QC";
-      case SQLOperation::QUERY_SUSPEND: return "QS";
-      case SQLOperation::REMAP_USER: return "RU";
-      case SQLOperation::SHOW: return "SW";
-      case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
-      default:
-         return "  ";   
-   }
-
-   return "  ";   
-
-}
-//******************** End of PrivMgr::getSQLOperationCode *********************
-
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::getSQLOperationDescription                             *
-// *                                                                           *
-// *    Returns the description for the specified SQL operation.  Note, all    *
-// * SQL operations have a description.                                        *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: const char                                                       *
-// *                                                                           *
-// *  If the operation exists, the corresponding description is returned,      *
-// *  otherwise the empty string "" is returned.                               *
-// *                                                                           *
-// *****************************************************************************
-const char * PrivMgr::getSQLOperationDescription(SQLOperation operation) 
-
-{
-
-   switch (operation)
-   {
-      case SQLOperation::ALTER: return "Allow grantee to alter database objects";
-      case SQLOperation::ALTER_LIBRARY: return "Allow grantee to alter libraries";
-      case SQLOperation::ALTER_ROUTINE: return "Allow grantee to alter routines";
-      case SQLOperation::ALTER_ROUTINE_ACTION: return "Allow grantee to alter routine actions";
-      case SQLOperation::ALTER_SCHEMA: return "Allow grantee to alter schemas";
-      case SQLOperation::ALTER_SEQUENCE: return "Allow grantee to alter sequence generators";
-      case SQLOperation::ALTER_SYNONYM: return "Allow grantee to alter synonyms";
-      case SQLOperation::ALTER_TABLE: return "Allow grantee to alter tables";
-      case SQLOperation::ALTER_TRIGGER: return "Allow grantee to alter triggers";
-      case SQLOperation::ALTER_VIEW: return "Allow grantee to alter views";
-      case SQLOperation::CREATE: return "Allow grantee to create database objects";
-      case SQLOperation::CREATE_CATALOG: return "Allow grantee to create catalogs";
-      case SQLOperation::CREATE_INDEX: return "Allow grantee to create indexes";
-      case SQLOperation::CREATE_LIBRARY: return "Allow grantee to create libraries";
-      case SQLOperation::CREATE_PROCEDURE: return "Allow grantee to create procedures";
-      case SQLOperation::CREATE_ROUTINE: return "Allow grantee to create routines";
-      case SQLOperation::CREATE_ROUTINE_ACTION: return "Allow grantee to create routine actions";
-      case SQLOperation::CREATE_SCHEMA: return "Allow grantee to create schemas";
-      case SQLOperation::CREATE_SEQUENCE: return "Allow grantee to create sequence generators";
-      case SQLOperation::CREATE_SYNONYM: return "Allow grantee to create synonyms";
-      case SQLOperation::CREATE_TABLE: return "Allow grantee to create tables";
-      case SQLOperation::CREATE_TRIGGER: return "Allow grantee to create triggers";
-      case SQLOperation::CREATE_VIEW: return "Allow grantee to create views";
-      case SQLOperation::DROP: return "Allow grantee to drop database objects";
-      case SQLOperation::DROP_CATALOG: return "Allow grantee to drop catalogs";
-      case SQLOperation::DROP_INDEX: return "Allow grantee to drop indexes";
-      case SQLOperation::DROP_LIBRARY: return "Allow grantee to drop libraries";
-      case SQLOperation::DROP_PROCEDURE: return "Allow grantee to drop procedures";
-      case SQLOperation::DROP_ROUTINE: return "Allow grantee to drop routines";
-      case SQLOperation::DROP_ROUTINE_ACTION: return "Allow grantee to drop routine actions";
-      case SQLOperation::DROP_SCHEMA: return "Allow grantee to drop schemas";
-      case SQLOperation::DROP_SEQUENCE: return "Allow grantee to drop sequence generators";
-      case SQLOperation::DROP_SYNONYM: return "Allow grantee to drop synonyms";
-      case SQLOperation::DROP_TABLE: return "Allow grantee to drop tables";
-      case SQLOperation::DROP_TRIGGER: return "Allow grantee to drop triggers";
-      case SQLOperation::DROP_VIEW: return "Allow grantee to drop views";
-      case SQLOperation::MANAGE_COMPONENTS: return "Allow grantee to manage components";
-      case SQLOperation::MANAGE_LIBRARY: return "Allow grantee to manage libraries";
-      case SQLOperation::MANAGE_LOAD: return "Allow grantee to perform LOAD and UNLOAD commands";
-      case SQLOperation::MANAGE_ROLES: return "Allow grantee to manage roles";
-      case SQLOperation::MANAGE_STATISTICS: return "Allow grantee to show and update statistics";
-      case SQLOperation::MANAGE_USERS: return "Allow grantee to manage users";
-      case SQLOperation::QUERY_ACTIVATE: return "Allow grantee to activate queries";
-      case SQLOperation::QUERY_CANCEL: return "Allow grantee to cancel queries";
-      case SQLOperation::QUERY_SUSPEND: return "Allow grantee to suspend queries";
-      case SQLOperation::REMAP_USER: return "Allow grantee to remap DB__ users to a different external username";
-      case SQLOperation::SHOW: return "Allow grantee to view metadata information about objects";
-      case SQLOperation::USE_ALTERNATE_SCHEMA: return "Allow grantee to use non-default schemas";
-      default:
-         return "";   
-   }
-
-   return "";   
-
-}
-//**************** End of PrivMgr::getSQLOperationDescription ******************
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::isAuthIDGrantedPrivs                                   *
-// *                                                                           *
-// *    Determines if the specified authorization ID has been granted one or   *
-// * more privileges.                                                          *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <authID>                        const int32_t                   In       *
-// *    is the authorization ID.                                               *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: bool                                                             *
-// *                                                                           *
-// * true: Authorization ID has been granted one or more privileges.           *
-// * false: Authorization ID has not been granted any privileges.              *
-// *                                                                           *
-// *****************************************************************************
-bool PrivMgr::isAuthIDGrantedPrivs(
-   int32_t authID,
-   std::vector<PrivClass> privClasses) 
-
-{
-
-// Check for empty vector.
-   if (privClasses.size() == 0)
-      return false;
-      
-// If authorization is not enabled, no privileges were granted to anyone. 
-   if (!isAuthorizationEnabled())
-      return false;
-      
-
-// Special case of PrivClass::ALL.  Caller does not need to change when
-// new a new PrivClass is added. 
-   if (privClasses.size() == 1 && privClasses[0] == PrivClass::ALL)
-   {
-      PrivMgrPrivileges objectPrivileges(metadataLocation_,pDiags_); 
-      
-      if (objectPrivileges.isAuthIDGrantedPrivs(authID))
-         return true;
-      
-      PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_); 
-      
-      if (componentPrivileges.isAuthIDGrantedPrivs(authID))
-         return true;
-   
-      return false;   
-   }
-
-// Called specified one or more specific PrivClass.  Note, ALL is not valid  
-// in a list, only by itself.   
-   for (size_t pc = 0; pc < privClasses.size(); pc++)
-      switch (privClasses[pc])
-      {
-         case PrivClass::OBJECT:
-         {
-            PrivMgrPrivileges objectPrivileges(metadataLocation_,pDiags_); 
-            
-            if (objectPrivileges.isAuthIDGrantedPrivs(authID))
-               return true;
-             
-            break;
-         
-         } 
-         case PrivClass::COMPONENT:
-         {
-            PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_); 
-            
-            if (componentPrivileges.isAuthIDGrantedPrivs(authID))
-               return true;
-         
-            break;
-         } 
-         case PrivClass::ALL:
-         default:
-         {
-            PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgr::isAuthIDGrantedPrivs()");
-            return STATUS_ERROR;
-            break;
-         }
-      }
-
-// No grants of any privileges found for this authorization ID.   
-   return false;
-      
-}
-//******************* End of PrivMgr::isAuthIDGrantedPrivs *********************
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::isSQLAlterOperation                                    *
-// *                                                                           *
-// *    Determines if a SQL operation is within the subset of alter operations *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: bool                                                             *
-// *                                                                           *
-// * true: operation is an alter operation.                                    *
-// * false: operation is not an alter operation.                               *
-// *                                                                           *
-// *****************************************************************************
-bool PrivMgr::isSQLAlterOperation(SQLOperation operation)
-
-{
-
-   if (operation == SQLOperation::ALTER_TABLE ||
-       operation == SQLOperation::ALTER_VIEW ||
-       operation == SQLOperation::ALTER_SCHEMA ||
-       operation == SQLOperation::ALTER_SEQUENCE ||
-       operation == SQLOperation::ALTER_TRIGGER ||
-       operation == SQLOperation::ALTER_ROUTINE ||
-       operation == SQLOperation::ALTER_ROUTINE_ACTION ||
-       operation == SQLOperation::ALTER_LIBRARY)
-      return true;
-      
-   return false;
-
-}
-//******************** End of PrivMgr::isSQLAlterOperation *********************
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::isSQLCreateOperation                                   *
-// *                                                                           *
-// *    Determines if a SQL operation is within the subset of create operations*
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: bool                                                             *
-// *                                                                           *
-// * true: operation is a create operation.                                    *
-// * false: operation is not a create operation.                               *
-// *                                                                           *
-// *****************************************************************************
-bool PrivMgr::isSQLCreateOperation(SQLOperation operation)
-
-{
-
-   if (operation == SQLOperation::CREATE_TABLE ||
-       operation == SQLOperation::CREATE_VIEW ||
-       operation == SQLOperation::CREATE_SEQUENCE ||
-       operation == SQLOperation::CREATE_TRIGGER ||
-       operation == SQLOperation::CREATE_SCHEMA ||
-       operation == SQLOperation::CREATE_CATALOG ||
-       operation == SQLOperation::CREATE_INDEX ||
-       operation == SQLOperation::CREATE_LIBRARY ||
-       operation == SQLOperation::CREATE_PROCEDURE ||
-       operation == SQLOperation::CREATE_ROUTINE ||
-       operation == SQLOperation::CREATE_ROUTINE_ACTION ||
-       operation == SQLOperation::CREATE_SYNONYM)
-      return true;
-      
-   return false;
-
-}
-//******************* End of PrivMgr::isSQLCreateOperation *********************
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::isSQLDropOperation                                     *
-// *                                                                           *
-// *    Determines if a SQL operation is within the subset of drop operations. *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <operation>                     SQLOperation                    In       *
-// *    is the operation.                                                      *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: bool                                                             *
-// *                                                                           *
-// * true: operation is a drop operation.                                      *
-// * false: operation is not a drop operation.                                 *
-// *                                                                           *
-// *****************************************************************************
-bool PrivMgr::isSQLDropOperation(SQLOperation operation)
-
-{
-
-   if (operation == SQLOperation::DROP_TABLE ||
-       operation == SQLOperation::DROP_VIEW ||
-       operation == SQLOperation::DROP_SEQUENCE ||
-       operation == SQLOperation::DROP_TRIGGER ||
-       operation == SQLOperation::DROP_SCHEMA ||
-       operation == SQLOperation::DROP_CATALOG ||
-       operation == SQLOperation::DROP_INDEX ||
-       operation == SQLOperation::DROP_LIBRARY ||
-       operation == SQLOperation::DROP_PROCEDURE ||
-       operation == SQLOperation::DROP_ROUTINE ||
-       operation == SQLOperation::DROP_ROUTINE_ACTION ||
-       operation == SQLOperation::DROP_SYNONYM)
-      return true;
-      
-   return false;
-
-}
-//******************** End of PrivMgr::isSQLDropOperation **********************
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::ObjectEnumToLit                                        *
-// *                                                                           *
-// *    Returns the two character literal associated with the object type enum.*
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <objectType>                    ComObjectType                   In       *
-// *    is the object type enum.                                               *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: const char                                                       *
-// *                                                                           *
-// *****************************************************************************
-const char * PrivMgr::ObjectEnumToLit(ComObjectType objectType)
-
-{
-
-   for (size_t i = 0; i < occurs(objectTypeConversionTable); i++)
-      if (objectType == objectTypeConversionTable[i].enum_)
-         return objectTypeConversionTable[i].literal_;
-
-   return COM_UNKNOWN_OBJECT_LIT;  
-    
-}
-//********************* End of PrivMgr::ObjectEnumToLit ************************
-
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgr::ObjectLitToEnum                                        *
-// *                                                                           *
-// *    Returns the enum associated with the object type literal.              *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <objectType>                    ComObjectType                   In       *
-// *    is the object type enum.                                               *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: ComObjectType                                                    *
-// *                                                                           *
-// *****************************************************************************
-ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
-
-{
-
-   for (size_t i = 0; i < occurs(objectTypeConversionTable); i++)
-   {
-      const literalAndEnumStruct & elem = objectTypeConversionTable[i];
-      if (!strncmp(elem.literal_,objectLiteral,2))
-         return static_cast<ComObjectType>(elem.enum_);
-   }
-   
-   return COM_UNKNOWN_OBJECT;
-   
-}
-//********************* End of PrivMgr::ObjectLitToEnum ************************
-
-
-// ----------------------------------------------------------------------------
-// method: isAuthorizationEnabled
-//
-// Return true if authorization has been enabled, false otherwise.
-//
-// ----------------------------------------------------------------------------
-bool PrivMgr::isAuthorizationEnabled()
-{
-  // If authorizationEnabled_ not setup in class, go determine status
-  if (authorizationEnabled_ == PRIV_INITIALIZE_UNKNOWN)
-    authorizationEnabled_ = authorizationEnabled();
-
-  // return true if PRIV_INITIALIZED
-  return (authorizationEnabled_ == PRIV_INITIALIZED);
-}
-
-// ----------------------------------------------------------------------------
-// method: resetFlags
-//
-// Resets parserflag settings.
-// 
-// At PrivMgr construction time, existing parserflags are saved and additional
-// parserflags are turned on.  This is needed so privilege manager
-// requests work without requiring special privileges.
-//
-// The parserflags are restored at class destruction. 
-//
-// Generally, the PrivMgr class is constructed, the operation performed and the
-// class destructed.  If some code requires the class to be constructed and 
-// kept around for awhile, the coder may want reset any parserflags set
-// by the constructor between PrivMgr calls. This way code inbetween PrivMgr 
-// calls won't have any unexpected parser flags set.
-//
-// If parserflags are reset, then setFlags must be called before the next
-// PrivMgr request.
-// ----------------------------------------------------------------------------
-void PrivMgr::resetFlags()
-{
-  // restore parser flag settings
-  // The parserflag requests return a unsigned int return code of 0
-  SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(parserFlags_);
-}
-
-// ----------------------------------------------------------------------------
-// method: setFlags
-//
-// saves parserflag settings and sets the INTERNAL_QUERY_FROM_EXEUTIL 
-// parserflag
-//
-// See comments for PrivMgr::reset for more details
-//
-// ----------------------------------------------------------------------------
-void PrivMgr::setFlags()
-{
-  // set the EXEUTIL parser flag to allow all privmgr internal queries
-  // to pass security checks
-  // The parserflag requests return a unsigned int return code of 0
-  SQL_EXEC_GetParserFlagsForExSqlComp_Internal(parserFlags_);
-  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
-}
-
-
-
-// *****************************************************************************
-//    PrivMgrMDAdmin methods
+//    PrivMgrMDAdmin class methods
 // *****************************************************************************
 // -----------------------------------------------------------------------
 // Default Constructor
@@ -1027,112 +255,203 @@ int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATI
 //
 // A cli error is put into the diags area if there is an error
 // ----------------------------------------------------------------------------
-PrivStatus PrivMgrMDAdmin::initializeMetadata (const std::string &objectsLocation,
-                                               const std::string &authsLocation)
+PrivStatus PrivMgrMDAdmin::initializeMetadata (
+  const std::string &objectsLocation,
+  const std::string &authsLocation,
+  const std::string &colsLocation,
+  std::vector<std::string> &tablesCreated,
+  std::vector<std::string> &tablesUpgraded)
+
 {
-  std::vector<std::string> tablesCreated;
   PrivStatus retcode = STATUS_GOOD;
+
+  // Authorization check
+  if (!isAuthorized())
+  {
+    *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+    return STATUS_ERROR;
+  }
+
+  Int32 cliRC = 0;
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                          CmpCommon::context()->sqlSession()->getParentQid());
+  
+  // See what tables exist
+  std::set<std::string> existingObjectList;
+  PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
+
+  // If unable to access metadata, return STATUS_ERROR 
+  //   (pDiags contains error details)
+  if (initStatus == PRIV_INITIALIZE_UNKNOWN)
+    return STATUS_ERROR;
+
+  // Create the privilege manager schema if it doesn't yet exists.
+  if (initStatus == PRIV_UNINITIALIZED)
+  {
+    std::string schemaCommand("CREATE PRIVATE SCHEMA IF NOT EXISTS ");
+  
+    schemaCommand += metadataLocation_;
+    cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
+    if (cliRC < 0)
+      return STATUS_ERROR;
+  }
+    
+  // Create or upgrade the tables
+  //   If table does not exist - create it
+  //   If table exists 
+  //     If doesn't need upgrading - done
+  //     else - upgrade table 
+  bool populateObjectPrivs = false;
+  bool populateRoleGrants = false;
+
   try
   {
-    // Authorization check
-    if (!isAuthorized())
-    {
-       *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-       return STATUS_ERROR;
-     }
-
-    // See what does and does not exist
-    PrivMDStatus initStatus = authorizationEnabled();
-
-    // If unable to access metadata, return STATUS_ERROR 
-    //   (pDiags_ contains error details)
-    if (initStatus == PRIV_INITIALIZE_UNKNOWN)
-      return STATUS_ERROR;
-
-    // If metadata tables already initialize, just return STATUS_GOOD
-    if (initStatus == PRIV_INITIALIZED)
-      return STATUS_GOOD;
-      
-    // Create the privilege manager schema.
-    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
-    std::string schemaCommand("CREATE PRIVATE SCHEMA ");
-    
-    schemaCommand += metadataLocation_;
-    Int32 cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
-    if (cliRC < 0)
-    {
-      // If schema already exists, change to warning and continue
-      cliInterface.retrieveSQLDiagnostics(pDiags_);
-      if (cliRC == -CAT_SCHEMA_ALREADY_EXISTS)
-      {
-        NegateAllErrors(pDiags_);
-        retcode = STATUS_WARNING;
-      }
-      else
-        throw cliRC;
-    }
-      
-    // Create the tables
-    //   If table already exists, skip it and continue
-    //   TBD: if the table already exists, then see if it needs to be upgraded
     size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
-    bool populateObjectPrivs = true;
-    bool populateRoleGrants = true;
+    bool doCreate = (initStatus == PRIV_UNINITIALIZED);
+
     for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
     {
       const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
-      std::string tableDDL("CREATE TABLE ");
-      tableDDL += deriveTableName(tableDefinition.tableName);
-      tableDDL += tableDefinition.tableDDL->str;
-      Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
-      if (cliRC < 0)
+      std::string tableName = deriveTableName(tableDefinition.tableName);
+
+      if (initStatus == PRIV_PARTIALLY_INITIALIZED)
       {
-        // If object already exists, change to warning and continue
-        cliInterface.retrieveSQLDiagnostics(pDiags_);
-        if (cliRC == -CAT_TRAFODION_OBJECT_EXISTS)
-        {
-          NegateAllErrors(pDiags_);
-          retcode = STATUS_WARNING;
-
-          // If the table is OBJECT_PRIVILEGES no need to populate again
-          if (tableDefinition.tableName == "OBJECT_PRIVILEGES")
-            populateObjectPrivs = false;
-          // If the table is ROLE_USAGE no need to populate again
-          if (tableDefinition.tableName == "ROLE_USAGE")
-            populateRoleGrants = false;
-        }
-        else
-          throw cliRC;
+        // See if table needs to be created
+        std::string metadataTable (tableDefinition.tableName);
+        std::set<std::string>::iterator it;
+        it = std::find(existingObjectList.begin(), existingObjectList.end(), metadataTable);
+        doCreate = (it == existingObjectList.end());
       }
-      // Add to list of tables created.
-      else
+
+      // Create tables for installations or upgrades 
+      if (doCreate)
+      {
+
+        cliRC = createTable(tableName.c_str(), tableDefinition.tableDDL, 
+                            cliInterface, pDiags_);
+
+        // Temp code to verify error handling
+        if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_ON) 
+        {
+          std::string schemaName ("SCHEMA_PRIVILEGES");
+          if (tableName.find(schemaName) !=std::string::npos)
+          {
+            *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+            cliRC = -CAT_NOT_AUTHORIZED;
+          }
+        }
+
+        // If create was successful, set flags to load default data
+        if (cliRC < 0)
+          throw STATUS_ERROR;
+       
         tablesCreated.push_back(tableDefinition.tableName);
+
+        if (tableDefinition.tableName == PRIVMGR_OBJECT_PRIVILEGES)
+          populateObjectPrivs = true;
+        if (tableDefinition.tableName == PRIVMGR_ROLE_USAGE)
+          populateRoleGrants = true;
+      }
+
+      // upgrade tables
+      else 
+      {
+#if 0
+        retcode = upgradeMetadata(tableDefinition, cliInterface,
+                                  objectsLocation, colsLocation); 
+        if (retcode == STATUS_ERROR)
+          throw STATUS_ERROR;
+
+        tablesUpgraded.push_back(tableDefinition.tableName);
+#endif
+      }
     }
-    
-PrivStatus privStatus = STATUS_GOOD;
-
-   privStatus = updatePrivMgrMetadata(objectsLocation,authsLocation,
-                                      populateObjectPrivs,populateRoleGrants);
-
+ 
+    // populate metadata tables
+    PrivStatus privStatus = updatePrivMgrMetadata
+      (objectsLocation,authsLocation,
+       populateObjectPrivs,populateRoleGrants);
 
     // if error occurs, drop tables already created
     if (privStatus == STATUS_ERROR)
-    {
-      PrivStatus dropRetcode = dropMetadata(tablesCreated);
-      *pDiags_ << DgSqlCode(-CAT_INIT_AUTHORIZATION_FAILED);
-    }  
-  }
+      throw STATUS_ERROR;
+
+    //TODO: should notify QI?
+  } 
 
   catch (...)
   {
-    // drop any tables created before returning
-    PrivStatus dropRetcode = dropMetadata(tablesCreated);
-    *pDiags_ << DgSqlCode(-CAT_INIT_AUTHORIZATION_FAILED);
-    return STATUS_ERROR;
+     tablesCreated.clear();
+     tablesUpgraded.clear();
+
+     // assume ddlTxn will be turned on
+     // if not need to redo work just performed
+     return STATUS_ERROR;
   }
-//TODO: should notify QI
-  return retcode;
+  return STATUS_GOOD;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  upgradeMetadata
+//
+// This method checks to see if the metadata tables needs to be upgraded.
+// If so, it is upgraded.
+//
+// Params:
+//    tableDefinition - definition of table that may need upgrading
+//    cliInterface - infrastructure for making SQL calls
+//    objectsLocation - name of OBJECTS system metadata table
+//    colsLocation - name of COLUMNS system metadata table
+//
+// Returns PrivStatus
+//    STATUS_GOOD
+//    STATUS_ERROR
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------
+//
+PrivStatus PrivMgrMDAdmin::upgradeMetadata (
+  const PrivMgrTableStruct &tableDefinition,
+  ExeCliInterface &cliInterface,
+  const std::string &objectsLocation,
+  const std::string &colsLocation)
+{
+  // create a different table with the current definition
+  std::string newTableName = tableDefinition.tableName + std::string("_NEW");
+  std::string qualNewTableName = deriveTableName(newTableName.c_str());
+  Int32 cliRC = createTable(qualNewTableName.c_str(), tableDefinition.tableDDL, 
+                            cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  // if tables match, no upgrade is needed, return STATUS_GOOD
+  if (compareTableDefs(newTableName.c_str(), tableDefinition.tableName, 
+                       objectsLocation, colsLocation, 
+                       cliInterface, pDiags_))
+    {
+      // Done with new table, go ahead and drop
+      cliRC = dropTable(qualNewTableName.c_str(), cliInterface, pDiags_);
+      if (cliRC < 0)
+        return STATUS_ERROR;
+      return STATUS_GOOD;
+    }
+
+
+  // TDB -- copy data
+
+  // drop original table 
+  cliRC = dropTable(qualNewTableName.c_str(), cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  // rename new version table
+  // When using this code, error 1390 is returned:  <table> already exists
+  cliRC = renameTable(tableDefinition.tableName, qualNewTableName.c_str(), 
+                      cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  return STATUS_GOOD;
 }
 
 // ----------------------------------------------------------------------------
@@ -1151,64 +470,45 @@ PrivStatus privStatus = STATUS_GOOD;
 PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objectsToDrop)
 {
   PrivStatus retcode = STATUS_GOOD;
-  try
+    
+  // Authorization check
+  if (!isAuthorized())
   {
-    // Authorization check
-    if (!isAuthorized())
-    {
-       *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-       return STATUS_ERROR;
-     }
+     *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+     return STATUS_ERROR;
+   }
 
-    // See what does and does not exist
-    PrivMDStatus initStatus = authorizationEnabled();
+  // See what does and does not exist
+  std::set<std::string> existingObjectList;
+  PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
 
-    // If unable to access metadata, return STATUS_ERROR 
-    //   (pDiags contains error details)
-    if (initStatus == PRIV_INITIALIZE_UNKNOWN)
-      return STATUS_ERROR;
-
-    // If metadata tables don't exist, just return STATUS_GOOD
-    if (initStatus == PRIV_UNINITIALIZED)
-      return STATUS_GOOD;
-
-    // Call Trafodion to drop the requested tables
-    // If one of the tables fail to drop, save retcode and continue
-    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
-    for (int32_t i = 0; i < objectsToDrop.size();++i)
-    {
-      std::string objectName = objectsToDrop[i];
-      std::string tableDDL("DROP TABLE IF EXISTS ");
-      tableDDL += deriveTableName(objectName.c_str());
-      tableDDL += ";";
-
-      Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
-      if (cliRC < 0)
-      {
-        cliInterface.retrieveSQLDiagnostics(pDiags_);
-        retcode = STATUS_ERROR;
-      }
-    }
-    
-    std::string schemaDDL("DROP SCHEMA ");
-    schemaDDL += metadataLocation_;
-    Int32 cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
-    if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(pDiags_);
-      retcode = STATUS_ERROR;
-    }
-    CmpSeabaseDDLrole role;
-    
-    role.dropStandardRole(DB_ROOTROLE_NAME);
-    
-  }
-
-  catch (...)
-  {
+  // If unable to access metadata, return STATUS_ERROR 
+  //   (pDiags contains error details)
+  if (initStatus == PRIV_INITIALIZE_UNKNOWN)
     return STATUS_ERROR;
+
+  // If metadata tables don't exist, just return STATUS_GOOD
+  if (initStatus == PRIV_UNINITIALIZED)
+    return STATUS_GOOD;
+
+  // Call Trafodion to drop the schema cascade
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, CmpCommon::context()->sqlSession()->getParentQid());
+  Int32 cliRC = 0;
+
+  std::string schemaDDL("DROP SCHEMA ");
+  schemaDDL += metadataLocation_;
+  schemaDDL += "CASCADE";
+  cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    retcode = STATUS_ERROR;
   }
+  CmpSeabaseDDLrole role;
+    
+  role.dropStandardRole(DB_ROOTROLE_NAME);
+    
+
 //TODO: should notify QI
   return retcode;
 }
@@ -1756,6 +1056,220 @@ int32_t diagsMark = pDiags_->mark();
   return true;
 }
 
+// ----------------------------------------------------------------------------
+// method: compareTableDefs
+//
+// this method looks at column attributes from two Seabase tables by
+//   performing a query that compares column attributes of the two tables
+//
+// params:
+//   tableNameOne 
+//   tableNameTwo - current definition of the table
+//   cliInterface - cli details 
+//   objectsLocation - location of the system metadata table OBJECTS
+//   colsLocation - loction of the system metadata table COLUMNS
+//
+// returns:
+//   true  - table structures match
+//   false - table structures don't match or unexpected error
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------
+static bool compareTableDefs (
+  const char *tableNameOne,
+  const char *tableNameTwo,
+  const std::string &objectsLocation,
+  const std::string &colsLocation,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  // Perform a SQL command that compares column differences between two tables:
+  //  select column_name, column_number, column_size, sql_data_type
+  //  from 
+  //   (select column_name, column_number, sql_data_type, column_size)
+  //    from <colsLocation>
+  //    where object_uid in 
+  //     (select object_uid from <objectsLocation>
+  //      where object_name in ('<tableNameOne> <tableNameTwo>') 
+  //            and schema_name = '_PRIVMGR_MD_')
+  //   group by column_name,column_number, 
+  //            fs_data_type,sql_data_type, column_size
+  //   having count(1)=1)
+  // order by column_name
+
+
+  // This code only checks a subset of column attributes.  These attributes are
+  // sufficient for now.  If future changes require other attributes, then this
+  // query should change.
+
+  // Calculate size of generated query - 2 catalogs, 3 schemas, 4 tables, plus 300 for text
+  char query[MAX_SQL_IDENTIFIER_NAME_LEN*2 + 
+             MAX_SQL_IDENTIFIER_NAME_LEN*3 + 
+             MAX_SQL_IDENTIFIER_NAME_LEN*4 + 300];
+
+  Queue * tableColDiffs = NULL;
+  str_sprintf(query, 
+    "select column_name, column_number, fs_data_type, column_size "
+    "from %s where object_uid in "
+    "(select object_uid from %s where object_name in ('%s', '%s') "
+    "and schema_name = '%s') " 
+    "group by column_name, column_number, fs_data_type, column_size "
+    "having count(1) = 1 order by column_name",
+    colsLocation.c_str(), objectsLocation.c_str(),
+    tableNameOne, tableNameTwo, SEABASE_PRIVMGR_SCHEMA); 
+
+  Int32 cliRC = cliInterface.fetchAllRows(tableColDiffs, query, 0, FALSE, FALSE, TRUE);
+
+  // Check the results of the select statement
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return false;
+  }
+
+  // If no rows are returned, then table structures match
+  return (tableColDiffs->numEntries() == 0);
+
+  // could return the list of rows that don't match
+#if 0
+  std::vector<ColumnRow> colInfoArray;
+  tableColDiffs->position();
+  for (Lng32 idx = 0; idx < tableColDiffs->numEntries(); idx++)
+  {
+      OutputInfo * oi = (OutputInfo*)tableColDiffs->getNext();
+      
+      ColumnRow colInfo;
+      char * data = NULL;
+      Lng32 len = 0;
+
+      // get the column name
+      oi->get(0, data, len);
+      colInfo.colName = new(STMTHEAP) char[len + 1];
+      strcpy((char*)colInfo.colName, data);
+
+      colInfo.colNumber = *(Lng32*)oi->get(1);
+      colInfo.datatype = *(Lng32*)oi->get(2);
+      colInfo.length = *(Lng32*)oi->get(3);
+
+      // may want to include these in comparison
+      colInfo.columnClass = COM_UNKNOWN_CLASS;
+      colInfo.precision = 0;
+      colInfo.scale = 0;
+      colInfo.dtStart = 0;
+      colInfo.dtEnd = 0;
+      colInfo.upshifted = 0;
+      colInfo.hbaseColFlags = 0;
+      colInfo.nullable = 1;
+      colInfo.charset = (SQLCHARSET_CODE)CharInfo::UnknownCharSet;
+      colInfo.defaultClass = COM_NO_DEFAULT;
+      colInfo.colHeading = NULL;
+      colInfo.hbaseColFam = NULL;
+      colInfo.hbaseColQual = NULL;
+      strcpy(colInfo.paramDirection, " ");
+      colInfo.isOptional = 0;
+      colInfo.colFlags = 0;
+      colInfoArray.push_back(colInfo);
+   }
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// Method:  createTable
+//
+// This method creates a table
+//
+// Params:
+//   tableName - fully qualified name of table to create 
+//   tableDDL - a TableDDLString describing the table
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the create statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t createTable (
+  const char *tableName,
+  const TableDDLString *tableDDL,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string createStmt("CREATE TABLE ");
+  createStmt += tableName;
+  createStmt += tableDDL->str;
+
+  Int32 cliRC = cliInterface.executeImmediate(createStmt.c_str());
+  if (cliRC != 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  dropTable
+//
+// This method drops a table
+//
+// Params:
+//   tableName - fully qualified name of table to drop
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the drop statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t dropTable (
+  const char *tableName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string tableDDL("DROP TABLE IF EXISTS ");
+  tableDDL += tableName;
+
+  Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
+  if (cliRC < 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  renameTable
+//
+// This method renames a table
+//
+// Params:
+//   originalObjectName - fully qualified name of object to rename
+//   newObjectName - fully qualified new name
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the rename statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t renameTable (
+  const char *originalObjectName,
+  const char *newObjectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string tableDDL("ALTER TABLE  ");
+  tableDDL += newObjectName;
+  tableDDL += " RENAME TO ";
+  tableDDL += originalObjectName;
+
+  Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
+  if (cliRC < 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
 // ****************************************************************************
 // method:  updatePrivMgrMetadata
 //
@@ -1795,11 +1309,14 @@ CmpSeabaseDDLrole role;
          return STATUS_ERROR;
    }
     
-   privStatus = initializeComponentPrivileges();
+      privStatus = initializeComponentPrivileges();
    
-   if (privStatus != STATUS_GOOD)
-      return STATUS_ERROR;
+      if (privStatus != STATUS_GOOD)
+         return STATUS_ERROR;
       
+   // When new components and component operations are added
+   // add an upgrade procedure
+   
    return STATUS_GOOD;
    
 }

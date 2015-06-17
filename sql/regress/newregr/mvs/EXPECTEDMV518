@@ -1,0 +1,374 @@
+>>
+>>-- Run Tests
+>>-- ==== CatApi 19 Tests (audit/no audit) ==== --
+>>	obey TESTMV518(TEST1);
+>>
+>>create mv T_518_MV1 
++>refresh on request
++>initialize on create
++>as select a, sum(b) as sb
++>from T_518_T1
++>group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_518_MV1_102641561_0004 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_518_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>alter mv T_518_MV1 mvattribute no auditonrefresh;
+
+--- SQL operation complete.
+>>
+>>create index T_518_I1 on T_518_MV1(a);
+
+--- SQL operation complete.
+>>
+>>-- check that they are AUDITED (Y)
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV1@ @1@;
+
+--- SQL operation complete.
+>>
+>>-- check that they are NO AUDITED (N)
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV1@ @0@;
+
+--- SQL operation complete.
+>>
+>>-- check that they are AUDITED (Y)
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>--==============================================================
+>>	obey TESTMV518(TEST2);
+>>
+>>log;
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm2.T_518_MV1@ @1@;
+
+--- SQL operation complete.
+>>
+>>-- check that they are NO AUDITED (N)
+>>
+>>set schema catmvs.mvschm2;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>set schema catmvs.mvschm2;
+
+--- SQL operation complete.
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm2.T_518_MV1@ @0@;
+
+--- SQL operation complete.
+>>
+>>-- check that they are AUDITED (Y)
+>>
+>>set param ?obj 'T_518_MV1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_MV1                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_I1';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_I1                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>set schema catmvs.mvschm2;
+
+--- SQL operation complete.
+>>
+>>--==============================================================
+>>	obey TESTMV518(TEST3);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create mv T_518_MV2 
++>refresh on request
++>initialize on create
++>as select a, sum(b) as sb
++>from T_518_T1
++>group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_518_MV2_102641563_0011 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_518_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>alter mv T_518_MV2 mvattribute no auditonrefresh;
+
+--- SQL operation complete.
+>>
+>>create index T_518_I2 on T_518_MV2(a);
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_MV2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_MV2                                                                                                                       
+
+--- 1 row(s) selected.
+>>set param ?obj 'T_518_I2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+Y        T_518_I2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_MV2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_MV2                                                                                                                       
+
+--- 1 row(s) selected.
+>>set param ?obj 'T_518_I2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_I2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_MV2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_MV2                                                                                                                       
+
+--- 1 row(s) selected.
+>>set param ?obj 'T_518_I2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_I2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 19 2 @catmvs.mvschm.T_518_MV2@ @1@;
+
+--- SQL operation complete.
+>>
+>>set param ?obj 'T_518_MV2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_MV2                                                                                                                       
+
+--- 1 row(s) selected.
+>>set param ?obj 'T_518_I2';
+>>execute select_path_table;
+
+AUDITED  (EXPR)
+-------  --------------------------------------------------------------------------------------------------------------------------------
+
+N        T_518_I2                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>--==============================================================
+>>--	obey TESTMV518(TEST4);  -- BUG 471: after altering the base table state to audit/no audit 
+>>				-- and then dropping the index, drop mv (table) returns internal error.
+>>
+>>-- ==== CatApi 14 Test ( popoulate index ) ==== --
+>>	obey TESTMV518(TEST5);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table t1 (a int );
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create index i1 on t1(a);
+
+--- SQL operation complete.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.T1L> <CATMVS.MVSCHM.T1> <0> <3> ;
+
+--- SQL operation complete.
+>>
+>>-- should pass
+>>CREATE TANDEM_CAT_REQUEST&1 11 4 @CATMVS.MVSCHM.I1@ @1@ @@ @CATMVS.MVSCHM.T1L@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 11 4 @CATMVS.MVSCHM.I1@ @0@ @@ @CATMVS.MVSCHM.T1L@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.T1L> ;
+
+--- SQL operation complete.
+>>drop index i1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------------------------------------------------
+>>-- Clean and Exit
+>>log;

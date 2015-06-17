@@ -1,0 +1,462 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION 'off';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_ROWCOUNT_REQUIRING_STATS '1';
+
+--- SQL operation complete.
+>>
+>>CQD POS 'OFF';
+
+--- SQL operation complete.
+>>
+>>create schema cat.missingwarn;
+
+--- SQL operation complete.
+>>
+>>set schema cat.missingwarn;
+
+--- SQL operation complete.
+>>
+>>create table cube1
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int, e int, f int, txt char(100));
+
+--- SQL operation complete.
+>>
+>>create table cube2 like cube1;
+
+--- SQL operation complete.
+>>
+>>create table cube3 like cube1;
+
+--- SQL operation complete.
+>>
+>>create table cube4 like cube1;
+
+--- SQL operation complete.
+>>
+>>insert into cube1 (select * from cat.hcube.cube1);
+
+--- 100000 row(s) inserted.
+>>
+>>insert into cube2 (select * from cube1 where a > 10 or b < 5);
+
+*** WARNING[6008] Statistics for column (A) from table CAT.MISSINGWARN.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (B) from table CAT.MISSINGWARN.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+
+--- 5000 row(s) inserted.
+>>
+>>insert into cube3 (select * from cube2 where a = 5 or b = 3 or c = 2);
+
+*** WARNING[6008] Statistics for column (A) from table CAT.MISSINGWARN.CUBE2 were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (B) from table CAT.MISSINGWARN.CUBE2 were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (C) from table CAT.MISSINGWARN.CUBE2 were not available. As a result, the access path chosen might not be the best possible.
+
+--- 1436 row(s) inserted.
+>>
+>>insert into cube4 (select * from cube1 where d = 5 and e > 6);
+
+*** WARNING[6008] Statistics for column (D) from table CAT.MISSINGWARN.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (E) from table CAT.MISSINGWARN.CUBE1 were not available. As a result, the access path chosen might not be the best possible.
+
+--- 9300 row(s) inserted.
+>>
+>>update statistics for table cube1 on a,b,c,d,e,f,txt;
+
+--- SQL operation complete.
+>>
+>>update statistics for table cube2 on a,b,c,d,e,f,txt;
+
+--- SQL operation complete.
+>>
+>>update statistics for table cube3 on a,b,c,d,e,f,txt;
+
+--- SQL operation complete.
+>>
+>>update statistics for table cube4 on a,b,c,d,e,f,txt;
+
+--- SQL operation complete.
+>>
+>>-- Q1
+>>prepare xx from select * from cube1 where e = 5 and f = 3;
+
+*** WARNING[6007] Multi-column statistics for columns (E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q2
+>>prepare xx from select * from cube1 where e = 5 and f = 3 and b = 4;
+
+*** WARNING[6007] Multi-column statistics for columns (B, E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q3
+>>prepare xx from select * from cube1 where e = 5 and f = 3 and b > 4 and a < 3;
+
+*** WARNING[6007] Multi-column statistics for columns (E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q4
+>>prepare xx from select * from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.d;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q5
+>>prepare xx from select * from cube1, cube2, cube3, cube4 where 
++>cube1.a = cube2.a and
++>cube1.b = cube3.b and
++>cube1.d = cube4.d;
+
+--- SQL command prepared.
+>>
+>>-- Q6
+>>prepare xx from select * from cube1, cube2, cube3, cube4 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.c = cube3.c and
++>cube1.d = cube4.d;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q7
+>>prepare xx from select count(*) from cube1 where e = 5 and f = 3
++>group by a,b;
+
+*** WARNING[6007] Multi-column statistics for columns (E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q8
+>>prepare xx from select count(*) from cube1 where e = 5 and f = 3 and b = 4
++>group by e,f,b,a;
+
+*** WARNING[6007] Multi-column statistics for columns (B, E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q9
+>>prepare xx from select count(*) from cube1 where e = 5 and f = 3 and b > 4 and a < 3
++>group by a,b,e,f;
+
+*** WARNING[6007] Multi-column statistics for columns (E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q10
+>>prepare xx from select cube1.a, cube1.b, cube1.d from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.d
++>group by cube1.a, cube1.b, cube1.d;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q11
+>>prepare xx from select cube1.a, cube2.a, cube1.b, cube2.b from cube1, cube2
++>group by cube1.a, cube2.a, cube1.b, cube2.b;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q12
+>>prepare xx from select cube1.a, cube1.b, cube1.d from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.d
++>group by cube1.a, cube1.b, cube1.c, cube1.d having
++>cube1.a =5 and cube1.c = 4;
+
+*** WARNING[6007] Multi-column statistics for columns (A, C) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (B, D) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (B, D) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q13
+>>prepare xx from select cube1.a, cube2.a, cube1.b, cube2.b from cube1, cube2
++>group by cube1.a, cube2.a, cube1.b, cube2.b having cube1.a = 5 and cube1.b = 4;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q14
+>>prepare xx from select cube1.a, cube2.a, cube1.b, cube2.b from cube1, cube2
++>group by cube1.a, cube2.a, cube1.b, cube2.b 
++>having cube1.a = 5 and cube1.b = 4 or
++>cube2.a = 4 and cube2.b = 5;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q15
+>>prepare xx from select cube1.a, cube1.b, cube1.c from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.c and
++>cube1.f = cube2.f
++>group by cube1.a, cube1.b, cube1.c;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C, F) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q16
+>>update statistics for table cube2 on (a,b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D).
+
+--- SQL operation completed with warnings.
+>>-- cube2 (a,b,c) is unique hence should not give warning for cube2(a,b,c,f)
+>>prepare xx from select cube1.a, cube1.b, cube1.c from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.c and
++>cube1.f = cube2.f
++>group by cube1.a, cube1.b, cube1.c;
+
+--- SQL command prepared.
+>>
+>>-- Q17
+>>update statistics for table cube1 on (a,b,d);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(C).
+
+--- SQL operation completed with warnings.
+>>-- cube1 (a,b,d) is not almost unique so there should be no change in the warnings
+>>-- from previous query
+>>prepare xx from select cube1.a, cube1.b, cube1.c from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.c and
++>cube1.f = cube2.f
++>group by cube1.a, cube1.b, cube1.c;
+
+--- SQL command prepared.
+>>
+>>-- Q18
+>>-- clear cube1 (a,b,d) and generate statistics for cube1 (a,b,f)
+>>-- since cube1 (a,b,f) are almost unique hence should not get a warning for 
+>>-- cube1 (a,b,d,f)
+>>update statistics for table cube1 on (a,b,d) clear;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D),(C),(B),(A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table cube1 on (a,b,f);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(E),(D),(C).
+
+--- SQL operation completed with warnings.
+>>prepare xx from select cube1.a, cube1.b, cube1.c from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.c and
++>cube1.f = cube2.f
++>group by cube1.a, cube1.b, cube1.c;
+
+--- SQL command prepared.
+>>
+>>-- Q19
+>>prepare xx from select cube1.a, cube1.b, cube1.c from cube1, cube2 where 
++>cube1.a = cube2.a and
++>cube1.b = cube2.b and
++>cube1.d = cube2.c and
++>cube1.e = cube2.e and
++>cube1.f = cube2.f 
++>group by cube1.a, cube1.b, cube1.c;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C, E, F) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, D, E, F) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B) from table CAT.MISSINGWARN.CUBE2 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q20
+>>prepare xx from
++>select * from cube1, cube2, cube3, cube4 where
++>cube1.a = cube2.a and
++>cube1.a = cube3.a and
++>cube1.b = cube2.b and
++>cube1.b = cube3.b and
++>cube1.c = cube2.c and
++>cube1.c = cube3.c and
++>cube1.c = cube4.c;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C) from table CAT.MISSINGWARN.CUBE3 were not available. The columns were being used by Join operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q21
+>>-- Should get warning only for group by
+>>prepare xx from
++>select cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c 
++>from cube1, cube2, cube3, cube4 where
++>cube1.a = cube2.a and
++>cube1.b = cube3.b and
++>cube1.c = cube4.c group by
++>cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c;
+
+*** WARNING[6007] Multi-column statistics for columns (A, B, C) from table CAT.MISSINGWARN.CUBE1 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q22
+>>-- update statistics for subset of columns and retry.
+>>-- If the subsets do not form a unique index, the warning 
+>>-- should not go away
+>>update statistics for table cube1 on (a,b), (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D),(F, B, A).
+
+--- SQL operation completed with warnings.
+>>prepare xx from
++>select cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c 
++>from cube1, cube2, cube3, cube4 where
++>cube1.a = cube2.a and
++>cube1.b = cube3.b and
++>cube1.c = cube4.c group by
++>cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c;
+
+--- SQL command prepared.
+>>
+>>-- Q23
+>>-- add statistics for table cube1 (a,c). No impact on warnings
+>>update statistics for table cube1 on (a,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D),(B),(F, B, A),(C, B),(B, A).
+
+--- SQL operation completed with warnings.
+>>prepare xx from
++>select cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c 
++>from cube1, cube2, cube3, cube4 where
++>cube1.a = cube2.a and
++>cube1.b = cube3.b and
++>cube1.c = cube4.c group by
++>cube1.a, cube1.b, cube1.c, cube2.a, cube3.b, cube4.c;
+
+--- SQL command prepared.
+>>
+>>-- use another table and try to incrementally create statistics to see the
+>>-- impact on warnings
+>>-- Q24
+>>prepare xx from select * from cube4
++>where e =3 and f = 4 and c = 5 and b = 5;
+
+*** WARNING[6007] Multi-column statistics for columns (B, C, E, F) from table CAT.MISSINGWARN.CUBE4 were not available. The columns were being used by Scan operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>-- Q25
+>>-- update statistics for (b,c) - should have no effect on warnings
+>>update statistics for table cube4 on (b,c);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D),(A).
+
+--- SQL operation completed with warnings.
+>>prepare xx from select * from cube4
++>where e =3 and f = 4 and c = 5 and b = 5;
+
+--- SQL command prepared.
+>>update statistics for table cube4 on (b,c) clear;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(E),(D),(C),(B),(A).
+
+--- SQL operation completed with warnings.
+>>
+>>-- Q26
+>>-- update statistics for table (c,f). Since stats for (b,e) and (c,f)
+>>-- exist and their product is equal to row count, do not issue a warning
+>>-- for (a,b,c,f)
+>>update statistics for table cube4 on (b,e);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(F),(D),(C),(A).
+
+--- SQL operation completed with warnings.
+>>update statistics for table cube4 on (c,f);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (TXT),(E),(D),(B),(A),(E, B).
+
+--- SQL operation completed with warnings.
+>>prepare xx from select * from cube4
++>where e =3 and f = 4 and c = 5 and b = 5;
+
+--- SQL command prepared.
+>>
+>>drop schema cat.missingwarn cascade;
+
+--- SQL operation complete.
+>>
+>>log;

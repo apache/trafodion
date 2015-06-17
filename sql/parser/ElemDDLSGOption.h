@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ class ElemDDLSGOptionMaxValue;
 class ElemDDLSGOptionCacheOption;
 class ElemDDLSGOptionCycleOption;
 class ElemDDLSGOptionDatatype;
+class ElemDDLSGOptionResetOption;
 
 // -----------------------------------------------------------------------
 // forward references
@@ -347,6 +348,34 @@ private:
   ComFSDataType dt_;
 
 }; // class ElemDDLSGOptionDatatype
+
+// -----------------------------------------------------------------------
+// definition of class ElemDDLSGOptionResetOption
+// -----------------------------------------------------------------------
+class ElemDDLSGOptionResetOption : public ElemDDLSGOption
+{
+
+public:
+
+  // constructor
+  ElemDDLSGOptionResetOption();
+
+  // virtual destructor
+  virtual ~ElemDDLSGOptionResetOption();
+
+  // cast
+  virtual ElemDDLSGOptionResetOption * castToElemDDLSGOptionResetOption();
+
+  // methods for tracing
+  virtual const NAString displayLabel1() const;
+  virtual const NAString getText() const;
+
+  // method for building text
+  virtual NAString getSyntax() const;
+
+private:
+}; // class ElemDDLSGOptionResetOption
+
 
 // -----------------------------------------------------------------------
 // definitions of inline methods for class ElemDDLSGOptionStartValue

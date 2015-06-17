@@ -535,6 +535,23 @@
 
 --- 1 row(s) selected.
 >>
+>>select timestamp '2015-05-31T10:11:12' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 10:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12Z' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 10:11:12
+
+--- 1 row(s) selected.
+>>
 >>-- Prove these cases work since they're used in the succeeding negative tests.
 >>
 >>select cast (cast (-10 as smallint) as numeric(2)) from t022t1;
@@ -2364,6 +2381,16 @@ A      B
 
 --- 1 row(s) inserted.
 >>
+>>set param ?p '2015-05-31T14:15:16Z';
+>>insert into t022t8 (c1) values ( ?p );
+
+--- 1 row(s) inserted.
+>>
+>>set param ?p '2015-05-31T14:15:16';
+>>insert into t022t8 (c1) values ( ?p );
+
+--- 1 row(s) inserted.
+>>
 >>set param ?p '2100-01-01:00:00:47.250000';
 >>insert into t022t8 (c1) values ( ?p );
 
@@ -2442,6 +2469,8 @@ C1
 --------------------------
 
 1998-12-05 15:15:08.123456
+2015-05-31 14:15:16.000000
+2015-05-31 14:15:16.000000
 2100-01-01 00:00:47.250000
 1998-12-05 22:15:08.889000
 1998-06-28 15:15:08.000000
@@ -2449,7 +2478,7 @@ C1
 1998-12-05 03:15:08.123456
 1998-12-05 03:15:08.123456
 
---- 7 row(s) selected.
+--- 9 row(s) selected.
 >>
 >>-- test convDoIt with time
 >>set param ?p '03:15:08 pm';
@@ -2559,6 +2588,8 @@ C2
 ?       
 ?       
 ?       
+?       
+?       
 15:15:08
 23:15:08
 10:15:08
@@ -2572,7 +2603,7 @@ C2
 00:01:00
 22:36:52
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>
 >>-- test type casting involving the ordering of digits and other symbols 
 >>-- like - . +
@@ -2603,14 +2634,18 @@ C2
           0            1          -32
           0            1          -32
           0            1          -32
+          0            1          -32
+          0            1          -32
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>select c1 from t022t8 where cast('-.3' as int) < 1 and cast('+1.5' as int) <2;
 
 C1                        
 --------------------------
 
 1998-12-05 15:15:08.123456
+2015-05-31 14:15:16.000000
+2015-05-31 14:15:16.000000
 2100-01-01 00:00:47.250000
 1998-12-05 22:15:08.889000
 1998-06-28 15:15:08.000000
@@ -2630,7 +2665,7 @@ C1
 ?                         
 ?                         
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>
 >>select cast ('123.' as real) ,
 +>       cast ('123.12' as real),
@@ -3891,7 +3926,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2014-08-18 23:03:27.240987
+10:13:14.0000  10:13:14.0000  2015-05-31 18:36:57.294491
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -4311,6 +4346,90 @@ IU          SS
 >>select * from t022tg where ss>=iu;
 
 --- 0 row(s) selected.
+>>
+>>-- check for string truncation, with and without auto truncate
+>>delete from t022u2;
+
+--- 4 row(s) deleted.
+>>insert into t022u2 (c) values (1);
+
+--- 1 row(s) inserted.
+>>
+>>-- should return truncation error
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,12 BYTES,ISO88591) Source Value:abcdefghijkl to Target Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591).
+
+--- 0 row(s) inserted.
+>>update t022u2 set a = 'abcdefghijkl';
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,12 BYTES,ISO88591) Source Value:abcdefghijkl to Target Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591).
+
+--- 0 row(s) updated.
+>>
+>>-- should not return truncation errors.
+>>cqd traf_string_auto_truncate 'ON';
+
+--- SQL operation complete.
+>>delete from t022u2;
+
+--- 1 row(s) deleted.
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+--- 1 row(s) inserted.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+abcdefghij  ?                               ?
+
+--- 1 row(s) selected.
+>>update t022u2 set a = 'lkjihgfedcba';
+
+--- 1 row(s) updated.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+lkjihgfedc  ?                               ?
+
+--- 1 row(s) selected.
+>>
+>>-- return warnings if truncation occurs
+>>cqd traf_string_auto_truncate_warning 'ON';
+
+--- SQL operation complete.
+>>delete from t022u2;
+
+--- 1 row(s) deleted.
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) inserted.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+abcdefghij  ?                               ?
+
+--- 1 row(s) selected.
+>>update t022u2 set a = 'lkjihgfedcba';
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) updated.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+lkjihgfedc  ?                               ?
+
+--- 1 row(s) selected.
 >>
 >>-- done
 >>log;
@@ -4853,6 +4972,23 @@ IU          SS
 --------
 
 23:59:59
+
+--- 1 row(s) selected.
+>>
+>>select timestamp '2015-05-31T10:11:12' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 10:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12Z' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 10:11:12
 
 --- 1 row(s) selected.
 >>
@@ -6685,6 +6821,16 @@ A      B
 
 --- 1 row(s) inserted.
 >>
+>>set param ?p '2015-05-31T14:15:16Z';
+>>insert into t022t8 (c1) values ( ?p );
+
+--- 1 row(s) inserted.
+>>
+>>set param ?p '2015-05-31T14:15:16';
+>>insert into t022t8 (c1) values ( ?p );
+
+--- 1 row(s) inserted.
+>>
 >>set param ?p '2100-01-01:00:00:47.250000';
 >>insert into t022t8 (c1) values ( ?p );
 
@@ -6763,6 +6909,8 @@ C1
 --------------------------
 
 1998-12-05 15:15:08.123456
+2015-05-31 14:15:16.000000
+2015-05-31 14:15:16.000000
 2100-01-01 00:00:47.250000
 1998-12-05 22:15:08.889000
 1998-06-28 15:15:08.000000
@@ -6770,7 +6918,7 @@ C1
 1998-12-05 03:15:08.123456
 1998-12-05 03:15:08.123456
 
---- 7 row(s) selected.
+--- 9 row(s) selected.
 >>
 >>-- test convDoIt with time
 >>set param ?p '03:15:08 pm';
@@ -6880,6 +7028,8 @@ C2
 ?       
 ?       
 ?       
+?       
+?       
 15:15:08
 23:15:08
 10:15:08
@@ -6893,7 +7043,7 @@ C2
 00:01:00
 22:36:52
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>
 >>-- test type casting involving the ordering of digits and other symbols 
 >>-- like - . +
@@ -6924,14 +7074,18 @@ C2
           0            1          -32
           0            1          -32
           0            1          -32
+          0            1          -32
+          0            1          -32
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>select c1 from t022t8 where cast('-.3' as int) < 1 and cast('+1.5' as int) <2;
 
 C1                        
 --------------------------
 
 1998-12-05 15:15:08.123456
+2015-05-31 14:15:16.000000
+2015-05-31 14:15:16.000000
 2100-01-01 00:00:47.250000
 1998-12-05 22:15:08.889000
 1998-06-28 15:15:08.000000
@@ -6951,7 +7105,7 @@ C1
 ?                         
 ?                         
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>
 >>select cast ('123.' as real) ,
 +>       cast ('123.12' as real),
@@ -8212,7 +8366,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2014-08-18 23:05:21.330991
+10:13:14.0000  10:13:14.0000  2015-05-31 18:39:19.247095
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -8632,6 +8786,96 @@ IU          SS
 >>select * from t022tg where ss>=iu;
 
 --- 0 row(s) selected.
+>>
+>>-- check for string truncation, with and without auto truncate
+>>delete from t022u2;
+
+--- 4 row(s) deleted.
+>>insert into t022u2 (c) values (1);
+
+--- 1 row(s) inserted.
+>>
+>>-- should return truncation error
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) inserted.
+>>update t022u2 set a = 'abcdefghijkl';
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 2 row(s) updated.
+>>
+>>-- should not return truncation errors.
+>>cqd traf_string_auto_truncate 'ON';
+
+--- SQL operation complete.
+>>delete from t022u2;
+
+--- 2 row(s) deleted.
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) inserted.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+abcdefghij  ?                               ?
+
+--- 1 row(s) selected.
+>>update t022u2 set a = 'lkjihgfedcba';
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) updated.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+lkjihgfedc  ?                               ?
+
+--- 1 row(s) selected.
+>>
+>>-- return warnings if truncation occurs
+>>cqd traf_string_auto_truncate_warning 'ON';
+
+--- SQL operation complete.
+>>delete from t022u2;
+
+--- 1 row(s) deleted.
+>>insert into t022u2 (a) values ('abcdefghijkl');
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) inserted.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+abcdefghij  ?                               ?
+
+--- 1 row(s) selected.
+>>update t022u2 set a = 'lkjihgfedcba';
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 1 row(s) updated.
+>>select * from t022u2;
+
+A           B                     C          
+----------  --------------------  -----------
+
+lkjihgfedc  ?                               ?
+
+--- 1 row(s) selected.
 >>
 >>-- done
 >>log;

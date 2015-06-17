@@ -1,0 +1,443 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV220
+--  Refresh utility pre-runtime checks
+------------------------------------------------------
+set schema catmvs.mvschm;
+obey TESTMV220(CLEAN_UP);
+log LOGMV220 clear;
+obey TESTMV220(SET_UP);
+
+-- Run Tests
+
+	obey TESTMV220(TEST1);
+	obey TESTMV220(TEST2);
+	obey TESTMV220(TEST3);
+	obey TESTMV220(TEST4);
+	obey TESTMV220(TEST5);
+	obey TESTMV220(TEST7);
+	obey TESTMV220(TEST8); 
+	obey TESTMV220(TEST9);
+
+
+-- Check the drop statement on the way out
+
+obey TESTMV220(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+exit;
+
+
+------------------------------------------------------
+?section SET_UP
+------------------------------------------------------
+set PARSERFLAGS 3;
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG220_cancel;
+
+create table T_220_T1 (a int not null not droppable,b int);
+ALTER TABLE T_220_T1 attribute all mvs allowed;
+create table T_220_T2 (c int,d int);
+ALTER TABLE T_220_T2 attribute all mvs allowed;
+create table T_220_T3 (e int,f int);
+ALTER TABLE T_220_T3 attribute all mvs allowed;
+create table T_220_T4 (g int,h int);
+ALTER TABLE T_220_T4 attribute all mvs allowed;
+create table T_220_T5 (c int,d int) attribute NO LOCKONREFRESH;
+ALTER TABLE T_220_T5 attribute all mvs allowed;
+ 
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+insert into T_220_T5 values(1,1);
+
+create mv T_220_MV1 
+	refresh on request 
+	initialize on create
+	as 
+	select sum(a) as sum_a,b from T_220_T1, T_220_T2 
+	where b=d group by b;
+ALTER MV T_220_MV1 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add T_220_MV1;
+
+create mv T_220_MV2 
+	refresh on request 
+	initialize on create
+	as select sum(b) as sum_b,a from T_220_T1, T_220_T2 
+	where b=d group by a;
+ALTER MV T_220_MV2 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add T_220_MV2;
+
+create mv T_220_MV3 
+	refresh on request 
+	initialize on create
+	as select sum(e) as sum_e,g from T_220_T3, T_220_T4 
+	where f=g group by g;
+ALTER MV T_220_MV3 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV3;
+
+create mv T_220_MV4 
+	refresh on request 
+	initialize on refresh 
+	as select sum(f) as sum_f ,e  
+	from T_220_MV1,T_220_T3 where b=e group by e;
+ALTER MV T_220_MV4 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV4;
+
+create mv T_220_MV5 
+	refresh on request 
+	initialize on refresh 
+	as select sum(sum_a) as sum_aa,g  
+	from T_220_MV1,T_220_MV3 where b=g group by g;
+ALTER MV T_220_MV5 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV5;
+
+create mv T_220_MV6 
+	recompute 
+	initialize on refresh 
+	as select b,g from T_220_MV1,T_220_MV3 where b=g;
+ALTER MV T_220_MV6 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV6;
+
+create mv T_220_MV7  
+	recompute 
+	initialize on refresh 
+	as select e,f from T_220_MV1,T_220_T3 where e=f;
+ALTER MV T_220_MV7 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV7;
+
+create mv T_220_MV8
+	refresh on statement
+	initialize on create 
+	as select * from T_220_T1;
+ALTER MV T_220_MV8 attribute all mvs allowed;
+
+create mv T_220_MV9 
+	refresh on request 
+	initialize on refresh 
+	as select sum(sum_a) as sum_aa,g  from T_220_MV1,T_220_MV3 
+	where b=g group by g;
+ALTER MV T_220_MV9 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV9;
+
+create mv T_220_MV10  
+	refresh on request 
+	initialize on refresh  
+	as select sum(g) as sum_g from T_220_MV9   group by g;
+ALTER MV T_220_MV10 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV10;
+
+create mv T_220_MV11 
+	refresh on request 
+	initialize on refresh 
+	as select sum(c) as sum_c from T_220_T5 group by d;
+ALTER MV T_220_MV11 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV11;
+
+create mv T_220_MV12 
+	refresh on statement 
+	initialize on refresh as select * from T_220_T5;
+ALTER MV T_220_MV12 attribute all mvs allowed;
+
+create mv T_220_MV13
+	refresh on statement
+	initialize on refresh 
+	as
+        select a,count(b) Bb
+	from T_220_T1
+	group by a;
+ALTER MV T_220_MV13 attribute all mvs allowed;
+
+create mv T_220_MV14 
+	refresh on statement 
+	initialize on refresh
+	as 
+	select * from T_220_MV13;
+ALTER MV T_220_MV14 attribute all mvs allowed;
+
+create mv T_220_MV15
+	refresh on request
+	initialize on create
+	store by (a)
+	as
+        select a,count(b) Bb
+	from T_220_T1
+	group by a;
+ALTER MV T_220_MV15 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV15;
+
+create mv T_220_MV16
+	recompute
+	initialize on create
+	as
+        select a,count(b) Bb
+	from T_220_T1
+	group by a;
+ALTER MV T_220_MV16 attribute all mvs allowed;
+ALTER MVGroup MVG220_cancel add  T_220_MV16; 
+
+
+------------------------------------------------------
+?section TEST1
+------------------------------------------------------
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+
+-- Fail must use cascade or mvgroup
+refresh T_220_MV5 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+
+-- Fail must use cascade or mvgroup
+refresh T_220_MV6 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+
+-- Fail must use cascade or mvgroup
+refresh T_220_MV7 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+------------------------------------------------------
+?section TEST2
+------------------------------------------------------
+
+-- Fail recompute task on more than one mv's 
+refresh T_220_MV4 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- PASS
+refresh T_220_MV4 cascade outfile REFRESH.LOG;
+
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+
+-- Fail not all deltas other than mv are empty
+refresh T_220_MV4 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- PASS
+refresh T_220_MV4 cascade outfile REFRESH.LOG;
+
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+refresh T_220_MV1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- PASS
+refresh T_220_MV4 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+------------------------------------------------------
+?section TEST3
+------------------------------------------------------
+-- Fail,second initialization in on statement mv
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+insert into T_220_T5 values(1,1);
+
+refresh T_220_MV8 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+------------------------------------------------------
+?section TEST4
+------------------------------------------------------
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+insert into T_220_T5 values(1,1);
+
+-- Fail,not all underlying mv's are already initialized
+refresh T_220_MV10 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+------------------------------------------------------
+?section TEST5
+------------------------------------------------------
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+insert into T_220_T5 values(1,1);
+
+-- Fail,recompute cannot be on no lock on refresh
+refresh T_220_MV11 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+insert into T_220_T1 values(1,1);
+insert into T_220_T2 values(1,1);
+insert into T_220_T3 values(1,1);
+insert into T_220_T4 values(1,1);
+insert into T_220_T5 values(1,1);
+
+-- Fail,recompute cannot be on no lock on refresh
+refresh T_220_MV12 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+
+--------------------------------------------------------
+?section TEST7
+--------------------------------------------------------
+-- Expected ERROR
+
+refresh T_220_MV14 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- Expected ERROR
+refresh T_220_MV14 cascade outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+
+------------------------------------------------------
+?section TEST8
+------------------------------------------------------
+Alter mv T_220_MV15 MVAttribute NO AUDIT;
+
+insert into T_220_t1 values (2, 100);
+
+-- MV - un-available
+refresh T_220_MV15 debug 102 target CATMVS.MVSCHM.T_220_MV15;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- Expected FAIL with message " refresh recompute" 
+refresh  T_220_MV15 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- Expected Success
+refresh T_220_MV15 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+------------------------------------------------------
+?section TEST9
+------------------------------------------------------
+drop mv T_220_MV8 cascade; 
+drop mv T_220_MV13 cascade;
+set parserflags 1024; -- allow no audit
+--Alter table T_220_T1 attribute NO AUDIT;
+reset parserflags 1024;
+
+-- Expected FAIL - incremental MV
+Refresh T_220_MV1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+-- Expected Success - recomputed MV
+Refresh T_220_MV16 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+set parserflags 1024; -- allow no audit
+--Alter table T_220_T1 attribute AUDIT;
+reset parserflags 1024;
+
+-- Expected Success
+Refresh T_220_MV1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+
+------------------------------------------------------
+?section CLEAN_UP
+------------------------------------------------------
+refresh T_220_MV15 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+refresh mvgroup MVG220_cancel cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV220;
+log LOGMV220;
+
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+
+
+drop table T_220_T1 cascade;
+drop table T_220_T2 cascade;
+drop table T_220_T3 cascade;
+drop table T_220_T4 cascade;
+drop table T_220_T5 cascade;
+
+drop mvgroup MVG220_cancel;
+
+set param ?schema_name 'MVSCHM';
+
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;

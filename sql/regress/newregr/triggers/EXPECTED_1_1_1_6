@@ -1,0 +1,19 @@
+>>obey TEST_1_1_1_6(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig6 AFTER DELETE
++>	ON tab1A
++>	REFERENCING OLD AS oldt
++>	FOR EACH STATEMENT
++>
++>		INSERT INTO tab1B
++>			(SELECT c, d FROM oldt
++>				WHERE b = 100000);
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>LOG;

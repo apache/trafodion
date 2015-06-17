@@ -1,0 +1,2304 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>control query default merge_joins 'off';
+
+--- SQL operation complete.
+>>
+>>set schema cat.mcrand;
+
+--- SQL operation complete.
+>>
+>>-- Total RC of RC2 - 100,000
+>>-- Total RC of FACTS - 30,000
+>>
+>>-- 1
+>>-- actual RC - 30M
+>>
+>>prepare xx from
++>select facts.z, rc2.z from facts left outer join RC2 on facts.z = rc2.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            3.05E+007           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 2
+>>-- actual RC - 129K
+>>
+>>prepare xx from
++>select facts.xyz, rc2.z from facts left outer join RC2 on facts.xyz = rc2.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.29E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.xyz = rc2.z;
+
+--- SQL command prepared.
+>>
+>>-- 3
+>>-- actual RC - 129K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.xyz = rc2.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.29E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 4
+>>-- actual RC - 668K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            6.62E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 5
+>>-- actual RC - 683K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            6.77E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 6
+>>-- actual RC - 633K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z and facts.fxyz1 > 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            5.82E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              8.88E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- 7
+>>-- actual RC - 658K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z and facts.fxyz1 > 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            6.06E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 8
+>>-- actual RC - 5.8K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z where facts.fxyz1 = 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            6.81E+003           
+2     FILE_SCAN                       FACTS            7.00E+000           
+3     FILE_SCAN                       RC2              9.74E+002           
+
+--- 3 row(s) selected.
+>>
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                5844
+
+--- 1 row(s) selected.
+>>
+>>-- 9
+>>-- actual RC - 5.8K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z where facts.fxyz1 = 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            3.67E+003           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 10
+>>-- actual RC - 5.8K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.fxyz1 = rc2.z where rc2.z = 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            3.76E+003           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 11
+>>-- actual RC - 691K
+>>
+>>prepare xx from 
++>select count(*) from facts left join rc2 on facts.fxyz1 = rc2.z + 1;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            3.83E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 12
+>>-- actual RC - 706K
+>>-- Join on an expression. Estimated cardinality is as per the expected per 
+>>-- the design
+>>
+>>prepare xx from 
++>select count(*) from facts full outer join rc2 on facts.fxyz1 = rc2.z + 1;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            3.83E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 13
+>>-- actual RC - 668K
+>>prepare xx from 
++>select count(*) from facts left join rc2 on facts.fxyz1 = cast(rc2.z as real);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            6.62E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 14
+>>-- actual RC - 39.9K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.xy = rc2.z and facts.xy > 10 and facts.xy < 12;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            3.99E+004           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              9.96E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 15
+>>-- actual RC - 138K
+>>
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.xy = rc2.z and facts.xy > 10 and facts.xy < 12;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.38E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 16
+>>-- actual RC - 49.6K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.fxyz1 = rc2.z and facts.fxy = 10;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            3.00E+004           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 17
+>>-- Without MC stats OJ expected card = 347K. The cardinality is very high 
+>>-- right after the inner join is done between facts and rc2. It is estimated 
+>>-- as 665K, and this eventually leads to high OJ estimate
+>>-- actual RC - 348K
+>>
+>>prepare xx from
++>select count(*) from facts left outer join RC2 on facts.x = rc2.x and facts.y = rc2.y;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            6.80E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 18
+>>prepare xx from
++>select count(*) from facts full outer join RC2 on facts.x = rc2.x and facts.y = rc2.y;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            6.80E+005           
+2     FILE_SCAN                       FACTS            3.00E+004           
+3     FILE_SCAN                       RC2              1.00E+005           
+
+--- 3 row(s) selected.
+>>
+>>-- 19
+>>prepare xx from
++>select count(*) from (facts left join rc2 on facts.xy = rc2.z) left join randcols on rc2.y = randcols.y;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.03E+009           
+2     LEFT_HYBRID_HASH_JOIN                            1.02E+006           
+3     FILE_SCAN                       FACTS            3.00E+004           
+4     FILE_SCAN                       RC2              1.00E+005           
+5     FILE_SCAN                       RANDCOLS         1.00E+005           
+
+--- 5 row(s) selected.
+>>
+>>-- 20
+>>prepare xx from
++>select count(*) from (facts full join rc2 on facts.fxyz1 = rc2.z), randcols where rc2.y = randcols.y;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.84E+008           
+2     FULL_HYBRID_HASH_JOIN                            6.77E+005           
+3     FILE_SCAN                       FACTS            3.00E+004           
+4     FILE_SCAN                       RC2              1.00E+005           
+5     FILE_SCAN                       RANDCOLS         1.00E+005           
+
+--- 5 row(s) selected.
+>>
+>>------------------------------------------------
+>>
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
+>>-- 21
+>>-- actual RC - 10K
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.b = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- 22
+>>-- actual RC - 10K
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T9               1.00E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- first left join transformed to inner join
+>>-- 23
+>>-- actual RC - 1.9K
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a
++>     LEFT JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 24
+>>-- actual RC - 1.09K
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.a
++>    LEFT JOIN T7 ON T8.a = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.09E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 25
+>>-- actual RC - 19K
+>>
+>>prepare xx from
++>select count(*) from 
++>T8 LEFT JOIN T9 ON T8.a = T9.b
++>    LEFT JOIN T7 ON T8.b = T7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+004           
+2     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+3     INDEX_SCAN                      T8               1.00E+003           
+4     INDEX_SCAN                      T7               1.00E+002           
+5     INDEX_SCAN                      T9               1.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>-- 26
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t5 natural full outer join t8;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 27
+>>-- actual RC - 10
+>>
+>>prepare xx from
++>select T1.b from T1 left join T2 on t1.a = t2.a 
++>left join T3 ON T1.B = T3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     FILE_SCAN                       T1               1.00E+001           
+3     FILE_SCAN                       T3               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 28
+>>-- actual RC - 10
+>>
+>>prepare xx from
++>select count(*) from T1 left join T2 on t1.a = t2.a 
++>left join T3 ON T1.B = T3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     FILE_SCAN                       T1               1.00E+001           
+3     FILE_SCAN                       T3               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 29
+>>-- actual RC - 10
+>>
+>>prepare xx from
++>select T1.b from T2 left join T1 on t1.a = t2.a 
++>left join T3 ON T1.B = T3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+3     FILE_SCAN                       T2               1.00E+001           
+4     FILE_SCAN                       T1               1.00E+001           
+5     FILE_SCAN                       T3               1.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- 30
+>>-- actual RC - 10
+>>
+>>prepare xx from
++>select count(*) from T2 left join T1 on t1.a = t2.a 
++>left join T3 ON T1.B = T3.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+3     FILE_SCAN                       T2               1.00E+001           
+4     FILE_SCAN                       T1               1.00E+001           
+5     FILE_SCAN                       T3               1.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- 31
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t5 full outer join t8 on t5.b = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     INDEX_SCAN                      T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 32
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t5 full outer join t8 on t5.a = 20;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     INDEX_SCAN                      T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 33
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t5 full outer join t8 on t5.b = t8.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     INDEX_SCAN                      T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 34
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t8 full outer join t5 on t5.b = t8.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T5               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 35
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t8 full outer join t5 on t5.b = t8.a
++>      OR t5.b = 2;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     INDEX_SCAN                      T8               1.00E+003           
+3     FILE_SCAN                       T5               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 36
+>>-- actual RC - 10K
+>>
+>>prepare xx from
++>select count(*) from t5 full outer join t8 on t5.b = t8.b
++>      left outer join t9 on t8.b = t9.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+3     FILE_SCAN                       T5               1.00E+001           
+4     INDEX_SCAN                      T8               1.00E+003           
+5     INDEX_SCAN                      T9               1.00E+004           
+
+--- 5 row(s) selected.
+>>
+>>-- 37
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from t5 full outer join t8 on t5.b = t8.b
++>      and t8.c = t5.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 38
+>>-- actual RC - 1
+>>
+>>prepare xx from
++>select count(*) from t5 left outer join t8 on t5.b = t8.b
++>      and t8.c = t5.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T8               1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>-- 39
+>>-- actual RC - 10K
+>>
+>>prepare xx from
++>select count(*) 
++>from t4, (t5 left join t6 on t5.b = t6.b) left join t7 on t6.c = t7.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+003           
+3     LEFT_HYBRID_HASH_JOIN                            1.00E+002           
+4     FILE_SCAN                       T5               1.00E+001           
+5     FILE_SCAN                       T6               1.00E+002           
+6     INDEX_SCAN                      T7               1.00E+002           
+7     FILE_SCAN                       T4               1.00E+001           
+
+--- 7 row(s) selected.
+>>
+>>-- 40
+>>-- actual RC - 10K
+>>
+>>cqd join_order_by_user 'ON';
+
+--- SQL operation complete.
+>>prepare xx from
++>select count(*) 
++>from t4, (t5 left join t6 on t5.b = t6.b) full outer join t7 on t6.c = t7.c;
+
+--- SQL command prepared.
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     FILE_SCAN                       T4               1.00E+001           
+3     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+4     LEFT_HYBRID_HASH_JOIN                            1.00E+002           
+5     FILE_SCAN                       T5               1.00E+001           
+6     FILE_SCAN                       T6               1.00E+002           
+7     INDEX_SCAN                      T7               1.00E+002           
+
+--- 7 row(s) selected.
+>>
+>>-- 41
+>>-- actual RC - 10K
+>>
+>>cqd join_order_by_user 'ON';
+
+--- SQL operation complete.
+>>prepare xx from
++>select count(*) 
++>from t4, (t5 full outer join t6 on t5.b = t6.b) left join t7 on t6.c = t7.c;
+
+--- SQL command prepared.
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+004           
+2     HYBRID_HASH_JOIN                                 1.00E+003           
+3     FILE_SCAN                       T4               1.00E+001           
+4     FULL_HYBRID_HASH_JOIN                            1.00E+002           
+5     FILE_SCAN                       T5               1.00E+001           
+6     FILE_SCAN                       T6               1.00E+002           
+7     INDEX_SCAN                      T7               1.00E+002           
+
+--- 7 row(s) selected.
+>>
+>>-- 42
+>>-- actual RC - 10K
+>>
+>>cqd join_order_by_user 'ON';
+
+--- SQL operation complete.
+>>prepare xx from
++>select count(*) 
++>from t4, (t5 full outer join t6 on t5.b = t6.b) full outer join t7 on t6.c = t7.c;
+
+--- SQL command prepared.
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+004           
+2     FILE_SCAN                       T4               1.00E+001           
+3     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+4     FULL_HYBRID_HASH_JOIN                            1.00E+002           
+5     FILE_SCAN                       T5               1.00E+001           
+6     FILE_SCAN                       T6               1.00E+002           
+7     INDEX_SCAN                      T7               1.00E+002           
+
+--- 7 row(s) selected.
+>>
+>>-- 43
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6) r1 left join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+003           
+2     INDEX_SCAN                      T6               1.00E+002           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 44
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6) r1 full outer join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            1.00E+003           
+2     INDEX_SCAN                      T6               1.00E+002           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 45
+>>-- actual RC - 400
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b > 5) r1 left join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.00E+002           
+2     INDEX_SCAN                      T6               4.00E+001           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 46
+>>-- actual RC - 460
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b > 5) r1 full outer join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            4.60E+002           
+2     INDEX_SCAN                      T6               4.00E+001           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 47
+>>-- actual RC - 940
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where a > 5) r1 left join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.40E+002           
+2     INDEX_SCAN                      T6               9.40E+001           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 48
+>>-- actual RC - 940
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where a > 5) r1 full outer join t7 on r1.b = t7.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            9.40E+002           
+2     INDEX_SCAN                      T6               9.40E+001           
+3     INDEX_SCAN                      T7               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 49
+>>-- actual RC - 40
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b > 5) r1 left join
++>(select c from T7 where b = 20) r2 on r1.b = r2.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.00E+001           
+2     INDEX_SCAN                      T6               4.00E+001           
+3     FILE_SCAN                       T7               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 50
+>>-- actual RC - 40
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b > 5) r1 full outer join
++>(select c from T7 where b = 20) r2 on r1.b = r2.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            4.60E+001           
+2     INDEX_SCAN                      T6               4.00E+001           
+3     FILE_SCAN                       T7               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 51
+>>-- actual RC - 85
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b+5 > c) r1 left join
++>(select c from T7 where b = 3) r2 on r1.b = r2.c;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            8.50E+001           
+2     FILE_SCAN                       T6               8.50E+001           
+3     FILE_SCAN                       T7               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 52
+>>-- actual RC - 85
+>>
+>>prepare xx from
++>select count(*) from (Select b from T6 where b+5 > c) r1 full outer join
++>(select c from T7 where b = 3) r2 on r1.b = r2.c;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            8.50E+001           
+2     FILE_SCAN                       T6               8.50E+001           
+3     FILE_SCAN                       T7               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 53
+>>-- actual RC - 19
+>>
+>>prepare xx from
++>select  count(*)
++>  from t5 left join t6
++>  on t5.b = t6.b and t5.b = (case when 10 = 10
++>              then 5
++>              else 6 end) ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+001           
+2     FILE_SCAN                       T5               1.00E+001           
+3     INDEX_SCAN                      T6               1.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 54
+>>-- actual RC - 10
+>>
+>>prepare xx from
++>select  count(*)
++>  from t5 left join t6
++>  on t5.b = t6.b and t5.c = (case when 10 = 10
++>              then t6.c 
++>              else 6 end) ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+2     FILE_SCAN                       T5               1.00E+001           
+3     FILE_SCAN                       T6               1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 55
+>>-- actual RC - 1.9K
+>>
+>>prepare xx from
++>select count(*)
++>FROM
++>(Select T8.b, T2.b
++>From T8
++>LEFT JOIN T2 on T8.b=T2.b
++>) as T01(b, c)
++>LEFT join
++>T6
++>on (T01.b=T6.b)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+003           
+3     INDEX_SCAN                      T8               1.00E+003           
+4     FILE_SCAN                       T2               1.00E+001           
+5     INDEX_SCAN                      T6               1.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- 56
+>>-- actual RC - 1.9K
+>>
+>>prepare xx from
++>select count(*)
++>FROM
++>(Select T8.b, T2.b
++>From T8
++>LEFT JOIN T2 on T8.b=T2.b
++>) as T01(b, c)
++>LEFT join
++>T6
++>on (T01.c=T6.c)
++>;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+003           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+003           
+3     INDEX_SCAN                      T8               1.00E+003           
+4     FILE_SCAN                       T2               1.00E+001           
+5     INDEX_SCAN                      T6               1.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- 57
+>>-- actual RC - 1K
+>>
+>>prepare xx from
++>select count(*)
++>FROM
++>(Select T6.b, T2.b
++>From T6
++>LEFT JOIN T2 on T6.b=T2.b
++>) as T01(b, c)
++>LEFT join
++>(
++>Select T8.b, T3.b
++>From T8
++>LEFT JOIN T3 on T8.b=T3.b
++>) as T02(b, c)
++>on (T01.C=T02.C)
++>;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+003           
+2     LEFT_HYBRID_HASH_JOIN                            1.00E+002           
+3     INDEX_SCAN                      T6               1.00E+002           
+4     FILE_SCAN                       T2               1.00E+001           
+5     HYBRID_HASH_JOIN                                 1.00E+002           
+6     INDEX_SCAN                      T8               1.00E+003           
+7     FILE_SCAN                       T3               1.00E+001           
+
+--- 7 row(s) selected.
+>>
+>>-- 58
+>>-- actual RC - 20
+>>
+>>prepare xx from
++>select count(*) from t1 left join (select t2.a from t2 union all select t3.a from t3) t4(a) on t1.c=t4.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            2.00E+001           
+2     FILE_SCAN                       T1               1.00E+001           
+3     FILE_SCAN                       T3               1.00E+001           
+4     FILE_SCAN                       T2               1.00E+001           
+
+--- 4 row(s) selected.
+>>
+>>-- 59
+>>-- actual RC - 20
+>>
+>>prepare xx from
++>select count(*) from t1 full outer join (select t2.a from t2 union all select t3.a from t3) t4(a) on t1.c=t4.a;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            2.00E+001           
+2     FILE_SCAN                       T1               1.00E+001           
+3     FILE_SCAN                       T3               1.00E+001           
+4     FILE_SCAN                       T2               1.00E+001           
+
+--- 4 row(s) selected.
+>>
+>>-- 60
+>>
+>>prepare xx from
++>select count(*) from t7 full outer join t8 on t7.b = t8.b
++>full outer join t9 on t7.b = t9.b full outer join
++>t10 on t7.b = t10.b full outer join t2 on t7.b = t2.b;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            2.08E+006           
+2     FULL_HYBRID_HASH_JOIN                            2.08E+006           
+3     FULL_HYBRID_HASH_JOIN                            2.08E+004           
+4     FULL_HYBRID_HASH_JOIN                            1.90E+003           
+5     INDEX_SCAN                      T7               1.00E+002           
+6     INDEX_SCAN                      T8               1.00E+003           
+7     INDEX_SCAN                      T9               1.00E+004           
+8     INDEX_SCAN                      T10              1.00E+005           
+9     FILE_SCAN                       T2               1.00E+001           
+
+--- 9 row(s) selected.
+>>
+>>-------------------------------------------------------------------
+>>set schema cat.qaschema;
+
+--- SQL operation complete.
+>>
+>>-- 61
+>>-- actual RC - 46.6K
+>>
+>>prepare xx from
++>select count(*)
++>From F01
++>left join D01 on D01.pk=F01.fk_d01
++>inner join D02 on D02.pk=F01.fk_d02
++>inner join D03 on D03.pk=F01.fk_d03
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.66E+004           
+2     HYBRID_HASH_JOIN                                 4.66E+004           
+3     FILE_SCAN                       F01              4.66E+004           
+4     FILE_SCAN                       D03              1.00E+003           
+5     FILE_SCAN                       D02              1.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- 62
+>>-- actual RC - 23.3K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>inner join
++>  (select D01.val01,count(D01.pk)
++>   from D01
++>   group by D01.val01) as TD01(val01,pk) 
++>on TD01.pk=TF01.fk_d01
++>full outer join
++>
++>  (select D02.val01,count(D02.pk)
++>  from D02
++>  group by D02.val01) as TD02(val01,pk) 
++>on TD02.pk=TF01.fk_d02
++>full outer join
++>  (select D03.val01,count(D03.pk)
++>  from D03
++>  group by D03.val01) as TD03(val01,pk) 
++>on TD03.pk=TF01.fk_d03
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            2.33E+004           
+2     FULL_HYBRID_HASH_JOIN                            2.33E+004           
+3     HYBRID_HASH_JOIN                                 2.33E+004           
+4     FILE_SCAN                       F01              4.66E+004           
+5     FILE_SCAN                       D01              1.00E+001           
+6     FILE_SCAN                       D02              1.00E+002           
+7     FILE_SCAN                       D03              1.00E+003           
+
+--- 7 row(s) selected.
+>>
+>>-- 63
+>>-- actual RC - 43.4K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>2) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>full outer join
++>
++>  (select D02.val01,D02.pk
++>  from D02
++>  where D02.val01>2) as TD02(val01,pk) 
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>5 AND TF01.fk_d02>5)
++>
++>full outer join
++>  (select D03.val01,D03.pk
++>  from D03
++>  where D03.val01>2) as TD03(val01,pk) 
++>on (TD03.pk=TF01.fk_d03
++>AND TD03.pk>5 AND TF01.fk_d03>5);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            4.32E+004           
+2     FULL_HYBRID_HASH_JOIN                            4.27E+004           
+3     FILE_SCAN                       F01              4.27E+004           
+4     FILE_SCAN                       D02              4.00E+001           
+5     FILE_SCAN                       D03              7.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- 64
+>>-- actual RC - 6.5K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>2) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>full outer join
++>
++>  (select D02.val01,D02.pk
++>  from D02
++>  where D02.val01>2) as TD02(val01,pk) 
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>5 AND TF01.fk_d02>5)
++>
++>full outer join
++>  (select D03.val01,D03.pk
++>  from D03
++>  where D03.val01>2) as TD03(val01,pk) 
++>on (TD03.pk=TF01.fk_d03
++>AND TD03.pk>5 AND TF01.fk_d03>5)
++>
++>where TF01.val01>3 
++>and TD02.val01 >3 
++>and TD03.val01>3
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            4.32E+004           
+2     FULL_HYBRID_HASH_JOIN                            4.27E+004           
+3     FILE_SCAN                       F01              4.27E+004           
+4     FILE_SCAN                       D02              4.00E+001           
+5     FILE_SCAN                       D03              7.00E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- 65
+>>-- actual RC - 0
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>inner join
++>  (select D01.val01,count(D01.pk)
++>   from D01
++>   where D01.val01>0
++>   group by D01.val01) as TD01(val01,pk) 
++>on (TD01.pk=TF01.fk_d01
++>AND TD01.pk>0 AND TF01.fk_d01>0)
++>
++>left outer join
++>
++>  (select D02.val01,count(D02.pk)
++>  from D02
++>  where D02.val01>0
++>  group by D02.val01) as TD02(val01,pk) 
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0)
++>
++>left outer join
++>  (select D03.val01,count(D03.pk)
++>  from D03
++>  where D03.val01>0
++>  group by D03.val01) as TD03(val01,pk) 
++>on (TD03.pk=TF01.fk_d03
++>AND TD03.pk>0 AND TF01.fk_d03>0)
++>
++>where TF01.val01>0 
++>and TD01.val01 >0 
++>and TD02.val01>0
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.20E+002           
+2     HYBRID_HASH_JOIN                                 4.20E+002           
+3     HYBRID_HASH_JOIN                                 2.10E+003           
+4     FILE_SCAN                       F01              3.67E+004           
+5     FILE_SCAN                       D02              8.00E+001           
+6     FILE_SCAN                       D01              6.00E+000           
+7     FILE_SCAN                       D03              9.00E+002           
+
+--- 7 row(s) selected.
+>>
+>>-- 66
+>>-- actual RC - 51.8K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   ) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>   from D02
++>   group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02)
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.66E+004           
+2     FILE_SCAN                       F01              4.66E+004           
+3     FILE_SCAN                       D02              1.00E+002           
+
+--- 3 row(s) selected.
+>>
+>>-- 67
+>>-- actual RC - 5.2K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>   from D02
++>   where D02.val01>0
++>   group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02)
++>
++>where TF01.val01>0 
++>and TD02.val01>0
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 5.04E+003           
+2     FILE_SCAN                       F01              4.53E+004           
+3     FILE_SCAN                       D02              8.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- 68
+>>-- actual RC - 5.2K
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>   from D02
++>   where D02.val01>0
++>   group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0)
++>
++>where TF01.val01>0 
++>and TD02.val01>0
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.52E+003           
+2     FILE_SCAN                       F01              4.41E+004           
+3     FILE_SCAN                       D02              8.00E+001           
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- 69
+>>-- actual RC - 0
+>>
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>   From F01
++>   Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>
++>inner join
++>
++>  (select D01.val01,count(D01.pk)
++>   from D01
++>   where D01.val01>0
++>   group by D01.val01) as TD01(val01,pk)
++>
++>on (TD01.pk=TF01.fk_d01
++>AND TD01.pk>0 AND TF01.fk_d01>0)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>   from D02
++>   where D02.val01>0
++>   group by D02.val01) as TD02(val01,pk)
++>
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0)
++>
++>where TF01.val01>0
++>and TD01.val01 >0
++>and TD02.val01>0
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 4.20E+002           
+2     HYBRID_HASH_JOIN                                 2.10E+003           
+3     FILE_SCAN                       F01              3.67E+004           
+4     FILE_SCAN                       D02              8.00E+001           
+5     FILE_SCAN                       D01              6.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>-- 70
+>>-- expected card 5.44 E8
+>>
+>>prepare xx from
++>select count(*)
++>from
++>(
++>Select F01.val02, D01.val01
++>From F01
++>right join D01 on D01.pk=F01.fk_d01
++>where D01.val01>0
++>) as T01(val01,val02)
++>right join
++>(
++>Select F02.val02, D02.val01
++>From F02
++>right join D02 on D02.pk=F02.fk_d02
++>where D02.val01>0
++>) as T02(val01,val02)
++>on (T01.val02=T02.val02)
++>where T02.val02>0
++>
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            5.44E+008           
+2     LEFT_HYBRID_HASH_JOIN                            4.66E+004           
+3     FILE_SCAN                       D02              8.00E+001           
+4     FILE_SCAN                       F02              4.66E+004           
+5     LEFT_HYBRID_HASH_JOIN                            4.66E+004           
+6     FILE_SCAN                       D01              6.00E+000           
+7     FILE_SCAN                       F01              4.66E+004           
+
+--- 7 row(s) selected.
+>>
+>>-- 71
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>  From F01
++>  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>inner join
++>  (select D01.val01,count(D01.pk)
++>  from D01
++>  where D01.val01>0
++>  group by D01.val01) as TD01(val01,pk) 
++>
++>on (TD01.pk=TF01.fk_d01
++>AND TD01.pk>0 AND TF01.fk_d01>0)
++>
++>full outer join
++>  (select D02.val01,count(D02.pk)
++>  from D02
++>  where D02.val01>0
++>  group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     FULL_HYBRID_HASH_JOIN                            7.56E+003           
+2     HYBRID_HASH_JOIN                                 7.56E+003           
+3     FILE_SCAN                       F01              3.78E+004           
+4     FILE_SCAN                       D01              6.00E+000           
+5     FILE_SCAN                       D02              8.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- 72
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>  From F01
++>  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>inner join
++>  (select D01.val01,count(D01.pk)
++>  from D01
++>  where D01.val01>0
++>  group by D01.val01) as TD01(val01,pk) 
++>
++>on (TD01.pk=TF01.fk_d01
++>AND TD01.pk>0 AND TF01.fk_d01>0)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>  from D02
++>  where D02.val01>0
++>  group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            7.56E+003           
+2     HYBRID_HASH_JOIN                                 7.56E+003           
+3     FILE_SCAN                       F01              3.78E+004           
+4     FILE_SCAN                       D01              6.00E+000           
+5     FILE_SCAN                       D02              8.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- 73
+>>prepare xx from
++>select count(*)
++>From
++>  (select F01.val01, F01.fk_d01, F01.fk_d02, F01.fk_d03
++>  From F01
++>  Where F01.val01>0) as TF01(val01,fk_d01,fk_d02,fk_d03)
++>inner join
++>  (select D01.val01,count(D01.pk)
++>  from D01
++>  where D01.val01>0
++>  group by D01.val01) as TD01(val01,pk) 
++>
++>on (TD01.pk=TF01.fk_d01
++>AND TD01.pk>0 AND TF01.fk_d01>0)
++>
++>left outer join
++>  (select D02.val01,count(D02.pk)
++>  from D02
++>  where D02.val01>0
++>  group by D02.val01) as TD02(val01,pk) 
++>
++>on (TD02.pk=TF01.fk_d02
++>AND TD02.pk>0 AND TF01.fk_d02>0);
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            7.56E+003           
+2     HYBRID_HASH_JOIN                                 7.56E+003           
+3     FILE_SCAN                       F01              3.78E+004           
+4     FILE_SCAN                       D01              6.00E+000           
+5     FILE_SCAN                       D02              8.00E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- 74
+>>prepare xx from
++>select count(*)
++>From F01
++>left outer join D01
++>on F01.val01 = D01.val01
++>and d01.val02 = mod(F01.val02, 5)
++>
++>inner join F02
++>on F02.val01 = F01.val01
++>and F02.val02 IN
++>    (select val02 from D03 where val01 > 0)
++>
++>left outer join D03
++>on F01.val01_d03 = D03.val01
++>and F01.val02_d03 = D03.val02
++>
++>where
++>F02.fk_d04 IN 
++>   (SELECT pk                                    
++>    FROM D04                            
++>    where D04.val01 > 0)
++>
++>OR F02.fk_D05 IN 
++>   (SELECT pk                                    
++>    FROM D05                            
++>    where D05.val01 > 0)
++>;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      3.83E+007           
+2     FILE_SCAN                       D05              8.00E+001           
+3     NESTED_JOIN                                      3.52E+008           
+4     FILE_SCAN                       D04              6.00E+000           
+5     LEFT_HYBRID_HASH_JOIN                            3.52E+008           
+6     LEFT_HYBRID_HASH_JOIN                            3.52E+007           
+7     HYBRID_HASH_JOIN                                 3.52E+007           
+8     HYBRID_HASH_SEMI_JOIN                            2.71E+004           
+9     FILE_SCAN                       F02              4.66E+004           
+10    FILE_SCAN                       D03              9.00E+002           
+11    FILE_SCAN                       F01              4.66E+004           
+12    FILE_SCAN                       D01              1.00E+001           
+13    FILE_SCAN                       D03              1.00E+003           
+
+--- 13 row(s) selected.
+>>
+>>-- 75
+>>prepare xx from
++>select count(*)
++>From F01
++>left outer join D01
++>on F01.val01 = D01.val01
++>and d01.val02 = F01.val02
++>
++>left outer join D03
++>on F01.val01_d03 = D03.val01
++>and F01.val02_d03 = D03.val02
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.66E+005           
+2     LEFT_HYBRID_HASH_JOIN                            4.66E+004           
+3     FILE_SCAN                       F01              4.66E+004           
+4     FILE_SCAN                       D01              1.00E+001           
+5     FILE_SCAN                       D03              1.00E+003           
+
+--- 5 row(s) selected.
+>>
+>>-- 76
+>>prepare xx from
++>select count(*)
++>From F01
++>left join D03
++>on F01.val01_d03 = D03.val01
++>and F01.val02_d03 = D03.val02
++>;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            4.66E+005           
+2     FILE_SCAN                       F01              4.66E+004           
+3     FILE_SCAN                       D03              1.00E+003           
+
+--- 3 row(s) selected.
+>>
+>>----------------------------------------------------------------------------
+>>-- Following queries test for left joins and IS NULL predicates on
+>>-- joining columns
+>>----------------------------------------------------------------------------
+>>set schema cat.hcube;
+
+--- SQL operation complete.
+>>
+>>-- 77
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 78
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where t6.c is null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- 79
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where t6.c is not null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- 80
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c and t6.c is null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- 81
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c and t6.c is not null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+005           
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- 82
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where cube1.e is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+
+--- 1 row(s) selected.
+>>
+>>-- 83
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c and cube1.e is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 84
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(t6.c as numeric(10)) is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+004           
+
+--- 1 row(s) selected.
+>>
+>>-- 85
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(t6.c as numeric(10)) is not null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 86
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 87
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c and cast(t6.c as numeric(10)) is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 88
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c and cast(t6.c as numeric(10)) is not null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.90E+005           
+
+--- 1 row(s) selected.
+>>
+>>-- 89
+>>prepare xx from
++>select count(*) from cube1 left join t6 on cube1.e = t6.c where cast(cube1.e as numeric(10)) is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+001           
+
+--- 1 row(s) selected.
+>>
+>>-- 90
+>>prepare xx from
++>select count(*) from cube1, t6 where cube1.e = t6.c and cast(t6.c as numeric(10)) is not null;
+
+--- SQL command prepared.
+>>
+>>
+>>-- execute explainJoinCard;
+>>
+>>-- 91
+>>prepare xx from
++>select count(*) from cube1 where cast(cube1.e as numeric(10)) is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+--- 0 row(s) selected.
+>>
+>>-- 92
+>>prepare xx from
++>select count(*) from t6 right join t8 on cast(t8.b as numeric(5)) = t6.c where
++>t6.c is null;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+
+--- 1 row(s) selected.
+>>
+>>-- 93
+>>prepare xx from
++>select count(*) from t6 left join t8 on cast(t8.b as numeric(5)) = t6.c where
++>t8.b is null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- 94
+>>prepare xx from
++>select count(*)
++>FROM
++>(Select T8.b, T2.b
++>From T8
++>LEFT JOIN T2 on T8.b=T2.b
++>) as T01(b, c)
++>LEFT join
++>T6
++>on (T01.b=T6.b) where T6.b IS NULL;
+
+--- SQL command prepared.
+>>
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+2     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- 95
+>>prepare xx from
++>select count(*) from t8 left outer join t7 
++>on t7.b = t8.b 
++>left outer join t6 
++>on t7.b = t6.b 
++>where t7.b is null and t6.b is null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+2     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+
+--- 2 row(s) selected.
+>>
+>>-- 96
+>>prepare xx from
++>select count(*) from t7 left join (Select b from T6) r1 
++>on r1.b = t7.b
++>where r1.b is null;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            1.00E+000           
+
+--- 1 row(s) selected.
+>>
+>>-- 97
+>>prepare xx from
++>select count(*) from (Select b from T8 where b > 5) r1 left join
++>(select c from T7 where b = 20) r2 on r1.b = r2.c
++>where r2.c IS NULL;
+
+--- SQL command prepared.
+>>
+>>execute explainJoinCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     LEFT_HYBRID_HASH_JOIN                            9.00E+002           
+
+--- 1 row(s) selected.
+>>
+>>log;

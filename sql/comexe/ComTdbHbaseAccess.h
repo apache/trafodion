@@ -335,7 +335,44 @@ public:
   };
   typedef NAVersionedObjectPtrTempl<HbaseSnapshotScanAttributes> HbaseSnapshotScanAttributesPtr;
 	
-	
+  class HbaseAccessOptions : public NAVersionedObject
+  {
+  public:
+  HbaseAccessOptions(Lng32 v = 0) :
+    versions_(v)
+    {
+    }
+    
+    virtual unsigned char getClassVersionID()
+    {
+      return 1;
+    }
+
+    virtual void populateImageVersionIDArray()
+    {
+      setImageVersionID(0,getClassVersionID());
+    }
+
+    virtual short getClassSize() { return (short)sizeof(HbaseAccessOptions); }
+
+    Lng32 getNumVersions() { return versions_; }
+
+    NABoolean multiVersions() { return (versions_ != 0);}
+  private:
+    // 0, version not specified, return default of 1.
+    // -1, return max versions
+    // -2, return all versions.
+    // N, return N versions.
+    Lng32 versions_; 
+    char filler_[4];
+  };
+
+ // ---------------------------------------------------------------------
+  // Template instantiation to produce a 64-bit pointer emulator class
+  // for HbaseAccessOptions
+  // ---------------------------------------------------------------------
+  typedef NAVersionedObjectPtrTempl<HbaseAccessOptions> HbaseAccessOptionsPtr;
+  	
   // Constructors
 
   // Default constructor (used in ComTdb::fixupVTblPtr() to extract
@@ -389,8 +426,11 @@ public:
 		    const UInt16 rowIdAsciiTuppIndex,
 		    const UInt16 keyTuppIndex,
 		    const UInt16 keyColValTuppIndex,
-		    const UInt16 hbaseFilterValTullIndex,
+		    const UInt16 hbaseFilterValTuppIndex,
 
+                    const UInt16 hbaseTimestampTuppIndex,
+                    const UInt16 hbaseVersionTuppIndex,
+                    
 		    Queue * listOfScanRows,
 		    Queue * listOfGetRows,
 		    Queue * listOfFetchedColNames,
@@ -412,8 +452,9 @@ public:
 		    char * zkPort,
 		    HbasePerfAttributes * hbasePerfAttributes,
 		    Float32 samplingRate = -1,
-		    HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes = NULL
+		    HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes = NULL,
 
+                    HbaseAccessOptions * hbaseAccessOptions = NULL
 	       );
   
   ComTdbHbaseAccess(
@@ -557,6 +598,9 @@ public:
   Queue* listOfUpdatedColNames() { return listOfUpDeldColNames_; }
   Queue* listOfDeletedColNames() { return listOfUpDeldColNames_; }
   Queue* listOfMergedColNames() { return listOfMergedColNames_; }
+  Queue* listOfIndexesAndTable() { return listOfIndexesAndTable_; }
+
+  void setListOfIndexesAndTable(Queue* val) {listOfIndexesAndTable_ = val; }
 
   // overloading listOfUpdatedColNames and listOfMergedColNames...for now.
   Queue* listOfHbaseFilterColNames() { return listOfUpDeldColNames_; }
@@ -566,6 +610,9 @@ public:
 
   char * keyColName() { return keyColName_; }
 
+  NABoolean isHbaseTimestampNeeded() { return (hbaseTimestampTuppIndex_ > 0); }
+  NABoolean isHbaseVersionNeeded() { return (hbaseVersionTuppIndex_ > 0); }
+
   const char * server() { return server_; }
   const char * zkPort() { return zkPort_;}
 
@@ -573,6 +620,15 @@ public:
   { return (HbasePerfAttributes*)hbasePerfAttributes_.getPointer();}
   HbasePerfAttributesPtr getHbasePerfAttributesPtr() { return hbasePerfAttributes_; }
 
+  HbaseAccessOptions * getHbaseAccessOptions() 
+  { return (HbaseAccessOptions*)hbaseAccessOptions_.getPointer(); }
+
+  NABoolean multiVersions() 
+  {
+    return 
+      (getHbaseAccessOptions() ? getHbaseAccessOptions()->multiVersions() : FALSE);
+  }
+      
   UInt32 rowIdLen() { return rowIdLen_;}
 
   void setRowwiseFormat(NABoolean v)
@@ -669,8 +725,6 @@ public:
   void setErrCountTab(char * v) { errCountTab_ = v; }
   const char * getLoggingLocation() const { return loggingLocation_; }
   void setLoggingLocation(char * v) { loggingLocation_ = v; }
-
-
 
   const Float32 getSamplingRate() const
   {
@@ -832,6 +886,9 @@ public:
   UInt16 keyColValTuppIndex_;
   UInt16 hbaseFilterValTuppIndex_;
 
+  UInt16 hbaseTimestampTuppIndex_;
+  UInt16 hbaseVersionTuppIndex_;
+
   UInt32 asciiRowLen_;
   UInt32 convertRowLen_;
   UInt32 updateRowLen_;
@@ -870,9 +927,9 @@ public:
   ExExprPtr keyColValExpr_;
   ExExprPtr hbaseFilterExpr_;
 
-  ExCriDescPtr workCriDesc_;                                 // 40 - 47
+  ExCriDescPtr workCriDesc_;      
 
-  NABasicPtr tableName_;                                     // 144 - 151
+  NABasicPtr tableName_;           
 
   QueuePtr colFamNameList_;
 
@@ -881,9 +938,10 @@ public:
   QueuePtr listOfFetchedColNames_;
   QueuePtr listOfUpDeldColNames_;
   QueuePtr listOfMergedColNames_;
+  QueuePtr listOfIndexesAndTable_; // used by bulk load
 
   // information about key ranges
-  keyRangeGenPtr keyInfo_;                                            // 08-15
+  keyRangeGenPtr keyInfo_;                             
 
   NABasicPtr keyColName_;
 
@@ -892,7 +950,6 @@ public:
 
   NABasicPtr server_;
   NABasicPtr zkPort_;
-
 
   HbasePerfAttributesPtr hbasePerfAttributes_;
   Float32 samplingRate_;
@@ -907,7 +964,8 @@ public:
   HbaseSnapshotScanAttributesPtr hbaseSnapshotScanAttributes_;
   UInt32 maxErrorRows_;
   UInt16 hbaseRowsetVsbbSize_; 
-  char fillers[10];
+  HbaseAccessOptionsPtr hbaseAccessOptions_;
+  char fillers[2];
 };
 
 class ComTdbHbaseCoProcAccess : public ComTdbHbaseAccess

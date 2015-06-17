@@ -1,0 +1,57 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+88c88,91
+< --- SQL operation complete.
+---
+> *** ERROR[1017] You are not authorized to perform this operation.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+124c127,129
+< *** ERROR[8573] The user does not have INSERT privilege on table or view CATMVS.T809_U7.T_809_MV1 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> insert into table(mv_table catmvs.t809_u7.T_809_MV1) values (1,1,1,1);
+>  ^ (zzz characters from start of SQL statement)
+126c131,132
+< --- 0 row(s) inserted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+131c137,139
+< *** ERROR[8573] The user does not have UPDATE privilege on table or view CATMVS.T809_U7.T_809_MV1 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> update table(mv_table catmvs.t809_u7.T_809_MV1) set a=4;
+>  ^ (zzz characters from start of SQL statement)
+133c141,142
+< --- 0 row(s) updated.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 
+138c147,149
+< *** ERROR[8573] The user does not have DELETE privilege on table or view CATMVS.T809_U7.T_809_MV1 (partition @location@).
+---
+> *** ERROR[15001] A syntax error occurred at or before:
+> delete from table(mv_table catmvs.t809_u7.T_809_MV1) where a=5;
+>  ^ (zzz characters from start of SQL statement)
+140c151,152
+< --- 0 row(s) deleted.
+---
+> *** ERROR[8822] The statement was not prepared.
+> 

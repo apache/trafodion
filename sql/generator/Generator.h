@@ -789,7 +789,8 @@ public:
       down_cri_desc = cri_desc_;
   };
 
-  void remapESPAllocation();
+  void remapESPAllocationAS();
+  void remapESPAllocationRandomly();
 
   ExpTupleDesc::TupleDataFormat determineInternalFormat( const ValueIdList &valIdList,
                                                           RelExpr * relExpr,
@@ -1630,7 +1631,8 @@ public:
   ItemExpr * addCompDecodeForDerialization(ItemExpr * ie);
 
   void setHBaseNumCacheRows(double rowsAccessed, 
-                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
+                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                            Float32 samplePercent = 0.0);
   void setHBaseCacheBlocks(Int32 hbaseRowSize, double rowsAccessed, 
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
   

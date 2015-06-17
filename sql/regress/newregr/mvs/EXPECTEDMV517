@@ -1,0 +1,87 @@
+>>
+>>-- Run Tests
+>>
+>>	obey TESTMV517(TEST1);
+>>
+>>-- PASS
+>>create mv T_517_MV1
++>  refresh on request 
++>  initialize on create 
++>  as select count(a) as c_a
++>  from T_517_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_517_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV517(TEST2);
+>>
+>>insert into T_517_T1 values (1), (3);
+
+--- 2 row(s) inserted.
+>>-- PASS
+>>refresh T_517_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_517_MV1 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_517_MV1 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_517_T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_517_T1.
+
+
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV517(TEST3);
+>>
+>>insert into T_517_T1 values (5), (23);
+
+--- 2 row(s) inserted.
+>>
+>>-- Fail
+>>internal refresh T_517_MV1 from singledelta T_517_T1 between 100 and 101 de level 0 use no rangelog use no iudlog;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+internal refresh T_517_MV1 from singledelta T_517_T1 between 100 and 101 de lev
+el 0 use no rangelog use no iudlog;
+                                  ^ (114 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- Fail
+>>internal refresh T_517_MV1 recompute;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+internal refresh T_517_MV1 recompute;
+                                    ^ (37 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>internal refresh T_517_MV1 from singledelta T_517_T1 between 100 and 101 de level 0 use no rangelog use no iudlog;
+
+--- SQL operation complete.
+>>
+>>
+>>-- PASS
+>>internal refresh T_517_MV1 recompute;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>log;

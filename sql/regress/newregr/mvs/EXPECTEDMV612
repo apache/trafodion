@@ -1,0 +1,404 @@
+>>
+>>obey TESTMV612(SET_UP);
+>>--=================================================================================
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create table T_612_A (a int, b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_612_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_612_MV1 
++>	refresh on request
++>	initialize on create
++>	as  select b, sum(a) sum_a 
++>		from T_612_A 
++>		group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_612_MV1_102641690_0004 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_612_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_612_MV2
++>	refresh on request 
++>	initialize on create
++>	as  select b, sum(sum_a) sum_sum_a 
++>		from T_612_MV1
++>		group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_612_MV2_102641690_0007 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_612_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>--=================================================================================
+>>
+>>-- Run Tests
+>>
+>>obey TESTMV612(TEST1);
+>>-- Explicit NOMVLOG use
+>>--=================================================================================
+>>
+>>-- Verify normal logging.
+>>insert into T_612_A values (1,2);
+
+--- 1 row(s) inserted.
+>>-- Should show 1 row only.
+>>select count(*) from table (iud_log_table T_612_A);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- Do some NOMVLOG operations
+>>insert NOMVLOG into T_612_A values (3,4);
+
+--- 1 row(s) inserted.
+>>update NOMVLOG T_612_A set b=b+2;
+
+--- 2 row(s) updated.
+>>delete NOMVLOG from T_612_A;
+
+--- 2 row(s) deleted.
+>>-- Should still show one row.
+>>select count(*) from table (iud_log_table T_612_A);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>--=================================================================================
+>>obey TESTMV612(TEST2);
+>>-- Recompute
+>>--=================================================================================
+>>
+>>delete from table (iud_log_table T_612_A);
+
+--- 1 row(s) deleted.
+>>
+>>internal refresh T_612_MV1 recompute;
+
+--- SQL operation complete.
+>>
+>>-- Should be empty.
+>>select count(*) from table (iud_log_table T_612_MV1);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>--=================================================================================
+>>obey TESTMV612(TEST3);
+>>-- Delete from MV
+>>--=================================================================================
+>>
+>>delete from T_612_MV1;
+
+--- 0 row(s) deleted.
+>>
+>>-- Should be empty.
+>>select count(*) from table (iud_log_table T_612_MV1);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>--=================================================================================
+>>obey TESTMV612(TEST4);
+>>-- Pipelined refresh
+>>--=================================================================================
+>>
+>>delete NOMVLOG from T_612_A;
+
+--- 0 row(s) deleted.
+>>-- All tables/mvs are empty now
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_a@ @0@ @200@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv1@ @0@ @200@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv2@ @0@ @200@ ;
+
+--- SQL operation complete.
+>>
+>>-- Do some inserts
+>>insert into T_612_A values (1,1), (2,2), (3,3), (4,4), (5,5);
+
+--- 5 row(s) inserted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_a@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv2@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_612_MV1
++>	from singledelta T_612_A between 200 and 200 de level 0 use no rangelog use iudlog
++>	pipeline (T_612_MV2);
+
+--- SQL operation complete.
+>>
+>>select * from T_612_MV1;
+
+B            SUM_A               
+-----------  --------------------
+
+          1                     1
+          2                     2
+          3                     3
+          4                     4
+          5                     5
+
+--- 5 row(s) selected.
+>>select * from T_612_MV2;
+
+B            SUM_SUM_A           
+-----------  --------------------
+
+          1                     1
+          2                     2
+          3                     3
+          4                     4
+          5                     5
+
+--- 5 row(s) selected.
+>>
+>>-- Should be empty.
+>>select count(*) from table (iud_log_table T_612_MV1);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>-- Now check updates and deletes
+>>update T_612_A set a=a+10 where b<3;
+
+--- 2 row(s) updated.
+>>delete from T_612_A where b>3;
+
+--- 2 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_a@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.t_612_mv2@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_612_MV1
++>	from singledelta T_612_A between 201 and 201 de level 0 use no rangelog use iudlog
++>	pipeline (T_612_MV2);
+
+--- SQL operation complete.
+>>
+>>select * from T_612_MV1;
+
+B            SUM_A               
+-----------  --------------------
+
+          1                    11
+          2                    12
+          3                     3
+
+--- 3 row(s) selected.
+>>select * from T_612_MV2;
+
+B            SUM_SUM_A           
+-----------  --------------------
+
+          1                    11
+          2                    12
+          3                     3
+
+--- 3 row(s) selected.
+>>
+>>-- Should be empty.
+>>select count(*) from table (iud_log_table T_612_MV1);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>--=================================================================================
+>>obey TESTMV612(TEST5);
+>>-- INSERTLOG tables
+>>--=================================================================================
+>>
+>>create table T_612_B (a int, b int)
++>	attribute insertlog;
+
+--- SQL operation complete.
+>>ALTER TABLE T_612_B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_612_MV3 
++>	refresh on request 
++>	initialize on create
++>	as  select b, sum(a) sum_a 
++>		from T_612_B 
++>		group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_612_MV3_102641692_0024 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_612_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- Do some operations on T_612_B
+>>insert into T_612_B values (1,2);
+
+--- 1 row(s) inserted.
+>>-- The insert should be logged.
+>>select count(*) from table (iud_log_table T_612_B);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>update T_612_B set b=b+2;
+
+--- 1 row(s) updated.
+>>delete from T_612_B;
+
+--- 1 row(s) deleted.
+>>-- The update and delete should not be logged.
+>>select count(*) from table (iud_log_table T_612_B);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- Do some NOMVLOG operations - should not be logged.
+>>insert NOMVLOG into T_612_B values (3,4);
+
+--- 1 row(s) inserted.
+>>update NOMVLOG T_612_B set b=b+2;
+
+--- 1 row(s) updated.
+>>delete NOMVLOG from T_612_B;
+
+--- 1 row(s) deleted.
+>>-- The update and delete should not be logged.
+>>select count(*) from table (iud_log_table T_612_B);
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>obey TESTMV612(CLEAN_UP);
+>>drop mv    T_612_MV3;
+
+--- SQL operation complete.
+>>drop mv    T_612_MV2;
+
+--- SQL operation complete.
+>>drop mv    T_612_MV1;
+
+--- SQL operation complete.
+>>drop table T_612_A;
+
+--- SQL operation complete.
+>>drop table T_612_B;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>
+>>--=================================================================================
+>>
+>>-- Clean and exit
+>>log;

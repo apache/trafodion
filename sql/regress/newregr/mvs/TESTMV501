@@ -1,0 +1,59 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV501
+--- Misc test   
+--- PURPOSE: 
+------------------------------------------------------
+
+obey TESTMV501(CLEAN_UP);
+obey TESTMV501(SET_UP);
+log LOGMV501 clear;
+-- Run Tests
+	set schema c.s;
+	obey TESTMV501(CATAPIREQ);
+	obey TESTMV501(MVGROUPS);
+	obey TESTMV501(TEMPTABLE);
+	obey TESTMV501(MAVSI);
+
+-- Clean and exit
+log;
+obey TESTMV501(CLEAN_UP);
+exit;
+
+?section SET_UP
+-- Create the base tables
+create catalog c;
+create schema c.s;
+obey PREPARE_DDL_SELECTS;
+
+?section CATAPIREQ
+  obey ./MVEXTERNALS/CATAPI.TXT;
+?section MAVSI
+  obey ./MVEXTERNALS/MAVSI.TXT;
+?section MVGROUPS
+  obey ./MVEXTERNALS/MVGROUPS.TXT;
+?section TEMPTABLE
+  obey ./MVEXTERNALS/TEMPTABLE.TXT;
+
+?section CLEAN_UP
+set schema c.s;
+drop schema c.s;
+drop catalog c;
+
+

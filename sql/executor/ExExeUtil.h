@@ -2911,6 +2911,7 @@ public:
     EMPTY_,
     GET_NO_CHILD_HANDLE_,
     GET_LOB_HANDLE_,
+    RETURN_STATUS_,
     SEND_REQ_TO_CHILD_,
     GET_REPLY_FROM_CHILD_,
     ERROR_FROM_CHILD_,
@@ -2932,36 +2933,24 @@ public:
   };
 
   Step step_;
-
-  char lobHandleBuf_[2050];
   Lng32 lobHandleLen_;
-  char * lobHandle_;
-
+  char  lobHandle_[2050];
   char lobInputHandleBuf_[4096];
-
   char lobNameBuf_[1024];
   Lng32 lobNameLen_;
   char * lobName_;
-
   Lng32 lobType_;
-
   char * lobData_;
   char * lobData2_;
-
   Int64 lobDataMaxLen_;
   Int64 lobDataLen_;
-
   Lng32 remainingBytes_;
   Lng32 currPos_;
-
   Lng32 numChildRows_;
-
   Int64 requestTag_;
-
   char lobLoc_[1024];
-
   ExLobStats lobStats_;
-
+  char statusString_[200];
   fstream indata_;
 };
 

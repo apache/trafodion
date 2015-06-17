@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -60,8 +60,8 @@ class StmtDDLPopulateIndex : public StmtDDLNode
 public:
 
   // initialize constructor
-  StmtDDLPopulateIndex(NABoolean populateAll,
-		       const NAString &anIndexName, // dummy name, if populateAll
+  StmtDDLPopulateIndex(NABoolean populateAll, NABoolean populateAllUnique,
+		       const NAString &anIndexName, // dummy name, if populateAll*
 		       const QualifiedName & aTableName,
 		       CollHeap    * heap = PARSERHEAP());
   
@@ -116,6 +116,7 @@ public:
   virtual NABoolean explainSupported() { return TRUE; }
 
   NABoolean populateAll() { return populateAll_; }
+  NABoolean populateAllUnique() { return populateAllUnique_; }
 
 private:
 
@@ -123,6 +124,7 @@ private:
   // private methods
   // ---------------------------------------------------------------------
   NABoolean populateAll_;
+  NABoolean populateAllUnique_;
 
   //
   // please do not use the following methods

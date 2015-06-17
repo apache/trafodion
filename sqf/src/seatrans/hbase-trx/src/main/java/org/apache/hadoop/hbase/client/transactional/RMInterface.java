@@ -185,21 +185,24 @@ public class RMInterface {
 
         TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
                                                                              location.getServerName());
-        if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation " + trLocation);
+        if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() + "], endKey: "
+                  + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " and transaction [" + transactionID + "]");
 
         // if this region hasn't been registered as participating in the transaction, we need to register it
         if (ts.addRegion(trLocation)) {
           register = true;
-          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, added TransactionRegionLocation to ts");
+          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, added TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
         }
 
         // register region with TM.
         if (register) {
-            ts.registerLocation(location);
-            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction called registerLocation for ts " + ts);
+            ts.registerLocation(trLocation);
+             if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
         }
         else {
-          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion.");
+          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion for transaction " + transactionID);
         }
 
         if ((ts == null) || (ret != 0)) {
@@ -305,16 +308,17 @@ public class RMInterface {
 
     public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter delete (list of deletes) txid: " + transactionID);
-	TransactionState ts;
+        TransactionState ts = null;
 	for (Delete delete : deletes) {
 	    ts = registerTransaction(transactionID, delete.getRow());
 	}
-	ts = mapTransactionStates.get(transactionID);
+        if (ts == null){
+           ts = mapTransactionStates.get(transactionID);
+        }
         ttable.delete(ts, deletes);
         if (LOG.isTraceEnabled()) LOG.trace("Exit delete (list of deletes) txid: " + transactionID);
     }
 
-    
     public synchronized ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("getScanner txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, scan.getStartRow());
@@ -322,7 +326,7 @@ public class RMInterface {
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
     }
-    
+
     public synchronized void put(final long transactionID, final Put put) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter Put txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, put.getRow());
@@ -331,14 +335,16 @@ public class RMInterface {
     }
 
     public synchronized void put(final long transactionID, final List<Put> puts) throws IOException {
-        if (LOG.isTraceEnabled()) LOG.trace("Enter put (list of puts) txid: " + transactionID);
-        TransactionState ts;
+         if (LOG.isTraceEnabled()) LOG.trace("Enter put (list of puts) txid: " + transactionID);
+        TransactionState ts = null;
       	for (Put put : puts) {
       	    ts = registerTransaction(transactionID, put.getRow());
       	}
-      	ts = mapTransactionStates.get(transactionID);
-              ttable.put(ts, puts);
-              if (LOG.isTraceEnabled()) LOG.trace("Exit put (list of puts) txid: " + transactionID);
+        if (ts == null){
+           ts = mapTransactionStates.get(transactionID);
+        }
+        ttable.put(ts, puts);
+         if (LOG.isTraceEnabled()) LOG.trace("Exit put (list of puts) txid: " + transactionID);
     }
 
     public synchronized boolean checkAndPut(final long transactionID, byte[] row, byte[] family, byte[] qualifier,

@@ -181,6 +181,8 @@ ExFunctionHbaseColumnsDisplay::ExFunctionHbaseColumnsDisplay() {};
 ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate() {};
 ExFunctionCastType::ExFunctionCastType() {};
 ExFunctionSequenceValue::ExFunctionSequenceValue() {};
+ExFunctionHbaseTimestamp::ExFunctionHbaseTimestamp() {};
+ExFunctionHbaseVersion::ExFunctionHbaseVersion() {};
 ExFunctionSVariance::ExFunctionSVariance(){};
 ExFunctionSStddev::ExFunctionSStddev(){};
 ExpRaiseErrorFunction::ExpRaiseErrorFunction(){};
@@ -606,6 +608,28 @@ ExFunctionSequenceValue::ExFunctionSequenceValue(OperatorTypeEnum oper_type,
 						 Space * space)
   : ex_function_clause(oper_type, 1, attr, space),
     sga_(sga),
+    flags_(0)
+{
+};
+
+ExFunctionHbaseTimestamp::ExFunctionHbaseTimestamp(
+                                                   OperatorTypeEnum oper_type,
+                                                   Attributes ** attr, 
+                                                   Lng32 colIndex,
+                                                   Space * space)
+  : ex_function_clause(oper_type, 2, attr, space),
+    colIndex_(colIndex),
+    flags_(0)
+{
+};
+
+ExFunctionHbaseVersion::ExFunctionHbaseVersion(
+                                                   OperatorTypeEnum oper_type,
+                                                   Attributes ** attr, 
+                                                   Lng32 colIndex,
+                                                   Space * space)
+  : ex_function_clause(oper_type, 2, attr, space),
+    colIndex_(colIndex),
     flags_(0)
 {
 };
@@ -6151,13 +6175,11 @@ ExRowsetArrayScan::eval(char          *op_data[],
   // SQLVarChar;
   // The size of the field is sizeof(short) for rowset SQLVarChars. 
   if(SourceAttr->getVCIndicatorLength() > 0){
-    assert(SourceAttr->getVCIndicatorLength() == sizeof(short));
     str_cpy_all((char*)op_data[-ex_clause::MAX_OPERANDS], 
-      (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), sizeof(short));
-    SourceElemPtr += sizeof(short);
-#pragma nowarn(1506)   // warning elimination 
-    str_cpy_all(op_data[0], SourceElemPtr, size-sizeof(short));
-#pragma warn(1506)  // warning elimination 
+      (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), 
+                SourceAttr->getVCIndicatorLength()); //sizeof(short));
+    SourceElemPtr += SourceAttr->getVCIndicatorLength();
+    str_cpy_all(op_data[0], SourceElemPtr, size - SourceAttr->getVCIndicatorLength());
   }
   else {
   // Note we do not have variable length for host variables. But we may not
@@ -6283,17 +6305,18 @@ ExRowsetArrayInto::eval(char *op_data[], CollHeap *heap,
   if (resultIsNull == FALSE){  
     if (DFS2REC::isSQLVarChar(resultAttr->getDatatype())) { 
       unsigned short VCLen = 0;
-      assert(resultAttr->getVCIndicatorLength() == sizeof(short));
       str_cpy_all((char *) &VCLen,
-	(char*)op_data[-ex_clause::MAX_OPERANDS + 1], sizeof(short));
+                  (char*)op_data[-ex_clause::MAX_OPERANDS + 1], 
+                  resultAttr->getVCIndicatorLength());
     
       str_cpy_all( resultElemPtr+resultAttr->getNullIndicatorLength(),
-	(char *) &VCLen,
-	sizeof(short));
+                   (char *) &VCLen,
+                   resultAttr->getVCIndicatorLength());
 
       str_cpy_all( 
-resultElemPtr+resultAttr->getNullIndicatorLength()+resultAttr->getVCIndicatorLength(),
-      op_data[1], VCLen); 
+                  resultElemPtr+resultAttr->getNullIndicatorLength()+
+                  resultAttr->getVCIndicatorLength(),
+                  op_data[1], VCLen); 
     }
     else {
       str_cpy_all(resultElemPtr + resultAttr->getNullIndicatorLength(), 
@@ -6999,6 +7022,40 @@ ExFunctionSequenceValue::eval(char *op_data[], CollHeap *heap,
     }
 
   *(Int64*)result = seqVal;
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type 
+ExFunctionHbaseTimestamp::eval(char *op_data[], CollHeap *heap, 
+                               ComDiagsArea **diagsArea)
+{
+  short rc = 0;
+
+  // op_data[0] points to result. 
+  Attributes *resultAttr   = getOperand(0);
+  char * result =  op_data[0];
+
+  Int64 * hbaseTS = (Int64*)op_data[1];
+
+  *(Int64*)result = hbaseTS[colIndex_];
+
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type 
+ExFunctionHbaseVersion::eval(char *op_data[], CollHeap *heap, 
+                               ComDiagsArea **diagsArea)
+{
+  short rc = 0;
+
+  // op_data[0] points to result. 
+  Attributes *resultAttr   = getOperand(0);
+  char * result =  op_data[0];
+
+  Int64 * hbaseVersion = (Int64*)op_data[1];
+
+  *(Int64*)result = hbaseVersion[colIndex_];
 
   return ex_expr::EXPR_OK;
 }

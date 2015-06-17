@@ -1,0 +1,49 @@
+>>obey TEST_1_1_3_11(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- 2008-5-22 Caroline:
+>>-- We do not support 'Separate by column' clause, create table would fail.
+>>-- expect the error messages.
+>>create table tvert (ind     int, 
++>		    code    CHAR,
++>		    price   NUMERIC (8,2),
++>		    name    VARCHAR(24))
++>  separate by column;
+
+*** ERROR[3074] The SEPARATE BY clause is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>create table ttemp (i int, j int);
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER trig AFTER INSERT ON tvert
++>         INSERT INTO ttemp VALUES (11,22);
+
+*** ERROR[1004] Object CAT1.SCHM.TVERT does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>-- Should return an error
+>>
+>>ALTER TRIGGER ENABLE ALL OF tvert;
+
+*** ERROR[1004] Object CAT1.SCHM.TVERT does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>-- Should return an error
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>LOG;

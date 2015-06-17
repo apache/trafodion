@@ -1,0 +1,25 @@
+>>obey TEST_1_1_3_7(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE VIEW myview AS
++>	SELECT a, b FROM tab1A;
+
+--- SQL operation complete.
+>>
+>>
+>>CREATE TRIGGER trig AFTER UPDATE
++>	ON myview
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (newrow.a < 5 )
++>
++>		insert into tab1a values (0,0,0,0);
+
+*** ERROR[11037] A trigger cannot be defined on a view!
+
+--- SQL operation failed with errors.
+>>--------------------------------------------------------
+>>LOG;

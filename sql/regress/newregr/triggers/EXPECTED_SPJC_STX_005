@@ -1,0 +1,20 @@
+>>obey TEST_SPJC_STX_005(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger with literal TABLE in the referencing clause.
+>>-- Result: ERROR[11049] Illegal use of ROW or TABLE keyword in the
+>>-- REFERENCING clause. Use ROW with row triggers and TABLE with statement
+>>-- triggers.
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG01_SPJC_STX_005 AFTER UPDATE ON
++>TAB01_SPJC_STX_005
++>REFERENCING OLD ROW AS O
++>FOR EACH STATEMENT
++>	INSERT INTO TAB02_SPJC_STX_005 VALUES(O.C, O.A);
+
+*** ERROR[11049] Illegal use of ROW or TABLE keyword in the REFERENCING clause. Use ROW with row triggers and TABLE with statement triggers.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

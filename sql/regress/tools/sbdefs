@@ -27,7 +27,8 @@ cqd hbase_serialization 'ON';
 cqd hbase_filter_preds 'ON';
 cqd traf_aligned_row_format 'OFF';
 --cqd traf_default_col_charset 'UTF8';
-cqd schema $$TEST_SCHEMA$$;
+cqd traf_index_create_opt 'ON';
+cqd schema '$$TEST_SCHEMA$$';
 set SCHEMA $$TEST_SCHEMA$$;
 #endif
 

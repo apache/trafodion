@@ -1,0 +1,1481 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey BACKBONE(SET_UP);
+obey BACKBONE(EPOCH18);
+
+---------------------------------------------------------------------
+?section SET_UP
+---------------------------------------------------------------------
+set envvar SQLMX_REGRESS 1;
+set envvar  SQLMX_PERF_ENLARGE_MAX_EXTENT;
+obey cidefs;
+control query default insert_vsbb 'OFF';
+--create catalog cat;
+--create schema cat10.perftpcd;
+set PARSERFLAGS 3;
+set schema cat10.perftpcd;
+
+obey EXP_SQL.TXT;
+
+
+?section CREATELINEITEM
+--====================================================================
+
+drop table lineitem cascade;
+
+Create table lineitem  (
+   l_orderkey          int                not null not droppable, 
+   l_linenumber        int                not null not droppable, 
+   l_partkey           int                not null not droppable, 
+   l_suppkey           int                not null not droppable, 
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key 
+location $$partition1$$
+attribute buffered, audit,no rangelog;
+
+alter table lineitem attribute all mvs allowed;
+
+?section CREATE_MV
+--====================================================================
+
+create mv  MV1
+    refresh  on request
+    initialize on refresh
+    store by (l_orderkey)
+    mvattribute audit
+    as
+        select l_orderkey,
+               avg(l_partkey) as avg_partkey,
+               sum(l_suppkey) as sum_suppkey,
+               count(*) as cnt
+        from  lineitem
+        group by l_orderkey;
+  
+  
+    refresh MV1;
+
+?section INSERT_DATA_5_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 60000 11000 80000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 60000 71000 80000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 60000 131000 80000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 60000 191000 80000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 60000 251000 80000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section INSERT_DATA_10_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 30000 11000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 30000 41000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 30000 71000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 30000 101000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 30000 131000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 30000 161000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 30000 191000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 30000 221000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 30000 251000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 30000 281000 40000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+
+?section INSERT_DATA_15_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 20000 11000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 20000 31000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 20000 51000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 20000 71000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 20000 91000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 20000 111000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 20000 131000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 20000 151000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 20000 171000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 20000 191000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 20000 211000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 20000 231000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 20000 251000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 20000 271000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 20000 291000 30000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section INSERT_DATA_19_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 15000 11000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 15000 26000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 15000 41000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 15000 56000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 15000 71000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 15000 86000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 15000 101000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 15000 116000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 15000 131000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 15000 146000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 15000 161000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 15000 176000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 15000 191000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 15000 206000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 15000 221000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 16
+sh sh LINEITEMIMPORTGEN.KSH 15000 236000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 17
+sh sh LINEITEMIMPORTGEN.KSH 15000 251000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 18
+sh sh LINEITEMIMPORTGEN.KSH 15000 266000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 19
+sh sh LINEITEMIMPORTGEN.KSH 15000 281000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 296000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section INSERT_DATA_17_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 15000 11000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 15000 26000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 15000 41000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 15000 56000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 15000 71000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 15000 86000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 15000 101000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 15000 116000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 15000 131000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 15000 146000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 15000 161000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 15000 176000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 15000 191000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 15000 206000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 15000 221000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 16
+sh sh LINEITEMIMPORTGEN.KSH 15000 236000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 17
+sh sh LINEITEMIMPORTGEN.KSH 15000 251000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 266000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 281000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 296000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section INSERT_DATA_18_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 15000 11000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 15000 26000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 15000 41000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 15000 56000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 15000 71000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 15000 86000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 15000 101000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 15000 116000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 15000 131000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 15000 146000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 15000 161000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 15000 176000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 15000 191000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 15000 206000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 15000 221000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 16
+sh sh LINEITEMIMPORTGEN.KSH 15000 236000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 17
+sh sh LINEITEMIMPORTGEN.KSH 15000 251000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 266000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+--18
+sh sh LINEITEMIMPORTGEN.KSH 15000 281000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+sh sh LINEITEMIMPORTGEN.KSH 15000 296000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+
+
+
+
+?section INSERT_DATA_20_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 15000 11000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 15000 26000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 15000 41000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 15000 56000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 15000 71000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 15000 86000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 15000 101000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 15000 116000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 15000 131000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 15000 146000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 15000 161000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 15000 176000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 15000 191000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 15000 206000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 15000 221000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 16
+sh sh LINEITEMIMPORTGEN.KSH 15000 236000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 17
+sh sh LINEITEMIMPORTGEN.KSH 15000 251000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 18
+sh sh LINEITEMIMPORTGEN.KSH 15000 266000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 19
+sh sh LINEITEMIMPORTGEN.KSH 15000 281000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 20
+sh sh LINEITEMIMPORTGEN.KSH 15000 296000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section INSERT_DATA_22_EPOCHS
+--====================================================================
+
+-- 1
+sh sh LINEITEMIMPORTGEN.KSH 15000 11000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 2
+sh sh LINEITEMIMPORTGEN.KSH 15000 26000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 3
+sh sh LINEITEMIMPORTGEN.KSH 15000 41000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 4
+sh sh LINEITEMIMPORTGEN.KSH 15000 56000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 5
+sh sh LINEITEMIMPORTGEN.KSH 15000 71000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 6
+sh sh LINEITEMIMPORTGEN.KSH 15000 86000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 7
+sh sh LINEITEMIMPORTGEN.KSH 15000 101000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 8
+sh sh LINEITEMIMPORTGEN.KSH 15000 116000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 9
+sh sh LINEITEMIMPORTGEN.KSH 15000 131000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 10
+sh sh LINEITEMIMPORTGEN.KSH 15000 146000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 11
+sh sh LINEITEMIMPORTGEN.KSH 15000 161000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 12
+sh sh LINEITEMIMPORTGEN.KSH 15000 176000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 13
+sh sh LINEITEMIMPORTGEN.KSH 15000 191000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 14
+sh sh LINEITEMIMPORTGEN.KSH 15000 206000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 15
+sh sh LINEITEMIMPORTGEN.KSH 15000 221000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 16
+sh sh LINEITEMIMPORTGEN.KSH 15000 236000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 17
+sh sh LINEITEMIMPORTGEN.KSH 15000 251000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 18
+sh sh LINEITEMIMPORTGEN.KSH 15000 266000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 19
+sh sh LINEITEMIMPORTGEN.KSH 15000 281000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 20
+sh sh LINEITEMIMPORTGEN.KSH 15000 296000 20000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 21
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+-- 22
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat10.perftpcd.lineitem@ @1@ @0@ ;
+
+?section TheTest
+--====================================================================
+-- Step 1 : Insert data in 10 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF clear;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_10_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 112 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW10_origin_qpd.log clear;
+execute root;
+log;
+log NEW10_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW10_ext_qpd.log clear;
+execute root;
+log;
+log NEW10_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--====================================================================
+
+drop table LINEITEM cascade;
+
+--====================================================================
+-- Step 2: Insert data in 15 epochs
+-------------------------------------------------
+?section EPOCH15
+------------------------------------------------
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_15_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+log;
+sh cat REFRESH.LOG >> LOGNEWPERF;
+log LOGNEWPERF;
+
+prepare XX from
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 117 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW15_origin_qpd.log clear;
+execute root;
+log;
+log NEW15_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW15_ext_qpd.log clear;
+execute root;
+log;
+log NEW15_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+?section else
+--====================================================================
+
+drop table LINEITEM cascade;
+
+--====================================================================
+-- Step 3: Insert data in 5 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_5_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 107 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+
+log NEW5_origin_qpd.log clear;
+execute root;
+log;
+log NEW5_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW15_ext_qpd.log clear;
+execute root;
+log;
+log NEW15_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--====================================================================
+-- Step 4: Insert data in 19 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_19_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 122 DE LEVEL 2
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW5_origin_qpd.log clear;
+execute root;
+log;
+log NEW5_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA 
+	cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 207 DE LEVEL 2
+	 USE NO RANGELOG
+	USE IUDLOG 
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW17_ext_qpd.log clear;
+execute root;
+log;
+log NEW17_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--====================================================================
+-- Step 5: Insert data in 17 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_17_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 119 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW5_origin_qpd.log clear;
+execute root;
+log;
+log NEW5_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW17_ext_qpd.log clear;
+execute root;
+log;
+log NEW17_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--====================================================================
+-- Step 6: Insert data in 18 epochs
+?section EPOCH18
+--------------------------------------------------------------
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_18_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 120 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW18_origin_qpd.log clear;
+execute root;
+log;
+log NEW18_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW18_ext_qpd.log clear;
+execute root;
+log;
+log NEW18_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+
+?section else
+--====================================================================
+-- Step 7: Insert data in 20 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_20_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 122 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW18_origin_qpd.log clear;
+execute root;
+log;
+log NEW18_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW20_ext_qpd.log clear;
+execute root;
+log;
+log NEW20_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--====================================================================
+-- Step 7: Insert data in 22 epochs
+obey BACKBONE(CREATELINEITEM);
+
+log LOGNEWPERF;
+
+sh sh LINEITEMIMPORTGEN.KSH 10000 0 11000 LOGNEWPERF > RUNIMPORT;
+obey RUNIMPORT;
+
+obey BACKBONE(CREATE_MV);
+
+obey BACKBONE(INSERT_DATA_22_EPOCHS);
+
+refresh MV1 debug 51,120,130;
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 122 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+obey BACKBONE(CHECKMV);
+
+log NEW18_origin_qpd.log clear;
+execute root;
+log;
+log NEW18_origin_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+--------------------------------------------------------------
+
+PREPARE XX FROM
+ INTERNAL REFRESH cat10.PERFTPCD.MV1
+ FROM SINGLEDELTA
+        cat10.PERFTPCD.LINEITEM BETWEEN 102 AND 212 DE LEVEL 0
+         USE NO RANGELOG
+        USE IUDLOG
+;
+
+BEGIN WORK;
+
+sh date;
+
+execute XX;
+
+sh date;
+
+log NEW20_ext_qpd.log clear;
+execute root;
+log;
+log NEW20_ext_expl.log clear;
+Display_explain xx;
+log;
+
+ROLLBACK;
+
+?section CHECKMV
+
+PREPARE stat1 FROM
+    select l_orderkey,
+           avg(l_partkey) as avg_partkey,
+           sum(l_suppkey) as sum_suppkey,
+		   count(*) as cnt
+    from lineitem
+    group by l_orderkey
+    order by l_orderkey
+	for browse access;
+
+PREPARE stat2 FROM
+    select l_orderkey, avg_partkey, sum_suppkey, cnt
+    from MV1
+    order by l_orderkey
+	for browse access;
+
+#ifNSK
+obey COMPARE;
+log;
+sh diff TEMP1 TEMP2 >> LOGNEWPERF;
+#ifNSK
+
+log LOGNEWPERF;

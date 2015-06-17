@@ -1,0 +1,2747 @@
+>>
+>>-- Enable extra-hub tables, run the tests, and then re-run with extra-hub
+>>-- tables turned off. Append a macro to all file names that has a different
+>>-- value in the hub/no-hub runs, so the files won't be overwritten in the
+>>-- 2nd run.
+>>control query default MVQR_USE_EXTRA_HUB_TABLES 'ON';
+
+--- SQL operation complete.
+>>set pattern $$phase$$ EHUB_ON;
+>>obey TEST015(run_test);
+>>obey TEST015(clean_up);
+>>log;
+>>
+>>obey TEST015(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>--control query default QUERY_CACHE '0';
+>>
+>>obey GetMvDesc;
+>>--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+>>set param ?mvDescSubId  -2;
+>>set param ?mvName 'SUMBY_DAY';
+>>set param ?mvSchemaName 'SUMBY';
+>>
+>>-- query the TEXT SMD table for the descriptor of an MV
+>>-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+>>--       length limit of the NT version of awk (file CropDescriptor.ksh).
+>>prepare getMVDescFromTEXT from
++>  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
++>                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
++>                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
++>  from
++>		 (SELECT o.object_uid as uid0, text as text0
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 0 ) as row0
++>	left outer join
++>		 (SELECT o.object_uid as uid1, text as text1
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 1 ) as row1
++>		 on uid0 = uid1
++>	left outer join
++>		 (SELECT o.object_uid as uid2, text as text2
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 2 ) as row2
++>		 on uid0 = uid2
++>	left outer join
++>		 (SELECT o.object_uid as uid3, text as text3
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 3 ) as row3
++>		 on uid0 = uid3
++>	left outer join
++>		 (SELECT o.object_uid as uid4, text as text4
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 4 ) as row4
++>		 on uid0 = uid4
++>	left outer join
++>		 (SELECT o.object_uid as uid5, text as text5
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 5 ) as row5
++>		 on uid0 = uid5
++>	left outer join
++>		 (SELECT o.object_uid as uid6, text as text6
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 6 ) as row6
++>		 on uid0 = uid6
++>	left outer join
++>		 (SELECT o.object_uid as uid7, text as text7
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 7 ) as row7
++>		 on uid0 = uid7
++>	left outer join
++>		 (SELECT o.object_uid as uid8, text as text8
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 8 ) as row8
++>		 on uid0 = uid8;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>create schema LOJ;
+
+--- SQL operation complete.
+>>set schema LOJ;
+
+--- SQL operation complete.
+>>set pattern $$MVSchemaName$$ LOJ;
+>>
+>>create table fact (
++>	pk     int not null not droppable primary key,
++>	f1     int,
++>	f2     int,
++>	name   char(20),
++>	dimkey int)
++>	store by primary key;
+
+--- SQL operation complete.
+>>
+>>create table dim1 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>create table dim2 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>
+>>insert into fact values 
++>  ( 1,  1,  1, ' 1',  1), ( 2,  2,  2, ' 2',  2),
++>  (11, 11, 11, '11', 11), (12, 12, 12, '12', 12);
+
+--- 4 row(s) inserted.
+>>
+>>insert into dim1 values 
++>  (1, 1), (3, 3), (11, 11), (13, 13);
+
+--- 4 row(s) inserted.
+>>
+>>insert into dim2 values 
++>  (1, 1), (4, 4), (11, 11), (14, 14);
+
+--- 4 row(s) inserted.
+>>
+>>obey TEST015(create_mvs);
+>>--===========================================
+>>-- MJVs
+>>--===========================================
+>>
+>>-- No LOJs.
+>>create mv LOJ_MJV_INNER
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    inner join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_INNER;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_INNER
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797374300574' isKeyCovered='1' numCols='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797372363161' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J109'>
+          <Column id='C90' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C83'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O100' name='F1'>
+        <Column id='C80' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O103' name='F2'>
+        <Column id='C81' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O109' name='DIMKEY'>
+        <Column id='C83' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O115' name='DIMDATA'>
+        <Column id='C91' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_INNER 
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>-- Single column LOJ pred.
+>>create mv LOJ_MJV_OUTER1
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER1;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER1
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T2' TS='212228797372363161' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+    </Hub>
+    <ExtraHub>
+      <TableList>
+        <Table id='T1' TS='212228797374300574' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+      </TableList>
+      <JoinPredList>
+        <JoinPred id='J102'>
+          <Column id='C78' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C71'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O84' name='DKEY'>
+        <Column id='C84' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O85' name='DIMDATA'>
+        <Column id='C85' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O90' name='F1'>
+        <Column id='C68' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O93' name='F2'>
+        <Column id='C69' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O99' name='DIMKEY'>
+        <Column id='C71' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER1
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, dkey not provided.
+>>create mv LOJ_MJV_OUTER2
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER2;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER2
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T2' TS='212228797372363161' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+    </Hub>
+    <ExtraHub>
+      <TableList>
+        <Table id='T1' TS='212228797374300574' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+      </TableList>
+      <JoinPredList>
+        <JoinPred id='J101'>
+          <Column id='C77' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C70'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O84' name='DIMDATA'>
+        <Column id='C84' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O89' name='F1'>
+        <Column id='C67' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O92' name='F2'>
+        <Column id='C68' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O98' name='DIMKEY'>
+        <Column id='C70' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER2
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DIMDATA    
+-----------  -----------  -----------  -----------
+
+          1            1            1            1
+          2            2            2            ?
+         11           11           11           11
+         12           12           12            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, range pred in WHERE clause.
+>>-- Normalizer should transform to inner join.
+>>create mv LOJ_MJV_OUTER3
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey
++>	    where dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER3;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER3
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797374300574' isKeyCovered='1' numCols='2' rangeBits='00000004'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797372363161' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J112'>
+          <Column id='C89' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C82'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <RangePredList>
+        <Range id='R129' sqlType='INTEGER SIGNED ALLOWS NULLS'>
+          <Column ref='C90'>
+          </Column>
+          <OpGE isNormalized='1'>
+            <NumericVal scale='0'>
+              11
+            </NumericVal>
+          </OpGE>
+        </Range>
+      </RangePredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O103' name='F1'>
+        <Column id='C79' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O106' name='F2'>
+        <Column id='C80' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O112' name='DIMKEY'>
+        <Column id='C82' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O124' name='DIMDATA'>
+        <Column id='C90' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER3
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+         11           11           11           11           11
+
+--- 1 row(s) selected.
+>>
+>>-- Single column LOJ pred, AND range pred in ON clause.
+>>create mv LOJ_MJV_OUTER4
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey and dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER4;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER4
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T2' TS='212228797372363161' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <RangePredList>
+        <Range id='R123' sqlType='INTEGER SIGNED ALLOWS NULLS'>
+          <Column id='C87' tableId='T1' colIndex='1'>
+            CAT.LOJ.DIM1.DIMDATA
+          </Column>
+          <OpGE isNormalized='1'>
+            <NumericVal scale='0'>
+              11
+            </NumericVal>
+          </OpGE>
+        </Range>
+      </RangePredList>
+    </Hub>
+    <ExtraHub>
+      <TableList>
+        <Table id='T1' TS='212228797374300574' numCols='2' hasLOJParent='1' rangeBits='00000004' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+      </TableList>
+      <JoinPredList>
+        <JoinPred id='J112'>
+          <Column id='C86' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C79'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O94' name='DKEY'>
+        <Column id='C94' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O95' name='DIMDATA'>
+        <Column id='C95' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O100' name='F1'>
+        <Column id='C76' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O103' name='F2'>
+        <Column id='C77' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O109' name='DIMKEY'>
+        <Column id='C79' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER4
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            ?            ?
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, OR range pred in ON clause.
+>>create mv LOJ_MJV_OUTER5
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey or dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER5;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER5
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797374300574' numCols='2' hasLOJParent='1' residualBits='0000000C' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797372363161' numCols='5' residualBits='00000080'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <ResidualPredList>
+        <Residual id='D117'>
+          <BinaryOper id='S117' op='or'>
+            <BinaryOper id='S115' op='='>
+              <Column ref='C76'>
+              </Column>
+              <Column id='C83' tableId='T1' colIndex='0' isNullable='0'>
+                CAT.LOJ.DIM1.DKEY
+              </Column>
+            </BinaryOper>
+            <BinaryOper id='S116' op='>'>
+              <Column id='C84' tableId='T1' colIndex='1'>
+                CAT.LOJ.DIM1.DIMDATA
+              </Column>
+              <NumericVal id='S89' scale='0'>
+                10
+              </NumericVal>
+            </BinaryOper>
+          </BinaryOper>
+        </Residual>
+      </ResidualPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O92' name='DKEY'>
+        <Column id='C92' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O93' name='DIMDATA'>
+        <Column id='C93' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O98' name='F1'>
+        <Column id='C73' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O101' name='F2'>
+        <Column id='C74' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O107' name='DIMKEY'>
+        <Column id='C76' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER5
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          1            1            1           11           11
+          1            1            1           13           13
+          2            2            2           11           11
+          2            2            2           13           13
+         11           11           11           11           11
+         11           11           11           13           13
+         12           12           12           11           11
+         12           12           12           13           13
+
+--- 9 row(s) selected.
+>>
+>>--============================================================================
+>>obey TEST015(match_inner);
+>>--============================================================================
+>>--== Inner join query, should match LOJ_MJV_INNER
+>>--============================================================================
+>>set pattern $$QueryName$$ LOJ_INNER;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST015(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$_$$phase$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$_$$phase$$.TMP -o $$QueryName$$_$$phase$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc rewriteLevel='3'>                                             
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212228797374300574' numCols='2'>           
+          CAT.LOJ.DIM1                                                
+          <Key>                                                       
+            <Column id='C12' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.LOJ.DIM1.DKEY                                       
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212228797372363161' numCols='5'>           
+          CAT.LOJ.FACT                                                
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.LOJ.FACT.PK                                         
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J31'>                                           
+          <Column ref='C12'>                                          
+          </Column>                                                   
+          <Column ref='C5'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O22'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.LOJ.FACT.F1                                             
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O25'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.LOJ.FACT.F2                                             
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O31'>                                               
+        <Column id='C5' tableId='T2' colIndex='4'>                    
+          CAT.LOJ.FACT.DIMKEY                                         
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O37'>                                               
+        <Column id='C13' tableId='T1' colIndex='1'>                   
+          CAT.LOJ.DIM1.DIMDATA                                        
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 61 row(s) selected.
+>>
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                    >> LOJ1_$$phase$$.in;
+>>sh echo MATCH LOJ_INNER_$$phase$$.xml >> LOJ1_$$phase$$.in;
+>>
+>>-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+>>-- the file names derived from them to/from fixed-name files that are used in
+>>-- the invocation of QMS.
+>>sh cp LOJ1_$$phase$$.in t015.copy.in;
+>>sh sh -c "$QMS t015.copy.in t015.copy.out";
+>>sh cp t015.copy.out LOJ_$$phase$$.out;
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.LOJ.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797391879365'>
+            CAT.LOJ.LOJ_MJV_OUTER1
+          </MVName>
+          <RangePredList>
+            <Range result='NotProvided'>
+              <MVColumn ref='C12'>
+                DKEY
+              </MVColumn>
+              <!-- empty Range element indicates IS NOT NULL -->
+            </Range>
+          </RangePredList>
+          <OutputList>
+            <Output ref='O22' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O25' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C5'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O37' result='Provided'>
+              <MVColumn ref='C13'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.LOJ.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797378628687'>
+            CAT.LOJ.LOJ_MJV_INNER
+          </MVName>
+          <OutputList>
+            <Output ref='O22' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O25' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C5'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O37' result='Provided'>
+              <MVColumn ref='C13'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER2 was disqualified because table CAT.LOJ.DIM1 key columns are not provided for NOT NULL predicate.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER3 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+
+--- SQL operation complete.
+>>obey TEST015(compare);
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.LOJ_MJV_OUTER1                                      
+
+--- 1 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>log T015_C1_$$phase$$.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.DIM1                                                
+FILE_SCAN                       CAT.LOJ.FACT                                                
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T015_C2_$$phase$$.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>--============================================================================
+>>obey TEST015(match_outer);
+>>--============================================================================
+>>--== Outer join query, should match LOJ_MJV_INNER 
+>>--== and also LOJ_MJV_OUTER with NOT NULL predicate.
+>>--============================================================================
+>>set pattern $$QueryName$$ LOJ_OUTER;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST015(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$_$$phase$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$_$$phase$$.TMP -o $$QueryName$$_$$phase$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+------------------------------------------------------------------------------------------
+
+<Query>                                                                                   
+  <Version>                                                                               
+    1.0                                                                                   
+  </Version>                                                                              
+  <Misc rewriteLevel='3'>                                                                 
+  </Misc>                                                                                 
+  <JBB id='B0'>                                                                           
+    <Hub>                                                                                 
+      <JBBCList>                                                                          
+        <Table id='T1' TS='212228797374300574' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1                                                                    
+          <Key>                                                                           
+            <Column id='C12' tableId='T1' colIndex='0' isNullable='0'>                    
+              CAT.LOJ.DIM1.DKEY                                                           
+            </Column>                                                                     
+          </Key>                                                                          
+        </Table>                                                                          
+        <Table id='T2' TS='212228797372363161' numCols='5'>                               
+          CAT.LOJ.FACT                                                                    
+          <Key>                                                                           
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>                     
+              CAT.LOJ.FACT.PK                                                             
+            </Column>                                                                     
+          </Key>                                                                          
+        </Table>                                                                          
+      </JBBCList>                                                                         
+      <JoinPredList>                                                                      
+        <JoinPred id='J36'>                                                               
+          <Column ref='C12'>                                                              
+          </Column>                                                                       
+          <Column ref='C5'>                                                               
+          </Column>                                                                       
+        </JoinPred>                                                                       
+      </JoinPredList>                                                                     
+    </Hub>                                                                                
+    <ExtraHub>                                                                            
+    </ExtraHub>                                                                           
+    <OutputList>                                                                          
+      <Output id='O18'>                                                                   
+        <Column id='C18' tableId='T1' colIndex='0' isNullable='0'>                        
+          CAT.LOJ.DIM1.DKEY                                                               
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O19'>                                                                   
+        <Column id='C19' tableId='T1' colIndex='1'>                                       
+          CAT.LOJ.DIM1.DIMDATA                                                            
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O24'>                                                                   
+        <Column id='C2' tableId='T2' colIndex='1'>                                        
+          CAT.LOJ.FACT.F1                                                                 
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O27'>                                                                   
+        <Column id='C3' tableId='T2' colIndex='2'>                                        
+          CAT.LOJ.FACT.F2                                                                 
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O33'>                                                                   
+        <Column id='C5' tableId='T2' colIndex='4'>                                        
+          CAT.LOJ.FACT.DIMKEY                                                             
+        </Column>                                                                         
+      </Output>                                                                           
+    </OutputList>                                                                         
+  </JBB>                                                                                  
+</Query>                                                                                  
+
+--- 66 row(s) selected.
+>>
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                    >> LOJ2_$$phase$$.in;
+>>sh echo MATCH LOJ_OUTER_$$phase$$.xml >> LOJ2_$$phase$$.in;
+>>
+>>-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+>>-- the file names derived from them to/from fixed-name files that are used in
+>>-- the invocation of QMS.
+>>sh cp LOJ2_$$phase$$.in t015.copy.in;
+>>sh sh -c "$QMS t015.copy.in t015.copy.out";
+>>sh cp t015.copy.out LOJ_$$phase$$.out;
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.LOJ.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797391879365'>
+            CAT.LOJ.LOJ_MJV_OUTER1
+          </MVName>
+          <OutputList>
+            <Output ref='O24' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O27' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O33' result='Provided'>
+              <MVColumn ref='C5'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O19' result='Provided'>
+              <MVColumn ref='C19'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+            <Output ref='O18' result='Provided'>
+              <MVColumn ref='C18'>
+                DKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_INNER was disqualified because Table CAT.LOJ.DIM1 is an inner table of an outer join in the query but not in the MV.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER2 was disqualified because extra-hub column CAT.LOJ.DIM1.DKEY cannot be provided.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER3 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+
+--- SQL operation complete.
+>>obey TEST015(compare);
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.LOJ_MJV_OUTER1                                      
+
+--- 1 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>log T015_C1_$$phase$$.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.DIM1                                                
+FILE_SCAN                       CAT.LOJ.FACT                                                
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T015_C2_$$phase$$.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>-- The following 3 commands could be used instead of sticking $$pattern$$
+>>-- everywhere, but they don't work on MKS, so the NT test would fail.
+>>--sh rename LOJ LOJ_EHUB LOJ*;
+>>--sh sed -i 's/LOJ/LOJ_EHUB/g' LOJ_EHUB*.in;
+>>--sh rename T015 T015_EHUB T015*;
+>>
+>>-- Now disable extra-hub tables and repeat the test.
+>>control query default MVQR_USE_EXTRA_HUB_TABLES 'OFF';
+
+--- SQL operation complete.
+>>set pattern $$phase$$ EHUB_OFF;
+>>obey TEST015(run_test);
+>>obey TEST015(clean_up);
+>>log;
+>>
+>>obey TEST015(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>--control query default QUERY_CACHE '0';
+>>
+>>obey GetMvDesc;
+>>--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+>>set param ?mvDescSubId  -2;
+>>set param ?mvName 'SUMBY_DAY';
+>>set param ?mvSchemaName 'SUMBY';
+>>
+>>-- query the TEXT SMD table for the descriptor of an MV
+>>-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+>>--       length limit of the NT version of awk (file CropDescriptor.ksh).
+>>prepare getMVDescFromTEXT from
++>  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
++>                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
++>                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
++>  from
++>		 (SELECT o.object_uid as uid0, text as text0
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 0 ) as row0
++>	left outer join
++>		 (SELECT o.object_uid as uid1, text as text1
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 1 ) as row1
++>		 on uid0 = uid1
++>	left outer join
++>		 (SELECT o.object_uid as uid2, text as text2
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 2 ) as row2
++>		 on uid0 = uid2
++>	left outer join
++>		 (SELECT o.object_uid as uid3, text as text3
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 3 ) as row3
++>		 on uid0 = uid3
++>	left outer join
++>		 (SELECT o.object_uid as uid4, text as text4
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 4 ) as row4
++>		 on uid0 = uid4
++>	left outer join
++>		 (SELECT o.object_uid as uid5, text as text5
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 5 ) as row5
++>		 on uid0 = uid5
++>	left outer join
++>		 (SELECT o.object_uid as uid6, text as text6
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 6 ) as row6
++>		 on uid0 = uid6
++>	left outer join
++>		 (SELECT o.object_uid as uid7, text as text7
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 7 ) as row7
++>		 on uid0 = uid7
++>	left outer join
++>		 (SELECT o.object_uid as uid8, text as text8
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 8 ) as row8
++>		 on uid0 = uid8;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>create schema LOJ;
+
+--- SQL operation complete.
+>>set schema LOJ;
+
+--- SQL operation complete.
+>>set pattern $$MVSchemaName$$ LOJ;
+>>
+>>create table fact (
++>	pk     int not null not droppable primary key,
++>	f1     int,
++>	f2     int,
++>	name   char(20),
++>	dimkey int)
++>	store by primary key;
+
+--- SQL operation complete.
+>>
+>>create table dim1 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>create table dim2 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>
+>>insert into fact values 
++>  ( 1,  1,  1, ' 1',  1), ( 2,  2,  2, ' 2',  2),
++>  (11, 11, 11, '11', 11), (12, 12, 12, '12', 12);
+
+--- 4 row(s) inserted.
+>>
+>>insert into dim1 values 
++>  (1, 1), (3, 3), (11, 11), (13, 13);
+
+--- 4 row(s) inserted.
+>>
+>>insert into dim2 values 
++>  (1, 1), (4, 4), (11, 11), (14, 14);
+
+--- 4 row(s) inserted.
+>>
+>>obey TEST015(create_mvs);
+>>--===========================================
+>>-- MJVs
+>>--===========================================
+>>
+>>-- No LOJs.
+>>create mv LOJ_MJV_INNER
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    inner join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_INNER;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_INNER
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' isKeyCovered='1' numCols='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J109'>
+          <Column id='C90' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C83'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O100' name='F1'>
+        <Column id='C80' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O103' name='F2'>
+        <Column id='C81' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O109' name='DIMKEY'>
+        <Column id='C83' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O115' name='DIMDATA'>
+        <Column id='C91' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_INNER 
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>-- Single column LOJ pred.
+>>create mv LOJ_MJV_OUTER1
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER1;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER1
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J102'>
+          <Column id='C78' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C71'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O84' name='DKEY'>
+        <Column id='C84' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O85' name='DIMDATA'>
+        <Column id='C85' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O90' name='F1'>
+        <Column id='C68' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O93' name='F2'>
+        <Column id='C69' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O99' name='DIMKEY'>
+        <Column id='C71' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER1
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, dkey not provided.
+>>create mv LOJ_MJV_OUTER2
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER2;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER2
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J101'>
+          <Column id='C77' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C70'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O84' name='DIMDATA'>
+        <Column id='C84' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O89' name='F1'>
+        <Column id='C67' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O92' name='F2'>
+        <Column id='C68' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O98' name='DIMKEY'>
+        <Column id='C70' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER2
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DIMDATA    
+-----------  -----------  -----------  -----------
+
+          1            1            1            1
+          2            2            2            ?
+         11           11           11           11
+         12           12           12            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, range pred in WHERE clause.
+>>-- Normalizer should transform to inner join.
+>>create mv LOJ_MJV_OUTER3
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey
++>	    where dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER3;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER3
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' isKeyCovered='1' numCols='2' rangeBits='00000004'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J112'>
+          <Column id='C89' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C82'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <RangePredList>
+        <Range id='R129' sqlType='INTEGER SIGNED ALLOWS NULLS'>
+          <Column ref='C90'>
+          </Column>
+          <OpGE isNormalized='1'>
+            <NumericVal scale='0'>
+              11
+            </NumericVal>
+          </OpGE>
+        </Range>
+      </RangePredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O103' name='F1'>
+        <Column id='C79' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O106' name='F2'>
+        <Column id='C80' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O112' name='DIMKEY'>
+        <Column id='C82' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+      <Output id='O124' name='DIMDATA'>
+        <Column id='C90' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER3
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+         11           11           11           11           11
+
+--- 1 row(s) selected.
+>>
+>>-- Single column LOJ pred, AND range pred in ON clause.
+>>create mv LOJ_MJV_OUTER4
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey and dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER4;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER4
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' numCols='2' hasLOJParent='1' rangeBits='00000004' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J112'>
+          <Column id='C86' tableId='T1' colIndex='0' isNullable='0'>
+            CAT.LOJ.DIM1.DKEY
+          </Column>
+          <Column ref='C79'>
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <RangePredList>
+        <Range id='R123' sqlType='INTEGER SIGNED ALLOWS NULLS'>
+          <Column id='C87' tableId='T1' colIndex='1'>
+            CAT.LOJ.DIM1.DIMDATA
+          </Column>
+          <OpGE isNormalized='1'>
+            <NumericVal scale='0'>
+              11
+            </NumericVal>
+          </OpGE>
+        </Range>
+      </RangePredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O94' name='DKEY'>
+        <Column id='C94' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O95' name='DIMDATA'>
+        <Column id='C95' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O100' name='F1'>
+        <Column id='C76' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O103' name='F2'>
+        <Column id='C77' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O109' name='DIMKEY'>
+        <Column id='C79' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER4
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            ?            ?
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>-- Single column LOJ pred, OR range pred in ON clause.
+>>create mv LOJ_MJV_OUTER5
++>	recompute
++>	initialized on create
++>	as  select f1, f2, dimkey, dkey, dimdata
++>	    from fact
++>	    left outer join dim1
++>	    on dimkey=dkey or dimdata > 10;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ LOJ_MJV_OUTER5;
+>>obey TEST015(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$_$$phase$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.LOJ.LOJ_MJV_OUTER5
+  </Table>
+  <Misc isIncremental='0'>
+  </Misc>
+  <JBB id='B0'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212228797472726398' numCols='2' hasLOJParent='1' residualBits='0000000C' joinOrder='2'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table id='T2' TS='212228797470976476' numCols='5' residualBits='00000080'>
+          CAT.LOJ.FACT
+        </Table>
+      </JBBCList>
+      <ResidualPredList>
+        <Residual id='D117'>
+          <BinaryOper id='S117' op='or'>
+            <BinaryOper id='S115' op='='>
+              <Column ref='C76'>
+              </Column>
+              <Column id='C83' tableId='T1' colIndex='0' isNullable='0'>
+                CAT.LOJ.DIM1.DKEY
+              </Column>
+            </BinaryOper>
+            <BinaryOper id='S116' op='>'>
+              <Column id='C84' tableId='T1' colIndex='1'>
+                CAT.LOJ.DIM1.DIMDATA
+              </Column>
+              <NumericVal id='S89' scale='0'>
+                10
+              </NumericVal>
+            </BinaryOper>
+          </BinaryOper>
+        </Residual>
+      </ResidualPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O92' name='DKEY'>
+        <Column id='C92' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.LOJ.DIM1.DKEY
+        </Column>
+      </Output>
+      <Output id='O93' name='DIMDATA'>
+        <Column id='C93' tableId='T1' colIndex='1'>
+          CAT.LOJ.DIM1.DIMDATA
+        </Column>
+      </Output>
+      <Output id='O98' name='F1'>
+        <Column id='C73' tableId='T2' colIndex='1'>
+          CAT.LOJ.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O101' name='F2'>
+        <Column id='C74' tableId='T2' colIndex='2'>
+          CAT.LOJ.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O107' name='DIMKEY'>
+        <Column id='C76' tableId='T2' colIndex='4'>
+          CAT.LOJ.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>select * from LOJ_MJV_OUTER5
++>  order by dimkey, dimdata;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          1            1            1           11           11
+          1            1            1           13           13
+          2            2            2           11           11
+          2            2            2           13           13
+         11           11           11           11           11
+         11           11           11           13           13
+         12           12           12           11           11
+         12           12           12           13           13
+
+--- 9 row(s) selected.
+>>
+>>--============================================================================
+>>obey TEST015(match_inner);
+>>--============================================================================
+>>--== Inner join query, should match LOJ_MJV_INNER
+>>--============================================================================
+>>set pattern $$QueryName$$ LOJ_INNER;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST015(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$_$$phase$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$_$$phase$$.TMP -o $$QueryName$$_$$phase$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc rewriteLevel='3'>                                             
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T1' TS='212228797472726398' numCols='2'>           
+          CAT.LOJ.DIM1                                                
+          <Key>                                                       
+            <Column id='C12' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.LOJ.DIM1.DKEY                                       
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+        <Table id='T2' TS='212228797470976476' numCols='5'>           
+          CAT.LOJ.FACT                                                
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.LOJ.FACT.PK                                         
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+      <JoinPredList>                                                  
+        <JoinPred id='J31'>                                           
+          <Column ref='C12'>                                          
+          </Column>                                                   
+          <Column ref='C5'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </Hub>                                                            
+    <ExtraHub>                                                        
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O22'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.LOJ.FACT.F1                                             
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O25'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.LOJ.FACT.F2                                             
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O31'>                                               
+        <Column id='C5' tableId='T2' colIndex='4'>                    
+          CAT.LOJ.FACT.DIMKEY                                         
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O37'>                                               
+        <Column id='C13' tableId='T1' colIndex='1'>                   
+          CAT.LOJ.DIM1.DIMDATA                                        
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 61 row(s) selected.
+>>
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                    >> LOJ1_$$phase$$.in;
+>>sh echo MATCH LOJ_INNER_$$phase$$.xml >> LOJ1_$$phase$$.in;
+>>
+>>-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+>>-- the file names derived from them to/from fixed-name files that are used in
+>>-- the invocation of QMS.
+>>sh cp LOJ1_$$phase$$.in t015.copy.in;
+>>sh sh -c "$QMS t015.copy.in t015.copy.out";
+>>sh cp t015.copy.out LOJ_$$phase$$.out;
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.LOJ.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797476476230'>
+            CAT.LOJ.LOJ_MJV_INNER
+          </MVName>
+          <OutputList>
+            <Output ref='O22' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O25' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C5'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O37' result='Provided'>
+              <MVColumn ref='C13'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797484085264'>
+            CAT.LOJ.LOJ_MJV_OUTER1
+          </MVName>
+          <RangePredList>
+            <Range result='NotProvided'>
+              <MVColumn ref='C12'>
+                DKEY
+              </MVColumn>
+              <!-- empty Range element indicates IS NOT NULL -->
+            </Range>
+          </RangePredList>
+          <OutputList>
+            <Output ref='O22' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O25' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C5'>
+                DKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O37' result='Provided'>
+              <MVColumn ref='C13'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER2 was disqualified because column CAT.LOJ.DIM1.DKEY cannot be provided.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER3 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER4 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+
+--- SQL operation complete.
+>>obey TEST015(compare);
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.LOJ_MJV_OUTER1                                      
+
+--- 1 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>log T015_C1_$$phase$$.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  inner join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.DIM1                                                
+FILE_SCAN                       CAT.LOJ.FACT                                                
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+         11           11           11           11           11
+
+--- 2 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T015_C2_$$phase$$.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>--============================================================================
+>>obey TEST015(match_outer);
+>>--============================================================================
+>>--== Outer join query, should match LOJ_MJV_INNER 
+>>--== and also LOJ_MJV_OUTER with NOT NULL predicate.
+>>--============================================================================
+>>set pattern $$QueryName$$ LOJ_OUTER;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST015(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$_$$phase$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$_$$phase$$.TMP -o $$QueryName$$_$$phase$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+------------------------------------------------------------------------------------------
+
+<Query>                                                                                   
+  <Version>                                                                               
+    1.0                                                                                   
+  </Version>                                                                              
+  <Misc rewriteLevel='3'>                                                                 
+  </Misc>                                                                                 
+  <JBB id='B0'>                                                                           
+    <Hub>                                                                                 
+      <JBBCList>                                                                          
+        <Table id='T1' TS='212228797472726398' numCols='2' hasLOJParent='1' joinOrder='2'>
+          CAT.LOJ.DIM1                                                                    
+          <Key>                                                                           
+            <Column id='C12' tableId='T1' colIndex='0' isNullable='0'>                    
+              CAT.LOJ.DIM1.DKEY                                                           
+            </Column>                                                                     
+          </Key>                                                                          
+        </Table>                                                                          
+        <Table id='T2' TS='212228797470976476' numCols='5'>                               
+          CAT.LOJ.FACT                                                                    
+          <Key>                                                                           
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>                     
+              CAT.LOJ.FACT.PK                                                             
+            </Column>                                                                     
+          </Key>                                                                          
+        </Table>                                                                          
+      </JBBCList>                                                                         
+      <JoinPredList>                                                                      
+        <JoinPred id='J36'>                                                               
+          <Column ref='C12'>                                                              
+          </Column>                                                                       
+          <Column ref='C5'>                                                               
+          </Column>                                                                       
+        </JoinPred>                                                                       
+      </JoinPredList>                                                                     
+    </Hub>                                                                                
+    <ExtraHub>                                                                            
+    </ExtraHub>                                                                           
+    <OutputList>                                                                          
+      <Output id='O18'>                                                                   
+        <Column id='C18' tableId='T1' colIndex='0' isNullable='0'>                        
+          CAT.LOJ.DIM1.DKEY                                                               
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O19'>                                                                   
+        <Column id='C19' tableId='T1' colIndex='1'>                                       
+          CAT.LOJ.DIM1.DIMDATA                                                            
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O24'>                                                                   
+        <Column id='C2' tableId='T2' colIndex='1'>                                        
+          CAT.LOJ.FACT.F1                                                                 
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O27'>                                                                   
+        <Column id='C3' tableId='T2' colIndex='2'>                                        
+          CAT.LOJ.FACT.F2                                                                 
+        </Column>                                                                         
+      </Output>                                                                           
+      <Output id='O33'>                                                                   
+        <Column id='C5' tableId='T2' colIndex='4'>                                        
+          CAT.LOJ.FACT.DIMKEY                                                             
+        </Column>                                                                         
+      </Output>                                                                           
+    </OutputList>                                                                         
+  </JBB>                                                                                  
+</Query>                                                                                  
+
+--- 66 row(s) selected.
+>>
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                    >> LOJ2_$$phase$$.in;
+>>sh echo MATCH LOJ_OUTER_$$phase$$.xml >> LOJ2_$$phase$$.in;
+>>
+>>-- sqlci macros (patterns) aren't expanded within quotes, so we have to copy
+>>-- the file names derived from them to/from fixed-name files that are used in
+>>-- the invocation of QMS.
+>>sh cp LOJ2_$$phase$$.in t015.copy.in;
+>>sh sh -c "$QMS t015.copy.in t015.copy.out";
+>>sh cp t015.copy.out LOJ_$$phase$$.out;
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T1'>
+          CAT.LOJ.DIM1
+        </Table>
+        <Table ref='T2'>
+          CAT.LOJ.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='212228797484085264'>
+            CAT.LOJ.LOJ_MJV_OUTER1
+          </MVName>
+          <OutputList>
+            <Output ref='O18' result='Provided'>
+              <MVColumn ref='C18'>
+                DKEY
+              </MVColumn>
+            </Output>
+            <Output ref='O19' result='Provided'>
+              <MVColumn ref='C19'>
+                DIMDATA
+              </MVColumn>
+            </Output>
+            <Output ref='O24' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O27' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O33' result='Provided'>
+              <MVColumn ref='C5'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_INNER was disqualified because Table CAT.LOJ.DIM1 is an inner table of an outer join in the query but not in the MV.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER2 was disqualified because column CAT.LOJ.DIM1.DKEY cannot be provided.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER3 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.LOJ.LOJ_MJV_OUTER4 was disqualified because Table CAT.LOJ.DIM1 failed on range bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.LOJ.LOJ_MJV_OUTER1';
+
+--- SQL operation complete.
+>>obey TEST015(compare);
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.LOJ_MJV_OUTER1                                      
+
+--- 1 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>log T015_C1_$$phase$$.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST015($$QueryName$$);
+>>prepare QueryStmt from
++>  select f1, f2, dimkey, dkey, dimdata
++>  from fact
++>  left outer join dim1
++>  on dimkey=dkey
++>  order by dimkey, dimdata;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.LOJ.DIM1                                                
+FILE_SCAN                       CAT.LOJ.FACT                                                
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1           F2           DIMKEY       DKEY         DIMDATA    
+-----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1
+          2            2            2            ?            ?
+         11           11           11           11           11
+         12           12           12            ?            ?
+
+--- 4 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T015_C2_$$phase$$.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST015(clean_up);
+>>log;
+>>
+>>exit;
+
+End of MXCI Session
+

@@ -1,0 +1,115 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+FILENAME_DECOMPOSE_:
+  ERROR                              FILENAME   LEVEL  OPTIONS  SUBPART                              PARTNAME  
+      0    \PFB0101.$FC0000.ZSDX6006.BFZQ9Z00       0        2        0                      \PFB0101.$FC0000  
+      0    \PFB0101.$FC0100.ZSDX6006.BM8Q9Z00       0        2        0                      \PFB0101.$FC0100  
+      0    \PFB0101.$FC0200.ZSDX6006.Z68Q9Z00       0        2        0                      \PFB0101.$FC0200  
+      0    \PFB0101.$FC0300.ZSDX6006.L9WR9Z00       0        2        0                      \PFB0101.$FC0300  
+      0    \PFB0101.$FC0400.ZSDX6006.BKDS9Z00       0        2        0                      \PFB0101.$FC0400  
+      0    \PFB0101.$FC0500.ZSDX6006.QQQS9Z00       0        2        0                      \PFB0101.$FC0500  
+      0    \PFB0101.$FC0600.ZSDX6006.BX1S9Z00       0        2        0                      \PFB0101.$FC0600  
+      0    \PFB0101.$FC0700.ZSDX6006.Z3FT9Z00       0        2        0                      \PFB0101.$FC0700  
+      0    \PFB0101.$FC0800.ZSDX6006.KCQT9Z00       0        2        0                      \PFB0101.$FC0800  
+      0    \PFB0101.$FC0900.ZSDX6006.L31T9Z00       0        2        0                      \PFB0101.$FC0900  
+      0    \PFB0101.$FC1000.ZSDX6006.LP2T9Z00       0        2        0                      \PFB0101.$FC1000  
+      0    \PFB0101.$FC1100.ZSDX6006.J8BV9Z00       0        2        0                      \PFB0101.$FC1100  
+      0    \PFB0101.$FC1200.ZSDX6006.HSCV9Z00       0        2        0                      \PFB0101.$FC1200  
+      0    \PFB0101.$FC1300.ZSDX6006.NCDV9Z00       0        2        0                      \PFB0101.$FC1300  
+      0    \PFB0101.$FC1400.ZSDX6006.DXDV9Z00       0        2        0                      \PFB0101.$FC1400  
+      0    \PFB0101.$FC1500.ZSDX6006.CQRV9Z00       0        2        0                      \PFB0101.$FC1500  
+      0    \PFB0102.$FC0000.ZSDX6006.DB9V9Z00       0        2        0                      \PFB0102.$FC0000  
+      0    \PFB0102.$FC0100.ZSDX6006.W6BW9Z00       0        2        0                      \PFB0102.$FC0100  
+      0    \PFB0102.$FC0200.ZSDX6006.R3DW9Z00       0        2        0                      \PFB0102.$FC0200  
+      0    \PFB0102.$FC0300.ZSDX6006.CZGW9Z00       0        2        0                      \PFB0102.$FC0300  
+      0    \PFB0102.$FC0400.ZSDX6006.XTJW9Z00       0        2        0                      \PFB0102.$FC0400  
+      0    \PFB0102.$FC0500.ZSDX6006.WQLW9Z00       0        2        0                      \PFB0102.$FC0500  
+      0    \PFB0102.$FC0600.ZSDX6006.DMNW9Z00       0        2        0                      \PFB0102.$FC0600  
+      0    \PFB0102.$FC0700.ZSDX6006.RHQW9Z00       0        2        0                      \PFB0102.$FC0700  
+      0    \PFB0102.$FC0800.ZSDX6006.CDSW9Z00       0        2        0                      \PFB0102.$FC0800  
+      0    \PFB0102.$FC0900.ZSDX6006.T8TW9Z00       0        2        0                      \PFB0102.$FC0900  
+      0    \PFB0102.$FC1000.ZSDX6006.D5WW9Z00       0        2        0                      \PFB0102.$FC1000  
+      0    \PFB0102.$FC1100.ZSDX6006.S1ZW9Z00       0        2        0                      \PFB0102.$FC1100  
+      0    \PFB0102.$FC1200.ZSDX6006.JFDX9Z00       0        2        0                      \PFB0102.$FC1200  
+      0    \PFB0102.$FC1300.ZSDX6006.C9FX9Z00       0        2        0                      \PFB0102.$FC1300  
+      0    \PFB0102.$FC1400.ZSDX6006.Z4HX9Z00       0        2        0                      \PFB0102.$FC1400  
+      0    \PFB0102.$FC1500.ZSDX6006.XZKX9Z00       0        2        0                      \PFB0102.$FC1500  
+      0    \PFB0101.$FC0000.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0000  
+      0    \PFB0101.$FC0100.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0100  
+      0    \PFB0101.$FC0200.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0200  
+      0    \PFB0101.$FC0300.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0300  
+      0    \PFB0101.$FC0400.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0400  
+      0    \PFB0101.$FC0500.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0500  
+      0    \PFB0101.$FC0600.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0600  
+      0    \PFB0101.$FC0700.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0700  
+      0    \PFB0101.$FC0800.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0800  
+      0    \PFB0101.$FC0900.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC0900  
+      0    \PFB0101.$FC1000.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1000  
+      0    \PFB0101.$FC1100.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1100  
+      0    \PFB0101.$FC1200.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1200  
+      0    \PFB0101.$FC1300.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1300  
+      0    \PFB0101.$FC1400.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1400  
+      0    \PFB0101.$FC1500.ZSDX6006.LINE0000       0        2        0                      \PFB0101.$FC1500  
+      0    \PFB0102.$FC0000.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0000  
+      0    \PFB0102.$FC0100.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0100  
+      0    \PFB0102.$FC0200.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0200  
+      0    \PFB0102.$FC0300.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0300  
+      0    \PFB0102.$FC0400.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0400  
+      0    \PFB0102.$FC0500.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0500  
+      0    \PFB0102.$FC0600.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0600  
+      0    \PFB0102.$FC0700.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0700  
+      0    \PFB0102.$FC0800.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0800  
+      0    \PFB0102.$FC0900.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC0900  
+      0    \PFB0102.$FC1000.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1000  
+      0    \PFB0102.$FC1100.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1100  
+      0    \PFB0102.$FC1200.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1200  
+      0    \PFB0102.$FC1300.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1300  
+      0    \PFB0102.$FC1400.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1400  
+      0    \PFB0102.$FC1500.ZSDX6006.LINE0000       0        2        0                      \PFB0102.$FC1500  
+      0    \PFB0101.$FC0000.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0000  
+      0    \PFB0101.$FC0100.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0100  
+      0    \PFB0101.$FC0200.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0200  
+      0    \PFB0101.$FC0300.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0300  
+      0    \PFB0101.$FC0400.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0400  
+      0    \PFB0101.$FC0500.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0500  
+      0    \PFB0101.$FC0600.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0600  
+      0    \PFB0101.$FC0700.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0700  
+      0    \PFB0101.$FC0800.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0800  
+      0    \PFB0101.$FC0900.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC0900  
+      0    \PFB0101.$FC1000.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1000  
+      0    \PFB0101.$FC1100.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1100  
+      0    \PFB0101.$FC1200.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1200  
+      0    \PFB0101.$FC1300.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1300  
+      0    \PFB0101.$FC1400.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1400  
+      0    \PFB0101.$FC1500.ZSDX6006.LINEX000       0        2        0                      \PFB0101.$FC1500  
+      0    \PFB0102.$FC0000.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0000  
+      0    \PFB0102.$FC0100.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0100  
+      0    \PFB0102.$FC0200.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0200  
+      0    \PFB0102.$FC0300.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0300  
+      0    \PFB0102.$FC0400.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0400  
+      0    \PFB0102.$FC0500.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0500  
+      0    \PFB0102.$FC0600.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0600  
+      0    \PFB0102.$FC0700.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0700  
+      0    \PFB0102.$FC0800.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0800  
+      0    \PFB0102.$FC0900.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC0900  
+      0    \PFB0102.$FC1000.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1000  
+      0    \PFB0102.$FC1100.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1100  
+      0    \PFB0102.$FC1200.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1200  
+      0    \PFB0102.$FC1300.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1300  
+      0    \PFB0102.$FC1400.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1400  
+      0    \PFB0102.$FC1500.ZSDX6006.LINEX000       0        2        0                      \PFB0102.$FC1500  

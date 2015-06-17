@@ -1,0 +1,1640 @@
+>>obey test009(hcube_create);
+>>create schema cat.myhcube;
+
+--- SQL operation complete.
+>>set schema cat.myhcube;
+
+--- SQL operation complete.
+>>
+>>cqd pos 'OFF';
+
+--- SQL operation complete.
+>>create table t0 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t1 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t2 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t3 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t4 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t5 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t6 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t7 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t8 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t9 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>create table t10 (a int not null not droppable, b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>
+>>cqd pos 'LOCAL_NODE';
+
+--- SQL operation complete.
+>>create table cube1
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int, e int, f int, txt char(100),
++>primary key (a,b,c))
++>location $$partition$$
++>HASH2 PARTITION BY (a,b)
++>  (
++>    ADD LOCATION $$partition2$$  EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition3$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192)
++>  );
+
+--- SQL operation complete.
+>>
+>>create table cube2
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int, e int, f int, txt char(100),
++>primary key (a,b,c))
++>location $$partition$$
++>HASH2 PARTITION BY (a,b)
++>  (
++>    ADD LOCATION $$partition2$$  EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition3$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192)
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192)
++>  );
+
+--- SQL operation complete.
+>>
+>>create table cube3
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int not null not droppable,
++>e int, f int,
++>primary key (a,b,c,d))
++>location $$partition$$ ATTRIBUTES EXTENT (8192, 8192)
++>HASH2 PARTITION BY (a,b)
++>  (
++>    ADD LOCATION $$partition2$$  EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition3$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192) 
++>  );
+
+--- SQL operation complete.
+>>
+>>create table cube4
++>(a int not null not droppable, 
++>b int not null not droppable,
++>c int not null not droppable,
++>d int not null not droppable,
++>e int, f int,
++>primary key (a,b,c,d))
++>location $$partition$$ ATTRIBUTES EXTENT (8192, 8192)
++>HASH2 PARTITION BY (a,b,c)
++>  (
++>    ADD LOCATION $$partition2$$  EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition3$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition2$$ EXTENT (8192, 8192) 
++>  , ADD LOCATION $$partition1$$ EXTENT (8192, 8192) 
++>  );
+
+--- SQL operation complete.
+>>
+>>obey test009(hcube_populate);
+>>-- insert 10 rows into t0
+>>insert into t0 values (0,0,0);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (2,2,2);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (3,3,3);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (4,4,4);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (5,5,5);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (6,6,6);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (7,7,7);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (8,8,8);
+
+--- 1 row(s) inserted.
+>>insert into t0 values (9,9,9);
+
+--- 1 row(s) inserted.
+>>
+>>-- t1,t2,t3,t4,t5 are 10 rows similar to t0
+>>insert into t1 select * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t2 select * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t3 select * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t4 select * from t0;
+
+--- 10 row(s) inserted.
+>>insert into t5 select * from t0;
+
+--- 10 row(s) inserted.
+>>
+>>-- t6, t7 are 100 rows
+>>insert into t6 select t1.a+10*t2.a,t1.a,t2.a from t1,t2;
+
+--- 100 row(s) inserted.
+>>insert into t7 select t1.a+10*t2.a,t1.a,t2.a from t1,t2;
+
+--- 100 row(s) inserted.
+>>
+>>-- t8 is 1000 rows
+>>insert into t8 select t6.a+100*t1.a,t6.a,t1.a from t1,t6;
+
+--- 1000 row(s) inserted.
+>>
+>>-- t9 is 10000 rows
+>>insert into t9 select t8.a+1000*t1.a,t8.a,t1.a from t1,t8;
+
+--- 10000 row(s) inserted.
+>>
+>>-- t10 is 100000 rows
+>>insert into t10 select t8.a+1000*t6.a,t8.a,t6.a from t6,t8;
+
+--- 100000 row(s) inserted.
+>>
+>>-- cube1 is 100000 row (change t8.a < 100 if you want more rows)
+>>insert into cube1 select t1.a, t6.a, t8.a, t1.a, t6.a, t8.a, 'some text'
++>from t1, t6, t8 where t8.a < 100;
+
+--- 100000 row(s) inserted.
+>>
+>>--obey test009(hcube_indexes);
+>>obey test009(hcube_stats);
+>>-- CREATE stat
+>>update statistics for table t0 on every column;
+
+--- SQL operation complete.
+>>--update statistics for table t1 on every column;
+>>--update statistics for table t2 on every column;
+>>--update statistics for table t3 on every column;
+>>--update statistics for table t4 on every column;
+>>--update statistics for table t5 on every column;
+>>--update statistics for table t6 on every column;
+>>--update statistics for table t7 on every column;
+>>--update statistics for table t8 on every column;
+>>--update statistics for table t9 on every column;
+>>--update statistics for table t10 on every column;
+>>update statistics for table cube1 on every column;
+
+--- SQL operation complete.
+>>
+>>obey test009(mvqr_cqds);
+>>set schema cat.myhcube;
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'OFF';
+
+--- SQL operation complete.
+>>control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+
+--- SQL operation complete.
+>>control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+--- SQL operation complete.
+>>control query default MVQR_USE_RI_FOR_EXTRA_HUB_TABLES 'ON';
+
+--- SQL operation complete.
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'LOG';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>control query default MVQR_PUBLISH_TO 'PRIVATE';
+
+--- SQL operation complete.
+>>
+>>obey test009(igb_setup_mv);
+>>-- This is used to make sure the MV is used in the plan.
+>>-- explain options 'f' is nicer but unstable 
+>>-- causing many false alarms from build to build.
+>>prepare checkPlan from
++>select operator, tname
++>from table(explain(NULL, 'XX'))
++>where operator like '%_SCAN%'
++>order by tname;
+
+--- SQL command prepared.
+>>
+>>drop mv mv1;
+
+*** ERROR[1004] Object CAT.MYHCUBE.MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.MYHCUBE.MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>CREATE MV MV1
++>    REFRESH ON REQUEST
++>    INITIALIZED ON create
++>    ENABLE QUERY REWRITE
++>    AS
++>SELECT a, txt, 
++>  min(d) as minD, min(e) as minE, min(f) as minF,
++>  max(d) as maxD, max(e) as maxE, max(f) as maxF,
++>  sum(d) as sumD, sum(e) as sumE, sum(f) as sumF,
++>  stddev(d) as stddevD, stddev(e) as stddevE, stddev(f) as stddevF,
++>  variance(d) as varianceD, variance(e) as varianceE, variance(f) as varianceF
++>FROM cube1
++>GROUP BY a, txt;
+
+*** WARNING[12112] A secondary index CAT.MYHCUBE.MV1_665619479_2513 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>update statistics for table mv1 on every column;
+
+--- SQL operation complete.
+>>
+>>-- setup test for soln 10-100430-9921
+>>create table y1 (
++>          a int not null
++>        , b int not null
++>        , c int not null
++>        , d int
++>        , e int not null
++>        , primary key(a)
++>        )
++>        ;
+
+--- SQL operation complete.
+>>
+>>        insert into y1 values
++>         (1,1,1,1,1)
++>        ,(2,1,2,2,1)
++>        ,(3,1,3,3,1)
++>        ,(4,1,4,2,1)
++>        ,(5,1,5,1,1)
++>        ;
+
+--- 5 row(s) inserted.
+>>
+>>        drop mv ymv1;
+
+*** ERROR[1004] Object CAT.MYHCUBE.YMV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CAT.MYHCUBE.YMV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>        create mv ymv1 
++>        --REFRESH ON REQUEST
++>        --INITIALIZED ON create
++>        REFRESH BY USER 
++>        INITIALIZE BY USER
++>        ENABLE QUERY REWRITE
++>        as
++>        select y1.b, y1.c, sum(y1.d) s1, count(y1.d) c1, sum(y1.d*y1.d) s2
++>        from  y1
++>        group by y1.b, y1.c
++>        ;
+
+--- SQL operation complete.
+>>
+>>insert into ymv1
++>        select y1.b, y1.c, sum(y1.d) s1, count(y1.d) c1, sum(y1.d*y1.d) s2
++>        from  y1
++>        group by y1.b, y1.c;
+
+--- 5 row(s) inserted.
+>>
+>>-- test with NO query caching
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>showcontrol default query_cache, match full, no header;
+0
+
+--- SQL operation complete.
+>>obey test009(igb_test1);
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, MIN(f.e) as "minE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            minE       
+-----------  -----------
+
+          2            0
+          1            0
+          0            0
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, MIN(f.e) as "minE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            minE       
+-----------  -----------
+
+          2            0
+          1            0
+          0            0
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, MAX(f.e) as "maxE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            maxE       
+-----------  -----------
+
+          2           99
+          1           99
+          0           99
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, MAX(f.e) as "maxE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            maxE       
+-----------  -----------
+
+          2           99
+          1           99
+          0           99
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, COUNT(*) as "countStar"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countStar           
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, COUNT(*) as "countStar"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countStar           
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, SUM(f.e) as "sumE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            sumE                
+-----------  --------------------
+
+          2                495000
+          1                495000
+          0                495000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, SUM(f.e) as "sumE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            sumE                
+-----------  --------------------
+
+          2                495000
+          1                495000
+          0                495000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, COUNT(f.e) as "countE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countE              
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, COUNT(f.e) as "countE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countE              
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, SUM(f.e)/COUNT(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, SUM(f.e)/COUNT(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, AVG(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, AVG(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, STDDEV(f.e) as "stddevE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            stddevE                  
+-----------  -------------------------
+
+          2   2.88675134594812928E+001
+          1   2.88675134594812928E+001
+          0   2.88675134594812928E+001
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, STDDEV(f.e) as "stddevE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            stddevE                  
+-----------  -------------------------
+
+          2   2.88675134594812928E+001
+          1   2.88675134594812928E+001
+          0   2.88675134594812928E+001
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, VARIANCE(f.e) as "varE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            varE                     
+-----------  -------------------------
+
+          2   8.33333333333333376E+002
+          1   8.33333333333333376E+002
+          0   8.33333333333333376E+002
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, VARIANCE(f.e) as "varE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            varE                     
+-----------  -------------------------
+
+          2   8.33333333333333376E+002
+          1   8.33333333333333376E+002
+          0   8.33333333333333376E+002
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>
+>>-- test with query caching
+>>cqd query_cache '16384';
+
+--- SQL operation complete.
+>>showcontrol default query_cache, match full, no header;
+16384
+
+--- SQL operation complete.
+>>obey test009(igb_test1);
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, MIN(f.e) as "minE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            minE       
+-----------  -----------
+
+          2            0
+          1            0
+          0            0
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, MIN(f.e) as "minE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            minE       
+-----------  -----------
+
+          2            0
+          1            0
+          0            0
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, MAX(f.e) as "maxE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            maxE       
+-----------  -----------
+
+          2           99
+          1           99
+          0           99
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, MAX(f.e) as "maxE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            maxE       
+-----------  -----------
+
+          2           99
+          1           99
+          0           99
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, COUNT(*) as "countStar"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countStar           
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, COUNT(*) as "countStar"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countStar           
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, SUM(f.e) as "sumE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            sumE                
+-----------  --------------------
+
+          2                495000
+          1                495000
+          0                495000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, SUM(f.e) as "sumE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            sumE                
+-----------  --------------------
+
+          2                495000
+          1                495000
+          0                495000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, COUNT(f.e) as "countE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countE              
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, COUNT(f.e) as "countE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            countE              
+-----------  --------------------
+
+          2                 10000
+          1                 10000
+          0                 10000
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, SUM(f.e)/COUNT(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, SUM(f.e)/COUNT(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, AVG(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, AVG(f.e) as "avgE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            avgE                
+-----------  --------------------
+
+          2                    49
+          1                    49
+          0                    49
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, STDDEV(f.e) as "stddevE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            stddevE                  
+-----------  -------------------------
+
+          2   2.88675134594812928E+001
+          1   2.88675134594812928E+001
+          0   2.88675134594812928E+001
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, STDDEV(f.e) as "stddevE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            stddevE                  
+-----------  -------------------------
+
+          2   2.88675134594812928E+001
+          1   2.88675134594812928E+001
+          0   2.88675134594812928E+001
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- should get mvqr plan
+>>prepare xx from 
++>SELECT d.b, VARIANCE(f.e) as "varE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.MV1                                             
+FILE_SCAN                       CAT.MYHCUBE.T0                                              
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            varE                     
+-----------  -------------------------
+
+          2   8.33333333333333376E+002
+          1   8.33333333333333376E+002
+          0   8.33333333333333376E+002
+
+--- 3 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>SELECT d.b, VARIANCE(f.e) as "varE"
++>FROM cube1 f INNER JOIN t0 d ON (f.a = d.a) WHERE d.b < 3
++>GROUP BY d.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       D (CAT.MYHCUBE.T0)                                          
+FILE_SCAN                       F (CAT.MYHCUBE.CUBE1)                                       
+
+--- 2 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            varE                     
+-----------  -------------------------
+
+          2   8.33333333333333376E+002
+          1   8.33333333333333376E+002
+          0   8.33333333333333376E+002
+
+--- 3 row(s) selected.
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>
+>>-- test mvqr master cqd
+>>obey test009(mvqr_master_cqd);
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>showcontrol default mvqr_rewrite_level, match full, no header;
+0
+
+--- SQL operation complete.
+>>showcontrol default multi_join_threshold, match full, no header;
+3
+
+--- SQL operation complete.
+>>
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>showcontrol default mvqr_rewrite_level, match full, no header;
+4
+
+--- SQL operation complete.
+>>showcontrol default multi_join_threshold, match full, no header;
+2
+
+--- SQL operation complete.
+>>
+>>--control query default MVQR_REWRITE_LEVEL reset; 
+>>--showcontrol default mvqr_rewrite_level, match full, no header;
+>>--showcontrol default multi_join_threshold, match full, no header;
+>>
+>>
+>>-- verify fix to soln 10-100430-9921
+>>-- this used to cause mxcmp to saveabend from a GenAssert in GenPreCode.cpp 
+>>-- ScalarVariance::preCodeGen which requires all 3 args to be double prec
+>>cqd MVQR_REWRITE_CANDIDATES 'CAT.MYHCUBE.YMV1';
+
+--- SQL operation complete.
+>>prepare xx from 
++>  select y1.b, stddev(y1.d) s1
++>  from  y1
++>  group by y1.b;
+
+--- SQL command prepared.
+>>cqd MVQR_REWRITE_CANDIDATES reset;
+
+--- SQL operation complete.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.YMV1                                            
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            S1                       
+-----------  -------------------------
+
+          1   8.36660026534075776E-001
+
+--- 1 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>cqd MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>  select y1.b, stddev(y1.d) s1
++>  from  y1
++>  group by y1.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.Y1                                              
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            S1                       
+-----------  -------------------------
+
+          1   8.36660026534075776E-001
+
+--- 1 row(s) selected.
+>>
+>>cqd MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- verify fix to soln 10-100429-9890
+>>cqd MVQR_REWRITE_CANDIDATES 'CAT.MYHCUBE.YMV1';
+
+--- SQL operation complete.
+>>prepare xx from 
++>  select y1.b, stddev(y1.d)/sum(y1.d)
++>  from  y1
++>  group by y1.b;
+
+--- SQL command prepared.
+>>cqd MVQR_REWRITE_CANDIDATES reset;
+
+--- SQL operation complete.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.YMV1                                            
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            (EXPR)                   
+-----------  -------------------------
+
+          1   9.29622251704528512E-002
+
+--- 1 row(s) selected.
+>>
+>>-- verify against non-mvqr plan
+>>cqd MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>prepare xx from 
++>  select y1.b, stddev(y1.d)/sum(y1.d)
++>  from  y1
++>  group by y1.b;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MYHCUBE.Y1                                              
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>execute xx;
+
+B            (EXPR)                   
+-----------  -------------------------
+
+          1   9.29622251704528512E-002
+
+--- 1 row(s) selected.
+>>
+>>log;

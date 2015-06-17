@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1183,6 +1183,9 @@ void SsmpNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
   case RTS_MSG_CPU_STATS_REQ:
     actOnCpuStatsReq(connection);
     break;
+  case RTS_MSG_EXPLAIN_REQ:
+    actOnExplainReq(connection);
+    break;
   case CANCEL_QUERY_STARTED_REQ:
     actOnQueryStartedReq(connection);
     break;
@@ -1727,6 +1730,23 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
                        reqType, queryId->getStatsMergeType());
             }
             break;
+          case SQLCLI_STATS_REQ_QID_DETAIL:
+            qid = queryId->getQid();
+            error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(), 
+                        ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);  
+            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+            stmtStats = 
+              statsGlobals->getMasterStmtStats(qid, str_len(qid), 1);
+            if (stmtStats != NULL)
+              stmtStats->setStmtStatsUsed(TRUE);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
+                    savedPriority, savedStopMode);
+            if (stmtStats != NULL)
+            {
+              getMergedStats(request, queryId, stmtStats,
+                      reqType, queryId->getStatsMergeType());
+            }
+            break;
           case SQLCLI_STATS_REQ_PROCESS_INFO:
             pid = queryId->getPid();
             getProcessStats(reqType, subReqType, pid);
@@ -2231,6 +2251,13 @@ void SscpClientMsgStream::actOnStatsReply(IpcConnection *connection)
             }
             mergedStats_->setDetailLevel(getDetailLevel());
             mergedStats_->appendCpuStats(stats, TRUE);
+
+            if (reqType == SQLCLI_STATS_REQ_QID_DETAIL && stats->getMasterStats() != NULL)
+            {
+              ExMasterStats *masterStats = new (getHeap()) ExMasterStats((NAHeap *)getHeap());
+              masterStats->copyContents(stats->getMasterStats());
+              mergedStats_->setMasterStats(masterStats);
+            } 
             break;
           }
           default:
@@ -2466,6 +2493,13 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
       }
       statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
                   savedPriority, savedStopMode);
+      break;
+    case SQLCLI_STATS_REQ_QID_DETAIL:
+      if (mergedStats != NULL)
+        *this << *(mergedStats);
+      send (FALSE);
+      if (stmtStats != NULL)
+        stmtStats->setStmtStatsUsed(FALSE);
       break;
     case SQLCLI_STATS_REQ_CPU_OFFENDER:
     case SQLCLI_STATS_REQ_SE_OFFENDER:

@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+initialize authorization;
 register user sql_user1 as sql_user1;
 register user sql_user2 as sql_user2;
 register user sql_user3 as sql_user3;

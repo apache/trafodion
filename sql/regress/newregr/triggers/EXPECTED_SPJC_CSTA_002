@@ -1,0 +1,43 @@
+>>obey TEST_SPJC_CSTA_002(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: CS with one or more Select statements (row trigger).
+>>-- Result: ERROR[11047] SELECT statements are not allowed in the
+>>-- compound action of a trigger.
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_002 AFTER DELETE ON
++>TAB01_SPJC_CSTA_002
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	SELECT * FROM TAB02_SPJC_CSTA_002;
++>END;
+
+*** ERROR[11047] SELECT statements are not allowed in the compound action of a trigger.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: CS with one or more Select statements (statement
+>>-- trigger).
+>>-- Result: ERROR[11047] SELECT statements are not allowed in the
+>>-- compound action of a trigger.
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_CSTA_002 AFTER UPDATE ON
++>TAB01_SPJC_CSTA_002
++>REFERENCING NEW TABLE AS NT
++>FOR EACH STATEMENT
++>BEGIN ATOMIC
++>	SELECT * FROM TAB02_SPJC_CSTA_002;
++>END;
+
+*** ERROR[11047] SELECT statements are not allowed in the compound action of a trigger.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

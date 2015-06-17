@@ -34,6 +34,8 @@
 
 // See general strategy notes preceding FetchHistogram implementation below.
 
+#define   SQLPARSERGLOBALS_FLAGS   // must precede all #include's
+#include "SqlParserGlobalsCmn.h"
 
 #define HS_FILE "hs_read"
 
@@ -1134,7 +1136,8 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
       {
         case OptimizerSimulator::OFF:
         case OptimizerSimulator::CAPTURE:
-
+        case OptimizerSimulator::LOAD:
+        
           if (tabDef->isInMemoryObjectDefn())
             {
               // not sure yet what to do about stats for in-memory definitions.
@@ -1340,65 +1343,85 @@ Lng32 readHistograms(HSTableDef *tabDef
       NAString histogramsName = histogramTableName; // It points to Histogram or Histints table name. soln#:10-030910-9505 
       histogramRowCount = -1;
 
+      ULng32 savedParserFlags = 0;
+      SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
+
       // save the statement heap from the current context so it can be used to allocate memory
       // for the cursor attributes
       NAHeap *curStmtHeap = STMTHEAP;
       NABoolean switched = FALSE;
       CmpContext* prevContext = CmpCommon::context();
-      // switch to another context to avoid spawning an arkcmp process when compiling
-      // the user metadata queries on the histograms tables
-      if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-         if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+
+      try
+      {
+         // set parserflag to avoid privilege checks
+         SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+      
+         // switch to another context to avoid spawning an arkcmp process when compiling
+         // the user metadata queries on the histograms tables
+         if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
          {
-            //failed to switch/create metadata CmpContext,  continue using current compiler context
-         }
-         else
-         {
-            switched = TRUE;
+            if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+            {
+               //failed to switch/create MD CmpContext, continue using current CmpContext
+            }
+            else
+            {
+               switched = TRUE;
+            }
          }
 
-      HSHistogrmCursor cursor(fullQualName /*in*/,
-                              histogramTableName /*in*/,
-                              tabDef->getObjectUID() /*in*/,
-                              tabDef->getObjectFormat()  /*in*/,
-                              (HSGlobalsClass::autoInterval > 0 && /*in*/
-                               (!tabDef->isVolatile() || 
-                                CmpCommon::getDefault(USTAT_AUTO_FOR_VOLATILE_TABLES) == DF_ON)),
-                                curStmtHeap /*in*/);
-      if ((retcode = cursor.open()) == 0)
-        {
-          HSHistintsCursor cursor2(fullQualName /*in*/,
-                                   histintsTableName /*in*/,
-                                   tabDef->getObjectUID() /*in*/,
-                                   tabDef->getObjectFormat() /*in*/,
+         HSHistogrmCursor cursor(fullQualName /*in*/,
+                                 histogramTableName /*in*/,
+                                 tabDef->getObjectUID() /*in*/,
+                                 tabDef->getObjectFormat()  /*in*/,
+                                 (HSGlobalsClass::autoInterval > 0 && /*in*/
+                                  (!tabDef->isVolatile() || 
+                                   CmpCommon::getDefault(USTAT_AUTO_FOR_VOLATILE_TABLES) == DF_ON)),
                                    curStmtHeap /*in*/);
-          histogramsName = histintsTableName;
-          LM->LogTimeDiff("START FETCH EXISTING HISTOGRAMS");
-          retcode = cursor.fetch( *cs
-                                , cursor2
-                                , colmap
-                                , fakeHistogram
-                                , emptyHistogram
-                                , smallSampleHistogram
-                                , smallSampleSize
-                                , histogramRowCount
-                                , statsTime
-                                , allFakeStat
-                                , preFetch
-                                , offset
-                                , tabDef
-                                , switched
-                                );
-          LM->LogTimeDiff("END FETCH EXISTING HISTOGRAMS");
-          maxHistid = cursor.getMaxHistid();
-        }
-       else
-        {
-           // switch back to previous compiler context in case cursor.open above failed
-           // if open succeeds, we switch back in the cursor.fetch method above
-           if (switched == TRUE)
-               SQL_EXEC_SWITCH_BACK_COMPILER();
-        }
+         if ((retcode = cursor.open()) == 0)
+           {
+             HSHistintsCursor cursor2(fullQualName /*in*/,
+                                      histintsTableName /*in*/,
+                                      tabDef->getObjectUID() /*in*/,
+                                      tabDef->getObjectFormat() /*in*/,
+                                      curStmtHeap /*in*/);
+             histogramsName = histintsTableName;
+             LM->LogTimeDiff("START FETCH EXISTING HISTOGRAMS");
+             retcode = cursor.fetch( *cs
+                                   , cursor2
+                                   , colmap
+                                   , fakeHistogram
+                                   , emptyHistogram
+                                   , smallSampleHistogram
+                                   , smallSampleSize
+                                   , histogramRowCount
+                                   , statsTime
+                                   , allFakeStat
+                                   , preFetch
+                                   , offset
+                                   , tabDef
+                                   , switched
+                                   );
+             LM->LogTimeDiff("END FETCH EXISTING HISTOGRAMS");
+             maxHistid = cursor.getMaxHistid();
+           }
+          else
+           {
+              // switch back to previous compiler context in case cursor.open above failed
+              // if open succeeds, we switch back in the cursor.fetch method above
+              if (switched == TRUE)
+                  SQL_EXEC_SWITCH_BACK_COMPILER();
+           }
+         }
+         catch (...)
+         {
+            // Restore parser flags settings to what they originally were
+            SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(savedParserFlags);
+            throw;
+         }
+
+      SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(savedParserFlags);
     }
     return 0;
 }

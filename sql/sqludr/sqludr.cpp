@@ -2557,7 +2557,7 @@ ColumnInfo::ColumnInfo() :
      TMUDRSerializableObject(COLUMN_INFO_OBJ,
                              getCurrentVersion()),
      usage_(UNKNOWN),
-     uniqueEntries_(-1)
+     estimatedUniqueEntries_(-1)
 {}
 
 /**
@@ -2570,7 +2570,7 @@ ColumnInfo::ColumnInfo(const char *name,
      name_(name),
      type_(type),
      usage_(UNKNOWN),
-     uniqueEntries_(-1)
+     estimatedUniqueEntries_(-1)
 {}
   
 /**
@@ -2614,13 +2614,13 @@ TypeInfo & ColumnInfo::getType()
  *  setUniqueEntries() method, or in some cases it can also be
  *  provided by the Trafodion compiler.
  *
- *  @see ColumnInfo::setUniqueEntries()
+ *  @see ColumnInfo::setEstimatedUniqueEntries()
  *
- *  @return Estimated number of unique entries.
+ *  @return Estimated number of unique entries or -1 if there is no estimate.
  */
-long ColumnInfo::getUniqueEntries() const
+long ColumnInfo::getEstimatedUniqueEntries() const
 {
-  return uniqueEntries_;
+  return estimatedUniqueEntries_;
 }
 
 /**
@@ -2677,13 +2677,14 @@ void ColumnInfo::setType(TypeInfo &type)
  *  @arg UDR::describeConstraints()
  *  @arg UDR::describeStatistics()
  *
- *  @see ColumnInfo::getUniqueEntries()
+ *  @see ColumnInfo::getEstimatedUniqueEntries()
  *
- *  @param uniqueEntries Estimate of the number of unique entries.
+ *  @param uniqueEntries Estimate of the number of unique entries or
+ *         -1 if there is no estimate.
  */
-void ColumnInfo::setUniqueEntries(long uniqueEntries)
+void ColumnInfo::setEstimatedUniqueEntries(long uniqueEntries)
 {
-  uniqueEntries_ = uniqueEntries;
+  estimatedUniqueEntries_ = uniqueEntries;
 }
 
 /**
@@ -2751,6 +2752,13 @@ void ColumnInfo::toString(std::string &s, bool longForm) const
           s+= " (invalid usage code)";
           break;
         }
+      if (estimatedUniqueEntries_ >= 0)
+        {
+          char buf[40];
+
+          snprintf(buf, sizeof(buf), " uec=%ld", estimatedUniqueEntries_);
+          s+= buf;
+        }
     }
 }
 
@@ -2783,7 +2791,7 @@ int ColumnInfo::serialize(Bytes &outputBuffer,
                          outputBuffer,
                          outputBufferLength);
 
-  result += serializeLong(uniqueEntries_,
+  result += serializeLong(estimatedUniqueEntries_,
                           outputBuffer,
                           outputBufferLength);
 
@@ -2822,7 +2830,7 @@ int ColumnInfo::deserialize(ConstBytes &inputBuffer,
                    inputBufferLength);
   usage_ = static_cast<ColumnUseCode>(tempInt1);
 
-  result += deserializeLong(uniqueEntries_,
+  result += deserializeLong(estimatedUniqueEntries_,
                     inputBuffer,
                     inputBufferLength);
 
@@ -3088,7 +3096,7 @@ void UniqueConstraintInfo::toString(const TableInfo &ti, std::string &s)
       if (c>0)
         s +=  ", ";
 
-      s += ti.getColumn(c).getColName();
+      s += ti.getColumn(uniqueColumns_[c]).getColName();
     }
   s += ")";
 }
@@ -3109,7 +3117,7 @@ int UniqueConstraintInfo::serialize(Bytes &outputBuffer,
   int numCols = uniqueColumns_.size();
   int *cols = new int[numCols];
 
-  result += serializeInt(uniqueColumns_.size(),
+  result += serializeInt(numCols,
                          outputBuffer,
                          outputBufferLength);
 
@@ -3152,7 +3160,7 @@ int UniqueConstraintInfo::deserialize(ConstBytes &inputBuffer,
          38900,
          "Inconsistent lengths for unique column list in constraint");
   for (int u=0; u<numCols; u++)
-    uniqueColumns_.push_back(u);
+    uniqueColumns_.push_back(cols[u]);
 
   validateDeserializedLength(result);
 
@@ -4923,6 +4931,16 @@ char * TupleInfo::getRowPtr() const
   return rowPtr_;
 }
 
+/**
+ *  Get the record length of a row.
+ *
+ *  This method returns the approximate record length of the tuple at
+ *  compile time and the actual (non-compressed) record length at
+ *  runtime. This might be useful for cost estimation, otherwise it
+ *  can be ignored by UDF writers.
+ *
+ *  @return Record length in bytes.
+ */
 int TupleInfo::getRecordLength() const
 {
   return recordLength_;
@@ -4945,7 +4963,8 @@ void TupleInfo::setRowPtr(char *ptr)
 
 TableInfo::TableInfo() :
      TupleInfo(TABLE_INFO_OBJ, getCurrentVersion()),
-     numRows_(-1)
+     estimatedNumRows_(-1),
+     estimatedNumPartitions_(-1)
 {}
 
 TableInfo::~TableInfo()
@@ -4960,13 +4979,27 @@ TableInfo::~TableInfo()
 /**
  *  @brief Get the estimated number of rows of this table.
  *
- *  @see setNumRows()
+ *  @see setEstimatedNumRows()
+ *  @see getEstimatedNumPartitions()
  *
- *  @return Estimated number of rows.
+ *  @return Estimated number of rows or -1 if there is no estimate.
  */
-long TableInfo::getNumRows() const
+long TableInfo::getEstimatedNumRows() const
 {
-  return numRows_;
+  return estimatedNumRows_;
+}
+
+/**
+ *  For tables with a PARTITION BY, get estimated number of partitions.
+ *
+ *  @see getEstimatedNumRows()
+ *  @see setEstimatedNumRows()
+ *
+ *  @return Estimated number of partitions or -1 if there is no estimate or no PARTITION BY.
+ */
+long TableInfo::getEstimatedNumPartitions() const
+{
+  return estimatedNumPartitions_;
 }
 
 /**
@@ -5068,9 +5101,9 @@ const ConstraintInfo &TableInfo::getConstraint(int i) const
  *
  *  @param rows Estimated number of rows for this table.
  */
-void TableInfo::setNumRows(long rows)
+void TableInfo::setEstimatedNumRows(long rows)
 {
-  numRows_ = rows;
+  estimatedNumRows_ = rows;
 }
 
 /**
@@ -5136,7 +5169,7 @@ void TableInfo::setIsStream(bool stream)
 void TableInfo::print()
 {
   TupleInfo::print();
-  printf("    Estimated number of rows : %ld\n", getNumRows());
+  printf("    Estimated number of rows : %ld\n", getEstimatedNumRows());
   printf("    Partitioning             : ");
   switch (getQueryPartitioning().getType())
     {
@@ -5161,6 +5194,7 @@ void TableInfo::print()
             needsComma = true;
           }
         printf(")\n");
+        printf("    Estimated # of partitions: %ld\n", getEstimatedNumPartitions());
       }
       break;
     case PartitionInfo::REPLICATE:
@@ -5218,14 +5252,14 @@ void TableInfo::setQueryOrdering(const OrderInfo &orderInfo)
 
 int TableInfo::serializedLength()
 {
-  // format: base class + long(numRows_) +
+  // format: base class + long(numRows) + long(numParts) +
   // int(#part cols) + int(#order cols) +
   // binary array of ints:
   // p*int(partkeycol#) +
   // o*(int(ordercol#) + int(ordering)) +
   // int(#constraints) + constraints
   int result = TupleInfo::serializedLength() +
-    serializedLengthOfLong() +
+    2 * serializedLengthOfLong() +
     4 * serializedLengthOfInt() +
     serializedLengthOfBinary(
          (getQueryPartitioning().getNumEntries() +
@@ -5249,7 +5283,11 @@ int TableInfo::serialize(Bytes &outputBuffer,
   int *intArray = new int[numPartCols + 2*numOrderCols];
   int c;
 
-  result += serializeLong(numRows_,
+  result += serializeLong(estimatedNumRows_,
+                          outputBuffer,
+                          outputBufferLength);
+
+  result += serializeLong(estimatedNumPartitions_,
                           outputBuffer,
                           outputBufferLength);
 
@@ -5308,7 +5346,11 @@ int TableInfo::deserialize(ConstBytes &inputBuffer,
   int binarySize = 0;
   int c;
 
-  result += deserializeLong(numRows_,
+  result += deserializeLong(estimatedNumRows_,
+                            inputBuffer,
+                            inputBufferLength);
+
+  result += deserializeLong(estimatedNumPartitions_,
                             inputBuffer,
                             inputBufferLength);
 
@@ -5623,6 +5665,30 @@ const std::string &UDRInvocationInfo::getQueryId() const
   return queryId_;
 }
 
+// The next four methods are not yet documented in Doxygen,
+// since there is no choice yet. Add them to the documentation
+// when we support more than one choice.
+UDRInvocationInfo::SQLAccessType UDRInvocationInfo::getSQLAccessType() const
+{
+  return sqlAccessType_;
+}
+
+UDRInvocationInfo::SQLTransactionType
+UDRInvocationInfo::getSQLTransactionType() const
+{
+  return sqlTransactionType_;
+}
+
+UDRInvocationInfo::SQLRightsType UDRInvocationInfo::getSQLRights() const
+{
+  return sqlRights_;
+}
+
+UDRInvocationInfo::IsolationType UDRInvocationInfo::getIsolationType() const
+{
+  return isolationType_;
+}
+
 /**
  *  @brief Check whether we are in the compile time interface.
  *  @return true at compile time, false at run-time.
@@ -5662,7 +5728,7 @@ int UDRInvocationInfo::getDebugFlags() const
  *  Returns the function type that can be set by the UDR writer
  *  with the setFuncType() method.
  *
- *  @see setFunctType()
+ *  @see setFuncType()
  *
  *  @return Enum of the function type.
  */
@@ -6168,7 +6234,10 @@ void UDRInvocationInfo::propagateConstraintsFor1To1UDFs(
                 for (int oc=0; oc<numOutputCols; oc++)
                   if (out().getColumn(oc).getProvenance().getInputColumnNum()
                       == ucChild.getUniqueColumn(uc))
-                    ucParent.addColumn(oc);
+                    {
+                      ucParent.addColumn(oc);
+                      break;
+                    }
 
               if (ucParent.getNumUniqueColumns() == numUniqueCols)
                 // we were able to translate all the unique columns on the
@@ -6860,7 +6929,7 @@ UDRPlanInfo::UDRPlanInfo(UDRInvocationInfo *invocationInfo, int planNum) :
                              getCurrentVersion()),
      invocationInfo_(invocationInfo),
      planNum_(planNum),
-     costPerRow_(0),
+     costPerRow_(-1),
      degreeOfParallelism_(ANY_DEGREE_OF_PARALLELISM),
      udrWriterCompileTimeData_(NULL),
      planData_(NULL),
@@ -6886,8 +6955,10 @@ int UDRPlanInfo::getPlanNum() const
 }
 
 /**
- *  @brief
- *  @return 
+ *  Get the cost of the UDR per row, approximately in nanoseconds.
+ *
+ *  @see setCostPerRow()
+ *  @return Cost of the UDR per row, in nanoseconds, for optimization purposes.
  */
 long UDRPlanInfo::getCostPerRow() const
 {
@@ -6909,6 +6980,9 @@ int UDRPlanInfo::getDesiredDegreeOfParallelism() const
 
 /**
  *  @brief Set the desired degree of parallelism.
+ *
+ *  Only use this method from within the
+ *  UDR::describeDesiredDegreeOfParallelism() method.
  *
  *  Here are some special values that can be set, in
  *  addition to positive numbers. These are defined in
@@ -6944,17 +7018,44 @@ void UDRPlanInfo::setDesiredDegreeOfParallelism(int dop)
 }
 
 /**
- *  @brief 
- *  @return 
- *  @throws UDRException
+ *  Set the cost of the UDR per row, approximately in nanoseconds.
+ *
+ *  Specifying a cost can help with query plan issues. Note that the
+ *  operator cost ("EST_OPER_COST") in EXPLAIN is not directly related
+ *  to the nanosecond value specified here:
+ *  <ul>
+ *  <li>For parallel plans (those under an ESP_EXCHANGE), the cost
+ *      is calculated for one parallel instance only.
+ *  <li>The cost in nanoseconds is converted to internal units
+ *      (see CQD NCM_UDR_NANOSEC_FACTOR).
+ *  <li>The EXPLAIN cost contains additional factors, accounting
+ *      for the cost to send input data to the process that executes
+ *      the UDR and for sending back the result.
+ *  </ul>
+ *
+ *  The default implementation estimates the cost to be approximately
+ *  100 * sqrt(out().getRecordLength()). Therefore, a value of
+ *  1000 might be a good starting point for a cost per row estimate,
+ *  assuming an output row length of about 1 KB. Increase this for
+ *  more complex UDFs or for wider result rows, decrease it for
+ *  simpler UDFs or shorter result rows.
+ *
+ *  Only use this method from within the
+ *  UDR::describeDesiredDegreeOfParallelism() method.
+ *
+ *  @see UDR::describeDesiredDegreeOfParallelism()
+ *  @see getCostPerRow()
+ *  @see UDR::TupleInfo::getRecordLength()
+ *  @param nanoseconds Cost of the UDR per row, in nanoseconds, for
+ *                     optimization purposes.
  */
-void UDRPlanInfo::setCostPerRow(long microseconds)
+void UDRPlanInfo::setCostPerRow(long nanoseconds)
 {
   invocationInfo_->validateCallPhase(UDRInvocationInfo::COMPILER_DOP_CALL,
                                      UDRInvocationInfo::COMPILER_PLAN_CALL,
                                      "UDRPlanInfo::setCostPerRow()");
 
-  costPerRow_ = microseconds;
+  costPerRow_ = nanoseconds;
 }
 
 /**
@@ -7447,19 +7548,38 @@ void UDR::describeConstraints(UDRInvocationInfo &info)
  *
  *  When the optimizer calls this method, it will have synthesized
  *  some statistics for the table-valued inputs, if any. The UDR
- *  writer can now indicate estimated statistics for the table-valued
- *  result.
+ *  writer can now indicate the estimated row count for the table-valued
+ *  result and estimated number of unique values for the output columns.
  *
- *  The default implementation does nothing.
+ *  The default implementation does nothing. If no estimated cardinality
+ *  is set for the output table and no estimated number of unique values
+ *  is set for output columns, the optimizer will make default assumptions.
+ *  Here are some of these default assumptions:
+ *  <ul>
+ *  <li>UDRs of type UDRInvocationInfo::MAPPER return one output row for
+ *      each row in their largest input table.
+ *  <li>UDRs of type UDRInvocationInfo::REDUCER return one output row for
+ *      every partition in their largest partitioned input table.
+ *  <li>For output columns that are passthru columns, the estimated
+ *      unique entries are the same as for the underlying column in the
+ *      table-valued input.
+ *  <li>Other default cardinality and unique entry counts can be influenced
+ *      with defaults (CONTROL QUERY DEFAULT) in Trafodion SQL.
+ *  </ul>
  *
- *  NOTE: This method is not yet implemented.
+ *  @see UDRInvocationInfo::setFuncType()
+ *  @see ColumnInfo::getEstimatedUniqueEntries()
+ *  @see ColumnInfo::setEstimatedUniqueEntries()
+ *  @see TableInfo::getEstimatedNumRows()
+ *  @see TableInfo::setEstimatedNumRows()
+ *  @see TableInfo::getEstimatedNumPartitions()
  *
  *  @param info A description of the UDR invocation.
  *  @throws UDRException
  */
 void UDR::describeStatistics(UDRInvocationInfo &info)
 {
-  // TBD
+  // do nothing
 }
 
 /**

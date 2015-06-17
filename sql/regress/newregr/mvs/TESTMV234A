@@ -1,0 +1,209 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV234a
+--- 2.13.1
+--- PURPOSE: duplicate elimination tests 
+--           with range inserts        
+--
+--- The same as TestMV234, but enforces full DE
+------------------------------------------------------
+
+control query default pos 'OFF';
+obey TESTMV234A(CLEAN_UP);
+log LOGMV234A clear;
+
+obey TESTMV234A(SET_UP);
+-- Run Tests
+
+set schema catmvs.mvschm;
+obey TESTMV234A(TEST1);
+
+-- Clean and exit
+obey TESTMV234A(CLEAN_UP);
+log;
+exit;
+
+-------------------------------------------------
+?section SET_UP
+-------------------------------------------------
+--Activate the VSBB inserts
+control query default insert_vsbb 'USER';
+control query default vsbb_test_mode 'ON';
+set PARSERFLAGS 3;
+
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+obey CREATERANGE(CREAT);
+-- Create the base tables
+obey DUPENV(CREATE_SIMPLE);
+obey DUPENV(CREATE_DUP_MV1);
+
+insert into Dup_A values (3500,'c4');
+
+refresh MVGroup Dup_MVG1 with MVLOG cleanup;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @0@ @202@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_B@ @0@ @202@ ;
+
+prepare select_iud_log from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
+				 when 1 then 'DELETE' 
+				 when 2 then 'I-UPDATE'
+				 when 3 then 'D-UPDATE'
+				 when 4 then 'END-RANGE'
+				 when 12 then 'BEGIN-RANGE'
+          end
+	, "@IGNORE"
+	, "@RANGE_SIZE"
+	, prim, ch
+ from table(iud_log_table dup_a)
+ order by prim desc,"@TS";
+
+prepare select_range_log from
+ select "@EPOCH"
+		, case "@RANGE_TYPE" 
+			when 3 then '[...]'
+			when 2 then '(...]'
+			when 1 then '[...)'
+			when 0 then '(...)'
+		  end
+        , "@BR_PRIM"
+        , "@ER_PRIM"
+ from table(range_log_table dup_a)
+ order by "@EPOCH", "@RANGE_ID", "@BR_PRIM" desc;
+
+?section TEST1
+ Delete from Dup_A
+   where ch='c4';
+
+ Insert into Dup_A
+   Values(3500,'I1');
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 202
+
+-- log must remain unchanged - non empty
+ execute select_iud_log;
+
+ Delete from Dup_A
+   where ch='I1';
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 203
+
+-- In this statement a row with clustering key 3500
+-- is not inserted.
+
+  Insert into Dup_A
+    select 5201 - 2*RunningCount(*) as a,'R1'
+    from Range_Factor5 p5 ,Range_Factor100 p100
+    sequence by p5.ts,p100.ts;
+
+-- IUD LOG 
+ execute select_iud_log;
+-- RANGE LOG
+execute select_range_log;
+
+Refresh Dup_MV3 without  MVLOG cleanup debug 55; -- epoch 204
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV234A;
+log LOGMV234A;
+-- IUD LOG 
+ execute select_iud_log;
+-- RANGE LOG
+ execute select_range_log;
+
+-- End Phase 1
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 205
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 206
+
+  Insert into Dup_A
+   Values(3500,'I2');
+
+  Delete from Dup_A
+   where ch='I2';
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 207
+
+  Insert into Dup_A
+   Values(3500,'I3');
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 208
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.Dup_A@ @1@ @0@ ; -- epoch 209
+
+  Delete from Dup_A
+   where prim=3500;
+
+execute select_iud_log;
+execute select_range_log;
+
+Refresh MVGroup Dup_MVG1 without  MVLOG cleanup debug 55; -- epoch 210
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort >> LOGMV234A;
+log LOGMV234A;
+
+execute select_iud_log;
+execute select_range_log;
+
+-- End Phase 2
+
+-- Correctness check
+
+obey DUPENV(CHECK_DUP_MV3);
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV234A ;
+log LOGMV234A;
+
+obey DUPENV(CHECK_DUP_MV2);
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV234A ;
+log LOGMV234A;
+
+obey DUPENV(CHECK_DUP_MV1);
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV234A ;
+log LOGMV234A;
+
+---------------------------------
+?section CLEAN_UP
+---------------------------------
+set schema catmvs.mvschm;
+Refresh mvgroup Dup_MVG1 cancel;
+
+obey DUPENV(DROP_SIMPLE);
+set schema catmvs.mvschm;
+obey CREATERANGE(DROPALL);
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table catmvs.mvschm.Num_Obj;

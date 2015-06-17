@@ -1,0 +1,33 @@
+>>obey TEST_5_2_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET d = 100;
+
+*** ERROR[3193] SIGNAL SQLSTATE=s9999, Message: atrig42 signaled.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.ATRIG42 on table CAT1.SCHM.TAB1B has failed.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            5
+
+--- 2 row(s) selected.
+>> -- check result
+>>SELECT * FROM tab1B;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

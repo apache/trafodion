@@ -325,6 +325,12 @@ const int DR_SPJ_TOKEN_LEN =
             DR_SPJ_TOKEN_SEPARATOR_LEN +
             DR_SPJ_TOKEN_INVOKER_TOKEN_LEN;
 
+LmResult LmRoutineJava::handleFinalCall(ComDiagsArea *diagsArea)
+{
+  // this method is not yet used for Java
+  return LM_OK;
+}
+
 LmResult LmRoutineJava::generateDefAuthToken(char *defAuthToken, ComDiagsArea *da)
 {
   // Get the NODE, PID information for the UDR server process

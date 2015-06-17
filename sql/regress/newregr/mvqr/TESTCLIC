@@ -1,0 +1,669 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TESTCLIC
+-- CLIC POC examples.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TESTCLIC(clean_up);
+obey TESTCLIC(clean_up_files);
+log LOGCLIC clear;
+obey TESTCLIC(set_up);
+obey TESTCLIC(create_mvs);
+obey TESTCLIC(match_Q14);
+--obey TESTCLIC(match_Q16);
+obey TESTCLIC(match_Q18);
+obey TESTCLIC(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema clic cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm clic*;
+sh rm CLIC*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '3';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default QUERY_CACHE '0';
+control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+obey GetMvDesc;
+
+create schema clic;
+set schema clic;
+set pattern $$MVSchemaName$$ CLIC;
+
+-- This is used to make sure the MV is used in the plan.
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+CREATE TABLE SRC1_B02 (
+  MIO_LOG_ID         CHARACTER (105) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  PLNMIO_REC_ID      LARGEINT SIGNED  DEFAULT NULL,
+  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  SG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_NO            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  MTN_ID             CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  MTN_ITEM_CODE      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  IPSN_NO            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  MIO_CUST_NO        CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  MIO_CUST_NAME      CHARACTER (20)  CHARACTER SET ISO88591  DEFAULT NULL,
+  PLNMIO_DATE        TIMESTAMP (0)   DEFAULT NULL,
+  MIO_DATE           TIMESTAMP (0)   DEFAULT NULL,
+  MIO_LOG_UPD_TIME   TIMESTAMP (0)   DEFAULT NULL,
+  PREM_DEADLINE      TIMESTAMP (0)   DEFAULT NULL,
+  MIO_ITEM_CODE      CHARACTER (4)   CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  MIO_TYPE_CODE      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  OCLK_BRANCH_NO     CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  OCLK_CLERK_NO      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_TYPE         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_BRANCH_NO    CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_NO           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MIO_CLASS          NUMERIC (1, 0)  SIGNED  DEFAULT NULL,
+  AMNT               NUMERIC (18, 2) SIGNED  DEFAULT NULL,
+  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
+  FIN_PLNMIO_DATE    TIMESTAMP (0)   DEFAULT NULL,
+  CNTR_YEAR          NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
+  MONEYIN_ITRVL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MONEYIN_DUR        NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
+  MONEYIN_TIME       INTEGER SIGNED  DEFAULT NULL,
+  AGENT_OAC_ID       VARCHAR (30)    CHARACTER SET ISO88591  DEFAULT NULL,
+  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
+  INSUR_DUR          NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  MAIN_POL_CODE      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_ID            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  ANN_ITRVL          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  IPSN_ID            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_TERM_CAUSE    CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MIO_TX_CLASS       NUMERIC (5, 0)  SIGNED  DEFAULT NULL,
+  I_INFO_GROUP_FLAG  NUMERIC (1, 0)  SIGNED  DEFAULT NULL,
+  CNTR_SOURCE        CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_NO            CHARACTER (16)  CHARACTER SET ISO88591  DEFAULT NULL,
+  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  UPD_TIME           TIMESTAMP (0)   DEFAULT NULL,
+  RECEIPT_NO         CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  REL_KEY_NO         CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  EXT_KEY1           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
+  EXT_KEY7           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
+  EXT_KEY16          CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
+  EXT_KEY4           CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
+  EXT_KEY19          NUMERIC (18, 2) SIGNED  DEFAULT NULL,
+  PRIMARY KEY (MIO_ITEM_CODE ASC, CNTR_NO ASC, MIO_LOG_ID ASC) NOT DROPPABLE )
+  STORE BY ( MIO_ITEM_CODE ASC, CNTR_NO ASC, MIO_LOG_ID ASC );
+
+CREATE TABLE SRC1_STD_CONTRACT (
+  CNTR_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  CNTR_FROM          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
+  APPL_NO            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
+  CNTR_NO            CHARACTER (32)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  LOSE_REG_NUM       NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  ORIGINAL_CNTR_NO   CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MR_TYPE            CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MASTER_CNTR_ID     CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_STAT          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_TERM_CAUSE    CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_TERM_DATE     TIMESTAMP (0)   DEFAULT NULL,
+  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  SG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  IPSN_NUM           NUMERIC (8, 0)  SIGNED  DEFAULT 0,
+  TERM_IPSN_NUM      NUMERIC (8, 0)  SIGNED  DEFAULT 0,
+  APPL_DATE          TIMESTAMP (0)   DEFAULT NULL,
+  SIGN_DATE          TIMESTAMP (0)   DEFAULT NULL,
+  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
+  AUTO_IN_FORCE_DATE TIMESTAMP (0)   DEFAULT NULL,
+  RENEW_FLAG         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'1',
+  RENEW_TIMES        NUMERIC (2, 0)  SIGNED  NOT NULL NOT DROPPABLE, --DEFAULT NULL,
+  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  O_SALES_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  O_SALES_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  N_SALES_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  N_SALES_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_EXPIRY_DATE   TIMESTAMP (0)   DEFAULT NULL,
+  MONEYIN_ITRVL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MONEYIN_ITRVL_MON  NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  BDD_TYPE           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  PAIDUP_FLAG        CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CV_FOR_PREM_FLAG   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MONEYIN_TYPE       CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT NULL,
+  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
+  BANK_ACC_NO        CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  ACC_CUST_NAME      CHARACTER (48)  CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_STAT_NO       NUMERIC (2, 0)  SIGNED  DEFAULT 0,
+  POL_CODE2          CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MR_TYPE2           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'M',
+  CNTR_NO2           CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  STD_PREMIUM        NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  FACE_AMNT          NUMERIC (20, 2) SIGNED  DEFAULT NULL,
+  INSUR_DUR_UNIT     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  INSUR_DUR          NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
+  MONEYIN_DUR_UNIT   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
+  MONEYIN_DUR        NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
+  HEAL_EXAM_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  PH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  SH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  SH_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  OC_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  OT_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  OT_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  PRIMARY KEY (RENEW_TIMES ASC, CNTR_NO ASC, CNTR_ID ASC) NOT DROPPABLE )
+  STORE BY ( RENEW_TIMES ASC, CNTR_NO ASC, CNTR_ID ASC );
+
+CREATE TABLE SRC1_INSUR_APPL (
+  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  CONTACT_SEQ        NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
+  CUST_NO            CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  UNEV_CUST_ID       CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CONTACT_SHARE_FLAG CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  HEALTH_STAT_FLAG   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_NO            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  CG_NO              CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_TYPE          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'P',
+  PREM_FROM          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
+  PRODUCT_CODE       CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MGR_BRANCH_NO      CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  ACCEPT_BRANCH_NO   CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  ACCEPT_DEPT_TYPE   CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT _ISO88591'SP',
+  ACCEPT_DEPT_NO     NUMERIC (4, 0)  SIGNED  DEFAULT NULL,
+  BIZ_ACCEPT_DATE    TIMESTAMP (0)   DEFAULT NULL,
+  SYS_ACCEPT_DATE    TIMESTAMP (0)   DEFAULT NULL,
+  APPL_DATE          TIMESTAMP (0)   DEFAULT NULL,
+  APPL_ENT_DATE      TIMESTAMP (0)   DEFAULT NULL,
+  SUM_PREM           NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  ENROLL_DATE        TIMESTAMP (0)   DEFAULT NULL,
+  SIGN_DATE          TIMESTAMP (0)   DEFAULT NULL,
+  AUTO_IN_FORCE_DATE TIMESTAMP (0)   DEFAULT NULL,
+  IN_FORCE_DATE      TIMESTAMP (0)   DEFAULT NULL,
+  SALES_CHANNEL      CHARACTER (2)   CHARACTER SET ISO88591  DEFAULT _ISO88591'PA',
+  SALES_BRANCH_NO    CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  SALES_CODE         CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  BDD_TYPE           CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'#',
+  BANK_CODE          CHARACTER (4)   CHARACTER SET ISO88591  DEFAULT NULL,
+  BANKACC_NO         CHARACTER (25)  CHARACTER SET ISO88591  DEFAULT NULL,
+  BANKACC_NAME       CHARACTER (72)  CHARACTER SET ISO88591  DEFAULT NULL,
+  ERNST_PREM         NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  ERNST_MONEYIN_TYPE CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'C',
+  ERNST_MONEYIN_DATE TIMESTAMP (0)   DEFAULT NULL,
+  MONEYIN_TYPE       CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MONEYIN_ITRVL      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
+  ANN_DRAW_AGE       NUMERIC (3, 0)  SIGNED  DEFAULT NULL,
+  ANN_AMNT           NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  ANN_ITRVL          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  ANN_INCR_PCT       NUMERIC (4, 2)  SIGNED  DEFAULT NULL,
+  MAFP_FLAG          CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  NOTICE_WAY         CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  REMARK             CHARACTER (255) CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_ENT_BRANCH_NO CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_ENT_CLERK_NO  CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_CHK_BRANCH_NO CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  APPL_CHK_CLERK_NO  CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_PR_BRANCH_NO  CHARACTER (6)   CHARACTER SET ISO88591  DEFAULT NULL,
+  CNTR_CLERK_NO      CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  VIP_CUST_FLAG      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  VIP_SALES_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  NEW_APPL_STAT      CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'N',
+  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  PRIMARY KEY (APPL_ID ASC) NOT DROPPABLE )
+STORE BY ( APPL_ID ASC );
+
+CREATE TABLE SRC1_APPL_STATE (
+  APPL_ID            CHARACTER (35)  CHARACTER SET ISO88591  NO DEFAULT  NOT NULL NOT DROPPABLE,
+  APPL_STAT_NO       NUMERIC (6, 0)  SIGNED  DEFAULT 0  NOT NULL NOT DROPPABLE,
+  POL_CODE           CHARACTER (8)   CHARACTER SET ISO88591  DEFAULT NULL,
+  MR_TYPE            CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'M',
+  CNTR_NO            CHARACTER (35)  CHARACTER SET ISO88591  DEFAULT NULL,
+  STD_PREMIUM        NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  PREMIUM            NUMERIC (12, 2) SIGNED  DEFAULT NULL,
+  FACE_AMNT          NUMERIC (20, 2) SIGNED  DEFAULT NULL,
+  INSUR_DUR_UNIT     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  INSUR_DUR          NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
+  MONEYIN_DUR_UNIT   CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT _ISO88591'Y',
+  MONEYIN_DUR        NUMERIC (5, 2)  SIGNED  DEFAULT NULL,
+  HEAL_EXAM_FLAG     CHARACTER (1)   CHARACTER SET ISO88591  DEFAULT NULL,
+  PH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  SH_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  SH_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  OC_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  OT_EX_PREM         NUMERIC (10, 2) SIGNED  DEFAULT NULL,
+  OT_EX_PREM_YEARS   NUMERIC (2, 0)  SIGNED  DEFAULT NULL,
+  DATASRC            CHARACTER (30)  CHARACTER SET ISO88591  DEFAULT NULL,
+  PRIMARY KEY (APPL_ID ASC, APPL_STAT_NO ASC) NOT DROPPABLE )
+STORE BY ( APPL_ID ASC, APPL_STAT_NO ASC );
+
+insert into SRC1_B02 (CNTR_NO, EXT_KEY1, EXT_KEY16, ext_key19, ext_key7, MGR_BRANCH_NO, mio_item_code, MIO_LOG_ID, pol_code) values
+  ('100', '1', 'PS', 24, 'S', '17', 'RM', '14', 'D31'),
+  ('101', '1', 'PS', 11, 'S', '12', 'ab', '16', 'D31'),
+  ('102', '2', 'PS', 22, 'S', '29', 'cd', '23', 'D31'),
+  ('103', '1', 'PS', 11, 'a', '19', 'RM', '39', 'D31'),
+  ('104', '2', 'PS', 21, 'S', '11', 'ab', '12', 'D31'),
+  ('105', '1', 'PS', 19, 'S', '23', 'cd', '12', 'D31'),
+  ('106', '1', 'PS', 23, 'S', '16', 'RM', '18', 'D31'),
+  ('107', '2', 'PS', 10, 'a', '16', 'ab', '35', 'D31'),
+  ('108', '1', 'PS', 19, 'S', '24', 'cd', '17', 'D31'),
+  ('109', '1', 'PS', 24, 'S', '28', 'RM', '35', 'D31'),
+  ('110', '1', 'PS', 24, 'S', '11', 'ab', '47', 'D31'),
+  ('111', '3', 'PS', 23, 'a', '24', 'cd', '44', 'D31'),
+  ('112', '1', 'PU', 16, 'S', '26', 'RM', '28', 'D31'),
+  ('113', '5', 'PU', 29, 'S', '28', 'ab', '31', 'S42'),
+  ('114', '4', 'PU', 19, 'S', '18', 'cd', '48', 'S42'),
+  ('115', '1', 'PU', 22, 'a', '18', 'RM', '26', 'S42'),
+  ('116', '1', 'PU', 27, 'S', '24', 'ab', '33', 'S42'),
+  ('117', '1', 'PU', 23, 'S', '15', 'cd', '31', 'S42'),
+  ('118', '2', 'PU', 28, 'S', '21', 'RM', '23', 'S42'),
+  ('119', '3', 'PU', 25, 'a', '21', 'ab', '47', 'S42'),
+  ('120', '1', 'PU', 28, 'S', '24', 'cd', '12', 'S42'),
+  ('121', '4', 'PU', 18, 'S', '22', 'RM', '36', 'S42'),
+  ('122', '2', 'PU', 27, 'S', '17', 'ab', '15', 'S42'),
+  ('123', '1', 'PU', 27, 'a', '20', 'cd', '48', 'S42'),
+  ('124', '1', 'PU', 18, 'S', '12', 'RM', '12', 'S42'),
+  ('125', '2', 'ab', 11, 'S', '16', 'ab', '41', 'abc'),
+  ('126', '1', 'ab', 23, 'S', '24', 'cd', '30', 'abc'),
+  ('127', '5', 'ab', 20, 'a', '17', 'RM', '30', 'abc'),
+  ('128', '3', 'ab', 26, 'S', '15', 'ab', '36', 'abc'),
+  ('129', '1', 'ab', 27, 'S', '21', 'cd', '24', 'abc');
+
+insert into SRC1_STD_CONTRACT (RENEW_TIMES, CNTR_NO, CNTR_ID, N_SALES_BRANCH_NO, N_SALES_CODE, O_SALES_BRANCH_NO, O_SALES_CODE, POL_CODE) values
+  (1, '109', '16', '15', '10', '15', '10', 'D31'),
+  (5, '130', '11', '14', '12', '14', '12', 'D31'),
+  (5, '102', '12', '14', '14', '14', '14', 'D31'),
+  (6, '121', '10', '15', '14', '15', '14', 'D31'),
+  (2, '109', '13', '12', '14', '12', '14', 'D31'),
+  (5, '108', '11', '13', '15', '13', '15', 'D31'),
+  (9, '114', '10', '13', '13', '13', '13', 'D31'),
+  (5, '114', '10', '12', '15', '12', '15', 'D31'),
+  (1, '122', '14', '12', '12', '12', '12', 'D31'),
+  (6, '120', '12', '13', '13', '13', '13', 'D31'),
+  (9, '122', '10', '14', '15', '14', '15', 'S42'),
+  (4, '108', '14', '13', '15', '13', '15', 'S42'),
+  (2, '123', '10', '15', '15', '15', '15', 'S42'),
+  (1, '105', '14', '15', '12', '15', '12', 'S42'),
+  (3, '106', '13', '11', '10', '11', '10', 'S42'),
+  (9, '113', '14', '15', '10', '15', '10', 'S42'),
+  (4, '109', '15', '15', '11', '15', '11', 'S42'),
+  (6, '129', '11', '11', '14', '11', '14', 'S42'),
+  (5, '113', '10', '14', '14', '14', '14', 'S42'),
+  (5, '107', '13', '14', '15', '14', '15', 'S42'),
+  (7, '119', '13', '13', '14', '13', '10', 'S42'),
+  (3, '103', '11', '11', '12', '12', '13', 'abc'),
+  (5, '119', '15', '10', '13', '10', '10', 'abc'),
+  (8, '100', '15', '11', '12', '10', '10', 'abc'),
+  (1, '120', '13', '12', '13', '11', '15', 'abc'),
+  (6, '128', '10', '13', '14', '11', '11', 'abc'),
+  (2, '110', '15', '12', '14', '10', '11', 'abc'),
+  (3, '109', '10', '15', '12', '14', '13', 'abc'),
+  (8, '119', '12', '12', '15', '14', '14', 'abc'),
+  (9, '119', '13', '15', '12', '11', '14', 'abc');
+
+
+insert into SRC1_INSUR_APPL (APPL_ID, SALES_BRANCH_NO) values
+  (' 1', '350202'),
+  (' 2', '350202'),
+  (' 3', '350202'),
+  (' 4', '350202'),
+  (' 5', '350202'),
+  (' 6', '350202'),
+  (' 7', '350202'),
+  (' 8', '350202'),
+  (' 9', '350202'),
+  ('10', '350202'),
+  ('11', '350204'),
+  ('12', '350204'),
+  ('13', '350204'),
+  ('14', '350204'),
+  ('15', '350204'),
+  ('16', '350204'),
+  ('17', '350204'),
+  ('18', '350204'),
+  ('19', '350204'),
+  ('20', '350204'),
+  ('21', '350204'),
+  ('22', '350212'),
+  ('23', '350212'),
+  ('24', '350215'),
+  ('25', '350211'),
+  ('26', '350215'),
+  ('27', '350215'),
+  ('28', '350215'),
+  ('29', '350213'),
+  ('30', '350213');
+
+INSERT INTO SRC1_APPL_STATE (APPL_STAT_NO, APPL_ID, CNTR_NO, pol_code) VALUES
+  ( 1, '18', '111', 'D31'),
+  ( 2, ' 3', '127', 'D31'),
+  ( 3, '23', '119', 'D31'),
+  ( 4, '19', '115', 'D31'),
+  ( 5, '16', '123', 'D31'),
+  ( 6, ' 3', '107', 'D31'),
+  ( 7, ' 2', '108', 'D31'),
+  ( 8, ' 3', '120', 'D31'),
+  ( 9, '24', '123', 'D31'),
+  (10, '10', '124', 'D31'),
+  (11, '16', '101', 'S42'),
+  (12, '21', '122', 'S42'),
+  (13, ' 5', '129', 'S42'),
+  (14, '26', '121', 'S42'),
+  (15, ' 3', '115', 'S42'),
+  (16, ' 9', '109', 'S42'),
+  (17, '29', '119', 'S42'),
+  (18, '26', '112', 'S42'),
+  (19, '27', '102', 'S42'),
+  (20, '12', '130', 'S42'),
+  (21, ' 5', '121', 'S42'),
+  (22, '26', '125', 'abc'),
+  (23, '18', '128', 'abc'),
+  (24, '28', '107', 'abc'),
+  (25, '23', '129', 'abc'),
+  (26, '10', '107', 'abc'),
+  (27, ' 5', '106', 'abc'),
+  (28, ' 5', '112', 'abc'),
+  (29, '20', '125', 'abc'),
+  (30, '10', '109', 'abc');
+  
+--alter table fact  add constraint fact1_fk foreign key (dimkey) references dim1(dkey);
+--alter table fact2 add constraint fact2_fk foreign key (qdimkey) references dim1(dkey);
+--alter table dim1  add constraint dim1_fk foreign key (fk1) references dim2(dkey);
+--alter table dim2  add constraint dim2_fk foreign key (fk1) references dim3(dkey);
+
+?section create_mvs
+--===========================================
+-- MJVs
+--===========================================
+
+-- Single table MJV
+create materialized view CLIC_MJV1
+  refresh on request
+  initialize on create
+  AS  select MIO_ITEM_CODE, 
+             CNTR_NO, 
+             MIO_LOG_ID, 
+             POL_CODE, 
+             EXT_KEY16, 
+             EXT_KEY19,
+             mgr_branch_no
+      from SRC1_B02 
+      where EXT_KEY1 = '1' 
+        and EXT_KEY16 in ('PS', 'PU')
+        and EXT_KEY7 = 'S' ;
+
+set pattern $$MVName$$ CLIC_MJV1;
+obey TESTCLIC(dump_MV);
+
+control query default MVQR_REWRITE_CANDIDATES 'CAT.CLIC.CLIC_MJV1';
+
+?section create_query_descriptors
+--===========================================
+--== Create the Query Descriptors
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--===========================================
+-- Join queries
+-- The ORDER BY clause was added to avoid sorting the resulting XML
+--===========================================
+
+?section CLIC_Q14
+-- Query 14
+prepare QueryStmt from
+select c.pol_code,
+       sum(ext_key19 ) amnt
+  from      SRC1_B02 a
+       join SRC1_STD_CONTRACT b 
+         on a.cntr_no=b.CNTR_NO
+       left join  SRC1_APPL_STATE c  
+         on b.CNTR_NO=c.CNTR_NO                                                                          
+  where a.ext_key1 = '1'                                                                                       
+    and a.ext_key16 in ('PS','PU')                                                                                     
+    and a.ext_key7 = 'S' 
+    and c.APPL_ID in 
+        (
+          select APPL_ID 
+            from SRC1_INSUR_APPL 
+            where SALES_BRANCH_NO in ('350202','350204')
+        ) 
+    and  b.O_SALES_BRANCH_NO=b.N_SALES_BRANCH_NO 
+    and  b.O_SALES_CODE=b.N_SALES_CODE
+  group by c.pol_code
+  order by c.pol_code;
+
+?section CLIC_Q16
+-- Query 16
+prepare QueryStmt from
+select a.pol_code,
+       sum(ext_key19 ) amnt ,
+       COUNT(*) cunt
+  from SRC1_b02 a  
+       join SRC1_STD_CONTRACT b 
+         on    a.cntr_no=b.CNTR_NO  
+           and a.pol_code=b.POL_CODE 
+           and b.POL_CODE in ('D31','S42') 
+  where a.ext_key1 = '1'                                                                                       
+    and a.ext_key16 in ('PS','PU')                                                                                     
+    and a.ext_key7 = 'S'   
+  group by a.pol_code
+  having COUNT(*) < ( select sum(p_cn)/count(*)
+                      from ( select POL_CODE,COUNT(*) p_cn
+                               from SRC1_STD_CONTRACT
+                               where O_SALES_BRANCH_NO=N_SALES_BRANCH_NO 
+                                 and O_SALES_CODE=N_SALES_CODE
+                               group by POL_CODE 
+                           ) d
+                    )
+  order by a.pol_code;
+
+?section CLIC_Q18
+-- Query 18
+prepare QueryStmt from
+select a.mgr_branch_no,
+       sum(ext_key19 ) amnt
+  from SRC1_B02 a  
+       join SRC1_STD_CONTRACT b 
+         on    a.cntr_no=b.CNTR_NO 
+           and a.mio_item_code='RM'
+  where a.ext_key1 = '1'                                                                                       
+	  and a.ext_key16 in ('PS')                                                                                     
+	  and a.ext_key7 = 'S' 
+	  and b.O_SALES_BRANCH_NO<>b.N_SALES_BRANCH_NO 
+	  and b.O_SALES_CODE<>b.N_SALES_CODE
+  group by a.mgr_branch_no
+  order by a.mgr_branch_no;
+
+?section match_Q14
+--===========================================
+-- Query 14
+--===========================================
+set pattern $$QueryName$$ CLIC_Q14;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TESTCLIC($$QueryName$$);
+obey TESTCLIC(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE            >> clic_q14.in;
+sh echo PUBLISH CLIC_MJV1.xml >> clic_q14.in;
+sh echo MATCH CLIC_Q14.xml    >> clic_q14.in;
+
+--== Run QMS as a command line tool
+sh sh -c "$QMS clic_q14.in clic.out";
+
+log;
+sh cat clic.out >> LOGCLIC;
+log LOGCLIC;
+
+obey TESTCLIC(compare);
+
+?section match_Q16
+--===========================================
+-- Query 16
+--===========================================
+
+set pattern $$QueryName$$ CLIC_Q16;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TESTCLIC($$QueryName$$);
+obey TESTCLIC(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE            >> clic_q16.in;
+sh echo PUBLISH CLIC_MJV1.xml >> clic_q16.in;
+sh echo MATCH CLIC_Q16.xml    >> clic_q16.in;
+
+--== Run QMS as a command line tool
+sh sh -c "$QMS clic_q16.in clic.out";
+
+log;
+sh cat clic.out >> LOGCLIC;
+log LOGCLIC;
+
+obey TESTCLIC(compare);
+
+?section match_Q18
+--===========================================
+-- Query 18
+--===========================================
+
+set pattern $$QueryName$$ CLIC_Q18;
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+obey TESTCLIC($$QueryName$$);
+obey TESTCLIC(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE            >> clic_q18.in;
+sh echo PUBLISH CLIC_MJV1.xml >> clic_q18.in;
+sh echo MATCH CLIC_Q18.xml    >> clic_q18.in;
+
+--== Run QMS as a command line tool
+sh sh -c "$QMS clic_q18.in clic.out";
+
+log;
+sh cat clic.out >> LOGCLIC;
+log LOGCLIC;
+
+obey TESTCLIC(compare);
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+select * from $$MVName$$;
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOGCLIC;
+log LOGCLIC;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOGCLIC;
+sh CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+
+?section ignore
+--===========================================
+--===========================================
+--===========================================
+?section compare
+
+obey TESTCLIC($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+log TCLIC_C1.txt clear;
+execute QueryStmt;
+log;
+log LOGCLIC;
+
+-- Verify the data is correct
+control query default MVQR_REWRITE_LEVEL '0';
+
+obey TESTCLIC($$QueryName$$);
+
+execute checkPlan;
+
+execute QueryStmt;
+
+control query default MVQR_REWRITE_LEVEL '3';
+
+log TCLIC_C2.txt clear;
+execute QueryStmt;
+log;
+log LOGCLIC;
+
+-- Diff query results
+log;
+sh diff TCLIC_C1.txt TCLIC_C2.txt >> LOGCLIC;
+log LOGCLIC;
+-- Diff is done.

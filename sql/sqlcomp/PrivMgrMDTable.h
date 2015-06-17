@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ class ExeCliInterface;
 #include <string>
 class ComDiagsArea;
 class Queue;
+class PrivMgrMDTable;
 
 // *****************************************************************************
 // * Class:         PrivMgrMDRow
@@ -49,7 +50,7 @@ class Queue;
 class PrivMgrMDRow
 {
 public:
-   PrivMgrMDRow(std::string myTableName);
+   PrivMgrMDRow(std::string myTableName, PrivMgrTableEnum myTableEnum);
    PrivMgrMDRow(const PrivMgrMDRow &other);
    virtual ~PrivMgrMDRow();
 
@@ -75,6 +76,7 @@ public:
 // -------------------------------------------------------------------
    PrivMgrMDTable(
       const std::string & tableName,
+      const PrivMgrTableEnum myTableEnum_,
       ComDiagsArea * pDiags = NULL);
    PrivMgrMDTable(const PrivMgrMDTable &other);
    virtual ~PrivMgrMDTable();
@@ -116,8 +118,9 @@ protected:
 // Data Members:
 // -------------------------------------------------------------------
 // Fully qualified table name      
-std::string    tableName_;
-ComDiagsArea * pDiags_;
+std::string      tableName_;
+PrivMgrTableEnum myTableEnum_;
+ComDiagsArea *   pDiags_;
 
 private:
    PrivMgrMDTable();

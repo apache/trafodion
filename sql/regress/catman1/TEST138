@@ -53,11 +53,8 @@ drop sequence user1_seq2;
 -- drop database
 drop schema t138sch cascade;
 drop schema sch138c cascade;
--- removes privilege metadata, including all component privilege grants
-initialize authorization, drop;
 
 ?section set_up
-initialize authorization;
 -- turn off CREATE_TABLE privilege, so user1 can no longer create objs
 revoke component privilege "CREATE" on SQL_OPERATIONS from sql_user1;
 revoke component privilege CREATE_SEQUENCE on SQL_OPERATIONS from sql_user1;
@@ -115,7 +112,9 @@ get tables;
 get privileges on component sql_operations for sql_user2;
 
 -- create some tables
+grant component privilege CREATE_TABLE on sql_operations to sql_user1;
 sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
+revoke component privilege CREATE_TABLE on sql_operations from sql_user1;
 
 -- user2 cannot alter them
 sh sqlci -i "TEST138(alter_tbl)" -u sql_user2;
@@ -138,7 +137,6 @@ obey TEST138(drop_tbl);
 
 -- reset
 revoke component privilege CREATE_TABLE on SQL_OPERATIONS from sql_user1;
-grant component privilege "CREATE" on SQL_OPERATIONS to public;
 get privileges on component sql_operations for "PUBLIC";
 get privileges on component sql_operations for sql_user1;
 
@@ -154,7 +152,9 @@ get privileges on component sql_operations for sql_user1;
 get privileges on component sql_operations for sql_user2;
 
 -- create some tables
+grant component privilege CREATE_TABLE on sql_operations to sql_user1;
 sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
+revoke component privilege CREATE_TABLE on sql_operations from sql_user1;
 
 -- user1 should not be able to create any views
 sh sqlci -i "TEST138(create_view)" -u sql_user1;

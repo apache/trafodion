@@ -1972,20 +1972,6 @@ ItemExpr *MonadicUSERFunction::bindNode(BindWA *bindWA)
   bindSelf(bindWA);
   if (bindWA->errStatus()) return this;
 
-  if(OSIM_isNSKbehavior())
-  {
-    // Convert my child to INT, if not already an INT.
-    if (child(0)->castToItemExpr()->getValueId().getType().getTypeName()
-        != LiteralInteger)
-    {
-      ItemExpr * newChild =
-	      new (bindWA->wHeap()) Cast(child(0),
-	           new (bindWA->wHeap())
-	           SQLInt(TRUE));
-      setChild(0, newChild);
-    }
-  }
-
   unBind();
 
   return ItemExpr::bindNode(bindWA);
@@ -4626,6 +4612,13 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
   return TRUE;
 } // ItemExpr::convertToValueIdList()
 
+//
+// MACROS used by SEMI-NON-RECURSIVE version of ItemExpr::convertToValueIdSet(...) below
+//
+#define AVR_STATE0 0
+#define AVR_STATE1 1
+#define AVR_STATE2 2
+
 // -----------------------------------------------------------------------
 // Convert a backbone of certain nodes (usually AND nodes) into a value id
 // set and get rid of the backbone (NOTE: this does not strictly
@@ -4638,135 +4631,186 @@ Int32 ItemExpr::convertToValueIdSet(ValueIdSet &vs,
 				  NABoolean tfmSubq,
 				  NABoolean flattenLists)
 {
-  if (getOperatorType() == backboneType)
-  {
-    // this is a backbone node, recurse and then delete the backbone node
-    CMPASSERT(getArity() == 2);
-    Int32 status;
-    status = child(0)->convertToValueIdSet(vs, bindWA, backboneType, tfmSubq);
-    if (status) return status;
-    status = child(1)->convertToValueIdSet(vs, bindWA, backboneType, tfmSubq);
-    if (status) return status;
+  //
+  // convertToValueIdSet() used to be called recursively not just
+  // for all the items in an expression but for all the items in the node
+  // tree for an entire query. Consequently, we must eliminate the recursive
+  // calls to convertToValueIdSet() by keeping the information needed by
+  // each "recursive" level in the HEAP and using a "while" loop to look
+  // at each node in the tree in the same order as the old recursive technique
+  // would have done.
+  // The information needed by each "recursive" level is basically just
+  // * a pointer to what node (ItemExpr *) to look at next, and
+  // * a "state" value that tells us where we are in the convertToValueIdSet()
+  //   code for the ItemExpr node that we are currently working on
+  //
+  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
 
-    // If user had specified selectivity for the compound predicate, then make 
-    // sure the child predicates get proportionate share of the selectivity.
-    if(isSelectivitySetUsingHint())
+  Int32  currIdx    = 0           ;
+  IEarray.insertAt( currIdx, this       ) ; //Initialize first array element
+  state.insertAt(   currIdx, AVR_STATE0 ) ;
+
+  Int32 status = FALSE ;
+
+  while( currIdx >= 0 )
+  {
+    ItemExpr * currIE = IEarray[currIdx] ;
+
+    if ( currIE->getOperatorType() == backboneType )
     {
-      double newSelFactor = sqrt(getSelectivityFactor());
-      
-      child(0)->setSelectivitySetUsingHint();
-      child(0)->setSelectivityFactor(newSelFactor);
+      switch ( state[currIdx] )
+      {
+        case AVR_STATE0:
+          // this is a backbone node, recurse and then delete the backbone node
+          CMPASSERT( currIE->getArity() == 2 );
 
-      child(1)->setSelectivitySetUsingHint();
-      child(1)->setSelectivityFactor(newSelFactor);
+          state.insertAt( currIdx, AVR_STATE1 ) ;
+          currIdx++ ;                               //"Recurse" down to child 0
+          state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+          IEarray.insertAt( currIdx, currIE->child(0) ) ;
+
+          // if (status) return status; Commented out since return will be done later
+          continue ;
+
+        case AVR_STATE1:
+          state.insertAt( currIdx, AVR_STATE2 ) ;
+          currIdx++ ;                               //"Recurse" down to child 1
+          state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+          IEarray.insertAt( currIdx, currIE->child(1) ) ;
+
+          // if (status) return status; Commented out since return will be done later
+          continue ;
+
+        case AVR_STATE2:
+          state.insertAt( currIdx, AVR_STATE0 ) ; // We are done processing 'currIE'
+          break;
+      }
+
+      // If user had specified selectivity for the compound predicate, then make 
+      // sure the child predicates get proportionate share of the selectivity.
+      if( currIE->isSelectivitySetUsingHint() )
+      {
+        double newSelFactor = sqrt( currIE->getSelectivityFactor() );
+
+        currIE->child(0)->setSelectivitySetUsingHint();
+        currIE->child(0)->setSelectivityFactor( newSelFactor );
+
+        currIE->child(1)->setSelectivitySetUsingHint();
+        currIE->child(1)->setSelectivityFactor( newSelFactor );
+      }
     }
-  }
-  else
-  {
-    // ok, we've reached a non-backbone node, bind the node and insert its
-    // value id into the set.
-    ItemExpr *boundExpr = this;
-    if (!bindWA)
-      synthTypeAndValueId();
     else
     {
-      boundExpr = (ItemExpr *) bindNodeRoot(bindWA);
-      if (bindWA->errStatus()) return TRUE;		// error
-
-      if ( bindWA->getCurrentScope()->context()->inOrderBy() ||
-           bindWA->getCurrentScope()->context()->inGroupByClause() )
-      {
-        // Temporary fix till random is supported in ORDER BY, GROUP BY
-        // For now do not allow random in ORDER BY clause, GROUP BY
-        // and DISTINCT.
-        if (boundExpr->containsOpType(ITM_RANDOMNUM))
-        {
-          *CmpCommon::diags() << DgSqlCode(-4313);
-          bindWA->setErrStatus();
-          return TRUE; // error
-        }
-      }
-
-     if (bindWA && (boundExpr->getValueId() != NULL_VALUE_ID) &&
-	  (boundExpr->getValueId().getType().isLob()))
-      {
-	BindScope *currScope = bindWA->getCurrentScope();
-
-	BindContext *currContext = currScope->context();
-	if (currContext->inOrderBy() ||
-	    currContext->inExistsPredicate() ||
-	    currContext->inGroupByClause() ||
-	    currContext->inHavingClause() ||
-	    currContext->inUnion() ||
-	    currContext->inJoin()
-	  )
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4322);
-	  bindWA->setErrStatus();
-	  return TRUE;  // error
-	}
-      }
-    }
-
-    if (getOperatorType() == ITM_REFERENCE &&
-        ((ColReference *) this)->getColRefNameObj().isStar() &&
-        ((ColReference *)this)->getStarExpansion())
-    {
-      const ColumnDescList& cl = *(((ColReference *)this)->getStarExpansion());
-      for (CollIndex i = 0; i < cl.entries(); i++)
-        vs.insert(cl[i]->getValueId());
-    }
-    else if (tfmSubq && backboneType == ITM_AND && containsSubquery())
-    {
-      // If *all* my children are MVPs, insert my transform (not me).
-      //
-      // If a "raw-mode" retry could transform *any* MVPs,
-      // insert the raw transform (containing all my subqueries) *AND*
-      // insert me too.
-      //
-      // See dissectOutSubqueries in NormItemExpr.cpp for rationale.
-      //
-      ItemExpr *tfm = transformMultiValuePredicate(FALSE/*do NOT flatten*/);
-      if (tfm)
-        tfm->convertToValueIdSet(vs, bindWA, backboneType, FALSE);
+      // ok, we've reached a non-backbone node, bind the node and insert its
+      // value id into the set.
+      ItemExpr *boundExpr = currIE;
+      if (!bindWA)
+         currIE->synthTypeAndValueId() ;
       else
       {
-        if (!bindWA) // do not do this at bindtime
-          tfm = transformMultiValuePredicate(FALSE, ANY_CHILD_RAW);
-        if (tfm)
-          tfm->convertToValueIdSet(vs, bindWA, backboneType, FALSE);
-        vs.insert(boundExpr->getValueId());
-      }
+        boundExpr = (ItemExpr *) currIE->bindNodeRoot(bindWA) ;
+        if (bindWA->errStatus()) return TRUE;             // error
 
-      if(tfm && ( tfm->getOperatorType() == ITM_AND))
-      {
-        tfm->synthTypeAndValueId(TRUE);
-
-        // check for the added prefix predicate
-        ItemExpr * leftChildOfAND = (ItemExpr *)tfm->child(0);
-
-        if((leftChildOfAND->isARangePredicate()) &&
-           ((BiRelat *)leftChildOfAND)->isDerivedFromMCRP())
+        if ( bindWA->getCurrentScope()->context()->inOrderBy() ||
+             bindWA->getCurrentScope()->context()->inGroupByClause() )
         {
-          BiRelat * addedComparison = (BiRelat *) leftChildOfAND;
-          addedComparison->translateListOfComparisonsIntoValueIds();
+          // Temporary fix till random is supported in ORDER BY, GROUP BY
+          // For now do not allow random in ORDER BY clause, GROUP BY
+          // and DISTINCT.
+          if (boundExpr->containsOpType(ITM_RANDOMNUM))
+          {
+            *CmpCommon::diags() << DgSqlCode(-4313);
+            bindWA->setErrStatus();
+            return TRUE; // error
+          }
+        }
+
+        if ( bindWA && (boundExpr->getValueId() != NULL_VALUE_ID) &&
+             ( boundExpr->getValueId().getType().isLob() ) )
+        {
+          BindScope *currScope = bindWA->getCurrentScope();
+
+          BindContext *currContext = currScope->context();
+          if (currContext->inOrderBy() ||
+              currContext->inExistsPredicate() ||
+              currContext->inGroupByClause() ||
+              currContext->inHavingClause() ||
+              currContext->inUnion() ||
+              currContext->inJoin()
+            )
+          {
+            *CmpCommon::diags() << DgSqlCode(-4322);
+            bindWA->setErrStatus();
+            return TRUE; // error
+          }
         }
       }
 
+      if ( currIE->getOperatorType() == ITM_REFERENCE &&
+          ((ColReference *)currIE)->getColRefNameObj().isStar()  &&
+          ((ColReference *)currIE)->getStarExpansion())
+      {
+        const ColumnDescList& cl = *(((ColReference *)currIE)->getStarExpansion());
+        for (CollIndex i = 0; i < cl.entries(); i++)
+          vs.insert(cl[i]->getValueId());
+      }
+      else if ( tfmSubq && backboneType == ITM_AND
+                && currIE->containsSubquery() )
+      {
+        // If *all* my children are MVPs, insert my transform (not me).
+        //
+        // If a "raw-mode" retry could transform *any* MVPs,
+        // insert the raw transform (containing all my subqueries) *AND*
+        // insert me too.
+        //
+        // See dissectOutSubqueries in NormItemExpr.cpp for rationale.
+        //
+        ItemExpr *tfm = currIE->transformMultiValuePredicate(FALSE/*do NOT flatten*/);
+        if (tfm)
+          tfm->convertToValueIdSet(vs, bindWA, backboneType, FALSE);
+        else
+        {
+          if (!bindWA) // do not do this at bindtime
+            tfm = currIE->transformMultiValuePredicate(FALSE, ANY_CHILD_RAW);
+          if (tfm)
+            tfm->convertToValueIdSet(vs, bindWA, backboneType, FALSE);
+          vs.insert(boundExpr->getValueId());
+        }
+
+        if(tfm && ( tfm->getOperatorType() == ITM_AND))
+        {
+          tfm->synthTypeAndValueId(TRUE);
+
+          // check for the added prefix predicate
+          ItemExpr * leftChildOfAND = (ItemExpr *)tfm->child(0);
+
+          if((leftChildOfAND->isARangePredicate()) &&
+             ((BiRelat *)leftChildOfAND)->isDerivedFromMCRP())
+          {
+            BiRelat * addedComparison = (BiRelat *) leftChildOfAND;
+            addedComparison->translateListOfComparisonsIntoValueIds();
+          }
+        }
+      }
+      else if ( ( flattenLists == TRUE )
+                && ( currIE->getOperatorType() == ITM_ITEM_LIST ) )
+      {
+        status = currIE->convertToValueIdSet(vs, bindWA, ITM_ITEM_LIST, 
+                                             tfmSubq, flattenLists);
+        if (status) return status;
+      }
+      else 
+      {
+        vs.insert(boundExpr->getValueId());
+      }
     }
-    else if ((flattenLists == TRUE) && (getOperatorType() == ITM_ITEM_LIST))
-    {
-      Int32 status;
-      status = convertToValueIdSet(vs, bindWA, ITM_ITEM_LIST, 
-                                   tfmSubq, flattenLists);
-      if (status) return status;
-    }
-    else
-    {
-      vs.insert(boundExpr->getValueId());
-    }
-  }
-  return FALSE;						// no error
+    if ( state[currIdx] == AVR_STATE0 )
+       currIdx-- ;       // Return to the parent node & continue working on it
+
+  } // end of while( currIdx >= 0 )
+
+  return status ;
 } // ItemExpr::convertToValueIdSet
 
 // -----------------------------------------------------------------------
@@ -6052,11 +6096,30 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	  NABoolean specialMode = 
 	    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
 	     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+
+          NABoolean checkForTrunc = TRUE;
+          NABoolean noStringTruncWarn = FALSE;
+          if (specialMode)
+            {
+              checkForTrunc = FALSE;
+              noStringTruncWarn = TRUE;
+            }
+          else
+            {
+              if (CmpCommon::getDefault(TRAF_STRING_AUTO_TRUNCATE) == DF_ON)
+                {
+                  checkForTrunc = FALSE;
+                  noStringTruncWarn = TRUE;
+                  if (CmpCommon::getDefault(TRAF_STRING_AUTO_TRUNCATE_WARNING) == DF_ON)
+                    noStringTruncWarn = FALSE;
+                }
+            }
+
 	  newChild = new(bindWA->wHeap()) Cast(child(1),
 					       &child(0)->getValueId().getType(),
 					       ITM_CAST,
-					       specialMode? FALSE:TRUE,
-					       specialMode? TRUE:FALSE);
+                                               checkForTrunc,
+                                               noStringTruncWarn);
 	}
       else
 	newChild = new (bindWA->wHeap()) Cast(child(1),
@@ -7228,7 +7291,7 @@ void BindWA::markAsReferencedColumn(const ColumnDesc *cd,
 { 
   if (cd->getViewFileName())
   {
-    setColumRefsInStoi(cd->getViewFileName(),cd->getViewColPosition());
+    setColumnRefsInStoi(cd->getViewFileName(),cd->getViewColPosition());
   }
 
   markAsReferencedColumn(cd->getValueId(), groupByRefForSingleIntHist); 
@@ -7296,7 +7359,7 @@ void BindWA::markAsReferencedColumn(const ValueId &vid,
                         getFileSetName().getQualifiedNameAsString(),
                     wHeap());
 
-    setColumRefsInStoi(fileName.data(),nacol->getPosition());
+    setColumnRefsInStoi(fileName.data(),nacol->getPosition());
   }
 
   if (inDDL()||context->inOrderBy()) return;
@@ -7401,7 +7464,7 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
                          getFileSetName().getQualifiedNameAsString(),
                          bindWA->wHeap());
       
-      bindWA->setColumRefsInStoi(fileName.data(),nacol->getPosition());
+      bindWA->setColumnRefsInStoi(fileName.data(),nacol->getPosition());
       
     }
   
@@ -11333,35 +11396,25 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
     case ITM_USER:
     case ITM_AUTHNAME:
     case ITM_AUTHTYPE:
-      {
+    {
 	ItemExpr * tempBoundTree =
 	  child(0)->castToItemExpr()->bindNode(bindWA);
 	if (bindWA->errStatus())
 	  return this;
 
-	if ( OSIM_isNTbehavior() )
-	  {
-	    // don't do this transformation on NT. On NT, the child operand
-	    // of a USER function is in string format and contains the SID value.
-	    buf[0] = 0;
-	    parseTree = child(0);
-	  }
-	else
-	  {
-	    if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
+	if (tempBoundTree->getValueId().getType().getTypeQualifier() !=
 		NA_NUMERIC_TYPE)
-	      {
+	{
 		strcpy(buf,
 		       "cast(substring(@A1, 1, position(',' in @A1)-1) as smallint) * 256 + cast(substring(@A1, position(',' in @A1)+1, char_length(@A1) - position(',' in @A1)) as smallint)");
-	      }
-	    else
-	      {
+	}
+	else
+	{
 		buf[0] = 0;
 		parseTree = child(0);
-	      }
-	  }
+	}
 	
-      }
+    }
     break;
 
     case ITM_WEEK:
@@ -12724,6 +12777,7 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
 
   if (nodeIsBound())
     return getValueId().getItemExpr();
+
   // Binds self; Binds children; SequenceValue::synthesize();
   boundExpr = Function::bindNode(bindWA);
   if (bindWA->errStatus()) 
@@ -12743,6 +12797,192 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
   Assign_SqlParser_Flags (savedParserFlags);
 
   return boundExpr;
+}
+
+ItemExpr *HbaseTimestamp::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  NAColumn * nac = ((BaseColumn*)col_)->getNAColumn();
+  if (! nac)
+    return NULL;
+
+  colName_ = nac->getColName();
+
+  NAType * tsValsType = 
+    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+  tsVals_ = 
+    new (bindWA->wHeap()) NATypeToItem(tsValsType);
+  
+  tsVals_ = tsVals_->bindNode(bindWA);
+  if (! tsVals_ || bindWA->errStatus())
+    return NULL;
+
+  // Binds self; Binds children; HbaseTimestamp::synthesize();
+  boundExpr = Function::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return boundExpr;
+}
+
+ItemExpr *HbaseTimestampRef::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  BaseColumn * bc = (BaseColumn*)col_;
+
+  if ((bc->getTableDesc()->getNATable()->isHiveTable()) ||
+      (bc->getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+    {
+      if (bc->getTableDesc()->getNATable()->isHiveTable())
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on a Hive table.");
+      else
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on an aligned format table.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  if (bc->getTableDesc()->hbaseTSList().entries() == 0)
+    {
+      for (CollIndex i = 0; i < bc->getTableDesc()->getColumnList().entries(); i++) 
+        {
+          ItemExpr *baseCol = bc->getTableDesc()->getColumnList()[i].getItemExpr();
+          HbaseTimestamp * hbtCol = 
+            new (bindWA->wHeap()) HbaseTimestamp(baseCol);
+          hbtCol->bindNode(bindWA);
+          if (bindWA->errStatus()) 
+            return NULL;
+          bc->getTableDesc()->hbaseTSList().insert(hbtCol->getValueId());
+        }
+    }
+
+  ValueId valId = bc->getTableDesc()->hbaseTSList()[bc->getColNumber()];
+  setValueId(valId);
+  
+  bindSelf(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return valId.getItemExpr();
+}
+
+ItemExpr *HbaseVersion::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  NAColumn * nac = ((BaseColumn*)col_)->getNAColumn();
+  if (! nac)
+    return NULL;
+
+  colName_ = nac->getColName();
+
+  NAType * tsValsType = 
+    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+  tsVals_ = 
+    new (bindWA->wHeap()) NATypeToItem(tsValsType);
+  
+  tsVals_ = tsVals_->bindNode(bindWA);
+  if (! tsVals_ || bindWA->errStatus())
+    return NULL;
+
+  // Binds self; Binds children; HbaseVersion::synthesize();
+  boundExpr = Function::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return boundExpr;
+}
+
+ItemExpr *HbaseVersionRef::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  CMPASSERT(col_);
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  col_ = col_->bindNode(bindWA);
+  if (! col_ || bindWA->errStatus())
+    return NULL;
+
+  CMPASSERT(col_->getOperatorType() == ITM_BASECOLUMN);
+
+  BaseColumn * bc = (BaseColumn*)col_;
+
+  if ((bc->getTableDesc()->getNATable()->isHiveTable()) ||
+      (bc->getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+    {
+      if (bc->getTableDesc()->getNATable()->isHiveTable())
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on a Hive table.");
+      else
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("hbase_timestamp or hbase_version cannot be used on an aligned format table.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  if (bc->getTableDesc()->hbaseVersionList().entries() == 0)
+    {
+      for (CollIndex i = 0; i < bc->getTableDesc()->getColumnList().entries(); i++) 
+        {
+          ItemExpr *baseCol = bc->getTableDesc()->getColumnList()[i].getItemExpr();
+          HbaseVersion * hbtCol = 
+            new (bindWA->wHeap()) HbaseVersion(baseCol);
+          hbtCol->bindNode(bindWA);
+          if (bindWA->errStatus()) 
+            return NULL;
+          bc->getTableDesc()->hbaseVersionList().insert(hbtCol->getValueId());
+        }
+    }
+
+  ValueId valId = bc->getTableDesc()->hbaseVersionList()[bc->getColNumber()];
+  setValueId(valId);
+  
+  bindSelf(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return valId.getItemExpr();
 }
 
 ItemExpr *RowNumFunc::bindNode(BindWA *bindWA)
@@ -12821,4 +13061,3 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
   return FALSE;
 }
-

@@ -1,0 +1,189 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets (in the presence of a BEFORE trigger)
+-- RW-conflicting set
+-- runs on cat1.schm and cat1.schm_alt
+----------------------------------------
+
+--CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF';
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_6_2_2_2(clean_up2);
+obey TEST_6_2_2_2(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_6_2_2_2(clean_up);
+
+-- start logging
+log   LOG_6_2_2_2 clear;
+
+set schema CAT1.SCHM;
+obey TEST_6_2_2_2(set_up);
+obey TEST_6_2_2_2(set_up2);
+obey TEST_6_2_2_2(tests);
+obey TEST_6_2_2_2(tests2);
+obey TEST_6_2_2_2(clean_up2);
+obey TEST_6_2_2_2(clean_up);
+
+-- switch schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_6_2_2_2(set_up);
+obey TEST_6_2_2_2(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_6_2_2_2(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up2
+DROP TRIGGER bt9; 
+DROP TRIGGER st10; 
+
+?section clean_up
+
+DROP TRIGGER rt0;
+DROP TRIGGER rt1;
+DROP TRIGGER rt2; 
+DROP TRIGGER st3; 
+DROP TRIGGER rt4; 
+DROP TRIGGER rt5; 
+DROP TRIGGER st6; 
+DROP TRIGGER st7; 
+DROP TRIGGER rt8; 
+obey clearTables2;
+
+
+?section set_up
+
+INSERT INTO T1 VALUES (1,2);
+INSERT INTO T1 VALUES (2,3);
+INSERT INTO T1 VALUES (3,4);
+INSERT INTO T1 VALUES (4,5);
+
+INSERT INTO T5 VALUES (0);
+INSERT INTO tab1A VALUES (100,200,0,0);
+INSERT INTO tab1A VALUES (200,300,0,0);
+---------------------------------
+-- DEFINE TRIGGERS
+---------------------------------
+
+CREATE TRIGGER rt0
+AFTER INSERT ON tab1B
+REFERENCING NEW AS newR
+FOR EACH ROW
+UPDATE T1 SET b=b+1 WHERE a<newR.b AND a<4;
+
+
+
+----------
+CREATE TRIGGER rt1
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T2 VALUES (oldR.a, oldR.b);
+
+----------
+CREATE TRIGGER rt2
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T3 VALUES (oldR.a, oldR.b);
+
+----------
+CREATE TRIGGER st3
+AFTER UPDATE ON T1
+INSERT INTO T4 VALUES (4);
+
+----------
+CREATE TRIGGER rt4
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+UPDATE T5 SET a=a+1 WHERE a=oldR.b-2;
+
+----------
+CREATE TRIGGER rt5
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+UPDATE T5 SET a=100 WHERE a=4;
+
+----------
+CREATE TRIGGER st6
+AFTER UPDATE ON T1
+INSERT INTO T6 VALUES (6);
+
+----------
+CREATE TRIGGER st7
+AFTER UPDATE ON T1
+INSERT INTO T7 VALUES (7);
+
+----------
+CREATE TRIGGER rt8
+AFTER UPDATE ON T1
+REFERENCING OLD AS oldR FOR EACH ROW
+INSERT INTO T8 VALUES (oldR.b);
+
+?section set_up2
+----------
+CREATE TRIGGER bt9 
+BEFORE INSERT ON T1
+REFERENCING NEW AS NEWR 
+SET NEWR.A = NEWR.A + 0;
+
+----------
+CREATE TRIGGER st10 
+AFTER INSERT ON T1
+DELETE FROM T1 WHERE A > 1000;
+
+?section tests2
+------------------------------------------------------------------
+--          ANOTHER TEST CASE
+------------------------------------------------------------------
+PREPARE SS FROM INSERT INTO T1 VALUES (1,1),(2,2),(3,3);
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+INSERT INTO tab1B (SELECT a,b FROM tab1a);
+
+SELECT * FROM tab1B ORDER BY a; -- check result
+
+SELECT * FROM T1 ORDER BY a,b; -- check result
+
+SELECT * FROM T2 ORDER BY a,b; -- check result
+
+SELECT * FROM T3 ORDER BY a,b; -- check result
+
+SELECT * FROM T4 ORDER BY a; -- check result
+
+SELECT * FROM T5 ORDER BY a; -- check result
+
+SELECT * FROM T6 ORDER BY a; -- check result
+
+SELECT * FROM T7 ORDER BY a; -- check result
+
+SELECT * FROM T8 ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

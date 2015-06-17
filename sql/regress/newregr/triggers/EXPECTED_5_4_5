@@ -1,0 +1,87 @@
+>>
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_4_5(set_up);
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig545
+>>---------------------------------
+>>
+>>
+>>create trigger atrig545
++>after insert on tab1b
++>referencing new as newt
++>insert into tab1b (select a+1, b+1 from newt);
+
+--- SQL operation complete.
+>>
+>>
+>>obey TEST_5_4_5(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>insert into tab1b values (1, 2);
+
+*** WARNING[11002] Trigger CAT1.SCHM_ALT.ATRIG545 on table CAT1.SCHM_ALT.TAB1B may be triggered recursively more than 16 times.
+
+*** ERROR[11003] Trigger CAT1.SCHM_ALT.ATRIG545 on table CAT1.SCHM_ALT.TAB1B was triggered recursively more than 16 times.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM_ALT.ATRIG545 on table CAT1.SCHM_ALT.TAB1B has failed.
+
+--- 0 row(s) inserted.
+>>
+>>SELECT * FROM tab1B;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_5_4_5(clean_up);
+>>
+>>DROP TRIGGER atrig545;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- end logging
+>>LOG;

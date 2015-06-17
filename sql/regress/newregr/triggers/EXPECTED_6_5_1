@@ -1,0 +1,35 @@
+>>obey TEST_6_5_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+1, c=c+1, d=d+1 WHERE a<3;
+
+*** ERROR[3193] SIGNAL SQLSTATE=s9999, Message: atrig6112c signalled.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.ATRIGC on table CAT1.SCHM.TAB1A has failed.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A ORDER BY a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            5
+          3            4            5            6
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

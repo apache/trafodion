@@ -1,0 +1,27 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+obey regr.init;
+-- Q66
+
+    SELECT MAX(total_revenue) as maxval
+    FROM supplier, (SELECT l_suppkey, sum(l_extendedprice * (1-l_discount))
+                    FROM lineitem
+                    WHERE l_shipdate >=  DATE '1996-01-01'
+                    AND l_shipdate <  DATE '1996-01-01' + INTERVAL '3' MONTH
+                    GROUP BY l_suppkey) revenue(supplier_no, total_revenue)
+    WHERE s_suppkey = supplier_no;

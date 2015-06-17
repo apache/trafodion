@@ -1,0 +1,854 @@
+>>obey TEST_1_3_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- NOTE: the following statement should add a row to cat3.schm.tab3a
+>>
+>>UPDATE tab1A SET d=2 WHERE a=1;
+
+--- 1 row(s) updated.
+>>
+>>-- showlabel on trigger should return error
+>>showlabel trig1;
+
+*** ERROR[1004] Object CAT1.SCHM.TRIG1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[3225] SHOWLABEL failed for object CAT1.SCHM.TRIG1. The object does not exist in the given namespace TABLE, the object is not accessible, or the object type is not supported. SHOWLABEL supports only SQL/MX tables, views, and indexes.
+
+--- SQL operation failed with errors.
+>>
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:47 ( 212095875767696801 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:49 ( 212095875769164639 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:49 ( 212095875769150279 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 1 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: ENABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>ALTER TRIGGER DISABLE trig1;
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+ALTER TRIGGER DISABLE CAT1.SCHM.TRIG1 ;
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:47 ( 212095875767696801 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:49 ( 212095875769164639 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:49 ( 212095875769150279 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 1 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: DISABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>-- NOTE: the following statement should NOT add a row to cat3.schm.tab3a
+>>
+>>UPDATE tab1A SET c=2 WHERE a=1;
+
+--- 1 row(s) updated.
+>>
+>>-- RESULT: cat3.schm.tab3a should have one row only
+>>
+>>SELECT count(*) FROM cat3.schm.tab3a;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- Re-enable a disabled trigger and ensure it is in effect.
+>>
+>>ALTER TRIGGER ENABLE trig1;
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:47 ( 212095875767696801 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:49 ( 212095875769764491 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:49 ( 212095875769698147 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 1 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: ENABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>-- NOTE: the following statement should add a row to cat3.schm.tab3a
+>>
+>>UPDATE tab1A SET b=2 ;
+
+--- 1 row(s) updated.
+>>
+>>
+>>-- RESULT: cat3.schm.tab3a should have two rows
+>>
+>>SELECT count(*) FROM cat3.schm.tab3a;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>DELETE FROM cat3.schm.tab3a;
+
+--- 2 row(s) deleted.
+>>
+>>ALTER TRIGGER DISABLE trig1;
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+ALTER TRIGGER DISABLE CAT1.SCHM.TRIG1 ;
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:47 ( 212095875767696801 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:50 ( 212095875770082725 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:50 ( 212095875770075684 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 1 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: DISABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER trig2 AFTER UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (newrow.a < 6 )
++>
++>		INSERT INTO cat3.schm.tab3a VALUES (200,200);
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+CREATE TRIGGER CAT1.SCHM.TRIG2 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 6) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (200, 200);
+ALTER TRIGGER DISABLE CAT1.SCHM.TRIG1 ;
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:50 ( 212095875770312602 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:50 ( 212095875770082725 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:50 ( 212095875770075684 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 2 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: DISABLED
+Trigger[1]: trigger created (ID): 212095875770312602
+  Status: ENABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>ALTER TRIGGER ENABLE ALL OF tab1a;
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+CREATE TRIGGER CAT1.SCHM.TRIG2 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 6) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (200, 200);
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:50 ( 212095875770312602 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:50 ( 212095875770082725 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:50 ( 212095875770075684 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 2 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: ENABLED
+Trigger[1]: trigger created (ID): 212095875770312602
+  Status: ENABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>-- NOTE: the following statement should add TWO rows to cat3.schm.tab3a
+>>
+>>UPDATE tab1A SET d=2 ;
+
+--- 1 row(s) updated.
+>>
+>>select * from cat3.schm.tab3a;
+
+A            B          
+-----------  -----------
+
+        100          100
+        200          200
+
+--- 2 row(s) selected.
+>>
+>>ALTER TRIGGER DISABLE ALL OF tab1a;
+
+--- SQL operation complete.
+>>showddl tab1A;
+
+CREATE TABLE CAT1.SCHM.TAB1A
+  (
+    A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.TAB1A_218481153_3918 PRIMARY KEY (A ASC) NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TAB1A_772561153_3918 CHECK (CAT1.SCHM.TAB1A.A IS NOT
+      NULL) NOT DROPPABLE
+  )
+  LOCATION \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+  NAME SLEEPY_FC0501_ZSDJ48TT_W1C7PX00
+  ATTRIBUTES BLOCKSIZE 32768
+  STORE BY (A ASC)
+  ;
+CREATE TRIGGER CAT1.SCHM.TRIG1 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 5) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (100, 100);
+CREATE TRIGGER CAT1.SCHM.TRIG2 AFTER UPDATE ON CAT1.SCHM.TAB1A REFERENCING NEW
+  AS NEWROW FOR EACH ROW WHEN (NEWROW.A < 6) INSERT INTO CAT3.SCHM.TAB3A VALUES
+  (200, 200);
+ALTER TRIGGER DISABLE CAT1.SCHM.TRIG1 ;
+ALTER TRIGGER DISABLE CAT1.SCHM.TRIG2 ;
+
+--- SQL operation complete.
+>>showlabel tab1A, detail;
+===================================================================
+
+GuardianName: \SLEEPY.$FC0501.ZSDJ48TT.W1C7PX00
+AnsiName: CAT1.SCHM.TAB1A
+AnsiNameSpace: TA
+AnsiNameObjectType: BT
+
+ObjectSchemaVersion: 2400
+ObjectFeatureVersion: 2000
+
+Owner: SUPER.SUPER 
+
+RedefTimestamp:    12 Dec, 2008 13:02:50 ( 212095875770312602 )
+CreationTimeStamp: 12 Dec, 2008 13:01:53 ( 212095875713195783 )
+LastModTimestamp:  12 Dec, 2008 13:02:50 ( 212095875770844165 )
+LastOpenTimeStamp: 12 Dec, 2008 13:02:50 ( 212095875770789837 )
+SecurityTimestamp: 12 Dec, 2008 13:01:52 ( 212095875712938589 )
+
+SMDtable: F
+File Organization: Key-sequenced
+Block Length: 32768
+File Code: 550
+
+Row Format: ALIGNED FORMAT
+AuditCompress: T
+Audited: T (If F, a Utility operation is in progress or has failed)
+Broken: F
+Buffered: T
+ClearOnPurge: F
+Corrupt: F (If T, a Utility operation is in progress or has failed)
+CrashLabel: F
+CrashOpen: F
+
+IndexCompress: F
+IncompletePartBoundChg: F (If T, a Utility operation is in progress or has failed)
+RedoNeeded: F
+RollfwdNeeded: F
+UndoNeeded: F
+UnreclaimedSpace: F (If T, a Utility operation is in progress or has failed)
+
+Primary Extent Size: 16 Pages
+Secondary Extent Size: 64 Pages
+Max Extents: 160
+Extents Allocated: 2
+EOF: 98304 
+
+Index Levels: 1
+
+Record Expression Label Length: 11520
+Security Label Length: 120
+
+Key Columns: 0 ASC
+
+Partitioning Scheme: N
+
+Partition Array - 1 partition[s]
+
+IndexMap Array  - 0 index[es]
+
+Trigger Status Array - 2 trigger[s]
+Trigger[0]: trigger created (ID): 212095875767696801
+  Status: DISABLED
+Trigger[1]: trigger created (ID): 212095875770312602
+  Status: DISABLED
+
+Rcb version: 2400
+
+Column attributes: maxDataLen: 24 (* marks special columns)
+  Attr[  0/  1]    dataType: 132  offset:   8 len:   4 align: 4
+  Attr[  1/  2]    dataType: 132  offset:  12 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 0
+  Attr[  2/  3]    dataType: 132  offset:  16 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 1
+  Attr[  3/ -1]    dataType: 132  offset:  20 len:   4 align: 4 
+          nullOff: 4 nullBitIdx: 2
+
+===================================================================
+
+
+--- SQL operation complete.
+>>
+>>-- NOTE: the following statement should NOT ADD rows to cat3.schm.tab3a
+>>
+>>UPDATE tab1A SET c=3 ;
+
+--- 1 row(s) updated.
+>>
+>>-- RESULT: cat3.schm.tab3a should have two rows
+>>
+>>SELECT count(*) FROM cat3.schm.tab3a;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

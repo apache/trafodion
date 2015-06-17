@@ -1,0 +1,67 @@
+>>obey TEST_1_1_1_13(tests);
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>
+>>create schema test_schema ;
+
+--- SQL operation complete.
+>>
+>>--Caroline: correct scripting errors 
+>>set schema cat1.test_schema ;
+
+--- SQL operation complete.
+>>
+>>create table t1 (x int, y int);
+
+--- SQL operation complete.
+>>create table t2 like t1 ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1 after insert on t1
++>    referencing new as mynew
++>      insert into t2 select * from mynew ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg2 before update of (j) on cat1.schm.t11113
++>    referencing new as myrow
++>      set myrow.i = (select MAX(x) from t2);
+
+--- SQL operation complete.
+>>
+>>showddl cat1.test_schema.t1;
+
+CREATE TABLE CAT1.TEST_SCHEMA.T1
+  (
+    X                                INT DEFAULT NULL
+  , Y                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA4.ZSDFFLD7.W7LD7Q00
+  NAME NSK_DATA4_ZSDFFLD7_W7LD7Q00
+  ;
+CREATE TRIGGER CAT1.TEST_SCHEMA.TRG1 AFTER INSERT ON CAT1.TEST_SCHEMA.T1
+  REFERENCING NEW AS MYNEW INSERT INTO CAT1.TEST_SCHEMA.T2 SELECT MYNEW.X,
+  MYNEW.Y FROM MYNEW;
+
+--- SQL operation complete.
+>>
+>>showddl schm.t11113;
+
+CREATE TABLE CAT1.SCHM.T11113
+  (
+    I                                INT DEFAULT NULL
+  , J                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA2.ZSDVJ3ZS.L1KD7Q00
+  NAME NSK_DATA2_ZSDVJ3ZS_L1KD7Q00
+  ;
+CREATE TRIGGER CAT1.TEST_SCHEMA.TRG2 BEFORE UPDATE OF (J) ON CAT1.SCHM.T11113
+  REFERENCING NEW AS MYROW SET MYROW.I = (SELECT MAX(CAT1.TEST_SCHEMA.T2.X)
+  FROM CAT1.TEST_SCHEMA.T2);
+
+--- SQL operation complete.
+>>
+>>log;

@@ -451,9 +451,9 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceInsert(ssize_t bytesToWrite)
       requestTag,
       0,
       descSyskey,
+      Lob_InsertDataSimple,
       NULL,
       Lob_None,//LobsSubOper so
-      0,  //checkStatus
       1,  //waitedOp
       currBuffer_->data_,
       bytesToWrite,

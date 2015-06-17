@@ -49,20 +49,6 @@ using namespace std;
 
 void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info);
 
-void UpdateStringText(string& textStr)
-{
-	int pos = 0;
-	while (pos != -1)
-	{
-		pos = textStr.find("'", pos);
-		if (pos != -1)
-		{
-			if(textStr.substr(pos, 2).compare("''") != 0)
-				textStr.insert(pos, "'");
-			pos = pos + 2;
-		}
-	}
-}
 
 extern ResStatisticsSession   *resStatSession;
 
@@ -379,6 +365,7 @@ string getQueryStateStringRes(unsigned short state)
 	case QUERY_COMPLETED_HOLD_TIMEOUT:
 	case QUERY_COMPLETED_EXEC_TIMEOUT:
 	case QUERY_COMPLETED_BY_ADMIN:
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:
 	case QUERY_COMPLETED_QUERY_NOT_FOUND:
 	case QUERY_COMPLETED_CONNECTION_FAILED:
 	case QUERY_COMPLETED_NDCS_PROCESS_FAILED:
@@ -487,6 +474,7 @@ string getQuerySubStateStringRes(unsigned short state)
 	case QUERY_COMPLETED_EXEC_TIMEOUT:			return FMT_EXEC_TIMEOUT;
 //
 	case QUERY_COMPLETED_BY_ADMIN:				return FMT_CANCELLED_BY_ADMIN;
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:			return FMT_CANCELLED_BY_ADMIN_SERVER;
 	case QUERY_COMPLETED_BY_CLIENT:			return FMT_CANCELLED_BY_CLIENT;
 //
 	case QUERY_COMPLETED_QUERY_NOT_FOUND:		return FMT_QUERY_NOT_FOUND;
@@ -2055,7 +2043,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 				// Send query end message
-				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+				if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			else { // non unique select error condition 
@@ -2075,7 +2063,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 				// Send query end message
-				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+				if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			/* *flag_21036 = false; */
@@ -2103,7 +2091,7 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
     	EXEC_OVERFLOW execOverflow = { 0 };
 		memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
 		// Send query end message
-		if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+		if (srvrGlobal->m_bStatisticsEnabled && srvrGlobal->m_statisticsPubType==STATISTICS_AGGREGATED && (srvrGlobal->m_iQueryPubThreshold==0 || pubStarted))
 			SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 
 		/* *flag_21036 = false; */
@@ -2401,6 +2389,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_session_id = srvrGlobal->sessionId;
 	pQuery_info->m_client_name = srvrGlobal->ClientComputerName;
 	pQuery_info->m_application_name = srvrGlobal->ApplicationName;
+    UpdateStringText(pQuery_info->m_application_name);
 	pQuery_info->m_statement_id = statementId;
 	pQuery_info->m_statement_type = getStatementType(pSrvrStmt->sqlQueryType);
 	//SUBMIT_UTC_TS=EXEC_START_UTC_TS for now
@@ -2483,6 +2472,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_master_execution_time = queryExecutionTime;
 	pQuery_info->m_master_elapse_time = queryElapseTime;
 	pQuery_info->m_query_status = getQueryStateStringRes(pSrvrStmt->m_state);
+	pQuery_info->m_query_sub_status = getQuerySubStateStringRes(pSrvrStmt->m_state);
 	pQuery_info->m_error_code = errorCode;
 	pQuery_info->m_sql_error_code = sqlErrorCode;
 	pQuery_info->m_error_text = getErrorText(inSqlError, inSqlErrorLength, MAX_ERROR_TEXT_LENGTH);

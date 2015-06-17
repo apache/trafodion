@@ -1,0 +1,39 @@
+>>obey TEST_SPJC_STX_007(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger with a CALL triggered action with host
+>>-- variable/paramter
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_007 AFTER DELETE ON
++>TAB01_SPJC_STX_007
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_007',
++>		?p1, ?p2, ?p3, ?p4);
+
+*** ERROR[11046] Host variables and dynamic parameters are not allowed in the action of a trigger.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Statement trigger with a CALL triggered action with host
+>>-- variable/paramter
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>CREATE TRIGGER TRIG02_SPJC_STX_007 AFTER UPDATE ON
++>TAB01_SPJC_STX_007 REFERENCING NEW TABLE AS NT, OLD TABLE AS OT
++>FOR EACH STATEMENT
++>	CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_007',
++>		?p4, ?p3, ?p2, ?p1);
+
+*** ERROR[11046] Host variables and dynamic parameters are not allowed in the action of a trigger.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>------------------------------------------------------------------
+>>LOG;

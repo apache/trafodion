@@ -1,0 +1,761 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML08 (Cardinality)
+-- Functionality: Tests cardinalities for semi and anti-semi-joins.
+-- Expected Files: ETESTDML08.
+
+-- Semi join cardinalities on HCUBE databased will have changed cardinalities
+-- after the R2.4 SP2 merge.
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+prepare explainCard from
+select 'A_SEMI_JOIN', tab_name, plan.card "Expected Cardinality"
+from (select      cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SEMI_JOIN%') ) plan( card, op, tab_name)
+;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF' ;
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF' ;
+
+control query default hist_rowcount_requiring_stats '1';
+
+cqd merge_joins 'off';
+
+log ATESTDML08 clear;
+
+set schema cat.hcube;
+
+control query default query_cache '0';
+
+control query default cache_histograms '0';
+
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+
+-- Q1
+-- Hence uses default selectivity
+-- card - 3.33 E4
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select count(*) from cube1 where 
+(a,b,c) not in (select a,b,f from cube1);
+
+execute explainCard;
+
+showstats for query
+select count(*) from cube1 where 
+(a,b,c) not in (select a,b,f from cube1);
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select count(*) from cube1 where 
+(a,b,c) not in (select a,b,f from cube1);
+
+execute explainCard;
+
+showstats for query
+select count(*) from cube1 where 
+(a,b,c) not in (select a,b,f from cube1);
+
+-- Q2
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select count(*) from cube1 where 
+(a) not in (select a from cube1);
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select count(*) from cube1 where 
+(a) not in (select a from cube1);
+
+execute explainCard;
+
+-- Q3
+-- predicate  t8.a = t7.a
+-- leftUEC = 90, rightUEC = 99, leftRC = 90, hence uses default.
+
+-- numUec = 0.33 * 90 = 30
+-- card = 90 * 30 / 90 = 30
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select count(*)
+from t7
+where t7.c >= 1
+and not exists (select *
+                  from t8
+                  where t8.a = t7.a)
+;
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select count(*)
+from t7
+where t7.c >= 1
+and not exists (select *
+                  from t8
+                  where t8.a = t7.a)
+;
+
+execute explainCard;
+
+-- Q4
+-- Same as in Q3, except that T7 and T8 are interchanged
+-- card = 841
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select t8.c
+from t8
+where t8.c >= 1
+and not exists (select *
+                  from t7
+                  where t8.a = t7.a)
+group by t8.c;
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select t8.c
+from t8
+where t8.c >= 1
+and not exists (select *
+                  from t7
+                  where t8.a = t7.a)
+group by t8.c;
+
+execute explainCard;
+
+-- Q5 
+-- predicate is not((VEGRef_55((CAT.HCUBE.T2.B)) > VEGRef_34((CAT.HCUBE.T1.A))) is true)
+-- hence uses default selectivity
+
+-- card - 3.33 (per probe) and 334
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+        select t1.a from t1, t4
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+execute explainCard;
+
+showstats for query
+        select t1.a from t1, t4
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+        select t1.a from t1, t4
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+execute explainCard;
+
+showstats for query
+        select t1.a from t1, t4
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+-- Q6
+-- same predicate as in Q3
+-- card - 3.34 (per probe) and 34
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from 
+        select t1.a from t1
+        where not exists (
+          select min(t2.a)
+          from t2
+         where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b, t1.a
+        );
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from 
+        select t1.a from t1
+        where not exists (
+          select min(t2.a)
+          from t2
+         where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b, t1.a
+        );
+
+execute explainCard;
+
+-- Q7
+-- card - 1000
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select * from t8 where not exists (select * from t10);
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select * from t8 where not exists (select * from t10);
+
+execute explainCard;
+
+-- Q8
+-- leftUEC = 10, rightUEC = 9, hence uses defaultSel * leftUec to compute card
+-- card - 3
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select * from t8 where t8.a in (select a from t4 where not (
+exists (select a from t6 where a=t4.a)));
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select * from t8 where t8.a in (select a from t4 where not (
+exists (select a from t6 where a=t4.a)));
+
+execute explainCard;
+
+-- Q9
+-- card - 334
+
+control query default hist_optimistic_card_optimization '0';
+
+control query default nested_joins 'off'; -- avoid nested_joins that are of same cost
+prepare xx from
+select * from t8 where (a >=  all (select a from t10));
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select * from t8 where (a >=  all (select a from t10));
+
+execute explainCard;
+
+control query default nested_joins reset;
+
+-- Q10
+-- leftUEC = leftRC = 994, rightUEC = 9
+-- card - 994 * 994 / 990 = 994
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select count(*) from t8
+where a not in (select b from t4 where b is not null)
+  and a is not null;
+
+execute explainCard;
+
+showstats for query
+select count(*) from t8
+where a not in (select b from t4 where b is not null)
+  and a is not null;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select count(*) from t8
+where a not in (select b from t4 where b is not null)
+  and a is not null;
+
+execute explainCard;
+
+showstats for query
+select count(*) from t8
+where a not in (select b from t4 where b is not null)
+  and a is not null;
+
+set schema cat.mcrand;
+
+-- Q11
+-- leftRC = leftUEC = 1, rightUEC = 90
+-- card = 1 * 0.33 / 1 = 0.33 -> 1
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select  count(*)
+                 from ten1000
+                 where ten1000.a=5 and
+                          not exists (select rc2.x  from rc2
+                                      where   rc2.y = ten1000.d  );
+
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select  count(*)
+                 from ten1000
+                 where ten1000.a=5 and
+                          not exists (select rc2.x  from rc2
+                                      where   rc2.y = ten1000.d  );
+
+execute explainCard;
+
+-- Q12
+-- Same as in Q11 except that the local predicate is > 5, ensuring that 
+-- the selectivity from this predicate is low
+-- card 9.87 E3
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select  count(*)
+                 from ten1000
+                 where ten1000.a>5 and
+                          not exists (select rc2.x  from rc2
+                                      where   rc2.y = ten1000.d  );
+
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select  count(*)
+                 from ten1000
+                 where ten1000.a>5 and
+                          not exists (select rc2.x  from rc2
+                                      where   rc2.y = ten1000.d  );
+
+
+execute explainCard;
+
+set schema tpch.sch;
+
+-- Q13
+-- leftUEC - 5798005, rightUEC = 150M
+-- card - 5798005 * 0.33 = 1.91 E6
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+SELECT COUNT(*) 
+FROM orders
+WHERE o_orderdate >= DATE '1993-07-01'
+      AND o_orderdate < DATE '1993-07-01' + INTERVAL '3' MONTH
+      AND NOT EXISTS (SELECT *
+                  FROM lineitem
+                  WHERE l_orderkey = o_orderkey
+                        AND l_commitdate < l_receiptdate)
+;
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+SELECT COUNT(*) 
+FROM orders
+WHERE o_orderdate >= DATE '1993-07-01'
+      AND o_orderdate < DATE '1993-07-01' + INTERVAL '3' MONTH
+      AND NOT EXISTS (SELECT *
+                  FROM lineitem
+                  WHERE l_orderkey = o_orderkey
+                        AND l_commitdate < l_receiptdate)
+;
+
+execute explainCard;
+
+-- Q14
+-- leftUEC = rightUEC = 150M, leftRC = 600M (approx)
+-- card - 600E6 * 150 E6 * 0.33 / 150 E6 = 1.99E8
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+SELECT count(*) 
+FROM supplier, lineitem l1
+WHERE s_suppkey = l1.l_suppkey
+  AND EXISTS (SELECT *
+              FROM lineitem l2
+              WHERE l2.l_orderkey = l1.l_orderkey
+                AND l2.l_suppkey <> l1.l_suppkey)
+  AND NOT EXISTS (SELECT *
+                  FROM lineitem l3
+                  WHERE l3.l_orderkey = l1.l_orderkey
+                    AND l3.l_suppkey <> l1.l_suppkey
+                    AND l3.l_receiptdate > l3.l_commitdate)
+;
+
+execute explainCard;
+
+showstats for query
+SELECT count(*) 
+FROM supplier, lineitem l1
+WHERE s_suppkey = l1.l_suppkey
+  AND EXISTS (SELECT *
+              FROM lineitem l2
+              WHERE l2.l_orderkey = l1.l_orderkey
+                AND l2.l_suppkey <> l1.l_suppkey)
+  AND NOT EXISTS (SELECT *
+                  FROM lineitem l3
+                  WHERE l3.l_orderkey = l1.l_orderkey
+                    AND l3.l_suppkey <> l1.l_suppkey
+                    AND l3.l_receiptdate > l3.l_commitdate)
+;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+SELECT count(*) 
+FROM supplier, lineitem l1
+WHERE s_suppkey = l1.l_suppkey
+  AND EXISTS (SELECT *
+              FROM lineitem l2
+              WHERE l2.l_orderkey = l1.l_orderkey
+                AND l2.l_suppkey <> l1.l_suppkey)
+  AND NOT EXISTS (SELECT *
+                  FROM lineitem l3
+                  WHERE l3.l_orderkey = l1.l_orderkey
+                    AND l3.l_suppkey <> l1.l_suppkey
+                    AND l3.l_receiptdate > l3.l_commitdate)
+;
+
+execute explainCard;
+
+showstats for query
+SELECT count(*) 
+FROM supplier, lineitem l1
+WHERE s_suppkey = l1.l_suppkey
+  AND EXISTS (SELECT *
+              FROM lineitem l2
+              WHERE l2.l_orderkey = l1.l_orderkey
+                AND l2.l_suppkey <> l1.l_suppkey)
+  AND NOT EXISTS (SELECT *
+                  FROM lineitem l3
+                  WHERE l3.l_orderkey = l1.l_orderkey
+                    AND l3.l_suppkey <> l1.l_suppkey
+                    AND l3.l_receiptdate > l3.l_commitdate)
+;
+
+-- Q15
+-- leftUEC - 150E6, leftRC - 200E6, rightUC - 150E6
+-- card - 200E6 * (150E6 * 0.33) / 150 E6 = 6.65 E7
+
+control query default hist_optimistic_card_optimization '0';
+
+prepare xx from
+select
+  count(*)
+from
+  lineitem l1
+where
+  l1.l_receiptdate > l1.l_commitdate
+  and not exists (
+              select *
+              from
+                lineitem l3
+              where
+                l3.l_orderkey = l1.l_orderkey
+                and
+                l3.l_suppkey <> l1.l_suppkey
+                and
+                l3.l_receiptdate > l3.l_commitdate
+  )
+;
+
+execute explainCard;
+
+control query default hist_optimistic_card_optimization reset;
+
+prepare xx from
+select
+  count(*)
+from
+  lineitem l1
+where
+  l1.l_receiptdate > l1.l_commitdate
+  and not exists (
+              select *
+              from
+                lineitem l3
+              where
+                l3.l_orderkey = l1.l_orderkey
+                and
+                l3.l_suppkey <> l1.l_suppkey
+                and
+                l3.l_receiptdate > l3.l_commitdate
+  )
+;
+
+execute explainCard;
+
+-- Semi join MC cardinalities. The fix has gone in R2,4 SP2. 
+-- After the 2.4 SP2 merge we should see the following cardinalities
+
+set schema cat.hcube;
+
+-- Q16
+-- join when the outer is unique and inner is not. There is no reduction on either side
+-- MC cardinality is 1000, which gets uplifted to SC cardinality of 10,000 
+
+prepare xx from 
+select count(*) from cube1 where (a,b,c,e) in (select a,b,d,e from cube2);
+
+execute explainCard;
+
+-- Q17
+-- MC_cardinality = 1000, SC_cardinality = 1, min Single Column Join RC - 10
+
+prepare xx from 
+select count(*) from t10 where (a,b) in (select a,b from cube2);
+
+execute explainCard;
+
+-- Q18
+-- join when the outer is unique and inner is not. 
+-- There is reduction on the outer side on the joining column.
+-- MC_cardinality = 1000, SC_cardinality = 1000, 
+-- min Single Column Join RC - 1000
+
+prepare xx from 
+select count(*) from cube1 where (a,b,c,e) in (select a,b,d,e from cube2) and cube1.a = 5;
+
+execute explainCard;
+
+-- Q19
+-- join when the outer is unique and inner is not. 
+-- There is reduction on the inner side  on the joining column
+-- MC_cardinality = 1000, SC_cardinality = 1000, 
+-- min Single Column Join RC - 1000
+
+prepare xx from 
+select count(*) from cube1 where (a,b,c,e) in 
+ (select a,b,d,e from cube2  where cube2.a = 5);
+
+execute explainCard;
+
+showstats for query
+select count(*) from cube1 where (a,b,c,e) in 
+ (select a,b,d,e from cube2  where cube2.a = 5);
+
+-- Q20
+-- join when the outer is unique and inner is not. 
+-- There is reduction on the both sides  on the joining column
+-- MC_cardinality = 5000, SC_cardinality = 5000, 
+-- min Single Column Join RC - 5000
+
+prepare xx from select count(*) from cube1 
+ where (b,c,e) in (select a,b,e from cube2) and cube1.d > 4;
+
+execute explainCard;
+
+-- Q21
+-- join when the outer is unique and inner is not. 
+-- There is indirect reduction on the outer side 
+-- MC_cardinality = 100, SC_cardinality = 1000, min Single Column Join RC - 1000
+-- MC cardinality goes below SC_cardinality when right MC UEC is lower than the left MC UEC
+
+prepare xx from 
+select count(*) from cube1 where (a,f) in (select a,d from cube2) and cube1.d = 10;
+
+execute explainCard;
+
+-- Q22
+-- MC_cardinality = 1000, SC_cardinality = 10000, 
+-- min Single Column Join RC - 10000
+
+prepare xx from 
+select count(*) from cube1 where (a,f) in (select a,d from cube2 where b = 1);
+
+execute explainCard;
+
+-- Q23
+-- join when the outer is unique and inner is not. 
+-- There is  indirect reduction on the inner side
+-- MC_cardinality = 1000, SC_cardinality = 10, 
+-- min Single Column Join RC - 100K
+
+prepare xx from 
+select count(*) from cube1 where (a,b,c,e) in 
+ (select a,b,d,e from cube2  where cube2.c = 1);
+
+execute explainCard;
+
+-- Q24
+-- join when the outer is unique and inner is not. 
+-- There is  indirect reduction on the both sides
+-- MC_cardinality = 100, SC_cardinality = 1, min Single Column Join RC - 100K
+
+prepare xx from 
+select count(*) from cube1 where (a,b,c,e) in 
+ (select a,b,d,e from cube2  where cube2.c = 50) and cube1.d = 1;
+
+execute explainCard;
+
+showstats for query
+select count(*) from cube1 where (a,b,c,e) in 
+ (select a,b,d,e from cube2  where cube2.c = 50) and cube1.d = 1;
+
+-- Q25
+-- MC_cardinality = 1000, SC_cardinality = 10000, 
+-- min Single Column Join RC - 10K
+
+prepare xx from 
+select count(*) from cube1 where (b,c,d) in (select a,b,d from cube2);
+
+execute explainCard;
+
+-- Q26
+-- MC_cardinality = 1000, SC_cardinality = 1000, 
+-- min Single Column Join RC - 10K
+prepare xx from 
+select count(*) from cube1 where (f,a,b) in (select a,b,d from cube2);
+
+execute explainCard;
+
+-- Q27
+-- MC_cardinality = 1000, SC_cardinality = 10K, 
+-- min Single Column Join RC - 10K
+prepare xx from 
+select count(*) from cube1 where (e,a) in (select d,a from cube2);
+
+execute explainCard;
+
+set schema cat.mcrand;
+
+-- Q28
+-- MC_cardinality = 30K, SC_cardinality = 30K, min Single Column Join RC - 30K
+prepare xx from select count(*) from facts where (x,y) in (select x,z from randcols);
+
+execute explainCard;
+
+-- Q29
+-- MC_cardinality = 10K, SC_cardinality = 110, min Single Column Join RC - 1010
+prepare xx from 
+select count(*) from facts where (xz,xy) in (select x,z from randcols);
+
+execute explainCard;
+
+showstats for query
+select count(*) from facts where (xz,xy) in (select x,z from randcols);
+
+-- Q30
+-- MC_cardinality = 9900, SC_cardinality = 110, min Single Column Join RC - 1010
+prepare xx from 
+select count(*) from facts where (xz,xy) in (select x,y from randcols);
+
+execute explainCard;
+
+-- Q31
+-- MC_cardinality = 30K, SC_cardinality = 30K, min Single Column Join RC - 30K
+prepare xx from 
+select count(*) from facts where (x,y,z) in (select x,y,z from randcols);
+
+execute explainCard;
+
+-- Q32
+-- MC_cardinality = 30K, SC_cardinality = 26K, min Single Column Join RC - 26K
+prepare xx from 
+select count(*) from facts where (x,y,xpy) in (select x,y,z from randcols);
+
+execute explainCard;
+
+-- Q33
+-- MC_cardinality = 3151, SC_cardinality = 30K, min Single Column Join RC - 30K
+prepare xx from 
+select count(*) from randcols where (x,y,z) in (select x,y,xpy from facts);
+
+execute explainCard;
+
+-- Q34
+-- MC_cardinality = 100K, SC_cardinality = 100K, min Single Column Join RC - 100K
+prepare xx from 
+select count(*) from randcols where (x,y,z) in (select x,y,z from mc1);
+
+execute explainCard;
+
+showstats for query
+select count(*) from randcols where (x,y,z) in (select x,y,z from mc1);
+
+-- Q35
+-- MC_cardinality = 100K, SC_cardinality = 15K, min Single Column Join RC - 28K
+prepare xx from 
+select count(*) from mc1 where (x,y,z) in (select x,y,z from randcols);
+
+execute explainCard;
+
+log;
+
+
+

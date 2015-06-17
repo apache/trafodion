@@ -1,0 +1,19 @@
+>>obey TEST_1_1_2_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER trig21 AFTER DELETE OF (c, d)
++>	ON tab1A
++>	REFERENCING OLD AS oldRow
++>	FOR EACH ROW
++>
++>		DELETE FROM tab1B WHERE tab1b.a = oldRow.a;
+
+*** ERROR[11011] Only an UPDATE trigger may specify explicit columns.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>---------------------------------------------
+>>LOG;

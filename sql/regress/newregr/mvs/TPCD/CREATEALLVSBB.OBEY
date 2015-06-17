@@ -1,0 +1,377 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-------------------------------------------------------------
+?section set_up
+
+-- * USE with RUNME.BAT, after editing.  See below.
+
+-- **********************************************************
+-- * A totally simple create-and-load script for a          *
+-- * TPC-D database with two partitions.                    *
+-- * Unsophisticated, no error checking. Feed to SQLCI.     *
+-- * Default size is 100 MB, or "scalefactor" SF 0.1        *
+-- * Takes about 10 minutes on a 4-way 200MHz machine.      *
+-- * If you need something partitioned, consult             * 
+-- * ..\scripts.                                            *
+-- *                                                        *
+-- * Susanne Englert 21 May 1999                            *
+-- * ********************************************************
+-- *                                                        *
+-- * The tables will be created in schema cat.tpcd (gets    *
+-- * created automatically if it doesn't exist yet). Note   *
+-- * that you also need to change the IMPORT commands if    *
+-- * you change the schema.                                 *
+-- * Most tables and indexes have two partitions on $data1  *
+-- * and $data2 (nation and region are not partitioned).    *
+-- * Edit this file if you need to change the disk names.   *
+-- * You must have a directory c:/temp and there must be    *
+-- * more than 115 MB free space on c:. To change that,     *
+-- * you need to edit the beginning of files createall.obey *
+-- * and areadme_runme.bat.                                 *
+-- * To change the scale factor you also need to change the *
+-- * partition boundaries.                                  *
+-- *                                                        *
+-- * ********************************************************
+-- * How it works:                                          *
+-- * Feed this script to SQLCI.  It creates tables, runs    *
+-- * DBGEN to create flat files (you need 115 MB free space *
+-- * in *this* directory), invokes Import to fill up the    *
+-- * tables, creates all indexes on the tables, turns       *
+-- * audit on for them, updates stats, and times itself.    *
+-- * Check sqlci.log when done.                             *
+-- *                                                        *
+-- * Better: use areadme_runme.bat and check file           *
+-- * tpcdcreate.log when done.                              *
+-- * ********************************************************
+
+
+create catalog cat;
+create schema cat.tpcd;
+cd .\tpcd;
+
+set schema CAT.TPCD;
+set envvar DSS_CONFIG . ;
+-- change all of these lines together if needed
+set envvar DSS_TEMP .\tpcdtemp;
+sh mkdir %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\dbgen.exe %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\Dists.dss %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\*.fmt %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\generateTpcd.ksh %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\*.awk %DSS_TEMP% ;
+sh copy %DSS_CONFIG%\runGen.pl %DSS_TEMP% ;
+
+cd tpcdtemp;
+
+log sqlci.log clear;
+env;
+
+-- ******************************************************************
+-- * Create a temp table used only for timing                      *
+-- ******************************************************************
+drop table timelog;
+create table timelog(
+starttime             timestamp(0),
+createsdone           timestamp(0),
+flatfilesdone         timestamp(0),
+importsdone           timestamp(0),
+indexesdone           timestamp(0),
+statsdone             timestamp(0),
+endtime               timestamp(0)
+);
+ALTER TABLE timelog attribute all mvs allowed;
+
+insert into timelog
+     values (current, current, current, current,
+             current, current, current);
+
+-- ******************************************************************
+-- * Drop old tables                                                *
+-- ******************************************************************
+
+obey ..\createall.obey(clean_up);
+-- ******************************************************************
+-- * Create the tables                                              *
+-- ******************************************************************
+
+Create table customer  (
+   c_custkey           int                not null not droppable, 
+   c_nationkey         int                not null not droppable, 
+   c_acctbal           numeric(12,2)      not null not droppable, 
+   c_phone             char(15)           not null not droppable, 
+   c_mktsegment        char(10)           not null not droppable, 
+   c_name              varchar(25)        not null not droppable, 
+   c_address           varchar(40)        not null not droppable, 
+   c_comment           varchar(117)       not null not droppable, 
+primary key (c_custkey) not droppable)
+store by primary key 
+location $data1
+partition ( 
+   add first key (           401) location $data2)
+attribute buffered,audit, automatic rangelog;
+ALTER TABLE customer attribute all mvs allowed;
+
+
+Create table supplier  (
+   s_suppkey           int                not null not droppable, 
+   s_nationkey         int                not null not droppable, 
+   s_acctbal           numeric(12,2)      not null not droppable, 
+   s_phone             char(15)           not null not droppable, 
+   s_name              char(25)           not null not droppable, 
+   s_address           varchar(40)        not null not droppable, 
+   s_comment           varchar(101)       not null not droppable, 
+primary key (s_suppkey) not droppable) 
+store by primary key 
+location $data1
+partition ( 
+   add first key (            501) location $data2)
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE supplier attribute all mvs allowed;
+
+Create table lineitem  (
+   l_orderkey          int                not null not droppable, 
+   l_linenumber        int                not null not droppable, 
+   l_partkey           int                not null not droppable, 
+   l_suppkey           int                not null not droppable, 
+   l_quantity          numeric(12,2)      not null not droppable, 
+   l_extendedprice     numeric(12,2)      not null not droppable, 
+   l_discount          numeric(12,2)      not null not droppable, 
+   l_tax               numeric(12,2)      not null not droppable, 
+   l_shipdate          date               not null not droppable, 
+   l_commitdate        date               not null not droppable, 
+   l_receiptdate       date               not null not droppable, 
+   l_returnflag        char(1)            not null not droppable, 
+   l_linestatus        char(1)            not null not droppable, 
+   l_shipinstruct      char(25)           not null not droppable, 
+   l_shipmode          char(10)           not null not droppable, 
+   l_comment           varchar(44)        not null not droppable, 
+primary key (l_orderkey,l_linenumber) not droppable) 
+store by primary key 
+location $data1
+partition ( 
+   add first key (         10001) location $data2)
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE lineitem attribute all mvs allowed;
+
+Create table orders  (
+   o_orderkey          int                not null not droppable, 
+   o_custkey           int                not null not droppable, 
+   o_shippriority      int                not null not droppable, 
+   o_totalprice        numeric(12,2)      not null not droppable, 
+   o_orderdate         date               not null not droppable, 
+   o_orderstatus       char(1)            not null not droppable, 
+   o_orderpriority     char(15)           not null not droppable, 
+   o_clerk             char(15)           not null not droppable, 
+   o_comment           varchar(79)        not null not droppable, 
+primary key (o_orderkey) not droppable) 
+store by primary key 
+location $data1
+partition ( 
+   add first key (         2001) location $data2)
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE orders attribute all mvs allowed;
+
+Create table part  (
+   p_partkey           int                not null not droppable, 
+   p_size              int                not null not droppable, 
+   p_retailprice       numeric(12,2)      not null not droppable, 
+   p_mfgr              char(25)           not null not droppable, 
+   p_brand             char(10)           not null not droppable, 
+   p_container         char(10)           not null not droppable, 
+   p_name              varchar(55)        not null not droppable, 
+   p_type              varchar(25)        not null not droppable, 
+   p_comment           varchar(23)        not null not droppable, 
+primary key (p_partkey) not droppable) 
+store by primary key 
+location $data1
+partition ( 
+   add first key (          1001) location $data2)
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE part attribute all mvs allowed;
+
+Create table partsupp  (
+   ps_partkey          int                not null not droppable, 
+   ps_suppkey          int                not null not droppable, 
+   ps_availqty         int                not null not droppable, 
+   ps_supplycost       numeric(12,2)      not null not droppable, 
+   ps_comment          varchar(199)       not null not droppable, 
+primary key (ps_partkey,ps_suppkey) not droppable) 
+store by primary key 
+location $data1
+partition ( 
+   add first key (          1001) location $data2)
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE partsupp attribute all mvs allowed;
+
+Create table nation  (
+   n_nationkey         int                not null not droppable, 
+   n_regionkey         int                not null not droppable, 
+   n_name              char(25)           not null not droppable, 
+   n_comment           varchar(152)       not null not droppable, 
+primary key (n_nationkey) not droppable) 
+store by primary key 
+location $data1
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE nation attribute all mvs allowed;
+
+Create table region  (
+   r_regionkey         int                not null not droppable, 
+   r_name              char(25)           not null not droppable, 
+   r_comment           varchar(152)       not null not droppable, 
+primary key (r_regionkey) not droppable) 
+store by primary key 
+location $data1
+attribute buffered, audit, automatic rangelog;
+ALTER TABLE region attribute all mvs allowed;
+
+update timelog set createsdone = current;
+
+-- ******************************************************************
+-- * Generate flat files using DBGEN, if they don't exist           *
+-- ******************************************************************
+-- * And yes, here's where to make it bigger.  Change all the
+-- * instances of 0.1 to something else in the following dbgen 
+-- * lines.  Changing it to 1 gets you 1 GB of flat files, 2 gets
+-- * you 2 GB, etc.  Since all flat files live in the current
+-- * default directory, bigger than this is probably not practical.
+-- * The default (currently set) is 0.1, which is 100 MB.
+
+
+--sh if not exist orders.tbl        .\dbgen -vFf -T o -s 0.001;
+--sh if not exist part.tbl          .\dbgen -vFf -T p -s 0.001;
+--sh if not exist customer.tbl      .\dbgen -vFf -T c -s 0.001;
+--sh if not exist supplier.tbl      .\dbgen -vFf -T s -s 0.001;
+--sh if not exist nation.tbl        .\dbgen -vFf -T l -s 0.001;
+
+update timelog set flatfilesdone = current;
+
+sh perl runGen.pl;
+
+-- ******************************************************************
+-- * Import into all base tables.                                   *
+-- ******************************************************************
+
+
+
+sh awk -f ./filter_key.awk  -v  downLimit1=0 -v upLimit1=1500 part.tbl > part.tbl1 ;
+sh awk -f ./filter_key.awk  -v  downLimit1=0 -v upLimit1=80 supplier.tbl > supplier.tbl1 ;
+sh awk -f ./filter_2key.awk -v  downLimit1=0 -v downLimit2=0 -v upLimit1=1500 -v upLimit2=80 partsupp.tbl > partsupp.tbl1 ;
+sh awk -f ./filter_key.awk  -v  downLimit1=0 -v upLimit1=800 customer.tbl > customer.tbl1 ;
+sh awk -f ./filter_2key.awk  -v  downLimit1=0 -v downLimit2=0 -v upLimit1=12000 -v upLimit2=800 orders.tbl > orders.tbl1 ;
+sh awk -f ./filter_3key.awk -v  downLimit1=0 -v downLimit2=0 -v downLimit3=0 -v upLimit1=10000 -v upLimit2=1500 -v upLimit3=80  lineitem.tbl > lineitem.tbl1 ;
+
+sh import cat.tpcd.nation -I nation.tbl -U nation.fmt ;
+sh import cat.tpcd.region -I region.tbl -U region.fmt ;
+sh import cat.tpcd.supplier -I supplier.tbl1 -U supplier.fmt  ;
+sh import cat.tpcd.part -I part.tbl1 -U part.fmt  ;
+sh import cat.tpcd.partsupp -I partsupp.tbl1 -U partsupp.fmt  ;
+sh import cat.tpcd.customer -I customer.tbl1 -U customer.fmt ;
+sh import cat.tpcd.orders -I orders.tbl1 -U orders.fmt ;
+sh import cat.tpcd.lineitem -I lineitem.tbl1 -U lineitem.fmt  ;
+
+
+
+update timelog set importsdone = current;
+-- ******************************************************************
+-- * Create all the indexes                                         *
+-- ******************************************************************
+
+--Create unique index cx1 on customer
+--(
+--     c_nationkey 
+--   , c_custkey 
+--)
+--location $data1
+--partition ( 
+--   add first key (  13) location $data2)
+--attribute buffered; 
+--
+--Create unique index sx1 on supplier
+--(
+--     s_nationkey 
+--   , s_suppkey 
+--)
+--location $data1
+--partition ( 
+--   add first key (  13) location $data2)
+--attribute buffered; 
+
+update timelog set indexesdone = current;
+
+
+
+
+
+
+
+
+
+
+-- ******************************************************************
+-- * Update stats                                                   *
+-- ******************************************************************
+--update statistics for table supplier on every column;
+--update statistics for table customer on every column;
+--update statistics for table part on every column;
+--update statistics for table partsupp on every column ;
+--update statistics for table orders on every column   ;
+--update statistics for table lineitem on every column ;
+--update statistics for table nation on every column   ;
+--update statistics for table region on every column   ;
+--update statistics for table partsupp on (ps_partkey, ps_suppkey)  ;
+--update statistics for table lineitem on (l_partkey, l_suppkey)    ;
+
+update timelog set statsdone = current;
+
+-- Add anything else you want done here.
+
+update timelog set endtime = current;
+
+select cast(cast(createsdone-starttime as int) as char(6)) as create_,
+      cast(cast(flatfilesdone-createsdone as int) as char(6)) as gen,
+      cast(cast(importsdone-flatfilesdone as int) as char(6)) as import,
+      cast(cast(indexesdone-importsdone as int) as char(6)) as index_,
+      cast(cast(statsdone-indexesdone as int) as char(6)) as stats,
+      cast(cast(endtime-starttime as int) as char(6)) as total_seconds
+      from timelog;
+
+
+cd ..\..;
+env;
+log;
+
+----------------------------------------------------------------
+?section clean_up
+
+drop table customer;
+drop table supplier;
+drop table lineitem;
+drop table orders;
+drop table part;
+drop table partsupp;
+drop table nation;
+drop table region;
+drop table customer;
+drop table supplier;
+drop table lineitem;
+drop table orders;
+drop table part;
+drop table partsupp;
+drop table nation;
+drop table region;
+drop table timelog;

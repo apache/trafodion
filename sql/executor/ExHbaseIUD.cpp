@@ -1208,7 +1208,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       matches_ = 0;
       currRowNum_ = 0;
       numRetries_ = 0;
-
+      hFileParamsInitialized_ = FALSE;
       prevTailIndex_ = 0;
       lastHandledStep_ = NOT_STARTED;
 
@@ -1409,13 +1409,21 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         copyRowIDToDirectBuffer( rowId_);
         currRowNum_++;
-        matches_++;
+        if (!hbaseAccessTdb().returnRow()) {
+          matches_++; // if we are returning a row moveRowToUpQueue 
+        //will increment matches_
+        }
+        else {
+            step_ = RETURN_ROW;
+            break ;
+        }
+
         if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
         {
           step_ = DONE;
           break;
         }
-        step_ = PROCESS_INSERT;
+        step_ = PROCESS_INSERT; // currRowNum_ == rowset size && we are not returning a row
       }
         break;
 
@@ -1511,9 +1519,22 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         step_ = DONE;
       }
         break;
+      case RETURN_ROW:
+      {
+        if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(),
+                             &rc, FALSE))
+		  return rc;
+        if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
+          step_ = DONE;
+        else
+          step_ = PROCESS_INSERT;
+
+        break;
+      }
       case DONE:
       case ALL_DONE:
       {
+ 
         if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
           return rc;
         lastHandledStep_ = step_;
@@ -3662,16 +3683,12 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
   }
-
-  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)
-    {
-      // At the end of range, added an extra byte with "0" value to
-      // make the key exclusive which is required by hbase scan.
-      // Note that the key buffer should have 2 extra bytes allocated
-      rowIdRowText.val[rowIdRowText.len] = '\0';
-      rowIdRowText.len += 1;
-    }
-
+  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)		
+  {		
+      // To ensure no row is found, add extra byte with "0" value 		
+      rowIdRowText.val[rowIdRowText.len] = '\0';		
+      rowIdRowText.len += 1;		
+  }		
   copyRowIDToDirectBuffer(rowIdRowText);
   return 0;
 }
@@ -4117,6 +4134,11 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	} // switch
 
     } // while
+    if (qparent_.down->isEmpty()
+           && (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)) {
+        ehi_->close();
+        step_ = NOT_STARTED;
+    } 
 
   return WORK_OK;
 }

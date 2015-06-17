@@ -460,15 +460,16 @@ public class TmAuditTlog {
       return asn.getAndIncrement();
    }
 
-   public void putSingleRecord(final long lvTransid, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced) throws Exception {
-      putSingleRecord(lvTransid, lvTxState, regions, forced, -1);
+   public void putSingleRecord(final long lvTransid, final long lvCommitId, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced) throws Exception {
+      putSingleRecord(lvTransid, lvCommitId, lvTxState, regions, forced, -1);
    }
 
-   public void putSingleRecord(final long lvTransid, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced, long recoveryASN) throws Exception {
+   public void putSingleRecord(final long lvTransid, final long lvCommitId, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced, long recoveryASN) throws Exception {
       long threadId = Thread.currentThread().getId();
       if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord start in thread " + threadId);
       StringBuilder tableString = new StringBuilder();
       String transidString = new String(String.valueOf(lvTransid));
+      String commitIdString = new String(String.valueOf(lvCommitId));
       boolean lvResult = true;
       long lvAsn;
       long startSynch = 0;
@@ -513,10 +514,11 @@ public class TmAuditTlog {
          lvAsn = recoveryASN;
       }
       if (LOG.isTraceEnabled()) LOG.trace("transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
-      p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," 
-                       + transidString + "," + lvTxState 
-                       + "," + Bytes.toString(filler)  
-                       +  "," + tableString.toString()));
+      p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + ","
+                       + transidString + "," + lvTxState
+                       + "," + Bytes.toString(filler)
+                       + "," + commitIdString
+                       + "," + tableString.toString()));
 
 
       if (recoveryASN != -1){
@@ -642,73 +644,6 @@ public class TmAuditTlog {
          }
       }// End else revoveryASN == -1
       if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord exit");
-   }
-
-   //   public static Put formatRecord(final long lvTransid, final String lvTxState, final Set<TransactionRegionLocation> regions) throws Exception {
-   public static Put formatRecord(final long lvTransid, final TransactionState lvTx) throws Exception {
-      if (LOG.isTraceEnabled()) LOG.trace("formatRecord start");
-      StringBuilder tableString = new StringBuilder();
-      String transidString = new String(String.valueOf(lvTransid));
-      String lvTxState;
-      Set<TransactionRegionLocation> regions = lvTx.getParticipatingRegions();
-      Iterator<TransactionRegionLocation> it = regions.iterator();
-      long lvAsn;
-      long threadId = Thread.currentThread().getId();
-      while (it.hasNext()) {
-         String name = new String(it.next().getRegionInfo().getTable().getNameAsString());
-         if (name.length() > 0){
-            tableString.append(",");
-            tableString.append(name);
-         }
-      }
-      if (LOG.isTraceEnabled()) LOG.trace("formatRecord table names " + tableString.toString());
-      Put p;
-
-      //create our own hashed key
-      long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-      if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
-      p = new Put(Bytes.toBytes(key));
-      lvAsn = asn.getAndIncrement();
-      lvTxState = lvTx.getStatus();
-      if (LOG.isTraceEnabled()) LOG.trace("formatRecord transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
-      p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," + transidString + "," + 
-            lvTxState + tableString.toString()));
-
-      if (LOG.isTraceEnabled()) LOG.trace("formatRecord exit");
-      return p;
-   }
-
-   public boolean putBuffer(ArrayList<Put> buffer, int lv_lockIndex) throws Exception {
-      long threadId = Thread.currentThread().getId();
-      if (LOG.isTraceEnabled()) LOG.trace("putBuffer start in thread " + threadId);
-      boolean lvResult = true;
-      long prepTime = 0;
-      long synchTime = 0;
-      long writeTime = 0;
-      long totalRecords = 0;
-
-      try {
-         if (LOG.isTraceEnabled()) LOG.trace("putBuffer synchronizing on tlogAuditLock[lv_lockIndex] " + lv_lockIndex + " in thread " + threadId);
-         synchronized(tlogAuditLock[lv_lockIndex]) {
-            synchTime = System.nanoTime() - prepTime;
-            table[lv_lockIndex].put(buffer);
-            writeTime = System.nanoTime() - synchTime;
-         }
-         if (LOG.isTraceEnabled()) LOG.trace("putBuffer tlogAuditLock[lv_lockIndex] " + lv_lockIndex + " synchronization complete in thread " + threadId);
-         LOG.info("TLog Control Point Write Report\n" + 
-                  "                        Total records: " + buffer.size() + "\n" +
-                  "                        Prep time: " + prepTime + "\n" +
-                  "                        Synch time: " + synchTime + "\n" +
-                  "                        Write time: " + writeTime + "\n");
-         
-      }
-      catch (Exception e) {
-         if (LOG.isDebugEnabled()) LOG.debug("putBuffer table.put Exception " + e);
-         lvResult = false;
-      }
-
-      if (LOG.isTraceEnabled()) LOG.trace("putBuffer exit in thread " + threadId + " with result " + lvResult);
-      return lvResult;
    }
 
    public static int getRecord(final long lvTransid) throws IOException {
@@ -889,8 +824,8 @@ public class TmAuditTlog {
                            Delete del = new Delete(r.getRow());
                            if (LOG.isTraceEnabled()) LOG.trace("adding transid: " + transidToken + " to delete list");
                            deleteList.add(del);
-                        }               
-                        else if ((Long.parseLong(asnToken) < lvAsn) && 
+                        }
+                        else if ((Long.parseLong(asnToken) < lvAsn) &&
                                 (stateToken.equals("COMMITTED") || stateToken.equals("ABORTED"))) {
                            if (ageCommitted) {
                               String rowKey = new String(r.getRow());
@@ -987,10 +922,10 @@ public class TmAuditTlog {
                if (LOG.isTraceEnabled()) LOG.trace("writeControlPointRecords adding record for trans (" + transid + ") : state is " + value.getStatus());
                cpWrites++;
                if (forceControlPoint) {
-                  putSingleRecord(transid, value.getStatus(), value.getParticipatingRegions(), true);
+                  putSingleRecord(transid, value.getCommitId(), value.getStatus(), value.getParticipatingRegions(), true);
                }
                else {
-                  putSingleRecord(transid, value.getStatus(), value.getParticipatingRegions(), false);
+                  putSingleRecord(transid, value.getCommitId(), value.getStatus(), value.getParticipatingRegions(), false);
                }
             }
          }
@@ -1106,6 +1041,7 @@ public class TmAuditTlog {
          TransState lvTxState = TransState.STATE_NOTX;
          String stateString = "";
          String transidToken = "";
+         String commitIdToken = "";
          try {
             Result r = unknownTransactionTable.get(g);
             if (r == null) {
@@ -1129,9 +1065,9 @@ public class TmAuditTlog {
             String recordString =  new String (Bytes.toString(value));
             StringTokenizer st = new StringTokenizer(recordString, ",");
             if (st.hasMoreElements()) {
-               String asnToken = st.nextElement().toString() ;
-               transidToken = st.nextElement().toString() ;
-               stateString = st.nextElement().toString() ;
+               String asnToken = st.nextElement().toString();
+               transidToken = st.nextElement().toString();
+               stateString = st.nextElement().toString();
                if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: transaction: " + transidToken + " stateString is: " + stateString);
             }
             if (stateString.compareTo("COMMITTED") == 0){
@@ -1220,6 +1156,9 @@ public class TmAuditTlog {
 
             // get past the filler
             st.nextElement();
+
+            commitIdToken = st.nextElement().toString();
+            ts.setCommitId(Long.parseLong(commitIdToken));
 
             // Load the TransactionState object up with regions
             while (st.hasMoreElements()) {

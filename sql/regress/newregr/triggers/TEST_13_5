@@ -1,0 +1,517 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- "Catch-all" test. Each section is documented
+
+-- a known diff file exists for the late binding problem in section s32.
+-- remove it after fixing the problem
+
+control query default use_envvars_name_mappings 'ON';
+
+obey TEST_13_5(clean_up);
+obey TEST_13_5(set_up);
+log  LOG_13_5 clear;
+obey TEST_13_5(s11);
+obey TEST_13_5(s12);
+obey TEST_13_5(s13);
+obey TEST_13_5(s14);
+obey TEST_13_5(s21);
+obey TEST_13_5(s22);
+obey TEST_13_5(s31);
+obey TEST_13_5(s32);
+obey TEST_13_5(s33);
+obey TEST_13_5(s41);
+obey TEST_13_5(s51);
+obey TEST_13_5(s61);
+LOG;
+obey TEST_13_5(clean_up);
+exit;
+
+?section clean_up
+
+SET SCHEMA cat1.schm;
+
+DROP VIEW myview;
+DROP TRIGGER trviewu;
+DROP TRIGGER trviewi;
+DROP TRIGGER trviewus;
+DROP TRIGGER trpara;
+DROP TRIGGER tpartb;
+DROP TRIGGER tparta;
+-- DROP TRIGGER fool;
+DROP TRIGGER trerr1;
+DROP TRIGGER trerr2;
+DROP TRIGGER tri_a313;
+DROP TRIGGER tri_a3132;
+DROP TRIGGER tri_a313yy;
+
+DROP TABLE liketab1b CASCADE;
+DROP TABLE subjpart;
+DROP TABLE tricky CASCADE ;  -- should remove trigger "fool" as well
+DROP TABLE t21;
+DROP TABLE t11;
+DROP TABLE tbl_a313;
+DROP TABLE tbl_a3132;
+DROP TABLE tbl_a313x;
+DROP TABLE tbl_a313y;
+
+
+delete from tab1a;
+delete from tab1b;
+
+?section set_up
+DROP TABLE tab1b;
+CREATE TABLE tab1B (a INT NOT NULL, b INT, PRIMARY KEY (a) NOT DROPPABLE);
+
+control query default auto_query_retry_warnings 'ON';
+
+insert into tab1a values (0,0,0,0);
+
+CREATE VIEW myview AS
+	SELECT a, b FROM tab1A;
+
+CREATE TRIGGER trviewu AFTER UPDATE
+	ON tab1a
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	insert into tab1b 
+	values(newrow.a+1, newrow.b+1);
+
+CREATE TRIGGER trviewi AFTER INSERT
+	ON tab1a
+	REFERENCING NEW AS newt
+	FOR EACH STATEMENT
+	insert into tab1b 
+	select a,b from newt;
+
+CREATE TABLE liketab1b like tab1b;
+
+CREATE TRIGGER trglike1 AFTER UPDATE
+	ON liketab1b
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	insert into tab1b 
+	values(newrow.a+1, newrow.b+1);
+
+CREATE TRIGGER trglike2 AFTER INSERT
+	ON liketab1b
+	REFERENCING NEW AS newt
+	FOR EACH STATEMENT
+	insert into tab1b 
+	select a,b from newt;
+
+------------------------------------------------------------------
+-- 	TEST CASES
+------------------------------------------------------------------
+---------------------------------
+-- episode 1.1: Views and Triggers
+---------------------------------
+
+?section s11
+
+-- should return error: no triggers on view
+CREATE TRIGGER trerr AFTER UPDATE
+	ON myview
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	insert into tab1b values (newrow.a, newrow.b);
+
+-- shoud return an error
+alter trigger enable all of myview;
+
+---------------------------------
+-- episode 1.2: Views and Update
+---------------------------------
+
+?section s12
+
+update myview set b = b+1;
+
+-- result: tab1b should contain:
+--(1,2)
+--------------------------------
+select * from tab1b;
+
+
+alter trigger disable all of tab1a;
+
+insert into tab1a values(3,3,3,3);
+
+update myview set b = b+1 where a=3;
+
+-- result: tab1b should contain the same
+-- (1,2)
+---------------------------------
+select * from tab1b;
+
+alter trigger enable trviewu;
+
+insert into tab1a values(11,11,11,11);
+update myview set b = b-1 where a = 11;
+
+-- result: tab1b should contain:
+-- (1,2)
+-- (12,11)
+---------------------------------
+select * from tab1b;
+
+---------------------------------
+-- episode 1.3: Views and Insert
+---------------------------------
+
+?section s13
+
+delete from tab1b;
+delete from tab1a;
+
+alter trigger disable all of tab1a;
+alter trigger enable trviewi;
+
+insert into myView 
+	values(11,22),(33,44),(66,77),(88,99);
+
+select * from tab1b;
+
+-----------------------------------------
+-- episode 1.4: Views and Trigger Usage
+---------------------------------
+
+?section s14
+
+delete from tab1a;
+delete from tab1b;
+
+CREATE TRIGGER trviewus AFTER INSERT
+	ON tab1a
+	REFERENCING NEW AS newrow
+	FOR EACH ROW
+	WHEN (newrow.a < 104)
+	insert into myview
+	values (newrow.a+1, newrow.b+1);
+
+alter trigger disable all of tab1a;
+alter trigger enable trviewus;
+
+insert into tab1a values(101,102,103,104);
+
+select * from myview;
+
+-- should fail because of usage
+drop view myview;
+drop trigger trviewus;
+
+-----------------------------------------
+-- episode 2.1: Params 
+---------------------------------
+
+?section s21
+
+delete from tab1b;
+prepare st from update tab1a set b = ?pp;
+set param ?pp 111;
+alter trigger enable trviewu;
+execute st;
+---------------------------------
+select * from tab1b;
+delete from tab1b;
+alter trigger disable trviewu;
+-- open blown away
+execute st;
+
+---------------------------------
+select * from tab1b;
+delete from tab1b;
+alter trigger enable trviewu;
+set param ?pp 222;
+-- open blown away
+execute st;
+
+---------------------------------
+select * from tab1b;
+
+-----------------------------------------
+-- episode 2.2: params in DDL
+---------------------------------
+
+?section s22
+
+delete from tab1b;
+
+set param ?pa 11;
+
+create trigger trpara after update on tab1a 
+	insert into tab1b values(?pa, ?pa);
+
+?section skipTheRest
+-- below is the rest of section s22, disabled while dynamic parameters are not
+-- allowed in DDL. Remove this "skip" if parameters are allowed in DDL again.
+
+alter trigger disable all of tab1a;
+alter trigger enable trpara;
+
+update tab1a set c=16;
+-- The ?pa parameter is left as NULL. The TEXT table holds is as ?pa
+-- similar problem exists for views.
+
+delete from tab1b; -- cleanup in any case
+
+drop trigger trpara;
+
+---------------------------------
+-- episode 3.1: late name resolution
+---------------------------------
+
+?section s31
+
+set envvar pp cat1.schm.tab1b; -- no triggers are defined on tab1b
+prepare s from select * from $pp;
+execute s;
+execute s;
+set envvar pp cat1.schm.liketab1b; -- there are triggers on liketab1b
+execute s;
+
+---------------------------------
+-- episode 3.2: late name resolution
+---------------------------------
+
+?section s32
+
+delete from tab1b;
+
+set envvar tab cat1.schm.tab1a;
+prepare s from insert into $tab values(100,1,2,3);
+alter trigger disable all of tab1a;
+-- recompiles, works just fine
+execute s;
+select * from tab1b;
+alter trigger enable trviewi;
+delete from tab1a where a=100;
+-- open blown away
+execute s;
+select * from tab1b;
+
+---------------------------------
+-- episode 3.2: late name in trigger def
+---------------------------------
+
+?section s33
+
+-- works fine -- gets an error
+CREATE TRIGGER trerr AFTER insert
+	ON tab1a
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	insert into $tab
+	values (newrow.a+1, newrow.b+1);
+
+
+---------------------------------
+-- episode 4.1: partitioned subject table
+---------------------------------
+
+?section S41
+
+create table subjpart(
+	a int not null not droppable, b int not null, c int not null,
+	d int,
+	primary key(a) not droppable)
+	range partition(add first key  (100) location $$partition$$,
+		  add first key  (200) location $$partition1$$,
+		  add first key  (300) location $$partition2$$);
+
+
+CREATE TRIGGER tpartb BEFORE insert
+	ON subjpart
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	WHEN (newrow.b > 200)
+	set newrow.b = newrow.b + 1;
+
+CREATE TRIGGER tparta AFTER insert
+	ON subjpart
+	REFERENCING NEW AS newrow
+	FOR EACH ROW	
+	WHEN (newrow.b > 200)
+	insert into tab1b
+	values (newrow.a+1, newrow.b+1);
+
+delete from tab1b;
+
+insert into subjpart values
+	(0,0,0,0),
+	(1,1,1,1),
+	(100,100,100,100),
+	(101,101,101,101),
+	(200,200,200,200),
+	(201,201,201,201),
+	(300,300,300,300),
+	(301,301,301,301),
+	(1000,1000,1000,1000);
+
+select * from subjpart order by a;
+select * from tab1b;
+	
+alter trigger disable all of subjpart;
+
+delete from subjpart;
+delete from tab1b;
+
+insert into subjpart values
+	(0,0,0,0),
+	(1,1,1,1),
+	(100,100,100,100),
+	(101,101,101,101),
+	(200,200,200,200),
+	(201,201,201,201),
+	(300,300,300,300),
+	(301,301,301,301),
+	(1000,1000,1000,1000);
+
+select * from subjpart order by a;
+select * from tab1b;
+
+---------------------------------
+-- episode 5.1: syskey is not allowed
+---------------------------------
+
+?section s51
+
+CREATE TABLE T11 (A INT);
+CREATE TABLE T21 (A INT, TS LARGEINT);
+
+-- should fail in DDL
+CREATE TRIGGER TRERR1 AFTER INSERT ON T11
+ 	REFERENCING NEW AS MYNEW
+ 	FOR EACH STATEMENT
+ 	INSERT INTO T21 SELECT A, SYSKEY FROM MYNEW;
+
+-- should fail in DDL
+CREATE TRIGGER TRERR2 AFTER INSERT ON T11
+ 	REFERENCING NEW AS MYNEW
+ 	FOR EACH ROW
+ 	INSERT INTO T21 VALUES (MYNEW.A, MYNEW.SYSKEY);
+
+---------------------------------
+-- episode 6.1: column name new_a should be OK
+---------------------------------
+
+?section s61
+
+create table tricky(a int, new_a int not null, primary key (new_a) not droppable );
+-- should work fine
+create trigger fool after insert on tricky delete from tricky;
+
+---------------------------------
+-- episode 7.1: WHEN clause should signal only when condition is TRUE, not NULL or FALSE.
+---------------------------------
+--
+-- Case 10-040604-5021"NF:IMPORT invoked statement trigger fired when WHEN condition was not met"
+--
+create table tbl_a313 (
+partnum int no default not null not droppable
+)
+;
+
+create table tbl_a3132 (
+partnum int no default not null not droppable
+)
+;
+
+create trigger tri_a313
+after insert on tbl_a313
+referencing new as n
+for each statement
+insert into tbl_a3132
+select max(partnum) from n
+;
+
+create trigger tri_a3132
+before insert on tbl_a3132
+referencing new as n
+for each row
+when (n.partnum=3103)
+SIGNAL sqlstate 'S0213'('tri_a3132')
+;
+
+create table tbl_a313x (
+partnum int no default not null not droppable
+)
+;
+
+--
+--  Should not signal; should get NULL violation on insert, 
+--  since tbl_a313x is empty, and "select max(partnum)" will be NULL.
+--
+insert into tbl_a313 select * from tbl_a313x;
+--
+--  Should cause signal, since condition is true
+--
+insert into tbl_a313 values(3103);
+--
+--  Should succeed without error or signal.
+--
+insert into tbl_a313 values(3104);
+
+---------------------------------
+-- episode 8.1: Fix Optimizer assert when WHEN condition is same as the WHERE clause.
+---------------------------------
+--
+-- Case 10-040630-8369:
+-- "NF:Optimizer asserts when trigger WHEN condition is the same as the WHERE clause"
+--
+
+create table tbl_a313y (
+partnum numeric (4) unsigned no default not null not droppable
+,partdesc char (18) no default not null not droppable
+,price numeric (8, 2) no default not null not droppable
+,qty_available numeric (5) default 0 not null not droppable
+,mycol varchar(20)
+,primary key (partnum) not droppable);
+;
+
+create trigger tri_a313yy
+after update on tbl_a313y
+referencing new as n
+for each row
+when (n.partnum=3103)
+SIGNAL sqlstate 'S0213'('tri_a313y')
+;
+
+--
+-- Populate table tbl_a313y
+--
+insert into tbl_a313y values(3103,'a',0,0,'a');
+insert into tbl_a313y values(3104,'a',0,0,'a');
+
+--
+-- Trigger signals correctly.
+--
+update tbl_a313y set price=123.45 where partdesc='a';
+
+--
+-- Row is updated correctly
+--
+update tbl_a313y set price=123.45 where partnum=3104;
+
+--
+-- Case 10-040630-8369:
+-- When preparing the statement, if the partnum=value is the same one in the 
+-- WHEN clause an assert occurred. Instead, the statement should execute and 
+-- the trigger should fire, as in the first update.
+--
+update tbl_a313y set price=123.45 where partnum=3103;

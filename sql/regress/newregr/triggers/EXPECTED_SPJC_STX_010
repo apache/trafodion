@@ -1,0 +1,64 @@
+>>obey TEST_SPJC_STX_010(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: AFTER trigger with a compound statement as a triggered
+>>-- action (Compound statement with Insert, Update, Delete, Signal,
+>>-- an IF statements.)
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_010 AFTER UPDATE ON
++>TAB01_SPJC_STX_010
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	IF (N.A IS NULL) THEN
++>		SIGNAL SQLSTATE 'S0000' ('Error');
++>	ELSEIF (N.A = O.B) THEN
++>		DELETE FROM TAB02_SPJC_STX_010 WHERE A = N.A;
++>	ELSEIF (N.A > O.B) THEN
++>		UPDATE TAB02_SPJC_STX_010 SET D = N.A WHERE A = N.A;
++>	ELSEIF (N.A < O.B) THEN
++>		INSERT INTO TAB02_SPJC_STX_010 VALUES (N.A, N.B, N.C, N.D);
++>	END IF;
++>END;
+
+--- SQL operation complete.
+>>
+>>
+>>UPDATE TAB01_SPJC_STX_010 SET A = A + 1;
+
+--- 3 row(s) updated.
+>>
+>>-- Result: TAB01_SPJC_STX_010 has three rows with A = {2, 9, 4} and
+>>--			TAB02_SPJC_STX_010 has
+>>-- A            B            C            D          
+>>-- -----------  -----------  -----------  -----------
+>>-- 
+>>--           7           10           10           10
+>>--           9           20           20            9
+>>--           4            6            9           12
+>>
+>>select * from TAB01_SPJC_STX_010;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          2            2            3            4
+          9            6            4            2
+          4            6            9           12
+
+--- 3 row(s) selected.
+>>
+>>select * from TAB02_SPJC_STX_010;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          7           10           10           10
+          9           20           20            9
+          4            6            9           12
+
+--- 3 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

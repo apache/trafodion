@@ -1,0 +1,17 @@
+>>obey TEST_1_1_1_7(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER tab1a BEFORE INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (newrow.a > newrow.b)
++>
++>		SET   newrow.c = 0, newrow.d = 1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>LOG;

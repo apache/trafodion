@@ -1,0 +1,85 @@
+>>obey TEST_SPJC_CSTA_006(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: CS with multiple statements that are selectively
+>>-- executed using IF statements.
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_006 AFTER UPDATE ON
++>TAB01_SPJC_CSTA_006
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>BEGIN ATOMIC
++>	IF (O.A < N.A) THEN
++>		INSERT INTO TAB02_SPJC_CSTA_006 VALUES(O.A, O.B, O.C, O.D);
++>	ELSEIF (O.A > N.A) THEN
++>		INSERT INTO TAB02_SPJC_CSTA_006 VALUES(N.A, N.B, N.C, N.D);
++>	ELSEIF (N.A IS NULL) THEN
++>		INSERT INTO TAB02_SPJC_CSTA_006 VALUES(NULL, NULL, O.A, O.B);
++>	END IF;
++>END;
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>UPDATE TAB01_SPJC_CSTA_006 SET A = A + 100 WHERE A = 10;
+
+--- 1 row(s) updated.
+>>
+>>SELECT * FROM TAB01_SPJC_CSTA_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+        110           11           12           13
+         20           21           22           23
+         30           31           32           33
+
+--- 3 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_CSTA_006 has the old row from TAB01_SPJC_CSTA_006
+>>SELECT * FROM TAB02_SPJC_CSTA_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           11           12           13
+
+--- 1 row(s) selected.
+>>
+>>UPDATE TAB01_SPJC_CSTA_006 SET A = A - 5 WHERE A = 20;
+
+--- 1 row(s) updated.
+>>
+>>-- Result: TAB02_SPJC_CSTA_006 has the new row from TAB01_SPJC_CSTA_006 and
+>>-- the result of previous update (total of two rows)
+>>
+>>SELECT * FROM TAB02_SPJC_CSTA_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           11           12           13
+         15           21           22           23
+
+--- 2 row(s) selected.
+>>
+>>UPDATE TAB01_SPJC_CSTA_006 SET A = NULL WHERE A = 30;
+
+--- 1 row(s) updated.
+>>
+>>-- Result: TAB02_SPJC_CSTA_006 has {NULL, NULL, 30, 31} and the
+>>-- previous two rows
+>>SELECT * FROM TAB02_SPJC_CSTA_006;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         10           11           12           13
+         15           21           22           23
+          ?            ?           30           31
+
+--- 3 row(s) selected.
+>>------------------------------------------------------------------
+>>LOG;

@@ -1,0 +1,57 @@
+>>obey TEST_13_2_4(set_up);
+>>
+>>create table tabES (i int, j int);
+
+--- SQL operation complete.
+>>
+>>create trigger trigES before insert on tabES
++> referencing new as mynew
++> set mynew.i=mynew.j,mynew.j=mynew.i;
+
+--- SQL operation complete.
+>>
+>>-- show
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>showddl TABLE ( TEMP_TABLE tabES__TEMP );
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TABES__TEMP)
+ (
+ "@UNIQUE_EXECUTE_ID" CHAR(SIZE) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@UNIQUE_IUD_ID" INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+ , "@SYSKEY" LARGEINT NO DEFAULT
+ -- NOT NULL NOT DROPPABLE
+ , I INT DEFAULT NULL
+ , J INT DEFAULT NULL
+ , CONSTRAINT @name@ PRIMARY KEY
+ ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC) NOT
+ DROPPABLE
+ )
+ LOCATION @location@
+ NAME @logicalname@
+ STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC)
+ ;
+
+--- SQL operation complete.
+>>
+>>-------------
+>>-- tests
+>>-------------
+>>obey TEST_13_2_4(tests);
+>>
+>>insert into tabES values (11,4444),(22,6666),(33,8888);
+
+--- 3 row(s) inserted.
+>>select * from tabES;
+
+I J
+----------
+
+ 4444 11
+ 6666 22
+ 8888 33
+
+--- 3 row(s) selected.
+>>LOG;

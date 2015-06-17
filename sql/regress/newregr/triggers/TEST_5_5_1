@@ -1,0 +1,96 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- cascading triggers
+-- cascading 'after' and 'before' triggers
+
+-- runs on cat1.schm and cat1.schm_alt
+----------------------------------------
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_5_5_1(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_5_5_1(clean_up);
+
+-- start logging
+log   LOG_5_5_1 clear;
+
+set schema CAT1.SCHM;
+obey TEST_5_5_1(set_up);
+obey TEST_5_5_1(tests);
+obey TEST_5_5_1(clean_up);
+
+-- switch schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_5_5_1(set_up);
+obey TEST_5_5_1(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_5_5_1(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+DROP TRIGGER atrig551;
+DROP TRIGGER btrig551;
+------------------------------------------------------------------
+obey clearTables;
+
+?section set_up
+INSERT INTO cat3.schm.tab3A VALUES (1,1);
+INSERT INTO cat3.schm.tab3A VALUES (2,10);
+INSERT INTO cat3.schm.tab3A VALUES (3,3);
+
+---------------------------------
+-- DEFINE TRIGGER atrig551
+---------------------------------
+
+
+CREATE TRIGGER atrig551
+AFTER INSERT ON tab1B
+REFERENCING NEW AS newT
+INSERT INTO cat2.schm.tab2A (SELECT * FROM newT);
+
+---------------------------------
+-- DEFINE TRIGGER btirg551
+---------------------------------
+
+
+CREATE TRIGGER btrig551
+BEFORE INSERT ON cat2.schm.tab2A
+REFERENCING NEW AS newR
+FOR EACH ROW
+WHEN (newR.b = newR.a) SET newR.b = 100;
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+INSERT INTO tab1B (SELECT * FROM cat3.schm.tab3A);
+
+SELECT * FROM cat2.schm.tab2A; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

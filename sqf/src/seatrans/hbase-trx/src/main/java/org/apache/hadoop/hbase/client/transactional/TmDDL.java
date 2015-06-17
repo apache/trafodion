@@ -39,6 +39,7 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableExistsException;
@@ -60,13 +61,13 @@ public class TmDDL {
    private static final byte[] TDDL_STATE = Bytes.toBytes("state");
    private static Object tablePutLock;            // Lock for synchronizing table.put operations
    private static HTable table;
-   
+
    public TmDDL (Configuration config) throws Exception {
 
       this.config = config;
       this.dtmid = Integer.parseInt(config.get("dtmid"));
-	  TableName tablename = TableName.valueOf("TRAFODION._DTM_.TDDL");
-	  
+      TableName tablename = TableName.valueOf("TRAFODION._DTM_.TDDL");
+
       if (LOG.isTraceEnabled()) LOG.trace("Enter TmDDL constructor for dtmid: " + dtmid);
 
       try {
@@ -90,133 +91,74 @@ public class TmDDL {
             throw e;
          }
       }
-      
+
       tablePutLock = new Object();
-      
+
       table = new HTable(config, tablename);
    }
-   
-   public void putRow(final long transid, final String state, final ArrayList<String> createList, final ArrayList<String> dropList) throws Exception {
-      long threadId = Thread.currentThread().getId();
-      if (LOG.isTraceEnabled()) LOG.trace("putRow start in thread " + threadId);
-      boolean lvResult = true;
-      StringBuilder ctableString = new StringBuilder();
-      StringBuilder dtableString = new StringBuilder();
-      Put p = new Put(Bytes.toBytes(transid));
-      
-      if (createList != null) {
-         Iterator<String> cl = createList.iterator();
-         List<String> ctableNameList = new ArrayList<String>();
-         while (cl.hasNext()) {
-            String cname = new String(cl.next());
-            if (cname.length() > 0){
-               ctableNameList.add(cname);
-               ctableString.append(",");
-               ctableString.append(cname);
-            }
-         }
-         if (LOG.isTraceEnabled()) LOG.trace("Create table names: " + ctableString.toString());
-      }
-      
-      if (dropList != null) {
-         Iterator<String> dl = dropList.iterator();
-         List<String> dtableNameList = new ArrayList<String>();
-         while (dl.hasNext()) {
-            String dname = new String(dl.next());
-            if (dname.length() > 0){
-               dtableNameList.add(dname);
-               dtableString.append(",");
-               dtableString.append(dname);
-            }
-         }
-         if (LOG.isTraceEnabled()) LOG.trace("Drop table names: " + ctableString.toString());
-      }
-      
-      p.add(TDDL_FAMILY, TDDL_CREATE, Bytes.toBytes(ctableString.toString()));
-	  p.add(TDDL_FAMILY, TDDL_DROP, Bytes.toBytes(dtableString.toString()));
-      p.add(TDDL_FAMILY, TDDL_STATE, Bytes.toBytes(state));
-        try {
-			synchronized (tablePutLock) {
-            try {
-                  if (LOG.isTraceEnabled()) LOG.trace("try table.put " + p );
-                  
-                  table.put(p);
-               }
-               catch (Exception e2){
-                  //Avoiding logging within a lock. Throwing Exception. 
-                  throw e2;
-               }
-            } // End global synchronization
-         }
-         catch (Exception e) {
-             //create record of the exception
-            LOG.error("tablePutLock or Table.put Exception " + e);
-            throw e;
-         }
-      if (LOG.isTraceEnabled()) LOG.trace("putRow exit");
-   }
-   
+
    public void putRow(final long transid, final String Operation, final String tableName) throws Exception {
-		
-		long threadId = Thread.currentThread().getId();
-		if (LOG.isTraceEnabled()) LOG.trace("putRow Operation in thread " + threadId);
-		byte [] value = null;
-		StringBuilder tableString = null;
-		Result r = null;
-		Put p = new Put(Bytes.toBytes(transid));
-		
-		
-		//Retrieve the row if it exists so we can append.    
-		Get g = new Get(Bytes.toBytes(transid));
-		try {
-				r = table.get(g);
-		}
-		catch(Exception e){
-		  LOG.error("getRow Exception ", e);
-		  throw new RuntimeException(e);    
-		}
-		
-		//Check and set State
+
+        long threadId = Thread.currentThread().getId();
+        if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow Operation, TxID: " + transid + "Thread ID:" + threadId 
+                + "TableName:" + tableName + "Operation :" + Operation);
+        byte [] value = null;
+        StringBuilder tableString = null;
+        Result r = null;
+        Put p = new Put(Bytes.toBytes(transid));
+
+
+        //Retrieve the row if it exists so we can append.
+        Get g = new Get(Bytes.toBytes(transid));
+        try {
+                r = table.get(g);
+        }
+        catch(Exception e){
+          LOG.error("TmDDL putRow method, Get Exception TxID:" + transid + "Exception:" + e);
+          throw e;
+        }
+
+        //Check and set State
         if(! r.isEmpty())
         {
             value = r.getValue(TDDL_FAMILY, TDDL_STATE);
         }
-		if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
-		{
-			LOG.error("TmDDL putRow on invalid Transaction :" + transid);
-			throw new RuntimeException("putRow on invalid Transaction State :" + transid);
-		}
-		else
-		{
-			p.add(TDDL_FAMILY, TDDL_STATE, Bytes.toBytes("VALID"));
-		}
-		
-		//Check and append table name
-		if(Operation.equals("CREATE"))
-		{
+        if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
+        {
+            LOG.error("TmDDL putRow on invalid Transaction TxID:" + transid);
+            throw new RuntimeException("TmDDL putRow on invalid Transaction State TxID :" + transid);
+        }
+        else
+        {
+            p.add(TDDL_FAMILY, TDDL_STATE, Bytes.toBytes("VALID"));
+        }
+
+        //Check and append table name
+        if(Operation.equals("CREATE"))
+        {
             if(! r.isEmpty())
             {
                 value = r.getValue(TDDL_FAMILY, TDDL_CREATE);
             }
-			if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
-			{
-				LOG.error("putRow on invalid Transaction :" + transid);
-				throw new RuntimeException("putRow on invalid Transaction State :" + transid);
-			}
-			else
-			{			
-				tableString = new StringBuilder();
+            if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
+            {
+                LOG.error("TmDDL putRow on invalid Transaction TxID:" + transid);
+                throw new RuntimeException("putRow on invalid Transaction State TxID:" + transid);
+            }
+            else
+            {
+                tableString = new StringBuilder();
                 if(value != null && value.length > 0)
-                {    
+                {
                     tableString.append(Bytes.toString(value));
                     tableString.append(",");
                 }
                 tableString.append(tableName);
-				p.add(TDDL_FAMILY, TDDL_CREATE, Bytes.toBytes(tableString.toString()));
-			}
-			
-		}
-	
+                p.add(TDDL_FAMILY, TDDL_CREATE, Bytes.toBytes(tableString.toString()));
+            }
+
+        }
+
         // Check and append table name
         if(Operation.equals("TRUNCATE"))
         {
@@ -226,7 +168,7 @@ public class TmDDL {
             }
             if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
             {
-                LOG.error("putRow on invalid Transaction :" + transid);
+                LOG.error("putRow on invalid Transaction, TxID :" + transid);
                 throw new RuntimeException("putRow on invalid Transaction State :" + transid);
             }
             else
@@ -243,114 +185,114 @@ public class TmDDL {
         }
 
         //Check and append table name
-		if(Operation.equals("DROP"))
-		{
-			if(! r.isEmpty())
+        if(Operation.equals("DROP"))
+        {
+            if(! r.isEmpty())
             {
                 value = r.getValue(TDDL_FAMILY, TDDL_DROP);
             }
-			if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
-			{
-				LOG.error("putRow on invalid Transaction :" + transid);
-				throw new RuntimeException("putRow on invalid Transaction State :" + transid);
-			}
-			else
-			{			
-				tableString = new StringBuilder();
+            if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
+            {
+                LOG.error("TmDDL putRow invalid Transaction state, TxID :" + transid);
+                throw new RuntimeException("putRow on invalid Transaction State :" + transid);
+            }
+            else
+            {
+                tableString = new StringBuilder();
                 if(value != null && value.length > 0)
                 {
                     tableString.append(Bytes.toString(value));
                     tableString.append(",");
                 }
                 tableString.append(tableName);
-				p.add(TDDL_FAMILY, TDDL_DROP, Bytes.toBytes(tableString.toString()));
-			}
-			
-		}
-				
-		try {
-			synchronized (tablePutLock) {
+                p.add(TDDL_FAMILY, TDDL_DROP, Bytes.toBytes(tableString.toString()));
+            }
+
+        }
+
+        try {
+            synchronized (tablePutLock) {
             try {
-                  if (LOG.isTraceEnabled()) LOG.trace("try table.put " + p );
-                  
+                  if (LOG.isTraceEnabled()) LOG.trace("TmDDL table.put, TxID: " + transid + "Put :" + p );
+
                   table.put(p);
                }
                catch (Exception e2){
-                  //Avoiding logging within a lock. Throwing Exception. 
+                  //Avoiding logging within a lock. Throwing Exception.
                   throw e2;
                }
             } // End global synchronization
          }
          catch (Exception e) {
              //create record of the exception
-            LOG.error("tablePutLock or Table.put Exception " + e);
+            LOG.error("TmDDL tablePutLock or Table.put Exception, TxID: " + transid + "Exception:" + e);
             throw e;
          }
-      if (LOG.isTraceEnabled()) LOG.trace("putRow exit");
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL putRow exit, TxId:" + transid);
    }
-   
-   public void putRow(final long transid, final String state) throws Exception {
+
+   public void setState(final long transid, final String state) throws Exception {
       long threadId = Thread.currentThread().getId();
-      if (LOG.isTraceEnabled()) LOG.trace("putRow State start in thread " + threadId);
-      
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState start in thread: " + threadId + "TxId:" + transid + "State :" + state);
+
       Put p = new Put(Bytes.toBytes(transid));
       p.add(TDDL_FAMILY, TDDL_STATE, Bytes.toBytes(state));
       try {
-			synchronized (tablePutLock) {
+            synchronized (tablePutLock) {
           try {
-                if (LOG.isTraceEnabled()) LOG.trace("try table.put " + p );
-                
+                if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState method. table.put. TxId: " + transid + "Put:" + p );
+
                 table.put(p);
              }
              catch (Exception e2){
-                //Avoiding logging within a lock. Throwing Exception. 
+                //Avoiding logging within a lock. Throwing Exception.
                 throw e2;
              }
           } // End global synchronization
        }
        catch (Exception e) {
            //create record of the exception
-          LOG.error("tablePutLock or Table.put Exception " + e);
+          LOG.error("TmDDL setState method. tablePutLock or Table.put Exception. TxID: " + transid + "Exception :" + e);
           throw e;
        }
-      if (LOG.isTraceEnabled()) LOG.trace("putRow State exit");
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL setState exit, TxID:" + transid);
    }
-   
-   public void getRow(final long lvTransid, StringBuilder state, ArrayList<String> createList, ArrayList<String> dropList, ArrayList<String> truncateList) throws IOException {
-      if (LOG.isTraceEnabled()) LOG.trace("getRow start");
-	  String recordString = null;
-	  StringTokenizer st = null;
-	  byte [] value = null;
+
+   public void getRow(final long lvTransid, StringBuilder state, ArrayList<String> createList, ArrayList<String> dropList, ArrayList<String> truncateList)
+              throws IOException, Exception {
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL getRow start, TxID: " + lvTransid);
+      String recordString = null;
+      StringTokenizer st = null;
+      byte [] value = null;
       try {
-            String transidString = new String(String.valueOf(lvTransid));
             Get g = new Get(Bytes.toBytes(lvTransid));
             Result r = table.get(g);
-            
+
             if(! r.isEmpty())
             {
                 value = r.getValue(TDDL_FAMILY, TDDL_CREATE);
                 if(value != null && value.length > 0)
-                {    
+                {
                     recordString =  new String (Bytes.toString(value));
                     st = new StringTokenizer(recordString, ",");
-            
-                    while (st.hasMoreElements()) 
+
+                    while (st.hasMoreElements())
                     {
                         createList.add(st.nextToken());
                     }
                 }
-                
+
                 value = r.getValue(TDDL_FAMILY, TDDL_DROP);
                 if(value != null && value.length > 0)
                 {
                     recordString =  new String (Bytes.toString(value));
                     st = new StringTokenizer(recordString, ",");
-                    while (st.hasMoreElements()) 
+                    while (st.hasMoreElements())
                     {
                         dropList.add(st.nextToken());
                     }
                 }
-		
+
                 value = r.getValue(TDDL_FAMILY, TDDL_TRUNCATE);
                 if(value != null && value.length > 0)
                 {
@@ -367,12 +309,54 @@ public class TmDDL {
                 {
                     state.append(Bytes.toString(value));
                 }
-			}
-                
+            }
+
         }
         catch(Exception e){
-          LOG.error("getRow Exception ", e);
-          throw new RuntimeException(e);    
-        }   
-    }  
+          LOG.error("TmDDL getRow Exception, TxId: " + lvTransid + "Exception:" + e);
+          throw e;
+        }
+    }
+
+    public void getState(final long lvTransid, StringBuilder state) throws IOException, Exception {
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL getState start, TxID:" + lvTransid);
+      byte [] value = null;
+      try {
+            Get g = new Get(Bytes.toBytes(lvTransid));
+            Result r = table.get(g);
+
+            if(! r.isEmpty())
+            {
+                value = r.getValue(TDDL_FAMILY, TDDL_STATE);
+                if(value != null && value.length > 0)
+                {
+                    state.append(Bytes.toString(value));
+                }
+                else
+                {
+                    state.append("INVALID");
+                }
+            }
+            else
+            {
+                state.append("INVALID");
+            }
+       }
+        catch(Exception e){
+          LOG.error("TmDDL getState Exception, TxID: " + lvTransid + "Exception: " + e);
+          throw e;
+        }
+    }
+
+    public void deleteRow(final long lvTransid) throws IOException, Exception {
+      if (LOG.isTraceEnabled()) LOG.trace("TmDDL deleteRow start, TxID: " + lvTransid);
+      try {
+            Delete d = new Delete(Bytes.toBytes(lvTransid));
+            table.delete(d);
+        }
+        catch(Exception e){
+          LOG.error("TmDDL deleteRow Exception, TxID: " + lvTransid + "Exception:" + e);
+          throw e;
+        }
+    }
  }

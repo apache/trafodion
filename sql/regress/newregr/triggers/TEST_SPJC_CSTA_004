@@ -1,0 +1,99 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- HL_R2_Triggers_Spec.doc: SPJ enhancements to Triggers
+-- CS with one Insert/Update/Delete statement.
+-- Result: Success
+
+obey TEST_SPJC_CSTA_004(clean_up);
+obey TEST_SPJC_CSTA_004(set_up);
+log  LOG_SPJC_CSTA_004 clear;
+obey TEST_SPJC_CSTA_004(tests);
+LOG;
+obey TEST_SPJC_CSTA_004(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+
+
+drop trigger TRIG01_SPJC_CSTA_004;
+drop trigger TRIG02_SPJC_CSTA_004;
+
+drop table TAB01_SPJC_CSTA_004;
+drop table TAB02_SPJC_CSTA_004;
+
+?section set_up
+set schema CAT1.SCHM;
+
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+CREATE TABLE TAB01_SPJC_CSTA_004(a int, b int, c int, d int);
+CREATE TABLE TAB02_SPJC_CSTA_004(a int, b int, c int, d int);
+
+INSERT INTO TAB01_SPJC_CSTA_004 VALUES(10, 11, 12, 13),
+		(20, 21, 22, 23),
+		(30, 31, 32, 33);
+
+?section tests
+
+------------------------------------------------------------------
+-- TEST CASE 01:  CS with one Insert/Update/Delete statement (row
+-- trigger)
+-- Result: success
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG01_SPJC_CSTA_004 AFTER DELETE ON
+TAB01_SPJC_CSTA_004
+REFERENCING OLD ROW AS O
+FOR EACH ROW
+BEGIN ATOMIC
+	INSERT INTO TAB02_SPJC_CSTA_004 VALUES(O.A, O.B, O.C, O.D);
+END;
+------------------------------------------------------------------
+
+------------------------------------------------------------------
+-- TEST CASE 02:  CS with one Insert/Update/Delete statement (statement
+-- trigger)
+-- Result: success
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG02_SPJC_CSTA_004 AFTER UPDATE ON
+TAB01_SPJC_CSTA_004
+FOR EACH STATEMENT
+BEGIN ATOMIC
+        INSERT INTO TAB02_SPJC_CSTA_004 VALUES(111, 222, 333, 444);
+END;
+------------------------------------------------------------------
+
+-- case 01:
+DELETE FROM TAB01_SPJC_CSTA_004 WHERE A = 10;
+
+select * from TAB01_SPJC_CSTA_004;
+
+-- Result: TAB02_SPJC_CSTA_004 has the row deleted from TAB01_SPJC_CSTA_004
+select * from TAB02_SPJC_CSTA_004;
+
+-- case 02:
+UPDATE TAB01_SPJC_CSTA_004 SET A = A + B;
+
+SELECT * FROM TAB01_SPJC_CSTA_004;
+
+-- Result: TAB02_SPJC_CSTA_004 has two rows
+SELECT * FROM TAB02_SPJC_CSTA_004;
+------------------------------------------------------------------

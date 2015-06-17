@@ -1,0 +1,190 @@
+>>obey TEST_2_2_1(test_create);
+>>
+>>-- create all the triggers from TEST_2_1_1
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>CREATE TRIGGER tr1 AFTER UPDATE
++>	ON tab1A
++>	REFERENCING OLD AS oldrow, NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (oldrow.a > newrow.b)
++>		INSERT INTO tab1B VALUES (oldrow.b, 0);
+
+--- SQL operation complete.
+>>
+>>SET SCHEMA cat2.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tr2 AFTER DELETE ON tab2A
++>REFERENCING OLD AS oldrow 
++>FOR EACH ROW
++>INSERT INTO cat1.schm.tab1B VALUES (oldrow.a, oldrow.b);
+
+--- SQL operation complete.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tr3 AFTER UPDATE OF (a) ON cat2.schm.tab2A
++>REFERENCING NEW AS newrow
++>FOR EACH ROW
++>WHEN (newrow.b = 3)
++>INSERT INTO tab1B VALUES (newrow.a, 22);
+
+--- SQL operation complete.
+>>
+>>SET SCHEMA cat3.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tab3A BEFORE UPDATE OF (b) ON cat3.schm.tab3A
++>REFERENCING OLD AS oldrow, NEW AS newrow
++>FOR EACH ROW
++>WHEN (newrow.a > oldrow.a)
++>SET newrow.b = oldrow.b;
+
+--- SQL operation complete.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tr4 AFTER UPDATE OF (b) ON cat2.schm.tab2A
++>REFERENCING OLD AS oldtab, NEW AS newtab
++>FOR EACH STATEMENT
++>UPDATE cat3.schm.tab3A
++> SET a=3 WHERE (a,b) IN 
++>    (SELECT t1.b, t2.a FROM cat1.schm.tab1A t1, cat1.schm.tab1A t2);
+
+--- SQL operation complete.
+>>
+>>-- some simple sanity checks
+>>
+>>set schema cat1.HP_DEFINITION_SCHEMA;
+
+--- SQL operation complete.
+>>
+>>select count(*) from TRIGGERS;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>select count(*) from TRIGGERS_CAT_USAGE;
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>
+>>select count(*) from TRIGGER_USED;
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>
+>>LOG;
+>>
+>>--
+>>-- from a new CI, should start with a "cold cache"
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>-- showddl tab1A;
+>>
+>>-- showddl tab1B;
+>>
+>>-- showddl cat2.schm.tab2A;
+>>
+>>showddl cat3.schm.tab3A;
+
+CREATE TABLE CAT3.SCHM.TAB3A
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA4.ZSDR276D.MCDH4D00
+  NAME NSK_DATA4_ZSDR276D_MCDH4D00
+  ;
+CREATE TRIGGER CAT3.SCHM.TAB3A BEFORE UPDATE OF (B) ON CAT3.SCHM.TAB3A
+  REFERENCING OLD AS OLDROW, NEW AS NEWROW FOR EACH ROW WHEN (NEWROW.A >
+  OLDROW.A) SET NEWROW.B = OLDROW.B;
+
+--- SQL operation complete.
+>>
+>>DROP TRIGGER cat1.schm.tr1;
+
+--- SQL operation complete.
+>>DROP TRIGGER cat2.schm.tr2;
+
+--- SQL operation complete.
+>>DROP TRIGGER cat1.schm.tr3;
+
+--- SQL operation complete.
+>>DROP TRIGGER cat1.schm.tr4;
+
+--- SQL operation complete.
+>>DROP TRIGGER cat3.schm.tab3A;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>obey TEST_2_2_1(clean_up);
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>
+>>DROP TRIGGER cat1.schm.tr1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TR1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER cat2.schm.tr2;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT2.SCHM.TR2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER cat1.schm.tr3;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TR3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER cat1.schm.tr4;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.TR4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER cat3.schm.tab3A;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT3.SCHM.TAB3A could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>LOG;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,10 +24,8 @@
 #include <string.h>
 
 //
-// Used by the following files:
-// w:/common/NAString.cpp
-// w:/sqlutils/ddol/ddnamevalue.cpp
-// w:/ddl/pmxparse.cpp
+// Used by the following file:
+// sql/common/NAString.cpp
 //
 
 //
@@ -42,7 +40,7 @@ static Int32 isDelimitedIdentifierReservedForInternalUse
   // Do not rely on the strlen(delimitedIdentWithoutTheLeadingQuote) call.
   // The logic in this routine also handles internal-format name correctly.
 {
-  // Prefixes of names reserved for internal use 
+  // Prefixes of names reserved for internal use
   //
   // Names with @ funny prefix are not included in the
   // array to save space and to improve efficiency.
@@ -77,7 +75,7 @@ static Int32 isDelimitedIdentifierReservedForInternalUse
   //
   // Starting from 4/7/2007, please use @ prefix for any new
   // internal and/or generated names to improve efficiency.
-  // 
+  //
   const char * reservedNamePrefixes[] =
     {
       "DELTA@",

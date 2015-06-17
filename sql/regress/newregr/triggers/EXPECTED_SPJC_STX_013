@@ -1,0 +1,39 @@
+>>obey TEST_SPJC_STX_013(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: AFTER trigger with a compound statement as a triggered
+>>-- action with statement other than Insert, Update, Delete, Signal,
+>>-- and IF.
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_013 AFTER UPDATE ON
++>TAB01_SPJC_STX_013
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>	BEGIN ATOMIC
++>		INSERT INTO TAB02_SPJC_STX_013 VALUES (O.A, O.B, O.C, O.D);
++>		IF (N.A > O.B) THEN
++>			SET N.A = O.B;
++>			INSERT INTO TAB02_SPJC_STX_013 VALUES (N.A, N.B, N.C, N.D);
++>		ELSEIF (N.A < O.B) THEN
++>			INSERT INTO TAB02_SPJC_STX_013 VALUES (N.A, O.B, N.C, O.D);
++>		ELSE
++>			INSERT INTO TAB02_SPJC_STX_013 VALUES
++>					(O.A + N.A, O.B + N.B, O.C + N.C, O.D + N.D);
++>			SIGNAL SQLSTATE 'S0213'('TRIG01_SPJC_STX_013');
++>		END IF;
++>		SELECT * FROM TAB02_SPJC_STX_013;
++>	END;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER TRIG01_SPJC_STX_013 AFTER UPDATE ON TAB01_SPJC_STX_013 REFERENCI
+NG OLD ROW AS O, NEW ROW AS N FOR EACH ROW  BEGIN ATOMIC   INSERT INTO TAB02_SP
+JC_STX_013 VALUES (O.A, O.B, O.C, O.D);   IF (N.A > O.B) THEN    SET N.A = O.B;
+                                                                     ^ (228 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>------------------------------------------------------------------
+>>LOG;

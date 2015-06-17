@@ -1,0 +1,238 @@
+>>obey TESTMV334(set_up);
+>>------------------------------------------------------------
+>>create table T_334_A 
++>(a int not null, b char(2) not null,primary key(a));
+
+--- SQL operation complete.
+>>
+>>create table T_334_B
++>(a int not null,b numeric (2) not null, c date not null,primary key(a));
+
+--- SQL operation complete.
+>>
+>>create mv T_334_MV1
++>        refresh on request
++>        initialized on refresh
++>        as
++>        select T_334_A.a,sum(T_334_B.b) sumb
++>        from T_334_A,T_334_B
++>        where T_334_A.a=T_334_B.a
++>        group by T_334_A.a;
+
+--- SQL operation complete.
+>>
+>>prepare st1 from
++>    select substring(object_name,1,50) obj, object_type ,object_name_space
++>    from HP_DEFINITION_SCHEMA.objects
++>    where object_name=upper(?objname) order by 1,3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------------
+>>
+>>-- Run Tests
+>>  obey TESTMV334(Test1);
+>>------------------------------------------------------------
+>>
+>>set param ?objname T_334_B;
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_B                                             BT           IL               
+T_334_B                                             RG           RG               
+T_334_B                                             BT           RL               
+T_334_B                                             BT           TA               
+
+--- 4 row(s) selected.
+>>
+>>alter mv T_334_MV1 add ignore changes on T_334_B;
+
+--- SQL operation complete.
+>>
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_B                                             BT           TA               
+
+--- 1 row(s) selected.
+>>
+>>alter mv T_334_MV1 remove ignore changes on T_334_B;
+
+--- SQL operation complete.
+>>
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_B                                             BT           IL               
+T_334_B                                             RG           RG               
+T_334_B                                             BT           RL               
+T_334_B                                             BT           TA               
+
+--- 4 row(s) selected.
+>>
+>>------------------------------------------------------------
+>>  obey TESTMV334(Test2);
+>>--
+>>--  MVGROUP is dropped when added to ignore
+>>--	changes list 
+>>--	and added back after table is dropped
+>>--	and remove ignore changes is used
+>>------------------------------------------------------------
+>>set param ?objname T_334_A;
+>>
+>>create mv T_334_MV2
++>        refresh on request
++>        initialized on refresh
++>        as
++>        select T_334_A.a,sum(T_334_B.b) sumb
++>        from T_334_A,T_334_B
++>        where T_334_A.a=T_334_B.a
++>        group by T_334_A.a;
+
+--- SQL operation complete.
+>>
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_A                                             BT           IL               
+T_334_A                                             RG           RG               
+T_334_A                                             BT           RL               
+T_334_A                                             BT           TA               
+
+--- 4 row(s) selected.
+>>
+>>alter mv T_334_MV2 add ignore changes on T_334_A;
+
+--- SQL operation complete.
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_A                                             BT           IL               
+T_334_A                                             RG           RG               
+T_334_A                                             BT           RL               
+T_334_A                                             BT           TA               
+
+--- 4 row(s) selected.
+>>
+>>drop mv T_334_MV1;
+
+--- SQL operation complete.
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_A                                             BT           TA               
+
+--- 1 row(s) selected.
+>>
+>>alter mv T_334_MV2 remove ignore changes on T_334_A;
+
+--- SQL operation complete.
+>>execute st1;
+
+OBJ                                                 OBJECT_TYPE  OBJECT_NAME_SPACE
+--------------------------------------------------  -----------  -----------------
+
+T_334_A                                             BT           IL               
+T_334_A                                             RG           RG               
+T_334_A                                             BT           RL               
+T_334_A                                             BT           TA               
+
+--- 4 row(s) selected.
+>>
+>>-- recreate the dropped mv
+>>create mv T_334_MV1
++>        refresh on request
++>        initialized on refresh
++>        as
++>        select T_334_A.a,sum(T_334_B.b) sumb
++>        from T_334_A,T_334_B
++>        where T_334_A.a=T_334_B.a
++>        group by T_334_A.a;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------
+>>  obey TESTMV334(Test3);
+>>--
+>>-- When table is in ignore changes list at mv creation time
+>>-- the mvgroup is not created
+>>------------------------------------------------------------
+>>drop mv T_334_MV1;
+
+--- SQL operation complete.
+>>drop mv T_334_MV2;
+
+--- SQL operation complete.
+>>
+>>create mv T_334_MV3
++> refresh on request
++> ignore changes on T_334_B
++> initialize on refresh
++> as
++> select T_334_A.a,sum(T_334_B.b) sumb
++>        from T_334_A,T_334_B
++>        where T_334_A.a=T_334_B.a
++>        group by T_334_A.a;
+
+--- SQL operation complete.
+>>
+>>-- MVGroup T_334_B does not exist
+>>drop mvgroup T_334_B;
+
+*** ERROR[12201] MVGroup CATMVS.MVSCHM.T_334_B does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- MVGroup T_334_A should exist 
+>>drop mvgroup T_334_A;
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>obey TESTMV334(clean_up);
+>>------------------------------------------------------------
+>>drop mv T_334_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_334_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_334_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_334_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_334_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_334_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_334_MV3;
+
+--- SQL operation complete.
+>>drop table T_334_A;
+
+--- SQL operation complete.
+>>drop table T_334_B;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>exit;
+
+End of MXCI Session
+

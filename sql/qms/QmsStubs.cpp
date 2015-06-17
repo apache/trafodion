@@ -1,0 +1,50 @@
+// **********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+// **********************************************************************
+
+
+//#include "Platform.h"
+
+// LCOV_EXCL_START :ale
+extern "C"
+void CmpAssertInternal__FPcT1i(void){};
+
+extern "C"
+void CmpAssertInternal__FPCcT1i(void){};
+
+extern "C"
+void isComparable__8CharTypeCFRC6NATypeP8ItemExpri(void){};
+
+extern "C"
+void setNamePosition__11CatalogNameFUii(void) {};
+
+extern "C"
+void __eq__8CorrNameCFRC8CorrName(void) {};
+
+extern "C"
+void getCorrNameAsString__8CorrNameCFv(void) {};
+
+extern "C"
+void  __eq__16ExtendedQualNameCFRC16ExtendedQualName(void) {};
+
+extern "C"
+void  __eq__13QualifiedNameCFRC8NAString(void) {};
+// LCOV_EXCL_STOP
+
+

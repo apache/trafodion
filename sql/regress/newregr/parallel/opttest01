@@ -1,0 +1,2665 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- opttest01
+--
+-- Phil Koza, Mike Skarpelos
+--
+-- Parallel execution, using the mini-Wisconsin style DB
+-- Prepares, explains, and executes the queries
+--
+
+
+
+?section cpara
+control query default DATA_FLOW_OPTIMIZATION 'OFF';
+
+control query default ATTEMPT_ESP_PARALLELISM 'ON';
+control query default DEF_NUM_LOCAL_SMP_CPUS 
+#ifMX
+'4'
+#ifMX
+#ifMP
+'1'
+#ifMP
+;
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER 
+#ifMX
+'1'
+#ifMX
+#ifMP
+'4'
+#ifMP
+;
+
+------------
+-- select --
+------------
+
+?section qse1
+-- simple parallel select with a PA node
+----------------------------------------
+control query shape exchange(split_top_pa(anything));
+prepare P from
+select uInt32_uniq,sInt32_uniq,char_uniq
+  from     $$P03$$ T03
+  where    uInt32_uniq < 20
+  order by sInt32_uniq;
+
+execute P;
+
+?section qse2
+-- simple parallel select with PAPA node
+----------------------------------------
+--control query shape exchange(anything);
+prepare P from
+select  sInt32_uniq,uInt32_uniq,char_uniq
+  from  $$P04$$ T04 
+  where sInt32_uniq < 20;
+
+execute P;
+
+--<pb>
+-------------------
+-- hash group by --
+-------------------
+
+-- Full hash GB in DP2 is not allowed by the HashGroupByRule::topMatch
+-- method, due to the possibility of overflow and DP2's inability
+-- to handle it. So, no tests for full hash GB in DP2.
+
+?section qhgb1
+-- Partial grouping in DP2 with final consolidation in the master
+-- Synchronous reads
+-------------------------------------------------------------------
+control query shape hash_groupby(partition_access(hash_groupby(scan)));
+prepare P from
+select distinct int64_6,uInt16_10
+  from  $$P09$$ T09
+  where     int64_6 IN (0,2,4,5)
+        and uInt16_10 < 5;
+
+execute P;
+
+?section qhgb2
+-- Partial grouping in DP2 with final consolidation in the master
+-- Parallel reads
+-------------------------------------------------------------------
+control query shape hash_groupby(split_top_pa(hash_groupby(scan)));
+prepare P from
+select distinct int64_6,uInt16_10
+  from  $$P09$$ T09
+  where     int64_6 IN (0,2,4,5)
+        and uInt16_10 < 5;
+
+execute P;
+
+?section qhgb3
+-- repartitioned groupby from table with 3 parts
+---------------------------------------------------
+control query shape exchange(hash_groupby(
+  exchange(exchange(scan))));
+prepare P from
+select uInt16_10
+  from     $$P00$$ T00
+  group by uInt16_10;
+
+execute P;
+
+?section qhgb4
+-- repartitioned groupby from table with 4 parts
+---------------------------------------------------
+control query shape exchange(hash_groupby(
+  exchange(exchange(scan))));
+prepare P from
+select uInt16_10
+  from     $$P03$$ T03
+  group by uInt16_10;
+
+execute P;
+
+?section qhgb5
+-- Logical partition grouping
+-- 2 cpus and table has 3 partitions, so this is an unbalanced plan
+-----------------------------------------------
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '2'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '2'
+#ifMP
+;
+
+control query shape exchange(hash_groupby(exchange(scan)));
+prepare P from
+select sInt32_60,sInt16_10
+  from     $$P05$$
+  group by sInt32_60,sInt16_10
+  having       sInt32_60 IN (0,15,30,45)
+           AND sInt16_10 < 5;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qhgb6
+-- Logical partition grouping
+-- 2 cpus and table has 4 partitions, so this is a balanced plan
+-----------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '2'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '2'
+#ifMP
+;
+
+control query shape exchange(hash_groupby(exchange(scan)));
+prepare P from
+select sInt32_60,sInt16_10
+  from     $$P14$$
+  group by sInt32_60,sInt16_10
+  having       sInt32_60 IN (0,15,30,45)
+           AND sInt16_10 < 5;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qhgb7
+-- repartitioned GB to get more parallelism
+-- table is partitioned 3 ways, but there are 6 cpus
+-----------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '6'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '6'
+#ifMP
+;
+
+-- control query shape exchange(hash_groupby(cut));
+control query shape exchange(hash_groupby(
+exchange(exchange(scan))));
+prepare P from
+select sInt32_60
+  from     $$P05$$ T05
+  group by sInt32_60;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qhgb8
+-- repartitioned groupby on char and date columns
+---------------------------------------------------
+control query shape exchange(hash_groupby(
+  exchange(exchange(scan))));
+prepare P from
+select char_10,date_12
+  from     $$P06$$ T06
+  group by char_10, date_12
+  having      char_10 like 'AB%'
+           OR char_10 like 'AE%';
+
+execute P;
+
+--<pb>
+-------------------
+-- sort group by --
+-------------------
+
+?section qsgb1 
+-- Execute a sort groupby in DP2 on a table that has one partition 
+------------------------------------------------------------------
+control query shape partition_access(sort_groupby(scan));
+prepare P from
+select count(*),min(sInt32_uniq),max(sInt32_uniq)
+  from $$U00$$ T00;
+
+execute P;
+
+?section qsgb2 
+-- Execute a sort groupby in DP2 on a table that has three partitions 
+-- Grouping is on the partitioning key, so this should succeed
+-- No sort should be needed.
+-------------------------------------------------------------------
+control query shape exchange(sort_groupby(scan));
+prepare P from
+select sInt32_60
+  from     $$P05$$ T05
+  group by sInt32_60;
+
+execute P;
+
+?section qsgb3 
+-- Partial grouping in DP2 with final consolidation in the master
+-- Synchronous reads
+-------------------------------------------------------------------
+control query shape sort_groupby(partition_access(sort_groupby(scan)));
+prepare P from 
+select int64_6,count(*)
+  from $$P09$$
+  where        int64_6 IN (0,2,4,5)
+  group by int64_6;
+
+execute P;
+
+?section qsgb4 
+-- Partial grouping in DP2 with final consolidation in the master
+-- parallel reads
+-------------------------------------------------------------------
+control query shape sort_groupby(sort(split_top_pa(sort_groupby(scan))));
+prepare P from 
+select int64_6,count(*)
+  from $$P09$$
+  where        int64_6 IN (0,2,4,5)
+  group by int64_6;
+
+execute P;
+
+?section qsgb5 
+-- repartitioned groupby from table with 3 parts
+-- Sort is needed
+---------------------------------------------------
+control query shape exchange(sort_groupby(sort(
+  exchange(exchange(scan)))));
+prepare P from
+select uInt16_10
+  from     $$P00$$ T00
+  group by uInt16_10;
+
+execute P;
+
+?section qsgb6 
+-- repartitioned groupby from table with 4 parts
+-- Sort is needed
+---------------------------------------------------
+control query shape exchange(sort_groupby(sort(
+  exchange(exchange(scan)))));
+prepare P from
+select uInt16_10
+  from     $$P03$$ T03
+  group by uInt16_10;
+
+execute P;
+
+?section qsgb7 
+-- Logical partition grouping
+-- 2 cpus and table has 3 partitions, so this is an unbalanced plan
+-- sort is needed because sInt16_10 is not a key column
+-----------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '2'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '2'
+#ifMP
+;
+
+control query shape exchange(sort_groupby(sort(exchange(scan))));
+prepare P from
+select sInt32_60,sInt16_10
+  from     $$P05$$
+  group by sInt32_60,sInt16_10
+  having       sInt32_60 IN (0,15,30,45)
+           AND sInt16_10 < 5;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qsgb8 
+-- Logical partition grouping
+-- 2 cpus and table has 4 partitions, so this is a balanced plan
+-- sort is needed because sInt16_10 is not a key column
+-----------------------------------------------
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '2'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '2'
+#ifMP
+;
+
+control query shape exchange(sort_groupby(sort(exchange(scan))));
+prepare P from
+select sInt32_60,sInt16_10
+  from     $$P14$$
+  group by sInt32_60,sInt16_10
+  having       sInt32_60 IN (0,15,30,45)
+           AND sInt16_10 < 5;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qsgb9
+-- repartitioned GB to get more parallelism
+-- table is partitioned 3 ways, but there are 6 cpus
+-- Sort is necessary, since a merge of sorted
+-- streams of the repartitioned data cannot be done,
+-- due to the risk of deadlock.
+-----------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '6'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '6'
+#ifMP
+;
+
+--control query shape exchange(sort_groupby(cut));
+control query shape exchange(sort_groupby(
+  sort(exchange(exchange(scan)))));
+prepare P from
+select sInt32_60
+  from     $$P05$$ T05
+  group by sInt32_60;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qsgb10
+-- repartitioned groupby on char and date columns
+-- Sort is needed
+---------------------------------------------------
+control query shape exchange(sort_groupby(sort(
+  exchange(exchange(scan)))));
+prepare P from
+select char_10,date_12
+  from     $$P06$$ T06
+  group by char_10, date_12
+  having   char_10 like 'A%';
+
+execute P;
+
+--<pb>
+----------------
+-- join plans --
+----------------
+
+----------------
+-- HASH JOINS
+----------------
+
+?section qhj1
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- both tables are partitioned 3 ways and part. keys match exactly
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T00')),exchange(scan('T01')),type1));
+prepare P from
+select  T00.sInt32_uniq,T01.uInt32_uniq, T01.sInt32_100,
+        substring(T01.char_50p from 1 for 8)  
+  from  $$P00$$ T00, $$P01$$ T01
+  where     T00.sInt32_uniq = T01.uInt32_uniq
+        and T01.sInt32_100 < 5;
+
+execute P;
+
+?section qhj2
+-- CPUS = 4
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- tables first keys don't match but logical partitioning is possible,
+-- since we are joining a 3-way partitioned table with a 4-way
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T01')),exchange(scan('T03')),type1));
+prepare P from
+select  T01.uInt32_uniq,T03.sInt32_uniq,T03.char_100
+  from  $$P01$$ T01, $$P03$$ T03
+  where     T01.uInt32_uniq = T03.sInt32_uniq
+        and T03.char_100 <= 'ADAAAAAA';
+
+execute P;
+
+?section qhj2b
+-- CPUS = 3
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- tables first keys don't match but logical partitioning is possible,
+-- since we are joining a 3-way partitioned table with a 4-way
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+----------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T01')),exchange(scan('T03')),type1));
+prepare P from
+select  T01.uInt32_uniq,T03.sInt32_uniq,T03.char_100
+  from  $$P01$$ T01, $$P03$$ T03
+  where     T01.uInt32_uniq = T03.sInt32_uniq
+        and T03.char_100 <= 'ADAAAAAA';
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+?section qhj3
+-- CPUS = 4
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- tables first keys don't match but logical partitioning is possible,
+-- since both tables are part 4 ways on the join columns, with 
+-- only the partitioning boundaries (first keys) being different.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+--
+-- With # of cpus = 3, should choose 3 ESP plan with logical partition
+-- grouping on one side and logical subpartitioning on the other.
+-- This should not lead to an inbalance, because the the final 
+-- partition of the 4-way partitioned table is empty, and the
+-- optimizer should be smart enough to group the empty partition
+-- with the partition just before it - thus all 3 new partitions
+-- will be the same size.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T04')),exchange(scan('T03')),type1));
+prepare P from
+select  T04.uInt32_uniq,T03.sInt32_uniq,T03.char_100
+  from  $$P04$$ T04, $$P03$$ T03
+  where     T04.uInt32_uniq = T03.sInt32_uniq
+        and T03.char_100 <= 'ADAAAAAA';
+
+execute P;
+
+?section qhj3b
+-- CPUS = 3
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join
+-- tables first keys don't match but logical partitioning is possible,
+-- since both tables are part 4 ways on the join columns, with 
+-- only the partitioning boundaries (first keys) being different.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+--
+-- With # of cpus = 3, should choose 3 ESP plan with logical partition
+-- grouping on one side and logical subpartitioning on the other.
+-- This should not lead to an inbalance, because the the final 
+-- partition of the 4-way partitioned table is empty, and the
+-- optimizer should be smart enough to group the empty partition
+-- with the partition just before it - thus all 3 new partitions
+-- will be the same size.
+----------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T04')),exchange(scan('T03')),type1));
+prepare P from
+select T04.uInt32_uniq,T03.sInt32_uniq,T03.char_100
+  from $$P04$$ T04, $$P03$$ T03
+  where T04.uInt32_uniq = T03.sInt32_uniq
+        and T03.char_100 <= 'ADAAAAAA';
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+?section qhj4
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join.
+-- Should choose logical partitioning on PTAB05, since basing
+-- parallelism on PTAB07 allows 4-way parallelism.
+-- PTAB07 has a 2 column clustering key and a 2 column partitioning  
+-- key, but PTAB05 has a 2 column clustering key and a 1 column
+-- partitioning key. 
+--
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T07')),exchange(scan('T05')),type1));
+prepare P from
+select  T07.int64_60,T05.sInt32_60,T07.sInt16_10,T05.uInt16_10,
+        T05.int64_uniq
+  from  $$P07$$ T07, $$P05$$ T05
+  where     T07.int64_60 = T05.sInt32_60
+        and T07.sInt16_10 = T05.uInt16_10
+        and T05.int64_uniq < 60;
+
+execute P;
+
+?section qhj5
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join.
+-- Must choose to logically partition PTAB06, or would
+-- have to repartition both tables, since there is only one join
+-- predicate column, but PTAB06 is partitioned on that column
+-- and an additional column.
+-- PTAB14's clustering key is on the join column and an additional
+-- column, but it's partitioning key is on only the join predicate
+-- column.
+--
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T06')),exchange(scan('T14')),type1));
+prepare P from
+select  T06.uInt32_60,T14.sInt32_60,T06.sInt16_10,T14.uInt16_10,
+        T14.sNum_100
+  from  $$P06$$ T06, $$P14$$ T14
+  where     T06.uInt32_60 = T14.sInt32_60
+        and T14.sNum_100 = 0;
+
+execute P;
+
+?section qhj6
+-- SQL/MP style PLAN1 parallel two-way join plan using hash join.
+-- Should choose logical partitioning on PTAB14, since basing
+-- parallelism on PTAB14 allows 4-way parallelism.
+-- Both PTAB05 and PTAB14 have 2 column clustering keys 
+-- and a 1 column partitioning key. 
+--
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T05')),exchange(scan('T14')),type1));
+prepare P from
+select  T05.sInt32_60,T14.sInt32_60,T05.uInt16_10,T14.uInt16_10,
+        T14.int64_uniq
+  from  $$P05$$ T05, $$P14$$ T14
+  where     T05.sInt32_60 = T14.sInt32_60
+        and T05.uInt16_10 = T14.uInt16_10
+        and T14.int64_uniq < 60;
+
+execute P;
+
+?section qhj7
+-- SQL/MP style PLAN2 parallel two-way join plan using hash join
+-- Both tables partitioned 3 ways.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T10')),
+  exchange(exchange(scan('T12'))),type2));
+prepare P from
+select T12.int64_100,T10.char_uniq,T12.varchar_uniq
+from $$P10$$ T10, $$P12$$ T12
+where T10.char_uniq = T12.varchar_uniq
+and T12.int64_100 < 10;
+
+execute P;
+
+?section qhj8
+-- SQL/MP style PLAN3 parallel two-way join plan using hash join
+-- Must range repartition T05,                 
+-- since it is not partitioned on the join columns.
+-- Both tables partitioned 3 ways.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(exchange(scan('T05'))),
+  exchange(scan('T06')),
+  type1));
+prepare P from
+select  T05.int64_uniq,T06.uInt32_60,T05.uInt16_10,T06.sInt16_10
+  from  $$P05$$ T05, $$P06$$ T06
+  where     T05.int64_uniq = T06.uInt32_60
+        and T05.uInt16_10 = T06.sInt16_10
+        and T06.sint16_10 < 5;
+
+execute P;
+
+?section qhj9
+-- SQL/MP style PLAN3 parallel two-way join plan using hash join
+-- Must range repartition T06,
+-- since it is not partitioned on the join columns.
+-- Both tables partitioned 3 ways.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T05')),
+  exchange(exchange(scan('T06'))),
+  type1));
+prepare P from
+select  T05.sInt32_60,T06.int64_uniq,T05.uInt16_10,T06.sInt16_10
+  from  $$P05$$ T05, $$P06$$ T06
+  where     T05.sInt32_60 = T06.int64_uniq
+        and T05.uInt16_10 = T06.sInt16_10
+        and T06.sint16_10 < 5;
+
+execute P;
+
+?section qhj10
+-- SQL/MP style PLAN3 parallel two-way join plan using hash join
+-- Must hash repartition both children,
+-- since neither is partitioned on the join columns. 
+-- Both tables partitioned 3 ways.
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape exchange(hybrid_hash_join(
+  exchange(exchange(scan('T05'))),
+  exchange(exchange(scan('T06'))),
+  type1));
+prepare P from
+select T05.int64_uniq,T06.int64_uniq,T05.uInt16_10,T06.uNum_10
+  from  $$P05$$ T05, $$P06$$ T06
+  where     T05.int64_uniq = T06.int64_uniq
+        and T05.uInt16_10 = T06.uNum_10
+;
+
+execute P;
+
+
+-- 3 WAY HASH JOINS
+
+?section qhj11
+-- PLAN1 H.H. over PLAN1 H.H. three way join plan
+-- All three tables are partitioned 3 ways and their partitioning
+-- keys match exactly (3-3-3).
+------------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(
+--  hybrid_hash_join(cut,cut),cut));
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(scan('T00A')),
+                   exchange(scan('T01')),
+                   type1),
+  exchange(scan('T00B')),
+  type1));
+prepare P from
+Select T00A.sInt32_uniq,T01.uInt32_uniq,T00B.sInt32_uniq
+  from  $$P00$$ T00A, $$P01$$ T01, $$P00$$ T00B
+  where     T00A.sint32_uniq = T01.uInt32_uniq
+        and T01.uInt32_uniq = T00B.sInt32_uniq
+        and T01.uInt32_uniq < 30
+        and T00B.sInt32_uniq < 30;
+
+execute P;
+
+?section qhj12
+-- PLAN2 H.H. over PLAN1 H.H. three way join plan
+-- 3-3-6
+------------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(
+--  hybrid_hash_join(cut,cut),cut));
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(scan('T00')),
+                   exchange(scan('T01')),
+                   type1),
+  exchange(exchange(scan('T02'))),
+  type2));
+prepare P from
+Select  T00.sInt32_uniq,T01.uInt32_uniq,T02.sInt32_uniq,T01.uNum_10
+  from  $$P00$$ T00, $$P01$$ T01, $$P02$$ T02
+  where     T00.sint32_uniq = T01.uInt32_uniq
+        and T00.sInt32_uniq = T02.sInt32_uniq
+        and T01.uNum_10 = 0
+        and T02.sInt32_uniq < 300;
+
+execute P;
+
+?section qhj13
+-- PLAN1 H.H. over PLAN2 H.H. three way join plan
+-- 3-6-3
+------------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(
+--  hybrid_hash_join(cut,cut),cut));
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(scan('T00')),
+                   exchange(exchange(scan('T02'))),
+                   type2),
+  exchange(scan('T01')),
+  type1));
+prepare P from
+Select T00.sInt32_uniq,T02.sInt32_uniq,T01.uInt32_uniq,T02.uNum_10
+  from  $$P00$$ T00, $$P02$$ T02, $$P01$$ T01
+  where     T00.sint32_uniq = T02.sInt32_uniq
+        and T00.sInt32_uniq = T01.uInt32_uniq
+        and T02.uNum_10 = 0
+        and T01.uInt32_uniq < 300;
+
+execute P;
+
+?section qhj14
+-- PLAN2 H.H. over PLAN2 H.H. three way join plan
+-- 4-4-4
+------------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(
+--  hybrid_hash_join(cut,cut),cut));
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(scan('T03')),
+                   exchange(exchange(scan('T04'))),
+                   type2),
+  exchange(exchange(scan('T07'))),
+  type2));
+prepare P from
+Select  T03.uInt32_uniq,T04.sInt32_uniq,T07.sInt32_uniq,
+        T04.char_10,T07.uInt32_50p
+  from  $$P03$$ T03, $$P04$$ T04, $$P07$$ T07
+  where     T03.uint32_uniq = T04.sInt32_uniq
+        and T04.sInt32_uniq = T07.sInt32_uniq
+        and T04.char_10 = 'AAAAAAAA'
+        and T07.uInt32_50p < 150;
+
+execute P;
+
+?section qhj15
+-- PLAN1 H.H. over PLAN3 H.H. 
+-- Must range repartition T03,
+-- since it has 4 parts and the other tables have 3 parts, and
+-- it is not partitioned on the join columns.
+-- 3-4-3
+----------------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(
+--  hybrid_hash_join(cut,cut),cut));
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(scan('T00')),
+	           exchange(exchange(scan('T03'))),
+                   type1),
+  exchange(scan('T01')),
+  type1));
+prepare P from
+Select  T00.sInt32_uniq,T03.sNum_uniq,T01.uInt32_uniq,T03.uInt16_10
+  from  $$P00$$ T00, $$P03$$ T03, $$P01$$ T01
+  where     T00.sInt32_uniq = T03.sNum_uniq
+        and T00.sInt32_uniq = T01.uInt32_uniq
+        and T03.uInt16_10 IN (0,1,2,3,4);
+
+execute P;
+
+?section qhj16
+-- PLAN3 H.H. over PLAN1 H.H. 
+-- Must hash repartition output of first hash join (the plan 1)
+-- and table T12, because they are not partitioned 
+-- on the join columns. 
+-- 3-4-3
+----------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(hybrid_hash_join(
+  exchange(hybrid_hash_join(exchange(scan('T10')),
+	                      exchange(scan('T11')),
+                            type1)),
+  exchange(exchange(scan('T12'))),
+  type1));
+prepare P from
+Select  T11.char_10,T12.char_10,T10.char_uniq,T11.varchar_uniq,
+        T10.varchar_uniq,T12.char_uniq
+  from  $$P10$$ T10, $$P11$$ T11, $$P12$$ T12
+  where     T10.char_uniq = T11.varchar_uniq
+        and T10.varchar_uniq = T12.char_uniq  
+        and T11.char_10 = 'AAAAAAAA'
+        and T12.char_10 = 'AAAAAAAA';
+
+execute P;
+
+?section qhj17
+-- PLAN3 H.H. over PLAN3 H.H. 
+-- Must hash repartition all leafs, since none of the tables
+-- are partitioned on the join columns.
+-- 3-4-3
+----------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(hybrid_hash_join(
+  hybrid_hash_join(exchange(exchange(scan('T10'))),
+                   exchange(exchange(scan('T11'))),
+                   type1),
+  exchange(exchange(scan('T12'))),
+  type1));
+prepare P from
+Select  T11.char_10,T12.char_10,T10.varchar_uniq,T11.char_uniq,
+        T12.char_uniq
+  from  $$P10$$ T10, $$P11$$ T11, $$P12$$ T12
+  where     T10.varchar_uniq = T11.char_uniq
+        and T10.varchar_uniq = T12.char_uniq  
+        and T11.char_10 = 'AAAAAAAA'
+        and T12.char_10 = 'AAAAAAAA';
+
+execute P;
+
+?section qhj18
+-- PLAN3 H.H. over PLAN3 H.H. 
+-- Must hash repartition all children, including the output of 
+-- the first hash join.
+-- 3-4-3
+----------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(hybrid_hash_join(
+  exchange(hybrid_hash_join(exchange(exchange(scan('T10'))),
+                            exchange(exchange(scan('T11'))),
+                            type1)),
+  exchange(exchange(scan('T12'))),
+  type1));
+prepare P from
+Select  T11.char_10,T12.char_10,T10.varchar_uniq,T11.char_uniq,
+        T10.char_100,T12.char_uniq
+  from  $$P10$$ T10, $$P11$$ T11, $$P12$$ T12
+  where     T10.varchar_uniq = T11.char_uniq
+        and T10.char_100 = T12.char_uniq  
+        and T11.char_10 = 'AAAAAAAA'
+        and T12.char_10 = 'AAAAAAAA';
+
+execute P;
+
+
+-- HASH JOINS ON DATE AND CHARACTER COLUMNS
+
+?section qhj19
+--================================================
+--  Plan 1 hash join on a date partitioning key ==
+-- each child with same number of partitions.   ==
+--================================================
+
+-------------------------------
+-- Force a plan 1 hash join. --
+-------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T13A')),
+            exchange(scan('T13B')),
+            type1
+                          )
+         );
+
+---------------------------------------
+--  Join on a date partitioning key. --
+---------------------------------------
+prepare P from
+select T13A.date_uniq,T13B.date_uniq, T13B.sInt32_100,
+       substring(T13B.char_50p from 1 for 8)  
+  from $$P13$$ T13A, $$P13$$ T13B
+  where    T13A.date_uniq = T13B.date_uniq
+       and T13A.sInt32_100 < 5;
+
+execute P;
+
+?section qhj20
+--================================================
+--  Plan 1 hash join on a char partitioning key ==
+-- each child with same number of partitions.   ==
+--================================================
+
+-------------------------------
+-- Force a plan 1 hash join. --
+-------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T10A')),
+            exchange(scan('T10B')),
+            type1
+                          )
+         );
+
+---------------------------------------
+--  Join on a char partitioning key. --
+---------------------------------------
+prepare P from
+select T10A.char_uniq,T10B.char_uniq, T10B.sInt32_100,
+       substring(T10A.char_50p from 1 for 8)  
+  from $$P10$$ T10A, $$P10$$ T10B
+  where    T10A.char_uniq = T10B.char_uniq
+       and T10A.sInt32_100 < 5;
+
+execute P;
+
+?section qhj21
+--====================================================
+--  Plan 1 hash join on a date partitioning key.    ==
+-- Each child has a differing number of partitions. ==
+--====================================================
+
+-------------------------------
+-- Force a plan 1 hash join. --
+-------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T12')),
+            exchange(scan('T13')),
+            type1
+                          )
+         );
+
+---------------------------------------
+--  Join on a date partitioning key. --
+---------------------------------------
+prepare P from
+select T12.date_uniq,T13.date_uniq, T13.sInt32_100,
+       substring(T13.char_50p from 1 for 8)  
+  from $$P12$$ T12, $$P13$$ T13
+  where    T12.date_uniq = T13.date_uniq
+       and T12.sInt32_100 < 5;
+
+
+execute P;
+
+?section qhj22
+--====================================================
+--  Plan 1 hash join on a char partitioning key.    ==
+-- Each child has a differing number of partitions. ==
+--====================================================
+
+-------------------------------
+-- Force a plan 1 hash join. --
+-------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+ exchange(hybrid_hash_join(
+            exchange(scan('T10')),
+            exchange(scan('T11')),
+            type1
+                          )
+         );
+
+---------------------------------------
+--  Join on a char partitioning key. --
+---------------------------------------
+prepare P from
+select substring(T10.char_uniq from 1 for 8),
+       substring(T11.varchar_uniq from 1 for 8),
+       T11.sInt32_100,
+       substring(T11.char_50p from 1 for 8)  
+  from $$P10$$ T10, $$P11$$ T11
+  where    T10.char_uniq = T11.varchar_uniq
+       and T10.sInt32_100 < 5;
+
+
+execute P;
+
+?section qhj23
+--======================================================
+--  Plan 3 hash join on a date column.  Neither child ==
+-- is partitioned on the date column.  Each child has ==
+-- a differing number of partitions.                  ==
+--======================================================
+
+--------------------------------------------------------
+-- Force a plan 1 hash join. Since join column is not --
+-- the partitioning key, this corresponds to a plan 3 --
+-- join.                                              --
+--------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(exchange(scan('T01'))),
+             exchange(exchange(scan('T03'))),
+             type1
+                           )
+          );
+
+--------------------------------------------------------------
+--  Join on a date column which is not the partitioning key --
+-- for either child.                                        --
+--------------------------------------------------------------
+prepare P from
+select T01.date_uniq,T03.date_uniq, T03.sInt32_100,
+       substring(T03.char_50p from 1 for 8)  
+  from $$P01$$ T01, $$P03$$ T03
+  where    T01.date_uniq = T03.date_uniq
+       and T01.sInt32_100 < 5;
+
+
+execute P;
+
+?section qhj24
+--======================================================
+--  Plan 3 hash join on a char column.  Neither child ==
+-- is partitioned on the char column.  Each child has ==
+-- a differing number of partitions.                  ==
+--======================================================
+
+--------------------------------------------------------
+-- Force a plan 1 hash join. Since join column is not --
+-- the partitioning key, this corresponds to a plan 3 --
+-- join.                                              --
+--------------------------------------------------------
+--control query shape exchange(hybrid_hash_join(cut,cut));
+control query shape
+  exchange(hybrid_hash_join(
+             exchange(exchange(scan('T01'))),
+             exchange(exchange(scan('T03'))),
+             type1
+                           )
+          );
+
+--------------------------------------------------------------
+--  Join on a char column which is not the partitioning key --
+-- for either child.                                        --
+--------------------------------------------------------------
+prepare P from
+select T01.char_uniq,T03.char_uniq, T03.sInt32_100,
+       substring(T03.char_50p from 1 for 8)  
+  from $$P01$$ T01, $$P03$$ T03
+  where    T01.char_uniq = T03.char_uniq
+       and T01.sInt32_100 < 5;
+
+execute P;
+
+
+----------------
+-- MERGE JOINS
+----------------
+
+?section qmj1
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Both tables are partitioned 3 ways and part. keys match exactly.
+-- Both tables must be sorted, since the char columns in the 2nd
+-- join pred are not key columns.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(scan('T05A'))),sort(exchange(scan('T05B'))),type1));
+prepare P from
+select T05A.sint32_60,T05B.sint32_60,T05A.char_100,T05B.varchar_100
+  from  $$P05$$ T05A, $$P05$$ T05B
+  where     T05A.sint32_60 = T05B.sint32_60
+        and T05A.char_100 = T05B.varchar_100;
+
+execute P;
+
+?section qmj2
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Both tables are part. 3 ways and part. keys match exactly.
+-- Neither table needs to be sorted.
+-- Select scalar aggregates to keep the amount of output to a 
+-- reasonable amount.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape groupby(exchange(merge_join(
+  exchange(scan('T05A')),exchange(scan('T05B')),type1)));
+prepare P from
+Select count(*), 
+       min(T05A.sInt32_60 - T05B.sInt32_60),
+       max(T05A.sInt32_60 - T05B.sInt32_60)
+  from  $$P05$$ T05A, $$P05$$ T05B
+  where T05A.sint32_60 = T05B.sint32_60;
+
+execute P;
+
+?section qmj2b
+-- CPUS = 6
+-- SQL/MP style PLAN3 parallel two-way join plan using sort merge join
+-- Both tables are part. 3 ways and part. keys match exactly.
+-- But, since there are 6 cpus, will need to repartition both
+-- tables to get 6-way parallelism (3 partitions is not enough
+-- to satisfy the requirement).
+-- Both tables need to be sorted, since a merge of sorted streams of
+-- the repartitioned output cannot be done, due to the risk of deadlock.
+-- Select scalar aggregates to keep the amount of output to a 
+-- reasonable amount.
+----------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '6'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '6'
+#ifMP
+;
+
+--control query shape exchange(merge_join(cut,cut));
+control query shape groupby(exchange(merge_join(
+  sort(exchange(exchange(scan('T05A')))),
+  sort(exchange(exchange(scan('T05B')))),type1)));
+prepare P from
+Select count(*), 
+       min(T05A.sInt32_60 - T05B.sInt32_60),
+       max(T05A.sInt32_60 - T05B.sInt32_60)
+from $$P05$$ T05A, $$P05$$ T05B
+where T05A.sint32_60 = T05B.sint32_60;
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+
+?section qmj3
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- tables don't match but logical partitioning is possible.
+-- Both tables are partitioned 3 ways, but the first keys are different.
+-- Neither table needs to be sorted.
+-- Should choose 3 ESP plan with logical subpart.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  partition_access(scan('T05')),split_top_pa(scan('T06')),type1));
+prepare P from
+select T05.sint32_60,T06.uint32_60,T05.uNum_10,T06.sInt16_10
+  from  $$P05$$ T05, $$P06$$ T06
+  where     T05.sint32_60 = T06.uint32_60
+        and T05.uNum_10 >= T06.sInt16_10;
+
+execute P;
+
+?section qmj4
+-- CPUS=4
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join.
+-- Tables don't match but logical partitioning is possible,       
+-- since we are joining a 3-way partitioned table with a 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+-- Neither table needs to be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  exchange(scan('T08')),exchange(scan('T09')),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6 = T09.int64_6
+        and T08.sInt16_10 = T09.sInt16_10
+        and T08.uInt16_10 = T09.uInt16_10
+        and T08.sInt32_100 < 5;
+
+execute P;
+
+?section qmj4b
+-- CPUS=3
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join.
+-- Tables don't match but logical partitioning is possible,       
+-- since we are joining a 3-way partitioned table with a 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+-- Neither table needs to be sorted.
+----------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  split_top_pa(scan('T08')),partition_access(scan('T09')),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from  $$P08$$ T08, $$P09$$ T09
+  where T08.int64_6 = T09.int64_6
+        and T08.sInt16_10 = T09.sInt16_10
+        and T08.uInt16_10 = T09.uInt16_10
+        and T08.sInt32_100 < 5;
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+?section qmj5
+-- CPUS=4
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must range repartition T08,
+-- since it is not partitioned on the join columns.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan - BUT:
+-- Should the optimizer use partition grouping on the 4 partition
+-- table to get the number of partitions to be <= # of cpus, and 
+-- then range repartition T08, OR 
+-- should the optimizer hash repartition both tables? The partition
+-- grouping plan will lead to an inbalance, so maybe the 
+-- repartitioning plan is better.  The c.q. shape forces the 
+-- first alternative - we'll have to try it both ways and see
+-- which is better.
+--
+-- Only T08 must be sorted, unless the optimizer hash repartitions
+-- both tables.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  exchange(scan('T09')),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from  $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+;
+
+execute P;
+
+?section qmj5b
+-- CPUS=3
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must range repartition T08,
+-- since it is not partitioned on the join columns.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan - BUT:
+-- Should the optimizer use partition grouping on the 4 partition
+-- table to get the number of partitions to be <= # of cpus, and 
+-- then range repartition T08, OR 
+-- should the optimizer hash repartition both tables? The partition
+-- grouping plan will lead to an inbalance, so maybe the 
+-- repartitioning plan is better.  The c.q. shape forces the 
+-- first alternative - we'll have to try it both ways and see
+-- which is better.
+--
+-- Only T08 must be sorted, unless the optimizer hash repartitions
+-- both tables.
+----------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  exchange(scan('T09')),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+;
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+?section qmj6
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must range repartition T09,
+-- since it is not partitioned on the join columns.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- Should choose 3 ESP plan.
+--
+-- Only right child must be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  exchange(scan('T08')),
+  sort(exchange(exchange(scan('T09')))),
+  type1));
+prepare P from
+Select T08.int64_6, T09.sInt32_100,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6   = T09.sInt32_100
+        and T08.sInt16_10 = T09.sInt16_10
+        and T08.uInt16_10 = T09.uInt16_10
+;
+
+execute P;
+
+?section qmj7
+-- CPUS=4
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must hash repartition both children,
+-- since neither is partitioned on the join columns.
+-- Both children must be sorted.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  sort(exchange(exchange(scan('T09')))),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.uInt32_100,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.uInt32_100
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+;
+
+execute P;
+
+?section qmj7b
+-- CPUS=3
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must hash repartition both children,
+-- since neither is partitioned on the join columns.
+-- Both children must be sorted.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan
+----------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  sort(exchange(exchange(scan('T09')))),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.uInt32_100,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.uInt32_100
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+;
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+
+-- 3 WAY MERGE JOINS
+
+?section qmj8
+-- PLAN1 M.J. over PLAN1 M.J. three way join plan
+-- All three tables are partitioned 3 ways and their partitioning
+-- keys match exactly (3-3-3).
+-- None of the children need to be sorted.
+------------------------------------------------------------------------
+--control query shape exchange(merge_join(merge_join(cut,cut),cut));
+control query shape exchange(merge_join(
+  merge_join(exchange(scan('T05A')),
+             exchange(scan('T05B')),
+             type1),
+  exchange(scan('T05C')),
+  type1));
+prepare P from
+Select T05A.sInt32_60,T05B.sInt32_60,T05C.sInt32_60,
+       T05C.sNum_uniq,T05C.int64_uniq
+  from $$P05$$ T05A, $$P05$$ T05B, $$P05$$ T05C
+  where T05A.sInt32_60 = T05B.sInt32_60 
+        and T05B.sInt32_60 = T05C.sInt32_60
+        and T05B.sNum_uniq < .6
+        and T05C.int64_uniq < 6;
+
+execute P;
+
+
+?section qmj9
+-- PLAN1 M.J. over PLAN3 M.J. 
+-- Must range repartition right child of the Plan 3 (T11),
+-- since it is not partitioned on the join columns.
+-- Select scalar aggregates to keep the amount of output to a 
+-- reasonable amount.
+-- Right child of the Plan 3 (T11) needs to be sorted.
+-- 4-4-4
+----------------------------------------------------------------
+--control query shape groupby(exchange(merge_join(merge_join(cut,cut),cut)));
+control query shape groupby(exchange(merge_join(
+  merge_join(exchange(scan('T07A')),
+             sort(exchange(exchange(scan('T11')))),
+             type1),
+  exchange(scan('T07B')),
+  type1)));
+prepare P from
+Select count(*), 
+       min(T07A.int64_60 - T11.uInt32_100),
+       max(T07A.int64_60 - T11.uInt32_100),
+       min(T07A.sInt16_10 - T11.uInt16_10),
+       max(T07A.sInt16_10 - T11.uInt16_10),
+       min(T07A.int64_60 - T07B.int64_60),
+       max(T07A.int64_60 - T07B.int64_60),
+       min(T07A.sInt16_10 - T07B.sInt16_10),
+       max(T07A.sInt16_10 - T07B.sInt16_10)
+  from $$P07$$ T07A, $$P11$$ T11, $$P07$$ T07B
+  where     T07A.int64_60 = T11.uInt32_100
+        and T07A.sInt16_10 = T11.uInt16_10
+        and T07A.int64_60 = T07B.int64_60
+        and T07A.sInt16_10 = T07B.sInt16_10;
+
+execute P;
+
+
+?section qmj10
+-- PLAN3 M.J. over PLAN3 M.J.
+-- Must hash repartition all children, 
+-- since none are partitioned on the join columns.
+-- All children must be sorted.
+-- 3-3-3
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(merge_join(cut,cut),cut));
+control query shape exchange(merge_join(
+  merge_join(sort(exchange(exchange(scan('T05')))),
+             sort(exchange(exchange(scan('T06')))),
+             type1),
+  sort(exchange(exchange(scan('T08')))),
+  type1));
+prepare P from
+Select T06.sInt32_100,T08.sInt16_10,T05.date_200,
+       T06.date_200,T08.date_200
+  from $$P05$$ T05, $$P06$$ T06, $$P08$$ T08
+  where T05.date_200 = T06.date_200
+        and T06.date_200   = T08.date_200
+        and T06.sInt32_100 = 4
+        and T08.sInt16_10  = 4;  
+
+execute P;
+
+
+-- MERGE JOINS + ORDER BY
+
+?section qmj11
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Tables don't match but logical partitioning is possible,
+-- since we are joining 3-way partitioned table with 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+--
+-- Order by clause on all three key columns, in key column order.
+-- Order by colunns and join columns are the same.
+-- Neither table needs to be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  partition_access(scan('T08')),split_top_pa(scan('T09')),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6    = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+        and T08.sInt32_100 < 5
+  order by T08.int64_6,T08.sInt16_10 DESC, T08.uInt16_10; 
+
+execute P;
+
+?section qmj12
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Tables don't match but logical partitioning is possible,
+-- since we are joining 3-way partitioned table with 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+--
+-- Order by clause on all first two key columns, in key column order.
+-- One more join column than o.b. columns - should be able to use the
+-- predicate it is from as a join predicate.
+-- Neither table needs to be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  partition_access(scan('T08')),split_top_pa(scan('T09')),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6    = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+        and T08.sInt32_100 < 5
+  order by T08.int64_6,T08.sInt16_10 DESC; 
+
+execute P;
+
+?section qmj13
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Tables don't match but logical partitioning is possible,
+-- since we are joining 3-way partitioned table with 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+--
+-- Order by clause on the first key column.
+-- Two more join columns than o.b. columns - should be able to use the
+-- predicates they are from as join predicates.
+-- Neither table needs to be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  partition_access(scan('T08')),split_top_pa(scan('T09')),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where T08.int64_6        = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+        and T08.sInt32_100 < 5
+  order by T08.int64_6; 
+
+execute P;
+
+?section qmj14
+-- SQL/MP style PLAN3 parallel two-way join plan using sort merge join
+--
+-- Order by clause on the first key column, a non-key column, and 
+-- the second key column.
+-- The second o.b. column is also not a join predicate column, so
+-- can only use one join predicate - the one on the first o.b. column.
+-- Must repartition and sort both tables.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  sort(exchange(exchange(scan('T09')))),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6    = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+        and T08.sInt32_100 < 5
+  order by T08.int64_6,T08.char_10,T08.sInt16_10 DESC; 
+
+execute P;
+
+?section qmj15
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Tables don't match but logical partitioning is possible,
+-- since we are joining 3-way partitioned table with 4-way 
+-- partitioned table on the key columns.
+-- With # of cpus = 4, should choose 4 ESP plan with logical subpart.
+-- With # of cpus = 3, should choose 3 ESP plan with logical subpart
+--
+-- Order by clause on the second key column.
+-- Will have to sort both tables to satisfy the order by.
+-- Should be able to use all join predicates.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(scan('T08'))),
+  sort(exchange(scan('T09'))),type1));
+prepare P from
+Select T08.int64_6, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10,
+       T08.sInt32_100
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.int64_6 = T09.int64_6
+        and T08.sInt16_10 = T09.sInt16_10
+        and T08.uInt16_10 = T09.uInt16_10
+        and T08.sInt32_100 < 5
+  order by T08.sInt16_10 DESC; 
+
+execute P;
+
+?section qmj16
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must range repartition T08,
+-- since it is not partitioned on the join columns.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan - BUT:
+-- Should the optimizer use partition grouping on the 4 partition
+-- table to get the number of partitions to be <= # of cpus, and 
+-- then range repartition T08, OR 
+-- should the optimizer hash repartition both tables? The partition
+-- grouping plan will lead to an inbalance, so maybe the 
+-- repartitioning plan is better.  The c.q. shape forces the 
+-- first alternative - we'll have to try it both ways and see
+-- which is better.
+--
+-- Order by clause on the two left child columns that correspond 
+-- to the first two columns of the right hand table primary key.
+-- Only left child must be sorted.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  exchange(scan('T09')),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+  order by T08.sInt32_100,T08.sInt16_10 DESC
+;
+
+execute P;
+
+?section qmj17
+-- Parallel two-way PLAN3 join plan using sort merge join
+--
+-- Order by clause on the first key column, a non-key column, and 
+-- the second key column.
+-- The second o.b. column is also not a join predicate column, so
+-- can only use one join predicate - the one on the first o.b. column.
+-- Must repartition and sort both tables.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  sort(exchange(exchange(scan('T09')))),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       'FUNKY_OPT_UNIQUE',
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+  order by T08.sInt32_100,T08.char_10,T08.sInt16_10 DESC
+;
+
+execute P;
+
+?section qmj18
+-- Parallel two-way PLAN3 join plan using sort merge join
+-- Must range repartition T08,
+-- since it is not partitioned on the join columns.
+-- T08 is partitioned 3 ways and T09 is partitioned 4 ways.
+-- With # of cpus = 4, should choose 4 ESP plan 
+-- With # of cpus = 3, should choose 3 ESP plan - BUT:
+-- Should the optimizer use partition grouping on the 4 partition
+-- table to get the number of partitions to be <= # of cpus, and 
+-- then range repartition T08, OR 
+-- should the optimizer hash repartition both tables? The partition
+-- grouping plan will lead to an inbalance, so maybe the 
+-- repartitioning plan is better.  The c.q. shape forces the 
+-- first alternative - we'll have to try it both ways and see
+-- which is better.
+--
+-- Order by clause on the two left child columns that correspond 
+-- to the last two columns of the right hand table primary key.
+-- Should be able to use all join predicates.
+-- Must sort BOTH children, because the order by has forced us
+-- to ask the right child for an order that does not match the key order 
+-- of the right table.
+----------------------------------------------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape exchange(merge_join(
+  sort(exchange(exchange(scan('T08')))),
+  sort(exchange(scan('T09'))),
+  type1));
+prepare P from
+Select T08.sInt32_100, T09.int64_6,
+       T08.sInt16_10,T09.sInt16_10,
+       T08.uInt16_10,T09.uInt16_10
+  from $$P08$$ T08, $$P09$$ T09
+  where     T08.sInt32_100 = T09.int64_6
+        and T08.sInt16_10  = T09.sInt16_10
+        and T08.uInt16_10  = T09.uInt16_10
+  order by T08.sInt16_10,T08.uInt16_10
+;
+
+execute P;
+
+
+-- MERGE JOINS ON DATE AND CHARACTER COLUMNS
+
+?section qmj19
+--=================================================
+--  Plan 1 merge join on a date partitioning key ==
+-- each child with same number of partitions.    ==
+--=================================================
+
+--------------------------------
+-- Force a plan 1 merge join. --
+--------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape
+  exchange(merge_join(
+             exchange(scan('T13A')),
+             exchange(scan('T13B')),
+             type1
+                     )
+          );
+
+---------------------------------------
+--  Join on a date partitioning key. --
+---------------------------------------
+prepare P from
+select T13A.date_uniq,T13B.date_uniq, T13B.sInt32_100,
+       substring(T13B.char_50p from 1 for 8)  
+  from $$P13$$ T13A, $$P13$$ T13B
+  where    T13A.date_uniq = T13B.date_uniq
+       and T13A.sInt32_100 < 5;
+
+execute P;
+
+?section qmj20
+--=================================================
+--  Plan 1 merge join on a char partitioning key ==
+-- each child with same number of partitions.    ==
+--=================================================
+
+--------------------------------
+-- Force a plan 1 merge join. --
+--------------------------------
+--control query shape exchange(merge_join(cut,cut));
+control query shape
+  exchange(merge_join(
+             exchange(scan('T10A')),
+             exchange(scan('T10B')),
+             type1
+                     )
+          );
+
+---------------------------------------
+--  Join on a char partitioning key. --
+---------------------------------------
+prepare P from
+select T10A.char_uniq,T10B.char_uniq, T10B.sInt32_100,
+       substring(T10A.char_50p from 1 for 8)  
+  from $$P10$$ T10A, $$P10$$ T10B
+  where    T10A.char_uniq = T10B.char_uniq
+       and T10A.sInt32_100 < 5;
+
+
+execute P;
+
+----------------
+-- NESTED JOINS
+----------------
+
+?section qnj1
+-- SQL/MP style PLAN2 parallel two-way join plan using nested loops join
+-- Really a Plan 1
+-- Both tables partitioned 3 ways
+------------------------------------------------------------------------
+--control query shape exchange(nested_join(cut,cut));
+control query shape exchange(nested_join(partition_access(scan('T00')),
+                                         split_top_pa(scan('T01')),
+                                         type2));
+prepare P from
+select T00.uInt16_10,T00.sInt32_uniq,T01.uInt32_uniq
+  from $$P00$$ T00, $$P01$$ T01
+  where     T00.sint32_uniq = T01.uInt32_uniq
+        and T00.uInt16_10   = 5;
+
+execute P;
+
+?section qnj2
+-- CPUS=4
+-- SQL/MP style PLAN2 parallel two-way join plan using nested loops join
+-- T02 is partitioned 6 ways      
+-- T01 is partitioned 3 ways
+-- With # of cpus = 4, should choose 4 ESP plan with logical
+-- partition grouping on T02 - this will result in an inbalanced plan.
+-- With # of cpus = 3, should choose 3 ESP plan with logical
+-- partition grouping on T02 - this will result in a balanced plan.
+-- In fact, in this case, the plan will end up really being a Type 1 plan
+-- (like the previous query).
+------------------------------------------------------------------------
+--control query shape exchange(nested_join(cut,cut));
+control query shape exchange(nested_join(split_top_pa(scan('T02')),
+                                         split_top_pa(scan('T01')),
+                                         type2));
+prepare P from
+select T02.uInt16_10,T02.int64_uniq,T01.uInt32_uniq
+  from $$P02$$ T02, $$P01$$ T01
+  where     T02.int64_uniq = T01.uInt32_uniq
+        and T02.uInt16_10  = 5;
+
+execute P;
+
+?section qnj2b
+-- CPUS=3
+-- SQL/MP style PLAN2 parallel two-way join plan using nested loops join
+-- T02 is partitioned 6 ways      
+-- T01 is partitioned 3 ways
+-- With # of cpus = 4, should choose 4 ESP plan with logical
+-- partition grouping on T02 - this will result in an inbalanced plan.
+-- With # of cpus = 3, should choose 3 ESP plan with logical
+-- partition grouping on T02 - this will result in a balanced plan.
+-- In fact, in this case, the plan will end up really being a Type 1 plan
+-- (like the previous query).
+------------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '3'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '3'
+#ifMP
+;
+
+--control query shape exchange(nested_join(cut,cut));
+control query shape exchange(nested_join(exchange(scan('T02')),
+                                         exchange(scan('T01')),
+                                         type2));
+prepare P from
+select T02.uInt16_10,T02.int64_uniq,T01.uInt32_uniq
+  from $$P02$$ T02, $$P01$$ T01
+  where     T02.int64_uniq = T01.uInt32_uniq
+        and T02.uInt16_10  = 5;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMP
+;
+
+execute P;
+
+?section qnj3
+-- SQL/MP style PLAN2 parallel two-way join plan using nested loops join
+-- A True Plan 2
+-- Both tables partitioned 3 ways
+------------------------------------------------------------------------
+--control query shape exchange(nested_join(cut,cut));
+control query shape exchange(nested_join(partition_access(scan('T00')),
+                                         split_top_pa(scan('T01')),
+                                         type2));
+prepare P from
+select T00.uInt16_10,T00.int64_uniq,T01.uInt32_uniq
+  from $$P00$$ T00, $$P01$$ T01
+  where     T00.int64_uniq = T01.uInt32_uniq
+        and T00.uInt16_10  = 5;
+
+execute P;
+
+?section qnj4
+-- SQL/MP style PLAN2 parallel two-way join plan using nested join
+-- Multiple requests to same inner table row
+-- T05 is part 3 ways and T02 is part 6 ways
+----------------------------------------------------------------
+--control query shape exchange(nested_join(cut,cut));
+control query shape exchange(nested_join(
+  exchange(scan('T05')),
+  exchange(scan('T02')),type2));
+prepare P from
+select T05.uNum_10,T02.uInt32_100,T05.sInt32_60,T02.int64_uniq
+  from $$P05$$ T05, $$P02$$ T02
+  where     T05.sInt32_60  = T02.int64_uniq 
+        and T02.uInt32_100 < 30
+        and T05.uNum_10    = 0.09;
+
+execute P;
+
+?section qnj5
+-- SQL/MP style PLAN2 parallel two-way join plan using simple hash join
+-- (AKA nested join + materialize)
+-- Materialize uses broadcast replication
+-- Both tables partitioned 3 ways
+-- Negative test case, we don't support broadcast replication underneath
+-- the right leg of a nested join -- yet
+------------------------------------------------------------------------
+--control query shape exchange(nested_join(cut,cut));
+control query shape 
+  exchange(nested_join(exchange(scan('T00')),
+           materialize(exchange(scan('T01'))),
+           type2));
+prepare P from
+select T00.uNum_10,T01.uNum_10,T00.uInt32_uniq,T01.uInt32_uniq
+  from $$P00$$ T00, $$P01$$ T01
+  where     T00.uint32_uniq = T01.uInt32_uniq
+        and T00.uNum_10     = T01.uNum_10;
+
+execute P;
+
+?section qnj6
+-- PLAN2 N.J. over PLAN2 N.J. three way join plan
+-- 4-4-4
+--------------------------------------------------------------------------
+--control query shape exchange(nested_join(nested_join(cut,cut),cut));
+control query shape exchange(nested_join(
+  nested_join(partition_access(scan('T07')),
+              split_top_pa(scan('T03')),
+              type2),
+  split_top_pa(scan('T04')),
+  type2));
+prepare P from
+Select T07.int64_uniq,T03.sInt32_uniq,T04.uInt32_uniq
+  from $$P07$$ T07, $$P03$$ T03, $$P04$$ T04
+  where     T07.int64_uniq = T03.sInt32_uniq
+        and T07.int64_uniq = T04.uInt32_uniq
+        and T07.int64_uniq < 30;
+
+execute P;
+
+
+
+---------------------------------------------------------------------
+-- SUBQUERIES - i.e.
+-- Joins with right child joins, right child scalar aggregates,
+-- and materialize of joins and scalar aggregates
+---------------------------------------------------------------------
+
+?section qsq1
+-- Correlated subquery, which is a join -
+-- Should choose a NJ + materialize plan for the subquery,
+-- but should NOT materialize the result of the subquery.
+-- Must choose a NJ for evaluating the subquery because it is correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.uInt32_uniq,T03.int64_100
+  from $$P03$$ T03
+  where T03.int64_100 < 2             
+        AND EXISTS  
+            (Select *
+             from $$P05$$ T05, $$P07$$ T07
+             where     T05.sInt32_60  = T07.sInt32_100
+                   and T07.sInt32_100 < 50
+                   and T05.sInt32_60  = T03.uInt32_uniq
+                   and T05.char_50p   <> T03.char_50p
+            );
+
+execute P;
+
+?section qsq2
+-- Correlated subquery, which is a join -
+-- Should choose a Type 3 Hash Join plan for the subquery.
+-- Should materialize the result of the subquery.
+-- Must choose a NJ for evaluating the subquery because it is correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.uInt32_uniq
+  from $$P03$$ T03
+  where EXISTS  
+        (Select *
+           from  $$P05$$ T05, $$P06$$ T06
+           where     T05.int64_uniq = T06.int64_uniq
+                 and T05.uInt16_10  = T06.sInt16_10
+                 and T06.sInt16_10  < 5
+                 and T05.sInt32_60  = T03.sInt32_uniq
+                 and T06.char_50p   <> T03.char_50p
+  );
+
+execute P;
+
+?section qsq3
+-- Correlated subquery, which is a join -
+-- Should choose a NJ with no materialize plan for the subquery,
+-- but should NOT materialize the result of the subquery.
+-- Must choose a NJ for evaluating the subquery because it is correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.sInt32_uniq
+  from $$P03$$ T03
+  where T03.char_100 = 'AAAAAAAA'
+        AND EXISTS  
+            (Select *
+               from $$P00$$ T00, $$P01$$ T01
+               where     T00.sInt32_uniq = T01.sInt32_uniq
+                     and T00.sInt32_uniq = T03.sInt32_uniq
+  );
+
+execute P;
+
+?section qsq4
+-- 2 correlated subqueries, which are joins -
+-- Should choose a NJ with no materialize plan for the subqueries,
+-- but should NOT materialize the result of the subqueries.
+-- Must choose NJ for evaluating the subqueries because they are correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.sInt32_uniq
+  from $$P03$$ T03
+  where T03.char_100 = 'AAAAAAAA'
+        AND EXISTS  
+        (Select *
+           from $$P00$$ T00, $$P01$$ T01
+           where     T00.sInt32_uniq = T01.sInt32_uniq
+                 and T00.sInt32_uniq = T03.sInt32_uniq
+        )
+        AND EXISTS  
+        (Select *
+           from $$P00$$ T00, $$P01$$ T01
+           where     T00.sInt32_uniq = T01.sInt32_uniq
+                 and T00.sInt32_uniq = T03.sInt32_uniq
+        );
+
+execute P;
+
+?section qsq5
+-- Non-correlated subquery on a scalar aggregate on a single table.
+-- Can choose any join method for evaluating the subquery.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.char_100
+  from $$P03$$ T03
+  where T03.char_100 = 
+    (Select min(T00.char_10)
+       from $$P00$$ T00
+    );
+
+execute P;
+
+?section qsq6
+-- non-correlated subquery on a scalar aggregate on a join
+-- Can choose any join method for evaluating the subquery.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.char_100
+  from $$P03$$ T03
+  where T03.char_100 = 
+        (Select min(T00.char_10)
+           from $$P00$$ T00, $$P01$$ T01
+           where     T00.sInt32_uniq = T01.sInt32_uniq
+                 and T01.sInt32_100 < 5
+        );
+
+execute P;
+
+?section qsq7
+-- Correlated subquery on a scalar aggregate on a join
+-- Must choose a NJ for evaluating the subquery because it is correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.char_100
+  from $$P03$$ T03
+  where T03.char_100 = 
+        (Select min(T00.char_10)
+           from $$P00$$ T00, $$P01$$ T01
+           where     T00.sInt32_uniq = T01.sInt32_uniq
+                 and T03.sInt32_50p = T00.sInt32_50p
+        );
+
+execute P;
+
+?section qsq8
+-- Correlated subquery on a join with a group by.
+-- Group by in the outer query as well.
+-- Must choose a NJ for evaluating the subquery because it is correlated.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T05.sInt32_60
+  from $$P05$$ T05
+  where T05.char_100 = 
+        (Select T00.char_10
+           from $$P00$$ T00, $$P01$$ T01
+           where    T00.sInt32_uniq = T01.sInt32_uniq
+           and      T05.date_12 = T00.date_12
+           group by T00.char_10
+           having T00.char_10 <= 'AAAAAAAA'
+
+        )
+  group by T05.sInt32_60;
+
+execute P;
+
+?section qsq9
+-- uncorrelated IN subquery on a join with a group by.
+-- Semi-join for the subquery.
+-- Group by in the outer query as well.
+-- Force nested join to evaluate the subquery.
+-- Materialize the subquery result.
+------------------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(nested_join(cut,materialize(cut))));
+prepare P from
+select T05.sInt32_60
+  from $$P05$$ T05
+  where T05.char_100 IN 
+        (Select T00.char_10
+           from $$P00$$ T00, $$P01$$ T01
+           where T00.sInt32_uniq = T01.sInt32_uniq
+           group by T00.char_10
+        )
+  group by T05.sInt32_60;
+
+execute P;
+
+?section qsq10
+-- Non-correlated =ANY subquery on a group by on a single table.
+-- Semi-join for the subquery.
+------------------------------------------------------------------------
+control query shape exchange(cut);
+prepare P from
+select T03.char_100
+  from $$P03$$ T03
+  where T03.char_100 =ANY 
+    (Select T00.char_10
+       from $$P00$$ T00
+       group by T00.char_10
+       having T00.char_10 like 'A%'
+    );
+
+execute P;
+
+-----------
+-- UNION --
+-----------
+
+?section qu1
+-- UNION (DISTINCT)
+-- Both tables partitioned the same, partitioning key columns
+-- match up in the select lists    
+------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(union(cut,cut)));
+prepare P from
+Select sInt32_uniq,uInt16_10
+  from $$P00$$ T00
+  where uInt16_10 = 5
+union
+Select uInt32_uniq,sInt16_10
+  from $$P01$$ T01
+  where sInt16_10 = 5;
+
+execute P;
+
+?section qu2
+-- UNION (DISTINCT)
+-- Both tables partitioned the same, but the partitioning key columns
+-- are not in the select lists
+-- Will have to repartition both children on the select list
+-- columns (since a GB will be generated to satisfy the union DISTINCT
+-- and the GB columns will be the select list columns)
+------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(union(cut,cut)));
+prepare P from
+Select char_uniq, uInt16_10
+  from $$P00$$ T00
+  where uInt16_10 = 5
+union
+Select char_uniq, uInt16_10
+  from $$P01$$ T01
+  where uInt16_10 = 5;
+
+execute P;
+
+
+?section qu3
+-- UNION ALL
+-- Both tables partitioned the same, but the partitioning key columns
+-- are not in the select lists
+-- should fail to generate a plan, due to limitations in the 
+-- current parallel union code.
+------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(union(cut,cut)));
+prepare P from
+Select char_uniq, sInt32_100
+  from $$P00$$ T00
+  where sInt32_100 = 5
+union all
+Select char_uniq, sInt32_100
+  from $$P01$$ T01
+  where sInt32_100 = 5;
+
+execute P;
+
+?section qu4
+-- UNION (DISTINCT)
+-- Union of two joins 
+-- Both joins must repartition both of their children
+------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape 
+    exchange(groupby(union(
+                   hybrid_hash_join(
+                   exchange(exchange(scan('T05'))),
+                   exchange(exchange(scan('T06'))),
+                   type1),
+                   hybrid_hash_join(
+                   exchange(exchange(scan('T05'))),
+                   exchange(exchange(scan('T06'))),
+                   type1)
+                  )));
+prepare P from
+select T05.int64_uniq,T06.int64_uniq,T05.sInt16_10,T06.uInt16_10
+  from $$P05$$ T05, $$P06$$ T06
+  where     T05.int64_uniq = T06.int64_uniq
+        and T05.sInt16_10  = T06.uInt16_10
+        and T06.sint16_10  < 5
+union
+select T05.int64_uniq,T06.int64_uniq,T05.sInt16_10,T06.uInt16_10
+  from $$P05$$ T05, $$P06$$ T06
+  where     T05.int64_uniq = T06.int64_uniq
+        and T05.sInt16_10 = T06.uInt16_10
+        and T06.sint16_10 < 5;
+
+execute P;
+
+-------------------------------------------------------------
+-- 3-way joins, with combinations of the various join methods
+-- (hash, merge, nested)
+-------------------------------------------------------------
+
+?section q31
+-- Type 1 Merge over Nested
+-- 3-6-3
+control query shape groupby(exchange(merge_join(
+                                       nested_join(cut,cut),cut)));
+prepare P from
+Select count(*), 
+       min(T05A.sInt32_60 - T02.int64_uniq),
+       max(T05A.sInt32_60 - T02.int64_uniq),
+       min(T05A.sInt32_60 - T05B.sInt32_60),
+       max(T05A.sInt32_60 - T05B.sInt32_60),
+       max(T05A.int64_100)
+  from $$P05$$ T05A, $$P02$$ T02, $$P05$$ T05B
+  where     T05A.sInt32_60 = T02.int64_uniq
+        and T05A.int64_100 < 50
+        and T05A.sInt32_60 = T05B.sInt32_60;
+
+execute P;
+
+?section q32
+-- Nested over Type 1 Merge with logical partitioning
+-- 3-4-6
+control query shape groupby(exchange(nested_join(
+                                       merge_join(cut,cut),cut)));
+prepare P from
+Select count(*), 
+       min(T05.sInt32_60 - T09.int64_6),
+       max(T05.sInt32_60 - T09.int64_6),
+       min(T05.sInt32_60 - T02.int64_uniq),
+       max(T05.sInt32_60 - T02.int64_uniq)
+from $$P05$$ T05, $$P09$$ T09, $$P02$$ T02
+  where     T05.sInt32_60 = T09.int64_6
+        and T05.sInt32_60 = T02.int64_uniq;
+
+execute P;
+
+?section q33
+-- Type 3 hash join over nested join
+-- 3-6-3
+control query shape exchange(hybrid_hash_join(
+                               exchange(nested_join(cut,cut)),cut));
+prepare P from
+Select T05.int64_uniq, T02.int64_uniq, T06.int64_uniq, T06.sInt16_10
+  from $$P05$$ T05, $$P02$$ T02, $$P06$$ T06
+  where     T05.int64_uniq  = T02.int64_uniq
+        and T05.int64_uniq  < 60
+        and T05.int64_uniq  = T06.int64_uniq
+        and T06.sInt16_10  <= 2;
+
+execute P;
+
+?section q34
+-- Nested join over Type 2 Hash
+-- 3-6-3
+ control query shape exchange(nested_join(hybrid_hash_join(cut,cut),cut));
+prepare P from
+Select T05.int64_uniq, T02.int64_uniq, T06.int64_uniq, T06.sInt16_10
+  from $$P05$$ T05, $$P02$$ T02, $$P06$$ T06
+  where     T05.int64_uniq = T02.int64_uniq
+        and T05.int64_uniq < 60
+        and T05.int64_uniq = T06.int64_uniq
+        and T06.sInt16_10  <= 2;
+
+execute P;
+
+?section q35
+-- Type 2 Hash over Type 1 Merge
+-- 4-4-4
+control query shape exchange(hybrid_hash_join(merge_join(cut,cut),cut));
+prepare P from
+Select T07A.int64_60,T07B.int64_60,T07A.sInt16_10,T07B.sInt16_10,
+       T04.sInt32_uniq,T04.uInt32_50p
+  from $$P07$$ T07A, $$P07$$ T07B, $$P04$$ T04
+  where     T07A.int64_60  = T07B.int64_60
+        and T07A.sInt16_10 = T07B.sInt16_10
+        and T07A.int64_60  = T04.sInt32_uniq
+        and T04.uInt32_50p < 30;
+
+execute P;
+
+?section q36
+-- Type 1 Merge over Type 1 Hash
+-- Sort of outer composite necessary
+-- 4-4-4
+control query shape exchange(merge_join(sort(hybrid_hash_join(cut,cut)),cut));
+prepare P from
+Select T07A.int64_60,T07B.int64_60,T07A.sInt16_10,T07B.sInt16_10,
+       T07C.int64_60,T07C.sInt16_10,T07B.uInt16_10,T07B.uInt32_50p
+  from $$P07$$ T07A, $$P07$$ T07B, $$P07$$ T07C
+  where     T07A.int64_60   = T07B.int64_60
+        and T07A.sInt16_10  = T07B.sInt16_10
+        and T07B.uInt32_50p < 150
+        and T07B.int64_60   = T07C.int64_60
+        and T07B.sInt16_10  = T07C.sInt16_10
+        and T07B.uInt16_10  = T07C.sInt16_10
+  order by T07B.int64_60, T07B.sInt16_10;
+
+execute P;
+
+?section q37
+-- Type 1 Merge over Type 3 Hash
+-- Sort of outer composite necessary
+-- Type 3 Hash should range repart T01
+-- 3-4-4
+control query shape exchange(merge_join(sort(hybrid_hash_join(cut,cut)),cut));
+prepare P from
+Select T01.int64_100,T07A.int64_60,T01.sInt16_10,T07A.sInt16_10,
+       T07B.int64_60,T07B.sInt16_10,T07A.varchar_100
+  from $$P01$$ T01, $$P07$$ T07A, $$P07$$ T07B
+  where     T01.int64_100    = T07A.int64_60
+        and T01.sInt16_10    = T07A.sInt16_10
+        and T01.int64_100    = T07B.int64_60
+        and T01.sInt16_10    = T07B.sInt16_10
+        and T07A.varchar_100 < 'AK'
+  order by T07B.int64_60;
+
+execute P;
+
+-------------------------------------------------------------
+-- Combinations of joins, group by, order by
+-------------------------------------------------------------
+
+?section qcombo1
+-- Hash Join + GB
+-- SQL/MP style PLAN3 parallel two-way join plan using hash join
+-- Must range repartition T05,                 
+-- since it is not partitioned on the join columns.
+-- Both tables partitioned 3 ways.
+-- Group by is on a non-key column, so must do a hash GB with 
+-- repartitioning.
+----------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(exchange(hybrid_hash_join(
+  exchange(exchange(scan('T05'))),
+  exchange(scan('T06')),
+  type1))));
+prepare P from
+select T05.uInt16_10,count(*)
+  from $$P05$$ T05, $$P06$$ T06
+  where     T05.int64_uniq = T06.uInt32_60
+        and T05.uInt16_10  = T06.sInt16_10
+        and T06.sint16_10  < 5
+  group by T05.uInt16_10
+;
+
+execute P;
+
+?section qcombo2
+-- Merge Join + GB
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join
+-- Both tables are partitioned on the join columns and match exactly.
+-- Group by on leading key column - must repartition, since we did
+-- not specify the second key column in the GB list.
+-- Should do a hash group by, instead of sort groupby, even though
+-- the order by includes the grouping column, because a merge of
+-- sorted streams will not be possible to preserve the sort order
+-- from the group by for the order by, due to the risk of deadlock.
+-- Neither table needs to be sorted for the merge join.
+-- Order by is on the leading key column, but a sort will be needed
+-- because we must repartition for the GB.
+----------------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape 
+ sort(exchange(groupby(exchange(merge_join(
+   exchange(scan('T06A')),
+   exchange(scan('T06B')),type1)))));
+prepare P from
+select T06A.uInt32_60
+  from $$P06$$ T06A, $$P06$$ T06B
+  where     T06A.uInt32_60 = T06B.uint32_60
+        and T06A.sInt16_10 = T06B.sInt16_10
+  group by T06A.uInt32_60
+  having   T06A.uInt32_60 IN (0,15,30,45)
+  order by T06A.uInt32_60
+;
+
+execute P;
+
+?section qcombo2b
+-- CPUS = 6
+-- Merge Join + GB
+-- SQL/MP style PLAN1 parallel two-way join plan using sort merge join.
+-- But, since there are 6 cpus, will need to repartition both
+-- tables to get 6-way parallelism (3 partitions is not enough
+-- to satisfy the requirement).
+-- Both tables are partitioned on the join columns and match exactly.
+-- Group by on leading key column - must repartition, since we did
+-- not specify the second key column in the GB list.
+-- Both tables need to be sorted for the merge join, since a 
+-- merge of sorted streams cannot be done for the repartitioned data,
+-- due to the risk of deadlock.
+-- Should do a hash group by, instead of sort groupby, even though
+-- the order by includes the grouping column, because a merge of
+-- sorted streams will not be possible to preserve the sort order
+-- from the group by for the order by, due to the risk of deadlock.
+-- Neither table needs to be sorted for the merge join.
+-- Order by is on the leading key column, but a sort will be needed
+-- because we must repartition for the GB.
+----------------------------------------------------------------------
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '6'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '6'
+#ifMP
+;
+
+--control query shape exchange(cut);
+control query shape 
+ sort(exchange(groupby(exchange(merge_join(
+   sort(exchange(exchange(scan('T06A')))),
+   sort(exchange(exchange(scan('T06B')))),type1)))));
+prepare P from
+select T06A.uInt32_60
+  from $$P06$$ T06A, $$P06$$ T06B
+  where     T06A.uInt32_60 = T06B.uint32_60
+        and T06A.sInt16_10 = T06B.sInt16_10
+  group by T06A.uInt32_60
+  having   T06A.uInt32_60 IN (0,15,30,45)
+  order by T06A.uInt32_60
+;
+
+
+execute P;
+
+#ifMX
+control query default DEF_NUM_LOCAL_SMP_CPUS '4'
+#ifMX
+#ifMP
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '4'
+#ifMMP
+;
+
+?section qcombo3
+-- Nested Join + GB
+-- SQL/MP style PLAN2 parallel two-way join plan using nested loops join
+-- Both tables partitioned 3 ways
+-- Group by on one key column of the outer table - should pick sort GB.
+------------------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(groupby(nested_join(
+                                         partition_access(scan('T14')),
+                                         split_top_pa(scan('T01')),
+                                         type2)));
+prepare P from
+select T14.sInt32_60,count(*)
+  from $$P14$$ T14, $$P01$$ T01
+  where     T14.sint32_uniq = T01.uInt32_uniq
+        and T14.uNum_10 = 0
+  group by T14.sInt32_60
+  order by T14.sInt32_60;
+
+execute P;
+
+?section qcombo4
+-- 3 way join + GB
+-- Type 3 hash join over nested join
+-- 3-6-3
+-- Group by - should do hash GB + repartitioning
+-- control query shape exchange(cut);
+control query shape exchange(groupby(exchange(hybrid_hash_join(
+          exchange(nested_join(cut,cut)),cut))));
+prepare P from
+Select T05.int64_uniq, T02.int64_uniq, T06.int64_uniq, T06.sInt16_10
+  from $$P05$$ T05, $$P02$$ T02, $$P06$$ T06
+  where     T05.int64_uniq = T02.int64_uniq
+        and T05.int64_uniq < 60
+        and T05.int64_uniq = T06.int64_uniq
+        and T06.sInt16_10 <= 2
+  group by T05.int64_uniq,T02.int64_uniq,T06.int64_uniq,T06.sInt16_10 
+;
+
+execute P;
+
+?section qcombo5
+-- 3 way join + GB + Order By
+-- Type 2 Nested over Type 1 Merge
+-- 4-4-4
+-- Group by - should do Sort GB
+control query shape exchange(groupby(nested_join(merge_join(cut,cut),cut)));
+prepare P from
+Select T07A.int64_60,T07B.int64_60,T07A.sInt16_10,T07B.sInt16_10,count(*)
+  from $$P07$$ T07A, $$P07$$ T07B, $$P04$$ T04
+  where     T07A.int64_60  = T07B.int64_60
+        and T07A.sInt16_10 = T07B.sInt16_10
+        and T07A.int64_60  = T04.sInt32_uniq
+        and T04.uInt32_50p < 30
+  group by T07A.sInt16_10,T07B.sInt16_10,
+           T07A.int64_60,T07B.int64_60
+  order by T07A.int64_60,T07A.sInt16_10
+;
+
+execute P;
+
+?section qcombo6
+-- Select aggregate + order by
+prepare P from
+Select min(T00.char_10)
+  from $$P00$$ T00
+  order by 1
+;
+
+execute P;
+
+?section qcombo7
+-- Join with logical partitioning on a derived table that has a 
+-- Full GB that can be pushed into DP2.
+----------------------------------------------------------------
+--control query shape exchange(cut);
+control query shape exchange(hybrid_hash_join(
+  exchange(scan('T14')),
+  exchange(cut),
+  type1));
+prepare P from
+select T14.sInt32_60, T05key1
+  from $$P14$$ T14, (select sInt32_60
+                    from $$P05$$
+                    group by sInt32_60) T05(T05key1)
+  where     T14.sInt32_60 = T05key1
+        and T14.int64_100 < 5
+;
+
+execute P;
+

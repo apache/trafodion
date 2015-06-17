@@ -1,0 +1,16 @@
+>>obey TEST_1_1_1_9(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER trig9 BEFORE DELETE
++>	ON tab1A
++>	REFERENCING OLD AS oldrow
++>	FOR EACH ROW
++>
++>		SIGNAL SQLSTATE 's1111' ('this is a message');
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>LOG;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ public:
   // when SIMPLE_COST_MODEL CQD is set to ON.
   // ---------------------------------------------------------------------
   Cost* scmComputeOperatorCost( RelExpr* op,
-				const Context* myContext,
+                                const PlanWorkSpace* pws,
 				Lng32& countOfStreams
 				); 
 
@@ -182,7 +182,6 @@ public:
   // and returns the result.
   // ---------------------------------------------------------------------
   virtual Cost* scmComputePlanCost( RelExpr* op,
-				    const Context* myContext,
 				    const PlanWorkSpace* pws,
 				    Lng32  planNumber
 				    );
@@ -239,8 +238,8 @@ protected:
                                            ) = 0;
 
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-                                             const Context* myContext,
-                                             Lng32& countOfStreams
+                                                const PlanWorkSpace* pws,
+                                                Lng32& countOfStreams
                                            ) = 0;
 
   //  Wrapper for SCM Cost constructor, used by SCM only.
@@ -435,7 +434,7 @@ protected:
                                             Lng32& );
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr* op, const Context* myContext);
@@ -476,7 +475,7 @@ protected:
                                             Lng32&    countOfStreams);
   // SCM cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32&    countOfStreams);
 
   // SCM method
@@ -653,7 +652,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-						const Context* myContext,
+                                                const PlanWorkSpace* pws,
 						Lng32& countOfStreams
 						);
 }; // class CostMethodFileScan
@@ -677,7 +676,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-						const Context* myContext,
+                                                const PlanWorkSpace* pws,
 						Lng32& countOfStreams
 						);
 }; // class CostMethodDP2Scan
@@ -718,7 +717,7 @@ protected:
   // For SCM.
   // ---------------------------------------------------------------------
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-						const Context* myContext,
+                                                const PlanWorkSpace* pws,
 						Lng32& countOfStreams
 						);
   const CostScalar baseCpuCost_;
@@ -764,7 +763,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32&    countOfStreams);
 
   CostScalar scmComputeOverflowCost( CostScalar numInputTuples, CostScalar inputRowSize );
@@ -963,7 +962,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32&    countOfStreams);
   const double bufferCount_;
 
@@ -1017,7 +1016,7 @@ protected:
 
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   CostScalar scmComputeOverflowCost( CostScalar numInputTuples, CostScalar inputRowSize, CostScalar numOutputTuples, CostScalar outputRowSize );
@@ -1133,7 +1132,7 @@ protected:
 
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-						const Context* myContext,
+                                                const PlanWorkSpace* pws,
 						Lng32& countOfStreams
 						);
 private:
@@ -1427,7 +1426,7 @@ protected:
 
   // SCM costing method
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   CostScalar scmComputeOverflowCost( CostScalar numBuildTuples, CostScalar buildRowSize, CostScalar numProbeTuples, CostScalar probeRowSize);
@@ -1613,7 +1612,7 @@ protected:
                                             Lng32& countOfStreams);
 
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual Cost* mergeNoLegsBlocking( const CostPtr leftChildCost,
@@ -1709,7 +1708,7 @@ protected:
 
   // SCM costing method
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual Cost* mergeNoLegsBlocking( const CostPtr leftChildCost,
@@ -1784,7 +1783,7 @@ protected:
 
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 }; // class CostMethodNestedJoinFlow
@@ -1825,7 +1824,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual Cost* mergeNoLegsBlocking( const CostPtr leftChildCost,
@@ -1893,7 +1892,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 private:
 
@@ -1924,7 +1923,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 
@@ -1957,7 +1956,7 @@ protected:
 
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 
@@ -1986,7 +1985,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 };                                     // class CostMethodStoredProc
@@ -2011,6 +2010,7 @@ protected:
 
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
 					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr*, const Context *);
@@ -2101,6 +2101,7 @@ protected:
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
 					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams) = 0;
 
   // Common functions to cost DP2 operations.
@@ -2161,6 +2162,7 @@ protected:
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
 					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr*, const Context *);
@@ -2189,6 +2191,7 @@ protected:
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
 					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 }; // class CostMethodDP2Delete
@@ -2213,7 +2216,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
 
@@ -2246,7 +2249,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
+                                               const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr* op, const Context* myContext);
@@ -2288,7 +2291,7 @@ protected:
                                             Lng32& countOfStreams);
   // SCM Cost function
   virtual Cost* scmComputeOperatorCostInternal( RelExpr* op,
-                                                const Context* myContext,
+                                                const PlanWorkSpace* pws,
                                                 Lng32& countOfStreams
                                               );
   CostScalar cpuCostToProduceAllRows_;
@@ -2318,7 +2321,7 @@ protected:
                                              Lng32&    countOfStreams);
    // SCM cost function
    virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-                                                const Context* myContext,
+                                                const PlanWorkSpace* pws,
                                                 Lng32&    countOfStreams);
 
 };
@@ -2343,8 +2346,8 @@ protected:
 
      // SCM cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-                                                const Context* myContext,
-                                                Lng32&    countOfStreams);
+                                               const PlanWorkSpace* pws,
+                                               Lng32&    countOfStreams);
 
 };                              
 
@@ -2369,8 +2372,8 @@ protected:
 
      // SCM cost function
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-                                                const Context* myContext,
-                                                Lng32&    countOfStreams);
+                                               const PlanWorkSpace* pws,
+                                               Lng32&    countOfStreams);
 
 };
 #endif /* COSTMETHOD_H */

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -113,6 +113,7 @@ public:
   
   const LIST(IndexDesc *) &getIndexes() const              { return indexes_; }
   const LIST(IndexDesc *) &getUniqueIndexes() const        { return uniqueIndexes_; }
+  NABoolean hasUniqueIndexes() const       { return uniqueIndexes_.entries() > 0; }
 
   NABoolean hasSecondaryIndexes() const      { return indexes_.entries() > 1; }
   const LIST(IndexDesc *) &getVerticalPartitions() const { return vertParts_; }
@@ -167,6 +168,10 @@ public:
   void setSelectivityHint(SelectivityHint *hint)      {selectivityHint_ = hint; }
   void setCardinalityHint(CardinalityHint *hint)      {cardinalityHint_ = hint; }
   void setPrimaryKeyColumns();
+
+  ValueIdList &hbaseTSList() { return hbaseTSList_; }
+  ValueIdList &hbaseVersionList() { return hbaseVersionList_; }
+
   // ---------------------------------------------------------------------
   // Needed by Collections classes
   // ---------------------------------------------------------------------
@@ -311,6 +316,19 @@ private:
   // Lock mode
   // CONTROLs that are in effect
   // ---------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // A List of ValueIds for hbase timestamp values for each of the column
+  // in colList_.
+  // ---------------------------------------------------------------------
+  ValueIdList  hbaseTSList_;
+
+  // ---------------------------------------------------------------------
+  // A List of ValueIds for hbase version values for each of the column
+  // in colList_.
+  // ---------------------------------------------------------------------
+  ValueIdList  hbaseVersionList_;
+
 
 }; // class TableDesc
 

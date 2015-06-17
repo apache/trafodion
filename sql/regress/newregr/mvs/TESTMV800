@@ -1,0 +1,245 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Testmv800: basic operation of all different IUD operations of ON STATEMENT MJV
+--
+
+set schema catmvs.mvschm;
+obey TESTMV800(clean_up);
+log LOGMV800 clear;
+obey TESTMV800(set_up);
+obey TESTMV800(setup_statements);
+obey TESTMV800(test1);
+obey TESTMV800(test2);
+obey TESTMV800(test3);
+obey TESTMV800(test4);
+obey TESTMV800(test5);
+obey TESTMV800(test6);
+obey TESTMV800(test7);
+obey TESTMV800(clean_up);
+exit;
+
+?section set_up
+create table T800_T1 (
+          id int no default not null
+	, name char(30) no default not null
+	, age smallint no default not null
+	, primary key(id)
+)
+store by (id)
+attribute all mvs allowed
+;
+
+create table T800_T2 (
+	  owner int no default not null
+	, car char(30) no default not null
+	, year_model smallint no default not null
+)
+attribute all mvs allowed
+;
+
+-- logging of all triggers activated
+create table T800_T3 (
+	  event char(50) no default not null
+	, current_at timestamp default current 
+)
+;
+
+create materialized view T800_MV1
+refresh on statement
+initialize on create
+as
+select name, car
+from T800_T1 a, T800_T2 b
+where a.id = b.owner;
+
+?section setup_statements
+prepare stat1 from
+select name, car
+from T800_MV1
+order by name,car;
+
+prepare stat2 from
+select name, car
+from T800_T1 a, T800_T2 b
+where a.id = b.owner
+order by name,car;
+
+?section clean_up
+drop materialized view T800_MV1;
+drop table T800_T1;
+drop table T800_T2;
+drop table T800_T3;
+
+?section test1
+insert into T800_T1 values (1,'Mickey Mouse',5);
+
+-- expected: MV still empty.
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+insert into T800_T2 values (1,'Mustang',1956);
+
+-- expected: Now Mickey has a Mustang
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+insert into T800_T2 values (1,'Schevrolet Sunbird',2800);
+
+-- expected: Mickey has both Mustang and Schevrolet Sunbird
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+-- Massive updates
+insert into T800_T1
+values  (2,'Donald',3)
+       ,(3,'Bugs Bunny',43)
+       ,(4,'Roger Rabbit',21)
+       ,(5,'Snow white',178)
+       ,(6,'Sinderella',18)
+       ,(7,'Homer Simpson',3)
+       ;
+
+insert into T800_T2
+values  (2,'Mitzubishi',1986)
+       ,(3,'Megan',2800)
+       ,(4,'Subaru',2000)
+       ,(5,'Honda Accord',1988)
+       ,(6,'Rolls Roise',1972)
+       ,(8,'Lantis',1968)
+       ,(8,'Lada',2002)
+       ,(3,'Suzuki Swift',1980)
+       ,(4,'Opel Astra',1999)
+       ,(8,'Ford Fiesta',1980)
+       ;
+
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+?section test2
+-- direct update of MV ('name' is not part of the join predicate)
+update T800_T1 set name = 'Donald Duck'
+where id = 2;
+
+-- expected: 'Donald Duck' owns 'Mitzubishi'
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+-- direct update of MV ('car' is not part of the join predicate)
+update T800_T2 set car = 'Mazda 626'
+where owner = 6;
+
+-- expected: 'Sinderella' owns 'Mazda 626'
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+-- direct update of MV. Only 'car' column should be updated in MV.
+-- 'year' column is not in use (irelevant).
+update T800_T2 set car = 'Rover', year_model = 2800
+where owner = 4;
+
+-- expected: 'Roger Rabbit' owns 2 'Rover' cars
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+?section test3
+-- indirect update. owner is part of the join predicate.
+update T800_T2 set owner = 7
+where owner = 8 and year_model = 1980;
+
+-- expected: 'Homer Simpson' owns now 'Ford Fiesta'
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+?section test4
+-- irrelevant update. MV not even accessed.
+
+prepare countIt from
+  select count(*) as NUMBER_OF_MV_ACCESSES
+  from table (explain(NULL, 'XX'))
+  where tname like '%T800_MV1%';
+
+prepare XX from
+update T800_T2 set year_model = 2002
+where owner = 8 and car = 'Lantis';
+
+--expected: 0
+execute countIt;
+
+?section test5
+-- delete records from base tables. MV updated accordingly.
+delete from T800_T2 where owner = 3 and car = 'Suzuki Swift';
+
+-- expected: 'Bugs Bunny' sold his 'Suzuki Swift' (doesn't own it anymore)
+obey compare;
+sh diff TEMP1 TEMP2 >> LOGMV800;
+log LOGMV800;
+
+?section test6
+-- ensure the histogram of the temp-table is not faked but copied from the
+-- subject table
+
+update statistics for table T800_T1 on every column;
+update statistics for table T800_T2 on every column;
+
+-- compareCardinality fetches only the two important rows from the query plan.
+-- We are interested only in the update on T800_T2 and on the scan from its
+-- temp-table. These two operations MUST have identical cardinality because
+-- the histogram used for the temp-table scan should be actually the histogram
+-- of the subject table.
+
+prepare compareCardinality from
+  select operator,
+         substring(tname,1,30) as Table_Name, 
+         cast (cardinality as numeric(16,2)) as Cardinality
+    from table (explain(NULL, 'STMT'))
+    where (operator = 'SUBSET_UPDATE' and tname = 'CATMVS.MVSCHM.T800_T2') or
+    	  (operator = 'FILE_SCAN' and tname = 'CATMVS.MVSCHM.T800_T2__TEMP')
+    order by seq_num DESC;
+
+-- indirect-update the T800_MV1, so the temp-table is scanned.
+prepare STMT from
+update T800_T2 set owner = 7;
+
+--expected: both scan from T800_T2 and scan from T800_T2's temp-table has
+-- same cardinality
+
+execute compareCardinality;
+
+?section test7
+-- ensure the insert into the temp-table is optimized (inserts NEW values only)
+-- and doesn't use the merge-union with two tuples sub-tree.
+
+-- prepare an indirect-update statement - should use the optimized temp-table insert
+prepare STMT from update T800_T2 set owner = 7;
+
+prepare ensureOptimizedTempInsert from
+  select count(*)
+    from table (explain(NULL, 'STMT'))
+    where operator = 'VALUES';
+
+-- expected: 0 rows
+execute ensureOptimizedTempInsert;

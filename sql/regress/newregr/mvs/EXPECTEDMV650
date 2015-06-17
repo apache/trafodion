@@ -1,0 +1,1450 @@
+>>
+>>obey TESTMV650(SET_UP);
+>>--------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>
+>>--insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+>>--(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '4');
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>-- Create the base tables
+>>obey DUPENV(CREATE_SIMPLE);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- The AUTOMATIC RANGELOG attribute will:
+>>-- (1) Force the utility to perform duplicate elimination
+>>-- (2) Allow the VSBB range-logging.
+>>
+>>create table Dup_A (prim integer NOT NULL NOT DROPPABLE,
++>                   ch char(2),
++>                   PRIMARY KEY (prim desc) NOT DROPPABLE) 
++>                   store by (prim desc)
++>				   location $$partition1$$
++>				   attribute automatic rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE Dup_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table Dup_B (prim integer NOT NULL NOT DROPPABLE,
++>                    prim2 char(20) NOT NULL NOT DROPPABLE,
++>                    ch char(2),
++>                    PRIMARY KEY (prim,prim2 desc) NOT DROPPABLE) 
++>                    store by (prim asc, prim2 desc)
++>					attribute automatic rangelog;
+
+--- SQL operation complete.
+>>ALTER TABLE Dup_B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into Dup_A values (10,'a'),(20,'b'),(35,'c'),(45,'d'),(50,'e'),(55,'f'), (2000, 'AA');
+
+--- 7 row(s) inserted.
+>>insert into Dup_B values (10,'a1','a'),(20,'b1','b'),(35,'c1','c'),(45,'d1','d'),(50,'e1','e'), (2000, '2', 'AA');
+
+--- 6 row(s) inserted.
+>>
+>>create materialized view Dup_MV2
++>	Refresh on request
++>	initialized on refresh
++>	as 
++>	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_B
++>	Group by Dup_B.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV2_331779953_4858 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>--create materialized view Dup_MV2
+>>--	Refresh on request
+>>--	initialized on refresh
+>>--	as 
+>>--	select Dup_A.prim,Dup_B.prim2
+>>--	from Dup_A,Dup_B 
+>>--	where Dup_A.prim = Dup_B.prim;
+>>
+>>create materialized view Dup_MV3
++>	Refresh on request
++>	initialized on refresh
++>	as 
++>	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
++>	from Dup_A
++>	Group by Dup_A.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV3_189746663_4858 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG1;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG1 add Dup_MV2, Dup_MV3;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG2;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG2 add Dup_MV2;
+
+--- SQL operation complete.
+>>
+>>create mvgroup Dup_MVG3;
+
+--- SQL operation complete.
+>>alter mvgroup Dup_MVG3 add Dup_MV2, Dup_MV3;
+
+--- SQL operation complete.
+>>
+>>obey DUPENV(CREATE_MV_DUMMY);
+>>create materialized view Dup_MV1_dummy
++>	Refresh on request
++>	initialized on create
++>	as 
++>	select Dup_A.ch,sum(Dup_A.prim) as sum_prim1
++>	from Dup_A
++>	Group by Dup_A.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV1_DUMMY_918475773_4858 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV1_dummy attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create materialized view Dup_MV2_dummy
++>	Refresh on request
++>	initialized on create
++>	as 
++>	select Dup_B.ch,sum(Dup_B.prim) as sum_prim1, Avg(Dup_B.prim) as avg_prim1
++>	from Dup_B
++>	Group by Dup_B.ch;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DUP_MV2_DUMMY_433546883_4858 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv Dup_MV2_dummy attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>refresh MVGroup Dup_MVG1 with MVLOG cleanup;
+
+--- SQL operation complete.
+>>
+>>prepare select_iud_log_b from
++> select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>          end
++>	, "@IGNORE"
++>	, prim
++> from table(iud_log_table dup_b)
++> order by prim asc,prim2 desc, "@TS";
+
+--- SQL command prepared.
+>>
+>>
+>>prepare select_iud_log_a from
++> select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>          end
++>	, "@IGNORE"
++>	, prim
++> from table(iud_log_table dup_a)
++> order by prim desc, "@TS";
+
+--- SQL command prepared.
+>>
+>>---------------------------------------------
+>>--obey PREPARE_DDL_SELECTS;
+>>
+>>-- Run Tests
+>>	set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>	obey TESTMV650(TEST1);
+>>---------------------------------------------
+>>
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>control query default insert_vsbb 'OFF';
+
+--- SQL operation complete.
+>>
+>> Insert NOMVLOG into Dup_B
++>   Values (1001,'www','I1'),(1004,'wwt','aa'),(1005,'rrr','B1'),(1007,'qqq','ff'),(1010,'ppp','gg'),
++>   (1011,'nlmlm','zz'),(1013,'naaa','ff'),(1015,'lll','nn'),(1016,'iii','uu'),(1017,'hhh','PP'),(1026,'gggggg','y'),
++>   (1035,'fff','ii'),(1037,'eeee','w'),(1040,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>
+>>delete NOMVLOG from Dup_B where prim = 1004;
+
+--- 1 row(s) deleted.
+>>
+>>update NOMVLOG Dup_B 
++>set ch = 'up'
++>where prim = 1015;
+
+--- 1 row(s) updated.
+>>
+>>execute select_iud_log_b;
+
+--- 0 row(s) selected.
+>>
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>
+>>delete from table(iud_log_table dup_b);
+
+--- 0 row(s) deleted.
+>>
+>>drop index I2;
+
+--- SQL operation complete.
+>>---------------------------------------------
+>>	obey TESTMV650(TEST2);
+>>---------------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>alter table Dup_B  Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>Insert NOMVLOG into Dup_B
++>	Values (1101,'www','I1'),(1104,'wwt','aa'),(1105,'rrr','B1'),(1107,'qqq','ff'),(1110,'ppp','gg'),
++>	(1111,'nlmlm','zz'),(1113,'naaa','ff'),(1115,'lll','nn'),(1116,'iii','uu'),(1117,'hhh','PP'),(1126,'gggggg','y'),
++>	(1135,'fff','ii'),(1137,'eeee','w'),(1140,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>execute select_iud_log_b;
+
+--- 0 row(s) selected.
+>>
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>
+>>delete from table(iud_log_table dup_b);
+
+--- 0 row(s) deleted.
+>>drop index I2;
+
+--- SQL operation complete.
+>>---------------------------------------------
+>>	obey TESTMV650(TEST3);
+>>---------------------------------------------
+>>delete from  Dup_A;
+
+--- 7 row(s) deleted.
+>>delete from table(iud_log_table dup_a);
+
+--- 7 row(s) deleted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts  NOMVLOG into Dup_A(prim,ch) 
++>Values  (2035,'ii'),(2034,'w'),(2033,'kk'),
++>		(2023,'PP'),(2022,'y'),(2016,'uu'),(2014,'nn'),(2013,'ff'),(2011,'zz'),
++>		(2006,'I1'),(2005,'aa'),(2003,'B1'),(2002,'ff'),(2001,'gg');
+
+--- 14 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>execute select_iud_log_a;
+
+--- 0 row(s) selected.
+>>
+>>
+>>delete from table(iud_log_table dup_a);
+
+--- 0 row(s) deleted.
+>>
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST4);
+>>-------------------------------------------------
+>>
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>alter table Dup_B  Attributes manual RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>Insert NOMVLOG into Dup_B
++>	Values (1201,'www','I1'),(1204,'wwt','aa'),(1205,'rrr','B1'),(1207,'qqq','ff'),(1210,'ppp','gg'),
++>	(1211,'nlmlm','zz'),(1213,'naaa','ff'),(1215,'lll','nn'),(1216,'iii','uu'),(1217,'hhh','PP'),(1226,'gggggg','y'),
++>	(1235,'fff','ii'),(1237,'eeee','w'),(1240,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>delete NOMVLOG from Dup_B where prim = 1213;
+
+--- 1 row(s) deleted.
+>>
+>>update NOMVLOG Dup_B 
++>set ch = 'up'
++>where prim = 1237;
+
+--- 1 row(s) updated.
+>>
+>>execute select_iud_log_b;
+
+--- 0 row(s) selected.
+>>
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>delete from table(iud_log_table dup_b);
+
+--- 0 row(s) deleted.
+>>drop index I2;
+
+--- SQL operation complete.
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST5);
+>>-------------------------------------------------
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>alter table Dup_B  Attributes mixed RANGELOG ;
+
+--- SQL operation complete.
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>
+>>Insert NOMVLOG into Dup_B
++>	Values (1301,'www','I1'),(1304,'wwt','aa'),(1305,'rrr','B1'),(1307,'qqq','ff'),(1310,'ppp','gg'),
++>	(1311,'nlmlm','zz'),(1313,'naaa','ff'),(1315,'lll','nn'),(1316,'iii','uu'),(1317,'hhh','PP'),(1326,'gggggg','y'),
++>	(1335,'fff','ii'),(1337,'eeee','w'),(1340,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>delete NOMVLOG from Dup_B where prim = 1313;
+
+--- 1 row(s) deleted.
+>>
+>>update NOMVLOG Dup_B 
++>set ch = 'up'
++>where prim = 1337;
+
+--- 1 row(s) updated.
+>>
+>>execute select_iud_log_b;
+
+--- 0 row(s) selected.
+>>
+>>Insert into Dup_B
++>	Values (3301,'www','I1'),(3304,'wwt','aa'),(3305,'rrr','B1'),(3307,'qqq','ff'),(3310,'ppp','gg'),
++>	(3311,'nlmlm','zz'),(3313,'naaa','ff'),(3315,'lll','nn'),(3316,'iii','uu'),(3317,'hhh','PP'),(3326,'gggggg','y'),
++>	(3335,'fff','ii'),(3337,'eeee','w'),(3340,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     PRIM       
+-----------  -----------  ----------  -----------
+
+        103  INSERT                0         3301
+        103  INSERT                0         3304
+        103  INSERT                0         3305
+        103  INSERT                0         3307
+        103  INSERT                0         3310
+        103  INSERT                0         3311
+        103  INSERT                0         3313
+        103  INSERT                0         3315
+        103  INSERT                0         3316
+        103  INSERT                0         3317
+        103  INSERT                0         3326
+        103  INSERT                0         3335
+        103  INSERT                0         3337
+        103  INSERT                0         3340
+
+--- 14 row(s) selected.
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>delete from table(iud_log_table dup_b);
+
+--- 14 row(s) deleted.
+>>drop index I2;
+
+--- SQL operation complete.
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST6);
+>>-------------------------------------------------
+>>
+>>create table t1_650
++>like Dup_B;
+
+--- SQL operation complete.
+>>ALTER TABLE t1_650 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>Insert NOMVLOG into t1_650
++>	Values (1301,'www','I1'),(1304,'wwt','aa'),(1305,'rrr','B1'),(1307,'qqq','ff'),(1310,'ppp','gg'),
++>	(1311,'nlmlm','zz'),(1313,'naaa','ff'),(1315,'lll','nn'),(1316,'iii','uu'),(1317,'hhh','PP'),(1326,'gggggg','y'),
++>	(1335,'fff','ii'),(1337,'eeee','w'),(1340,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>delete NOMVLOG from t1_650 where prim = 1313;
+
+--- 1 row(s) deleted.
+>>
+>>update NOMVLOG t1_650 
++>set ch = 'up'
++>where prim = 1337;
+
+--- 1 row(s) updated.
+>>
+>>select * from table(iud_log_table t1_650);
+
+*** ERROR[4082] Object CATMVS.MVSCHM.T1_650 (IudLog) does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>alter table t1_650 Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>Insert NOMVLOG into t1_650
++>	Values (1401,'www','I1'),(1404,'wwt','aa'),(1405,'rrr','B1'),(1407,'qqq','ff'),(1410,'ppp','gg'),
++>	(1411,'nlmlm','zz'),(1413,'naaa','ff'),(1415,'lll','nn'),(1416,'iii','uu'),(1417,'hhh','PP'),(1426,'gggggg','y'),
++>	(1435,'fff','ii'),(1437,'eeee','w'),(1440,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>select * from table(iud_log_table t1_650);
+
+*** ERROR[4082] Object CATMVS.MVSCHM.T1_650 (IudLog) does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>delete NOMVLOG from t1_650;
+
+--- 27 row(s) deleted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table t1_650 attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts  NOMVLOG into t1_650(prim,prim2,ch) 
++>Values   (1501,'www','I1'),(1504,'wwt','aa'),(1505,'rrr','B1'),(1507,'qqq','ff'),(1510,'ppp','gg'),
++>	(1511,'nlmlm','zz'),(1513,'naaa','ff'),(1515,'lll','nn'),(1516,'iii','uu'),(1517,'hhh','PP'),(1526,'gggggg','y'),
++>	(1535,'fff','ii'),(1537,'eeee','w'),(1540,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table t1_650 attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>
+>>select * from table(iud_log_table t1_650);
+
+*** ERROR[4082] Object CATMVS.MVSCHM.T1_650 (IudLog) does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop table t1_650;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST7);
+>>-------------------------------------------------
+>>
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>alter table Dup_B  Attributes manual RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>Insert into Dup_B
++>	Values (1401,'www','I1'),(1404,'wwt','aa'),(1405,'rrr','B1'),(1407,'qqq','ff'),(1410,'ppp','gg'),
++>	(1411,'nlmlm','zz'),(1413,'naaa','ff'),(1415,'lll','nn'),(1416,'iii','uu'),(1417,'hhh','PP'),(1426,'gggggg','y'),
++>	(1435,'fff','ii'),(1437,'eeee','w'),(1440,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>delete from Dup_B where prim = 1413;
+
+--- 1 row(s) deleted.
+>>
+>>update Dup_B 
++>set ch = 'up'
++>where prim = 1437;
+
+--- 1 row(s) updated.
+>>
+>>execute select_iud_log_b;
+
+--- 0 row(s) selected.
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>delete from table(iud_log_table dup_b);
+
+--- 0 row(s) deleted.
+>>
+>>drop index I2;
+
+--- SQL operation complete.
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST8);
+>>-------------------------------------------------
+>>Alter table Dup_B Attributes automatic RANGELOG;
+
+--- SQL operation complete.
+>>Alter table Dup_B Attributes insertlog;
+
+--- SQL operation complete.
+>>
+>>CREATE INDEX I2 on DUP_b (ch);
+
+--- SQL operation complete.
+>>
+>>Insert into Dup_B
++>	Values (4501,'www','I1'),(4504,'wwt','aa'),(4505,'rrr','B1'),(4507,'qqq','ff'),(4510,'ppp','gg'),
++>	(4511,'nlmlm','zz'),(4513,'naaa','ff'),(4515,'lll','nn'),(4516,'iii','uu'),(4517,'hhh','PP'),(4526,'gggggg','y'),
++>	(4535,'fff','ii'),(4537,'eeee','w'),(4540,'ddd','kk');
+
+--- 14 row(s) inserted.
+>>
+>>delete from Dup_B where prim = 4513;
+
+--- 1 row(s) deleted.
+>>
+>>update Dup_B 
++>set ch = 'up'
++>where prim = 4537;
+
+--- 1 row(s) updated.
+>>
+>>execute select_iud_log_b;
+
+@EPOCH       (EXPR)       @IGNORE     PRIM       
+-----------  -----------  ----------  -----------
+
+        103  INSERT                0         4501
+        103  INSERT                0         4504
+       -103  BEGIN-RANGE           0         4505
+       -103  END-RANGE             0         4540
+
+--- 4 row(s) selected.
+>>obey TESTMV650(compare_b);
+>>---------------------------------------------
+>>PREPARE stat1 FROM
++>select PRIM ,PRIM2 ,CH from dup_b
++>order by prim;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select PRIM ,PRIM2 ,CH from table(index_table i2)
++>order by prim;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------
+>>delete from table(iud_log_table dup_b);
+
+--- 4 row(s) deleted.
+>>
+>>drop index I2;
+
+--- SQL operation complete.
+>>-------------------------------------------------
+>>	obey TESTMV650(TEST9);
+>>-------------------------------------------------
+>>refresh Dup_MV2 recompute;
+
+--- SQL operation complete.
+>>
+>>create mv Dup_MV5
++>	refresh on request
++>	initialize on create
++>	as
++>	select count(*) cnt from Dup_MV2;
+
+--- SQL operation complete.
+>>ALTER MV Dup_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>Alter mv Dup_MV2 MVAttribute NO AUDITONREFRESH;
+
+--- SQL operation complete.
+>>
+>>delete from Dup_MV2;
+
+--- 20 row(s) deleted.
+>>
+>>select "@EPOCH"
++>        , case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>        end
++>	, "@IGNORE"
++>from table(iud_log_table dup_mv2)
++>order by "@TS";
+
+--- 0 row(s) selected.
+>>
+>>delete from table(iud_log_table dup_mv2);
+
+--- 0 row(s) deleted.
+>>
+>>drop mv Dup_MV5;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------
+>>
+>>	obey TESTMV650(TEST10_AUTOMATIC_RANGELOG);
+>>---------------------------------------------
+>>delete from  Dup_A;
+
+--- 14 row(s) deleted.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts  into Dup_A(prim,ch) 
++>Values  (2035,'ii'),(2034,'w'),(2033,'kk'),
++>		(2023,'PP'),(2022,'y'),(2016,'uu'),(2014,'nn'),(2013,'ff'),(2011,'zz'),
++>		(2006,'I1'),(2005,'aa'),(2003,'B1'),(2002,'ff'),(2001,'gg');
+
+--- 14 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     PRIM       
+-----------  -----------  ----------  -----------
+
+       -103  BEGIN-RANGE           0         2035
+       -103  END-RANGE             0         2001
+
+--- 2 row(s) selected.
+>>delete from table(iud_log_table dup_a);
+
+--- 2 row(s) deleted.
+>>
+>>---------------------------------------------
+>>	obey TESTMV650(TEST10_NO_RANGELOG);
+>>---------------------------------------------
+>>delete from  Dup_A;
+
+--- 14 row(s) deleted.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>alter table Dup_A  Attributes no RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts into Dup_A(prim,ch) 
++>Values  (2035,'ii'),(2034,'w'),(2033,'kk'),
++>		(2023,'PP'),(2022,'y'),(2016,'uu'),(2014,'nn'),(2013,'ff'),(2011,'zz'),
++>		(2006,'I1'),(2005,'aa'),(2003,'B1'),(2002,'ff'),(2001,'gg');
+
+--- 14 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     PRIM       
+-----------  -----------  ----------  -----------
+
+        103  INSERT                0         2035
+        103  INSERT                0         2034
+        103  INSERT                0         2033
+        103  INSERT                0         2023
+        103  INSERT                0         2022
+        103  INSERT                0         2016
+        103  INSERT                0         2014
+        103  INSERT                0         2013
+        103  INSERT                0         2011
+        103  INSERT                0         2006
+        103  INSERT                0         2005
+        103  INSERT                0         2003
+        103  INSERT                0         2002
+        103  INSERT                0         2001
+
+--- 14 row(s) selected.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>---------------------------------------------
+>>	obey TESTMV650(TEST10_MIXED_RANGELOG);
+>>---------------------------------------------
+>>delete from  Dup_A;
+
+--- 14 row(s) deleted.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>alter table Dup_A  Attributes mixed RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts into Dup_A(prim,ch) 
++>Values  (2035,'ii'),(2034,'w'),(2033,'kk'),
++>		(2023,'PP'),(2022,'y'),(2016,'uu'),(2014,'nn'),(2013,'ff'),(2011,'zz'),
++>		(2006,'I1'),(2005,'aa'),(2003,'B1'),(2002,'ff'),(2001,'gg');
+
+--- 14 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>execute select_iud_log_a;
+
+@EPOCH       (EXPR)       @IGNORE     PRIM       
+-----------  -----------  ----------  -----------
+
+        103  INSERT                0         2035
+        103  INSERT                0         2034
+        103  INSERT                0         2033
+        103  INSERT                0         2023
+        103  INSERT                0         2022
+        103  INSERT                0         2016
+        103  INSERT                0         2014
+        103  INSERT                0         2013
+        103  INSERT                0         2011
+        103  INSERT                0         2006
+        103  INSERT                0         2005
+        103  INSERT                0         2003
+        103  INSERT                0         2002
+        103  INSERT                0         2001
+
+--- 14 row(s) selected.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>---------------------------------------------
+>>	obey TESTMV650(TEST10_MANUAL_RANGELOG);
+>>---------------------------------------------
+>>delete from  Dup_A;
+
+--- 14 row(s) deleted.
+>>delete from table(iud_log_table dup_a);
+
+--- 14 row(s) deleted.
+>>
+>>alter table Dup_A  Attributes manual RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts  into Dup_A(prim,ch) 
++>Values  (2035,'ii'),(2034,'w'),(2033,'kk'),
++>		(2023,'PP'),(2022,'y'),(2016,'uu'),(2014,'nn'),(2013,'ff'),(2011,'zz'),
++>		(2006,'I1'),(2005,'aa'),(2003,'B1'),(2002,'ff'),(2001,'gg');
+
+--- 14 row(s) inserted.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table Dup_A attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>execute select_iud_log_a;
+
+--- 0 row(s) selected.
+>>delete from table(iud_log_table dup_a);
+
+--- 0 row(s) deleted.
+>>
+>>---------------------------------------------
+>>	obey TESTMV650(TEST11);
+>>-- Make sure that VSBB works fine even when VSBB_TEST_MODE is turned off.
+>>---------------------------------------------
+>>
+>>control query default vsbb_test_mode 'OFF';
+
+--- SQL operation complete.
+>>set parserflags 3;
+
+--- SQL operation complete.
+>>
+>>obey CREATERANGE(CREAT);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop table Range_Factor2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor5;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor10;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR10 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR10 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table Range_Factor100;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.RANGE_FACTOR100 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.RANGE_FACTOR100 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>create table Range_Factor2(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor3(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor5(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor10(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor100(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>create table Range_Factor1000(TS TIMESTAMP);
+
+--- SQL operation complete.
+>>
+>>insert into Range_Factor2(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 2 row(s) inserted.
+>>
+>>insert into Range_Factor3(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 3 row(s) inserted.
+>>
+>>
+>>insert into Range_Factor5(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 5 row(s) inserted.
+>>
+>>insert into Range_Factor10(TS)
++>values 
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP),
++>(CURRENT_TIMESTAMP);
+
+--- 10 row(s) inserted.
+>>
+>>insert into Range_Factor100(TS)
++>select CURRENT_TIMESTAMP
++>from Range_Factor10 p10,Range_Factor10 P100;
+
+--- 100 row(s) inserted.
+>>
+>>insert into Range_Factor1000(TS)
++>select CURRENT_TIMESTAMP
++>from Range_Factor10 p10,Range_Factor100 P1000;
+
+--- 1000 row(s) inserted.
+>>
+>>
+>>create table t650_source
++>  ( pk   int not null primary key,
++>    data int)
++>    store by primary key
++>    attribute automatic rangelog, all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table t650_target like t650_source;
+
+--- SQL operation complete.
+>>alter  table t650_target attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into t650_source
++>  select runningcount(*), runningcount(*)
++>  from Range_Factor1000 t1, Range_Factor2 t2
++>  sequence by t1.ts, t2.ts;
+
+--- 2000 row(s) inserted.
+>>
+>>update statistics for table t650_source on every column;
+
+--- SQL operation complete.
+>>
+>>create mv mv650
++>  refresh on request
++>  initialize on create
++>  as  select pk, count(data) as cd
++>      from t650_target
++>      group by pk;
+
+--- SQL operation complete.
+>>
+>>-- Using VSBB_USER mode from defaults table
+>>control query default insert_vsbb 'USER';
+
+--- SQL operation complete.
+>>insert into t650_target select * from t650_source;
+
+--- 2000 row(s) inserted.
+>>select count(*) from table (iud_log_table t650_target);
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>delete from t650_target;
+
+--- 2000 row(s) deleted.
+>>delete from table (iud_log_table t650_target);
+
+--- 2005 row(s) deleted.
+>>
+>>-- Using VSBB_SYSTEM mode from defaults table
+>>control query default insert_vsbb 'SYSTEM';
+
+--- SQL operation complete.
+>>insert into t650_target select * from t650_source;
+
+--- 2000 row(s) inserted.
+>>select count(*) from table (iud_log_table t650_target);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>delete from t650_target;
+
+--- 2000 row(s) deleted.
+>>delete from table (iud_log_table t650_target);
+
+--- 2007 row(s) deleted.
+>>
+>>-- Using command line override to VSBB
+>>insert using vsbb into t650_target select * from t650_source;
+
+--- 2000 row(s) inserted.
+>>select count(*) from table (iud_log_table t650_target);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>delete from t650_target;
+
+--- 2000 row(s) deleted.
+>>delete from table (iud_log_table t650_target);
+
+--- 2007 row(s) deleted.
+>>
+>>-- Using command line override to SideTree Insert.
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>alter table t650_target attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>insert using sideinserts into t650_target select * from t650_source;
+
+--- 2000 row(s) inserted.
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>alter table t650_target attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>select count(*) from table (iud_log_table t650_target);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>delete from t650_target;
+
+--- 2000 row(s) deleted.
+>>delete from table (iud_log_table t650_target);
+
+--- 2002 row(s) deleted.
+>>
+>>
+>>obey TESTMV650(CLEAN_UP);
+>>---------------------------------------------
+>>Refresh mvgroup Dup_MVG1 cancel;
+
+--- SQL operation complete.
+>>obey DUPENV(DROP_MV_DUMMY);
+>>drop mv Dup_MV1_dummy;
+
+--- SQL operation complete.
+>>drop mv Dup_MV2_dummy;
+
+--- SQL operation complete.
+>>
+>>
+>>obey DUPENV(DROP_SIMPLE);
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV3;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV2;
+
+--- SQL operation complete.
+>>drop materialized view Dup_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.DUP_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.DUP_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop MVGroup Dup_MVG1;
+
+--- SQL operation complete.
+>>drop MVGroup Dup_MVG2;
+
+--- SQL operation complete.
+>>drop MVGroup Dup_MVG3;
+
+--- SQL operation complete.
+>>
+>>drop table Dup_A;
+
+--- SQL operation complete.
+>>drop table Dup_B;
+
+--- SQL operation complete.
+>>obey CREATERANGE(DROPALL);
+>>
+>>drop table Range_Factor2;
+
+--- SQL operation complete.
+>>drop table Range_Factor3;
+
+--- SQL operation complete.
+>>drop table Range_Factor5;
+
+--- SQL operation complete.
+>>drop table Range_Factor10;
+
+--- SQL operation complete.
+>>drop table Range_Factor100;
+
+--- SQL operation complete.
+>>drop table Range_Factor1000;
+
+--- SQL operation complete.
+>>
+>>--create table a (ch1 int ,ch2 char(2));
+>>
+>>--insert into a 
+>>--values (1,'aa');
+>>
+>>
+>>--select a.ch1,a.ch2,RUNNINGCOUNT (*) 
+>>--from a,Range_Factor10 P10,Range_Factor100 P100
+>>--sequence by P10.TS,P100.TS;
+>>
+>>
+>>drop table t1_650;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T1_650 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T1_650 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t650_source cascade;
+
+--- SQL operation complete.
+>>drop table t650_target cascade;
+
+--- SQL operation complete.
+>>
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+--- 0 row(s) deleted.
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+
+--- 0 row(s) deleted.
+>>
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------
+>>log;

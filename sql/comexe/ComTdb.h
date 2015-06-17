@@ -1164,6 +1164,8 @@ class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase
   Int64       library_UID;
   Int32       library_version;
   const char *library_filename;
+  Int32       object_owner_id;
+  Int32       schema_owner_id;
 };
 
 #endif /* COMTDB_H */

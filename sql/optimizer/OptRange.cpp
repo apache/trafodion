@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -921,15 +921,44 @@ void OptRangeSpec::addColumnsUsed(const QRDescGenerator* descGen)
     descGenerator_->mergeDescGenerator(descGen);
 }
 
-NABoolean OptRangeSpec::buildRange(ItemExpr* predExpr)
+#define AVR_STATE0 0
+#define AVR_STATE1 1
+#define AVR_STATE2 2
+
+NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
 {
   QRTRACER("buildRange");
   ConstValue *startValue, *endValue;
   OperatorTypeEnum leftOp, rightOp;
   NABoolean isRange = TRUE;
   NABoolean reprocessAND = FALSE;
-  OperatorTypeEnum op = predExpr->getOperatorType();
-  switch (op)
+
+  //
+  // buildRange() can be called recursively for all the items in an IN-list
+  // at a point in time when we are already many levels deep in other
+  // recursion (e.g. Scan::applyAssociativityAndCommutativity() ). Consequently,
+  // we may not have much of our stack space available at the time, so
+  // we must eliminate the recursive calls to buildRange() by keeping the
+  // information needed by each "recursive" level in the heap and using
+  // a "while" loop to look at each node in the tree in the same order as
+  // the old recursive technique would have done.
+  // The information needed by each "recursive" level is basically just
+  // a pointer to what node (ItemExpr *) to look at next and a "state" value
+  // that tells us where we are in the buildRange() code for the ItemExpr
+  // node that we are currently working on.
+  //
+  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
+
+  Int32 currIdx     = 0 ;
+  IEarray.insertAt( currIdx, origPredExpr ) ; //Initialize 1st element in the ARRAYs
+  state.insertAt(   currIdx, AVR_STATE0   ) ;
+
+  while( currIdx >= 0 && isRange )
+  {
+    ItemExpr * predExpr = IEarray[currIdx] ;  //Get ptr to the current IE
+    OperatorTypeEnum op = predExpr->getOperatorType();
+    switch (op)
     {
       case ITM_AND:
         // Check for a bounded subrange, from BETWEEN predicate, etc. If not of
@@ -1020,10 +1049,25 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* predExpr)
         break;
 
       case ITM_OR:
-        isRange = buildRange(predExpr->child(0));
-        if (isRange)
-          isRange = buildRange(predExpr->child(1));
-        break;
+        if ( state[currIdx] == AVR_STATE0 )
+        {
+           state.insertAt( currIdx, AVR_STATE1 ) ;
+           currIdx++ ;                               //"Recurse" down to child 0
+           state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+           IEarray.insertAt( currIdx, predExpr->child(0) ) ;
+           continue ;
+        }
+        else if ( state[currIdx] == AVR_STATE1 )
+        {
+           state.insertAt( currIdx, AVR_STATE2 ) ;
+           currIdx++ ;                               //"Recurse" down to child 1
+           state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+           IEarray.insertAt( currIdx, predExpr->child(1) ) ;
+           continue ;
+        }
+        else
+           state.insertAt( currIdx, AVR_STATE0 ); // We are done processing predExpr
+        break ;
 
       case ITM_EQUAL:
         startValue = endValue = getConstOperand(predExpr);
@@ -1184,6 +1228,9 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* predExpr)
         isRange = FALSE;
         break;
     }
+    if ( state[currIdx] == AVR_STATE0 )
+       currIdx-- ;  // Go back to the parent node & continue working on it.
+  }
 
   return isRange;
 } // buildRange()

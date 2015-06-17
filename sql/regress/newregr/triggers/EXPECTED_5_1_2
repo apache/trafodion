@@ -1,0 +1,165 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_5_1_2(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig21
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig21
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newT
++>UPDATE tab1B SET b=a WHERE a NOT IN (SELECT a FROM newT);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig22
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig22
++>AFTER UPDATE ON tab1B
++>SIGNAL SQLSTATE 's9999' ('atrig22 signaled');
+
+--- SQL operation complete.
+>>
+>>obey TEST_5_1_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO tab1B (SELECT a, b FROM tab1A);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s9999, Message: atrig22 signaled.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.ATRIG22 on table CAT1.SCHM.TAB1B has failed.
+
+--- 0 row(s) inserted.
+>>
+>>------------------------------------------------------------------
+>>--          CHECK RSULTS
+>>-------------------------------------------------------------------
+>>
+>>SELECT * FROM tab1B;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>
+>>------------------------------------------------------------------
+>>obey TEST_5_1_2(clean_up);
+>>
+>>DROP TRIGGER atrig21;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig22;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 2 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_1_2(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig21
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig21
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newT
++>UPDATE tab1B SET b=a WHERE a NOT IN (SELECT a FROM newT);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig22
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig22
++>AFTER UPDATE ON tab1B
++>SIGNAL SQLSTATE 's9999' ('atrig22 signaled');
+
+--- SQL operation complete.
+>>
+>>obey TEST_5_1_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO tab1B (SELECT a, b FROM tab1A);
+
+*** ERROR[3193] SIGNAL SQLSTATE=s9999, Message: atrig22 signaled.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM_ALT.ATRIG22 on table CAT1.SCHM_ALT.TAB1B has failed.
+
+--- 0 row(s) inserted.
+>>
+>>------------------------------------------------------------------
+>>--          CHECK RSULTS
+>>-------------------------------------------------------------------
+>>
+>>SELECT * FROM tab1B;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>
+>>------------------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

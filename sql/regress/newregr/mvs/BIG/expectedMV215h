@@ -1,0 +1,1271 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>-- Run Tests
+>>	set schema cat.tpcd;
+
+--- SQL operation complete.
+>>	obey TESTMV215H(TEST1);
+>>-------------------------------------------------------------------------
+>>-- Q17
+>>
+>>PREPARE stat1 FROM
++>	select  	orders.o_custkey , 
++>			sum ( orders.o_totalprice) sum_price ,
++>			sum ( lineitem.l_quantity) quantity ,
++>			sum (lineitem.l_discount) discount,
++>			min(orders.o_orderdate) orderdate,
++>			count(*) cnt
++>	from orders,lineitem
++>	where orders.o_orderkey = lineitem.l_orderkey          
++>	group by orders.o_custkey 
++>	order by o_custkey;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM
++>	select * from mv4q17
++>	order by o_custkey;
+
+--- SQL command prepared.
+>>
+>>
+>>refresh mv4q17 recompute;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q17 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q17 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>-- Prepare deltas----------------------------------------------------
+>>
+>>sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=12000 
++>                                 -v upLimit1=45000   
++>									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+>>
+>>sh awk -f ./TPCD/FILTER_KEY.AWK 
++>								 -v downLimit1=10000 
++>								 -v upLimit1=20000     
++>									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+>>
+>>cd tpcd/tpcdtemp;
+>>
+>>sh import cat.tpcd.temp_orders -I orders.tbl1 -U orders.fmt ;
+>>sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt;
+>>
+>>cd ../..;
+>>
+>>
+>>insert NOLOG into orders 
++>select * from temp_orders
++>;
+
+--- 8256 row(s) inserted.
+>>
+>>insert NOLOG into lineitem
++>select * from temp_lineitem
++>;
+
+--- 10093 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF orders (o_orderkey ) BETWEEN (12000) AND (45000);
+
+--- SQL operation complete.
+>>
+>>MVLOG INTO RANGELOG OF lineitem (l_orderkey) BETWEEN (10000) AND (20000);
+
+--- SQL operation complete.
+>>
+>>insert into orders 
++>VALUES (10,23,0,100 ,DATE '1977-05-14','F','5-LOW','Clerk#000000557','dsgG'),
++>		(11,23,0,102.12 ,DATE '1989-06-14','O','2-HIGH','Clerk#000000557','fgsjhtgk'),
++>		(12,23,0,10000 ,DATE '1995-05-25','F','1-URGENT','Clerk#000000557','dsgG');
+
+--- 3 row(s) inserted.
+>>
+>>delete from orders
++>where o_orderkey = 12994 ;
+
+--- 1 row(s) deleted.
+>>
+>>delete from lineitem 
++>where l_orderkey = 3140;
+
+--- 2 row(s) deleted.
+>>
+>>update orders 
++>set o_custkey = 280
++>where o_orderkey =99;
+
+--- 1 row(s) updated.
+>>
+>>update orders 
++>set o_totalprice = 10000
++>where o_orderkey =70;
+
+--- 1 row(s) updated.
+>>
+>>update orders 
++>set o_custkey = 8
++>where o_orderkey =98;
+
+--- 1 row(s) updated.
+>>
+>>
+>>-- End prepare deltas -----------------------------------------------------------
+>>
+>>refresh mv4q17 debug 51;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.ORDERS 1 3 1 0 24 ORDERS__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.LINEITEM 1 3 1 0 26 LINEITEM__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 107;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -107;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 110;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -110;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, O_ORDERKEY
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE 
+(
+"@EPOCH" = -107
+)
+ORDER BY O_ORDERKEY ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.ORDERS)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_O_ORDERKEY", "@ER_O_ORDERKEY")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.ORDERS', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_O_ORDERKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_O_ORDERKEY") <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_O_ORDERKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.ORDERS', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND (O_ORDERKEY) >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND (O_ORDERKEY) <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND SYSKEY > CAST (? AS LARGEINT);
+ Compiling Statement : 
+ UPDATE TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+SET "@IGNORE"=CAST (? AS INT UNSIGNED)
+WHERE "@EPOCH">CAST (? AS INT)
+AND (O_ORDERKEY) >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND (O_ORDERKEY) <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND "@IGNORE"<CAST (? AS INT UNSIGNED);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, L_ORDERKEY, L_LINENUMBER
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE 
+(
+"@EPOCH" = -110
+)
+ORDER BY L_ORDERKEY ASC, L_LINENUMBER ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_L_ORDERKEY", "@BR_L_LINENUMBER", "@ER_L_ORDERKEY", "@ER_L_LINENUMBER")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.LINEITEM', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_L_ORDERKEY", "@BR_L_LINENUMBER") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_L_ORDERKEY", "@ER_L_LINENUMBER") <= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_L_ORDERKEY", "@ER_L_LINENUMBER") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.LINEITEM', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND (L_ORDERKEY, L_LINENUMBER) >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND (L_ORDERKEY, L_LINENUMBER) <= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND SYSKEY > CAST (? AS LARGEINT);
+ Compiling Statement : 
+ UPDATE TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+SET "@IGNORE"=CAST (? AS INT UNSIGNED)
+WHERE "@EPOCH">CAST (? AS INT)
+AND (L_ORDERKEY, L_LINENUMBER) >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND (L_ORDERKEY, L_LINENUMBER) <= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND "@IGNORE"<CAST (? AS INT UNSIGNED);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+The materialized view CAT.TPCD.MV4Q17 is being refreshed in a single transaction...
+
+ Compiling Statement : 
+ CONTROL TABLE *  MDAM 'ON';
+ Compiling Statement : 
+ INTERNAL REFRESH CAT.TPCD.MV4Q17
+ FROM MULTIDELTA 
+	CAT.TPCD.LINEITEM BETWEEN 110 AND 110 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	USE IUDLOG , 
+	CAT.TPCD.ORDERS BETWEEN 107 AND 107 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	USE IUDLOG  
+	PHASE 0 
+ Compiling Statement : 
+ INTERNAL REFRESH CAT.TPCD.MV4Q17 RECOMPUTE 
+The materialized view CAT.TPCD.MV4Q17 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------------------------------------------------------
+>>	obey TESTMV215H(TEST2);
+>>---------------------------------------------------------------------------------------------
+>>-- Basic Q5
+>>-- for compare 
+>>
+>>PREPARE stat1 FROM 
++>	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
++>	from customer,orders,lineitem,supplier,nation, region
++>	where
++>	    c_custkey = o_custkey
++>	    and o_orderkey = l_orderkey
++>	    and l_suppkey = s_suppkey
++>	    and c_nationkey= s_nationkey
++>	    and s_nationkey = n_nationkey
++>	    and n_regionkey = r_regionkey
++>	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
++>	    and o_orderdate >= date '1994-01-01'
++>	    and o_orderdate < date '1994-01-01' + interval '3' year
++>	group by n_name
++>	order by n_name,revenue desc ;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select n_name,revenue,rows_in_group
++>	from mv4q5 
++>	order by n_name,revenue desc;
+
+--- SQL command prepared.
+>>
+>>
+>>refresh mv4q5 recompute;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q5 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q5 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.REGION...
+
+Finished the log cleanup of table CAT.TPCD.REGION.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+Starting the log cleanup of table CAT.TPCD.CUSTOMER...
+
+Finished the log cleanup of table CAT.TPCD.CUSTOMER.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>-- Prepare deltas----------------------------------------------------
+>>
+>>delete from temp_supplier;
+
+--- 0 row(s) deleted.
+>>delete from temp_customer;
+
+--- 0 row(s) deleted.
+>>delete from temp_part;
+
+--- 0 row(s) deleted.
+>>
+>>sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=81
++>                                 -v upLimit1=5000   
++>									./tpcd/tpcdtemp/supplier.tbl > ./tpcd/tpcdtemp/supplier.tbl1 ;
+>>
+>>
+>>sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=900
++>                                 -v upLimit1=5000   
++>									./tpcd/tpcdtemp/customer.tbl > ./tpcd/tpcdtemp/customer.tbl1 ;
+>>
+>>sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=1700
++>                                 -v upLimit1=3000   
++>									./tpcd/tpcdtemp/part.tbl > ./tpcd/tpcdtemp/part.tbl1 ;
+>>
+>>cd tpcd/tpcdtemp;
+>>
+>>sh import cat.tpcd.temp_supplier -I supplier.tbl1 -U supplier.fmt ;
+>>sh import cat.tpcd.temp_customer -I customer.tbl1 -U customer.fmt;
+>>sh import cat.tpcd.temp_part -I part.tbl1 -U part.fmt;
+>>
+>>cd ../..;
+>>
+>>
+>>insert  NOLOG into supplier 
++>select * from temp_supplier
++>;
+
+--- 20 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF supplier (s_suppkey) BETWEEN (80) AND (5000);
+
+--- SQL operation complete.
+>>
+>>insert NOLOG into customer 
++>select * from temp_customer
++>;
+
+--- 601 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF customer (c_custkey) BETWEEN (900) AND (5000);
+
+--- SQL operation complete.
+>>
+>>insert NOLOG into part 
++>select * from temp_part
++>;
+
+--- 301 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF part (p_partkey) BETWEEN (1600) AND (3000);
+
+--- SQL operation complete.
+>>
+>>update customer
++>set c_nationkey = 12 -- 'JAPAN'
++>where c_nationkey = 10 and c_acctbal < 4000;
+
+--- 37 row(s) updated.
+>>
+>>
+>>update customer
++>set c_nationkey = 10 -- 'IRAN'
++>where c_nationkey = 12 and c_acctbal > 3000;
+
+--- 54 row(s) updated.
+>>
+>>update customer
++>set c_nationkey = 12 -- 'IRAN'
++>where c_nationkey = 12 and c_acctbal < 2500;
+
+--- 34 row(s) updated.
+>>
+>>delete from temp_lineitem;
+
+--- 10093 row(s) deleted.
+>>sh awk -f ./TPCD/FILTER_KEY.AWK 
++>								 -v downLimit1=21000 
++>								 -v upLimit1=30000     
++>									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+>>
+>>cd tpcd/tpcdtemp;
+>>sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt ;
+>>cd ../..;
+>>
+>>insert NOLOG into lineitem
++>select * from temp_lineitem
++>;
+
+--- 9148 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF lineitem (l_orderkey ) BETWEEN (21000) AND (30000);
+
+--- SQL operation complete.
+>>
+>>-----------------------
+>>update statistics for table customer on (c_custkey) ;
+
+--- SQL operation complete.
+>>update statistics for table orders on  (o_orderkey) ;
+
+--- SQL operation complete.
+>>update statistics for table supplier on  (s_suppkey) ;
+
+--- SQL operation complete.
+>>update statistics for table nation on  (n_nationkey) ,(n_name);
+
+--- SQL operation complete.
+>>update statistics for table region on  (r_regionkey)  ;
+
+--- SQL operation complete.
+>>update statistics for table lineitem on  (l_orderkey ,l_linenumber)  ;
+
+--- SQL operation complete.
+>>
+>>update statistics for table mv4q5 on (n_name);
+
+--- SQL operation complete.
+>>
+>>update statistics for table(iud_log_table orders )  on (o_orderkey);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table lineitem )  on (l_orderkey,l_linenumber);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table customer )  on (c_custkey);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table supplier )  on (s_suppkey);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table nation )  on (n_nationkey) ,(n_name);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table region )  on (r_regionkey);
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------
+>>-- End prepare deltas ---------------------------------------------------------------
+>>
+>>REFRESH mv4q5 debug 51;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.REGION 1 3 1 0 24 REGION__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.NATION 1 3 1 0 24 NATION__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.ORDERS 1 3 1 0 24 ORDERS__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.LINEITEM 1 3 1 0 26 LINEITEM__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.SUPPLIER 1 3 1 0 26 SUPPLIER__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.CUSTOMER 1 3 1 0 26 CUSTOMER__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.REGION)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 102;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.REGION)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -102;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 105;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -105;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 109;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -109;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 112;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -112;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 104;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -104;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 104;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -104;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, L_ORDERKEY, L_LINENUMBER
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE 
+(
+"@EPOCH" = -112
+)
+ORDER BY L_ORDERKEY ASC, L_LINENUMBER ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_L_ORDERKEY", "@BR_L_LINENUMBER", "@ER_L_ORDERKEY", "@ER_L_LINENUMBER")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.LINEITEM', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_L_ORDERKEY", "@BR_L_LINENUMBER") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_L_ORDERKEY", "@ER_L_LINENUMBER") <= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_L_ORDERKEY", "@ER_L_LINENUMBER") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, S_SUPPKEY
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE 
+(
+"@EPOCH" = -104
+)
+ORDER BY S_SUPPKEY ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.SUPPLIER)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_S_SUPPKEY", "@ER_S_SUPPKEY")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.SUPPLIER', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_S_SUPPKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_S_SUPPKEY") <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_S_SUPPKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, C_CUSTKEY
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE 
+(
+"@EPOCH" = -104
+)
+ORDER BY C_CUSTKEY ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.CUSTOMER)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_C_CUSTKEY", "@ER_C_CUSTKEY")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.CUSTOMER', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.CUSTOMER
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_C_CUSTKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_C_CUSTKEY") <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND ("@ER_C_CUSTKEY") >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.CUSTOMER', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND (C_CUSTKEY) >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND (C_CUSTKEY) <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND SYSKEY > CAST (? AS LARGEINT);
+ Compiling Statement : 
+ UPDATE TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+SET "@IGNORE"=CAST (? AS INT UNSIGNED)
+WHERE "@EPOCH">CAST (? AS INT)
+AND (C_CUSTKEY) >= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND (C_CUSTKEY) <= (CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC)
+AND "@IGNORE"<CAST (? AS INT UNSIGNED);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+The materialized view CAT.TPCD.MV4Q5 is being refreshed in a single transaction...
+
+ Compiling Statement : 
+ CONTROL TABLE *  MDAM 'ON';
+ Compiling Statement : 
+ INTERNAL REFRESH CAT.TPCD.MV4Q5
+ FROM MULTIDELTA 
+	CAT.TPCD.CUSTOMER BETWEEN 104 AND 104 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	USE IUDLOG , 
+	CAT.TPCD.SUPPLIER BETWEEN 104 AND 104 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	 USE NO IUDLOG, 
+	CAT.TPCD.LINEITEM BETWEEN 112 AND 112 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	 USE NO IUDLOG 
+	PHASE 0 
+ Compiling Statement : 
+ CONTROL TABLE *  RESET;
+The materialized view CAT.TPCD.MV4Q5 has been refreshed (in 1 phases) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.REGION...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.REGION)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.REGION)
+WHERE
+("@EPOCH" <= 102);
+Finished the log cleanup of table CAT.TPCD.REGION.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.NATION)
+WHERE
+("@EPOCH" <= 101);
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE
+("@EPOCH" <= 101);
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+Starting the log cleanup of table CAT.TPCD.CUSTOMER...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.CUSTOMER)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.CUSTOMER.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------------------------
+>>
+>>PREPARE stat1 FROM 
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select nation, yr,sum_profit
++>	from mv4q9 
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>refresh mv4q9 recompute;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>delete from temp_partsupp;
+
+--- 0 row(s) deleted.
+>>sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=1600
++>                                 -v upLimit1=5000   
++>									./tpcd/tpcdtemp/partsupp.tbl > ./tpcd/tpcdtemp/partsupp.tbl1 ;
+>>cd tpcd/tpcdtemp;
+>>sh import cat.tpcd.temp_partsupp -I partsupp.tbl1 -U partsupp.fmt ;
+>>cd ../..;
+>>
+>>insert NOLOG into partsupp
++>select * from temp_partsupp
++>;
+
+--- 1604 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF partsupp (ps_partkey ) BETWEEN (1600) AND (5000);
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>update statistics for table lineitem on (l_orderkey,l_linenumber);
+
+--- SQL operation complete.
+>>update statistics for table customer on (c_custkey) ;
+
+--- SQL operation complete.
+>>update statistics for table orders on  (o_orderkey) ;
+
+--- SQL operation complete.
+>>update statistics for table supplier on  (s_suppkey) ;
+
+--- SQL operation complete.
+>>update statistics for table nation on  (n_nationkey) ,(n_name);
+
+--- SQL operation complete.
+>>update statistics for table region on  (r_regionkey)  ;
+
+--- SQL operation complete.
+>>
+>>
+>>update statistics for table mv4q9  on (nation), (yr);
+
+--- SQL operation complete.
+>>
+>>update statistics for table(iud_log_table orders )  on (o_orderkey),(o_orderdate);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table lineitem )  on (l_orderkey,l_linenumber);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table customer )  on (c_custkey);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table supplier )  on (s_suppkey);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table nation )  on (n_nationkey) ,(n_name);
+
+--- SQL operation complete.
+>>update statistics for table(iud_log_table region )  on (r_regionkey);
+
+--- SQL operation complete.
+>>
+>>
+>>REFRESH mv4q9 debug 51;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.NATION 1 3 1 0 24 NATION__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.PARTSUPP 1 3 1 0 26 PARTSUPP__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 13 CAT.TPCD.PART 1 3 1 0 22 PART__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 15 CAT.TPCD.ORDERS 1 3 1 0 24 ORDERS__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.LINEITEM 1 3 1 0 26 LINEITEM__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ CREATE TANDEM_CAT_REQUEST&2 LIST 1 CREATE TANDEM_CAT_REQUEST&2 16 4 17 CAT.TPCD.SUPPLIER 1 3 1 0 26 SUPPLIER__REFRESH__DDLLOCK ;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 107;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -107;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 103;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -103;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PART)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 102;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PART)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -102;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 111;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -111;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 114;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -114;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 106;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE "@EPOCH" <= CAST (? AS INT)
+AND "@EPOCH" >= -106;
+ Compiling Statement : 
+ CONTROL TABLE * MDAM 'ON';
+ Compiling Statement : 
+ SELECT "@EPOCH", "@OPERATION_TYPE", "@RANGE_SIZE", SYSKEY, PS_PARTKEY, PS_SUPPKEY
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE 
+(
+"@EPOCH" = -103
+)
+ORDER BY PS_PARTKEY ASC, PS_SUPPKEY ASC, SYSKEY
+FOR BROWSE ACCESS;
+ Compiling Statement : 
+ INSERT INTO TABLE(RANGE_LOG_TABLE CAT.TPCD.PARTSUPP)
+("@EPOCH", "@RANGE_ID", "@RANGE_TYPE", "@BR_PS_PARTKEY", "@BR_PS_SUPPKEY", "@ER_PS_PARTKEY", "@ER_PS_SUPPKEY")
+VALUES (CAST (? AS INT), CAST (? AS LARGEINT), CAST (? AS INT UNSIGNED), 
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED),
+CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)
+);
+ Compiling Statement : 
+ CONTROL QUERY SHAPE TSJ (EXCHANGE (SCAN (TABLE 'CAT.TPCD.PARTSUPP', MDAM FORCED)), CUT);
+ Compiling Statement : 
+ DELETE FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE "@EPOCH"=CAST (? AS INT)
+AND "@RANGE_ID"=CAST (? AS LARGEINT)
+AND ("@BR_PS_PARTKEY", "@BR_PS_SUPPKEY") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_PS_PARTKEY", "@ER_PS_SUPPKEY") <= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+AND ("@ER_PS_PARTKEY", "@ER_PS_SUPPKEY") >= (CAST (? AS INT SIGNED), CAST (? AS INT SIGNED)) DIRECTEDBY ( ASC, ASC)
+ Compiling Statement : 
+ CONTROL QUERY SHAPE OFF;
+ Compiling Statement : 
+ CONTROL TABLE * RESET;
+The materialized view CAT.TPCD.MV4Q9 is being refreshed in a single transaction...
+
+ Compiling Statement : 
+ CONTROL TABLE *  MDAM 'ON';
+ Compiling Statement : 
+ INTERNAL REFRESH CAT.TPCD.MV4Q9
+ FROM SINGLEDELTA 
+	CAT.TPCD.PARTSUPP BETWEEN 103 AND 103 DE LEVEL 2
+	USE RANGELOG 2 NUM_OF_RANGES 20000 ROWS_COVERED
+	 USE NO IUDLOG
+ Compiling Statement : 
+ CONTROL TABLE *  RESET;
+The materialized view CAT.TPCD.MV4Q9 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.NATION)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.NATION)
+WHERE
+("@EPOCH" <= 102);
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.PARTSUPP)
+WHERE
+("@EPOCH" <= 101);
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.PART)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.PART)
+WHERE
+("@EPOCH" <= 102);
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.ORDERS)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" BETWEEN 101 AND 100)
+OR
+("@EPOCH" BETWEEN -100 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.LINEITEM)
+WHERE
+("@EPOCH" <= 100);
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(IUD_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+ Compiling Statement : 
+ DELETE [FIRST 4000]
+FROM TABLE(RANGE_LOG_TABLE CAT.TPCD.SUPPLIER)
+WHERE
+("@EPOCH" <= 102);
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-----------------------------------------------------------------------------------------
+>> --  to reproduse the bugs  please comment
+>>							--  update statistics.  Bug 515,Bug 519
+>>
+>>-- Clean and exit
+>>log;

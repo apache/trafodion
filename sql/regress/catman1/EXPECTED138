@@ -134,7 +134,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>
@@ -242,7 +242,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -319,7 +319,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -456,6 +456,9 @@ USER1_T2
 --- SQL operation complete.
 >>
 >>-- create some tables
+>>grant component privilege CREATE_TABLE on sql_operations to sql_user1;
+
+--- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
 
@@ -492,7 +495,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>
@@ -529,6 +532,9 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T2
 
 End of MXCI Session
 
+>>revoke component privilege CREATE_TABLE on sql_operations from sql_user1;
+
+--- SQL operation complete.
 >>
 >>-- user2 cannot alter them
 >>sh sqlci -i "TEST138(alter_tbl)" -u sql_user2;
@@ -601,7 +607,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -678,7 +684,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -794,7 +800,7 @@ ALTER TABLE TRAFODION.T138SCH.USER1_T1 ADD CONSTRAINT
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -873,7 +879,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -999,7 +1005,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -1076,7 +1082,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>showddl user1_t2;
@@ -1153,16 +1159,14 @@ USER1_T2
 >>-- reset
 >>revoke component privilege CREATE_TABLE on SQL_OPERATIONS from sql_user1;
 
---- SQL operation complete.
->>grant component privilege "CREATE" on SQL_OPERATIONS to public;
+*** ERROR[1018] Grant of role or privilege CREATE_TABLE on component SQL_OPERATIONS from DB__ROOT to SQL_USER1 not found, revoke request ignored.
 
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>get privileges on component sql_operations for "PUBLIC";
 
 Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
-CREATE
 CREATE_SCHEMA
 SHOW
 
@@ -1191,6 +1195,9 @@ SHOW
 --- SQL operation complete.
 >>
 >>-- create some tables
+>>grant component privilege CREATE_TABLE on sql_operations to sql_user1;
+
+--- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
 >>get tables;
 
@@ -1227,7 +1234,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON
   TRAFODION.T138SCH.USER1_T1 TO SQL_USER1 WITH GRANT OPTION;
 GRANT REFERENCES
-  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2;
+  ON TRAFODION.T138SCH.USER1_T1 TO SQL_USER2 GRANTED BY SQL_USER1;
 
 --- SQL operation complete.
 >>
@@ -1264,6 +1271,9 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T2
 
 End of MXCI Session
 
+>>revoke component privilege CREATE_TABLE on sql_operations from sql_user1;
+
+--- SQL operation complete.
 >>
 >>-- user1 should not be able to create any views
 >>sh sqlci -i "TEST138(create_view)" -u sql_user1;
@@ -1272,18 +1282,16 @@ End of MXCI Session
 --- SQL operation complete.
 >>create view user1_v1 as select * from user1_t1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>create view user1_v2 (c1, c2) as 
 +>  select t1.c1, t2.c2 from user1_t1 t1, user1_t2 t2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get views;
-
-Views in Schema TRAFODION.T138SCH
-=================================
-
-USER1_V1
-USER1_V2
 
 --- SQL operation complete.
 >>
@@ -1307,24 +1315,14 @@ CREATE_VIEW
 >>sh sqlci -i "TEST138(create_view)" -u sql_user1;
 >>get views;
 
-Views in Schema TRAFODION.T138SCH
-=================================
-
-USER1_V1
-USER1_V2
-
 --- SQL operation complete.
 >>create view user1_v1 as select * from user1_t1;
 
-*** ERROR[1390] Object TRAFODION.T138SCH.USER1_V1 already exists in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>create view user1_v2 (c1, c2) as 
 +>  select t1.c1, t2.c2 from user1_t1 t1, user1_t2 t2;
 
-*** ERROR[1390] Object TRAFODION.T138SCH.USER1_V2 already exists in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>get views;
 
 Views in Schema TRAFODION.T138SCH
@@ -1480,17 +1478,15 @@ USER1_T2
 --- SQL operation complete.
 >>create sequence user1_seq1;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>create sequence user1_seq2;
 
---- SQL operation complete.
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
 >>get sequences in schema t138sch;
-
-Sequences in schema TRAFODION.T138SCH
-=====================================
-
-USER1_SEQ1
-USER1_SEQ2
 
 --- SQL operation complete.
 >>
@@ -1514,23 +1510,13 @@ CREATE_SEQUENCE
 >>sh sqlci -i "TEST138(create_sequence)" -u sql_user1;
 >>get sequences in schema t138sch;
 
-Sequences in schema TRAFODION.T138SCH
-=====================================
-
-USER1_SEQ1
-USER1_SEQ2
-
 --- SQL operation complete.
 >>create sequence user1_seq1;
 
-*** ERROR[1390] Object TRAFODION.T138SCH.USER1_SEQ1 already exists in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>create sequence user1_seq2;
 
-*** ERROR[1390] Object TRAFODION.T138SCH.USER1_SEQ2 already exists in Trafodion.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>get sequences in schema t138sch;
 
 Sequences in schema TRAFODION.T138SCH

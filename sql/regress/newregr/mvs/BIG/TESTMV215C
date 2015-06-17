@@ -1,0 +1,497 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV215c
+--- 2.4.4.
+--- PURPOSE: Internal Refresh tests with TPCD database   
+--           with multiple deltas       
+------------------------------------------------------
+
+obey TESTMV215C(CLEAN_UP);
+obey TESTMV215C(SET_UP);
+
+log LOGMV215C clear;
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215C(TEST1);
+--	obey TESTMV215C(TEST2);
+-- Clean and exit
+log;
+obey TESTMV215C(CLEAN_UP);
+exit;
+
+?section SET_UP
+control query default insert_vsbb 'OFF';
+--control query default attempt_esp_parallelism 'OFF';
+set PARSERFLAGS 3;
+
+set schema cat.tpcd;
+obey PREPARE_DDL_SELECTS;
+obey ./TPCD/CREATEALL.OBEY(SET_UP);
+obey ./TPCD/CREATEMVS(CREATEALL);
+create table t1(a1 int,b1 int );
+create table t2(a2 int,b2 int );
+create table t3(a3 int,b3 int );
+create table t4(a4 int,b4 int );
+create table t5(a5 int,b5 int );
+
+create mv mv4q5_6
+	refresh on request 
+	store  by (n_name)
+	as
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	     ,t1,t2,t3,t4,t5
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+		and t1.a1 = s_nationkey 
+		and t2.a2 = n_regionkey
+		and t3.a3 = t1.a1
+		and t4.a4 = t1.b1
+		and t5.a5 = t2.a2
+	group by n_name;
+
+create mv mv4q5_7
+	refresh on request 
+	store  by (n_name)
+	as
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	     ,t1,t2,t3,t4,t5
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+		and t1.a1 = s_nationkey 
+		and t2.a2 = n_regionkey
+		and t3.a3 = t1.a1
+		and t4.a4 = t1.b1
+		and t5.a5 = t2.a2
+	group by n_name;
+
+create mv mv4q5_9
+	refresh on request 
+	store  by (n_name)
+	as
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	     ,t1,t2,t3,t4,t5
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+		and t1.a1 = s_nationkey 
+		and t2.a2 = n_regionkey
+		and t3.a3 = t1.a1
+		and t4.a4 = t1.b1
+		and t5.a5 = t2.a2
+	group by n_name;
+
+
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=1500 
+								 -v upLimit1=1700 
+									./tpcd/tpcdtemp/part.tbl > ./tpcd/tpcdtemp/part.tbl1 ;
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=80 
+                                 -v upLimit1=90 
+									./tpcd/tpcdtemp/supplier.tbl > ./tpcd/tpcdtemp/supplier.tbl1 ;
+sh awk -f ./TPCD/FILTER_2KEY.AWK -v downLimit1=1500 -v downLimit2=80 
+                                 -v upLimit1=1700   -v upLimit2=90 
+									./tpcd/tpcdtemp/partsupp.tbl > ./tpcd/tpcdtemp/partsupp.tbl1 ;
+sh awk -f ./TPCD/FILTER_KEY.AWK  -v downLimit1=800 
+                                 -v upLimit1=900 
+									./tpcd/tpcdtemp/customer.tbl > ./tpcd/tpcdtemp/customer.tbl1 ;
+sh awk -f ./TPCD/FILTER_2KEY.AWK -v downLimit1=12000 -v downLimit2=800 
+                                 -v upLimit1=13000   -v upLimit2=900 
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+sh awk -f ./TPCD/FILTER_3KEY.AWK 
+								 -v downLimit1=10000 -v downLimit2=30 -v downLimit3=30 
+								 -v upLimit1=20000   -v upLimit2=2000   -v upLimit3=85 
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+prepare refresh_mv5 
+from
+refresh mv4q5;
+
+prepare refresh_mv9 
+from
+refresh mv4q9;
+
+ 
+?section CLEAN_UP
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+drop mv mv4q5_6;
+drop mv mv4q5_7;
+drop mv mv4q5_9;
+drop table t1;
+drop table t2;
+drop table t3;
+drop table t4;
+drop table t5;
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+
+
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+
+?section TEST1
+-- Basic Q5
+-- for compare 
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+	group by n_name
+	order by n_name,revenue desc ;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+
+refresh mv4q5 recompute;
+refresh mv4q9 recompute;
+--internal refresh mv4q5 recompute;
+--internal refresh mv4q9 recompute;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215C;
+log LOGMV215C;
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C ;
+log LOGMV215C;
+
+
+
+-- Prepare deltas ---------------------------------------------------------------
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @110@ ;
+
+-- importing supplier
+log;
+sh import cat.tpcd.supplier -I ./tpcd/tpcdtemp/supplier.tbl1 -U ./tpcd/tpcdtemp/supplier.fmt -r >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>logMV215c;
+log LOGMV215C;
+-- importing customer
+log;
+sh import cat.tpcd.customer -I ./tpcd/tpcdtemp/customer.tbl1 -U ./tpcd/tpcdtemp/customer.fmt -r  >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>logMV215c;
+log LOGMV215C;
+-- importing part
+log;
+sh import cat.tpcd.part -I ./tpcd/tpcdtemp/part.tbl1 -U ./tpcd/tpcdtemp/part.fmt -r   >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>logMV215c;
+log LOGMV215C;
+
+
+
+update customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_nationkey = 10 and c_acctbal < 4000;
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @1@ @0@ ;	
+update customer
+set c_nationkey = 10 -- 'IRAN'
+where c_nationkey = 12 and c_acctbal > 3000;
+
+update customer
+set c_nationkey = 12 -- 'JAPAN'
+where c_nationkey = 12 and c_acctbal < 2500;
+
+-- importing lineitem
+log;
+sh import cat.tpcd.lineitem -I ./tpcd/tpcdtemp/lineitem.tbl1 -U ./tpcd/tpcdtemp/lineitem.fmt -r >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>logMV215c;
+log LOGMV215C;
+
+-- End prepare deltas ---------------------------------------------------------------
+
+
+--REFRESH mv4q5;
+--execute refresh_mv5;
+--log;
+--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215C;
+--log LOGMV215C;
+
+internal refresh mv4q5 from	multidelta
+        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 0;
+
+internal refresh mv4q5 from	multidelta
+        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 1;
+
+
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C ;
+log LOGMV215C;
+
+
+PREPARE stat1 FROM 
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr
+	order by nation, yr;
+
+PREPARE stat2 FROM 
+	select nation, yr,sum_profit
+	from mv4q9 
+	order by nation, yr;
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @0@ @110@ ;
+--log;
+sh import cat.tpcd.partsupp -I ./tpcd/tpcdtemp/partsupp.tbl1 -U ./tpcd/tpcdtemp/partsupp.fmt -r  >temp.tmp;
+sh egrep "Import|Rows" temp.tmp >>logMV215c;
+log LOGMV215C;
+
+
+--REFRESH mv4q9;
+--execute refresh_mv9;
+internal refresh mv4q9 from	multidelta
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+	partsupp between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 0;
+
+internal refresh mv4q9 from	multidelta
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+	partsupp between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 1;
+
+
+log;
+--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215C;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C;
+log LOGMV215C;
+
+
+
+
+
+
+
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+
+
+?section TEST2
+
+PREPARE stat1 FROM 
+	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
+	from customer,orders,lineitem,supplier,nation, region
+	     ,t1,t2,t3,t4,t5
+	where
+	    c_custkey = o_custkey
+	    and o_orderkey = l_orderkey
+	    and l_suppkey = s_suppkey
+	    and c_nationkey= s_nationkey
+	    and s_nationkey = n_nationkey
+	    and n_regionkey = r_regionkey
+	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
+	    and o_orderdate >= date '1994-01-01'
+	    and o_orderdate < date '1994-01-01' + interval '3' year
+		and t1.a1 = s_nationkey 
+		and t2.a2 = n_regionkey
+		and t3.a3 = t1.a1
+		and t4.a4 = t1.a1
+		and t5.a5 = t2.a2
+	group by n_name;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5 
+	order by n_name,revenue desc;
+
+
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.t1@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.t2@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.t3@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.t4@ @0@ @110@ ;
+CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.t5@ @0@ @110@ ;
+
+
+insert into t1 values	(1,1),(2,1),(3,1),(4,1),
+						(5,2),(6,2),(7,2),(8,2),
+						(9,3),(10,3),(11,3),(12,3),
+						(13,4),(14,4),(15,4),(16,4);
+
+insert into t2 values	(1,1),(2,1),(3,1),(4,1),
+						(5,2),(6,2),(7,2),(8,2),
+						(9,3),(10,3),(11,3),(12,3),
+						(13,4),(14,4),(15,4),(16,4);
+
+internal refresh mv4q5_6 from multidelta
+        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t1		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t2		 between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 0;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5_6 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C ;
+log LOGMV215C;
+
+
+insert into t3 values	(1,1),(2,1),(3,1),(4,1),
+						(5,2),(6,2),(7,2),(8,2),
+						(9,3),(10,3),(11,3),(12,3),
+						(13,4),(14,4),(15,4),(16,4);
+
+internal refresh mv4q5_7 from multidelta
+        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t1		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t2		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t3		 between 110 and 110 de level 0 use no rangelog use iudlog insert only
+		phase 0;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5_7 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C ;
+log LOGMV215C;
+
+insert into t4 values	(1,1),(2,1),(3,1),(4,1),
+						(5,2),(6,2),(7,2),(8,2),
+						(9,3),(10,3),(11,3),(12,3),
+						(13,4),(14,4),(15,4),(16,4);
+
+insert into t5 values	(1,1),(2,1),(3,1),(4,1),
+						(5,2),(6,2),(7,2),(8,2),
+						(9,3),(10,3),(11,3),(12,3),
+						(13,4),(14,4),(15,4),(16,4);
+
+internal refresh mv4q5_9 from multidelta
+        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
+        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t1		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t2		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t3		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t4		 between 110 and 110 de level 0 use no rangelog use iudlog insert only,
+		t5		 between 110 and 110 de level 0 use no rangelog use iudlog insert only
+        phase 0;
+
+PREPARE stat2 FROM 
+	select n_name,revenue,rows_in_group
+	from mv4q5_9 
+	order by n_name,revenue desc;
+
+log;
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215C ;
+log LOGMV215C;

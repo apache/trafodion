@@ -65,6 +65,9 @@
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
 #include "Platform.h"				// must be the first #include
+//debug yacc
+#define YY_LOG_FILE "yylog"
+#define YYFPRINTF(stderr, format, args...) {FILE* fp=fopen(YY_LOG_FILE, "a+");fprintf(fp, format, ##args);fclose(fp);}
 
 #define   SQLPARSERGLOBALS__INITIALIZE
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
@@ -526,6 +529,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COLUMN_CREATE
 %token <tokval> TOK_COLUMN_LOOKUP
 %token <tokval> TOK_COLUMN_DISPLAY
+%token <tokval> TOK_HBASE_TIMESTAMP
+%token <tokval> TOK_HBASE_VERSION
 %token <tokval> TOK_COMMANDS
 %token <tokval> TOK_COMMAND_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_COMMENT
@@ -895,7 +900,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_OR
 %token <tokval> TOK_ORDER
 %token <tokval> TOK_ORDERED
-%token <tokval> TOK_OSIM_CAPTURE
 %token <tokval> TOK_OS_USERID
 %token <tokval> TOK_OUT
 %token <tokval> TOK_OUTER
@@ -1156,6 +1160,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_VARWCHAR
 %token <tokval> TOK_VARYING
 %token <tokval> TOK_VERSION
+%token <tokval> TOK_VERSIONS
 %token <tokval> TOK_VPROC
 %token <tokval> TOK_VERSION_INFO        /* Versioning. Non-reserved */
 %token <tokval> TOK_VOLATILE
@@ -1207,6 +1212,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_BUFFERED            /* Tandem extension */
 %token <tokval> TOK_BYTE                /* TD extension that HP maps to CHAR */
 %token <tokval> TOK_BYTES               /* Tandem extension */
+%token <tokval> TOK_CAPTURE
 %token <tokval> TOK_CASCADE
 %token <tokval> TOK_CASCADED
 %token <tokval> TOK_CATALOG
@@ -1323,6 +1329,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_OPCODE              /* internal label alter opcode */
 %token <tokval> TOK_OPTION
 %token <tokval> TOK_OPTIONS
+%token <tokval> TOK_OSIM
+%token <tokval> TOK_SIMULATE
 %token <tokval> TOK_PARALLEL            /* Tandem extension */
 %token <tokval> TOK_PARTITION           /* Tandem extension non-reserved word*/
 %token <tokval> TOK_PARTITIONING        /* Tandem extension non-reserved word*/
@@ -1341,6 +1349,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGE               /* Tandem extension non-reserved word*/
 %token <tokval> TOK_RANGE_N             /* TD extension that HP wants to ignore */
 %token <tokval> TOK_RANGELOG			/* MV */
+%token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
@@ -1629,6 +1638,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   RelExpr              		*relx;
   double              		     doubleVal;
   Hint              		    *hint;
+  HbaseAccessOptions          *hbaseAccessOptions;
   RelExpr::AtomicityType        atomicityType;
   SchemaName                    *pSchemaName;
   SequenceOfLong                *longSeq;
@@ -1843,7 +1853,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <uint>                 output_hostvar_list
 %type <uint>                 input_hostvar_list
 %type <boolean>              global_hint
-%type <boolean>              osim_capture_hint
 %type <boolean>              set_quantifier
 %type <tokval>               firstn_sorted
 %type <item>                 sort_spec_list
@@ -1917,6 +1926,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hint>      		hints
 %type <hint>      		index_hints
 %type <hint>      		ignore_ms4_hints
+%type <hbaseAccessOptions>     hbase_access_options
 %type <stringval>    	index_hint
 %type <doubleVal>       number
 %type <doubleVal>       selectivity_number
@@ -2154,7 +2164,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		delete_statement
 %type <relx>      		delete_start_tokens
 %type <relx>      		control_statement
-
+%type <relx>                    osim_statement
 %type <relx>      		set_statement  
 %type <relx>      		set_table_statement  
 %type <boolean>                 optional_stream
@@ -2540,6 +2550,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		sg_identity_option
 %type <pElemDDL>  		sg_identity_function
 %type <pElemDDL>  		sequence_generator_options
+%type <pElemDDL>  		all_sequence_generator_options
 %type <pElemDDL>  		sequence_generator_option
 %type <pElemDDL>  		sequence_generator_option_list
 %type <pElemDDL>  		start_with_option
@@ -2548,6 +2559,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		min_value_option
 %type <pElemDDL>  		cache_option
 %type <pElemDDL>  		cycle_option
+%type <pElemDDL>  		reset_option
 %type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
@@ -2788,7 +2800,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_truncate_option
 %type <hBaseBulkLoadOption>      hbb_update_stats_option
 %type <hBaseBulkLoadOption>      hbb_no_duplicate_check
-%type <hBaseBulkLoadOption>      hbb_no_populate_indexes
+%type <hBaseBulkLoadOption>      hbb_rebuild_indexes
 %type <hBaseBulkLoadOption>      hbb_constraints
 %type <hBaseBulkLoadOption>      hbb_no_output
 %type <hBaseBulkLoadOption>      hbb_continue_on_error
@@ -6168,15 +6180,38 @@ TOK_ROWSET '(' rowset_input_host_variable_list ')'
 global_hint : empty { $$ = FALSE; }
     | TOK_BEGIN_HINT TOK_ORDERED TOK_END_HINT 
       { $$ = TRUE; QueryAnalysis::Instance()->setJoinOrderByUser(); }
-    | osim_capture_hint
 
-/* type boolean */
-osim_capture_hint : TOK_BEGIN_HINT TOK_OSIM_CAPTURE character_string_literal TOK_END_HINT 
-      { $$ = TRUE; 
-        if (CURRCONTEXT_OPTSIMULATOR) {
-          OptimizerSimulator::osimMode mode = OptimizerSimulator::CAPTURE;
-          CURRCONTEXT_OPTSIMULATOR->setOsimModeAndLogDir(mode, $3->data(), TRUE);
-        }
+/* type hbaseAccessOptions */
+hbase_access_options : empty 
+       {
+         Lng32 n = CmpCommon::getDefaultNumeric(TRAF_NUM_HBASE_VERSIONS);
+         if (n == -1)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(-1, PARSERHEAP());
+         else if (n == -2)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(-2, PARSERHEAP());
+         else if (n > 1)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(n, PARSERHEAP());
+         else
+           $$ = NULL; 
+       }
+    | '{' TOK_VERSIONS NUMERIC_LITERAL_EXACT_NO_SCALE '}'
+      {
+        Int64 value = atoInt64($3->data()); 
+        if (value <= 0)
+          YYERROR;
+
+        if (value > 1)
+          $$ = new (PARSERHEAP()) HbaseAccessOptions(value, PARSERHEAP());
+        else
+          $$ = NULL;
+      }
+    | '{' TOK_VERSIONS TOK_MAX '}'
+      {
+        $$ = new (PARSERHEAP()) HbaseAccessOptions(-1, PARSERHEAP());
+      }
+    | '{' TOK_VERSIONS TOK_ALL '}'
+      {
+        $$ = new (PARSERHEAP()) HbaseAccessOptions(-2, PARSERHEAP());
       }
 
 /* type hint */
@@ -6560,10 +6595,15 @@ table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
     $$ = $3;
   }
 
-table_name_and_hint : table_name optimizer_hint
+table_name_and_hint : table_name optimizer_hint hbase_access_options
                       {
                         $$ = new (PARSERHEAP()) Scan(*$1);
-                        if ($2) $$->setHint($2);
+                        if ($2) 
+                          $$->setHint($2);
+
+                        if ($3)
+                          ((Scan*)$$)->setHbaseAccessOptions($3);
+                        
                         delete $1;
                       }
                     | '(' table_name_and_hint ')'
@@ -6861,13 +6901,17 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
                    $$ = $2;
                  }
 
-table_name_as_clause_and_hint : table_name as_clause optimizer_hint
+table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access_options
                                 {
                                   $1->setCorrName(*$2);
                                   $$ = new (PARSERHEAP()) Scan(*$1);
-                                  if ($3) $$->setHint($3);
-                                     delete $1;
-                                     delete $2;
+                                  if ($3) 
+                                    $$->setHint($3);
+                                  if ($4)
+                                    ((Scan*)$$)->setHbaseAccessOptions($4);
+                                   
+                                  delete $1;
+                                  delete $2;
                                 }
                               | '(' table_name_as_clause_and_hint ')'
                                 {
@@ -6875,12 +6919,18 @@ table_name_as_clause_and_hint : table_name as_clause optimizer_hint
                                   $$ = $2;
                                 }
 
-table_name_as_clause_hint_and_col_list : table_name as_clause optimizer_hint '(' derived_column_list ')'
+table_name_as_clause_hint_and_col_list : table_name as_clause optimizer_hint hbase_access_options '(' derived_column_list ')'
                                          {
+                                           Scan * sc = new (PARSERHEAP()) Scan(*$1);
                                            $$ = new (PARSERHEAP())
-				             RenameTable(
-				               new (PARSERHEAP()) Scan(*$1), *$2, $5);
-                                           if ($3) $$->setHint($3);
+				             RenameTable(sc, *$2, $6);
+
+                                           if ($3) 
+                                             $$->setHint($3);
+
+                                           if ($4)
+                                             sc->setHbaseAccessOptions($4);
+                                           
                                            delete $1;
                                            delete $2;
                                          }
@@ -8963,26 +9013,32 @@ sg_identity_function :
                                        $3 /*sequence_generator_option_list*/);
                                      
 		    }  
-		                   
+	
+/* type pElemDDL */
+all_sequence_generator_options : empty
+                                {
+                                  $$ = NULL;
+                                }
+                      | sequence_generator_option_list
+                      | reset_option
+	                   
 /* type pElemDDL */
 sequence_generator_options : empty
                                 {
                                   $$ = NULL;
                                 }
-
                       | sequence_generator_option_list
 
 /* type pElemDDL */
 sequence_generator_option_list :   sequence_generator_option
-
 		      | sequence_generator_option_list sequence_generator_option
-		     
-        {
-                    $$ = new (PARSERHEAP())
-				    ElemDDLOptionList(
-                                       $1 /*sequence_generator_option_list*/,
-                                       $2 /*sequence_generator_option*/);
-        }
+                        {
+                          $$ = new (PARSERHEAP())
+                            ElemDDLOptionList(
+                                              $1 /*sequence_generator_option_list*/,
+                                              $2 /*sequence_generator_option*/);
+                        }
+
 /* type pElemDDL */
 sequence_generator_option : start_with_option
                       | increment_option
@@ -9099,6 +9155,15 @@ cycle_option : TOK_CYCLE
   
      }
 
+/* type pElemDDL */
+reset_option : TOK_RESET
+     {
+        // RESET Option
+        $$ = new (PARSERHEAP())
+          ElemDDLSGOptionResetOption();
+  
+     } 
+                                          
 /* type pElemDDL */
 cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
      {
@@ -9743,6 +9808,15 @@ misc_function :
                                   $$ = new (PARSERHEAP()) RowNumFunc();
                                 }
 
+       | TOK_HBASE_VERSION '(' dml_column_reference  ')'
+                              {
+                                $$ = new (PARSERHEAP()) HbaseVersionRef($3);
+			      }
+
+       | TOK_HBASE_TIMESTAMP '(' dml_column_reference  ')'
+                              {
+                                $$ = new (PARSERHEAP()) HbaseTimestampRef($3);
+			      }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
@@ -11290,34 +11364,26 @@ tok_char_or_character_or_byte : TOK_CHAR | TOK_CHARACTER
 /* type na_type */
 blob_type : TOK_BLOB blob_optional_left_len_right 
             {
-	
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("BLOB");
 		}
 	      else
 		{
-    
-		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
-	     
-
+    		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
 		}
             }
           | TOK_CLOB blob_optional_left_len_right 
             {
-
-	      
-
-	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
+	      if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+                  ((SQLVarChar*)$$)->setClientDataType("CLOB");
 		}
 	      else
 		{
-
-
-	      $$ = new (PARSERHEAP()) SQLClob ( $2 );
-	      
+                  $$ = new (PARSERHEAP()) SQLClob ( $2 );
 		}
             }
 
@@ -12570,18 +12636,14 @@ insert_obj_to_lob_function :
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
-				}
-                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
-			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::FILE_, FALSE);
-				}
+				}			       
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
 				}
-                          | TOK_FILETOLOB '(' literal ')'
+                          | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
-                                  YYERROR;
+                                  
                                   $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::FILE_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ')'
@@ -12611,10 +12673,12 @@ update_obj_to_lob_function :
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ',' TOK_APPEND ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, TRUE);
 				}
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
@@ -12662,17 +12726,18 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBselect( $3, $5, LOBoper::FILE_);
 				  
 				}
+                         
 			  | TOK_LOBTOSTRING '(' value_expression ')'
 			        {
 				  
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,LOBoper::STRING_);
 				 
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
 			        {
 				 
 				  Int64 tgtSize = atoInt64($5->data());
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_, (Lng32)tgtSize);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,  LOBoper::STRING_, (Lng32)tgtSize);
 				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' TOK_EXTRACT ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
@@ -12689,6 +12754,7 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBextract( $3, (Lng32)rowSize);
 				  
 				}
+                           
 
 table_value_constructor : TOK_VALUES '(' insert_value_expression_list ')' 
 				{
@@ -14249,7 +14315,10 @@ interactive_query_expression:
 				{
 				  $$ = finalize($1);
 				}
-
+           |  osim_statement
+              {
+                  $$ = finalize($1);
+              }
               | set_statement
 				{ 
 				  $$ = finalize($1);
@@ -15524,7 +15593,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
-		    ExeUtilLobExtract::TO_STRING_,
+		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
 		    NULL, NULL, 0, 0);
 
 		 $$ = lle;
@@ -15578,10 +15647,11 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 $$ = lle;
 	       }
 
-               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ')'
+              
+            | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING  ','  QUOTED_STRING ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file');
+                 // extract lobtofile (lob 'abc',  'file');
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15589,16 +15659,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 0 /* truncate*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE  ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_CREATE  ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15606,16 +15677,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 0 /* truncate */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING ,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
+               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ','  QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
                {
                  // if file exists, append. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15623,16 +15695,18 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 1 /* append */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0,
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_APPEND ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_APPEND ')'
                {
                  // if file exists, append. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file', append);
+                 // extract lobtofile (lob 'abc',  'file', append);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15640,8 +15714,10 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 1 /*append*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
@@ -16151,6 +16227,30 @@ exe_util_display_explain: explain_starting_tokens TOK_PROCEDURE '(' QUOTED_STRIN
 		 
                  $$ = eue;
 	       }
+exe_util_display_explain: explain_starting_tokens TOK_FOR TOK_QID qid_identifier
+              {
+                char * tmpString =
+                          new (PARSERHEAP()) char[$4->length() + 5];
+                strcpy(tmpString, "QID=");
+                strncpy(tmpString+4, $4->data(), $4->length());
+                tmpString[$4->length()+4] = '\0';
+                ExeUtilDisplayExplain * eue =
+                   new (PARSERHEAP ()) ExeUtilDisplayExplain
+                   (ExeUtilExpr::DISPLAY_EXPLAIN_,
+                    (char*)NULL, CharInfo::UnknownCharSet,
+                    NULL,
+                    tmpString,
+                    ($1 ? (char*)$1->data() : NULL),
+                    NULL,
+                    PARSERHEAP());
+                 //$$ = finalize(eue);
+
+                 // xn will be started, if needed, when the exeutilstmt stmt
+                 // is processed.
+                 eue->xnNeeded() = FALSE;
+
+                 $$ = eue;
+              }
 exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier TOK_FROM TOK_RMS
               {
                 char * tmpString = 
@@ -17437,7 +17537,7 @@ hbbload_option :  hbb_no_recovery_option
                 | hbb_log_error_rows
                 | hbb_no_duplicate_check
                 | hbb_no_output
-                | hbb_no_populate_indexes
+                | hbb_rebuild_indexes
                 | hbb_constraints
                 | hbb_index_table_only
                 | hbb_upsert_using_load
@@ -17533,11 +17633,11 @@ hbb_no_output :  TOK_NO TOK_OUTPUT
                                            NULL);
                       $$ = op;
                     }                     
-hbb_no_populate_indexes   : TOK_NO TOK_POPULATE TOK_INDEXES
+hbb_rebuild_indexes   : TOK_REBUILD TOK_INDEXES
                     { //INDEXES
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::NO_POPULATE_INDEXES_,
+                                          (ExeUtilHBaseBulkLoad::REBUILD_INDEXES_,
                                            0, 
                                            NULL);
                       $$ = op;
@@ -20619,6 +20719,63 @@ control_statement : TOK_CONTROL TOK_QUERY TOK_SHAPE query_shape_options query_sh
                   | declare_or_set_cqd
                   | set_session_default_statement
 
+osim_statement : TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
+                   {
+                      //input : $4 osim directory
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::CAPTURE, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_CAPTURE TOK_STOP
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::OFF, 
+                                                                                    *(new (PARSERHEAP()) NAString("")),
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_SIMULATE TOK_START
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
+                                                                                    *(new (PARSERHEAP()) NAString("")),
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_SIMULATE TOK_CONTINUE character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
+                                                                                    *$4,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal ',' TOK_FORCE
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
+                                                                                    *$4,
+                                                                                    TRUE,
+                                                                                    PARSERHEAP());                                                             
+                      $$ = osim;
+                   }
+                   |TOK_OSIM TOK_UNLOAD character_string_literal
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::UNLOAD, 
+                                                                                    *$3,
+                                                                                    FALSE,
+                                                                                    PARSERHEAP());                                                            
+                      $$ = osim;
+                   }
 /* type relx */
 /* Except where noted (the Ansi flavor of SET CATALOG and of SET SCHEMA),
  * all of these are Tandem syntax extensions.
@@ -28975,19 +29132,13 @@ index_definition : TOK_CREATE optional_unique_optional_ghost TOK_INDEX
 populate_index_definition: TOK_POPULATE TOK_INDEX
                         index_name TOK_ON ddl_qualified_name optional_purgedata
                                 {
-                                  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-                                  {
-                                    // pop index will be processed by sqlutils code
-                                    yyerror(""); 
-                                    YYERROR;
-                                  }
-
+                                  
                                   StmtDDLPopulateIndex *pNode =
                                     new (PARSERHEAP())
 				      StmtDDLPopulateIndex(
-							 FALSE,
-							 *$3 /*index_name*/,
-							 *$5 /*ddl_qualified_name*/);
+                                           FALSE, FALSE,
+                                           *$3 /*index_name*/,
+                                           *$5 /*ddl_qualified_name*/);
                                  pNode->synthesize();
 
                                   delete $3 /*index_name*/;
@@ -28996,26 +29147,38 @@ populate_index_definition: TOK_POPULATE TOK_INDEX
                                }
 
                     | TOK_POPULATE TOK_ALL TOK_INDEXES
-                        TOK_ON ddl_qualified_name optional_purgedata
+                        TOK_ON ddl_qualified_name 
                                 {
-                                  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-                                  {
-                                    // pop index will be processed by sqlutils code
-                                    yyerror(""); 
-                                    YYERROR;
-                                  }
+                                  
+				  NAString cn("DUMMY");
+
+                                  StmtDDLPopulateIndex *pNode =
+                                    new (PARSERHEAP())
+				      StmtDDLPopulateIndex(
+                                           TRUE, FALSE,
+                                           cn /*index_name*/,
+                                           *$5 /*ddl_qualified_name*/);
+				  pNode->synthesize();
+				  
+                                  delete $5 /*ddl_qualified_name*/;
+                                  $$ = pNode;
+                               }
+                            | TOK_POPULATE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                              TOK_ON ddl_qualified_name 
+                                {
+                                  
 
 				  NAString cn("DUMMY");
 
                                   StmtDDLPopulateIndex *pNode =
                                     new (PARSERHEAP())
 				      StmtDDLPopulateIndex(
-							   TRUE,
-							   cn /*index_name*/,
-							   *$5 /*ddl_qualified_name*/);
+                                           FALSE,TRUE,
+                                           cn /*index_name*/,
+                                           *$6 /*ddl_qualified_name*/);
 				  pNode->synthesize();
 				  
-                                  delete $5 /*ddl_qualified_name*/;
+                                  delete $6 /*ddl_qualified_name*/;
                                   $$ = pNode;
                                }
 
@@ -29306,7 +29469,7 @@ create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_
 			delete $4 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
 			ElemDDLSGOptions *sgOptions = 
 			  new (PARSERHEAP()) ElemDDLSGOptions(
@@ -29321,7 +29484,7 @@ alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_ge
 			delete $3 /*seq_name*/;
 		      }
 
-alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name all_sequence_generator_options
 		      {
                         if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
                           {
@@ -30208,7 +30371,6 @@ no_log: empty
 		{
 			$$ = TRUE;
 		}
-        | osim_capture_hint
 
  no_check_log: empty
 		{
@@ -30229,10 +30391,6 @@ no_log: empty
 		| TOK_NO TOK_CHECK TOK_NOMVLOG
 		{
 		  $$ = 3;
-		}
-                | osim_capture_hint
-		{
-		  $$ = 0;
 		}
 
 ignore_triggers: empty
@@ -30972,6 +31130,19 @@ alter_table_alter_column_set_sg_option : TOK_ALTER TOK_COLUMN column_name TOK_SE
 				      
 				  delete $3;
 				}
+                             | TOK_ALTER TOK_COLUMN column_name reset_option
+				{
+				  ElemDDLSGOptions *sgOptions = new (PARSERHEAP()) ElemDDLSGOptions(
+				     1, /* SG_INTERNAL */
+				     $4 /*sequence_generator_option_list*/);
+                                       
+				  $$ = new (PARSERHEAP())
+				    StmtDDLAlterTableAlterColumnSetSGOption(
+				      *$3,        // column name
+				      sgOptions  /* sequence generator options*/);
+				      
+				  delete $3;
+				}
 				
 /* type pElemDDL */
 alter_col_default_clause_arg : literal
@@ -31091,7 +31262,18 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableDisableIndex(*tmp, 
+                                                                  TRUE, FALSE);
+                                  delete tmp;
+                                }
+                                |
+                                TOK_DISABLE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                                {
+                                  NAString *tmp = new 
+                                     (PARSERHEAP()) NAString((""),PARSERHEAP());
+                                  $$ = new (PARSERHEAP())
+                                    StmtDDLAlterTableDisableIndex(*tmp, FALSE,
+                                                                  TRUE);
                                   delete tmp;
                                 }
                                 |
@@ -31100,7 +31282,8 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE, 
+                                                                  FALSE);
                                   delete tmp;
                                 }
                                 |
@@ -31108,7 +31291,7 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                 {
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableDisableIndex
-                                     ( *$3, FALSE);
+                                    ( *$3, FALSE, FALSE);
                                   delete $3;
                                 }
 
@@ -31117,7 +31300,18 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE, 
+                                                                 FALSE);
+                                  delete tmp;
+                                }
+                                |
+                                TOK_ENABLE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                                {
+                                  NAString *tmp = new 
+                                     (PARSERHEAP()) NAString((""),PARSERHEAP());
+                                  $$ = new (PARSERHEAP())
+                                    StmtDDLAlterTableEnableIndex(*tmp, FALSE,
+                                                                 TRUE);
                                   delete tmp;
                                 }
                                 |
@@ -31126,7 +31320,8 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE, 
+                                                                 FALSE);
                                   delete tmp;
                                 }
                                 |
@@ -31134,7 +31329,7 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                 {
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableEnableIndex
-                                     ( *$3, FALSE);
+                                    ( *$3, FALSE, FALSE);
                                   delete $3;
                                 }
 
@@ -32634,6 +32829,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RATE 
                       | TOK_REAL_IEEE
                       | TOK_REAL_TANDEM
+                      | TOK_REBUILD
                       | TOK_RECOMPUTE // MV 
                       | TOK_RECORD_SEPARATOR
                       | TOK_RECOVER
@@ -32761,6 +32957,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_VARIABLE_POINTER
                       | TOK_VOLATILE			
                       | TOK_VERSION
+                      | TOK_VERSIONS
                       | TOK_VPROC
                       | TOK_VERSION_INFO		// Versioning
                       | TOK_VIEWS
@@ -32872,6 +33069,8 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_GREATEST
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
+                      | TOK_HBASE_TIMESTAMP
+                      | TOK_HBASE_VERSION
                       | TOK_HIVEMD
                       | TOK_INITIAL
                       | TOK_INSTR
@@ -32903,7 +33102,6 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_NVL
                       | TOK_NULLIFZERO
                       | TOK_OFFSET
-                      | TOK_OSIM_CAPTURE
                       | TOK_OS_USERID
                       | TOK_PI
                       | TOK_PIVOT

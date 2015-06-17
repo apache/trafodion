@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -340,10 +340,12 @@ class HPT4Desc {
 			break;
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+                        boolean shortLength = maxLen < Math.pow(2, 15);
+                        int dataOffset = ((shortLength) ? 2 : 4);
 			if (sqlDataType_ == SQLTYPECODE_VARCHAR) {
 				sqlOctetLength_ = maxLen + 1;
 			} else {
-				sqlOctetLength_ = maxLen + 3;
+				sqlOctetLength_ = maxLen + dataOffset + 1;
 			}
 			displaySize_ = maxLen;
 			precision_ = maxLen; // ODBC2.0

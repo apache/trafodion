@@ -1,0 +1,466 @@
+>>obey TEST_13_2_5(tests);
+>>
+>>set schema cat1.schm;
+
+--- SQL operation complete.
+>>
+>>-- guest should try CREATE TRIGGER, but fail
+>>sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  CREATE TRIGGER  trg1325_1 for GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1325_1 after insert on t1325K
++>  referencing new as newrow
++>    for each row
++>      when ( newrow.i = 11 ) 
++>        insert into cat1.schm.t1325F
++>              select j, 
++>                     case
++>                        when i=5 then (select MAX(j) from SCHM.t1325C)
++>			when i=6 then 
++>			   (select count(*) from SCHM.t1325D,SCHM.t1325E)
++>			when i in (select i from SCHM.t1325A)
++>				then 777
++>			else newrow.j+200
++>		     end
++>		from SCHM.t1325B;
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view CAT1.SCHM.T1325F.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325B.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325C.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325D.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325E.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325A.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>grant all on table t1325A to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant all on table t1325B to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant all on table t1325C to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant select on table t1325D to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant insert on table t1325F to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant update (i) on table t1325G to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant update (j) on table t1325G to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>--grant select(i,j) on CAT1.SCHM.T1325G to $$SQLUSER1Q$$;
+>>grant select on CAT1.SCHM.T1325G to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>grant delete on table t1325H to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>
+>>-- guest should try CREATE TRIGGER, but fail due to rights on  t1325E
+>>sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  CREATE TRIGGER  trg1325_1 for GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1325_1 after insert on t1325K
++>  referencing new as newrow
++>    for each row
++>      when ( newrow.i = 11 ) 
++>        insert into cat1.schm.t1325F
++>              select j, 
++>                     case
++>                        when i=5 then (select MAX(j) from SCHM.t1325C)
++>			when i=6 then 
++>			   (select count(*) from SCHM.t1325D,SCHM.t1325E)
++>			when i in (select i from SCHM.t1325A)
++>				then 777
++>			else newrow.j+200
++>		     end
++>		from SCHM.t1325B;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CAT1.SCHM.T1325E.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>grant all on table t1325E to $$SQLUSER1Q$$;
+
+--- SQL operation complete.
+>>
+>>-- Now guest got MAX rights on all tables
+>>-- Guest try misc. operations (all should fail) 
+>>sh sh runmxci.ksh -i "TEST_13_2_5(misc_guest)" -u $$SQLUSER1Q$$;
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>-- try and drop the other trigger (should fail)
+>>drop trigger cat1.schm.trg1325X ;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+*** ERROR[1031] Object CAT1.SCHM.TRG1325X could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-- try and alter the other trigger (should fail)
+>>alter trigger disable all of cat1.schm.t1325A;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>-- try and create a trigger on the other tables (should fail too)
+>>create trigger trg1325fail after insert on schm.t1325A
++> delete from t1325K;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>-- guest should try CREATE TRIGGER, and now succeed !!!
+>>sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_1_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  CREATE TRIGGER  trg1325_1 for GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1325_1 after insert on t1325K
++>  referencing new as newrow
++>    for each row
++>      when ( newrow.i = 11 ) 
++>        insert into cat1.schm.t1325F
++>              select j, 
++>                     case
++>                        when i=5 then (select MAX(j) from SCHM.t1325C)
++>			when i=6 then 
++>			   (select count(*) from SCHM.t1325D,SCHM.t1325E)
++>			when i in (select i from SCHM.t1325A)
++>				then 777
++>			else newrow.j+200
++>		     end
++>		from SCHM.t1325B;
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>-- guest should try CREATE TRIGGER for the other triggers
+>>-- all should succeed
+>>sh sh runmxci.ksh -i "TEST_13_2_5(create_trigger_2_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  CREATE TRIGGER for the other triggers for GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1325_2 before update on t1325K 
++>  referencing new as newr 
++>    when (exists (select * from SCHM.t1325B))
++>       set newr.i = newr.j + 20;
+
+--- SQL operation complete.
+>>
+>>create trigger trg_1325_3 after update on t1325K
++>  update SCHM.t1325G set i = i + 3, j = j + 20;
+
+--- SQL operation complete.
+>>
+>>create trigger trg1325_4 after delete on t1325L
++>  delete from SCHM.t1325H;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>-- Guest try and execute
+>>sh sh runmxci.ksh -i "TEST_13_2_5(use_trigger_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  USE  TRIGGER  GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>insert into t1325K values (99,88);
+
+--- 1 row(s) inserted.
+>> -- WHEN should return FALSE
+>>insert into t1325K values (11,77);
+
+--- 1 row(s) inserted.
+>> -- WHEN should return TRUE
+>>update t1325K set i = i + 20, j = j + 12;
+
+--- 6 row(s) updated.
+>>delete from t1325L where i < 100;
+
+--- 4 row(s) deleted.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>-- verify that trigger worked
+>>select * from t1325F;
+
+I            J          
+-----------  -----------
+
+         55          133
+         56            9
+         57          277
+
+--- 3 row(s) selected.
+>>
+>>-- try and drop dependant objects (all these should fail)
+>>drop table t1325A;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325A cannot be dropped because it is being used by trigger CAT1.SCHM.TRG1325X.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1325B;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325B cannot be dropped because it is being used by trigger CAT1.GUEST_SCHEMA.TRG1325_1.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1325C;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325C cannot be dropped because it is being used by trigger CAT1.GUEST_SCHEMA.TRG1325_1.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325C could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1325D;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325D cannot be dropped because it is being used by trigger CAT1.GUEST_SCHEMA.TRG1325_1.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325D could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1325E;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325E cannot be dropped because it is being used by trigger CAT1.GUEST_SCHEMA.TRG1325_1.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325E could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t1325F;
+
+*** ERROR[11033] Object CAT1.SCHM.T1325F cannot be dropped because it is being used by trigger CAT1.SCHM.TRG1325X.
+
+*** ERROR[1031] Object CAT1.SCHM.T1325F could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-- all revoke operations should fail because of dependent
+>>-- descriptors
+>>revoke select on table t1325A from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke select on table t1325B from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke select on table t1325C from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke all on table t1325D from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke all on table t1325E from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke insert on table t1325F from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke update (i) on table t1325G from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>revoke delete on table t1325H from $$SQLUSER1Q$$;
+
+*** ERROR[1014] Privileges were not revoked.  Dependent privilege descriptors still exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- Guest try and execute (should execute)
+>>sh sh runmxci.ksh -i "TEST_13_2_5(use_trigger_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  USE  TRIGGER  GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>insert into t1325K values (99,88);
+
+--- 1 row(s) inserted.
+>> -- WHEN should return FALSE
+>>insert into t1325K values (11,77);
+
+--- 1 row(s) inserted.
+>> -- WHEN should return TRUE
+>>update t1325K set i = i + 20, j = j + 12;
+
+--- 8 row(s) updated.
+>>delete from t1325L where i < 100;
+
+--- 0 row(s) deleted.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>
+>>-- all revoke operations should fail because of dependent
+>>-- descriptors
+>>revoke select on table t1325A from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke select on table t1325B from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke select on table t1325C from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke all on table t1325D from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke all on table t1325E from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke insert on table t1325F from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke update (i) on table t1325G from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>revoke delete on table t1325H from $$SQLUSER1Q$$ cascade;
+
+--- SQL operation complete.
+>>
+>>-- try and drop the triggers, should all fail because the triggers
+>>-- should have been dropped by the revoke cascade above
+>>sh sh runmxci.ksh -i "TEST_13_2_5(drop_trigger_guest)" -u $$SQLUSER1Q$$;
+>>--------------------------------------------------
+>>--  DROP  TRIGGER  GUEST
+>>--------------------------------------------------
+>>set schema cat1.guest_schema ;
+
+--- SQL operation complete.
+>>
+>>drop trigger trg1325_1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.GUEST_SCHEMA.TRG1325_1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trg1325_2;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.GUEST_SCHEMA.TRG1325_2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trg1325_3;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.GUEST_SCHEMA.TRG1325_3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop trigger trg1325_4;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.GUEST_SCHEMA.TRG1325_4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>log LOG_13_2_5;
+>>------------------------
+>>--  That's all the tests
+>>------------------------
+>>
+>>log;

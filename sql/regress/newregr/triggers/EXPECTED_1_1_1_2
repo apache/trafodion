@@ -1,0 +1,35 @@
+>>obey TEST_1_1_1_2(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER trig2 AFTER INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newTab
++>	FOR EACH STATEMENT
++>		WHEN (5 > (SELECT count(*) FROM newtab 
++>			 WHERE newTab.a + newTab.b = newTab.c))
++>
++>		UPDATE tab1A
++>		SET d= 100 WHERE a in 
++>			(SELECT a FROM newTab);
+
+*** ERROR[11023] Subqueries are currently not supported in the WHEN clause of AFTER triggers.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- a variation that should work
+>>CREATE TRIGGER TRIG2a AFTER INSERT 
++>	ON TAB1A 
++>	REFERENCING NEW AS NEWTAB 
++>	FOR EACH STATEMENT 
++>		WHEN (5 > 3) 
++>		UPDATE TAB1A 
++>		SET D = 100 WHERE A IN (SELECT b FROM NEWTAB);
+
+--- SQL operation complete.
+>>-- select b ... instead of select a ... 
+>>
+>>---------------------------------------------------------------------------------
+>>LOG;

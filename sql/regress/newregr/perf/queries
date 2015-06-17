@@ -1,0 +1,343 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+obey cidefs;
+
+?ifMX
+set catalog tpcd;
+set schema tpcd.sch;
+?ifMX
+
+------------------------------------------
+-- controls
+------------------------------------------
+control query default PARALLEL_EXECUTION 'OFF';
+control query default DEF_NUM_LOCAL_SMP_CPUS '1';
+
+control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER 
+?ifMX
+'1'
+?ifMX
+?ifNSKRel1
+'4'
+?ifNSKRel1
+;
+
+control query default DEF_PHYSICAL_MEMORY_AVAILABLE '128000000';
+control query default DEF_VIRTUAL_MEMORY_AVAILABLE '1000000000';
+
+
+control query shape anything;
+
+----------------------------------------------------------------
+--------------                                     -------------
+------                 START TESTS                          ----
+-----------                                      ---------------
+----------------------------------------------------------------
+
+
+----------------------------------------------------------------
+-- QUERY 1 - scan
+--
+-- produces 0 rows
+-- WHERE clause applied on non-key column with ~50% selectivity
+----------------------------------------------------------------
+?section query1
+
+log query1.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+select [last 0] * from $$table1$$ where l_shipdate <= date '1995-07-01';
+
+display statistics;
+
+log;
+
+
+----------------------------------------------------------------
+-- QUERY 2 - scan + aggr + hash_groupby (modified tpcd query 1)
+--
+-- produces 0 rows
+----------------------------------------------------------------
+?section query2
+
+log query2.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape hash_groupby(partition_access(scan('T1')));
+
+SELECT [last 0] l_returnflag, l_linestatus, SUM(l_quantity),
+       CAST(SUM(l_extendedprice) AS NUMERIC(18,2)),
+       CAST(SUM(l_extendedprice * (1-l_discount)) AS NUMERIC(18,2)),
+       CAST(SUM(l_extendedprice * (1-l_discount) * (1 + l_tax))
+            AS NUMERIC(18,2)),
+       AVG(l_quantity),
+       AVG(l_extendedprice),
+       AVG(CAST(l_discount AS NUMERIC (10,3))),
+       AVG(l_discount),
+       COUNT(*)
+FROM $$table1$$ T1
+GROUP BY l_returnflag, l_linestatus;
+
+display statistics;
+
+log;
+
+
+-----------------------------------------------------------------
+-- QUERY 3 - scan + aggr + sort_groupby + hash_groupby + sort
+--
+-- produces 0 rows
+-----------------------------------------------------------------
+?section query3
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+log query3.log clear;
+
+control query shape sort_groupby(sort(partition_access(scan('T1'))));
+
+select [last 0] l_linestatus, count(l_returnflag)
+from $$table1$$ T1
+group by l_linestatus order by l_linestatus;
+
+display statistics;
+
+log;
+
+----------------------------------------------------------------
+-- QUERY 4 - hash join
+--
+-- produces 0 rows
+-- joining on primary key columns
+----------------------------------------------------------------
+?section query4
+
+log query4.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+
+control query shape hybrid_hash_join(partition_access(
+scan('T1')),partition_access(scan('T2')));
+
+select [last 0] l_orderkey, o_orderdate
+from $$table2$$ T2, $$table1$$ T1
+where l_orderkey = o_orderkey;
+
+display statistics;
+
+log;
+
+
+-----------------------------------------------------------------
+-- QUERY 5 - nested join & materialize
+--
+-- produces 0 rows
+-- joining on non-key columns
+-----------------------------------------------------------------
+?section query5
+
+log query5.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape nested_join(partition_access(
+scan('T2')), materialize(partition_access(scan('T1' ))));
+
+select [last 0] l_orderkey, o_orderdate
+from $$table2$$ T2, $$table1$$ T1
+where l_quantity = o_orderkey;
+
+display statistics;
+
+log;
+
+
+-----------------------------------------------------------------
+-- QUERY 6 - merge join
+--
+-- produces 0 rows 
+-- joining on primary key columns
+-----------------------------------------------------------------
+?section query6
+
+log query6.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape merge_join(partition_access(
+scan('T1')),partition_access(scan('T2')));
+
+select [last 0] l_orderkey, o_orderdate
+from $$table2$$ T2, $$table1$$ T1
+where l_orderkey = o_orderkey ;
+
+display statistics;
+
+log;
+
+
+-----------------------------------------------------------------
+-- QUERY 7 - union all
+-- 
+-- produces 0 rows
+-----------------------------------------------------------------
+?section query7
+
+log query7.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape union(partition_access(scan('T1')),
+partition_access(scan('T2')));
+
+select [last 0] * from (
+  select l_orderkey from $$table1$$ T1 union all 
+  select o_orderkey from $$table2$$ T2
+) x(a);
+
+display statistics;
+log;
+
+
+------------------------------------------------------------------
+-- QUERY 8 - sort
+--
+------------------------------------------------------------------
+?section query8
+
+log query8.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape sort(nested_join(partition_access(
+scan('T2')), materialize(partition_access(scan('T1')))));
+
+select [last 0] l_returnflag, l_linestatus, o_shippriority
+from $$table1$$ T1, $$table2$$ T2
+where l_orderkey = o_orderkey
+order by l_returnflag, l_linestatus, o_shippriority;
+
+display statistics;
+
+log;
+
+------------------------------------------------------------------
+-- QUERY 9 - granddaddy query
+--
+------------------------------------------------------------------
+?section query9
+
+log query9.log clear;
+
+-- clear disk cache
+?ifMX
+sh setcache -dp2 $DATA;
+sh setcache -dp2 $DATA2;
+?ifMX
+?ifNSKRel1
+sh gtacl -c 'scf alter disk $data02, cache(4096, 1)';
+sh gtacl -c 'scf alter disk $data08, cache(4096, 1)';
+?ifNSKRel1
+
+control query shape hash_groupby(merge_join(sort(hybrid_hash_join(
+partition_access(scan('T1')),nested_join(partition_access(
+scan('T2')), materialize(partition_access(scan('T1')))))),partition_access(
+scan('T2'))));
+
+
+select [last 0] l_returnflag, l_linestatus, 
+       sum(l_quantity), cast(sum(l_extendedprice) as numeric(18,2)), 
+       avg(l_discount), count(*) 
+from $$table1$$ T1, $$table2$$ T2
+where o_orderkey = l_orderkey and 
+      l_comment in (select l_comment from $$table1$$ T1, $$table2$$ T2 where
+                   l_orderkey = o_orderkey)
+group by l_returnflag, l_linestatus for serializable access;
+
+display statistics;
+
+log;
+
+

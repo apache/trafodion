@@ -1,0 +1,1112 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+
+obey TEST_EN_DIS(clean_up);
+obey TEST_EN_DIS(set_up);
+log   LOG_EN_DIS clear;
+obey TEST_EN_DIS(tests);
+LOG;
+obey TEST_EN_DIS(clean_up);
+exit;
+
+
+
+?section clean_up
+
+------------------------------------------------------------------------------
+-- SECTION: CLEAN_UP
+------------------------------------------------------------------------------
+
+Set schema endis.schm;
+
+Drop trigger tr00;
+Drop trigger tr01;
+Drop trigger tr02;
+Drop trigger tr03;
+Drop trigger tr04;
+Drop trigger trDummy1;
+Drop trigger trDummy2;
+
+
+Drop trigger tr10;
+Drop trigger tr11;
+Drop trigger tr12;
+Drop trigger tr13;
+Drop trigger tr14;
+Drop trigger tr19;
+Drop trigger cover19;
+Drop trigger trDummy11;
+Drop trigger trDummy12;
+
+
+
+Drop trigger tr20;
+Drop trigger tr21;
+Drop trigger tr22;
+Drop trigger tr23;
+Drop trigger tr24;
+Drop trigger trDummy21;
+
+Drop trigger tr30;
+Drop trigger tr31;
+Drop trigger tr32;
+Drop trigger tr33;
+Drop trigger tr34;
+Drop trigger trDummy31;
+
+
+Drop trigger tr40;
+Drop trigger tr41;
+Drop trigger tr42;
+Drop trigger tr43;
+Drop trigger tr44;
+Drop trigger tr49;
+Drop trigger cover49;
+Drop trigger trDummy41;
+
+
+Drop trigger tr50;
+Drop trigger tr51;
+Drop trigger tr52;
+Drop trigger tr53;
+Drop trigger tr54;
+Drop trigger trDummy51;
+
+
+Drop trigger tr60;
+Drop trigger tr61;
+Drop trigger tr62;
+Drop trigger tr63;
+Drop trigger tr64;
+Drop trigger trDummy61;
+
+
+Drop trigger tr70;
+Drop trigger tr71;
+Drop trigger tr72;
+Drop trigger tr73;
+Drop trigger tr74;
+Drop trigger tr79;
+Drop trigger cover79;
+Drop trigger trDummy71;
+
+Drop trigger tr80;
+Drop trigger tr81;
+Drop trigger tr82;
+Drop trigger tr83;
+Drop trigger tr84;
+Drop trigger trDummy81;
+
+Drop table results;
+Drop table t0;
+Drop table t1;
+Drop table t2;
+Drop table t3;
+Drop table t4;
+Drop table t5;
+Drop table t6;
+Drop table t7;
+Drop table t8;
+Drop table t9;
+
+
+Drop schema endis.schm;
+Drop catalog endis;
+
+
+?section set_up
+------------------------------------------------------------------------------
+-- SECTION: SET_UP
+------------------------------------------------------------------------------
+
+Create catalog endis;
+Create schema endis.schm;
+Set schema endis.schm;
+
+
+
+--------------------------------
+--       results table
+--------------------------------
+create table results (trig_num int not null, enabled int not null, primary key(trig_num));
+insert into results values   (1 , 0), (2 , 0), (3 , 0), (4 , 0),
+                             (11, 0), (12, 0), (13, 0), (14, 0), (19, 0),
+                             (21, 0), (22, 0), (23, 0), (24, 0),
+                             (31, 0), (32, 0), (33, 0), (34, 0),
+                             (41, 0), (42, 0), (43, 0), (44, 0), (49, 0),
+                             (51, 0), (52, 0), (53, 0), (54, 0),
+                             (61, 0), (62, 0), (63, 0), (64, 0),
+                             (71, 0), (72, 0), (73, 0), (74, 0), (79, 0),
+                             (81, 0), (82, 0), (83, 0), (84, 0),
+                             ( -1,0), (-2,0),
+                             (-11,0), (-12,0),
+                             (-21,0),
+                             (-31,0),
+                             (-41,0),
+                             (-51,0),
+                             (-61,0),
+                             (-71,0),
+                             (-81,0);
+                             
+			     
+--------------------------------
+--   tables T0 ... T9
+--------------------------------
+create table t0( a int);
+
+create table t1( a int);
+insert into t1 values (0);
+insert into t1 values (1000);
+
+create table t2( a int);
+insert into t2 values (0);
+
+create table t3( a int);
+insert into t3 values (0);
+
+create table t4( a int);
+insert into t4 values (0);
+insert into t4 values (1000);
+
+create table t5( a int);
+insert into t5 values (0);
+
+create table t6( a int);
+insert into t6 values (0);
+
+create table t7( a int);
+insert into t7 values (0);
+insert into t7 values (1000);
+
+create table t8( a int);
+insert into t8 values (0);
+
+create table t9( a int);
+insert into t9 values (0);
+
+------------------------------------------
+--   triggers tr0, tr10, tr20 ... tr80
+------------------------------------------
+create trigger tr00 after insert on t0
+	update t1 set a=1;
+
+create trigger tr10 after update on t1
+	delete from t2;
+
+create trigger tr20 after delete on t2
+	insert into t3 values(1);
+
+create trigger tr30 after insert on t3
+	update t4 set a=1;
+
+create trigger tr40 after update on t4
+	delete from t5;
+
+create trigger tr50 after delete on t5
+	insert into t6 values(1);
+
+create trigger tr60 after insert on t6
+	update t7 set a=1;
+
+create trigger tr70 after update on t7
+	delete from t8;
+
+create trigger tr80 after delete on t8
+	insert into t9 values(1);
+
+
+------------------------------------------
+--   triggers tr01 ... tr04. -1, -2
+------------------------------------------
+create trigger tr01 after insert on t0
+	update results set enabled=1 where trig_num = 1;
+
+create trigger tr02 after insert on t0
+	update results set enabled=1 where trig_num = 2;
+
+create trigger tr03 after insert on t0
+	update results set enabled=1 where trig_num = 3;
+
+create trigger tr04 after insert on t0
+	update results set enabled=1 where trig_num = 4;
+
+create trigger trDummy1 after update on t0
+	update results set enabled=1 where trig_num = (-1);
+
+create trigger trDummy2 after delete on t0
+	update results set enabled=1 where trig_num = (-2);
+
+
+------------------------------------------
+--   triggers tr11 ... tr14, tr19 + cover, -11, -12
+------------------------------------------
+create trigger tr11 after update on t1
+	update results set enabled=1 where trig_num = 11;
+
+create trigger tr12 after update on t1
+	update results set enabled=1 where trig_num = 12;
+
+create trigger tr13 after update on t1
+	update results set enabled=1 where trig_num = 13;
+
+create trigger tr14 after update on t1
+	update results set enabled=1 where trig_num = 14;
+
+-- before trig tr19
+create trigger tr19 before update on t1 
+referencing old as oldt, new as newt for each row
+	when (oldt.a >999) set newt.a=2000;
+
+-- cover for tr19
+create trigger cover19 after update on t1
+	referencing new as newt for each row
+	when (newt.a > 1999)
+	update results set enabled=1 where trig_num =19;
+
+create trigger trDummy11 after insert on t1
+	update results set enabled=1 where trig_num = (-11);
+
+create trigger trDummy12 after delete on t1
+	update results set enabled=1 where trig_num = (-12);
+
+
+
+------------------------------------------
+--   triggers tr21 ... tr24, -21
+------------------------------------------
+create trigger tr21 after delete on t2
+	update results set enabled=1 where trig_num = 21;
+
+create trigger tr22 after delete on t2
+	update results set enabled=1 where trig_num = 22;
+
+create trigger tr23 after delete on t2
+	update results set enabled=1 where trig_num = 23;
+
+create trigger tr24 after delete on t2
+	update results set enabled=1 where trig_num = 24;
+
+create trigger trDummy21 after update on t2
+	update results set enabled=1 where trig_num = (-21);
+
+------------------------------------------
+--   triggers tr31 ... tr34, -31
+------------------------------------------
+create trigger tr31 after insert on t3
+	update results set enabled=1 where trig_num = 31;
+
+create trigger tr32 after insert on t3
+	update results set enabled=1 where trig_num = 32;
+
+create trigger tr33 after insert on t3
+	update results set enabled=1 where trig_num = 33;
+
+create trigger tr34 after insert on t3
+	update results set enabled=1 where trig_num = 34;
+
+create trigger trDummy31 after delete on t3
+	update results set enabled=1 where trig_num = (-31);
+
+------------------------------------------
+--   triggers tr41 ... tr44, tr49 +cover, -41
+------------------------------------------
+create trigger tr41 after update on t4
+	update results set enabled=1 where trig_num = 41;
+
+create trigger tr42 after update on t4
+	update results set enabled=1 where trig_num = 42;
+
+create trigger tr43 after update on t4
+	update results set enabled=1 where trig_num = 43;
+
+create trigger tr44 after update on t4
+	update results set enabled=1 where trig_num = 44;
+
+-- before trig tr49
+create trigger tr49 before update on t4 
+referencing old as oldt, new as newt for each row
+	when (oldt.a >999) set newt.a=2000;
+
+-- cover for tr49
+create trigger cover49 after update on t4
+	referencing new as newt for each row
+	when (newt.a > 1999)
+	update results set enabled=1 where trig_num =49;
+
+
+create trigger trDummy41 after insert on t4
+	update results set enabled=1 where trig_num = (-41);
+
+------------------------------------------
+--   triggers tr51 ... tr54, -51
+------------------------------------------
+create trigger tr51 after delete on t5
+	update results set enabled=1 where trig_num = 51;
+
+create trigger tr52 after delete on t5
+	update results set enabled=1 where trig_num = 52;
+
+create trigger tr53 after delete on t5
+	update results set enabled=1 where trig_num = 53;
+
+create trigger tr54 after delete on t5
+	update results set enabled=1 where trig_num = 54;
+
+create trigger trDummy51 after insert on t5
+	update results set enabled=1 where trig_num = (-51);
+
+------------------------------------------
+--   triggers tr61 ... tr64, -61
+------------------------------------------
+create trigger tr61 after insert on t6
+	update results set enabled=1 where trig_num = 61;
+
+create trigger tr62 after insert on t6
+	update results set enabled=1 where trig_num = 62;
+
+create trigger tr63 after insert on t6
+	update results set enabled=1 where trig_num = 63;
+
+create trigger tr64 after insert on t6
+	update results set enabled=1 where trig_num = 64;
+
+create trigger trDummy61 after update of (a) on t6
+	update results set enabled=1 where trig_num = (-61);
+
+
+------------------------------------------
+--   triggers tr71 ... tr74, tr79 + cover, -71
+------------------------------------------
+create trigger tr71 after update on t7
+	update results set enabled=1 where trig_num = 71;
+
+create trigger tr72 after update on t7
+	update results set enabled=1 where trig_num = 72;
+
+create trigger tr73 after update on t7
+	update results set enabled=1 where trig_num = 73;
+
+create trigger tr74 after update on t7
+	update results set enabled=1 where trig_num = 74;
+
+-- before trig tr79
+create trigger tr79 before update on t7 
+referencing old as oldt, new as newt for each row
+	when (oldt.a >999) set newt.a=2000;
+
+-- cover for tr79
+create trigger cover79 after update on t7
+	referencing new as newt for each row
+	when (newt.a > 1999)
+	update results set enabled=1 where trig_num =79;
+
+create trigger trDummy71 after insert on t7
+	update results set enabled=1 where trig_num = (-71);
+
+------------------------------------------
+--   triggers tr81 ... tr84, -81
+------------------------------------------
+create trigger tr81 after delete on t8
+	update results set enabled=1 where trig_num = 81;
+
+create trigger tr82 after delete on t8
+	update results set enabled=1 where trig_num = 82;
+
+create trigger tr83 after delete on t8
+	update results set enabled=1 where trig_num = 83;
+
+create trigger tr84 after delete on t8
+	update results set enabled=1 where trig_num = 84;
+
+create trigger trDummy81 after insert on t8
+	update results set enabled=1 where trig_num = (-81);
+
+
+?section clear_res
+------------------------------------------------------------------------------
+-- SECTION: CLEAR_RES
+------------------------------------------------------------------------------
+alter trigger disable all of t0;
+alter trigger disable all of t1;
+alter trigger disable all of t2;
+alter trigger disable all of t3;
+alter trigger disable all of t4;
+alter trigger disable all of t5;
+alter trigger disable all of t6;
+alter trigger disable all of t7;
+alter trigger disable all of t8;
+alter trigger disable all of t9;
+
+
+delete from t0;
+delete from t1;
+delete from t2;
+delete from t3;
+delete from t4;
+delete from t5;
+delete from t6;
+delete from t7;
+delete from t8;
+delete from t9;
+
+
+insert into t1 values (0);
+insert into t1 values (1000);
+insert into t2 values (0);
+insert into t3 values (0);
+insert into t4 values (0);
+insert into t4 values (1000);
+insert into t5 values (0);
+insert into t6 values (0);
+insert into t7 values (0);
+insert into t7 values (1000);
+insert into t8 values (0);
+insert into t9 values (0);
+
+update results set enabled=0;
+
+
+
+
+alter trigger enable  all of t0;
+alter trigger enable  all of t1;
+alter trigger enable  all of t2;
+alter trigger enable  all of t3;
+alter trigger enable  all of t4;
+alter trigger enable  all of t5;
+alter trigger enable  all of t6;
+alter trigger enable  all of t7;
+alter trigger enable  all of t8;
+alter trigger enable  all of t9;
+
+
+?section tests
+------------------------------------------------------------------------------
+-- SECTION: TESTS
+------------------------------------------------------------------------------
+obey TEST_EN_DIS(test1);
+obey TEST_EN_DIS(test2);
+obey TEST_EN_DIS(test3);
+obey TEST_EN_DIS(test4);
+obey TEST_EN_DIS(test5);
+
+?section test1
+------------------------------------------------------------------------------
+-- SECTION: TEST1
+------------------------------------------------------------------------------
+-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+-- enabled
+
+obey TEST_EN_DIS(clear_res);
+			
+	Alter trigger	ENABLE	tr00;
+	Alter trigger	ENABLE	tr01;
+	Alter trigger	ENABLE	tr02;
+	Alter trigger	ENABLE	tr03;
+	Alter trigger	ENABLE	tr04;
+	Alter trigger	ENABLE	Tr10;
+	Alter trigger	ENABLE	Tr11;
+	Alter trigger	ENABLE	Tr12;
+	Alter trigger	ENABLE	Tr13;
+	Alter trigger	ENABLE	Tr14;
+	Alter trigger	ENABLE	Tr19;
+	Alter trigger	ENABLE	Tr20;
+	Alter trigger	ENABLE	Tr21;
+	Alter trigger	ENABLE	Tr22;
+	Alter trigger	ENABLE	Tr23;
+	Alter trigger	ENABLE	Tr24;
+	Alter trigger	ENABLE	Tr30;
+	Alter trigger	ENABLE	Tr31;
+	Alter trigger	ENABLE	Tr32;
+	Alter trigger	ENABLE	Tr33;
+	Alter trigger	ENABLE	Tr34;
+	Alter trigger	ENABLE	Tr40;
+	Alter trigger	ENABLE	Tr41;
+	Alter trigger	ENABLE	Tr42;
+	Alter trigger	ENABLE	Tr43;
+	Alter trigger	ENABLE	Tr44;
+	Alter trigger	ENABLE	Tr49;
+	Alter trigger	ENABLE	Tr50;
+	Alter trigger	ENABLE	Tr51;
+	Alter trigger	ENABLE	Tr52;
+	Alter trigger	ENABLE	Tr53;
+	Alter trigger	ENABLE	Tr54;
+	Alter trigger	ENABLE	Tr60;
+	Alter trigger	ENABLE	Tr61;
+	Alter trigger	ENABLE	Tr62;
+	Alter trigger	ENABLE	Tr63;
+	Alter trigger	ENABLE	Tr64;
+	Alter trigger	ENABLE	Tr70;
+	Alter trigger	ENABLE	Tr71;
+	Alter trigger	ENABLE	Tr72;
+	Alter trigger	ENABLE	Tr73;
+	Alter trigger	ENABLE	Tr74;
+	Alter trigger	ENABLE	Tr79;
+	Alter trigger	ENABLE	Tr80;
+	Alter trigger	ENABLE	Tr81;
+	Alter trigger	ENABLE	Tr82;
+	Alter trigger	ENABLE	Tr83;
+	Alter trigger	ENABLE	Tr84;
+
+
+--	TR	E/D	RES
+--	00	1	--
+--	01	1	1
+--	02	1	1
+--	03	1	1
+--	04	1	1
+--	10	1	--
+--	11	1	1
+--	12	1	1
+--	13	1	1
+--	14	1	1
+--	19	1	1
+--	20	1	--
+--	21	1	1
+--	22	1	1
+--	23	1	1
+--	24	1	1
+--	30	1	--
+--	31	1	1
+--	32	1	1
+--	33	1	1
+--	34	1	1
+--	40	1	--
+--	41	1	1
+--	42	1	1
+--	43	1	1
+--	44	1	1
+--	49	1	1
+--	50	1	--
+--	51	1	1
+--	52	1	1
+--	53	1	1
+--	54	1	1
+--	60	1	--
+--	61	1	1
+--	62	1	1
+--	63	1	1
+--	64	1	1
+--	70	1	--
+--	71	1	1
+--	72	1	1
+--	73	1	1
+--	74	1	1
+--	79	1	1
+--	80	1	--
+--	81	1	1
+--	82	1	1
+--	83	1	1
+--	84	1	1
+
+---------------------
+-- TRIGGERING IUD
+---------------------
+insert into t0 values (0);
+
+---------------------
+-- CHECK RESULTS
+---------------------
+select * from results;
+
+
+
+?section test2
+------------------------------------------------------------------------------
+-- SECTION: TEST2
+------------------------------------------------------------------------------
+-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+-- enabled
+
+obey TEST_EN_DIS(clear_res);
+			
+	Alter trigger	DISABLE	tr00;
+	Alter trigger	ENABLE	tr01;
+	Alter trigger	ENABLE	tr02;
+	Alter trigger	ENABLE	tr03;
+	Alter trigger	ENABLE	tr04;
+	Alter trigger	ENABLE	Tr10;
+	Alter trigger	ENABLE	Tr11;
+	Alter trigger	ENABLE	Tr12;
+	Alter trigger	ENABLE	Tr13;
+	Alter trigger	ENABLE	Tr14;
+	Alter trigger	ENABLE	Tr19;
+	Alter trigger	ENABLE	Tr20;
+	Alter trigger	ENABLE	Tr21;
+	Alter trigger	ENABLE	Tr22;
+	Alter trigger	ENABLE	Tr23;
+	Alter trigger	ENABLE	Tr24;
+	Alter trigger	ENABLE	Tr30;
+	Alter trigger	ENABLE	Tr31;
+	Alter trigger	ENABLE	Tr32;
+	Alter trigger	ENABLE	Tr33;
+	Alter trigger	ENABLE	Tr34;
+	Alter trigger	ENABLE	Tr40;
+	Alter trigger	ENABLE	Tr41;
+	Alter trigger	ENABLE	Tr42;
+	Alter trigger	ENABLE	Tr43;
+	Alter trigger	ENABLE	Tr44;
+	Alter trigger	ENABLE	Tr49;
+	Alter trigger	ENABLE	Tr50;
+	Alter trigger	ENABLE	Tr51;
+	Alter trigger	ENABLE	Tr52;
+	Alter trigger	ENABLE	Tr53;
+	Alter trigger	ENABLE	Tr54;
+	Alter trigger	ENABLE	Tr60;
+	Alter trigger	ENABLE	Tr61;
+	Alter trigger	ENABLE	Tr62;
+	Alter trigger	ENABLE	Tr63;
+	Alter trigger	ENABLE	Tr64;
+	Alter trigger	ENABLE	Tr70;
+	Alter trigger	ENABLE	Tr71;
+	Alter trigger	ENABLE	Tr72;
+	Alter trigger	ENABLE	Tr73;
+	Alter trigger	ENABLE	Tr74;
+	Alter trigger	ENABLE	Tr79;
+	Alter trigger	ENABLE	Tr80;
+	Alter trigger	ENABLE	Tr81;
+	Alter trigger	ENABLE	Tr82;
+	Alter trigger	ENABLE	Tr83;
+	Alter trigger	ENABLE	Tr84;
+
+
+--	TR	E/D	RES
+--	00	0	--
+--	01	1	1
+--	02	1	1
+--	03	1	1
+--	04	1	1
+--	10	1	--
+--	11	1	0
+--	12	1	0
+--	13	1	0
+--	14	1	0
+--	19	1	0
+--	20	1	--
+--	21	1	0
+--	22	1	0
+--	23	1	0
+--	24	1	0
+--	30	1	--
+--	31	1	0
+--	32	1	0
+--	33	1	0
+--	34	1	0
+--	40	1	--
+--	41	1	0
+--	42	1	0
+--	43	1	0
+--	44	1	0
+--	49	1	0
+--	50	1	--
+--	51	1	0
+--	52	1	0
+--	53	1	0
+--	54	1	0
+--	60	1	--
+--	61	1	0
+--	62	1	0
+--	63	1	0
+--	64	1	0
+--	70	1	--
+--	71	1	0
+--	72	1	0
+--	73	1	0
+--	74	1	0
+--	79	1	0
+--	80	1	--
+--	81	1	0
+--	82	1	0
+--	83	1	0
+--	84	1	0
+
+---------------------
+-- TRIGGERING IUD
+---------------------
+insert into t0 values (0);
+
+---------------------
+-- CHECK RESULTS
+---------------------
+select * from results;
+
+
+?section test3
+------------------------------------------------------------------------------
+-- SECTION: TEST3
+------------------------------------------------------------------------------
+-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+-- enabled
+
+obey TEST_EN_DIS(clear_res);
+			
+	Alter trigger	ENABLE	tr00;
+	Alter trigger	ENABLE	tr01;
+	Alter trigger	DISABLE	tr02;
+	Alter trigger	ENABLE	tr03;
+	Alter trigger	DISABLE	tr04;
+	Alter trigger	ENABLE	Tr10;
+	Alter trigger	ENABLE	Tr11;
+	Alter trigger	ENABLE	Tr12;
+	Alter trigger	DISABLE	Tr13;
+	Alter trigger	ENABLE	Tr14;
+	Alter trigger	ENABLE	Tr19;
+	Alter trigger	ENABLE	Tr20;
+	Alter trigger	DISABLE	Tr21;
+	Alter trigger	ENABLE	Tr22;
+	Alter trigger	ENABLE	Tr23;
+	Alter trigger	ENABLE	Tr24;
+	Alter trigger	ENABLE	Tr30;
+	Alter trigger	ENABLE	Tr31;
+	Alter trigger	ENABLE	Tr32;
+	Alter trigger	ENABLE	Tr33;
+	Alter trigger	DISABLE	Tr34;
+	Alter trigger	ENABLE	Tr40;
+	Alter trigger	ENABLE	Tr41;
+	Alter trigger	DISABLE	Tr42;
+	Alter trigger	ENABLE	Tr43;
+	Alter trigger	ENABLE	Tr44;
+	Alter trigger	DISABLE	Tr49;
+	Alter trigger	ENABLE	Tr50;
+	Alter trigger	DISABLE	Tr51;
+	Alter trigger	DISABLE	Tr52;
+	Alter trigger	DISABLE	Tr53;
+	Alter trigger	DISABLE	Tr54;
+	Alter trigger	DISABLE	Tr60;
+	Alter trigger	ENABLE	Tr61;
+	Alter trigger	ENABLE	Tr62;
+	Alter trigger	DISABLE	Tr63;
+	Alter trigger	ENABLE	Tr64;
+	Alter trigger	ENABLE	Tr70;
+	Alter trigger	ENABLE	Tr71;
+	Alter trigger	ENABLE	Tr72;
+	Alter trigger	ENABLE	Tr73;
+	Alter trigger	DISABLE	Tr74;
+	Alter trigger	ENABLE	Tr79;
+	Alter trigger	ENABLE	Tr80;
+	Alter trigger	DISABLE	Tr81;
+	Alter trigger	DISABLE	Tr82;
+	Alter trigger	DISABLE	Tr83;
+	Alter trigger	DISABLE	Tr84;
+
+
+--	TR	E/D	RES
+--	00	1	--
+--	01	1	1
+--	02	0	0
+--	03	1	1
+--	04	0	0
+--	10	1	--
+--	11	1	1
+--	12	1	1
+--	13	0	0
+--	14	1	1
+--	19	1	1
+--	20	1	--
+--	21	0	0
+--	22	1	1
+--	23	1	1
+--	24	1	1
+--	30	1	--
+--	31	1	1
+--	32	1	1
+--	33	1	1
+--	34	0	0
+--	40	1	--
+--	41	1	1
+--	42	0	0
+--	43	1	1
+--	44	1	1
+--	49	0	0
+--	50	1	--
+--	51	0	0
+--	52	0	0
+--	53	0	0
+--	54	0	0
+--	60	0	--
+--	61	1	1
+--	62	1	1
+--	63	0	0
+--	64	1	1
+--	70	1	--
+--	71	1	0
+--	72	1	0
+--	73	1	0
+--	74	0	0
+--	79	1	0
+--	80	1	--
+--	81	0	0
+--	82	0	0
+--	83	0	0
+--	84	0	0
+
+---------------------
+-- TRIGGERING IUD
+---------------------
+insert into t0 values (0);
+
+---------------------
+-- CHECK RESULTS
+---------------------
+select * from results;
+
+?section test4
+------------------------------------------------------------------------------
+-- SECTION: TEST4
+------------------------------------------------------------------------------
+-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+-- enabled
+
+obey TEST_EN_DIS(clear_res);
+			
+	Alter trigger	ENABLE	tr00;
+	Alter trigger	ENABLE	tr01;
+	Alter trigger	DISABLE	tr02;
+	Alter trigger	ENABLE	tr03;
+	Alter trigger	ENABLE	tr04;
+	Alter trigger	ENABLE	Tr10;
+	Alter trigger	DISABLE	Tr11;
+	Alter trigger	DISABLE	Tr12;
+	Alter trigger	DISABLE	Tr13;
+	Alter trigger	DISABLE	Tr14;
+	Alter trigger	ENABLE	Tr19;
+	Alter trigger	ENABLE	Tr20;
+	Alter trigger	ENABLE	Tr21;
+	Alter trigger	DISABLE	Tr22;
+	Alter trigger	ENABLE	Tr23;
+	Alter trigger	DISABLE	Tr24;
+	Alter trigger	ENABLE	Tr30;
+	Alter trigger	DISABLE	Tr31;
+	Alter trigger	ENABLE	Tr32;
+	Alter trigger	ENABLE	Tr33;
+	Alter trigger	ENABLE	Tr34;
+	Alter trigger	ENABLE	Tr40;
+	Alter trigger	ENABLE	Tr41;
+	Alter trigger	ENABLE	Tr42;
+	Alter trigger	ENABLE	Tr43;
+	Alter trigger	ENABLE	Tr44;
+	Alter trigger	ENABLE	Tr49;
+	Alter trigger	ENABLE	Tr50;
+	Alter trigger	DISABLE	Tr51;
+	Alter trigger	DISABLE	Tr52;
+	Alter trigger	DISABLE	Tr53;
+	Alter trigger	ENABLE	Tr54;
+	Alter trigger	ENABLE	Tr60;
+	Alter trigger	ENABLE	Tr61;
+	Alter trigger	ENABLE	Tr62;
+	Alter trigger	ENABLE	Tr63;
+	Alter trigger	ENABLE	Tr64;
+	Alter trigger	ENABLE	Tr70;
+	Alter trigger	ENABLE	Tr71;
+	Alter trigger	ENABLE	Tr72;
+	Alter trigger	ENABLE	Tr73;
+	Alter trigger	ENABLE	Tr74;
+	Alter trigger	DISABLE	Tr79;
+	Alter trigger	DISABLE	Tr80;
+	Alter trigger	ENABLE	Tr81;
+	Alter trigger	DISABLE	Tr82;
+	Alter trigger	ENABLE	Tr83;
+	Alter trigger	ENABLE	Tr84;
+
+
+--	TR	E/D	RES
+--	00	1	--
+--	01	1	1
+--	02	0	0
+--	03	1	1
+--	04	1	1
+--	10	1	--
+--	11	0	0
+--	12	0	0
+--	13	0	0
+--	14	0	0
+--	19	1	1
+--	20	1	--
+--	21	1	1
+--	22	0	0
+--	23	1	1
+--	24	0	0
+--	30	1	--
+--	31	0	0
+--	32	1	1
+--	33	1	1
+--	34	1	1
+--	40	1	--
+--	41	1	1
+--	42	1	1
+--	43	1	1
+--	44	1	1
+--	49	1	1
+--	50	1	--
+--	51	0	0
+--	52	0	0
+--	53	0	0
+--	54	1	1
+--	60	1	--
+--	61	1	1
+--	62	1	1
+--	63	1	1
+--	64	1	1
+--	70	1	--
+--	71	1	1
+--	72	1	1
+--	73	1	1
+--	74	1	1
+--	79	0	0
+--	80	0	--
+--	81	1	1
+--	82	0	0
+--	83	1	1
+--	84	1	1
+
+---------------------
+-- TRIGGERING IUD
+---------------------
+insert into t0 values (0);
+
+---------------------
+-- CHECK RESULTS
+---------------------
+select * from results;
+
+
+
+
+
+?section test5
+------------------------------------------------------------------------------
+-- SECTION: TEST5
+------------------------------------------------------------------------------
+-- assumption: the 'dummy' triggers and the 'covers' for the before triggers are always 
+-- enabled
+
+obey TEST_EN_DIS(clear_res);
+			
+	Alter trigger	ENABLE	tr00;
+	Alter trigger	DISABLE	tr01;
+	Alter trigger	DISABLE	tr02;
+	Alter trigger	DISABLE	tr03;
+	Alter trigger	DISABLE	tr04;
+	Alter trigger	ENABLE	Tr10;
+	Alter trigger	DISABLE	Tr11;
+	Alter trigger	DISABLE	Tr12;
+	Alter trigger	DISABLE	Tr13;
+	Alter trigger	DISABLE	Tr14;
+	Alter trigger	DISABLE	Tr19;
+	Alter trigger	ENABLE	Tr20;
+	Alter trigger	DISABLE	Tr21;
+	Alter trigger	DISABLE	Tr22;
+	Alter trigger	DISABLE	Tr23;
+	Alter trigger	DISABLE	Tr24;
+	Alter trigger	ENABLE	Tr30;
+	Alter trigger	ENABLE	Tr31;
+	Alter trigger	ENABLE	Tr32;
+	Alter trigger	ENABLE	Tr33;
+	Alter trigger	DISABLE	Tr34;
+	Alter trigger	ENABLE	Tr40;
+	Alter trigger	DISABLE	Tr41;
+	Alter trigger	DISABLE	Tr42;
+	Alter trigger	DISABLE	Tr43;
+	Alter trigger	DISABLE	Tr44;
+	Alter trigger	ENABLE	Tr49;
+	Alter trigger	DISABLE	Tr50;
+	Alter trigger	ENABLE	Tr51;
+	Alter trigger	DISABLE	Tr52;
+	Alter trigger	ENABLE	Tr53;
+	Alter trigger	DISABLE	Tr54;
+	Alter trigger	ENABLE	Tr60;
+	Alter trigger	ENABLE	Tr61;
+	Alter trigger	DISABLE	Tr62;
+	Alter trigger	ENABLE	Tr63;
+	Alter trigger	ENABLE	Tr64;
+	Alter trigger	ENABLE	Tr70;
+	Alter trigger	DISABLE	Tr71;
+	Alter trigger	ENABLE	Tr72;
+	Alter trigger	ENABLE	Tr73;
+	Alter trigger	DISABLE	Tr74;
+	Alter trigger	ENABLE	Tr79;
+	Alter trigger	ENABLE	Tr80;
+	Alter trigger	DISABLE	Tr81;
+	Alter trigger	ENABLE	Tr82;
+	Alter trigger	DISABLE	Tr83;
+	Alter trigger	ENABLE	Tr84;
+
+
+--	TR	E/D	RES
+--	00	1	--
+--	01	0	0
+--	02	0	0
+--	03	0	0
+--	04	0	0
+--	10	1	--
+--	11	0	0
+--	12	0	0
+--	13	0	0
+--	14	0	0
+--	19	0	0
+--	20	1	--
+--	21	0	0
+--	22	0	0
+--	23	0	0
+--	24	0	0
+--	30	1	--
+--	31	1	1
+--	32	1	1
+--	33	1	1
+--	34	0	0
+--	40	1	--
+--	41	0	0
+--	42	0	0
+--	43	0	0
+--	44	0	0
+--	49	1	1
+--	50	0	--
+--	51	1	1
+--	52	0	0
+--	53	1	1
+--	54	0	0
+--	60	1	--
+--	61	1	0
+--	62	0	0
+--	63	1	0
+--	64	1	0
+--	70	1	--
+--	71	0	0
+--	72	1	0
+--	73	1	0
+--	74	0	0
+--	79	1	0
+--	80	1	--
+--	81	0	0
+--	82	1	0
+--	83	0	0
+--	84	1	0
+
+---------------------
+-- TRIGGERING IUD
+---------------------
+insert into t0 values (0);
+
+---------------------
+-- CHECK RESULTS
+---------------------
+select * from results;
+
+

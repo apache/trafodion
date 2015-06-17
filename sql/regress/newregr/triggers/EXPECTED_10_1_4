@@ -1,0 +1,30 @@
+ ** Known bug:  # 89  **
+
+>>obey TEST_10_1_4(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b=b+1;
+
+*** ERROR[8838] Unable to receive reply from arkcmp, possibly caused by internal errors in arkcmp when compiling SQL statements, processing DDL statements, or executing the builtin stored procedures.
+
+*** ERROR[8822] Unable to prepare the statement.
+
+>>
+>>SELECT * FROM tab1A ORDER BY a;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            2            3            4  
+          2            3            4            5  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

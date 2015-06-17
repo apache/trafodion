@@ -1,0 +1,55 @@
+>>obey TEST_SPJC_STX_014(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Row trigger with a compound statement triggered action
+>>-- that has a host variable.
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_014 AFTER UPDATE ON
++>TAB01_SPJC_STX_014
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>	BEGIN ATOMIC
++>		INSERT INTO TAB02_SPJC_STX_014 VALUES (:t1p1, O.B, O.C, O.D);
++>		IF (N.A > O.B) THEN
++>			INSERT INTO TAB02_SPJC_STX_014 VALUES (N.A, N.B, N.C, N.D);
++>		ELSEIF (N.A < O.B) THEN
++>			INSERT INTO TAB02_SPJC_STX_014 VALUES (N.A, O.B, N.C, O.D);
++>		ELSE
++>			INSERT INTO TAB02_SPJC_STX_014 VALUES
++>					(O.A + N.A, O.B + N.B, O.C + N.C, O.D + N.D);
++>			SIGNAL SQLSTATE 'S0213'('TRIG01_SPJC_STX_014');
++>		END IF;
++>	END;
+
+*** ERROR[3049] Host variables, such as :t1p1, are not allowed in a dynamic compilation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Statement trigger with a compound statement triggered
+>>-- action that has a host variable.
+>>-- Result: Error
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_STX_014 AFTER DELETE ON
++>TAB01_SPJC_STX_014
++>REFERENCING OLD TABLE AS OT
++>FOR EACH STATEMENT
++>	BEGIN ATOMIC
++>		INSERT INTO TAB02_SPJC_STX_014
++>			SELECT * FROM TAB01_SPJC_STX_014
++>			WHERE TAB01_SPJC_STX_014.A = :t1p1;
++>	END;
+
+*** ERROR[3049] Host variables, such as :t1p1, are not allowed in a dynamic compilation.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>------------------------------------------------------------------
+>>LOG;

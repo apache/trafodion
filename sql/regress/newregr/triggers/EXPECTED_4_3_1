@@ -1,0 +1,82 @@
+>>obey TEST_4_3_1(set_up);
+>>ALTER TABLE tab1A ADD CONSTRAINT for_key_c FOREIGN KEY (c) REFERENCES tab1B;
+
+--- SQL operation complete.
+>>
+>>----------------------------------
+>>-- DEFINE CONSTRAINT for_key_d
+>>---------------------------------
+>>
+>>ALTER TABLE tab1A ADD CONSTRAINT for_key_d FOREIGN KEY (d) REFERENCES cat2.schm.tab2A;
+
+--- SQL operation complete.
+>>
+>>----------------------------------
+>>-- INSERT INTO TABLES
+>>----------------------------------
+>>INSERT INTO tab1B VALUES (10,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (20,20);
+
+--- 1 row(s) inserted.
+>>INSERT INTO cat2.schm.tab2A VALUES (30,30);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (1,2,10,30);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER btrig5
+>>---------------------------------
+>>
+>>CREATE TRIGGER btrig5
++>BEFORE UPDATE OF (b)
++>ON tab1A
++>REFERENCING NEW AS newR 
++>FOR EACH ROW
++>set newR.d= newR.b+20;
+
+--- SQL operation complete.
+>>
+>>obey TEST_4_3_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b=10, C=20;
+
+--- 1 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1           10           20           30  
+
+--- 1 row(s) selected.
+>> -- check result
+>>
+>>UPDATE tab1A SET b=11, C=20;
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint CAT1.SCHM.FOR_KEY_D on table CAT1.SCHM.TAB1A.
+
+--- 0 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1           10           20           30  
+
+--- 1 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>log;

@@ -1,0 +1,481 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- TESTDML05 (Cardinality)
+-- Functionality: Uses MCRAND database to test group by cardinalities.
+-- Expected Files: ETESTDML05.
+-- History: Created on 12/05/2008
+-- Owner: Renu Varshneya
+---------------------------------------------------------------------------
+prepare explainCard from
+select plan.num, plan.op, tab_name, plan.card "Expected Cardinality"
+from (select cast(runningcount(seq_num) as char(4)), 
+                  cast(cardinality as char(10)), 
+                  cast(operator as char (30)),
+                  substring (substring(tname from (1+locate('.',tname))), (1+locate('.',substring(tname from (1+locate('.',tname))))),15 )
+      from table(explain(null,'XX'))
+      where (operator like '%SCAN%') OR 
+                (operator like '%JOIN%') OR
+                (operator like '%GROUP%')
+      sequence by seq_num desc) plan(num, card, op, tab_name)
+;
+
+control query default query_cache '0';
+control query default cache_histograms '0';
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION 'OFF';
+
+control query default hist_rowcount_requiring_stats '1';
+
+log ATESTDML05 clear;
+
+set schema cat.mcrand;
+
+-- Q1
+control query shape implicit enforcers sort_groupby(hash_groupby(
+scan(path 'CAT.MCRAND.MC1')));
+
+prepare xx from
+select count (*)
+from (select count(*)
+      from mc1
+      where x=5
+      group by x,y
+     ) as t;
+
+execute explainCard;
+
+showstats for query
+select count (*)
+from (select count(*)
+      from mc1
+      where x=5
+      group by x,y
+     ) as t;
+
+-- Q2
+prepare xx from
+select count (*)
+from (select count(*)
+      from mc1
+      where x>5
+      group by x,y
+     ) as t;
+
+-- Q3
+prepare xx from
+select count (*)
+from (select count(*)
+      from mc1
+      where x>5 or
+      y < 5
+      group by x,y
+     ) as t;
+
+execute explainCard;
+
+-- Q4
+prepare xx from
+select count (*)
+from (select count(*)
+      from mc1
+      where x>5 and
+      y < 5
+      group by x,y
+     ) as t;
+
+execute explainCard;
+
+-- Q5
+control query shape implicit enforcers hash_groupby(
+scan(path 'CAT.MCRAND.FACTS' ));
+
+prepare xx from
+select count(*) from facts 
+where fxy > 500 
+and fxz < 10000
+group by fxy, fxz;
+
+execute explainCard;
+
+showstats for query
+select count(*) from facts 
+where fxy > 500 
+and fxz < 10000
+group by fxy, fxz;
+
+-- Q6
+prepare xx from
+select count(*) from facts where
+yz > 5000 and xz < 70
+group by yz, xz;
+
+execute explainCard;
+
+-- Q7
+prepare xx from
+select count(*) from facts where
+xpy < 90 and xpz < 10
+group by xpy, xpz, xpypz;
+
+set schema cat.hcube;
+
+execute explainCard;
+
+-- Q8
+control query shape implicit enforcers sort(hash_groupby(
+scan(path 'CAT.HCUBE.T8')));
+
+prepare xx from select t8.b, t8.c
+from t8
+where t8.b <= 15
+group by t8.b, t8.c
+order by t8.b, t8.c;
+
+execute explainCard;
+
+-- Q9
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6' ),
+scan(path 'CAT.HCUBE.T7'))));
+
+prepare xx from select count(*)
+from t6,t7,t8
+where t6.a = t7.b
+and t8.b = t7.a
+group by t8.b, t7.b, t7.c;
+
+execute explainCard;
+
+-- Q10
+prepare xx from select max(t7.c)
+FROM t6,t7,t8
+WHERE t6.a = t7.b
+      AND t8.b = t7.a
+GROUP BY t8.b;
+
+execute explainCard;
+
+showstats for query 
+select max(t7.c)
+FROM t6,t7,t8
+WHERE t6.a = t7.b
+      AND t8.b = t7.a
+GROUP BY t8.b;
+
+-- Q11
+control query shape implicit enforcers expr(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B', forward, blocks_per_access 4 ),
+hybrid_hash_join(scan(path 'CAT.HCUBE.T6', forward
+, blocks_per_access 1 ),
+scan(path 'CAT.HCUBE.T7', forward, blocks_per_access 1 ))));
+
+prepare xx from select max(t7.c), t8.a
+from t6,t7,t8
+where t6.a = t7.b
+and t8.b = t7.a
+group by t8.a;
+
+execute explainCard;
+
+-- Q12
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B' ),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6' ),
+scan(path 'CAT.HCUBE.T7'))));
+
+prepare xx from select max(t7.c)
+from t6,t7,t8
+where t6.a = t7.b
+and t8.b = t7.a
+group by t7.b, t7.c;
+
+execute explainCard;
+
+-- Q13
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(TABLE 'SA', path 'CAT.HCUBE.T6'),
+hybrid_hash_join(
+scan(TABLE 'SD', path 'CAT.HCUBE.T6'),
+scan(TABLE 'DF', path 'CAT.HCUBE.T6'))));
+
+prepare xx from select count(*)
+from t6 as sa, t6 as sd,t6 as df
+where sa.a = sd.b
+and df.b = sd.a
+group by df.b, sd.b, sd.c;
+
+execute explainCard;
+
+-- Q14
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T7' ),
+scan(path 'CAT.HCUBE.IX8C')));
+
+prepare xx from select t7.c
+from t7
+where t7.c >= 1
+and exists (select *
+                  from t8
+                  where t8.a = t7.a)
+group by t7.c;
+
+execute explainCard;
+
+-- Q15
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6'),
+scan(path 'CAT.HCUBE.T5')));
+
+prepare xx from select count(*)
+from t6, t5
+where t6.b = t5.a
+group by t6.c, t5.a;
+
+execute explainCard;
+
+showstats for query
+select count(*)
+from t6, t5
+where t6.b = t5.a
+group by t6.c, t5.a;
+
+-- Q16
+control query shape implicit enforcers hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX9C'),
+scan(path 'CAT.HCUBE.T10')));
+
+prepare xx from 
+select count(*)
+from t9, t10
+where t9.a = t10.a
+group by t10.b, t10.c;
+
+execute explainCard;
+
+-- Q17
+control query shape implicit enforcers hybrid_hash_join(
+hash_groupby(
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.IX8B'),
+scan(path 'CAT.HCUBE.IX8B'))),
+hybrid_hash_join(
+scan(path 'CAT.HCUBE.T7'),
+scan(path 'CAT.HCUBE.T6')));
+
+prepare xx from 
+select count(*)
+from t6, t7, t8
+where t7.a IN (select t8.b
+                     from t8
+                     group by t8.b )
+      and t6.a = t7.b
+      and t7.a = t8.b
+group  by t6.a, t6.b, t7.a, t7.b, t7.c;
+
+execute explainCard;
+
+-- GroupBy below nested join
+
+-- Q18
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.T1'),
+hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T2'),
+scan(path 'CAT.HCUBE.T3' ))));
+
+prepare xx from 
+        select t1.a from t1
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b, t1.a
+        );
+
+
+execute explainCard;
+
+-- Q19
+control query shape implicit enforcers nested_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T1' ),
+scan(path 'CAT.HCUBE.T4')),
+hash_groupby(nested_join(
+scan(path 'CAT.HCUBE.T2' ),
+scan(path 'CAT.HCUBE.T3'))));
+
+prepare xx from 
+        select t1.a from t1, t4
+        where not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+execute explainCard;
+
+-- Q20
+control query shape implicit enforcers nested_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T1' ),
+scan(path 'CAT.HCUBE.T4')),
+hash_groupby(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T2' ),
+scan(path 'CAT.HCUBE.T3'))));
+
+prepare xx from 
+        select t1.a from t1, t4
+        where t1.a = t4.a and 
+          not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+execute explainCard;
+
+showstats for query
+        select t1.a from t1, t4
+        where t1.a = t4.a and 
+          not exists (
+          select min(t2.a)
+          from t2
+          where t2.b > ALL (
+           select t1.a
+           from t3
+          )
+          group by t2.b
+        );
+
+-- Q21
+control query shape implicit enforcers nested_join(
+scan(path 'CAT.HCUBE.IX9B'),
+hash_groupby(nested_join(
+scan(path 'CAT.HCUBE.IX10B' ),
+scan(path 'CAT.HCUBE.T10' )
+,INDEXJOIN)));
+
+prepare xx from 
+select t9.b from t9 where
+t9.a in
+(select sum(t10.a) from t10
+where t9.b = t10.b
+group by t10.c
+);
+
+execute explainCard;
+
+-- Q22
+control query shape implicit enforcers nested_join(scan(path 'CAT.HCUBE.T6' ),
+sort_groupby(hash_groupby(
+scan(path 'CAT.HCUBE.T5'))));
+
+prepare xx from 
+        select * from t6
+        where t6.a > (
+          select t5.b
+          from t5
+          where t5.b = t6.b
+          group by t5.b
+        );
+
+execute explainCard;
+
+-- Q23
+control query shape implicit enforcers nested_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6' ),
+scan(path 'CAT.HCUBE.T4')),
+sort_groupby(hash_groupby(
+scan(path 'CAT.HCUBE.T5'))));
+
+prepare xx from 
+        select * from t6, t4
+        where t6.a > (
+          select t5.b
+          from t5
+          where t5.b = t6.b
+          group by t5.b
+        );
+
+execute explainCard;
+
+-- Q24
+control query shape implicit enforcers nested_join(hybrid_hash_join(
+scan(path 'CAT.HCUBE.T6' ),
+scan(path 'CAT.HCUBE.T4')),
+sort_groupby(expr(hash_groupby(hash_groupby(
+scan(path 'CAT.HCUBE.IX7B'))))));
+
+prepare xx from 
+        select * from t6, t4
+        where t6.a > (
+          select t7.b
+          from t7
+          where t7.b = t6.b
+          group by t7.b
+        );
+
+execute explainCard;
+
+-- Q25
+-- Group by on expressions which is also a part of select list
+control query shape implicit enforcers expr(hash_groupby(hash_groupby(
+scan(path 'CAT.HCUBE.IX9B'))));
+
+prepare xx from
+select y,sum(z)
+from (select b+1,b from t9) as t(y,z)
+group by y ;
+
+execute explainCard;
+
+showstats for query
+select y,sum(z)
+from (select b+1,b from t9) as t(y,z)
+group by y ;
+
+-- Q26
+control query shape implicit enforcers hash_groupby(
+scan(path 'CAT.HCUBE.IXCUBE1D')
+);
+
+prepare xx from
+select mod(d,5), floor(c) from cube1 group by   mod(d,5), floor(c);
+
+execute explainCard;
+
+-- Q27
+prepare xx from
+select a*(b-d), c-d from cube1  where a<50  group by a*(b-d), c-d;
+
+execute explainCard;
+
+LOG;
+
+exit;

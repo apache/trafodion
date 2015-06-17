@@ -13,10 +13,6 @@
 +>  2>&1 | tee LOG135-SECONDARY;
 >>set pattern $$DLL$$ udrtest135.dll;
 >>
->>-- enable authorization;
->>initialize authorization;
-
---- SQL operation complete.
 >>get tables in schema "_PRIVMGR_MD_";
 
 Tables in Schema TRAFODION._PRIVMGR_MD_
@@ -1348,6 +1344,5 @@ DB__ROOTROLE
 >>set schema t135sch;
 
 --- SQL operation complete.
->>--initialize authorization, drop;
 >>
 >>log;

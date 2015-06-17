@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -792,6 +792,9 @@ RelExpr *GenericUpdate::inlineIM(RelExpr   *topNode,
 
   // If no IM tree was created than we have a bug!
   CMPASSERT(imTree != NULL);
+
+  if (bindWA->isTrafLoadPrep())
+    return imTree;
 
   // Drive IM and RI trees using a TSJ on top of the GenericUpdate node.
   topNode = new(bindWA->wHeap()) 
@@ -1824,13 +1827,23 @@ RelExpr *GenericUpdate::createIMTree(BindWA *bindWA,
           if (getOperatorType() == REL_UNARY_UPDATE ||
               getOperatorType() == REL_UNARY_DELETE)
             setScanLockForIM(child(0));
+          if (bindWA->isTrafLoadPrep())
+            imTree->setChild(0,this);
         }
         else
         {
-          imTree = new (bindWA->wHeap()) 
-			  Union(imTree, createIMNodes(bindWA, useInternalSyskey, index),
+          if (!bindWA->isTrafLoadPrep())
+          {
+            imTree = new (bindWA->wHeap()) 
+              Union(imTree, createIMNodes(bindWA, useInternalSyskey, index),
                     NULL, NULL, REL_UNION, CmpCommon::statementHeap(), TRUE, TRUE);
-          imTree->setBlockStmt(isinBlockStmt());
+            imTree->setBlockStmt(isinBlockStmt());
+          } // not bulk load
+          else {
+            RelExpr * oldIMTree = imTree;
+            imTree = createIMNodes(bindWA, useInternalSyskey, index);
+            imTree->setChild(0,oldIMTree);
+          } // is bulk load
         }
 
     } // !clusteringIndex
@@ -1904,13 +1917,25 @@ static RelExpr *createIMNode(BindWA *bindWA,
   GenericUpdate *imNode;
   if (isInsert)
     {
-      imNode = new (bindWA->wHeap()) LeafInsert(indexCorrName, NULL, colRefList);
-      HostArraysWA * arrayWA = bindWA->getHostArraysArea() ;
-      if (arrayWA && arrayWA->hasHostArraysInTuple()) {
-	if (arrayWA->getTolerateNonFatalError() == TRUE)
-	  imNode->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);			  
-      }	
-
+      if (!bindWA->isTrafLoadPrep())
+      {
+        imNode = new (bindWA->wHeap()) LeafInsert(indexCorrName, NULL, colRefList);
+        HostArraysWA * arrayWA = bindWA->getHostArraysArea() ;
+        if (arrayWA && arrayWA->hasHostArraysInTuple()) {
+          if (arrayWA->getTolerateNonFatalError() == TRUE)
+            imNode->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);    
+        }	
+      } // regular insert
+      else {
+        imNode = new (bindWA->wHeap()) Insert(indexCorrName,
+                 NULL,
+                 REL_UNARY_INSERT,
+                 NULL);
+        ((Insert *)imNode)->setBaseColRefs(colRefList);
+        ((Insert *)imNode)->setInsertType(Insert::UPSERT_LOAD);
+        ((Insert *)imNode)->setIsTrafLoadPrep(true);
+        ((Insert *)imNode)->setNoIMneeded(TRUE);
+      } // traf load prep
     }
   else
     imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
@@ -1926,6 +1951,9 @@ static RelExpr *createIMNode(BindWA *bindWA,
 
   // Do not collect STOI info for security checks.
   imNode->getInliningInfo().setFlags(II_AvoidSecurityChecks);
+
+  if (bindWA->isTrafLoadPrep())
+    return imNode;
 
   // Add a root here to prevent error 4056 when binding the LeafDelete+Insert
   // pair for an Update.
@@ -3067,6 +3095,9 @@ RelExpr *GenericUpdate::inlineOnlyRIandIMandMVLogging(BindWA *bindWA,
     }
   
   
+   if (bindWA->isTrafLoadPrep())
+     return result ;
+
 
   if (result!=NULL)
   {

@@ -1,0 +1,78 @@
+>>obey TEST_SPJC_FUNC_005(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Cascading trigger
+>>-- Result: Success
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_FUNC_005 AFTER DELETE ON
++>TAB01_SPJC_FUNC_005
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_FUNC_005 VALUES (O.A, O.B, O.C, O.D);
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER TRIG02_SPJC_FUNC_005 AFTER INSERT ON
++>TAB02_SPJC_FUNC_005
++>REFERENCING NEW ROW AS N
++>FOR EACH ROW
++>	INSERT INTO TAB03_SPJC_FUNC_005 VALUES (N.A, N.B, N.C, N.D);
+
+--- SQL operation complete.
+>>------------------------------------------------------------------
+>>
+>>-- original table
+>>select * from TAB01_SPJC_FUNC_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          8            6            4            2
+          3            6            9           12
+
+--- 3 row(s) selected.
+>>
+>>-- The tests
+>>
+>>BEGIN
++>--	triggers an insert of old values into TAB02_SPJC_FUNC_005
++>	DELETE FROM TAB01_SPJC_FUNC_005 where a = 8;
++>END;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Result: TAB01_SPJC_FUNC_005 has two rows
+>>select * from TAB01_SPJC_FUNC_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          3            6            9           12
+
+--- 2 row(s) selected.
+>>
+>>-- Result: TAB02_SPJC_FUNC_005 has one row
+>>select * from TAB02_SPJC_FUNC_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+
+--- 1 row(s) selected.
+>>
+>>-- Result: TAB03_SPJC_FUNC_005 has one row
+>>select * from TAB03_SPJC_FUNC_005;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          8            6            4            2
+
+--- 1 row(s) selected.
+>>------------------------------------------------------------------
+>>log;

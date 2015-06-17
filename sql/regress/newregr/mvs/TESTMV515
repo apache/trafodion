@@ -1,0 +1,102 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--  TestMV515
+-- ===========
+-- Checks the MVS_USED column- PREDICATES
+------------------------------------------------------
+control query default pos 'OFF';
+obey TESTMV515(CLEAN_UP);
+obey TESTMV515(SET_UP);
+
+log LOGMV515 clear;
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV515(TEST1);
+-- Clean and exit
+log;
+obey TESTMV515(CLEAN_UP);
+exit;
+
+?section SET_UP
+set PARSERFLAGS 1;
+
+set schema cat.tpcd;
+obey ./TPCD/CREATEALL.OBEY(SET_UP);
+ 
+?section CLEAN_UP
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+
+
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+-- ======================================================================
+
+?section TEST1
+
+-- MV with several select predicates on different tables and some on the same table
+log;
+
+PREPARE select_mvs_used FROM
+    SELECT SUBSTRING(object_name, 0, 20) as table_name, 
+           used_object_type,USAGE_ORIGIN,PREDICATES
+    FROM  HP_DEFINITION_SCHEMA.mvs_used
+          left join HP_DEFINITION_SCHEMA.objects used_object
+	  on used_object.object_uid = used_object_uid
+    WHERE 
+	 mv_uid = (SELECT object_uid 
+	    	       FROM HP_DEFINITION_SCHEMA.objects 
+	      	       WHERE object_name = ?mv_name
+	      	       for read uncommitted access)
+    order by predicates, table_name;
+
+PREPARE select_text_table FROM
+  SELECT substring(objs.object_name, 0, 20) as mv_name, 
+	 substring(used_objs.object_name, 0, 20) as used_name,
+	 PREDICATES,
+	 case PREDICATES when -1 then '' else TEXT end
+  from   HP_DEFINITION_SCHEMA.mvs_used as used,
+	 HP_DEFINITION_SCHEMA.objects as objs,
+	 HP_DEFINITION_SCHEMA.objects as used_objs,
+	 HP_DEFINITION_SCHEMA.text as text
+  where  objs.OBJECT_UID = used.MV_UID 
+  and    used_objs.OBJECT_UID = used.USED_OBJECT_UID
+  and	 used.MV_UID = text.OBJECT_UID
+  and 	 predicates = object_sub_id
+  and 	 mv_uid = (select object_uid
+		   from HP_DEFINITION_SCHEMA.objects
+		   where object_name = ?mv_name
+		   for read uncommitted access)
+  order by objs.OBJECT_UID, used_objs.OBJECT_UID, predicates, used_objs.object_name;
+log LOGMV515;
+	
+obey ./TPCD/CREATEMVS(MV5);
+ 
+set param ?mv_name 'MV4Q5';
+execute select_mvs_used;
+execute select_text_table;
+
+obey ./TPCD/CREATEMVS(MV9);
+
+set param ?mv_name 'MV4Q9';
+execute select_mvs_used;
+execute select_text_table;

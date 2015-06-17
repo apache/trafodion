@@ -1,0 +1,169 @@
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+<!-- TPCD Query 7                                                               -->
+<!-- (Default schema is TRAFODION.TPCD)                                               -->
+<!--    select                                                                  -->
+<!--        supp_nation, cust_nation, yr                                        -->
+<!--    from                                                                    -->
+<!--        (select                                                             -->
+<!--             n1.n_name as supp_nation,                                      -->
+<!--             n2.n_name as cust_nation,                                      -->
+<!--             extract (year from l_shipdate) as yr,                          -->
+<!--             l_extendedprice*(1-l_discount) as volume                       -->
+<!--         from supplier,lineitem,orders,customer, nation n1, nation n2       -->
+<!--         where                                                              -->
+<!--             s_suppkey = l_suppkey                                          -->
+<!--             and o_orderkey = l_orderkey                                    -->
+<!--             and c_custkey = o_custkey                                      -->
+<!--             and s_nationkey = n1.n_nationkey                               -->
+<!--             and c_nationkey = n2.n_nationkey                               -->
+<!--             and                                                            -->
+<!--             (n1.n_name  = 'FRANCE' and                                     -->
+<!--             n2.n_name = 'GERMANY')                                         -->
+<!--             and l_shipdate between                                         -->
+<!--             date '1995-01-01' and date '1996-12-31'                        -->
+<!--        ) as shipping                                                       -->
+<!--    group by supp_nation, cust_nation, yr;                                  -->
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>TRAFODION.TPCD.Q7-MV</Table>
+  <JBB>
+    <Hub>
+      <JBBCList>
+        <Table id='T3' isAnMV='0'>
+          CAT.TPCD.CUSTOMER
+        </Table>
+        <Table id='T5' isAnMV='0'>
+          CAT.TPCD.LINEITEM
+        </Table>
+        <Table id='T1' isAnMV='0'>
+          CAT.TPCD.NATION
+        </Table>
+        <Table id='T2' isAnMV='0'>
+          CAT.TPCD.NATION
+        </Table>
+        <Table id='T4' isAnMV='0'>
+          CAT.TPCD.ORDERS
+        </Table>
+        <Table id='T6' isAnMV='0'>
+          CAT.TPCD.SUPPLIER
+        </Table>
+      </JBBCList>
+      <JoinPredList>
+        <JoinPred id='J330'>
+          <Column id='C127' tableId='T3'>
+            C_NATIONKEY
+          </Column>
+          <Column id='C172' tableId='T1'>
+            N_NATIONKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J234'>
+          <Column id='C2' tableId='T6'>
+            S_NATIONKEY
+          </Column>
+          <Column id='C157' tableId='T2'>
+            N_NATIONKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J327'>
+          <Column id='C92' tableId='T4'>
+            O_CUSTKEY
+          </Column>
+          <Column id='C126' tableId='T3'>
+            C_CUSTKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J300'>
+          <Column id='C28' tableId='T5'>
+            L_ORDERKEY
+          </Column>
+          <Column id='C91' tableId='T4'>
+            O_ORDERKEY
+          </Column>
+        </JoinPred>
+        <JoinPred id='J231'>
+          <Column id='C1' tableId='T6'>
+            S_SUPPKEY
+          </Column>
+          <Column id='C31' tableId='T5'>
+            L_SUPPKEY
+          </Column>
+        </JoinPred>
+      </JoinPredList>
+      <RangePredList>
+          <Range id="R1">
+            <Column id="C157" tableId="T2">N_NAME</Column>
+            <OpEQ>
+              <StringVal>FRANCE</StringVal>
+            </OpEQ>
+          </Range>
+          <Range id="R2">
+            <Column id="C172" tableId="T1">N_NAME</Column>
+            <OpEQ>
+              <StringVal>GERMANY</StringVal>
+            </OpEQ>
+          </Range>
+          <Range id="R3">
+            <Column id="C8" tableId="T5">L_SHIPDATE</Column>
+            <OpGE>
+              <NumericVal scale='0'>
+                 DATE '1995-01-01'
+              </NumericVal>
+            </OpGE>
+          </Range>
+          <Range id="R4">
+            <Column id="C8" tableId="T5">L_SHIPDATE</Column>
+            <OpLE>
+              <NumericVal scale='0'>
+                 DATE '1996-12-31'
+              </NumericVal>
+            </OpLE>
+          </Range>
+      </RangePredList>
+      <ResidualPredList>
+      </ResidualPredList>
+      <GroupBy>
+        <Expr>
+          extract(CAT.TPCD.LINEITEM.L_SHIPDATE)
+            <Input>
+              <Column id="C8" tableId="T5">L_SHIPDATE</Column>
+            </Input>
+        </Expr>
+        <Column id='C356' tableId='T2'>
+          N_NAME
+        </Column>
+        <Column id='C368' tableId='T1'>
+          N_NAME
+        </Column>
+      </GroupBy>
+    </Hub>
+    <OutputList>
+      <Output>
+        <Expr>
+          extract(CAT.TPCD.LINEITEM.L_SHIPDATE)
+            <Input>
+              <Column id="C8" tableId="T5">L_SHIPDATE</Column>
+            </Input>
+        </Expr>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>

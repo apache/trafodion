@@ -1,0 +1,44 @@
+>>obey TEST_SPJC_CSTA_001(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: Empty CS in row trigger
+>>-- Result: ERROR[15001] A syntax error occurred at or before: [END]
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_001 AFTER DELETE ON
++>TAB01_SPJC_CSTA_001
++>REFERENCING OLD ROW AS O
++>FOR EACH ROW
++>BEGIN ATOMIC
++>END;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER TRIG01_SPJC_CSTA_001 AFTER DELETE ON TAB01_SPJC_CSTA_001 REFEREN
+CING OLD ROW AS O FOR EACH ROW BEGIN ATOMIC END;
+                                              ^ (126 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: Empty CS in statement trigger
+>>-- Result: ERROR[15001] A syntax error occurred at or before: [END]
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_CSTA_001 AFTER UPDATE ON
++>TAB01_SPJC_CSTA_001
++>REFERENCING NEW TABLE AS NT
++>FOR EACH STATEMENT
++>BEGIN ATOMIC
++>END;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER TRIG02_SPJC_CSTA_001 AFTER UPDATE ON TAB01_SPJC_CSTA_001 REFEREN
+CING NEW TABLE AS NT FOR EACH STATEMENT BEGIN ATOMIC END;
+                                                       ^ (135 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

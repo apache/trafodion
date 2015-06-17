@@ -1,0 +1,303 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>-- Run Tests
+>>	set schema cat.tpcd;
+
+--- SQL operation complete.
+>>	obey TESTMV215C(TEST1);
+>>-- Basic Q5
+>>-- for compare 
+>>
+>>PREPARE stat1 FROM 
++>	select n_name, sum(l_extendedprice*(1-l_discount)) as revenue,count(*) rows_in_group
++>	from customer,orders,lineitem,supplier,nation, region
++>	where
++>	    c_custkey = o_custkey
++>	    and o_orderkey = l_orderkey
++>	    and l_suppkey = s_suppkey
++>	    and c_nationkey= s_nationkey
++>	    and s_nationkey = n_nationkey
++>	    and n_regionkey = r_regionkey
++>	    and r_name in ('ASIA','AMERICA','EUROPE','MIDDLE EAST','AFRICA')
++>	    and o_orderdate >= date '1994-01-01'
++>	    and o_orderdate < date '1994-01-01' + interval '3' year
++>	group by n_name
++>	order by n_name,revenue desc ;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select n_name,revenue,rows_in_group
++>	from mv4q5 
++>	order by n_name,revenue desc;
+
+--- SQL command prepared.
+>>
+>>
+>>refresh mv4q5 recompute;
+
+--- SQL operation complete.
+>>refresh mv4q9 recompute;
+
+--- SQL operation complete.
+>>--internal refresh mv4q5 recompute;
+>>--internal refresh mv4q9 recompute;
+>>
+>>log;
+
+The materialized view CAT.TPCD.MV4Q9 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CAT.TPCD.MV4Q9 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CAT.TPCD.NATION...
+
+Finished the log cleanup of table CAT.TPCD.NATION.
+
+Starting the log cleanup of table CAT.TPCD.PARTSUPP...
+
+Finished the log cleanup of table CAT.TPCD.PARTSUPP.
+
+Starting the log cleanup of table CAT.TPCD.PART...
+
+Finished the log cleanup of table CAT.TPCD.PART.
+
+Starting the log cleanup of table CAT.TPCD.ORDERS...
+
+Finished the log cleanup of table CAT.TPCD.ORDERS.
+
+Starting the log cleanup of table CAT.TPCD.LINEITEM...
+
+Finished the log cleanup of table CAT.TPCD.LINEITEM.
+
+Starting the log cleanup of table CAT.TPCD.SUPPLIER...
+
+Finished the log cleanup of table CAT.TPCD.SUPPLIER.
+
+
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>-- Prepare deltas ---------------------------------------------------------------
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @110@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @0@ @110@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @0@ @110@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @110@ ;
+
+--- SQL operation complete.
+>>
+>>-- importing supplier
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 10
+Import Completed Successfully
+>>-- importing customer
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 100
+Import Completed Successfully
+>>-- importing part
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 200
+Import Completed Successfully
+>>
+>>
+>>
+>>update customer
++>set c_nationkey = 12 -- 'JAPAN'
++>where c_nationkey = 10 and c_acctbal < 4000;
+
+--- 23 row(s) updated.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.customer@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>update customer
++>set c_nationkey = 10 -- 'IRAN'
++>where c_nationkey = 12 and c_acctbal > 3000;
+
+--- 33 row(s) updated.
+>>
+>>update customer
++>set c_nationkey = 12 -- 'JAPAN'
++>where c_nationkey = 12 and c_acctbal < 2500;
+
+--- 24 row(s) updated.
+>>
+>>-- importing lineitem
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 5501
+Import Completed Successfully
+>>
+>>-- End prepare deltas ---------------------------------------------------------------
+>>
+>>
+>>--REFRESH mv4q5;
+>>--execute refresh_mv5;
+>>--log;
+>>--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215C;
+>>--log LOGMV215C;
+>>
+>>internal refresh mv4q5 from	multidelta
++>        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
++>        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only
++>        phase 0;
+
+*** WARNING[12304] An additional phase is needed to complete the refresh.
+
+--- SQL operation completed with warnings.
+>>
+>>internal refresh mv4q5 from	multidelta
++>        customer between 110 and 111 de level 0 use no rangelog use iudlog ,
++>        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only
++>        phase 1;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select nation, yr, sum(amount) as sum_profit
++>	from (select
++>         	n_name as nation, 
++>         	extract(year from o_orderdate) as yr,
++>         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
++>     from part,supplier,lineitem,partsupp,orders, nation
++>     where 
++>         s_suppkey  = l_suppkey
++>         and ps_suppkey = l_suppkey
++>         and ps_partkey = l_partkey
++>         and p_partkey  = l_partkey
++>         and o_orderkey = l_orderkey
++>         and s_nationkey = n_nationkey
++>         and p_name like '%green%'
++>    ) as profit
++>	group by nation, yr
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select nation, yr,sum_profit
++>	from mv4q9 
++>	order by nation, yr;
+
+--- SQL command prepared.
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.partsupp@ @0@ @110@ ;
+
+--- SQL operation complete.
+>>log;
+NonStop SQL/MX Import Utility 1.0
+Rows Imported = 79
+Import Completed Successfully
+>>
+>>
+>>--REFRESH mv4q9;
+>>--execute refresh_mv9;
+>>internal refresh mv4q9 from	multidelta
++>        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>	partsupp between 110 and 110 de level 0 use no rangelog use iudlog insert only
++>        phase 0;
+
+*** WARNING[12304] An additional phase is needed to complete the refresh.
+
+--- SQL operation completed with warnings.
+>>
+>>internal refresh mv4q9 from	multidelta
++>        orders   between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        lineitem between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>        supplier between 110 and 110 de level 0 use no rangelog use iudlog insert only,
++>	partsupp between 110 and 110 de level 0 use no rangelog use iudlog insert only
++>        phase 1;
+
+--- SQL operation complete.
+>>
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>-- ======================================================================
+>>-- ======================================================================
+>>-- ======================================================================
+>>-- ======================================================================
+>>-- ======================================================================
+>>
+>>
+>>--	obey TESTMV215C(TEST2);
+>>-- Clean and exit
+>>log;

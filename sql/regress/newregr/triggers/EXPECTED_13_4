@@ -1,0 +1,96 @@
+>>obey TEST_13_4(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO tab VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>> -- should actually insert (5,2,3,9)
+>>INSERT INTO tab VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>> -- should actually insert (7,3,4,12)
+>>
+>>-- tab should contain:
+>>-- (5,2,3,9)
+>>-- (7,3,4,12)
+>>SELECT * FROM tab order by a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          5            2            3            9
+          7            3            4           12
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER btrig3
+>>---------------------------------
+>>
+>>CREATE TRIGGER btrig3
++>BEFORE UPDATE OF (b)
++>ON tab
++>REFERENCING NEW AS newR, OLD AS oldR
++>FOR EACH ROW
++>SET newR.c = oldR.b;
+
+--- SQL operation complete.
+>>
+>>UPDATE tab SET B=10;
+
+--- 2 row(s) updated.
+>>
+>>-- tab should contain:
+>>-- (5,10,2,9)
+>>-- (7,10,3,12)
+>>SELECT * FROM tab order by a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          5           10            2            9
+          7           10            3           12
+
+--- 2 row(s) selected.
+>> -- check result 
+>>
+>>
+>>-- the following ddl should fail:
+>>
+>>CREATE TRIGGER btrig4
++>BEFORE UPDATE OF (b)
++>ON tab
++>REFERENCING NEW AS newR, OLD AS oldR
++>FOR EACH ROW
++>SET newR.a = oldR.b;
+
+*** ERROR[4033] Column A is a primary or clustering key column and cannot be updated.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-- the following ddl should fail:
+>>
+>>CREATE TRIGGER btrig5
++>BEFORE UPDATE OF (c)
++>ON tab
++>REFERENCING NEW AS newR, OLD AS oldR
++>FOR EACH ROW
++>SET newR.d = oldR.b;
+
+*** ERROR[4033] Column D is a primary or clustering key column and cannot be updated.
+
+*** ERROR[1079] SQL was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

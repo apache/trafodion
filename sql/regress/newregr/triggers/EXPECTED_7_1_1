@@ -1,0 +1,68 @@
+>>obey TEST_7_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>DELETE FROM tab1A WHERE a=3;
+
+--- 1 row(s) deleted.
+>>
+>>SELECT * FROM tab1A ORDER BY a;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            1            1            1  
+          2            1            1            1  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          3            4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>-----------------------------------------------------------
+>>
+>>DELETE FROM tab1A WHERE a=2;
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint CAT1.SCHM_ALT.REF_CONSTR on table CAT1.SCHM_ALT.TAB1B.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM_ALT.ATRIG711 on table CAT1.SCHM_ALT.TAB1A has failed.
+
+--- 0 row(s) deleted.
+>>
+>>SELECT * FROM tab1A ORDER BY a;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1            1            1            1  
+          2            1            1            1  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B ORDER BY a;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          3            4  
+
+--- 2 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>LOG;

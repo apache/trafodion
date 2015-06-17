@@ -1,0 +1,498 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TestMV215j
+------------------------------------------------------
+
+obey TESTMV215J(CLEAN_UP);
+obey TESTMV215J(SET_UP);
+
+log LOGMV215J clear;
+
+-- Run Tests
+	set schema cat.tpcd;
+	obey TESTMV215J(TEST1);
+	obey TESTMV215J(TEST2);
+	obey TESTMV215J(TEST3); 
+--	obey TESTMV215J(TEST4); Bug 510
+-- Clean and exit
+log;
+obey TESTMV215J(CLEAN_UP);
+exit;
+
+-----------------------------------------------------
+?section CLEAN_UP
+-----------------------------------------------------
+set schema cat.tpcd;
+obey ./TPCD/CREATEMVS(DROPALL);
+
+drop  table temp_orders;
+delete from temp_lineitem;
+delete from temp_supplier;
+delete from temp_customer;
+delete from temp_part;
+delete from temp_partsupp;
+
+
+obey ./TPCD/CREATEALL.OBEY(CLEAN_UP);
+obey ./TPCD/CREATEALLVSBB.OBEY(CLEAN_UP);
+
+-----------------------------------------------------
+?section SET_UP
+-----------------------------------------------------
+
+set PARSERFLAGS 3;
+control query default insert_vsbb 'USER';
+
+set schema cat.tpcd;
+obey ./TPCD/CREATEALLVSBB.OBEY(SET_UP);
+obey ./TPCD/CREATEMVS(CREATEALL);
+obey PREPARE_DDL_SELECTS;
+
+delete from orders;
+delete from lineitem;
+delete from supplier;
+delete from customer;
+delete from part;
+delete from nation;
+delete from region;
+
+
+
+
+ALTER TABLE orders Attributes AUTOMATIC RANGELOG ;
+ALTER TABLE lineitem Attributes AUTOMATIC RANGELOG ;
+ALTER TABLE supplier Attributes AUTOMATIC RANGELOG ;
+ALTER TABLE customer Attributes AUTOMATIC RANGELOG ;
+ALTER TABLE part	Attributes AUTOMATIC RANGELOG ;
+ALTER TABLE partsupp Attributes AUTOMATIC RANGELOG ;
+
+
+create table temp_orders 
+like orders;
+
+create table temp_lineitem
+like lineitem;
+
+create table temp_supplier
+like supplier;
+
+create table temp_customer
+like customer;
+
+create table temp_part
+like part;
+
+create table temp_partsupp
+like partsupp;
+
+prepare select_iud_log_orders from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , o_orderkey
+ from table(iud_log_table orders )
+ order by syskey;
+
+ prepare select_iud_log_lineitem from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , l_orderkey
+ from table(iud_log_table lineitem )
+ order by l_orderkey;
+
+prepare select_iud_log_supplier from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , s_suppkey
+ from table(iud_log_table supplier )
+ order by s_suppkey;
+
+prepare select_iud_log_customer from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , c_custkey
+ from table(iud_log_table customer )
+ order by c_custkey;
+
+
+prepare select_iud_log_part from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , p_partkey
+ from table(iud_log_table part )
+ order by p_partkey;
+
+prepare select_iud_log_partsupp from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , ps_partkey,ps_suppkey
+ from table(iud_log_table partsupp )
+ order by ps_partkey,ps_suppkey;
+
+
+prepare select_iud_log_nation from
+ select "@EPOCH"
+        , case "@OPERATION_TYPE" when 0 then 'INSERT'
+                                 when 1 then 'DELETE'
+                                 when 2 then 'I-UPDATE'
+                                 when 3 then 'D-UPDATE'
+                                 when 4 then 'END-RANGE'
+                                 when 12 then 'BEGIN-RANGE'
+          end
+        , "@RANGE_SIZE"
+        , n_nationkey
+ from table(iud_log_table nation )
+ order by n_nationkey;
+-------------------------------------------------------------------------
+?section SETUP_FOR_Q17
+-------------------------------------------------------------------------
+-- Q17
+
+
+PREPARE stat1 FROM
+	select  	orders.o_custkey , 
+			sum ( orders.o_totalprice) sum_price ,
+			sum ( lineitem.l_quantity) quantity ,
+			sum (lineitem.l_discount) discount,
+			min(orders.o_orderdate) orderdate,
+			count(*) cnt
+	from orders,lineitem
+	where orders.o_orderkey = lineitem.l_orderkey          
+	group by orders.o_custkey 
+	order by o_custkey;
+
+PREPARE stat2 FROM
+	select * from mv4q17
+	order by o_custkey;
+
+refresh mv4q17 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215J;
+log LOGMV215J;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J ;
+log LOGMV215J;
+
+
+------------------------------------------------------------------------
+?section SETUP_FOR_Q9
+------------------------------------------------------------------------
+
+PREPARE stat1 FROM 
+	select nation, yr, sum(amount) as sum_profit
+	from (select
+         	n_name as nation, 
+         	extract(year from o_orderdate) as yr,
+         	((l_extendedprice*(1-l_discount)) - (ps_supplycost*l_quantity)) as amount
+     from part,supplier,lineitem,partsupp,orders, nation
+     where 
+         s_suppkey  = l_suppkey
+         and ps_suppkey = l_suppkey
+         and ps_partkey = l_partkey
+         and p_partkey  = l_partkey
+         and o_orderkey = l_orderkey
+         and s_nationkey = n_nationkey
+         and p_name like '%green%'
+    ) as profit
+	group by nation, yr
+	order by nation, yr;
+
+PREPARE stat2 FROM 
+	select nation, yr,sum_profit
+	from mv4q9 
+	order by nation, yr;
+
+
+refresh mv4q9 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215H;
+log LOGMV215H;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J ;
+log LOGMV215J;
+
+-------------------------------------------------------------------------
+?section TEST1
+-------------------------------------------------------------------------
+obey TESTMV215J(SETUP_FOR_Q17);
+log;
+delete   from table(iud_log_table orders );
+delete   from table(iud_log_table lineitem );
+log LOGMV215J;
+-- ALL partions are empty
+-- expected success
+
+-- Prepare deltas---------------------------------------------------
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=1000 
+                                 -v upLimit1=11000   
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK 
+								 -v downLimit1=5100 
+								 -v upLimit1=20000     
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+
+
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.temp_orders -I orders.tbl1 -U orders.fmt ;
+sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt;
+
+cd ../..;
+
+insert using sideinserts into  orders(o_orderkey,o_custkey,o_shippriority,o_totalprice,o_orderdate,o_orderstatus,o_orderpriority,o_clerk,o_comment )
+ select * from temp_orders;
+
+
+execute select_iud_log_orders;
+
+
+insert using sideinserts into lineitem ( l_orderkey , l_linenumber , l_partkey, l_suppkey , l_quantity  , 
+   l_extendedprice ,  l_discount  ,  l_tax,  l_shipdate,  l_commitdate, l_receiptdate ,  l_returnflag  , 
+   l_linestatus    , l_shipinstruct  , l_shipmode    , l_comment ) select * from temp_lineitem;
+execute select_iud_log_lineitem;
+
+
+-- End prepare deltas -----------------------------------------------------------
+
+refresh mv4q17;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215J;
+log LOGMV215J;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J;
+log LOGMV215J;
+
+----------------------------------------------------------------------------------
+?section TEST2
+-----------------------------------------------------------------------------------
+-- partion is not empty
+-- expected failure
+
+delete from temp_orders;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=45100 
+                                 -v upLimit1=46000   
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.temp_orders -I orders.tbl1 -U orders.fmt ;
+
+cd ../..;
+
+
+insert using sideinserts into  orders(o_orderkey,o_custkey,o_shippriority,o_totalprice,o_orderdate,o_orderstatus,o_orderpriority,o_clerk,o_comment ) select * from temp_orders;
+
+----------------------------------------------------------------------------------
+?section TEST3
+-----------------------------------------------------------------------------------
+-- partion is  empty , but there is not empty partitions
+-- expected success
+
+delete from temp_orders;
+delete from temp_lineitem;
+
+delete from orders
+where o_orderkey < 2010;
+
+delete from lineitem
+where l_orderkey < 11000;
+
+
+refresh mv4q17 recompute;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215J;
+log LOGMV215J;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J;
+log LOGMV215J;
+
+
+log;
+delete   from table(iud_log_table orders );
+delete   from table(iud_log_table lineitem );
+log LOGMV215J;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=100 
+                                 -v upLimit1=2000  
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK 
+								 -v downLimit1=2000 
+								 -v upLimit1=9000     
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.temp_orders -I orders.tbl1 -U orders.fmt ;
+sh import cat.tpcd.temp_lineitem -I lineitem.tbl1 -U lineitem.fmt;
+
+cd ../..;
+
+
+insert using sideinserts into  orders(o_orderkey,o_custkey,o_shippriority,o_totalprice,o_orderdate,o_orderstatus,o_orderpriority,o_clerk,o_comment ) select * from temp_orders;
+execute select_iud_log_orders;
+
+insert using sideinserts into lineitem ( l_orderkey , l_linenumber , l_partkey, l_suppkey , l_quantity  , 
+   l_extendedprice ,  l_discount  ,  l_tax,  l_shipdate,  l_commitdate, l_receiptdate ,  l_returnflag  , 
+   l_linestatus    , l_shipinstruct  , l_shipmode    , l_comment )
+    select * from temp_lineitem;
+execute select_iud_log_lineitem;
+
+
+-- End prepare deltas -----------------------------------------------------------
+
+refresh mv4q17;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215J;
+log LOGMV215J;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J;
+log LOGMV215J;
+
+
+
+----------------------------------------------------------------------------------------
+?section TEST4
+----------------------------------------------------------------------------------------
+obey TESTMV215J(SETUP_FOR_Q9);
+
+log;
+delete from table(iud_log_table supplier );
+delete from table(iud_log_table part );
+delete from table(iud_log_table orders );
+delete from table(iud_log_table lineitem );
+delete from table(iud_log_table partsupp );
+delete from table(iud_log_table nation );
+log LOGMV215J;
+
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=12000 
+                                 -v upLimit1=45000   
+									./tpcd/tpcdtemp/orders.tbl > ./tpcd/tpcdtemp/orders.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK 
+								 -v downLimit1=10000 
+								 -v upLimit1=20000     
+									./tpcd/tpcdtemp/lineitem.tbl > ./tpcd/tpcdtemp/lineitem.tbl1 ;
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=0
+                                 -v upLimit1=15000   
+									./tpcd/tpcdtemp/supplier.tbl > ./tpcd/tpcdtemp/supplier.tbl1 ;
+
+
+
+sh awk -f ./TPCD/FILTER_KEY.AWK -v downLimit1=0
+                                 -v upLimit1=13000   
+									./tpcd/tpcdtemp/part.tbl > ./tpcd/tpcdtemp/part.tbl1 ;
+
+cd tpcd/tpcdtemp;
+
+sh import cat.tpcd.nation -I nation.tbl -U nation.fmt;
+sh import cat.tpcd.partsupp -I partsupp.tbl -U partsupp.fmt;
+sh import cat.tpcd.supplier -I supplier.tbl1 -U supplier.fmt ;
+sh import cat.tpcd.part -I part.tbl1 -U part.fmt;
+sh import cat.tpcd.lineitem -I lineitem.tbl -U lineitem.fmt ;
+sh import cat.tpcd.orders -I orders.tbl -U orders.fmt ;
+cd ../..;
+		
+execute select_iud_log_supplier;
+execute select_iud_log_lineitem;
+execute select_iud_log_part;
+execute select_iud_log_orders;
+execute select_iud_log_nation;
+execute select_iud_log_partsupp;
+
+-- End prepare deltas -----------------------------------------------------------
+
+refresh mv4q9;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV215J;
+log LOGMV215J;
+
+obey COMPARE;
+sh diff TEMP1 TEMP2 >> LOGMV215J;
+log LOGMV215J;
+
+

@@ -179,9 +179,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139187956907
+PLAN_ID .................. 212299471793545173
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 STATEMENT ................ select f,count(f)
                            from mcStatPart7 <<+ cardinality 10e8 >>
                            group by f;
@@ -192,7 +192,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -215,14 +215,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455084869
+  ObjectUIDs ............. 134049428157758971
   select_list ............ TRAFODION.HBASE.MCSTATPART7.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.
                              F)))
@@ -232,7 +233,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -247,7 +248,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -268,7 +269,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -282,8 +283,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART7
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 952.85
-EST_TOTAL_COST ......... 952.85
+EST_OPER_COST .......... 522.77
+EST_TOTAL_COST ......... 522.77
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -324,9 +325,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139188293118
+PLAN_ID .................. 212299471793757408
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 986.75
+EST_TOTAL_COST ......... 541.42
 STATEMENT ................ select f,count(f)
                            from mcStatPart5 <<+ cardinality 10e8 >>
                            group by f;
@@ -337,7 +338,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 986.75
+EST_TOTAL_COST ......... 541.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -360,14 +361,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455087167
+  ObjectUIDs ............. 134049428157760596
   select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
                              F)))
@@ -377,7 +379,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 986.75
+EST_TOTAL_COST ......... 541.42
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -392,7 +394,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 986.75
+EST_TOTAL_COST ......... 541.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -413,7 +415,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 986.75
+EST_TOTAL_COST ......... 541.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -427,8 +429,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART5
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 982.86
-EST_TOTAL_COST ......... 982.86
+EST_OPER_COST .......... 537.52
+EST_TOTAL_COST ......... 537.52
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -469,9 +471,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139188618691
+PLAN_ID .................. 212299471793957272
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 STATEMENT ................ select f,count(f)
                            from mcStatPart3 <<+ cardinality 10e8 >>
                            group by f;
@@ -482,7 +484,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -505,14 +507,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455088351
+  ObjectUIDs ............. 134049428157761364
   select_list ............ TRAFODION.HBASE.MCSTATPART3.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.
                              F)))
@@ -522,7 +525,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -537,7 +540,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -558,7 +561,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -572,8 +575,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART3
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 952.85
-EST_TOTAL_COST ......... 952.85
+EST_OPER_COST .......... 522.77
+EST_TOTAL_COST ......... 522.77
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -614,9 +617,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139188958160
+PLAN_ID .................. 212299471794167363
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 STATEMENT ................ select f,count(f)
                            from mcStatPart6 <<+ cardinality 10e8 >>
                            group by f;
@@ -627,7 +630,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -650,14 +653,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455089404
+  ObjectUIDs ............. 134049428157762085
   select_list ............ TRAFODION.HBASE.MCSTATPART6.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.
                              F)))
@@ -667,7 +671,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -682,7 +686,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -703,7 +707,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -717,8 +721,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART6
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 897.98
-EST_TOTAL_COST ......... 897.98
+EST_OPER_COST .......... 493.97
+EST_TOTAL_COST ......... 493.97
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -759,9 +763,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139189295795
+PLAN_ID .................. 212299471794378801
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 STATEMENT ................ select f,count(f)
                            from mcStatPart2 <<+ cardinality 10e8 >>
                            group by f;
@@ -772,7 +776,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -795,14 +799,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455090448
+  ObjectUIDs ............. 134049428157762740
   select_list ............ TRAFODION.HBASE.MCSTATPART2.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.
                              F)))
@@ -812,7 +817,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -827,7 +832,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -848,7 +853,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 901.88
+EST_TOTAL_COST ......... 497.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -862,8 +867,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART2
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 897.98
-EST_TOTAL_COST ......... 897.98
+EST_OPER_COST .......... 493.97
+EST_TOTAL_COST ......... 493.97
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -904,9 +909,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139189635098
+PLAN_ID .................. 212299471794589169
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 928.51
+EST_TOTAL_COST ......... 511.87
 STATEMENT ................ select f,count(f)
                            from mcStatPart1 <<+ cardinality 10e8 >>
                            group by f;
@@ -917,7 +922,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 928.51
+EST_TOTAL_COST ......... 511.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -940,14 +945,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455091495
+  ObjectUIDs ............. 134049428157763422
   select_list ............ TRAFODION.HBASE.MCSTATPART1.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.
                              F)))
@@ -957,7 +963,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 928.51
+EST_TOTAL_COST ......... 511.87
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -972,7 +978,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 928.51
+EST_TOTAL_COST ......... 511.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -993,7 +999,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 928.51
+EST_TOTAL_COST ......... 511.87
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1007,8 +1013,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 924.61
-EST_TOTAL_COST ......... 924.61
+EST_OPER_COST .......... 507.98
+EST_TOTAL_COST ......... 507.98
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2
@@ -1049,9 +1055,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212290139189972742
+PLAN_ID .................. 212299471794800057
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 STATEMENT ................ select f,count(f)
                            from mcStatPart8 <<+ cardinality 10e8 >>
                            group by f;
@@ -1062,7 +1068,7 @@ ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1085,14 +1091,15 @@ DESCRIPTION
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
-  TRAF_ALIGNED_ROW_FORMAT  ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 14131755455092534
+  ObjectUIDs ............. 134049428157764111
   select_list ............ TRAFODION.HBASE.MCSTATPART8.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.
                              F)))
@@ -1102,7 +1109,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -1117,7 +1124,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1138,7 +1145,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 3.9
-EST_TOTAL_COST ......... 956.75
+EST_TOTAL_COST ......... 526.67
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1152,8 +1159,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART8
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 952.85
-EST_TOTAL_COST ......... 952.85
+EST_OPER_COST .......... 522.77
+EST_TOTAL_COST ......... 522.77
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 2

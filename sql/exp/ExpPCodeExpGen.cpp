@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -213,15 +213,13 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
       // If offset is UINT_MAX, pcode is normally generated unless
       // CQD says otherwise or if this operation is for insert/update.
       for(short i = 0; i < clause->getNumOperands(); i++) {
-#if defined(__EID)
-	if ((clause->getOperand(i)->getOffset() == UINT_MAX) ||
-            (clause->getOperand(i)->isSpecialField() && !pCodeSpecialFields()))
-#else
+        if (! clause->getOperand(i))
+          continue;
+
 	if (((clause->getOperand(i)->getOffset() == UINT_MAX) &&
               !handleIndirectVC()) ||
             (clause->getOperand(i)->isSpecialField() && 
               !pCodeSpecialFields()))
-#endif
         {
 	  setPCodeObject(0);
 	  pCode_ = 0;

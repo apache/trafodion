@@ -1,0 +1,904 @@
+>>log LOG013;
+>>
+>>obey TEST013(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>set catalog neo;
+
+--- SQL operation complete.
+>>create schema SCH013;
+
+--- SQL operation complete.
+>>set schema SCH013;
+
+--- SQL operation complete.
+>>
+>>--insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+>>--(attribute, attr_value) values ('MVQR_MAX_MV_JOIN_SIZE', '100');
+>>--cqd MVQR_MAX_MV_JOIN_SIZE '100';
+>>
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'STMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(create_tables);
+>>------------------------------------------------------
+>>create table OPPTY_CRM_CMPGN_A_F (
++>  OPPTY_ID              CHAR(10) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL
++> ,CMPGN_NM              CHAR(10) CHARACTER SET UCS2  DEFAULT NULL
++> ,CRM_CMPGN_ID          LARGEINT NO DEFAULT  NOT NULL
++> ,INT_COL1              INT NOT NULL
++>);
+
+--- SQL operation complete.
+>> -- store by (OPPTY_ID);
+>>
+>>CREATE TABLE OPPTY_A_D
++>(
++>  OPPTY_ID              CHAR(10) CHARACTER SET ISO88591  NO DEFAULT  NOT NULL
++> ,SLS_MTHD_CD           CHAR(10) CHARACTER SET ISO88591  DEFAULT NULL
++> ,INT_COL2              INT NOT NULL
++> ,PRIMARY KEY (OPPTY_ID ASC)
++>);
+
+--- SQL operation complete.
+>> -- store by (OPPTY_ID);
+>>
+>>------------------------------------------------------
+>>obey TEST013(run_queries);
+>>------------------------------------------------------
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP_MV';
+
+--- SQL operation complete.
+>>control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST013(Q12259903);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12259903;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259903';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>  AND  OOAD_1.OPPTY_ID  = _ISO88591'CRMAP1-6-1JIENX3')))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(dump_MV);
+>>------------------------------------------------------
+>>
+>>log T013_$$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>                                                                                               
+  <Version>                                                                                        
+    1.0                                                                                            
+  </Version>                                                                                       
+  <Table>                                                                                          
+    Q12259903                                                                                      
+  </Table>                                                                                         
+  <Misc isIncremental='0' isFromQuery='1'>                                                         
+  </Misc>                                                                                          
+  <JBB id='B0'>                                                                                    
+    <Hub>                                                                                          
+      <JBBCList>                                                                                   
+        <Table id='T1' TS='212223881396708302' numCols='3' rangeBits='0000000C' corr='OOAD_1'>     
+          NEO.SCH013.OPPTY_A_D                                                                     
+        </Table>                                                                                   
+        <Table id='T2' TS='212223881396192730' numCols='5' rangeBits='00000004' corr='CCOCCAF_1'>  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F                                                           
+        </Table>                                                                                   
+      </JBBCList>                                                                                  
+      <JoinPredList>                                                                               
+        <JoinPred id='J40'>                                                                        
+          <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>                               
+            NEO.SCH013.OPPTY_A_D.OPPTY_ID                                                          
+          </Column>                                                                                
+          <Column id='C2' tableId='T2' colIndex='1' isNullable='0'>                                
+            NEO.SCH013.OPPTY_CRM_CMPGN_A_F.OPPTY_ID                                                
+          </Column>                                                                                
+        </JoinPred>                                                                                
+      </JoinPredList>                                                                              
+      <RangePredList>                                                                              
+        <Range id='R41' sqlType='CHAR(10) CHARACTER SET ISO88591 NO NULLS'>                        
+          <Column ref='C2'>                                                                        
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'CRMAP1-6-1JIENX3'"><![CDATA[CRMAP1-6-1JIENX3]]></StringVal>  
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+        <Range id='R73' sqlType='CHAR(10) CHARACTER SET ISO88591 ALLOWS NULLS'>                    
+          <Column id='C17' tableId='T1' colIndex='1'>                                              
+            NEO.SCH013.OPPTY_A_D.SLS_MTHD_CD                                                       
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'Lead Management'"><![CDATA[Lead Management]]></StringVal>    
+            <StringVal sql="_ISO88591'Sales Methodology'"><![CDATA[Sales Methodology]]></StringVal>
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+      </RangePredList>                                                                             
+    </Hub>                                                                                         
+    <ExtraHub>                                                                                     
+    </ExtraHub>                                                                                    
+    <OutputList>                                                                                   
+      <Output id='O43'>                                                                            
+        <Column ref='C3'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+      <Output id='O46'>                                                                            
+        <Column ref='C4'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+    </OutputList>                                                                                  
+    <GroupBy id='G3'>                                                                              
+      <Primary>                                                                                    
+        <Column id='C3' tableId='T2' colIndex='2'>                                                 
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CMPGN_NM                                                  
+        </Column>                                                                                  
+        <Column id='C4' tableId='T2' colIndex='3' isNullable='0'>                                  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CRM_CMPGN_ID                                              
+        </Column>                                                                                  
+      </Primary>                                                                                   
+    </GroupBy>                                                                                     
+  </JBB>                                                                                           
+</MV>                                                                                              
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>-- Don't INITIALIZE -- test designed to run with only MV published here
+>>sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+>>
+>>------------------------------------------------------
+>>
+>>obey TEST013(Q12259937);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12259937;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259937';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>LEFT OUTER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>  AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1C6XUBU'))))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(dump_MV);
+>>------------------------------------------------------
+>>
+>>log T013_$$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>                                                                                               
+  <Version>                                                                                        
+    1.0                                                                                            
+  </Version>                                                                                       
+  <Table>                                                                                          
+    Q12259937                                                                                      
+  </Table>                                                                                         
+  <Misc isIncremental='0' isFromQuery='1'>                                                         
+  </Misc>                                                                                          
+  <JBB id='B0'>                                                                                    
+    <Hub>                                                                                          
+      <JBBCList>                                                                                   
+        <Table id='T1' TS='212223881396708302' numCols='3' rangeBits='0000000C' corr='OOAD_1'>     
+          NEO.SCH013.OPPTY_A_D                                                                     
+        </Table>                                                                                   
+        <Table id='T2' TS='212223881396192730' numCols='5' rangeBits='00000004' corr='CCOCCAF_1'>  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F                                                           
+        </Table>                                                                                   
+      </JBBCList>                                                                                  
+      <JoinPredList>                                                                               
+        <JoinPred id='J43'>                                                                        
+          <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>                               
+            NEO.SCH013.OPPTY_A_D.OPPTY_ID                                                          
+          </Column>                                                                                
+          <Column id='C2' tableId='T2' colIndex='1' isNullable='0'>                                
+            NEO.SCH013.OPPTY_CRM_CMPGN_A_F.OPPTY_ID                                                
+          </Column>                                                                                
+        </JoinPred>                                                                                
+      </JoinPredList>                                                                              
+      <RangePredList>                                                                              
+        <Range id='R44' sqlType='CHAR(10) CHARACTER SET ISO88591 NO NULLS'>                        
+          <Column ref='C2'>                                                                        
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'CRMEM1-2-1C6XUBU'"><![CDATA[CRMEM1-2-1C6XUBU]]></StringVal>  
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+        <Range id='R84' sqlType='CHAR(10) CHARACTER SET ISO88591 ALLOWS NULLS'>                    
+          <Column id='C17' tableId='T1' colIndex='1'>                                              
+            NEO.SCH013.OPPTY_A_D.SLS_MTHD_CD                                                       
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'Lead Management'"><![CDATA[Lead Management]]></StringVal>    
+            <StringVal sql="_ISO88591'Sales Methodology'"><![CDATA[Sales Methodology]]></StringVal>
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+      </RangePredList>                                                                             
+    </Hub>                                                                                         
+    <ExtraHub>                                                                                     
+    </ExtraHub>                                                                                    
+    <OutputList>                                                                                   
+      <Output id='O46'>                                                                            
+        <Column ref='C3'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+      <Output id='O49'>                                                                            
+        <Column ref='C4'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+    </OutputList>                                                                                  
+    <GroupBy id='G3'>                                                                              
+      <Primary>                                                                                    
+        <Column id='C3' tableId='T2' colIndex='2'>                                                 
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CMPGN_NM                                                  
+        </Column>                                                                                  
+        <Column id='C4' tableId='T2' colIndex='3' isNullable='0'>                                  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CRM_CMPGN_ID                                              
+        </Column>                                                                                  
+      </Primary>                                                                                   
+    </GroupBy>                                                                                     
+  </JBB>                                                                                           
+</MV>                                                                                              
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>-- Don't INITIALIZE -- test designed to run with only MV published here
+>>sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+>>
+>>------------------------------------------------------
+>>
+>>obey TEST013(Q12260038);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12260038;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12260038';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>--AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1F700BJ'))))
++>  AND  OOAD_1.OPPTY_ID  LIKE _ISO88591'%MEM1-2-%')))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(dump_MV);
+>>------------------------------------------------------
+>>
+>>log T013_$$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>                                                                                                                  
+  <Version>                                                                                                           
+    1.0                                                                                                               
+  </Version>                                                                                                          
+  <Table>                                                                                                             
+    Q12260038                                                                                                         
+  </Table>                                                                                                            
+  <Misc isIncremental='0' isFromQuery='1'>                                                                            
+  </Misc>                                                                                                             
+  <JBB id='B0'>                                                                                                       
+    <Hub>                                                                                                             
+      <JBBCList>                                                                                                      
+        <Table id='T1' TS='212223881396708302' numCols='3' rangeBits='00000004' residualBits='00000008' corr='OOAD_1'>
+          NEO.SCH013.OPPTY_A_D                                                                                        
+        </Table>                                                                                                      
+        <Table id='T2' TS='212223881396192730' numCols='5' residualBits='00000004' corr='CCOCCAF_1'>                  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F                                                                              
+        </Table>                                                                                                      
+      </JBBCList>                                                                                                     
+      <JoinPredList>                                                                                                  
+        <JoinPred id='J40'>                                                                                           
+          <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>                                                  
+            NEO.SCH013.OPPTY_A_D.OPPTY_ID                                                                             
+          </Column>                                                                                                   
+          <Column id='C2' tableId='T2' colIndex='1' isNullable='0'>                                                   
+            NEO.SCH013.OPPTY_CRM_CMPGN_A_F.OPPTY_ID                                                                   
+          </Column>                                                                                                   
+        </JoinPred>                                                                                                   
+      </JoinPredList>                                                                                                 
+      <RangePredList>                                                                                                 
+        <Range id='R73' sqlType='CHAR(10) CHARACTER SET ISO88591 ALLOWS NULLS'>                                       
+          <Column id='C17' tableId='T1' colIndex='1'>                                                                 
+            NEO.SCH013.OPPTY_A_D.SLS_MTHD_CD                                                                          
+          </Column>                                                                                                   
+          <OpEQ>                                                                                                      
+            <StringVal sql="_ISO88591'Lead Management'"><![CDATA[Lead Management]]></StringVal>                       
+            <StringVal sql="_ISO88591'Sales Methodology'"><![CDATA[Sales Methodology]]></StringVal>                   
+          </OpEQ>                                                                                                     
+        </Range>                                                                                                      
+      </RangePredList>                                                                                                
+      <ResidualPredList>                                                                                              
+        <Residual id='D32' result='NotProvided'>                                                                      
+          <Function id='S32' op='fake function'>                                                                      
+            <Column ref='C2'>                                                                                         
+            </Column>                                                                                                 
+          </Function>                                                                                                 
+        </Residual>                                                                                                   
+      </ResidualPredList>                                                                                             
+    </Hub>                                                                                                            
+    <ExtraHub>                                                                                                        
+    </ExtraHub>                                                                                                       
+    <OutputList>                                                                                                      
+      <Output id='O43'>                                                                                               
+        <Column ref='C3'>                                                                                             
+        </Column>                                                                                                     
+      </Output>                                                                                                       
+      <Output id='O46'>                                                                                               
+        <Column ref='C4'>                                                                                             
+        </Column>                                                                                                     
+      </Output>                                                                                                       
+    </OutputList>                                                                                                     
+    <GroupBy id='G3'>                                                                                                 
+      <Primary>                                                                                                       
+        <Column id='C3' tableId='T2' colIndex='2'>                                                                    
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CMPGN_NM                                                                     
+        </Column>                                                                                                     
+        <Column id='C4' tableId='T2' colIndex='3' isNullable='0'>                                                     
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CRM_CMPGN_ID                                                                 
+        </Column>                                                                                                     
+      </Primary>                                                                                                      
+    </GroupBy>                                                                                                        
+  </JBB>                                                                                                              
+</MV>                                                                                                                 
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>-- Don't INITIALIZE -- test designed to run with only MV published here
+>>sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+>>
+>>------------------------------------------------------
+>>
+>>obey TEST013(QGB_EXPR1);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ QGB_EXPR1;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR1';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>,  INT_COL1 + INT_COL2 "Col2"
++>--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') )
++>GROUP BY 2, 3, 4
++>ORDER BY 2, 3, 4;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(dump_MV);
+>>------------------------------------------------------
+>>
+>>log T013_$$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>                                                                                               
+  <Version>                                                                                        
+    1.0                                                                                            
+  </Version>                                                                                       
+  <Table>                                                                                          
+    QGB_EXPR1                                                                                      
+  </Table>                                                                                         
+  <Misc isIncremental='0' isFromQuery='1'>                                                         
+  </Misc>                                                                                          
+  <JBB id='B0'>                                                                                    
+    <Hub>                                                                                          
+      <JBBCList>                                                                                   
+        <Table id='T1' TS='212223881396708302' numCols='3' rangeBits='00000004' corr='OOAD_1'>     
+          NEO.SCH013.OPPTY_A_D                                                                     
+        </Table>                                                                                   
+        <Table id='T2' TS='212223881396192730' numCols='5' corr='CCOCCAF_1'>                       
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F                                                           
+        </Table>                                                                                   
+      </JBBCList>                                                                                  
+      <JoinPredList>                                                                               
+        <JoinPred id='J40'>                                                                        
+          <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>                               
+            NEO.SCH013.OPPTY_A_D.OPPTY_ID                                                          
+          </Column>                                                                                
+          <Column id='C2' tableId='T2' colIndex='1' isNullable='0'>                                
+            NEO.SCH013.OPPTY_CRM_CMPGN_A_F.OPPTY_ID                                                
+          </Column>                                                                                
+        </JoinPred>                                                                                
+      </JoinPredList>                                                                              
+      <RangePredList>                                                                              
+        <Range id='R70' sqlType='CHAR(10) CHARACTER SET ISO88591 ALLOWS NULLS'>                    
+          <Column id='C17' tableId='T1' colIndex='1'>                                              
+            NEO.SCH013.OPPTY_A_D.SLS_MTHD_CD                                                       
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'Lead Management'"><![CDATA[Lead Management]]></StringVal>    
+            <StringVal sql="_ISO88591'Sales Methodology'"><![CDATA[Sales Methodology]]></StringVal>
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+      </RangePredList>                                                                             
+    </Hub>                                                                                         
+    <ExtraHub>                                                                                     
+    </ExtraHub>                                                                                    
+    <OutputList>                                                                                   
+      <Output id='O33'>                                                                            
+        <Expr ref='X33'>                                                                           
+        </Expr>                                                                                    
+      </Output>                                                                                    
+      <Output id='O43'>                                                                            
+        <Column ref='C3'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+      <Output id='O46'>                                                                            
+        <Column ref='C4'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+    </OutputList>                                                                                  
+    <GroupBy id='G3'>                                                                              
+      <Primary>                                                                                    
+        <Expr id='X33'>                                                                            
+          <BinaryOper id='S33' op='+'>                                                             
+            <Column id='C5' tableId='T2' colIndex='4' isNullable='0'>                              
+              NEO.SCH013.OPPTY_CRM_CMPGN_A_F.INT_COL1                                              
+            </Column>                                                                              
+            <Column id='C18' tableId='T1' colIndex='2' isNullable='0'>                             
+              NEO.SCH013.OPPTY_A_D.INT_COL2                                                        
+            </Column>                                                                              
+          </BinaryOper>                                                                            
+          <Info><![CDATA[(CCOCCAF_1.INT_COL1 + OOAD_1.INT_COL2)]]></Info>                          
+        </Expr>                                                                                    
+        <Column id='C3' tableId='T2' colIndex='2'>                                                 
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CMPGN_NM                                                  
+        </Column>                                                                                  
+        <Column id='C4' tableId='T2' colIndex='3' isNullable='0'>                                  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CRM_CMPGN_ID                                              
+        </Column>                                                                                  
+      </Primary>                                                                                   
+    </GroupBy>                                                                                     
+  </JBB>                                                                                           
+</MV>                                                                                              
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>-- Don't INITIALIZE -- test designed to run with only MV published here
+>>sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+>>
+>>------------------------------------------------------
+>>
+>>obey TEST013(QGB_EXPR2);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ QGB_EXPR2;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR2';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>,  INT_COL1 + INT_COL2 "Col2"
++>--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology',_ISO88591'AnotherOption') )
++>GROUP BY 2, 3, 4
++>ORDER BY 2, 3, 4;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>obey TEST013(dump_MV);
+>>------------------------------------------------------
+>>
+>>log T013_$$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>                                                                                               
+  <Version>                                                                                        
+    1.0                                                                                            
+  </Version>                                                                                       
+  <Table>                                                                                          
+    QGB_EXPR2                                                                                      
+  </Table>                                                                                         
+  <Misc isIncremental='0' isFromQuery='1'>                                                         
+  </Misc>                                                                                          
+  <JBB id='B0'>                                                                                    
+    <Hub>                                                                                          
+      <JBBCList>                                                                                   
+        <Table id='T1' TS='212223881396708302' numCols='3' rangeBits='00000004' corr='OOAD_1'>     
+          NEO.SCH013.OPPTY_A_D                                                                     
+        </Table>                                                                                   
+        <Table id='T2' TS='212223881396192730' numCols='5' corr='CCOCCAF_1'>                       
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F                                                           
+        </Table>                                                                                   
+      </JBBCList>                                                                                  
+      <JoinPredList>                                                                               
+        <JoinPred id='J43'>                                                                        
+          <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>                               
+            NEO.SCH013.OPPTY_A_D.OPPTY_ID                                                          
+          </Column>                                                                                
+          <Column id='C2' tableId='T2' colIndex='1' isNullable='0'>                                
+            NEO.SCH013.OPPTY_CRM_CMPGN_A_F.OPPTY_ID                                                
+          </Column>                                                                                
+        </JoinPred>                                                                                
+      </JoinPredList>                                                                              
+      <RangePredList>                                                                              
+        <Range id='R76' sqlType='CHAR(10) CHARACTER SET ISO88591 ALLOWS NULLS'>                    
+          <Column id='C17' tableId='T1' colIndex='1'>                                              
+            NEO.SCH013.OPPTY_A_D.SLS_MTHD_CD                                                       
+          </Column>                                                                                
+          <OpEQ>                                                                                   
+            <StringVal sql="_ISO88591'AnotherOption'"><![CDATA[AnotherOption]]></StringVal>        
+            <StringVal sql="_ISO88591'Lead Management'"><![CDATA[Lead Management]]></StringVal>    
+            <StringVal sql="_ISO88591'Sales Methodology'"><![CDATA[Sales Methodology]]></StringVal>
+          </OpEQ>                                                                                  
+        </Range>                                                                                   
+      </RangePredList>                                                                             
+    </Hub>                                                                                         
+    <ExtraHub>                                                                                     
+    </ExtraHub>                                                                                    
+    <OutputList>                                                                                   
+      <Output id='O36'>                                                                            
+        <Expr ref='X36'>                                                                           
+        </Expr>                                                                                    
+      </Output>                                                                                    
+      <Output id='O46'>                                                                            
+        <Column ref='C3'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+      <Output id='O49'>                                                                            
+        <Column ref='C4'>                                                                          
+        </Column>                                                                                  
+      </Output>                                                                                    
+    </OutputList>                                                                                  
+    <GroupBy id='G3'>                                                                              
+      <Primary>                                                                                    
+        <Expr id='X36'>                                                                            
+          <BinaryOper id='S36' op='+'>                                                             
+            <Column id='C5' tableId='T2' colIndex='4' isNullable='0'>                              
+              NEO.SCH013.OPPTY_CRM_CMPGN_A_F.INT_COL1                                              
+            </Column>                                                                              
+            <Column id='C18' tableId='T1' colIndex='2' isNullable='0'>                             
+              NEO.SCH013.OPPTY_A_D.INT_COL2                                                        
+            </Column>                                                                              
+          </BinaryOper>                                                                            
+          <Info><![CDATA[(CCOCCAF_1.INT_COL1 + OOAD_1.INT_COL2)]]></Info>                          
+        </Expr>                                                                                    
+        <Column id='C3' tableId='T2' colIndex='2'>                                                 
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CMPGN_NM                                                  
+        </Column>                                                                                  
+        <Column id='C4' tableId='T2' colIndex='3' isNullable='0'>                                  
+          NEO.SCH013.OPPTY_CRM_CMPGN_A_F.CRM_CMPGN_ID                                              
+        </Column>                                                                                  
+      </Primary>                                                                                   
+    </GroupBy>                                                                                     
+  </JBB>                                                                                           
+</MV>                                                                                              
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>-- Don't INITIALIZE -- test designed to run with only MV published here
+>>sh echo PUBLISH T013_$$MVName$$.xml >> T013.in;
+>>
+>>------------------------------------------------------
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------
+>>obey TEST013(run_qms);
+>>------------------------------------------------------
+>>sh echo WORKLOAD 0 >> T013.in;
+>>
+>>sh sh -c "$QMS T013.in T013.out";
+>>
+>>log;
+CREATE SCHEMA  NEO.MVQR_WA;
+SET CATALOG NEO;
+SET SCHEMA  NEO.MVQR_WA;
+CONTROL QUERY DEFAULT MVQR_REWRITE_LEVEL '4';
+
+-- ProposedMV: ProposedMV1
+-- Covers 2 queries:
+--   id: QGB_EXPR1
+--   id: QGB_EXPR2
+-- Join size is: 2.
+CREATE MV ProposedMV1
+  REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE AS
+  SELECT  (CCOCCAF_1.INT_COL1 + OOAD_1.INT_COL2) Col1, 
+          CCOCCAF_1.CMPGN_NM Col2, 
+          CCOCCAF_1.CRM_CMPGN_ID Col3, 
+          OOAD_1.SLS_MTHD_CD Col4
+         ,COUNT(*) count_star
+  FROM NEO.SCH013.OPPTY_CRM_CMPGN_A_F CCOCCAF_1
+  INNER JOIN NEO.SCH013.OPPTY_A_D OOAD_1
+    ON CCOCCAF_1.OPPTY_ID = OOAD_1.OPPTY_ID
+  GROUP BY 1, 2, 3, 4
+;
+--=========================================================================
+
+-- ProposedMV: ProposedMV2
+-- Covers 3 queries:
+--   id: Q12259903
+--   id: Q12259937
+--   id: Q12260038
+-- Join size is: 2.
+CREATE MV ProposedMV2
+  REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE AS
+  SELECT  CCOCCAF_1.CMPGN_NM Col1, 
+          CCOCCAF_1.CRM_CMPGN_ID Col2, 
+          CCOCCAF_1.OPPTY_ID Col3
+         ,COUNT(*) count_star
+  FROM NEO.SCH013.OPPTY_CRM_CMPGN_A_F CCOCCAF_1
+  INNER JOIN NEO.SCH013.OPPTY_A_D OOAD_1
+    ON CCOCCAF_1.OPPTY_ID = OOAD_1.OPPTY_ID
+  WHERE ( OOAD_1.SLS_MTHD_CD IN ( _ISO88591'Lead Management', _ISO88591'Sales Methodology' ) )
+  GROUP BY 1, 2, 3
+;
+--=========================================================================
+
+>>
+>>obey T013.out;
+>>CREATE SCHEMA  NEO.MVQR_WA;
+
+--- SQL operation complete.
+>>SET CATALOG NEO;
+
+--- SQL operation complete.
+>>SET SCHEMA  NEO.MVQR_WA;
+
+--- SQL operation complete.
+>>CONTROL QUERY DEFAULT MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>
+>>-- ProposedMV: ProposedMV1
+>>-- Covers 2 queries:
+>>--   id: QGB_EXPR1
+>>--   id: QGB_EXPR2
+>>-- Join size is: 2.
+>>CREATE MV ProposedMV1
++>  REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE AS
++>  SELECT  (CCOCCAF_1.INT_COL1 + OOAD_1.INT_COL2) Col1, 
++>          CCOCCAF_1.CMPGN_NM Col2, 
++>          CCOCCAF_1.CRM_CMPGN_ID Col3, 
++>          OOAD_1.SLS_MTHD_CD Col4
++>         ,COUNT(*) count_star
++>  FROM NEO.SCH013.OPPTY_CRM_CMPGN_A_F CCOCCAF_1
++>  INNER JOIN NEO.SCH013.OPPTY_A_D OOAD_1
++>    ON CCOCCAF_1.OPPTY_ID = OOAD_1.OPPTY_ID
++>  GROUP BY 1, 2, 3, 4
++>;
+
+--- SQL operation complete.
+>>--=========================================================================
+>>
+>>-- ProposedMV: ProposedMV2
+>>-- Covers 3 queries:
+>>--   id: Q12259903
+>>--   id: Q12259937
+>>--   id: Q12260038
+>>-- Join size is: 2.
+>>CREATE MV ProposedMV2
++>  REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE AS
++>  SELECT  CCOCCAF_1.CMPGN_NM Col1, 
++>          CCOCCAF_1.CRM_CMPGN_ID Col2, 
++>          CCOCCAF_1.OPPTY_ID Col3
++>         ,COUNT(*) count_star
++>  FROM NEO.SCH013.OPPTY_CRM_CMPGN_A_F CCOCCAF_1
++>  INNER JOIN NEO.SCH013.OPPTY_A_D OOAD_1
++>    ON CCOCCAF_1.OPPTY_ID = OOAD_1.OPPTY_ID
++>  WHERE ( OOAD_1.SLS_MTHD_CD IN ( _ISO88591'Lead Management', _ISO88591'Sales Methodology' ) )
++>  GROUP BY 1, 2, 3
++>;
+
+--- SQL operation complete.
+>>--=========================================================================
+>>
+>>obey TEST013(verify_queries);
+>>------------------------------------------------------
+>>
+>>cqd mvqr_rewrite_candidates 'NEO.SCH013.ProposedMV1';
+
+--- SQL operation complete.
+>>
+>>obey TEST013(Q12259903);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12259903;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259903';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>  AND  OOAD_1.OPPTY_ID  = _ISO88591'CRMAP1-6-1JIENX3')))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       NEO.MVQR_WA.PROPOSEDMV2                                     
+
+--- 1 row(s) selected.
+>>
+>>obey TEST013(Q12259937);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12259937;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12259937';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>LEFT OUTER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>  AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1C6XUBU'))))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       NEO.MVQR_WA.PROPOSEDMV2                                     
+
+--- 1 row(s) selected.
+>>
+>>obey TEST013(Q12260038);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ Q12260038;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'Q12260038';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>        ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ((( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') 
++>--AND  OOAD_1.OPPTY_ID  IN (_ISO88591'CRMEM1-2-1F700BJ'))))
++>  AND  OOAD_1.OPPTY_ID  LIKE _ISO88591'%MEM1-2-%')))
++>GROUP BY 2, 3
++>ORDER BY 2, 3;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       NEO.MVQR_WA.PROPOSEDMV2                                     
+
+--- 1 row(s) selected.
+>>
+>>obey TEST013(QGB_EXPR1);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ QGB_EXPR1;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR1';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>,  INT_COL1 + INT_COL2 "Col2"
++>--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology') )
++>GROUP BY 2, 3, 4
++>ORDER BY 2, 3, 4;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       NEO.MVQR_WA.PROPOSEDMV1                                     
+
+--- 1 row(s) selected.
+>>
+>>obey TEST013(QGB_EXPR2);
+>>------------------------------------------------------
+>>set pattern $$MVName$$ QGB_EXPR2;
+>>control query default MVQR_WORKLOAD_ANALYSIS_MV_NAME 'QGB_EXPR2';
+
+--- SQL operation complete.
+>>PREPARE STMT FROM SELECT
++>'0' "Dummy"
++>,  CCOCCAF_1.CRM_CMPGN_ID  "Col0"
++>,  CCOCCAF_1.CMPGN_NM  "Col1"
++>,  INT_COL1 + INT_COL2 "Col2"
++>--,  CCOCCAF_1.CMPGN_NM || OOAD_1.SLS_MTHD_CD "Col3"
++>FROM       NEO.SCH013.OPPTY_CRM_CMPGN_A_F "CCOCCAF_1"
++>INNER JOIN NEO.SCH013.OPPTY_A_D "OOAD_1"
++>ON ( CCOCCAF_1.OPPTY_ID  =  OOAD_1.OPPTY_ID )
++>WHERE ( OOAD_1.SLS_MTHD_CD  IN (_ISO88591'Lead Management',_ISO88591'Sales Methodology',_ISO88591'AnotherOption') )
++>GROUP BY 2, 3, 4
++>ORDER BY 2, 3, 4;
+
+--- SQL command prepared.
+>>
+>>------------------------------------------------------
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       NEO.MVQR_WA.PROPOSEDMV1                                     
+
+--- 1 row(s) selected.
+>>
+>>------------------------------------------------------
+>>
+>>obey TEST013(clean_up);
+>>----------------------------------------------------
+>>------------------ clean up section ----------------
+>>----------------------------------------------------
+>>set catalog neo;
+
+--- SQL operation complete.
+>>
+>>drop schema SCH013 cascade;
+
+--- SQL operation complete.
+>>drop schema mvqr_wa cascade;
+
+--- SQL operation complete.
+>>
+>>log;

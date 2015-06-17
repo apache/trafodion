@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1488,29 +1488,14 @@ const NAType *MonadicUSERFunction::synthesizeType()
   //
   ValueId vid = child(0)->getValueId();
 
-  if (OSIM_isNTbehavior())
-  {
-    vid.coerceType(NA_CHARACTER_TYPE);
-  }
-  else {
-    SQLInt si(TRUE);
-    vid.coerceType(si, NA_NUMERIC_TYPE);
-  }
+  SQLInt si(TRUE);
+  vid.coerceType(si, NA_NUMERIC_TYPE);
 
   //
   // Check that the operands are compatible.
   //
   const NAType& typ1 = vid.getType();
 
-  if (OSIM_isNTbehavior())
-  {
-    if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE) {
-      // 4043 The operand of a USER function must be character.
-      *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
-      return NULL;
-    }
-  }
-  else{
   if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE) {
     // 4043 The operand of a USER function must be character.
     *CmpCommon::diags() << DgSqlCode(-4045) << DgString0(getTextUpper());
@@ -1532,7 +1517,6 @@ const NAType *MonadicUSERFunction::synthesizeType()
       *CmpCommon::diags() << DgSqlCode(-4047) << DgString0(getTextUpper());
       return NULL;
     }
-  }
 
   //
   // Return the result.
@@ -6407,6 +6391,25 @@ const NAType * SequenceValue::synthesizeType()
   return type;
 }
 
+const NAType * HbaseTimestamp::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE,  
+                              col_->getValueId().getType().supportsSQLnull());
+
+  return type;
+}
+
+const NAType * HbaseVersion::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE, FALSE); 
+
+  return type;
+}
+
 const NAType * RowNumFunc::synthesizeType()
 {
   NAType * type = NULL;
@@ -6415,8 +6418,6 @@ const NAType * RowNumFunc::synthesizeType()
 
   return type;
 }
-
-
 
 const NAType *LOBoper::synthesizeType()
 {
@@ -6624,7 +6625,7 @@ const NAType *LOBconvert::synthesizeType()
   ValueId vid1 = child(0)->getValueId();
   const NAType &typ1 = (NAType&)vid1.getType();
 
-  if (obj_ == STRING_)
+  if (obj_ == STRING_ || obj_ == FILE_)
     {
       if (typ1.getTypeQualifier() != NA_LOB_TYPE)
 	{

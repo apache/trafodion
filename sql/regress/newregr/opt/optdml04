@@ -1,0 +1,252 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--======================================================--
+-- test verifies optimizer chooses expected plans for Acxiom queries.
+-- requires: run regress/opt/optddl04 first to create Acxiom tables & stats.
+-- verify that sequence ESPs float when Adaptive Segmentation is on or off.
+--======================================================--
+
+-- This pattern for quote(') is needed to set OSIM_SIMULATION_LOC
+-- to a directory set by an env variable $OPTSCRIPTDIR.
+set pattern $$quote$$ '''';
+control query default osim_simulation_loc $$quote$$ $$OPTSCRIPTDIR$$/acxiom $$quote$$;
+
+control query default target_code 'RELEASE';
+control query default float_esp_random_num_seed '777777';
+control query default query_cache '0';
+control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'off';
+-- make sure we get the required CQDS from the OSIM data
+-- including MX_SKIP_VCC
+obey $$REGRTSTDIR$$/acxiom/CQDS;
+
+?section explainIt
+--  Prepared query for displaying chosen plan using EXPLAIN. --
+prepare explainIt from
+  select [first 4] operator, op_cost
+  from (select
+         substring(cast(SEQ_NUM+100 as char(3)),2,2),
+         substring(operator,1,16),        
+         cast(case when operator_cost < 0.0 then 'NEGATIVE'
+                   else 'POSITIVE' end as char(8))
+         from table (explain(NULL,'XX'))
+       ) as t(s, operator, op_cost)
+  order by s desc;
+
+?section setSCH
+set schema bench6.acxiom064;
+
+?section cdefs
+-- Control query defaults 
+
+?section tests
+prepare xx from 
+Insert into seg_q5B_1 ( SELECT HH_ID, 'BBBBH81ZBBBG' SEG_ID, INDIV_ID, ACCT_ID
+FROM ( SELECT HH_ID, INDIV_ID, ACCT_ID FROM ACCOUNT_MASTER_LOOKUP_TB WHERE
+HH_ID IN ( SELECT HH_ID FROM household_TB WHERE NETNET_PUR_LAST12_PROP_AMT > 1
+AND NET_VISIT_LAST12_MOS_QTY >= 4 AND NETNET_PUR_LAST12_MOS_AMT >= 500 READ
+COMMITTED ACCESS ) AND HH_id IN ( SELECT HH_ID FROM MERCHANDISE_VW WHERE
+TRANS_DT BETWEEN DATE '2001-04-22' and DATE '2001-10-20' GROUP BY HH_ID HAVING
+SUM (RDSWRIT_RPS_NETNET_PUR_AMT) >= 50 READ COMMITTED ACCESS ) AND INDIV_ID IN
+( SELECT INDIV_ID FROM INDIVIDUAL_UNIVERSE_TB WHERE OKAY_TO_MAIL_IND = 'Y'
+READ COMMITTED ACCESS ) READ COMMITTED ACCESS ) AS T1 READ COMMITTED ACCESS);
+
+--  Start logging output. --
+LOG aoptdml04 clear;
+
+execute explainIt;
+-- q5b should get a parallel insert select plan with positive operator costs
+-- for all except root
+LOG;
+
+log off;
+prepare xx from 
+select count (*)
+from
+ (
+   select HH_ID,
+   INDIV_ID,
+   ACCT_ID
+   from ACCOUNT_MASTER_LOOKUP_TB
+   WHERE HH_id IN (
+     select a.HH_ID
+     from ACCOUNT_MASTER_LOOKUP_TB a,
+     MERCHANDISE_VW b
+     WHERE TRANS_DT BETWEEN DATE '2000-10-22' AND DATE '2001-10-20'
+     AND A.ACCT_ID = B.ACCT_ID
+     GROUP BY A.HH_ID
+     HAVING SUM (B.RDSWRIT_RPS_NETNET_PUR_AMT) >= 50
+     READ COMMITTED ACCESS
+   )
+   READ COMMITTED ACCESS
+ ) AS T1
+ READ COMMITTED ACCESS ;
+
+LOG aoptdml04;
+execute explainIt;
+-- Q8 expects a parallel plan. Exchange (node 19) collects into 1 the 
+-- parallel sort_partial_aggr nodes below.
+
+?section countNodeMaps
+log off;
+-- To reduce the probability of getting a false alarm from this nodemap test
+-- we ran 4 prepares: ss, s2, s3, s4. The probability of getting a false alarm
+-- from one prepare that randomly picks the same segment/cpu for the 2 single
+-- cpu sequence ESPs is about 6% (1 in 16). We declare a PASS if at least one
+-- of the 4 prepares gets 2 distinct cpus. Therefore, the probability of a
+-- false alarm is now 0.001% (.0625 ** 4).
+
+prepare countExchBottomNodeMaps from
+select -- t1.a+t2.a+t3.a+t4.a,
+  case when t1.a+t2.a+t3.a+t4.a > 4 THEN 'PASS' ELSE 'FAIL' end
+from
+(select count(distinct d.nodemap) 
+ from
+  (select cast(substring(e.description 
+               from position('bottom_node_map' in e.description)
+               for  position('partitioning_expression' in e.description)-
+                    position('bottom_node_map' in e.description))
+               as char(70)) as nodemap
+   from table(explain(null, 'SS')) e
+   where e.operator = 'ESP_EXCHANGE'
+     and e.description like '% child_processes: 1 %'
+  )d
+) as t1(a),
+(select count(distinct d.nodemap) 
+ from
+  (select cast(substring(e.description 
+               from position('bottom_node_map' in e.description)
+               for  position('partitioning_expression' in e.description)-
+                    position('bottom_node_map' in e.description))
+               as char(70)) as nodemap
+   from table(explain(null, 'S2')) e
+   where e.operator = 'ESP_EXCHANGE'
+     and e.description like '% child_processes: 1 %'
+  )d
+) as t2(a),
+(select count(distinct d.nodemap) 
+ from
+  (select cast(substring(e.description 
+               from position('bottom_node_map' in e.description)
+               for  position('partitioning_expression' in e.description)-
+                    position('bottom_node_map' in e.description))
+               as char(70)) as nodemap
+   from table(explain(null, 'S3')) e
+   where e.operator = 'ESP_EXCHANGE'
+     and e.description like '% child_processes: 1 %'
+  )d
+) as t3(a),
+(select count(distinct d.nodemap) 
+ from
+  (select cast(substring(e.description 
+               from position('bottom_node_map' in e.description)
+               for  position('partitioning_expression' in e.description)-
+                    position('bottom_node_map' in e.description))
+               as char(70)) as nodemap
+   from table(explain(null, 'S4')) e
+   where e.operator = 'ESP_EXCHANGE'
+     and e.description like '% child_processes: 1 %'
+  )d
+) as t4(a)
+;
+
+?section prepSequenceQuery
+log off;
+-- The mechanism for trying to distribute single cpu sequence ESPs uses a
+-- random number generator. Therefore, there is a 6.25% probability of a
+-- false alarm from this nodemap test. We reduce the probability of a 
+-- false alarm by doing 4 prepares. Later, we'll declare a pass only if 
+-- at least 1 of the 4 plans picks different segment/cpu assignments for 
+-- the query's 2 sequence ESPs.
+
+control query shape esp_exchange(cut,16);
+prepare SS from 
+select * 
+from household_tb h,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m1,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m2
+where h.hh_id = m1.hh_id 
+  and m1.hh_id = m2.hh_id;
+control query shape cut;
+
+control query shape esp_exchange(cut,16);
+prepare S2 from 
+select * 
+from household_tb h,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m1,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m2
+where h.hh_id = m1.hh_id 
+  and m1.hh_id = m2.hh_id;
+control query shape cut;
+
+control query shape esp_exchange(cut,16);
+prepare S3 from 
+select * 
+from household_tb h,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m1,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m2
+where h.hh_id = m1.hh_id 
+  and m1.hh_id = m2.hh_id;
+control query shape cut;
+
+control query shape esp_exchange(cut,16);
+prepare S4 from 
+select * 
+from household_tb h,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m1,
+(select hh_id, rank(item_qty) as qrank
+from merchandise_tb sequence by item_qty) m2
+where h.hh_id = m1.hh_id 
+  and m1.hh_id = m2.hh_id;
+control query shape cut;
+
+?section showNodeMaps
+-- sequence ESPs float when their bottom_node_maps are all different
+LOG aoptdml04;
+execute countExchBottomNodeMaps; 
+
+?section floatSequenceESPs
+control query default affinity_value '-4';
+obey optdml04(prepSequenceQuery);
+obey optdml04(showNodeMaps); -- should pass
+
+control query default affinity_value '-3';
+obey optdml04(prepSequenceQuery);
+obey optdml04(showNodeMaps); -- should pass
+
+control query default affinity_value '-2';
+obey optdml04(prepSequenceQuery);
+obey optdml04(showNodeMaps);
+
+control query default affinity_value '-1';
+obey optdml04(prepSequenceQuery);
+obey optdml04(showNodeMaps); -- should pass
+
+?section stopLog
+--  Stop logging output. --
+LOG;
+-- temoprarily drop the bench6 catalog so we get rid of the 2400 version stuff
+-- that interfere with other tests.
+-- remove once we have 2500 version osim data.
+drop catalog bench6 cascade;

@@ -1,0 +1,204 @@
+>>log;
+>>-- section: clean_up_user7, active user: sql_user7
+>>drop schema catmvs.t809_u7 cascade;
+
+*** ERROR[1003] Schema CATMVS.T809_U7 does not exist.
+
+*** ERROR[1069] Schema CATMVS.T809_U7 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>---------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>-- section: clean_up_user8, active user: sql_user8
+>>drop schema catmvs.t809_u8 cascade;
+
+*** ERROR[1003] Schema CATMVS.T809_U8 does not exist.
+
+*** ERROR[1069] Schema CATMVS.T809_U8 could not be dropped.
+
+--- SQL operation failed with errors.
+>>exit;
+
+End of MXCI Session
+
+>>-- section: set_up_user8, active user: sql_user8
+>>set schema catmvs.t809_u8;
+
+--- SQL operation complete.
+>>
+>>create schema catmvs.t809_u8;
+
+--- SQL operation complete.
+>>create table T_809_T1 (c int not null not droppable,d int) attribute on statement mvs allowed;
+
+--- SQL operation complete.
+>>grant select on T_809_T1 to $$SQLUSER7Q$$;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>-- section: set_up_user7, active user: sql_user7
+>>set schema catmvs.t809_u7;
+
+--- SQL operation complete.
+>>
+>>create schema catmvs.t809_u7;
+
+--- SQL operation complete.
+>>
+>>create table T_809_T2 (a int not null not droppable,b int) attribute on statement mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_809_MV1
++>refresh on statement
++>initialize on create
++>as
++>    select
++>        a, d
++>    from catmvs.t809_u8.T_809_T1,T_809_T2
++>    where
++>        catmvs.t809_u8.T_809_T1.c=T_809_T2.a
++>;
+
+*** WARNING[12112] A secondary index CATMVS.T809_U7.T_809_MV1_411834158_1994 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>insert into T_809_T2 values(1,1),(2,2),(3,3),(4,4);
+
+--- 4 row(s) inserted.
+>>
+>>---------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>-- section: test1, active user: sql_user8
+>>set parserflags 3;
+
+--- SQL operation complete.
+>>
+>>set schema catmvs.t809_u8;
+
+--- SQL operation complete.
+>>
+>>-- insert: should NOT fail on security
+>>insert into T_809_T1 values(1,2),(2,3),(3,4);
+
+--- 3 row(s) inserted.
+>>
+>>-- direct update: should NOT fail on security
+>>update T_809_T1 set d=5 where c=1;
+
+--- 1 row(s) updated.
+>>
+>>-- indirect update: should NOT fail on security
+>>update T_809_T1 set c=4 where d=3;
+
+--- 1 row(s) updated.
+>>
+>>-- delete: should NOT fail on security
+>>delete from T_809_T1 where c=3;
+
+--- 1 row(s) deleted.
+>>
+>>-- select: should fail on security
+>>select * from catmvs.t809_u7.T_809_T2;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CATMVS.T809_U7.T_809_T2.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- insert: should fail on security
+>>insert into table(mv_table catmvs.t809_u7.T_809_MV1) values (1,1,1,1);
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view CATMVS.T809_U7.T_809_MV1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- update: should fail on security
+>>update table(mv_table catmvs.t809_u7.T_809_MV1) set a=4;
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view CATMVS.T809_U7.T_809_MV1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- delete: should fail on security
+>>delete from table(mv_table catmvs.t809_u7.T_809_MV1) where a=5;
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view CATMVS.T809_U7.T_809_MV1.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CATMVS.T809_U7.T_809_MV1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- section: check_mv1, active user: sql_user7
+>>set schema catmvs.t809_u7;
+
+--- SQL operation complete.
+>>
+>>prepare stat1 from
++>    select
++>        a, d
++>    from catmvs.t809_u8.T_809_T1,T_809_T2
++>    where
++>        catmvs.t809_u8.T_809_T1.c=T_809_T2.a
++>    order by a,d;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>    select
++>        a, d
++>    from T_809_MV1
++>    order by a,d;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>---------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>-- section: clean_up_user7, active user: sql_user7
+>>drop schema catmvs.t809_u7 cascade;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>exit;
+
+End of MXCI Session
+
+>>-- section: clean_up_user8, active user: sql_user8
+>>drop schema catmvs.t809_u8 cascade;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+

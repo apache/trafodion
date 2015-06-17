@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.io.InterruptedIOException;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
-
+import org.apache.commons.codec.binary.Hex;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -120,14 +120,16 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         HConnection conn = this.getConnection();
         conn = HConnectionManager.createConnection(this.getConfiguration());
     }
-    
+
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
       if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
-      if (transactionState.addRegion(location))     	  
-         if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.recordServer added region to TS. Beginning txn " + transactionState + " on server");
+      if (transactionState.addRegion(location)){
+         if (LOG.isTraceEnabled()) LOG.trace("addLocation added region [" + location.getRegionInfo().getRegionNameAsString() + " endKey: "
+                     + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " to TS. Beginning txn " + transactionState.getTransactionId() + " on server");
+      }
       if (LOG.isTraceEnabled()) LOG.trace("addLocation EXIT");
     }
-    
+
     /**
      * Method for getting data from a row
      * 
@@ -460,22 +462,29 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
    	 */
    	public void delete(final TransactionState transactionState,
    			List<Delete> deletes) throws IOException {
-   		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.delete[] row ");
+                        long transactionId = transactionState.getTransactionId();
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.delete[] <List> size: " + deletes.size() + ", transid: " + transactionId);
    		// collect all rows from same region
                         final Map<TransactionRegionLocation, List<Delete>> rows = new HashMap<TransactionRegionLocation, List<Delete>>();
                         HRegionLocation hlocation = null;
                         TransactionRegionLocation location = null;
    			List<Delete> list = null;
+                        int size = 0;
    			for (Delete del : deletes) {
                                 hlocation = this.getRegionLocation(del.getRow(), false);
                                 location = new TransactionRegionLocation(hlocation.getRegionInfo(), hlocation.getServerName());
-   				if (!rows.containsKey(location)) {
+                if (LOG.isTraceEnabled()) LOG.trace("delete <List> with trRegion [" + location.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "], delete number: " + size);
+			  if (!rows.containsKey(location)) {
+                if (LOG.isTraceEnabled()) LOG.trace("delete adding new <List> for region [" + location.getRegionInfo().getRegionNameAsString() + "], endKey: "
+                  + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "], delete number: " + size);
    					list = new ArrayList<Delete>();
    					rows.put(location, list);
    				} else {
    					list = rows.get(location);
    				}
    				list.add(del);
+                                size++;
    			}
 
    			final List<Delete> rowsInSameRegion = new ArrayList<Delete>();
@@ -509,9 +518,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
    	   Map<byte[], DeleteMultipleTransactionalResponse> result = null;
  	      try {
  	        result = super.coprocessorService(TrxRegionService.class, 
-                                      entry.getKey().getRegionInfo().getStartKey(), 
-                                      TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1),
-                                      callable);
+                                                  entry.getValue().get(0).getRow(),
+                                                  entry.getValue().get(0).getRow(),
+                                                  callable);
  	      } catch (Throwable e) {
  	        e.printStackTrace();
 	        throw new IOException("ERROR while calling coprocessor");
@@ -540,23 +549,30 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	 */
 	public void put(final TransactionState transactionState,
 			final List<Put> puts) throws IOException {
-		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.put[] row ");
+                long transactionId = transactionState.getTransactionId();
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.put[] <List> size: " + puts.size() + ", transid: " + transactionId);
 		// collect all rows from same region
 		final Map<TransactionRegionLocation, List<Put>> rows = new HashMap<TransactionRegionLocation, List<Put>>();
 		HRegionLocation hlocation = null;
                 TransactionRegionLocation location = null;
 		List<Put> list = null;
+                int size = 0;
 		for (Put put : puts) {
 			validatePut(put);
 			hlocation = this.getRegionLocation(put.getRow(), false);
                         location = new TransactionRegionLocation(hlocation.getRegionInfo(), hlocation.getServerName());
+                if (LOG.isTraceEnabled()) LOG.trace("put <List> with trRegion [" + location.getRegionInfo().getEncodedName() + "], endKey: "
+                  + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "], put number: " + size);
 			if (!rows.containsKey(location)) {
+                if (LOG.isTraceEnabled()) LOG.trace("put adding new <List> for region [" + location.getRegionInfo().getRegionNameAsString() + "], endKey: "
+                  + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "], put number: " + size);
 				list = new ArrayList<Put>();
 				rows.put(location, list);
 			} else {
 				list = rows.get(location);
 			}
 			list.add(put);
+                        size++;
 		}
 
 		final List<Put> rowsInSameRegion = new ArrayList<Put>();
@@ -584,13 +600,13 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	        instance.putMultiple(controller, builder.build(), rpcCallback);
 	        return rpcCallback.get();
 	      }
-	    };	      
+	    };
 	    Map<byte[], PutMultipleTransactionalResponse> result = null;
       try {
-        result = super.coprocessorService(TrxRegionService.class, 
-        								  entry.getKey().getRegionInfo().getStartKey(), 
-        								  TransactionManager.binaryIncrementPos(entry.getKey().getRegionInfo().getEndKey(),-1), 
-        								  callable);
+        result = super.coprocessorService(TrxRegionService.class,
+                                          entry.getValue().get(0).getRow(),
+                                          entry.getValue().get(0).getRow(),
+                                          callable);
       } catch (Throwable e) {
         e.printStackTrace();
         throw new IOException("ERROR while calling coprocessor");

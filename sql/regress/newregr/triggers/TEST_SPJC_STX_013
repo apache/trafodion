@@ -1,0 +1,86 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- HL_R2_Triggers_Spec.doc: SPJ enhancements to Triggers
+-- AFTER trigger with a compound statement as a triggered
+-- action with statement other than Insert, Update, Delete, Signal,
+-- and IF.
+-- Result: Error
+
+obey TEST_SPJC_STX_013(clean_up);
+obey TEST_SPJC_STX_013(set_up);
+LOG LOG_SPJC_STX_013 clear;
+obey TEST_SPJC_STX_013(tests);
+LOG;
+obey TEST_SPJC_STX_013(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+drop trigger TRIG01_SPJC_STX_013;
+drop trigger TRIG02_SPJC_STX_013;
+
+drop table TAB01_SPJC_STX_013;
+drop table TAB02_SPJC_STX_013;
+
+?section set_up
+set schema CAT1.SCHM;
+
+-- CONTROL QUERY DEFAULT SIMILARITY_CHECK 'OFF';
+SET ENVVAR ALLOW_CS_IN_SQLCI 1;
+CONTROL QUERY DEFAULT POS 'OFF';
+
+create table TAB01_SPJC_STX_013(a int, b int, c int, d int);
+create table TAB02_SPJC_STX_013(a int, b int, c int, d int);
+
+INSERT INTO TAB01_SPJC_STX_013 VALUES (1, 2, 3, 4),
+						(8, 6, 4, 2),
+						(3, 6, 9, 12);
+
+?section tests
+
+------------------------------------------------------------------
+-- TEST CASE 01: AFTER trigger with a compound statement as a triggered
+-- action with statement other than Insert, Update, Delete, Signal,
+-- and IF.
+-- Result: Error
+------------------------------------------------------------------
+
+CREATE TRIGGER TRIG01_SPJC_STX_013 AFTER UPDATE ON
+TAB01_SPJC_STX_013
+REFERENCING OLD ROW AS O, NEW ROW AS N
+FOR EACH ROW
+	BEGIN ATOMIC
+		INSERT INTO TAB02_SPJC_STX_013 VALUES (O.A, O.B, O.C, O.D);
+		IF (N.A > O.B) THEN
+			SET N.A = O.B;
+			INSERT INTO TAB02_SPJC_STX_013 VALUES (N.A, N.B, N.C, N.D);
+		ELSEIF (N.A < O.B) THEN
+			INSERT INTO TAB02_SPJC_STX_013 VALUES (N.A, O.B, N.C, O.D);
+		ELSE
+			INSERT INTO TAB02_SPJC_STX_013 VALUES
+					(O.A + N.A, O.B + N.B, O.C + N.C, O.D + N.D);
+			SIGNAL SQLSTATE 'S0213'('TRIG01_SPJC_STX_013');
+		END IF;
+		SELECT * FROM TAB02_SPJC_STX_013;
+	END;
+
+------------------------------------------------------------------

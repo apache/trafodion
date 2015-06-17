@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -50,19 +50,14 @@ CPPSRC := CharSetConstants.cpp \
 	sqlclicmd.cpp
 
 
-INCLUDE_DIRS += sqlutils/inc
-
 YINC := tdm_sqlmxmsg_intl
-
-
-INCLUDE_DIRS += sqlutils/inc
 
 CPPSRC += SqlciRWSimulator.cpp \
 	SqlciCSSimulator.cpp
 
 DEFS += -DSQLCLI_LIB -DCLI_DLL -D_UNICODE -DCOPYRIGHT_VERSION_H=\"$(TRAFODION_VER)\"
 
-  CPPSRC += vers_libsqlcilib.cpp
+CPPSRC += vers_libsqlcilib.cpp
 
 
 YSRC := sqlci_yacc.y

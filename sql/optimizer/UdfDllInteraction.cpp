@@ -96,7 +96,7 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
     }
   catch (tmudr::UDRException e)
     {
-      *CmpCommon::diags() << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *CmpCommon::diags() << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
                           << DgString0(invocationInfo->getUDRName().c_str())
                           << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
                                             tmudr::UDRInvocationInfo::GET_ROUTINE_CALL))
@@ -107,7 +107,7 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
     }
   catch (...)
     {
-      *CmpCommon::diags() << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *CmpCommon::diags() << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
                           << DgString0(invocationInfo->getUDRName().c_str())
                           << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
                                             tmudr::UDRInvocationInfo::GET_ROUTINE_CALL))
@@ -557,6 +557,25 @@ NABoolean TMUDFDllInteraction::describeConstraints(
   return TRUE;
 }
 
+NABoolean TMUDFDllInteraction::describeStatistics(
+     TableMappingUDF * tmudfNode,
+     const EstLogPropSharedPtr& inputLP)
+{
+  // set the child output stats, so the UDF can synthesize its own stats
+  if (!TMUDFInternalSetup::setChildOutputStats(
+           tmudfNode->getInvocationInfo(),
+           tmudfNode,
+           inputLP))
+    return FALSE;
+
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_STATISTICS_CALL,
+                     tmudfNode))
+    return FALSE;
+
+  return TRUE;
+}
+
 NABoolean TMUDFDllInteraction::degreeOfParallelism(
      TableMappingUDF * tmudfNode,
      TMUDFPlanWorkSpace * pws,
@@ -599,6 +618,60 @@ NABoolean TMUDFDllInteraction::finalizePlan(
   return TRUE;
 }
 
+CostScalar TMUDFDllInteraction::getResultCardinality(TableMappingUDF *tmudfNode)
+{
+  return tmudfNode->getInvocationInfo()->out().getEstimatedNumRows();
+}
+
+CostScalar TMUDFDllInteraction::getCardinalityScaleFactorFromFunctionType(
+     TableMappingUDF *tmudfNode)
+{
+  switch (tmudfNode->getInvocationInfo()->getFuncType())
+    {
+    case tmudr::UDRInvocationInfo::MAPPER:
+      // for mappers, we assume that the UDF returns one output row per input row
+      return 1;
+
+    case tmudr::UDRInvocationInfo::REDUCER:
+      // for reducers, we assume that the UDF returns one output row per partition
+      // of the input rows of the partitioned child with the most rows
+      {
+        double ratio = 1; // fallback, return the same value as for a maper
+        long childNumRows = 0;
+        tmudr::UDRInvocationInfo *ii = tmudfNode->getInvocationInfo();
+
+        // try to find the partitioned child with the most rows and
+        // compute its ratio of partitions / row
+        for (int c=0; c<ii->getNumTableInputs(); c++)
+          {
+            long estNumRows    = ii->in(c).getEstimatedNumRows();
+            long estPartitions = ii->in(c).getEstimatedNumPartitions();
+
+            if (estNumRows > childNumRows &&
+                estPartitions > 0 &&
+                estPartitions < estNumRows)
+              {
+                ratio = estPartitions / estNumRows;
+                childNumRows = estNumRows;
+              }
+          }
+
+        return ratio;
+      }
+
+    default:
+      // we don't have a clue
+      return -1;
+    }
+}
+
+CostScalar TMUDFDllInteraction::getOutputColumnUEC(TableMappingUDF *tmudfNode,
+                                                   int colNum)
+{
+  return tmudfNode->getInvocationInfo()->
+    out().getColumn(colNum).getEstimatedUniqueEntries();
+}
+
 NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase cp,
                                              TableMappingUDF * tmudfNode,
                                              tmudr::UDRPlanInfo *planInfo,
@@ -626,7 +699,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
   int piAllocatedLen = sizeof(piBuf);
   Int32 piReturnedLen = -1;
   int piCheckLen = -1;
-  int planNum = 0;
+  int planNum = -1;
 
   try
     {
@@ -667,7 +740,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
     }
   catch (tmudr::UDRException e)
     {
-      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *diags << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("serialize")
@@ -676,7 +749,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
     }
   catch (...)
     {
-      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *diags << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("serialize")
@@ -743,7 +816,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
     {
       // make sure we report an error
       if (diags->mainSQLCODE() >= 0)
-        *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+        *diags << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
                << DgString0(invocationInfo->getUDRName().c_str())
                << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
                << DgString2("GetRoutineInvocationInfo")
@@ -765,7 +838,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
     }
   catch (tmudr::UDRException e)
     {
-      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *diags << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("deserialize")
@@ -774,7 +847,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
     }
   catch (...)
     {
-      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+      *diags << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("deserialize")
@@ -1660,6 +1733,66 @@ NABoolean TMUDFInternalSetup::createConstraintInfoFromRelExpr(
               // skip this constraint, it's not handled yet
               break;
             }
+        }
+    }
+
+  return TRUE;
+}
+
+NABoolean TMUDFInternalSetup::setChildOutputStats(
+     tmudr::UDRInvocationInfo *tgt,
+     TableMappingUDF * tmudfNode,
+     const EstLogPropSharedPtr& inputLP)
+{
+  // set estimated # of rows, # of partitions, UECs for child
+  // tables of the UDF in the UDRInvocationInfo
+  for (CollIndex i=0; i<tmudfNode->getArity(); i++)
+    {
+      tmudr::TableInfo &ti = tgt->inputTableInfo_[i];
+      const tmudr::PartitionInfo &pi = ti.getQueryPartitioning();
+      ValueIdList &childOutputs = tmudfNode->getChildInfo(i)->getOutputIds();
+      int numInputCols = ti.getNumColumns();
+      int numPartCols  = pi.getNumEntries();
+      EstLogPropSharedPtr childEstLogProps = 
+        tmudfNode->child(i).outputLogProp(inputLP);
+      const ColStatDescList &childColStatList =
+        childEstLogProps->getColStats();
+
+
+      // set overall estimated row count
+      ti.setEstimatedNumRows(childEstLogProps->getResultCardinality().toLong());
+
+      if (numPartCols > 0)
+        {
+          // set estimated # of partitions, if available
+          ValueIdSet partCols;
+
+          for (CollIndex p=0; p<numPartCols; p++)
+            partCols += childOutputs[pi.getColumnNum(p)];
+
+          // As a friend we can set this directly. Conveniently, both
+          // estimatedNumPartitions_ and getAggregateUec() use -1
+          // to represent an unknown value
+          ti.estimatedNumPartitions_ =
+            childColStatList.getAggregateUec(partCols).toLong();
+        }
+
+      // set UEC for each column, if available
+      for (CollIndex c=0; c<numInputCols; c++)
+        {
+          long uec = -1;
+          CollIndex index;
+
+          if (childColStatList.getColStatDescIndexForColumn(
+                   index,
+                   childOutputs[c]))
+            {
+              uec = childColStatList[index]->getColStats()->getTotalUec().toLong();
+              if (uec < 1)
+                uec = 1;
+            }
+
+          ti.getColumn(c).setEstimatedUniqueEntries(uec);
         }
     }
 

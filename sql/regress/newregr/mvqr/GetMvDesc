@@ -1,0 +1,146 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+set param ?mvDescSubId  -2;
+set param ?mvName 'SUMBY_DAY';
+set param ?mvSchemaName 'SUMBY';
+
+-- query the TEXT SMD table for the descriptor of an MV
+-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+--       length limit of the NT version of awk (file CropDescriptor.ksh).
+prepare getMVDescFromTEXT from
+  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
+                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
+                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
+  from
+		 (SELECT o.object_uid as uid0, text as text0
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 0 ) as row0
+	left outer join
+		 (SELECT o.object_uid as uid1, text as text1
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 1 ) as row1
+		 on uid0 = uid1
+	left outer join
+		 (SELECT o.object_uid as uid2, text as text2
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 2 ) as row2
+		 on uid0 = uid2
+	left outer join
+		 (SELECT o.object_uid as uid3, text as text3
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 3 ) as row3
+		 on uid0 = uid3
+	left outer join
+		 (SELECT o.object_uid as uid4, text as text4
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 4 ) as row4
+		 on uid0 = uid4
+	left outer join
+		 (SELECT o.object_uid as uid5, text as text5
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 5 ) as row5
+		 on uid0 = uid5
+	left outer join
+		 (SELECT o.object_uid as uid6, text as text6
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 6 ) as row6
+		 on uid0 = uid6
+	left outer join
+		 (SELECT o.object_uid as uid7, text as text7
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 7 ) as row7
+		 on uid0 = uid7
+	left outer join
+		 (SELECT o.object_uid as uid8, text as text8
+		         from  HP_DEFINITION_SCHEMA.TEXT t,
+		               HP_DEFINITION_SCHEMA.objects o,
+		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
+		         where o.object_name = ?mvName
+		           and o.OBJECT_TYPE = 'MV'
+		           and o.object_uid = t.object_uid
+		           and o.schema_uid = s.schema_uid
+		           and s.schema_name = ?mvSchemaName
+		           and t.object_sub_id = ?mvDescSubId
+		           and sequence_num = 8 ) as row8
+		 on uid0 = uid8;

@@ -98,13 +98,19 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 close() = 0;
 
   virtual Lng32 create(HbaseStr &tblName,
-	               HBASE_NAMELIST& colFamNameList) = 0;
+	               HBASE_NAMELIST& colFamNameList,
+                       NABoolean isMVCC) = 0;
   
   virtual Lng32 create(HbaseStr &tblName,
 		       NAText * hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
                        const char ** splitValues,
-                       NABoolean noXn) =0;
+                       NABoolean noXn,
+                       NABoolean isMVCC) =0;
+
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn) =0;
 
   // During upsert using load, register truncate on abort will be used
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
@@ -150,7 +156,8 @@ class ExpHbaseInterface : public NABasicObject
 			 Lng32 snapTimeout = 0,
 			 char * snapName = NULL,
 			 char * tmpLoc = NULL,
-			 Lng32 espNum=0) = 0;
+			 Lng32 espNum=0,
+                         Lng32 versions = 0) = 0;
 
   virtual Lng32 scanClose() = 0;
 
@@ -165,6 +172,9 @@ class ExpHbaseInterface : public NABasicObject
 		     LIST(NAString) &col1ValueList, // output
 		     LIST(NAString) &col2ValueList, // output
 		     LIST(NAString) &col3ValueList); // output
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName) = 0;
 		     
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -202,7 +212,7 @@ class ExpHbaseInterface : public NABasicObject
               short &colNameLen,
               Int64 &timestamp) = 0;
  
-  virtual Lng32 getNumCols(int &numCols) = 0;
+  virtual Lng32 getNumCellsPerRow(int &numCells) = 0;
  
   virtual Lng32 getRowID(HbaseStr &rowID) = 0;
  
@@ -358,6 +368,11 @@ class ExpHbaseInterface : public NABasicObject
                                   Int32& indexLevels,
                                   Int32& blockSize) = 0;
 
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) = 0;
+
+
 protected:
   enum 
     {
@@ -401,13 +416,19 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 close();
 
   virtual Lng32 create(HbaseStr &tblName,
-	               HBASE_NAMELIST& colFamNameList);
+	               HBASE_NAMELIST& colFamNameList,
+                       NABoolean isMVCC);
 
   virtual Lng32 create(HbaseStr &tblName,
 	               NAText* hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
                        const char ** splitValues,
-                       NABoolean noXn);
+                       NABoolean noXn,
+                       NABoolean isMVCC);
+
+  virtual Lng32 alter(HbaseStr &tblName,
+		      NAText * hbaseCreateOptionsArray,
+                      NABoolean noXn);
 
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
@@ -443,11 +464,15 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 Lng32 snapTimeout = 0,
 			 char * snapName = NULL,
 			 char * tmpLoc = NULL,
-			 Lng32 espNum = 0);
+			 Lng32 espNum = 0,
+                         Lng32 versions = 0);
 
   virtual Lng32 scanClose();
 
   virtual Lng32 getHTable(HbaseStr &tblName);
+
+  // return 1 if table is empty, 0 if not empty. -ve num in case of error
+  virtual Lng32 isEmpty(HbaseStr &tblName);
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -485,7 +510,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
               short &colNameLen,
               Int64 &timestamp);
 
-  virtual Lng32 getNumCols(int &numCols);
+  virtual Lng32 getNumCellsPerRow(int &numCells);
 
   virtual Lng32 getRowID(HbaseStr &rowID);
 
@@ -637,6 +662,10 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   virtual Lng32 getHbaseTableInfo(const HbaseStr& tblName,
                                   Int32& indexLevels,
                                   Int32& blockSize) ;
+  virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
+                                   Int32 partns,
+                                   ARRAY(const char *)& nodeNames) ;
+
 
 private:
   bool  useTRex_;

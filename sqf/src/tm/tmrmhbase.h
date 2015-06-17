@@ -51,7 +51,7 @@ class RM_Info_HBASE :public virtual RM_Info
                                        bool lv_error_condition = false);       
       virtual int32 start_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg);
       virtual int32 registerRegion (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg);
-      virtual int32 hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg, char *ddlbuffer);
+      virtual int32 hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg);
 };
  
 #endif // TMRMHBASE_H_

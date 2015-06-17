@@ -1,0 +1,878 @@
+>>obey TESTMV281(CLEAN_UP);
+>>--------------------------------------------------------------------------
+>>refresh  T_281_MV6_stam cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV6_STAM does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV7 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV7 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV6 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV6 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV5 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV5 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV4 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV4 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV3 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV3 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV2 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV2 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV1 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV1 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>drop mv T_281_MV6_stam;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV6_STAM does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV6_STAM could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV7;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV7 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV7 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV6;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV6 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV6 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV5;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV4;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV4 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table A_281 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.A_281 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.A_281 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table T_281_tab1 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_281_tab2 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_281_tab3 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_281_tab4 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB4 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_281_tab5 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_281_tab6 cascade;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_TAB6 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_TAB6 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table temp1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TEMP1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TEMP1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table temp2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TEMP2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TEMP2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop mvgroup MVG1_281;
+
+*** ERROR[12201] MVGroup CATMVS.MVSCHM.MVG1_281 does not exist.
+
+--- SQL operation failed with errors.
+>>obey TESTMV281(SETUP);
+>>---------------------------------------------------------
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table A_281(id int NOT NULL NOT DROPPABLE,
++>					name CHARACTER (15) ,
++>					mounth int NOT NULL NOT DROPPABLE,
++>					year1 int,
++>					age int,
++>					salary int , 
++>					primary key (id ASC , mounth ASC))
++>					store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE A_281 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>INSERT INTO A_281
++>VALUES (121,'Anna',4,1999,23,3000),
++>		(121,'Anna',5,1999,23,5000),
++>		(121,'Anna',7,1999,23,5000),
++>		(343,'Itay',1,1999,35,10000),
++>		(343,'Itay',2,1999,35,10000),
++>		(343,'Itay',3,1999,35,10000),
++>		(343,'Itay',4,1999,35,10000),
++>		(545,'Shiri',1,1999,27,14000),
++>		(545,'Shiri',2,1999,27,15000),
++>		(545,'Shiri',3,1999,27,45000),
++>		(545,'Shiri',4,1999,27,14000);
+
+--- 11 row(s) inserted.
+>>
+>>
+>>create table T_281_tab1(id int NOT NULL NOT DROPPABLE,
++>					name CHARACTER (15),
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_281_tab2(id int NOT NULL NOT DROPPABLE,
++>					salary  int,
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_281_tab3(id int NOT NULL NOT DROPPABLE,
++>					age int,
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_281_tab4(id int NOT NULL NOT DROPPABLE,
++>					city CHARACTER (15),
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_281_tab5(id int NOT NULL NOT DROPPABLE,
++>					country CHARACTER (15),
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_281_tab6(id int NOT NULL NOT DROPPABLE,
++>					phone int,
++>					primary key (id));
+
+--- SQL operation complete.
+>>ALTER TABLE T_281_tab6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv T_281_MV1
++>	refresh on request
++>initialized on refresh
++>	MVAttributes no audit
++>	as
++>	select id,name,age,year1,sum(salary) salary_per_year
++>	from A_281
++>	group by id,name,year1,age;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV1_125696961_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV2
++>	refresh on request 
++>initialized on refresh
++>	MVAttributes no Audit
++>	as
++>	select T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age1
++>	from T_281_tab1,T_281_tab3
++>	where T_281_tab1.id=T_281_tab3.id
++>	group by T_281_tab1.id,name;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV2_646492571_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV3
++>refresh on request 
++>initialized on refresh
++>MVAttributes no Audit
++>as
++>	select	T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age,T_281_tab2.salary,T_281_tab4.city,
++>	T_281_tab5.country,T_281_tab6.phone
++>	from T_281_tab1,T_281_tab2,T_281_tab3,T_281_tab4,T_281_tab5,T_281_tab6
++>	where T_281_tab1.id=T_281_tab2.id and T_281_tab2.id=T_281_tab3.id and T_281_tab3.id=T_281_tab4.id
++>	and T_281_tab4.id=T_281_tab5.id and T_281_tab5.id=T_281_tab6.id
++>	group by T_281_tab1.id,name,salary,city,country,phone;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV3_935197481_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV6
++>refresh on request
++>initialized on refresh
++>MVAttribute  no Audit
++>as
++>	select id,name,max(salary) as max_salary
++>	from A_281
++>	group by id,name;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV6_234253291_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV7
++>	refresh on request 
++>initialized on refresh
++>	MVAttributes no audit
++>	as
++>	select max(T_281_tab3.age) oldest,T_281_tab5.country country
++>	from T_281_tab3,T_281_tab5
++>	where T_281_tab3.id = T_281_tab5.id
++>	group by country;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV7_244367891_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table temp1 ( epoch INT UNSIGNED , table_name char(100));
+
+--- SQL operation complete.
+>>ALTER TABLE temp1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table temp2 (mv_name CHARACTER(20), bt_name CHARACTER(20), EPOCH int);
+
+--- SQL operation complete.
+>>ALTER TABLE temp2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>prepare save_epoch from 
++>insert into temp1 
++>SELECT CURRENT_EPOCH,?table_name
++>	FROM HP_DEFINITION_SCHEMA.mvs_table_info
++>	WHERE base_table_uid = (SELECT object_uid 
++>	FROM HP_DEFINITION_SCHEMA.objects 
++>	  WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
++>	FOR READ UNCOMMITTED ACCESS);
+
+--- SQL command prepared.
+>>
+>>prepare if_bigger from 
++>select 'BIGGER' as rel
++>from temp1
++>where  table_name = ?table_name and 
++>       epoch
++>	<
++>	(SELECT CURRENT_EPOCH
++>		FROM HP_DEFINITION_SCHEMA.mvs_table_info
++>	 WHERE base_table_uid = (SELECT object_uid 
++>	 FROM HP_DEFINITION_SCHEMA.objects 
++>   	   WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
++>	 FOR READ UNCOMMITTED ACCESS)
++>	)
++>;
+
+--- SQL command prepared.
+>>
+>>Create MVGroup MVG1_281;
+
+--- SQL operation complete.
+>>
+>> --------------------------------------------------------------
+>>
+>>
+>>
+>>-- Run Tests
+>>
+>>
+>>	obey TESTMV281(TEST1);
+>>---------------------------------------------------------------
+>>refresh T_281_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.A_281...
+
+Finished the log cleanup of table CATMVS.MVSCHM.A_281.
+
+
+>>
+>>INSERT INTO A_281
++>VALUES (121,'Anna',2,1999,23,6000),
++>		(121,'Anna',3,1999,23,2000),
++>		(121,'Anna',1,1999,23,7000);
+
+--- 3 row(s) inserted.
+>>
+>>set param ?table_name 'A_281';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>set param ?mv_name 'T_281_MV1';
+>>execute select_mvs_used_umd;
+
+MV_NAME               BT_NAME               EPOCH       DELTA_SIZE
+--------------------  --------------------  ----------  ----------
+
+T_281_MV1             A_281                        103           0
+
+--- 1 row(s) selected.
+>>
+>>refresh T_281_MV1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.A_281...
+
+Finished the log cleanup of table CATMVS.MVSCHM.A_281.
+
+
+>>
+>>
+>>set param ?table_name 'A_281';
+>>execute if_bigger ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>set param ?mv_name 'T_281_MV1';
+>>execute select_mvs_used_umd;
+
+MV_NAME               BT_NAME               EPOCH       DELTA_SIZE
+--------------------  --------------------  ----------  ----------
+
+T_281_MV1             A_281                        104           0
+
+--- 1 row(s) selected.
+>>
+>>PREPARE stat1 FROM
++>	select id,name,age,year1,sum(salary) salary_per_year
++>	from A_281
++>	group by id,name,year1,age
++>	order by id,name,year1,age;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_281_MV1
++>	order by id,name,year1,age;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>log;
+>>---------------------------------------------------------------
+>>	obey TESTMV281(TEST2);
+>>---------------------------------------------------------------
+>>drop mv T_281_MV1;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV1
++>	refresh on request
++>	initialize on refresh
++>	MVAttributes no auditonrefresh
++>	as
++>	select id,name,age,year1,sum(salary) salary_per_year
++>	from A_281
++>	group by id,name,year1,age;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_281_MV1_311335352_9488 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_281_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>alter mv T_281_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_281_MV1_stam
++>refresh on request 
++>initialized on refresh
++>as
++>select count(*) stam
++>from T_281_MV1;
+
+--- SQL operation complete.
+>>ALTER MV T_281_MV1_stam attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>INSERT INTO A_281
++>VALUES (121,'Anna',11,1999,23,5000),
++>		(121,'Anna',12,1999,23,3000);
+
+--- 2 row(s) inserted.
+>>
+>>set param ?mv_name 'T_281_MV1';
+>>execute select_mvs_table_info_umd;
+
+MV_NAME               LAST_DE_EPOCH  RECOMPUTE_EPOCH  IS_LAST_DE_COMPLETE
+--------------------  -------------  ---------------  -------------------
+
+T_281_MV1                        99                0  Y                  
+
+--- 1 row(s) selected.
+>>
+>>refresh T_281_MV1 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_281_MV1 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.A_281...
+
+Finished the log cleanup of table CATMVS.MVSCHM.A_281.
+
+
+>>
+>>--Expected - Audit
+>>set param ?mv_name 'T_281_MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             Y         N          R       
+
+--- 1 row(s) selected.
+>>
+>>set param ?mv_name 'T_281_MV1';
+>>execute select_mvs_table_info_umd;
+
+MV_NAME               LAST_DE_EPOCH  RECOMPUTE_EPOCH  IS_LAST_DE_COMPLETE
+--------------------  -------------  ---------------  -------------------
+
+T_281_MV1                        99              101  Y                  
+
+--- 1 row(s) selected.
+>>
+>>PREPARE stat1 FROM
++>	select id,name,age,year1,sum(salary) salary_per_year
++>	from A_281
++>	group by id,name,year1,age
++>	order by id,name,year1,age;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_281_MV1
++>	order by id,name,year1,age;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>drop mv T_281_MV1_stam;
+
+--- SQL operation complete.
+>>log;
+>>--------------------------------------------------------------
+>>	obey TESTMV281(TEST3);
+>>--------------------------------------------------------------
+>>-- refresh by recompute
+>>refresh T_281_MV2 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>	log;
+
+The materialized view CATMVS.MVSCHM.T_281_MV2 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_281_MV2 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_281_TAB3...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_281_TAB1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_281_TAB3.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_281_TAB1.
+
+
+>>
+>>INSERT INTO T_281_tab1
++>VALUES (6760,'Shirli'),
++>		(2904,'Mats');
+
+--- 2 row(s) inserted.
+>>
+>>INSERT INTO T_281_tab3
++>VALUES (6760,25),
++>		(2904,38);
+
+--- 2 row(s) inserted.
+>>
+>>set param ?table_name 'T_281_TAB1';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>set param ?table_name 'T_281_TAB3';
+>>execute save_epoch ;
+
+--- 1 row(s) inserted.
+>>
+>>set param ?mv_name 'T_281_MV2';
+>>execute select_mvs_used_umd;
+
+MV_NAME               BT_NAME               EPOCH       DELTA_SIZE
+--------------------  --------------------  ----------  ----------
+
+T_281_MV2             T_281_TAB1                   103           0
+T_281_MV2             T_281_TAB3                   104           0
+
+--- 2 row(s) selected.
+>>
+>>refresh T_281_MV2 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>	log;
+
+The materialized view CATMVS.MVSCHM.T_281_MV2 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_281_MV2 has been refreshed from 2 deltas in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_281_TAB3...
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_281_TAB1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_281_TAB3.
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_281_TAB1.
+
+
+>>
+>>--Expected bigger
+>>set param ?table_name 'T_281_TAB1';
+>>execute if_bigger;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>set param ?table_name 'T_281_TAB3';
+>>execute if_bigger  ;
+
+REL   
+------
+
+BIGGER
+
+--- 1 row(s) selected.
+>>
+>>set param ?mv_name 'T_281_MV2';
+>>execute select_mvs_used_umd;
+
+MV_NAME               BT_NAME               EPOCH       DELTA_SIZE
+--------------------  --------------------  ----------  ----------
+
+T_281_MV2             T_281_TAB1                   104           0
+T_281_MV2             T_281_TAB3                   105           0
+
+--- 2 row(s) selected.
+>>
+>>PREPARE stat1 FROM
++>	select T_281_tab1.id,T_281_tab1.name ,avg(T_281_tab3.age) age1
++>	from T_281_tab1,T_281_tab3
++>	where T_281_tab1.id=T_281_tab3.id
++>	group by T_281_tab1.id,name
++>	order by id ,name;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_281_MV2
++>	order by id,name;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>log;
+>>---------------------------------------------------------------------------
+>>--	obey TESTMV281(TEST6); -- bug 613 no audit mvs are not fully supported
+>>--	obey TESTMV281(TEST7); -- bug 613 no audit mvs are not fully supported
+>>--	obey TESTMV281(TEST8); -- bug 613 no audit mvs are not fully supported
+>>--	obey TESTMV281(TEST9); -- bug 613 no audit mvs are not fully supported
+>>
+>>-- Check the drop statement on the way out
+>>
+>>obey TESTMV281(CLEAN_UP);
+>>--------------------------------------------------------------------------
+>>refresh  T_281_MV6_stam cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV6_STAM does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV7 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>refresh  T_281_MV6 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>refresh  T_281_MV5 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV5 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV4 cancel outfile REFRESH.LOG ;
+
+*** ERROR[20508] Materialized view CATMVS.MVSCHM.T_281_MV4 does not exist.
+
+*** ERROR[20505] Failed to access the catalog data. REFRESH cannot be performed.
+
+--- SQL operation failed with errors.
+>>refresh  T_281_MV3 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>refresh  T_281_MV2 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>refresh  T_281_MV1 cancel outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>
+>>
+>>drop mv T_281_MV6_stam;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV6_STAM does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV6_STAM could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV7;
+
+--- SQL operation complete.
+>>drop mv T_281_MV6;
+
+--- SQL operation complete.
+>>drop mv T_281_MV5;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV4;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_281_MV4 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_281_MV4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_281_MV3;
+
+--- SQL operation complete.
+>>drop mv T_281_MV2;
+
+--- SQL operation complete.
+>>drop mv T_281_MV1;
+
+--- SQL operation complete.
+>>
+>>drop table A_281 cascade;
+
+--- SQL operation complete.
+>>
+>>drop table T_281_tab1 cascade;
+
+--- SQL operation complete.
+>>drop table T_281_tab2 cascade;
+
+--- SQL operation complete.
+>>drop table T_281_tab3 cascade;
+
+--- SQL operation complete.
+>>drop table T_281_tab4 cascade;
+
+--- SQL operation complete.
+>>drop table T_281_tab5 cascade;
+
+--- SQL operation complete.
+>>drop table T_281_tab6 cascade;
+
+--- SQL operation complete.
+>>
+>>drop table temp1;
+
+--- SQL operation complete.
+>>drop table temp2;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG1_281;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

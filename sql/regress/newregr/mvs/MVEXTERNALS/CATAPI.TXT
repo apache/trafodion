@@ -1,0 +1,162 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+-- CatApiRequest
+
+
+
+set PARSERFLAGS 1;
+
+create table t1 ( a int ) LOCATION $$partition1$$;
+ALTER TABLE t1 attribute all mvs allowed;
+
+create mv mv1 refresh on request initialize on create as select * from t1 group by a;
+ALTER MV mv1 attribute all mvs allowed;
+
+
+----------------------------------
+-- RefreshedAt
+
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+CREATE TANDEM_CAT_REQUEST&1 18 3 @C.S.MV1@ @16@ @32@;
+
+-- this should result in 68719476768
+select refreshed_at from HP_DEFINITION_SCHEMA.MVS;
+
+
+drop mv mv1;
+drop table t1;
+
+----------------------------------
+-- MVSTATUS
+
+create table t1 ( a int ) LOCATION $$partition1$$;
+ALTER TABLE t1 attribute all mvs allowed;
+create mv mv1 refresh on request initialize on refresh as select * from t1 group by a;
+ALTER MV mv1 attribute all mvs allowed;
+
+
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+-- not initialized to initialized 
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+-- initialized to unavailable 
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+-- unavailable to initialized
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+-- initialized to unavailable 
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+-- unavailable to not initialized
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @2@;
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+-- not initialized to unavailable
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+SET PARAM ?mv_name 'MV1';
+execute select_mvs_table;
+
+
+
+drop mv mv1;
+drop table t1;
+
+
+----------------------------------
+-- MVSTATUS - ALTER rule 41
+-- non init to init for on statement mvs causes redef time for all underling objects
+
+create table t1 ( a int )
+location $$partition2$$;
+ALTER TABLE t1 attribute all mvs allowed;
+create table t2 ( b int )
+location $$partition2$$;
+ALTER TABLE t2 attribute all mvs allowed;
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+prepare ins_1 from
+insert into t1 values (2);
+
+prepare sel_1 from 
+select * from t1 where a <0;
+
+prepare del_1 from
+delete from t1 where a<0;
+
+prepare upd_1 from
+update t1 set a=1 where a<0;
+
+prepare ins_2 from
+insert into t2 values (2);
+
+prepare sel_2 from 
+select * from t2 where b <0;
+
+prepare del_2 from
+delete from t2 where b<0;
+
+prepare upd_2 from
+update t2 set b=1 where b<0;
+
+create mv mv1 refresh on statement initialize on refresh 
+location $$partition2$$
+as select a from t1, t2 where a=b;
+ALTER MV mv1 attribute all mvs allowed;
+
+-- not initialized to initialized 
+CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+
+-- check redef time for t1 and t2;
+
+execute ins_1;
+execute del_1;
+execute upd_1;
+execute sel_1;
+
+execute ins_2;
+execute del_2;
+execute upd_2;
+execute sel_2;
+
+drop mv mv1;
+drop table t1;
+drop table t2;
+
+

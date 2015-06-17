@@ -866,7 +866,7 @@ public :
                             LIST(NAString) &llist) const;
 
 
-  virtual NABoolean isBigMemoryOperator(const Context* context,
+  virtual NABoolean isBigMemoryOperator(const PlanWorkSpace* pws,
                                         const Lng32 /*planNumber*/);
 
   void checkAndCoerceScalarInputParamTypes(BindWA* bindWA);
@@ -954,8 +954,6 @@ protected:
   CliRoutineHandle routineHandle_;
 
   ValueIdSet predsEvaluatedByUDF_;
-
-private:
 
   // selectivity hint from user. Set in the parser. Set if > 0, set -1 otherwise
   CostScalar selectivityFactor_;

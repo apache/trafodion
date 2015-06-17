@@ -1,0 +1,105 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+--  Test a too long CI of the subject table that prevents the ceration of the
+--  temporary table
+--  Also, test that triggers cannot be created for table names longer than 122 characters,
+--  and that such tables can be dropped (Genesis solution 10-031015-0454). This is because
+--  trigger temp table names are the same as the table name, plus the suffix __TEMP.
+--  This suffix is 6 characters, therefore the base table name cannot be longer than 122 
+--  characters (6 + 122 = 128 = max table name length)
+--
+
+-- Make CREATE TRIGGER print its CREATE (TEMP) TABLE (as a "Warning")
+-- set envvar DEBUG_TEMP_TABLE 1;
+
+-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+set parserflags 1;
+
+set schema cat1.schm;
+
+obey TEST_2_3_4(clean_up);
+log  LOG_2_3_4 clear;
+obey TEST_2_3_4(tests);
+LOG;
+obey TEST_2_3_4(clean_up);
+exit;
+
+?section clean_up
+drop trigger trg234;
+drop trigger trg234_success;
+drop table t234;
+drop table This_is_a_122_character_table_name_which_is_also_very_long_but_NOT_too_loooooooooooooooooooooooooooooooooooooooooooooooong;
+
+?section tests
+
+-- CI is too long (244 > 255 - 16) - Supported in QCD7 with DBLimits support
+-- DB Limits not supported on NT. On NT it should fail with Error 1085
+create table t234 (
+	a int not null not droppable,
+	b int,
+	c char(240) not null not droppable,
+	d int,
+	primary key (a,c) not droppable)
+	store by primary key
+	location $$partition1$$;
+
+-- (temp. table creation) should fail for pre-QCD7 - successful in QCD7 due to DBLimits support
+create trigger trg234 after insert on t234 delete from t234;
+
+-- Table name is too long
+create table 
+  This_is_a_very_very_very_loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong_name
+--                                                                                                   1         1         1
+--         1         2         3         4         5         6         7         8         9         0         1         2
+--123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123
+
+	(a int not null not droppable primary key)
+	store by primary key
+	location $$partition1$$;
+
+-- (temp. table creation) should fail 
+create trigger trg_name_too_long 
+  after insert on This_is_a_very_very_very_loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong_name
+  delete from t234;
+
+-- Drop the table with a too long name - should succeed
+drop table
+  This_is_a_very_very_very_loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong_name;
+
+
+-- Try with a table name of the max length
+create table 
+  This_is_a_122_character_table_name_which_is_also_very_long_but_NOT_too_loooooooooooooooooooooooooooooooooooooooooooooooong
+--                                                                                                   1         1         1
+--         1         2         3         4         5         6         7         8         9         0         1         2
+--123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123
+	(a int not null not droppable primary key)
+	store by primary key
+	location $$partition1$$
+        -- Now that we're at it, check that extent specs get inherited by the trigger temp table.
+        attributes extent (100, 200) maxextents 300;
+
+-- Should succeed 
+create trigger trg234_success 
+  after insert on This_is_a_122_character_table_name_which_is_also_very_long_but_NOT_too_loooooooooooooooooooooooooooooooooooooooooooooooong 
+  delete from t234;
+
+showddl table (temp_table
+ This_is_a_122_character_table_name_which_is_also_very_long_but_NOT_too_loooooooooooooooooooooooooooooooooooooooooooooooong__TEMP);

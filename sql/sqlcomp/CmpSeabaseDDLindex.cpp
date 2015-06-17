@@ -397,6 +397,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAString btSchemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   NAString btObjectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   NAString extTableName = tableName.getExternalName(TRUE);
+  NAString extTableNameForHbase = 
+    btCatalogNamePart + "." + btSchemaNamePart + "." + btObjectNamePart;
 
   ComObjectName indexName(createIndexNode->getIndexName());
   indexName.applyDefaults(btCatalogNamePart, btSchemaNamePart); 
@@ -897,18 +899,46 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     {
-      NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
-      // populate index
-      if (populateSeabaseIndexFromTable(&cliInterface,
-					createIndexNode->isUniqueSpecified(),
-					extIndexName, 
-                                        isVolatileTable ? volTabName : tableName, 
-                                        selColList,
-                                        useLoad))
-	{ 
-          goto label_error_drop_index;
-	}
-      
+      NABoolean useLoad = 
+        (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
+
+      NABoolean indexOpt = 
+        (CmpCommon::getDefault(TRAF_INDEX_CREATE_OPT) == DF_ON);
+
+      if (indexOpt)
+        {
+          // validate that table is empty
+          HbaseStr tblName;
+          tblName.val = (char*)extTableNameForHbase.data();
+          tblName.len = extNameForHbase.length();
+          retcode = ehi->isEmpty(tblName);
+          if (retcode < 0)
+            {
+              goto label_error;
+            }
+          
+          if (retcode == 0) // not empty
+            indexOpt = FALSE;
+        }
+
+      if (NOT indexOpt)
+        {
+          // populate index
+          if (populateSeabaseIndexFromTable(&cliInterface,
+                                            createIndexNode->isUniqueSpecified(),
+                                            extIndexName, 
+                                            isVolatileTable ? volTabName : tableName, 
+                                            selColList,
+                                            useLoad))
+            { 
+              goto label_error_drop_index;
+            }
+        }
+      else
+        {
+          // TBD. Validate that table is empty.
+        }
+
       if (updateObjectAuditAttr(&cliInterface, 
 			       catalogNamePart, schemaNamePart, objectNamePart,
 				TRUE, COM_INDEX_OBJECT_LIT))
@@ -934,8 +964,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   deallocEHI(ehi);
 
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                      NATableDB::REMOVE_FROM_ALL_USERS, 
+                                                      COM_BASE_TABLE_OBJECT);
+    }
 
   return;
 
@@ -1219,10 +1253,12 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       const NAString& nafIndexName =
 	qn.getQualifiedNameAsAnsiString(TRUE);
       
-      if ((populateIndexNode->populateAll()) ||
+      if ((populateIndexNode->populateAll()) || 
+          (populateIndexNode->populateAllUnique() && naf->uniqueIndex()) ||
 	  (extIndexName == nafIndexName))
       {
-          if (populateIndexNode->populateAll())
+        if (populateIndexNode->populateAll() || 
+            populateIndexNode->populateAllUnique())
           {
             objectNamePart= qn.getObjectName().data();
           }
@@ -1777,7 +1813,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
                                              ExprNode * ddlNode,
                                              NAString &currCatName,
                                              NAString &currSchName,
-                                             NAString &tabName)
+                                             NAString &tabName,
+                                             NABoolean allUniquesOnly)
 {
   Lng32 cliRC = 0;
   char buf[4000];
@@ -1819,17 +1856,18 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
     }
 
   str_sprintf(buf,
-      " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
-      " where object_uid in ( select i.index_uid from " \
-      " %s.\"%s\".%s i " \
-      " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
-      " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s') " \
-      " and object_type='IX' ; ",
-      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-      catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data()  //table name in this case
-      );
+              " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
+              " where object_uid in ( select i.index_uid from "         \
+              " %s.\"%s\".%s i "                                        \
+              " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
+              " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s' " \
+              " %s "                                                    \
+                " and object_type='IX' ; ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data(),  //table name in this case
+              allUniquesOnly ? " AND is_unique = 1 )" : ")" );
 
   Queue * indexes = NULL;
   cliRC = cliInterface.fetchAllRows(indexes, buf, 0, FALSE, FALSE, TRUE);
@@ -1885,6 +1923,7 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
   NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
+  NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
@@ -2010,9 +2049,21 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
 
   // tell HBase to change the options
 
-  // TODO: Write this code
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+  result = alterHbaseTable(ehi,
+                           &hbaseTable,
+                           &(edhbo->getHbaseOptions()));
+  if (result < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
 
   // invalidate cached NATable info on this table for all users
+
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 

@@ -111,6 +111,7 @@ Ex_Lob_Error ExLobsOper (
     Int64       transId,
     void        *blackBox,         // black box to be sent to cli
     Int64       blackBoxLen,        // length of black box
+    Int64       lobMaxSize = 2000*1024*1024,        // max size of lob.
     int         bufferSize =0,
     short       replication =0,
     int         blocksize=0,
@@ -175,7 +176,14 @@ class ExLobDesc
 {
   public:
     ExLobDesc(int offset, int size, int tail);
-    ExLobDesc() { };
+  ExLobDesc() :
+    dataOffset_(0),
+      dataSize_(0),
+      dataState_(0),
+      tail_(0),
+      next_(0),
+      prev_(0),
+      nextFree_(0){};
     ~ExLobDesc();
 
     int getTailDescNum() { return tail_; }  
@@ -361,12 +369,12 @@ class ExLob
                             LobsStorage storage, char *hdfsServer, Int64 hdfsPort,
                             int bufferSize = 0, short replication =0, int blocksize=0, ExLobGlobals *lobGlobals = NULL);
     Ex_Lob_Error initialize(char *lobFile);
-    Ex_Lob_Error writeDesc(Int64 sourceLen, Int64 &descNumOut, Int64 &operLen);
-    Ex_Lob_Error writeData(char *source, Int64 sourceLen, LobsSubOper subOperation, 
+    Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize);
+    Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, LobsSubOper subOperation, 
                            Int64 descNumIn, Int64 &operLen);
     Ex_Lob_Error writeDataSimple(char *data, Int64 size, LobsSubOper subOperation, Int64 &operLen,
                                  int bufferSize = 0, short replication =0, int blocksize=0);
-    Ex_Lob_Error readToMem(char *memAddr, Int64 size, Int64 descNumIn, Int64 &operLen);
+    Ex_Lob_Error readToMem(char *memAddr, Int64 size,  Int64 &operLen);
     Ex_Lob_Error readToFile(char *fileName, Int64 descNum, Int64 &operLen);
     Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int64 handleInLen, Int64 &operLen);
     Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
@@ -385,10 +393,15 @@ class ExLob
     Ex_Lob_Error update(char *data, Int64 size, Int64 headDescNum, Int64 &operLen);
     Ex_Lob_Error update(ExLobRequest *request);
     Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, int &size);
+    Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, int &size);
+    Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, int &size);
+    Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, int &size);
+    Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
     Ex_Lob_Error delDesc();
     Ex_Lob_Error delDesc(ExLobRequest *request);
     Ex_Lob_Error purgeLob();
     Ex_Lob_Error closeFile();
+    LobInputOutputFileType fileType(char *ioFileName);
     Ex_Lob_Error closeCursor(char *handleIn, Int64 handleInLen);
     Ex_Lob_Error closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals);
     Ex_Lob_Error closeCursorDesc(ExLobRequest *request);
@@ -419,8 +432,11 @@ class ExLob
     Ex_Lob_Error getDesc(ExLobRequest *request);
 
     Ex_Lob_Error writeData(Int64 offset, char *data, Int64 size, Int64 &operLen);
-    Ex_Lob_Error readDataToMem(char *memAddr, Int64 &descNum, Int64 offset, Int64 size, Int64 &operLen);
-    Ex_Lob_Error readDataToFile(char *fileName, Int64 &descNum, Int64 offset, Int64 &operLen);
+    Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size, Int64 &operLen);
+    Ex_Lob_Error readDataToFile(char *fileName, Int64 offset, Int64 &operLen);
+    Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 &operLen);
+    Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 &operLen);
+    Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 &operLen);
     Ex_Lob_Error readDataFromFile(char *memAddr, Int64 len, Int64 &operLen);
 
     Ex_Lob_Error emptyDirectory();

@@ -39,37 +39,32 @@ import java.nio.ByteOrder;
 public class LmUDRObjMethodInvoke
 {
     // dummy class for now
-    class UDR {};
+    // class UDR {};
 
-    /* temporarily commented out
     UDR udr_;
     UDRInvocationInfo invocationInfo_;
     Vector<UDRPlanInfo> planInfos_;
-    */
 
     // factory method, make a new object of this class
     static LmUDRObjMethodInvoke makeNewObj(
             UDR udrObj,
             byte[] serializedInvocationInfo,
-            byte[] serializedPlanInfo) // temporarily commented out throws UDRException
+            byte[] serializedPlanInfo) throws UDRException
     {
         LmUDRObjMethodInvoke result = new LmUDRObjMethodInvoke();
 
-        /* temporarily commented out
         result.udr_ = udrObj;
         result.unpackObjects(serializedInvocationInfo,
                              serializedPlanInfo,
                              0);
 
         if (((result.invocationInfo_.getDebugFlags() &
-              UDRInvocationInfo.DebugFlags.PRINT_INVOCATION_INFO_INITIAL) != 0) &&
-            serializedPlanInfo == null)
+              UDRInvocationInfo.DebugFlags.PRINT_INVOCATION_INFO_INITIAL.ordinal()) == 1) && (serializedPlanInfo != null))
             {
                 // serializedPlanInfo == null indicates that we are in the compile
                 // phase, print the initial value of this object
                 result.invocationInfo_.print();
             }
-        */
 
         return result;
     }
@@ -90,13 +85,13 @@ public class LmUDRObjMethodInvoke
          int callPhase,
          byte [] serializedInvocationInfo,
          byte [] serializedPlanInfo,
-         int planNum) // temporarily commented out throws UDRException
+         int planNum) throws UDRException
     {
         ReturnInfo result = new ReturnInfo(-1);
 
+        planNum = validatePlanNum(serializedPlanInfo, planNum);
         System.out.println("In the JNI method, call phase is " + callPhase);
         System.out.println("Invocation info length is " + serializedInvocationInfo.length);
-        /* temporarily commented out
         for (int i=0; i<serializedInvocationInfo.length && i<100; i++)
             System.out.print(serializedInvocationInfo[i]);
         if (serializedInvocationInfo.length > 100)
@@ -155,23 +150,51 @@ public class LmUDRObjMethodInvoke
 
         // at compile time, return modified invocation/plan info
         if (invocationInfo_.getCallPhase() != UDRInvocationInfo.CallPhase.RUNTIME_WORK_CALL)
-            packObjects(result);
-        */
+            packObjects(result, 0, planNum);
 
         return result;
+    }
+
+    private int validatePlanNum(
+         byte [] serializedPlanInfo,
+         int planNum) // temporarily commented out throws UDRException
+    {
+        int validatedPlanNum = planNum;
+
+        /* temporarily commented out
+        if (serializedPlanInfo != null && serializedPlanInfo.length > 0)
+            {
+                // make sure the passed plan number is valid and reasonable
+                if (planNum < 0 || planNum > 100000)
+                    throw new UDRException(
+                        38900,
+                        "Invalid plan number %d passed to LmUDRObjMethodInvoke.invokeRoutineMethod()",
+                        planNum);
+
+                // our planInfos list may be too short, make sure we
+                // have an actual UDRPlanInfo object at the right
+                // position
+                while (planNum < planInfos_.size())
+                    planInfos_.add(new UDRPlanInfo(invocationInfo_));
+            }
+        else if (planNum != -1)
+            throw new UDRException(
+                38900,
+                "Plan number should be -1 when not passing a UDRPlanInfo to a method invocation");
+        */
+
+        return validatedPlanNum;
     }
 
     private void unpackObjects(
          byte [] serializedInvocationInfo,
          byte [] serializedPlanInfo,
-         int planNum) // temporarily commented out throws UDRException
+         int planNum) throws UDRException
     {
         System.out.println("in unpackObjects");
 
-        /* temporarily commented out
         if (serializedInvocationInfo != null && serializedInvocationInfo.length > 0)
             {
-                System.out.println("got invocation info of length " + serializedInvocationInfo.length);
                 ByteBuffer iiByteBuffer = ByteBuffer.wrap(serializedInvocationInfo);
 
                 iiByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -184,24 +207,35 @@ public class LmUDRObjMethodInvoke
                 38900,
                 "Invocation info is required for object method creation or call");
 
-        if (serializedPlanInfo != null && serializedPlanInfo.length > 0)
+        if (planNum >= 0)
             {
                 ByteBuffer piByteBuffer = ByteBuffer.wrap(serializedPlanInfo);
-
-                // our planInfos list may be too short, make sure we
-                // have an actual UDRPlanInfo object at the right
-                // position
-                while (planNum < planInfos_.size())
-                    planInfos_.add(new UDRPlanInfo(invocationInfo_));
 
                 piByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
                 planInfos_.get(planNum).deserialize(piByteBuffer);
             }
-        */
 
     }
 
-    private void packObjects(ReturnInfo ri)
+    private void packObjects(ReturnInfo ri,
+                             int returnStatus,
+                             int planNum)
     {
+        ri.returnStatus_ = returnStatus;
+
+        ByteBuffer iiByteBuffer = ByteBuffer.wrap(ri.returnedInvocationInfo_);
+
+        iiByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        /* temporarily commented out
+        invocationInfo_.serialize(iiByteBuffer);
+
+        if (planNum >= 0)
+            {
+                ByteBuffer piByteBuffer = ByteBuffer.wrap(ri.returnedPlanInfo_);
+
+                piByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                planInfos_.get(planNum).serialize(piByteBuffer);
+            }
+        */
     }
 }

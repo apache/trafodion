@@ -1,0 +1,45 @@
+>>obey TEST_3_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>control query default auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>PREPARE s FROM 
++>	INSERT INTO tab1A VALUES (50,51,52,53);
+
+--- SQL command prepared.
+>>
+>>DROP TRIGGER tr;
+
+--- SQL operation complete.
+>>
+>>EXECUTE s;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8575] Timestamp mismatch on table CAT1.SCHM.TAB1A.
+
+--- 1 row(s) inserted.
+>>-- should recompile
+>>
+>>--------------------------------------------------------
+>>-- CHECK RESULTS:
+>>select * from tab1a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+         50           51           52           53
+
+--- 1 row(s) selected.
+>>
+>>select * from tab1b;
+
+--- 0 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

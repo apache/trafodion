@@ -1,0 +1,28 @@
+>>obey TEST_1_4_2_1(tests);
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>-- the following command should FAIL and roll back
+>>
+>>UPDATE tab1A SET d=10, b=10;
+
+*** ERROR[3193] SIGNAL SQLSTATE=s1111, Message: singnal!!!.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM.TRIG1 on table CAT1.SCHM.TAB1A has failed.
+
+--- 0 row(s) updated.
+>>
+>>-------------------------------------------------------
+>>-- RESULT: no change in tab1A: 1 ,2 3, 4
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

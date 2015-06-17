@@ -1,0 +1,102 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>-- Run Tests
+>>
+>>    obey TESTMV640(TEST1);
+>>--=======================================================================
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @0@ @10@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @0@ @10@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @0@ @10@;
+
+--- SQL operation complete.
+>>
+>>-- inserting rows to lineitem that have corresponding keys in part and supplier
+>>insert into lineitem select * from lineitemp;
+
+--- 78 row(s) inserted.
+>>
+>>-- deleting rows from part
+>>delete from part where p_partkey > 1000;
+
+--- 2000 row(s) deleted.
+>>
+>>-- deleting rows from supplier
+>>delete from supplier where s_suppkey < 6;
+
+--- 10 row(s) deleted.
+>>
+>>-- deleting some rows from lineitem
+>>delete from lineitem where l_partkey between 400 and 500
++>    and l_suppkey between 1 and 10;
+
+--- 47 row(s) deleted.
+>>
+>>-- refresh
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.lineitem@ @1@ @0@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.supplier@ @1@ @0@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @cat.tpcd.part@ @1@ @0@;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_640_MV1
++>    from multidelta lineitem between 10 and 10 de level 0 use no rangelog use iudlog,
++>                    supplier between 10 and 10 de level 0 use no rangelog use iudlog,
++>                    part     between 10 and 10 de level 0 use no rangelog use iudlog
++>         phase 0;
+
+--- SQL operation complete.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--=======================================================================
+>>
+>>-- Clean and Exit
+>>log;

@@ -1,0 +1,322 @@
+>>
+>>-- Run Tests
+>>  obey TestMV516(Test1);
+>>
+>>reset PARSERFLAGS;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>create table (iud_log_table T_516_T1) (a int);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table (iud_log_table T_516_T1) (a int);
+                                    ^ (37 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- FAIL
+>>create table (range_log_table T_516_T2) (a int);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table (range_log_table T_516_T2) (a int);
+                                      ^ (39 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>create table (iud_log_table T_516_T1) (a int);
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>create table (range_log_table T_516_T2) (a int);
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------------------
+>>  obey TestMV516(Test2);
+>>
+>>reset PARSERFLAGS;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>drop table (iud_log_table T_516_T1);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+drop table (iud_log_table T_516_T1);
+                                  ^ (35 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- FAIL
+>>drop table (range_log_table T_516_T2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+drop table (range_log_table T_516_T2);
+                                    ^ (37 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>drop table (iud_log_table T_516_T1);
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>drop table (range_log_table T_516_T2);
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------------------
+>>  obey TestMV516(Test3);
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>create table (iud_log_table T_516_T1) (a int, b int);
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>-- table already exists
+>>create table (iud_log_table T_516_T1) (a int, b int);
+
+*** ERROR[1055] Object CATMVS.MVSCHM.T_516_T1 already exists.
+
+--- SQL operation failed with errors.
+>>
+>>-----------------------------------------------------------------------------
+>>  obey TestMV516(Test4);
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>drop table (iud_log_table T_516_T1);
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>-- no such table
+>>drop table (iud_log_table T_516_T1);
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_516_T1 (IudLog) does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_516_T1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-----------------------------------------------------------------------------
+>>  obey TestMV516(Test5);
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>create table (iud_log_table T_516_T1) (a int, b int);
+
+--- SQL operation complete.
+>>
+>>insert into table (iud_log_table T_516_T1) values (1, 1), (2, 2);
+
+--- 2 row(s) inserted.
+>>
+>>create table T_516_T1 (a int, b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_516_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_516_T1 select * from table (iud_log_table T_516_T1);
+
+--- 2 row(s) inserted.
+>>
+>>prepare stat1 from select * from T_516_T1 order by a, b;
+
+--- SQL command prepared.
+>>
+>>prepare stat2 from select * from table (iud_log_table T_516_T1) order by a, b;
+
+--- SQL command prepared.
+>>
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-----------------------------------------------------------------------------
+>>  obey TestMV516(Test6);
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>create table T_516_T6 (a int, b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_516_T6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create mv T_516_MV6 refresh on request 
++>initialized on refresh
++>as
++>select a, count(b) cb from T_516_T6 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_516_MV6_813931826_3941 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_516_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_516_T6_log like table (iud_log_table T_516_T6);
+
+--- SQL operation complete.
+>>ALTER TABLE T_516_T6_log attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>invoke T_516_T6_log;
+
+-- Definition of table CATMVS.MVSCHM.T_516_T6_LOG
+-- Definition current  Wed Jul 23 20:20:53 2008
+
+  (
+    "@EPOCH"                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>invoke table (iud_log_table T_516_T6);
+
+-- Definition of table (IUD_LOG_TABLE CATMVS.MVSCHM.T_516_T6)
+-- Definition current  Wed Jul 23 20:20:53 2008
+
+  (
+    "@EPOCH"                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------------------
+>>  obey TestMV516(Test7);
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>create table T_516_T7 (a int, b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_516_T7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table (iud_log_table T_516_T7) like T_516_T7;
+
+--- SQL operation complete.
+>>
+>>invoke T_516_T7;
+
+-- Definition of table CATMVS.MVSCHM.T_516_T7
+-- Definition current  Wed Jul 23 20:20:53 2008
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>invoke table (iud_log_table T_516_T7);
+
+-- Definition of table (IUD_LOG_TABLE CATMVS.MVSCHM.T_516_T7)
+-- Definition current  Wed Jul 23 20:20:53 2008
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------------------
+>>  obey TestMV516(Test8);
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>create table (iud_log_table T_516_T8) (a int, b int);
+
+--- SQL operation complete.
+>>
+>>create table (range_log_table T_516_T8) like table (iud_log_table T_516_T8);
+
+--- SQL operation complete.
+>>
+>>invoke table (iud_log_table T_516_T8);
+
+-- Definition of table (IUD_LOG_TABLE CATMVS.MVSCHM.T_516_T8)
+-- Definition current  Wed Jul 23 20:20:54 2008
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>invoke table (range_log_table T_516_T8);
+
+-- Definition of table (RANGE_LOG_TABLE CATMVS.MVSCHM.T_516_T8)
+-- Definition current  Wed Jul 23 20:20:54 2008
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>-- clean and exit
+>>
+>>log;

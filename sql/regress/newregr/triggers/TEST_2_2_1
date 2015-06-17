@@ -1,0 +1,98 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- Test the DDL Caching mechanism with triggers
+
+obey TEST_2_2_1(clean_up);
+log   LOG_2_2_1 clear;
+obey TEST_2_2_1(test_create);
+LOG;
+#ifNT
+sh sqlci -i SUBTEST_2_2_1 ;
+#ifNT
+#ifNSK
+sh $mxcidir/mxci -i SUBTEST_2_2_1 ;
+#ifNSK
+log   LOG_2_2_1;
+obey TEST_2_2_1(clean_up);
+LOG;
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+DROP TRIGGER cat1.schm.tr1;
+DROP TRIGGER cat2.schm.tr2;
+DROP TRIGGER cat1.schm.tr3;
+DROP TRIGGER cat1.schm.tr4;
+DROP TRIGGER cat3.schm.tab3A;
+
+?section test_create
+
+-- create all the triggers from TEST_2_1_1
+
+SET SCHEMA cat1.schm;
+CREATE TRIGGER tr1 AFTER UPDATE
+	ON tab1A
+	REFERENCING OLD AS oldrow, NEW AS newrow
+	FOR EACH ROW
+		WHEN (oldrow.a > newrow.b)
+		INSERT INTO tab1B VALUES (oldrow.b, 0);
+
+SET SCHEMA cat2.schm;
+
+CREATE TRIGGER tr2 AFTER DELETE ON tab2A
+REFERENCING OLD AS oldrow 
+FOR EACH ROW
+INSERT INTO cat1.schm.tab1B VALUES (oldrow.a, oldrow.b);
+
+SET SCHEMA cat1.schm;
+
+CREATE TRIGGER tr3 AFTER UPDATE OF (a) ON cat2.schm.tab2A
+REFERENCING NEW AS newrow
+FOR EACH ROW
+WHEN (newrow.b = 3)
+INSERT INTO tab1B VALUES (newrow.a, 22);
+
+SET SCHEMA cat3.schm;
+
+CREATE TRIGGER tab3A BEFORE UPDATE OF (b) ON cat3.schm.tab3A
+REFERENCING OLD AS oldrow, NEW AS newrow
+FOR EACH ROW
+WHEN (newrow.a > oldrow.a)
+SET newrow.b = oldrow.b;
+
+SET SCHEMA cat1.schm;
+
+CREATE TRIGGER tr4 AFTER UPDATE OF (b) ON cat2.schm.tab2A
+REFERENCING OLD AS oldtab, NEW AS newtab
+FOR EACH STATEMENT
+UPDATE cat3.schm.tab3A
+ SET a=3 WHERE (a,b) IN 
+    (SELECT t1.b, t2.a FROM cat1.schm.tab1A t1, cat1.schm.tab1A t2);
+
+-- some simple sanity checks
+
+set schema cat1.HP_DEFINITION_SCHEMA;
+
+select count(*) from TRIGGERS;
+
+select count(*) from TRIGGERS_CAT_USAGE;
+
+select count(*) from TRIGGER_USED;
+
+?section test_cold_cache

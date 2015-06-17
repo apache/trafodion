@@ -1,0 +1,45 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+[DATE FORMAT]
+DateOrder=YMD
+DateDelimiter=-
+TimeDelimiter=:
+FourDigitYear=Y
+DecimalSymbol=.
+
+[COLUMN FORMAT]
+col=l_orderkey,N
+col=l_linenumber,N
+col=l_partkey,N
+col=l_suppkey,N
+col=l_quantity,N
+col=l_extendedprice,N
+col=l_discount,N
+col=l_tax,N
+col=l_shipdate,N
+col=l_commitdate,N
+col=l_receiptdate,N
+col=l_returnflag,N
+col=l_linestatus,N
+col=l_shipinstruct,N
+col=l_shipmode,N
+col=l_comment,N
+
+[DELIMITED FORMAT]
+FieldDelimiter=|
+Qualifier='

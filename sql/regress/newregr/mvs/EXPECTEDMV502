@@ -1,0 +1,292 @@
+>>-- Run Tests
+>>	obey TESTMV502(DEFAULTSTEST);
+>>
+>>control query default SHOWCONTROL_UNEXTERNALIZED_ATTRS 'ON';
+
+--- SQL operation complete.
+>>showcontrol query default MV_AGE;
+
+No CONTROL QUERY DEFAULT MV_AGE settings are in effect.
+
+Current DEFAULTS
+  MV_AGE
+
+--- SQL operation complete.
+>>showcontrol query default MV_TRACE_INCONSISTENCY;
+
+No CONTROL QUERY DEFAULT MV_TRACE_INCONSISTENCY settings are in effect.
+
+Current DEFAULTS
+  MV_TRACE_INCONSISTENCY        	OFF
+
+--- SQL operation complete.
+>>showcontrol query default MV_REFRESH_MAX_PARALLELISM;
+
+No CONTROL QUERY DEFAULT MV_REFRESH_MAX_PARALLELISM settings are in effect.
+
+Current DEFAULTS
+  MV_REFRESH_MAX_PARALLELISM    	0
+
+--- SQL operation complete.
+>>showcontrol query default MV_REFRESH_MAX_PIPELINING;
+
+No CONTROL QUERY DEFAULT MV_REFRESH_MAX_PIPELINING settings are in effect.
+
+Current DEFAULTS
+  MV_REFRESH_MAX_PIPELINING     	0
+
+--- SQL operation complete.
+>>showcontrol query default MVQR_REWRITE_LEVEL;
+
+No CONTROL QUERY DEFAULT MVQR_REWRITE_LEVEL settings are in effect.
+
+Current DEFAULTS
+  MVQR_REWRITE_LEVEL            	0
+
+--- SQL operation complete.
+>>showcontrol query default MVQR_REWRITE_CANDIDATES;
+
+No CONTROL QUERY DEFAULT MVQR_REWRITE_CANDIDATES settings are in effect.
+
+Current DEFAULTS
+  MVQR_REWRITE_CANDIDATES
+
+--- SQL operation complete.
+>>showcontrol query default MV_INTERNAL_IGNORE_UNAVAILABLE;
+
+No CONTROL QUERY DEFAULT MV_INTERNAL_IGNORE_UNAVAILABLE settings are in effect.
+
+Current DEFAULTS
+  MV_INTERNAL_IGNORE_UNAVAILABLE	OFF
+
+--- SQL operation complete.
+>>
+>>-- MV_AGE should be formatted: <number> [DAYS | HOURS | MINUTES | SECONDS]
+>>control query default MV_AGE '60 seconds';
+
+--- SQL operation complete.
+>>control query default MV_AGE '30 minutes';
+
+--- SQL operation complete.
+>>control query default MV_AGE '3 HOURS';
+
+--- SQL operation complete.
+>>control query default MV_AGE '3.5 Days';
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>control query default MV_AGE '3 and a half DAYS';
+
+*** ERROR[2055] The specified value '3 and a half DAYS' for DEFAULTS attribute MV_AGE is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MV_AGE '42';
+
+*** ERROR[2055] The specified value '42' for DEFAULTS attribute MV_AGE is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MV_AGE '10:30';
+
+*** ERROR[2055] The specified value '10:30' for DEFAULTS attribute MV_AGE is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>control query default MV_TRACE_INCONSISTENCY 'OFF';
+
+--- SQL operation complete.
+>>
+>>-- this returns the value to the default initial one
+>>control query default MV_TRACE_INCONSISTENCY 'SYSTEM';
+
+--- SQL operation complete.
+>>showcontrol query default MV_TRACE_INCONSISTENCY;
+
+CONTROL QUERY DEFAULT
+  MV_TRACE_INCONSISTENCY        	OFF
+
+Current DEFAULTS
+  MV_TRACE_INCONSISTENCY        	OFF
+
+--- SQL operation complete.
+>>
+>>-- these are all SYNONYMs to ON and OFF
+>>control query default MV_TRACE_INCONSISTENCY 'TRUE';
+
+--- SQL operation complete.
+>>control query default MV_TRACE_INCONSISTENCY 'DISABLE';
+
+--- SQL operation complete.
+>>control query default MV_TRACE_INCONSISTENCY 'FALSE';
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>control query default MV_TRACE_INCONSISTENCY 'FULL';
+
+*** ERROR[2055] The specified value 'FULL' for DEFAULTS attribute MV_TRACE_INCONSISTENCY is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>
+>>control query default MV_REFRESH_MAX_PARALLELISM '10';
+
+--- SQL operation complete.
+>>-- FAIL
+>>control query default MV_REFRESH_MAX_PARALLELISM '-10';
+
+*** ERROR[2055] The specified value '-10' for DEFAULTS attribute MV_REFRESH_MAX_PARALLELISM is not valid.
+
+*** ERROR[2056] The value must be a number in the range [0,2147483584].
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>
+>>control query default MV_REFRESH_MAX_PIPELINING '10';
+
+--- SQL operation complete.
+>>-- FAIL
+>>control query default MV_REFRESH_MAX_PIPELINING '-10';
+
+*** ERROR[2055] The specified value '-10' for DEFAULTS attribute MV_REFRESH_MAX_PIPELINING is not valid.
+
+*** ERROR[2056] The value must be a number in the range [0,2147483584].
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>-- ERROR
+>>control query default MVQR_REWRITE_LEVEL '8';
+
+*** ERROR[2055] The specified value '8' for DEFAULTS attribute MVQR_REWRITE_LEVEL is not valid.
+
+*** ERROR[2056] The value must be a number in the range [0,5].
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'c.s.t1:c.s.t2';
+
+--- SQL operation complete.
+>>
+>>control query default MVQR_REWRITE_CANDIDATES 'c.s.t1:xxx';
+
+--- SQL operation complete.
+>>
+>>
+>>SET SCHEMA CATMVS.MVSCHM;
+
+--- SQL operation complete.
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>create table t1 (a int, b int);
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create mv mv1 refresh on request 
++>initialize on refresh
++>as select a, count(b) xb from t1 group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.MV1_624139672_4127 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into t1 values (3, 5);
+
+--- 1 row(s) inserted.
+>>
+>>-- mvstatus : not initialized ---> initialized
+>>refresh mv1 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.MV1 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.MV1 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1.
+
+
+>>
+>>-- mvstatus : initialized ---> not available
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @CATMVS.MVSCHM.MV1@ @1@;
+
+--- SQL operation complete.
+>>-- U
+>>select mvstatus from HP_DEFINITION_SCHEMA.mvs;
+
+MVSTATUS
+--------
+
+U       
+
+--- 1 row(s) selected.
+>>
+>>
+>>create index i1 on MV1(a) no populate;
+
+--- SQL operation complete.
+>>
+>>-- create ddl lock on mv
+>>CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.MV1_LOCK> <CATMVS.MVSCHM.MV1> <0> <3> ;
+
+--- SQL operation complete.
+>>
+>>------- simulating populate index:
+>>
+>>-- FAIL - mv unavailable
+>>INSERT USING SIDEINSERTS INTO TABLE(INDEX_TABLE I1)
++>SELECT A, SYSKEY FROM CATMVS.MVSCHM.MV1 FOR READ UNCOMMITTED ACCESS;
+
+*** ERROR[12312] Materialized view CATMVS.MVSCHM.MV1 is unavailable.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query default MV_INTERNAL_IGNORE_UNAVAILABLE 'ON';
+
+--- SQL operation complete.
+>>
+>>-- PASS - ignore unavailable
+>>INSERT USING SIDEINSERTS INTO TABLE(INDEX_TABLE I1)
++>SELECT A, SYSKEY FROM CATMVS.MVSCHM.MV1 FOR READ UNCOMMITTED ACCESS;
+
+--- 1 row(s) inserted.
+>>
+>>-- drop ddl lock
+>>CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.MV1_LOCK>;
+
+--- SQL operation complete.
+>>
+>>DROP MV MV1;
+
+--- SQL operation complete.
+>>DROP TABLE T1;
+
+--- SQL operation complete.
+>>
+>>log;

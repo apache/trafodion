@@ -52,6 +52,8 @@
 
 #include "CommonLogger.h"
 #include "zookeeper/zookeeper.h"
+#include "PubInterface.h"
+
 // +++ Move below to srvrGlobal if needed
 
 //ZK_GLOBAL_Def zkGlobals;
@@ -95,6 +97,7 @@ void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watche
 bool verifyPortAvailable(const char * idForPort, int portNumber);
 BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, char* strName, char* strValue);
 
+//only support positive number
 BOOL getNumberTemp( char* strValue, int& nValue )
 {
 	if( strspn( strValue, "0123456789" ) != strlen( strValue) )
@@ -1274,19 +1277,13 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 		else
 		if (strcmp(arg, "-STATISTICSINTERVAL") == 0)
 		{
-			if (++count < argc && argv[count][0] != '-' )
-			{
-				if( getNumberTemp( argv[count], number ) == TRUE )
-				{
-					if(number > 0)
-						aggrInterval = number;
-				}
-				else
-				{
-					argWrong = TRUE;
-					break;
-				}
-			}
+			if (++count < argc )
+			{			    
+				//support positive & minus
+				number=atoi(argv[count]);				
+                if(number >= MIN_INTERVAL)
+					aggrInterval = number;				
+			}	
 			else
 			{
 				argEmpty = TRUE;
@@ -1296,19 +1293,12 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 		else
 		if (strcmp(arg, "-STATISTICSLIMIT") == 0)
 		{
-			if (++count < argc && argv[count][0] != '-' )
+			if (++count < argc)
 			{
-				if( getNumberTemp( argv[count], number ) == TRUE )
-				{
-					if(number > 0)
-						queryPubThreshold = number;
-				}
-				else
-				{
-					argWrong = TRUE;
-					break;
-				}
-			}
+				number=atoi(argv[count]);				
+                if(!(number >0 && number<MIN_INTERVAL))
+					queryPubThreshold = number;				
+			}	
 			else
 			{
 				argEmpty = TRUE;
@@ -1373,15 +1363,9 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 		else
 		if (strcmp(arg, "-PORTMAPTOSECS") == 0)
 		{
-			if (++count < argc && argv[count][0] != '-' )
+			if (++count < argc )
 			{
-				if( getNumberTemp( argv[count], number ) == TRUE )
-					portMapToSecs = number;
-				else
-				{
-					argWrong = TRUE;
-					break;
-				}
+				portMapToSecs = atoi(argv[count]);;				
 			}
 			else
 			{
@@ -1392,15 +1376,9 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 		else
 		if (strcmp(arg, "-PORTBINDTOSECS") == 0)
 		{
-			if (++count < argc && argv[count][0] != '-' )
+			if (++count < argc )
 			{
-				if( getNumberTemp( argv[count], number ) == TRUE )
-					portBindToSecs = number;
-				else
-				{
-					argWrong = TRUE;
-					break;
-				}
+				portBindToSecs = atoi(argv[count]);				
 			}
 			else
 			{

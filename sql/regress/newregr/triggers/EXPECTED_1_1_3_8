@@ -1,0 +1,21 @@
+>>obey TEST_1_1_3_8(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>
+>>CREATE TRIGGER trig BEFORE UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS newtable
++>	FOR EACH STATEMENT
++>
++>		SIGNAL SQLSTATE 's1111' ('illegal');
+
+*** ERROR[11010] A BEFORE trigger works only at row granularity.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--------------------------------------------------------
+>>LOG;

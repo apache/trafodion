@@ -3277,6 +3277,36 @@ const NAString SetSessionDefault::getText() const
 }
 
 // -----------------------------------------------------------------------
+// member functions for class OSIMControl
+// -----------------------------------------------------------------------
+OSIMControl::OSIMControl(OptimizerSimulator::osimMode mode,
+                                       NAString & localDir,
+                                       NABoolean force,
+                                       CollHeap * oHeap)
+                                       //the real work is done in OSIMControl::bindNode() to control OSIM.
+                                       //We set operator type to REL_SET_SESSION_DEFAULT,
+                                       //so as not to define dummy OSIMControl::codeGen() and OSIMControl::work(),
+                                       //which will do nothing there,  
+                       : ControlAbstractClass(REL_SET_SESSION_DEFAULT, NAString("DUMMYSQLTEXT", oHeap), 
+                                                           CharInfo::ISO88591, NAString("OSIM", oHeap), 
+                                                           NAString("DUMMYVALUE", oHeap), TRUE, oHeap)
+                       , targetMode_(mode), osimLocalDir_(localDir, oHeap), forceLoad_(force)
+{}
+
+
+RelExpr * OSIMControl::copyTopNode(RelExpr *derivedNode, CollHeap *h )
+{
+      RelExpr *result;
+
+      if (derivedNode == NULL)
+          result = new (h) OSIMControl(targetMode_, osimLocalDir_, forceLoad_, h);
+      else
+          result = derivedNode;
+          
+      return ControlAbstractClass::copyTopNode(result,h);
+}
+
+// -----------------------------------------------------------------------
 // member functions for class Sort
 // -----------------------------------------------------------------------
 
@@ -8065,7 +8095,11 @@ void Scan::getPotentialOutputValues(ValueIdSet & outputValues) const
   // as the output values that can be produced by this scan.
   //
   if (potentialOutputs_.isEmpty())
-    outputValues.insertList( getTableDesc()->getColumnList() );
+    {
+      outputValues.insertList( getTableDesc()->getColumnList() );
+      outputValues.insertList( getTableDesc()->hbaseTSList() );
+      outputValues.insertList( getTableDesc()->hbaseVersionList() );
+    }
   else
     outputValues = potentialOutputs_;
 
@@ -8178,6 +8212,8 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setExtraOutputColumns(getExtraOutputColumns());
   result->isRewrittenMV_ = isRewrittenMV_;
   result->matchingMVs_ = matchingMVs_;
+
+  result->hbaseAccessOptions_ = hbaseAccessOptions_;
 
   // don't copy values that can be calculated by addIndexInfo()
   // (could be done, but we are lazy and just call addIndexInfo() again)
@@ -9652,41 +9688,6 @@ NABoolean FileScan::isLogical() const  { return FALSE; }
 
 NABoolean FileScan::isPhysical() const { return TRUE;  }
 
-void FileScan::computeRetrievedCols()
-{
-  GroupAttributes     fakeGA;
-  ValueIdSet          requiredValueIds(getGroupAttr()->
-				       getCharacteristicOutputs());
-  ValueIdSet          coveredExprs;
-
-  // ---------------------------------------------------------------------
-  // Make fake group attributes with all inputs that are available to
-  // the file scan node and with no "native" values.
-  // Then call the "coverTest" method, offering it all the index columns
-  // as additional inputs. "coverTest" will mark those index columns that
-  // it actually needs to satisfy the required value ids, and that is
-  // what we actually want. The actual cover test should always succeed,
-  // otherwise the FileScan node would have been inconsistent.
-  // ---------------------------------------------------------------------
-
-  fakeGA.addCharacteristicInputs(getGroupAttr()->getCharacteristicInputs());
-  requiredValueIds += selectionPred();
-  requiredValueIds += executorPred();
-
-  fakeGA.coverTest(requiredValueIds,              // char outputs + preds
-		   indexDesc_->getIndexColumns(), // all index columns
-		   coveredExprs,                  // dummy parameter
-		   retrievedCols_);               // needed index cols
-
-  //
-  // *** This CMPASSERT goes off sometimes, indicating an actual problem.
-  // Hans has agreed to look into it (10/18/96) but I (brass) am
-  // commenting it out for now, for sake of my time in doing a checking.
-  //
-  //  CMPASSERT(coveredExprs == requiredValueIds);
-
-}
-
 PlanPriority FileScan::computeOperatorPriority
 (const Context* context,
  PlanWorkSpace *pws,
@@ -10167,8 +10168,12 @@ void HbaseAccess::getPotentialOutputValues(
      ValueIdSet & outputValues) const
 {
   outputValues.clear();
+
   // since this is a physical operator, it only generates the index columns
   outputValues.insertList( getIndexDesc()->getIndexColumns() );
+  outputValues.insertList( getTableDesc()->hbaseTSList() );
+  outputValues.insertList( getTableDesc()->hbaseVersionList() );
+  
 } // HbaseAccess::getPotentialOutputValues()
 
 void
@@ -12281,6 +12286,8 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->canDoCheckAndUpdel() = canDoCheckAndUpdel();
   result->setNoCheck(noCheck());
   result->noDTMxn() = noDTMxn();
+  result->useMVCC() = useMVCC();
+  result->useSSCC() = useSSCC();
 
   if (currOfCursorName())
     result->currOfCursorName_ = currOfCursorName()->copyTree(outHeap)->castToItemExpr();
@@ -12589,7 +12596,8 @@ Insert::Insert(const CorrName &name,
    isSequenceFile_(FALSE),
    isUpsert_(FALSE),
    isTrafLoadPrep_(FALSE),
-   createUstatSample_(createUstatSample)
+   createUstatSample_(createUstatSample),
+   baseColRefs_(NULL)
 {
   insert_a_tuple_ = FALSE;
   if ( child ) {
@@ -12793,7 +12801,7 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       ConstStringList * csl,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
-    isFastDelete_(FALSE), noIMneeded_(FALSE),
+    isFastDelete_(FALSE),
     csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
@@ -12986,7 +12994,7 @@ const NAString HbaseInsert::getText() const
 
 RelExpr * HbaseInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
-  RelExpr *result;
+  HbaseInsert *result;
 
   if (derivedNode == NULL)
     result = new (outHeap) HbaseInsert(getTableName(),
@@ -12995,7 +13003,9 @@ RelExpr * HbaseInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 					NULL,
 					outHeap);
   else
-    result = derivedNode;
+    result = (HbaseInsert *) derivedNode;
+  
+  result->returnRow_ = returnRow_;
 
   return Insert::copyTopNode(result, outHeap);
 }

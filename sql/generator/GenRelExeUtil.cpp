@@ -100,8 +100,6 @@
 
 
 
-#include "OptimizerSimulator.h"
-
 #include "ComCextdecs.h"
 
 #include "SqlParserGlobals.h"   // Parser Flags
@@ -3582,7 +3580,7 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     {
       ConstValue * cv = (ConstValue*)handle_;
       
-      NAString h = cv->getConstStr();
+      NAString h = *(cv->getRawText());
       handleLen = h.length();
 
       handle = space->allocateAlignedSpace(handleLen + 1);
@@ -3633,10 +3631,10 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 	     &handle_->child(0)->getValueId().getType());
         */
 	Cast(handle_, 
-	     &handle_->getValueId().getType());
+	     &handle_->getValueId().getType()); // Leave it in string format.
  
-      //	 SQLVarChar(handle_->getValueId().getType().getNominalSize(),
-      //		    handle_->getValueId().getType().supportsSQLnull()));
+      //SQLVarChar(handle_->getValueId().getType().getNominalSize(),
+      //      		    handle_->getValueId().getType().supportsSQLnull()));
       inputExpr->bindNode(generator->getBindWA());
       NAType &nat = (NAType&)inputExpr->getValueId().getType();
       nat.setNullable(TRUE);
@@ -3705,11 +3703,21 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      32000);
 #pragma warn(1506)  // warning elimination 
 
-  if (handleInStringFormat_)
+if (handleInStringFormat_)
     exe_util_tdb->setHandleInStringFormat(TRUE);
 
   if (handle_ == NULL)
     exe_util_tdb->setSrcIsFile(TRUE);
+
+  if (ExtractFileActionType::ERROR_IF_NOT_EXISTS)
+    exe_util_tdb->setErrorIfNotExists(TRUE);   
+  else
+    exe_util_tdb->setErrorIfNotExists(FALSE);
+
+  if (ExtractFileActionType::TRUNCATE_EXISTING)
+    exe_util_tdb->setTruncateExisting(TRUE);
+  else
+    exe_util_tdb->setTruncateExisting(FALSE);
 
   exe_util_tdb->setWithCreate(withCreate_);
 
@@ -3722,6 +3730,11 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, childExplainTuple, 0, generator));
   }
+  if (toType_ == RETRIEVE_LENGTH_)
+    {
+      exe_util_tdb->setRetrieveLength(TRUE);
+    }
+  exe_util_tdb->setBufSize(CmpCommon::getDefaultNumeric(LOB_OUTPUT_SIZE));
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);
@@ -4689,7 +4702,8 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setContinueOnError(continueOnError_);
   exe_util_tdb->setMaxErrorRows(maxErrorRows_);
   exe_util_tdb->setNoDuplicates(noDuplicates_);
-  exe_util_tdb->setIndexes(indexes_);
+  exe_util_tdb->setRebuildIndexes(rebuildIndexes_);
+  exe_util_tdb->setHasUniqueIndexes(hasUniqueIndexes_);
   exe_util_tdb->setConstraints(constraints_);
   exe_util_tdb->setNoOutput(noOutput_);
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
@@ -4741,6 +4755,24 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
+  Queue * indexList = NULL;
+  const LIST(IndexDesc *) indList = getUtilTableDesc()->getIndexes();
+
+  indexList = new(space) Queue(space);
+  char * indexName = NULL;
+  {
+    // base table is included
+    for (CollIndex i=0; i<indList.entries(); i++) 
+      {
+        IndexDesc *index = indList[i];
+        indexName = 
+          space->AllocateAndCopyToAlignedSpace
+          (index->getIndexName().getQualifiedNameAsAnsiString(), 0);
+
+        indexList->insert(indexName);
+      }
+  }
+
   ComTdbHbaseAccess *load_tdb = new(space)
     ComTdbHbaseAccess(
                       ComTdbHbaseAccess::BULK_LOAD_TASK_,
@@ -4776,6 +4808,7 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
     load_tdb->setIsTrafLoadCompetion(TRUE);
     load_tdb->setIsTrafLoadKeepHFiles(taskType_ == COMPLETE_BULK_LOAD_N_KEEP_HFILES_ ? TRUE: FALSE);
   }
+  load_tdb->setListOfIndexesAndTable(indexList);
 
 
   if(!generator->explainDisabled()) {

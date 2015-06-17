@@ -1295,7 +1295,7 @@ public:
   void markAsReferencedColumn(const ColumnDesc *cd, NABoolean groupByRefForSingleIntHist = FALSE);
   void markAsReferencedColumn(const ItemExpr *ie, NABoolean groupByRefForSingleIntHist = FALSE)
     				  { markAsReferencedColumn(ie->getValueId(), groupByRefForSingleIntHist); }
-  void setColumRefsInStoi(const char* fileName, Lng32 colPosition);
+  void setColumnRefsInStoi(const char* fileName, Lng32 colPosition);
 
 
   // --------------------------------------------------------------------
@@ -1647,7 +1647,7 @@ public:
   inline void setISPExecLocation(const NAString & locationStr) { ISPExecLocation_ = locationStr; }
 
   const NAString & getISPExecLocation() const { return ISPExecLocation_ ;}
-  
+
 private:
 
   // --------------------------------------------------------------------
@@ -1952,6 +1952,7 @@ private:
   NABoolean hasCallStmts_;
 
   NAString ISPExecLocation_;
+
 }; // class BindWA
 
 class HbaseColUsageInfo : public NABasicObject

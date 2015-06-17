@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -171,6 +171,7 @@ void ResStatisticsSession::end()
 	pSession_info->m_client_name = srvrGlobal->ClientComputerName;
 	pSession_info->m_client_user_name = resCollectinfo.clientUserName;
 	pSession_info->m_application_name = srvrGlobal->ApplicationName;
+    UpdateStringText(pSession_info->m_application_name);
 	pSession_info->m_total_odbc_exection_time = totalOdbcExecutionTime;
 	pSession_info->m_total_odbc_elapsed_time = totalOdbcElapseTime;
 	pSession_info->m_total_insert_stmts_executed = totalInsertStatements;
@@ -417,6 +418,7 @@ std::tr1::shared_ptr<SESSION_AGGREGATION> ResStatisticsSession::getAggrStats()
 	pAggr_info->m_role_name = srvrGlobal->QSRoleName;
 	pAggr_info->m_client_name = srvrGlobal->ClientComputerName;
 	pAggr_info->m_application_name = srvrGlobal->ApplicationName;
+    UpdateStringText(pAggr_info->m_application_name);
 	pAggr_info->m_client_user_name = resCollectinfo.clientUserName;
 	pAggr_info->m_total_est_rows_accessed = sessWlStats.aggrStats.EstimatedRowsAccessed;
 	pAggr_info->m_total_est_rows_used = sessWlStats.aggrStats.EstimatedRowsUsed;

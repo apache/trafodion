@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ private:
   // Return the cached pointer to the single subset search key.
   // The value was cached in constructSearchKey()
   //
-  inline const SearchKey *getSearchKey() const;
+  inline const SearchKey *getSearchKey() const { return searchKey_; }
 
   // Returns True if probes are in Full order otherwise False.
   // Sets a partialy order flag if probes are partially ordered.
@@ -117,14 +117,15 @@ private:
   // The size of the single subset scanned by this Scan node.
   // Computed and cached by computeSingleSubsetSize()
   //
-  inline const CostScalar &getSingleSubsetSize() const;
+  inline const CostScalar &getSingleSubsetSize() const
+                                                  { return singleSubsetSize_; }
 
   // Return the cached set of single subset predicates.
   // The key predicates which define the single subset. 
   // Computed and cached by computeSingleSubsetSize()
   //
-  inline const ValueIdSet &getSingleSubsetPreds() const;
-
+  inline const ValueIdSet &getSingleSubsetPreds() const
+                                                 { return singleSubsetPreds_; }
   // Does the partitioning function associated with this scan
   // represent logical sub-partitioning.
   // (If so, we must consider the extra predicates from the
@@ -347,27 +348,27 @@ private:
   // each end of the subset.  This may overestimate the number of
   // blocks by 1, especially when there are very few rows.
   //
-  inline CostScalar getNumBlocksForRows(const CostScalar &numRows) const;
+  CostScalar getNumBlocksForRows(const CostScalar &numRows) const;
 
   // Compute the estimated number of rows per scan (active partition),
   // based on the result set cardinality computed outside of the Scan
   // Optimizer and the number of active partitions for this Scan.
   //
-  inline CostScalar getResultSetCardinalityPerScan() const;
+  CostScalar getResultSetCardinalityPerScan() const;
 
   // Compute the number of rows of this Scan that will fit in a DP2 Buffer.
   //
-  inline CostScalar getRowsInDP2Buffer() const;
+  CostScalar getRowsInDP2Buffer() const;
 
   // Return the cached value of the recordSizeinKB for this Scan.  Value
   // was initialized from the IndexDesc of the associated FileScan.
   //
-  inline const CostScalar &getRecordSizeInKb() const;
+  inline const CostScalar &getRecordSizeInKb() const { return recordSizeInKb_;}
 
   // Return the cached value of the blockSizeinKB for this Scan.  Value
   // was initialized from the IndexDesc of the associated FileScan.
   //
-  inline const CostScalar &getBlockSizeInKb() const;
+  inline const CostScalar &getBlockSizeInKb() const { return blockSizeInKb_; }
 
   // Return the repeat Count for this scan.  The repeat count is an
   // estimate of the number of probes that this scan (partition) will
@@ -383,8 +384,8 @@ private:
   // Scan.  Value was initialized from the IndexDesc of the associated
   // FileScan.
   //
-  inline const CostScalar &getEstimatedRecordsPerBlock() const;
-
+  inline const CostScalar &getEstimatedRecordsPerBlock() const
+                                         { return estimatedRecordsPerBlock_; }
 
   // Addtional methods for Multiprobe scans
   //
@@ -584,13 +585,60 @@ private:
   // For Multiprobe scans
   //
 
-  inline const CostScalar getFailedProbes() const { return failedProbes_; };
-  inline const CostScalar &getDataRows() const;
-  inline const CostScalar &getEffectiveTotalRowCount() const;
-  inline const CostScalar &getTotalRowCount() const;
-  inline const CostScalar &getIndexBlocksLowerBound() const;
-  inline const CostScalar &getBlksPerSuccProbe() const;
-  inline const NABoolean  getPartialOrderProbesFlag() const;
+  inline const CostScalar getFailedProbes() const     { return failedProbes_; }
+
+  // Return the cached value of number of data rows.  This is the
+  // number of rows produced by all successful probes.
+  // The value was cached in categorizeMultiProbes().
+  // 
+  // For MultiProbe Scans
+  //
+  inline const CostScalar &getDataRows() const            { return dataRows_; }
+
+  // Return the cached value of effective total row count.  This is the
+  // size of the bounding subset of all probes.  Typically this will be
+  // all the rows of the table, but if all probes are restricted to a
+  // subset of rows (e.g. the key predicate contains leading constants)
+  // then the effective row count will be less than the total row count.
+  // The value was cached in computeCostVectorsMultiProbes().
+  //
+  //  For MultiProbe Scans
+  //
+  inline const CostScalar &getEffectiveTotalRowCount() const
+                                            { return effectiveTotalRowCount_; }
+
+  // Return the cached value of real total row count.
+  // The value was cached in computeCostVectorsMultiProbes().
+  //
+  //  For MultiProbe Scans
+  //
+  inline const CostScalar &getTotalRowCount() const { return totalRowCount_; }
+
+  // Return the cached value of the lower bound of the number of index
+  // blocks for the table. This value is the estimate of the number of
+  // blocks all probes touch in their way down in every level of the
+  // B-tree. see IndexDesc::getEstimatedIndexBlocksLowerBound().
+  // The value was cached in computeCostVectorsMultiProbes().
+  //
+  //  For MultiProbe Scans
+  //
+  inline const CostScalar &getIndexBlocksLowerBound() const
+                                            { return indexBlocksLowerBound_; }
+
+  // Return the cached value of number of blocks for each successful
+  // probe.  This is the estimated number of blocks produced by each
+  // successful probe on average.
+  // The value was cached in categorizeMultiProbes().
+  // 
+  // For MultiProbe Scans
+  //
+  inline const CostScalar &getBlksPerSuccProbe() const
+                                                 { return blksPerSuccProbe_; }
+
+  // Return the value of partialy order probes flag.
+  // The value was cached in orderMatch().
+  inline const NABoolean  getPartialOrderProbesFlag() const
+                                               { return partialOrderProbes_; }
 
   // This is the number of probes (probes_) that do not result in
   // data.  failedProbes = probes - successfulProbes.  The value is

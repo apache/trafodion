@@ -1814,6 +1814,15 @@ short HbaseAccess::genListOfColNames(Generator * generator,
   return 0;
 }
 
+// colIdformat:
+//     2 bytes len, len bytes colname.
+//
+// colname format: 
+//       <colfam>:<colQual>  (for base table access)
+//       <colfam>:@<colQual>   (for index access)
+//
+//                colQual is 1,2,4 bytes
+//
 short HbaseAccess::createHbaseColId(const NAColumn * nac,
 				    NAString &cid, 
 				    NABoolean isSecondaryIndex)
@@ -2077,6 +2086,51 @@ short HbaseAccess::sortValues (NASet<NAString> &inSet,
   return 0;
 }
 
+// infoType: 0, timestamp. 1, version. 2, security label.
+static short HbaseAccess_updateHbaseInfoNode(
+                                             ValueIdList &hbiVIDlist,
+                                             const NAString &colName,
+                                             Lng32 colIndex)
+{
+  for (Lng32 i = 0; i < hbiVIDlist.entries(); i++)
+    {
+      ValueId &vid = hbiVIDlist[i];
+      ItemExpr * ie = vid.getItemExpr();
+      
+      const ItemExpr * col_node = NULL;
+      HbaseTimestamp * hbt = NULL;
+      HbaseVersion * hbv = NULL;
+      if (ie->getOperatorType() == ITM_HBASE_TIMESTAMP)
+        {
+          hbt = (HbaseTimestamp*)ie;
+      
+          col_node = hbt->col();
+        }
+      else if (ie->getOperatorType() == ITM_HBASE_VERSION)
+        {
+          hbv = (HbaseVersion*)ie;
+      
+          col_node = hbv->col();
+        }
+        
+      NAColumn * nac = NULL;
+      if (col_node->getOperatorType() == ITM_BASECOLUMN)
+        {
+          nac = ((BaseColumn*)col_node)->getNAColumn();
+        }
+      
+      if (nac && (nac->getColName() == colName))
+        {
+          if (ie->getOperatorType() == ITM_HBASE_TIMESTAMP)
+            hbt->setColIndex(colIndex);
+          else
+            hbv->setColIndex(colIndex);
+        }
+    }
+  
+  return 0;
+}
+
 short HbaseAccess::codeGen(Generator * generator)
 {
   Space * space          = generator->getSpace();
@@ -2103,6 +2157,8 @@ short HbaseAccess::codeGen(Generator * generator)
   const Int32 rowIdAsciiTuppIndex = 5;
   const Int32 keyTuppIndex = 6;
   const Int32 hbaseFilterValTuppIndex = 7;
+  const Int32 hbaseTimestampTuppIndex = 8;
+  const Int32 hbaseVersionTuppIndex = 9;
 
   ULng32 asciiRowLen; 
   ExpTupleDesc * asciiTupleDesc = 0;
@@ -2112,11 +2168,11 @@ short HbaseAccess::codeGen(Generator * generator)
   ULng32 hbaseFilterValRowLen = 0;
 
   ex_cri_desc * work_cri_desc = NULL;
-  work_cri_desc = new(space) ex_cri_desc(8, space);
+  work_cri_desc = new(space) ex_cri_desc(10, space);
 
   returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 
-   ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
     ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
   ValueIdList asciiVids;
   ValueIdList executorPredCastVids;
@@ -2143,20 +2199,7 @@ short HbaseAccess::codeGen(Generator * generator)
 		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
-  ValueIdList rvidl;
-  computeRetrievedCols();
-  for (ValueId valId = retrievedCols().init();
-       retrievedCols().next(valId);
-       retrievedCols().advance(valId))
-    {
-      ValueId dummyValId;
-      /*if ((valId.getItemExpr()->getOperatorType() != ITM_CONSTANT) &&
-	(getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(valId, dummyValId)))*/
-      rvidl.insert(valId);
-    }
-
-  //  const ValueIdList &retColumnList = getIndexDesc()->getIndexColumns();
-  const ValueIdList &retColumnList = retColRefSet_; //rvidl;
+  const ValueIdList &retColumnList = retColRefSet_; 
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -2171,6 +2214,37 @@ short HbaseAccess::codeGen(Generator * generator)
 	}
      }
 
+  ValueIdList hbTsVIDlist;
+  ValueIdList hbVersVIDlist;
+  for (CollIndex hi = 0; hi < retColumnList.entries(); hi++)
+    {
+      ValueId vid = retColumnList[hi];
+      
+      if ((vid.getItemExpr()->getOperatorType() != ITM_HBASE_TIMESTAMP) &&
+          (vid.getItemExpr()->getOperatorType() != ITM_HBASE_VERSION))
+        continue;
+      
+      if (vid.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP)
+        hbTsVIDlist.insert(vid);
+      else
+        hbVersVIDlist.insert(vid);
+
+      ValueId tsValsVID = 
+        (vid.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP 
+         ? ((HbaseTimestamp*)vid.getItemExpr())->tsVals()->getValueId()
+         : ((HbaseVersion*)vid.getItemExpr())->tsVals()->getValueId());
+
+      Attributes * attr  = generator->addMapInfo(tsValsVID, 0)->getAttr();
+      attr->setAtp(work_atp);
+      if (vid.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP)
+        attr->setAtpIndex(hbaseTimestampTuppIndex);
+      else
+         attr->setAtpIndex(hbaseVersionTuppIndex);
+
+      attr->setTupleFormat(ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
+      attr->setOffset(0);
+      attr->setNullIndOffset(-1);
+    }
 
   // contains source values corresponding to the key columns that will be used
   // to create the encoded key.  
@@ -2224,6 +2298,15 @@ short HbaseAccess::codeGen(Generator * generator)
 	 if (colPos != -1)
 	   encodedKeyExprVidArr.insertAt(colPos, castValue->getValueId());
        }
+
+     // if any hbase info functions are specified(hbase_timestamp, hbase_version),
+     // then update them with index of the col.
+     // At runtime, ts and version values are populated in a ts/vers array that has
+     // one entry for each column. The index values updated here is used to access
+     // that info at runtime.
+     HbaseAccess_updateHbaseInfoNode(hbTsVIDlist, nac->getColName(), ii);
+     HbaseAccess_updateHbaseInfoNode(hbVersVIDlist, nac->getColName(), ii);
+
     } // for (ii = 0; ii < numCols; ii++)
 
   ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
@@ -2258,7 +2341,16 @@ short HbaseAccess::codeGen(Generator * generator)
                            (NAColumnArray*)colArray);
   
   work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
-  
+
+  // add hbase info nodes to convert list.
+  convertExprCastVids.insert(hbTsVIDlist);
+  convertExprCastVids.insert(hbVersVIDlist);
+  for (CollIndex i = 0; i < columnList.entries(); i++) 
+    {
+      ValueId colValId = columnList[i];
+      generator->addMapInfo(colValId, 0)->getAttr();
+    } // for
+
   ExpTupleDesc * tuple_desc = 0;
   ExpTupleDesc * hdfs_desc = 0;
   ULng32 executorPredColsRecLength; 
@@ -2296,11 +2388,25 @@ short HbaseAccess::codeGen(Generator * generator)
       ValueId colValId = columnList[i];
       ValueId castValId = convertExprCastVids[i];
 
-      Attributes * colAttr = (generator->addMapInfo(colValId, 0))->getAttr();
+      Attributes * colAttr = (generator->getMapInfo(colValId))->getAttr();
       Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
 
       colAttr->copyLocationAttrs(castAttr);
 
+    } // for
+
+  for (CollIndex i = 0; i < hbTsVIDlist.entries(); i++) 
+    {
+      ValueId vid = hbTsVIDlist[i];
+      
+      generator->getMapInfo(vid)->codeGenerated();
+    } // for
+
+  for (CollIndex i = 0; i < hbVersVIDlist.entries(); i++) 
+    {
+      ValueId vid = hbVersVIDlist[i];
+      
+      generator->getMapInfo(vid)->codeGenerated();
     } // for
 
   if (addDefaultValues) 
@@ -2391,6 +2497,8 @@ short HbaseAccess::codeGen(Generator * generator)
 	    }
 	  else if (col_node->getOperatorType() == ITM_REFERENCE)
 	    {
+              GenAssert(0, "HbaseAccess::codeGen. Should not reach here.");
+
 	      const NAString &cn =
 		((ColReference*)col_node)->getCorrNameObj().getQualifiedNameObj().getObjectName();
 
@@ -2522,6 +2630,14 @@ short HbaseAccess::codeGen(Generator * generator)
   // Change the atp and atpindex of the returned values to indicate that.
   expGen->assignAtpAndAtpIndex(columnList,
 			       0, returnedDesc->noTuples()-1);
+  
+  if (NOT hbTsVIDlist.isEmpty())
+    expGen->assignAtpAndAtpIndex(hbTsVIDlist,
+                                 0, returnedDesc->noTuples()-1);
+
+  if (NOT hbVersVIDlist.isEmpty())
+    expGen->assignAtpAndAtpIndex(hbVersVIDlist,
+                                 0, returnedDesc->noTuples()-1);
  
   Cardinality expectedRows = (Cardinality) getEstRowsUsed().getValue();
   ULng32 buffersize = 3 * getDefault(GEN_DPSO_BUFFER_SIZE);
@@ -2644,9 +2760,16 @@ short HbaseAccess::codeGen(Generator * generator)
     hbpa->setUseMinMdamProbeSize(TRUE);
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
-                                  hbpa) ;
+                                  hbpa, samplePercent()) ;
   generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
                                  getEstRowsAccessed().getValue(),hbpa);
+
+  ComTdbHbaseAccess::HbaseAccessOptions * hbo = NULL;
+  if (getHbaseAccessOptions())
+    {
+      hbo = new(space) ComTdbHbaseAccess::HbaseAccessOptions
+        (getHbaseAccessOptions()->getHbaseVersions());
+    }
 
   // create hbasescan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -2697,6 +2820,9 @@ short HbaseAccess::codeGen(Generator * generator)
 		      0, // keyColValTuppIndex
 		      hbaseFilterValTuppIndex,
 
+		      (hbTsVIDlist.entries() > 0 ? hbaseTimestampTuppIndex : 0),
+		      (hbVersVIDlist.entries() > 0 ? hbaseVersionTuppIndex : 0),
+
 		      tdbListOfRangeRows,
 		      tdbListOfUniqueRows,
 		      listOfFetchedColNames,
@@ -2719,7 +2845,9 @@ short HbaseAccess::codeGen(Generator * generator)
                       zkPort,
 		      hbpa,
 		      samplePercent(),
-		      snapAttrs
+		      snapAttrs,
+
+                      hbo
 		      );
 
   generator->initTdbFields(hbasescan_tdb);
@@ -2838,20 +2966,8 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
-  ValueIdList rvidl;
-  computeRetrievedCols();
-  for (ValueId valId = retrievedCols().init();
-       retrievedCols().next(valId);
-       retrievedCols().advance(valId))
-    {
-      ValueId dummyValId;
-      /*if ((valId.getItemExpr()->getOperatorType() != ITM_CONSTANT) &&
-	(getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(valId, dummyValId)))*/
-      rvidl.insert(valId);
-    }
-
   //  const ValueIdList &retColumnList = getIndexDesc()->getIndexColumns();
-  const ValueIdList &retColumnList = retColRefSet_; //rvidl;
+  const ValueIdList &retColumnList = retColRefSet_;
 
   // generate explain selection expression, if present
   if (! executorPred().isEmpty())
@@ -2950,6 +3066,9 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		      0, // keyTuppIndex,
 		      0, // keyColValTuppIndex
 		      0, // hbaseFilterValTuppIndex
+
+                      0, // hbaseTimestampTuppIndex
+                      0, // hbaseVersionTuppIndex
 
 		      NULL, // tdbListOfRangeRows,
 		      NULL, // tdbListOfUniqueRows,

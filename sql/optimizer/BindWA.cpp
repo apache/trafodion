@@ -798,7 +798,7 @@ NABoolean BindWA::checkMultiOutSPParams (ItemExpr *h)
   return FALSE;
 }
 
-void BindWA::setColumRefsInStoi(const char* fileName, Lng32 colPosition)
+void BindWA::setColumnRefsInStoi(const char* fileName, Lng32 colPosition)
 {
 
   if (getCurrentScope()->context()->inAnyConstraint()) return;

@@ -1,0 +1,2338 @@
+>>
+>>obey TESTMV652(SET_UP);
+>>---------------------------------------------------------------
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create mvgroup MVG1_652;
+
+--- SQL operation complete.
+>>create mvgroup MVG2_652;
+
+--- SQL operation complete.
+>>
+>>create table T_652_T1(a int, b int , c int,d int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_652_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_652_T2(a int, b int , c int,d int not null not droppable,
++>					primary key (d) )
++>	store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE T_652_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table temp_652 (a int, b int , c int,d int);
+
+--- SQL operation complete.
+>>ALTER TABLE temp_652 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV1_a
++>	refresh on request 
++>	initialize on create 
++>	as
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV1_A_131668885_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV1_a attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV1_a;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv T_652_MV2_a
++>	refresh on request 
++>	initialize on create 
++>	as
++>	select a,c,sum(b) sb
++>	from T_652_T2
++>	group by c,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV2_A_963958395_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV2_a attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_652 add T_652_MV2_a;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV1_mtx                 
++>	refresh on request 
++>	initialize on create
++>	MVAttributes COMMIT Refresh EACH 5 
++>	as
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV1_MTX_379119695_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV1_mtx attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV1_mtx;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV2_mtx                  
++>	refresh on request 
++>	initialize on create
++>	MVAttributes COMMIT Refresh EACH 5 
++>	as
++>	select a,c,sum(b) sb
++>	from T_652_T2
++>	group by c,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV2_MTX_569532216_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV2_mtx attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup  MVG2_652 add T_652_MV2_mtx;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV1_min
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV1_MIN_125944516_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV1_min attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV1_min;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>create mv T_652_MV2_min
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,d,min(b) min_b
++>	from T_652_T2
++>	group by d,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV2_MIN_275738816_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV2_min attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_652 add T_652_MV2_min;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV_mdelta
++>	refresh on request 
++>	initialize on create
++>	as
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV_MDELTA_181473326_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV_mdelta attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV_mdelta;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV1_pipe    
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV1_PIPE_178417626_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV1_pipe attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV1_pipe;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV2_pipe
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV2_PIPE_356574136_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV2_pipe attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV2_pipe;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv T_652_MV3_pipe
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,c,d, sum(b) sb
++>	from T_652_T2
++>	group by a,d,c;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV3_PIPE_335724436_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV3_pipe attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_652 add T_652_MV3_pipe;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV4_pipe
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV3_pipe
++>	group by a,sb;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV4_PIPE_477165836_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV4_pipe attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_652 add T_652_MV4_pipe;
+
+--- SQL operation complete.
+>>
+>>create table T_652_T3(a int, b int , c int,d int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_652_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV3_min
++>	refresh on request 
++>	initialize on create
++>	as
++>	select a,d,min(b) min_b
++>	from T_652_T3
++>	group by d,a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV3_MIN_854726446_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV3_min attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_652_A(a int , b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_652_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_652_MV15
++>	refresh on request 
++>	initialize on create 
++>	as
++>	select sum(a) sum_a, a ,count(a) cnt_a
++>	from T_652_A
++>	group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV15_286932946_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_652_MV15 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>prepare select_from_log_of_T3 from
++>	select "@EPOCH", 
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>		   					else         '???'
++>		   end,
++>		   a,b,c,d
++>	from table (iud_log_table T_652_T3)
++>	order by   syskey;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare select_from_log_of_T1 from
++>	select "@EPOCH", 
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>		   					else         '???'
++>		   end,
++>		   a,b,c,d
++>	from table (iud_log_table T_652_T1)
++>	order by   syskey;
+
+--- SQL command prepared.
+>>
+>>prepare select_from_log_of_T2 from
++>	select "@EPOCH", 
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>		   					else         '???'
++>		   end,
++>		  d
++>	from table (iud_log_table T_652_T2)
++>	order by  d, syskey;
+
+--- SQL command prepared.
+>>-------------------------------------------------------
+>>
+>>-- Run Tests
+>>
+>>	obey TESTMV652(SINGLE_ROW_INSERT);
+>>-------------------------------------------------------
+>>insert into T_652_T1 values
++>	(1,null,null,4),(null,3,4,null),(1,5,null,3),(null,8,4,22),(null,12,22,null), (null,3,8,2),
++>	(null,2,4,5),(13,23,13,null);
+
+--- 8 row(s) inserted.
+>>
+>>insert into T_652_T2 values
++>	(1,null,null,4),(null,3,4,5),(1,5,null,6),(null,8,4,22),(null,12,22,7), (null,3,8,8),
++>	(null,2,4,9),(13,23,13,10);
+
+--- 8 row(s) inserted.
+>>
+>>refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed in 3 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed in multiple transactions...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed from 2 deltas in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV652(SINGLE_ROW_UPDATE);
+>>-------------------------------------------------------
+>>
+>>update T_652_T1 set d=null  where d = 22 ;
+
+--- 1 row(s) updated.
+>>update T_652_T1 set a=null  where a=1 ;
+
+--- 2 row(s) updated.
+>>
+>>execute select_from_log_of_T1;
+
+@EPOCH       (EXPR)       A            B            C            D
+-----------  -----------  -----------  -----------  -----------  -----------
+
+        106  ???                    ?            8            4           22
+        106  ???                    ?            8            4            ?
+        106  ???                    1            ?            ?            4
+        106  ???                    ?            ?            ?            4
+        106  ???                    1            5            ?            3
+        106  ???                    ?            5            ?            3
+
+--- 6 row(s) selected.
+>>
+>>refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed in 2 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed in multiple transactions...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV652(SINGLE_ROW_DELETE);
+>>-------------------------------------------------------
+>>delete from T_652_T1 where a is null;
+
+--- 7 row(s) deleted.
+>>
+>>execute select_from_log_of_T1;
+
+@EPOCH       (EXPR)       A            B            C            D
+-----------  -----------  -----------  -----------  -----------  -----------
+
+        107  ???                    ?            ?            ?            4
+        107  ???                    ?            3            4            ?
+        107  ???                    ?            5            ?            3
+        107  ???                    ?            8            4            ?
+        107  ???                    ?           12           22            ?
+        107  ???                    ?            3            8            2
+        107  ???                    ?            2            4            5
+
+--- 7 row(s) selected.
+>>
+>>refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed in 3 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed in multiple transactions...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV652(VSBB_INSERT);
+>>-------------------------------------------------------
+>>alter table T_652_T1  Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>insert into T_652_T1 values (1,null,null,1),(1,null,2,2),(1,null,3,2),(2,null,null,null),
++>(2,null,2,2),(2,null,2,3),(2,null,2,4);
+
+--- 7 row(s) inserted.
+>>
+>>execute select_from_log_of_T1;
+
+@EPOCH       (EXPR)       A            B            C            D
+-----------  -----------  -----------  -----------  -----------  -----------
+
+        108  INSERT                 1            ?            ?            1
+        108  INSERT                 1            ?            2            2
+       -108  BEGIN-RANGE            1            ?            3            2
+       -108  END-RANGE              2            ?            2            4
+
+--- 4 row(s) selected.
+>>
+>>
+>>refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed in 4 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed in multiple transactions...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV652(MVLOG1);
+>>-------------------------------------------------------
+>>delete 	from table (iud_log_table T_652_T2);
+
+--- 8 row(s) deleted.
+>>
+>>drop mv T_652_MV_mdelta;
+
+--- SQL operation complete.
+>>
+>>refresh mvgroup MVG2_652 recompute outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV3_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV3_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV2_A has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_A is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV2_MIN has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_MIN is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV2_MTX has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_MTX is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV3_PIPE has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV3_PIPE is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV4_PIPE has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV4_PIPE is being refreshed (by recompute) in a single transaction...
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+*** ERROR[4082] Object CATMVS.MVSCHM.T_652_MV_MDELTA does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+4,5c4
+< A            D            B            SUM_C               
+< -----------  -----------  -----------  --------------------
+---
+> *** ERROR[15017] Statement STAT2 was not found.
+7,11d5
+<           1            4            ?                     5
+<           1            6            ?                     5
+<          13           10           23                    13
+< 
+< --- 3 row(s) selected.
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>alter table T_652_T2  Attributes manual RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>delete from temp_652;
+
+--- 0 row(s) deleted.
+>>
+>>insert into temp_652 values (10,null,null,11),(10,null,null,12),(10,null,2,13),
++>				(12,null,2,14),(11,2,null,15),(null, 1,1,16),(11,111,11,17);
+
+--- 7 row(s) inserted.
+>>
+>>insert NOMVLOG into T_652_T2  select * from  temp_652;
+
+--- 7 row(s) inserted.
+>>
+>>
+>>MVLOG INTO RANGELOG OF T_652_T2 ( d ) BETWEEN (11) AND 	(17);
+
+--- SQL operation complete.
+>>
+>>
+>>execute select_from_log_of_T2;
+
+@EPOCH       (EXPR)       D          
+-----------  -----------  -----------
+
+       -110  BEGIN-RANGE           11
+       -110  END-RANGE             17
+
+--- 2 row(s) selected.
+>>
+>>refresh MVGroup MVG2_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV3_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV3_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV2_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV2_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV2_MTX has been refreshed in 3 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV2_MTX is being refreshed in multiple transactions...
+The materialized views CATMVS.MVSCHM.T_652_MV3_PIPE, CATMVS.MVSCHM.T_652_MV4_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV3_PIPE, CATMVS.MVSCHM.T_652_MV4_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS2);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T2
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV2_a
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T2
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV2_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T2
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T2
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV3_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV3_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV4_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>alter table T_652_T2  Attributes no RANGELOG ;
+
+--- SQL operation complete.
+>>create mv T_652_MV_mdelta
++>	refresh on request 
++>	initialize on create
++>	as
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_652_MV_MDELTA_889362529_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>> ALTER MV T_652_MV_mdelta attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_652 add T_652_MV_mdelta;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV652(SIDEINSERT);
+>>-------------------------------------------------------
+>>
+>>delete from T_652_T1;
+
+--- 8 row(s) deleted.
+>>
+>>refresh mvgroup MVG1_652 recompute outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_PIPE has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_PIPE is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV2_PIPE has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV2_PIPE is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed (by recompute) in a single transaction...
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>alter table T_652_T1  Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>Insert into temp_652
++>Values  (12,null,12,null),(null,null,23,11),(null,25,null,10),(1,null,null,6),
++>		(15,24,null,5),	(90,8,null,3),(null,7,23,4),(90,null,23,15),(90,6,23,null),
++>		(90,null,null,17),(90,6,null ,18),(80,16,14,null),(80,34,14,null),
++>		(79,33,null,27),(null,11,22,34);
+
+--- 15 row(s) inserted.
+>>
+>>set parserflags 1024;
+>> -- allow no audit
+>>ALTER table T_652_T1 attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+>>
+>>insert using sideinserts into T_652_T1(a,b,c,d) select * from temp_652 ;
+
+--- 22 row(s) inserted.
+>>
+>>set parserflags 1024;
+>> -- allow no audit
+>>ALTER table T_652_T1 attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+>>
+>>-- IUD LOG 
+>>execute select_from_log_of_T1;
+
+@EPOCH       (EXPR)       A            B            C            D
+-----------  -----------  -----------  -----------  -----------  -----------
+
+       -111  BEGIN-RANGE           10            ?            ?           11
+       -111  END-RANGE              ?           11           22           34
+
+--- 2 row(s) selected.
+>>
+>>
+>>refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T1.
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T2.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_MV1_PIPE...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T1...
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T2...
+The materialized view CATMVS.MVSCHM.T_652_MV1_A has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_A is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV1_MIN is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX has been refreshed in 7 transaction(s).
+The materialized view CATMVS.MVSCHM.T_652_MV1_MTX is being refreshed in multiple transactions...
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV_MDELTA is being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE are being refreshed in a single transaction...
+The materialized views CATMVS.MVSCHM.T_652_MV1_PIPE, CATMVS.MVSCHM.T_652_MV2_PIPE have been refreshed in a single transaction.
+>>
+>>obey TESTMV652(COMPARE_MVS);
+>>--------------------------------------------------------
+>>PREPARE stat1 FROM 
++>	select a,avg(b) sb
++>	from T_652_T1
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_a
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,c,sum(b) sb
++>	from T_652_T1
++>	group by c,a
++>	order by c,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from  T_652_MV1_mtx
++>	order by c,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T1
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV1_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>PREPARE stat1 FROM
++>	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
++>	from T_652_T1,T_652_T2
++>	where T_652_T1.a=T_652_T2.a
++>	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>-- momentarily disable preparser caching to avoid disrupting this test's
+>>-- expected output (note that table T_652_MV_mdelta no longer exists now)
+>>control query default query_text_cache 'off';
+
+--- SQL operation complete.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV_mdelta
++>	order by a,d,b;
+
+--- SQL command prepared.
+>>control query default query_text_cache 'on';
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,c,d, sum(b) sb
++>	from T_652_T1
++>	group by a,d,c
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>select * from T_652_MV1_pipe
++>	order by a,d,c;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select a,sb,avg(d) avg_d
++>	from T_652_MV1_pipe
++>	group by a,sb
++>	order by a,sb;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV2_pipe
++>	order by a,sb;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>--------------------------------------------------------
+>>	obey TESTMV652(MINMAX);
+>>--------------------------------------------------------
+>>
+>>
+>>-- single row insert
+>>insert into T_652_T3 values
++>	(1,null,null,4),(null,3,4,null),(1,5,null,3),(null,8,4,22),(null,12,22,null), (null,3,8,2),
++>	(null,2,4,5),(13,23,13,null);
+
+--- 8 row(s) inserted.
+>>
+>>refresh T_652_MV3_min outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T3.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T3...
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN is being refreshed in a single transaction...
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T3
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV3_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>delete from T_652_T3 where a=1 and d=3 ;
+
+--- 1 row(s) deleted.
+>>
+>>insert into T_652_T3 values (1,null,null,3) ;
+
+--- 1 row(s) inserted.
+>>
+>>
+>>refresh T_652_MV3_min outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T3.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T3...
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN is being refreshed in a single transaction...
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T3
++>	group by d,a
++>	order by d,a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV3_min
++>	order by d,a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--vsbb insert																		
+>>alter table T_652_T3 Attributes automatic RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>delete from T_652_T3 where a=13 and d is null ;
+
+--- 1 row(s) deleted.
+>>
+>>insert into T_652_T3 values (1,null,null,1),(1,null,2,2),(1,null,3,2),(2,null,null,null),
++>(2,null,2,2),(2,null,2,3),(2,null,2,4);
+
+--- 7 row(s) inserted.
+>>
+>>execute select_from_log_of_T3;
+
+@EPOCH       (EXPR)       A            B            C            D
+-----------  -----------  -----------  -----------  -----------  -----------
+
+        103  ???                   13           23           13            ?
+        103  INSERT                 1            ?            ?            1
+        103  INSERT                 1            ?            2            2
+       -103  BEGIN-RANGE            1            ?            3            2
+       -103  END-RANGE              2            ?            2            4
+
+--- 5 row(s) selected.
+>>
+>>
+>>refresh T_652_MV3_min outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_T3.
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_T3...
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_652_MV3_MIN is being refreshed in a single transaction...
+>>
+>>PREPARE stat1 FROM 
++>	select a,d,min(b) min_b
++>	from T_652_T3
++>	group by a,d
++>	order by a,d;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV3_min
++>	order by a,d;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>--------------------------------------------------------
+>>	obey TESTMV652(SUM_A_GROUP_BY_A);
+>>--------------------------------------------------------
+>>
+>>insert into T_652_A values (1,2),(2,3),(3,4),(3,4),(4,5),(4,6),(4,7);
+
+--- 7 row(s) inserted.
+>>
+>>refresh T_652_MV15 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_652_MV15 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_652_MV15 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_A...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_A.
+
+
+>>
+>>PREPARE stat1 FROM
++>	select sum(a) sum_a, a ,count(a) cnt_a
++>	from T_652_A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV15
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>insert into T_652_A values (null ,null), (null,2) ,(null,3),(3,3),(null,4);
+
+--- 5 row(s) inserted.
+>>
+>>refresh T_652_MV15 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_652_MV15 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_652_MV15 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_652_A...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_652_A.
+
+
+>>
+>>PREPARE stat1 FROM
++>	select sum(a) sum_a, a ,count(a) cnt_a
++>	from T_652_A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_652_MV15
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>-- Clean and Exit
+>>
+>>obey TESTMV652(CLEAN_UP);
+>>-------------------------------------------------------
+>>Alter mvgroup MVG1_652 add T_652_MV3_min,T_652_MV15;
+
+--- SQL operation complete.
+>>
+>>refresh mvgroup MVG1_652 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>refresh mvgroup MVG2_652 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>drop mv T_652_MV15;
+
+--- SQL operation complete.
+>>drop table T_652_A;
+
+--- SQL operation complete.
+>>
+>>drop mv T_652_MV4_pipe;
+
+--- SQL operation complete.
+>>drop mv T_652_MV3_pipe;
+
+--- SQL operation complete.
+>>drop mv T_652_MV2_pipe;
+
+--- SQL operation complete.
+>>drop mv T_652_MV1_pipe;
+
+--- SQL operation complete.
+>>drop mv T_652_MV_mdelta;
+
+--- SQL operation complete.
+>>
+>>drop mv T_652_MV2_min;
+
+--- SQL operation complete.
+>>drop mv T_652_MV1_min;
+
+--- SQL operation complete.
+>>drop mv T_652_MV2_mtx;
+
+--- SQL operation complete.
+>>drop mv T_652_MV1_mtx;
+
+--- SQL operation complete.
+>>drop mv T_652_MV2_a;
+
+--- SQL operation complete.
+>>drop mv T_652_MV1_a;
+
+--- SQL operation complete.
+>>
+>>drop mv T_652_MV3_min;
+
+--- SQL operation complete.
+>>
+>>drop table T_652_T2;
+
+--- SQL operation complete.
+>>drop table T_652_T1;
+
+--- SQL operation complete.
+>>drop table T_652_T3;
+
+--- SQL operation complete.
+>>drop table temp_652;
+
+--- SQL operation complete.
+>>
+>>
+>>drop mvgroup MVG1_652;
+
+--- SQL operation complete.
+>>drop mvgroup MVG2_652;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>log;

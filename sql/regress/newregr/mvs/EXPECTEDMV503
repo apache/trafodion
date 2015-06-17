@@ -1,0 +1,860 @@
+>>
+>>
+>>------------------------------------------------------------------------------
+>>-- ADD COLUMN
+>>-- Run Tests
+>>	obey TESTMV503(ADD1);
+>>
+>>create table T_503_A ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create mv MV_503_A refresh on request 
++>initialized on refresh
++>as
++>select * from T_503_A group by a;
+
+*** WARNING[12112] A secondary index C.S.MV_503_A_915895585_4521 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV MV_503_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A ADD COLUMN b int;
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A ADD COLUMN c int default 3;
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A ADD COLUMN d int default 5 NOT NULL NOT DROPPABLE;
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_214116585_4521 NOT NULL NOT DROPPABLE ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_825116585_4521 NOT NULL NOT DROPPABLE ;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A ADD COLUMN e int default 7 NOT NULL NOT DROPPABLE UNIQUE;
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_214116585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN E                       INT DEFAULT 7
+    CONSTRAINT C.S.T_503_A_495216585_4521 NOT NULL NOT DROPPABLE ;
+-- The following index is a system created index --
+CREATE UNIQUE INDEX T_503_A_426216585_4521 ON C.S.T_503_A
+  (
+    E ASC
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.G1DX6F00
+  NAME NSK_DATA_ZSDNCPW6_G1DX6F00
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD CONSTRAINT C.S.T_503_A_426216585_4521 UNIQUE (E) DROPPABLE ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_825116585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN E                       INT DEFAULT 7
+    CONSTRAINT C.S.T_503_A_796216585_4521 NOT NULL NOT DROPPABLE ;
+
+--- SQL operation complete.
+>>
+>>
+>>create table T_503_B ( a int not null not droppable unique);
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_503_C ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_C attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_C ADD COLUMN b int REFERENCES T_503_B (a);
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A ADD COLUMN f int REFERENCES T_503_B (a);
+
+--- SQL operation complete.
+>>
+>>showddl T_503_A;
+
+CREATE TABLE C.S.T_503_A
+  (
+    A                                INT DEFAULT NULL
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.BJ8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  ATTRIBUTES ALL MVS ALLOWED
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_214116585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN E                       INT DEFAULT 7
+    CONSTRAINT C.S.T_503_A_495216585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN F                       INT DEFAULT NULL ;
+-- The following index is a system created index --
+CREATE UNIQUE INDEX T_503_A_426216585_4521 ON C.S.T_503_A
+  (
+    E ASC
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.G1DX6F00
+  NAME NSK_DATA_ZSDNCPW6_G1DX6F00
+  ;
+-- The following index is a system created index --
+CREATE INDEX T_503_A_314316585_4521 ON C.S.T_503_A
+  (
+    F ASC
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.CZFX6F00
+  NAME NSK_DATA_ZSDNCPW6_CZFX6F00
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD CONSTRAINT C.S.T_503_A_426216585_4521 UNIQUE (E) DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD CONSTRAINT C.S.T_503_A_314316585_4521 FOREIGN KEY (F) REFERENCES
+      C.S.T_503_B(A) DROPPABLE ;
+
+--  Table has an IUD log.
+
+--- SQL operation complete.
+>>showddl table (iud_log_table T_503_A);
+
+CREATE TABLE (IUD_LOG_TABLE C.S.T_503_A)
+  (
+    "@EPOCH"                         INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@OPERATION_TYPE"                INT UNSIGNED DEFAULT NULL
+  , "@IGNORE"                        INT UNSIGNED DEFAULT 0
+  , "@RANGE_SIZE"                    INT UNSIGNED DEFAULT NULL
+  , "@UPDATE_BITMAP"                 CHAR(8) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , "@TS"                            LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  , CONSTRAINT C.S.T_503_A_273895585_4521 PRIMARY KEY ("@EPOCH" ASC, "@SYSKEY"
+      ASC, "@TS" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDNCPW6.PV8W6F00
+  NAME NSK_DATA_ZSDNCPW6_BJ8W6F00
+  STORE BY ("@EPOCH" ASC, "@SYSKEY" ASC, "@TS" ASC)
+  ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN B                       INT DEFAULT NULL ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN C                       INT DEFAULT 3 ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN D                       INT DEFAULT 5
+    CONSTRAINT C.S.T_503_A_825116585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN E                       INT DEFAULT 7
+    CONSTRAINT C.S.T_503_A_796216585_4521 NOT NULL NOT DROPPABLE ;
+ALTER TABLE C.S.T_503_A
+  ADD COLUMN F                       INT DEFAULT NULL ;
+
+--- SQL operation complete.
+>>
+>>
+>>drop mv MV_503_A;
+
+--- SQL operation complete.
+>>drop table T_503_A;
+
+--- SQL operation complete.
+>>drop table T_503_C;
+
+--- SQL operation complete.
+>>drop table T_503_B;
+
+--- SQL operation complete.
+>>
+>>	obey TESTMV503(ADD2);
+>>
+>>------------------------------------------------------------------------------
+>>-- add column exceeding bitmap when the log is empty
+>>-- should drop the log and create a new one
+>>
+>>set envvar DEBUG_LOG_TABLE;
+
+--- SQL operation complete.
+>>
+>>
+>>create table T_503_A2 (	a1 int,  a2 int,  a3 int,  a4 int,  a5 int,  a6 int,  a7 int,  a8 int,  a9 int, a10 int,
++>						a11 int, a12 int, a13 int, a14 int, a15 int, a16 int, a17 int, a18 int, a19 int, a20 int,
++>						a21 int, a22 int, a23 int) location $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv MV_503_A2 refresh on request 
++>initialized on refresh
++>as
++>select * from T_503_A2;
+
+*** WARNING[8427] CREATE TABLE C.S.T_503_A2 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(8) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A1 INT ,A2 INT ,A3 INT ,A4 INT ,A5 INT ,A6 INT ,A7 INT ,A8 INT ,A9 INT ,A10 INT ,A11 INT ,A12 INT ,A13 INT ,A14 INT ,A15 INT ,A16 INT ,A17 INT ,A18 INT ,A19 INT ,A20 INT ,A21 INT ,A22 INT ,A23 INT, PRIMARY KEY ( "@EPOCH", "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDNCPW6_P1GX6F00 
+ NO PARTITION 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+*** WARNING[8427] CREATE TABLE C.S.T_503_A2  ("@EPOCH" INT NOT NULL NOT DROPPABLE, "@RANGE_ID" LARGEINT NOT NULL NOT DROPPABLE, "@RANGE_TYPE" INT UNSIGNED, "@BR_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE, "@ER_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE,  PRIMARY KEY ( "@EPOCH", "@ER_SYSKEY", "@RANGE_ID" )  )  STORE BY PRIMARY KEY   LOCATION \NSK.$DATA1  
+ ATTRIBUTE ALIGNED FORMAT AUDIT ;
+
+--- SQL operation completed with warnings.
+>>ALTER MV MV_503_A2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER TABLE T_503_A2 ADD COLUMN a24 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a25 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a26 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a27 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a28 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a29 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a30 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a31 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a32 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a33 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a34 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a35 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a36 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a37 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a38 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a39 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a40 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a41 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a42 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a43 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a44 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a45 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a46 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a47 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a48 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a49 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a50 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a51 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a52 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a53 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a54 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a55 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a56 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a57 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a58 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a59 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a60 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a61 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a62 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a63 int;
+
+--- SQL operation complete.
+>>
+>>-- this should cause drop and recreate log
+>>
+>>ALTER TABLE T_503_A2 ADD COLUMN a64 int;
+
+*** WARNING[8427] DROP TABLE C.S.T_503_A2
+
+*** WARNING[8427] CREATE TABLE C.S.T_503_A2 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(16) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A1 INT ,A2 INT ,A3 INT ,A4 INT ,A5 INT ,A6 INT ,A7 INT ,A8 INT ,A9 INT ,A10 INT ,A11 INT ,A12 INT ,A13 INT ,A14 INT ,A15 INT ,A16 INT ,A17 INT ,A18 INT ,A19 INT ,A20 INT ,A21 INT ,A22 INT ,A23 INT, PRIMARY KEY ( "@EPOCH", "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDNCPW6_P1GX6F00 
+ NO PARTITION 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>ALTER TABLE T_503_A2 ADD COLUMN a65 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a66 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a67 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a68 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a69 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a70 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A2 ADD COLUMN a71 int;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>drop mv MV_503_A2;
+
+*** WARNING[8427] DROP TABLE C.S.T_503_A2
+
+*** WARNING[8427] DROP TABLE C.S.T_503_A2
+
+--- SQL operation completed with warnings.
+>>drop table T_503_A2;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>	obey TESTMV503(ADD3);
+>>------------------------------------------------------------------------------
+>>-- add column exceeding bitmap when the log is not empty
+>>-- should result in an error
+>>
+>>set envvar DEBUG_LOG_TABLE;
+
+--- SQL operation complete.
+>>
+>>
+>>create table T_503_A3 (	a1 int,  a2 int,  a3 int,  a4 int,  a5 int,  a6 int,  a7 int,  a8 int,  a9 int, a10 int,
++>						a11 int, a12 int, a13 int, a14 int, a15 int, a16 int, a17 int, a18 int, a19 int, a20 int,
++>						a21 int, a22 int, a23 int) location $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv MV_503_A3 refresh on request 
++>initialized on create
++>as
++>select * from T_503_A3;
+
+*** WARNING[8427] CREATE TABLE C.S.T_503_A3 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(8) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A1 INT ,A2 INT ,A3 INT ,A4 INT ,A5 INT ,A6 INT ,A7 INT ,A8 INT ,A9 INT ,A10 INT ,A11 INT ,A12 INT ,A13 INT ,A14 INT ,A15 INT ,A16 INT ,A17 INT ,A18 INT ,A19 INT ,A20 INT ,A21 INT ,A22 INT ,A23 INT, PRIMARY KEY ( "@EPOCH", "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDNCPW6_SXZX6F00 
+ NO PARTITION 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+*** WARNING[8427] CREATE TABLE C.S.T_503_A3  ("@EPOCH" INT NOT NULL NOT DROPPABLE, "@RANGE_ID" LARGEINT NOT NULL NOT DROPPABLE, "@RANGE_TYPE" INT UNSIGNED, "@BR_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE, "@ER_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE,  PRIMARY KEY ( "@EPOCH", "@ER_SYSKEY", "@RANGE_ID" )  )  STORE BY PRIMARY KEY   LOCATION \NSK.$DATA1  
+ ATTRIBUTE ALIGNED FORMAT AUDIT ;
+
+--- SQL operation completed with warnings.
+>>ALTER MV MV_503_A3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- make the iud log not empty
+>>insert into T_503_A3 values (1,2,3,4,5,6,7,8,9, 10,11,12,13,14,15,16,17,18,19,20,21,22,23);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>ALTER TABLE T_503_A3 ADD COLUMN a24 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a25 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a26 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a27 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a28 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a29 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a30 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a31 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a32 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a33 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a34 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a35 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a36 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a37 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a38 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a39 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a40 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a41 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a42 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a43 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a44 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a45 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a46 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a47 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a48 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a49 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a50 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a51 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a52 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a53 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a54 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a55 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a56 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a57 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a58 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a59 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a60 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a61 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a62 int;
+
+--- SQL operation complete.
+>>ALTER TABLE T_503_A3 ADD COLUMN a63 int;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- FAIL
+>>ALTER TABLE T_503_A3 ADD COLUMN a64 int;
+
+*** ERROR[12087] The operation failed because the MVLog is not empty.
+
+--- SQL operation failed with errors.
+>>-- FAIL
+>>ALTER TABLE T_503_A3 ADD COLUMN a65 int;
+
+*** ERROR[12087] The operation failed because the MVLog is not empty.
+
+--- SQL operation failed with errors.
+>>-- FAIL
+>>ALTER TABLE T_503_A3 ADD COLUMN a66 int;
+
+*** ERROR[12087] The operation failed because the MVLog is not empty.
+
+--- SQL operation failed with errors.
+>>-- FAIL
+>>ALTER TABLE T_503_A3 ADD COLUMN a67 int;
+
+*** ERROR[12087] The operation failed because the MVLog is not empty.
+
+--- SQL operation failed with errors.
+>>-- FAIL
+>>ALTER TABLE T_503_A3 ADD COLUMN a68 int;
+
+*** ERROR[12087] The operation failed because the MVLog is not empty.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>drop mv MV_503_A3;
+
+*** WARNING[8427] DROP TABLE C.S.T_503_A3
+
+*** WARNING[8427] DROP TABLE C.S.T_503_A3
+
+--- SQL operation completed with warnings.
+>>drop table T_503_A3;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>-- Clean and exit
+>>log;

@@ -1,0 +1,1474 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+1,1454c1
+< >>obey OptTest03;
+< >>-- opttest03
+< >>--
+< >>-- parallel tests on tables with alternate indexes available
+< >>--
+< >>-- Phil Koza, Mike Skarpelos
+< >>
+< >>?section dropIDX
+< >>------------------
+< >>-- Drop Indexes --
+< >>------------------
+< >>drop index IDX01B00;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX01B00 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX02B00;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX02B00 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX03B00;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX03B00 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX04B00;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX04B00 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX05B00;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX05B00 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX01B06;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX01B06 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>drop index IDX01B07;
+< 
+< *** ERROR[1006] Index CAT.SCH.IDX01B07 does not exist.
+< 
+< --- SQL operation completed with errors.
+< >>
+< >>
+< >>?section createIDX
+< >>--------------------
+< >>-- Create Indexes --
+< >>--------------------
+< >>create index IDX01B00 on PTAB00 (int64_100,sInt32_100,
+< +>                                 uInt16_10,sInt16_10)
+< +>location $data3
+< +>partition (
+< +>  add first key (50,0) location $data1)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX02B00 on PTAB00 (sInt32_100,int64_100,sInt32_uniq)
+< +>location $data1
+< +>partition (
+< +>  add first key (50) location $data4)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX03B00 on PTAB00 (sInt32_uniq,sInt32_100)
+< +>location $data1
+< +>partition (
+< +>  add first key (150) location $data4,
+< +>  add first key (300) location $data3,
+< +>  add first key (450) location $data2)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX04B00 on PTAB00 (uInt32_uniq,sInt32_100)
+< +>location $data1
+< +>partition (
+< +>  add first key (200) location $data2,
+< +>  add first key (400) location $data)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX05B00 on PTAB00 (uInt32_uniq,sInt32_100)
+< +>location $data3
+< +>partition (
+< +>  add first key (150) location $data1,
+< +>  add first key (400) location $data4)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX01B06 on PTAB06 (sInt32_100, uInt16_10)
+< +>location $data2
+< +>partition (
+< +>  add first key (15) location $data4,
+< +>  add first key (30) location $data3,
+< +>  add first key (45) location $data1)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>
+< >>create index IDX01B07 on PTAB07 (sInt32_uniq, uInt16_10)
+< +>location $data1
+< +>partition (
+< +>  add first key (150) location $data2,
+< +>  add first key (300) location $data3,
+< +>  add first key (450) location $data4)
+< +>attribute buffered;
+< 
+< --- SQL operation complete.
+< >>--<pb>
+< >>
+< >>
+< >>?section cpara
+< >>control query default PARALLEL_EXECUTION 'ON';
+< 
+< --- SQL operation complete.
+< >>control query default DEF_NUM_LOCAL_SMP_CPUS '4';
+< 
+< --- SQL operation complete.
+< >>control query default DEF_NUM_NODES_IN_LOCAL_CLUSTER '1';
+< 
+< --- SQL operation complete.
+< >>control query default NESTED_JOIN_CONTROL 'OFF';
+< 
+< --- SQL operation complete.
+< >>
+< >>
+< >>-----------------------------------------------------------------
+< >>-----------------------------------------------------------------
+< >>-- INDEX ONLY TESTS
+< >>-----------------------------------------------------------------
+< >>-----------------------------------------------------------------
+< >>
+< >>?section qlchj1
+< >>-----------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(exchange(scan('T00'))),
+< +>             exchange(exchange(scan('T01')))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-------------------------------------------------------------
+< >>--  None of the indexes nor the base table are partitioned --
+< >>-- correctly for the query below.  Key columns of IDX01B00 --
+< >>-- satisfy left child's scan.                              --
+< >>-------------------------------------------------------------
+< >>prepare P from
+< +>select T00.int64_100,T01.int64_100,T01.sInt32_100,
+< +>       T00.uInt16_10,T00.sInt32_100
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.int64_100 = T01.int64_100
+< +>        and T01.sInt32_100 = 0;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< INT64_100             INT64_100             SINT32_100   UINT16_10  SINT32_100
+< --------------------  --------------------  -----------  ---------  -----------
+< 
+<                   52                    52            0          0           79
+<                   52                    52            0          2           51
+<                   52                    52            0          2           86
+<                   52                    52            0          2           97
+<                   52                    52            0          6            0
+<                   52                    52            0          9           57
+<                   56                    56            0          0           41
+<                   56                    56            0          1           13
+<                   56                    56            0          1           14
+<                   56                    56            0          1           88
+<                   56                    56            0          4           38
+<                   56                    56            0          9            0
+<                   61                    61            0          3           98
+<                   61                    61            0          4           60
+<                   61                    61            0          5            0
+<                   61                    61            0          8           20
+<                   61                    61            0          8           24
+<                   61                    61            0          9           96
+<                   62                    62            0          1            0
+<                   62                    62            0          2           40
+<                   62                    62            0          2           53
+<                   62                    62            0          2           78
+<                   62                    62            0          4           40
+<                   62                    62            0          6           65
+<                   66                    66            0          2           34
+<                   66                    66            0          2           54
+<                   66                    66            0          6           22
+<                   66                    66            0          7            0
+<                   66                    66            0          7           88
+<                   66                    66            0          8           88
+<                   80                    80            0          1           43
+<                   80                    80            0          6           26
+<                   80                    80            0          7            0
+<                   80                    80            0          7           30
+<                   80                    80            0          7           56
+<                   80                    80            0          8           21
+< 
+< --- 36 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlchj2
+< >>-----------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T03'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>----------------------------------------------------
+< >>--  IDX03B00 partitioning matches that of PTAB03. --
+< >>-- Its key columns entirely satisfy the left scan --
+< >>-- for the query below.                           --
+< >>----------------------------------------------------
+< >>prepare P from
+< +>select T00.sInt32_uniq, T03.sInt32_uniq, T03.int64_100
+< +>  from  PTAB00 T00, PTAB03 T03
+< +>  where     T00.sInt32_uniq = T03.sInt32_uniq
+< +>        and T03.int64_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  INT64_100
+< -----------  -----------  --------------------
+< 
+<           9            9                     4
+<          12           12                     1
+<          40           40                     0
+<          73           73                     0
+<          76           76                     4
+<         105          105                     0
+<         149          149                     4
+<         168          168                     2
+<         177          177                     3
+<         189          189                     4
+<         199          199                     2
+<         203          203                     2
+<         221          221                     0
+<         243          243                     2
+<         296          296                     3
+<         308          308                     3
+<         313          313                     1
+<         336          336                     4
+<         373          373                     1
+<         376          376                     0
+<         387          387                     0
+<         393          393                     2
+<         416          416                     2
+<         421          421                     4
+<         505          505                     3
+<         550          550                     3
+<         569          569                     1
+<         578          578                     1
+<         583          583                     3
+<         590          590                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlchj3
+< >>-----------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T01'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>--------------------------------------------------------------
+< >>--  IDX02B00 key columns satisfy the left scan of the query --
+< >>-- below but it is not partitioned the same as PTAB01.      --
+< >>-- PTAB00 is partitioned the same as PTAB01, however, so    --
+< >>-- the query effectively sets up a competition between      --
+< >>-- an index only scan and correct partitioning.             --
+< >>--------------------------------------------------------------
+< >>prepare P from
+< +>select T00.sInt32_uniq,T01.uInt32_uniq,T00.sInt32_100,T01.sInt32_uniq
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.sInt32_uniq = T01.uInt32_uniq
+< +>        and T01.sInt32_uniq < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  UINT32_UNIQ  SINT32_100   SINT32_UNIQ
+< -----------  -----------  -----------  -----------
+< 
+<          30           30           61            4
+<          44           44           30            2
+<         391          391           96            3
+<         453          453           72            1
+<         514          514            0            0
+< 
+< --- 5 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlchj4
+< >>-----------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T01'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-----------------------------------------------------
+< >>--  Both IDX04B00 and IDX05B00 have key columns    --
+< >>-- which satisfy the left scan in the query below, --
+< >>-- but only IDX04B00 is partitioned correctly.     --
+< >>-----------------------------------------------------
+< >>prepare P from
+< +>select T00.uInt32_uniq, T01.uInt32_uniq, T01.int64_100
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.uInt32_uniq = T01.uInt32_uniq
+< +>        and T01.int64_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  UINT32_UNIQ  INT64_100
+< -----------  -----------  --------------------
+< 
+<           9            9                     4
+<          12           12                     1
+<          40           40                     0
+<          73           73                     0
+<          76           76                     4
+<         105          105                     0
+<         149          149                     4
+<         168          168                     2
+<         177          177                     3
+<         189          189                     4
+<         199          199                     2
+<         203          203                     2
+<         221          221                     0
+<         243          243                     2
+<         296          296                     3
+<         308          308                     3
+<         313          313                     1
+<         336          336                     4
+<         373          373                     1
+<         376          376                     0
+<         387          387                     0
+<         393          393                     2
+<         416          416                     2
+<         421          421                     4
+<         505          505                     3
+<         550          550                     3
+<         569          569                     1
+<         578          578                     1
+<         583          583                     3
+<         590          590                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrchj1
+< >>------------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(exchange(scan('T01'))),
+< +>             exchange(exchange(scan('T00')))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-------------------------------------------------------------
+< >>--  None of the indexes nor the base table are partitioned --
+< >>-- correctly for the query below.  Key columns of IDX01B00 --
+< >>-- satisfy right child's scan.                             --
+< >>-------------------------------------------------------------
+< >>prepare P from
+< +>select T01.int64_100,T00.int64_100,T00.sInt32_100,
+< +>       T00.uInt16_10,T00.sInt32_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.int64_100 = T00.int64_100
+< +>        and T00.sInt32_100 = 0;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< INT64_100             INT64_100             SINT32_100   UINT16_10  SINT32_100
+< --------------------  --------------------  -----------  ---------  -----------
+< 
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+< 
+< --- 36 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrchj2
+< >>------------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T03')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-----------------------------------------------------
+< >>--  IDX03B00 partitioning matches that of PTAB03.  --
+< >>-- Its key columns entirely satisfy the right scan --
+< >>-- for the query below.                            --
+< >>-----------------------------------------------------
+< >>prepare P from
+< +>select T03.sInt32_uniq, T00.sInt32_uniq, T00.sInt32_100
+< +>  from  PTAB03 T03, PTAB00 T00
+< +>  where     T03.sInt32_uniq = T00.sInt32_uniq
+< +>        and T00.sInt32_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  SINT32_100
+< -----------  -----------  -----------
+< 
+<          32           32            3
+<          77           77            3
+<          96           96            1
+<         105          105            1
+<         110          110            3
+<         117          117            1
+<         136          136            4
+<         139          139            1
+<         167          167            0
+<         200          200            0
+<         203          203            4
+<         232          232            0
+<         276          276            4
+<         295          295            2
+<         304          304            3
+<         316          316            4
+<         326          326            2
+<         330          330            2
+<         348          348            0
+<         370          370            2
+<         423          423            3
+<         435          435            3
+<         440          440            1
+<         463          463            4
+<         500          500            1
+<         503          503            0
+<         514          514            0
+<         520          520            2
+<         543          543            2
+<         548          548            4
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrchj3
+< >>------------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T01')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>---------------------------------------------------------------
+< >>--  IDX02B00 key columns satisfy the right scan of the query --
+< >>-- below but it is not partitioned the same as PTAB01.       --
+< >>-- PTAB00 is partitioned the same as PTAB01, however, so     --
+< >>-- the query effectively sets up a competition between       --
+< >>-- an index only scan and correct partitioning.              --
+< >>---------------------------------------------------------------
+< >>prepare P from
+< +>select T01.uInt32_uniq,T00.sInt32_uniq,T00.int64_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.uInt32_uniq = T00.sInt32_uniq
+< +>        and T00.int64_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  SINT32_UNIQ  INT64_100
+< -----------  -----------  --------------------
+< 
+<           9            9                     4
+<          12           12                     1
+<          40           40                     0
+<          73           73                     0
+<          76           76                     4
+<         105          105                     0
+<         149          149                     4
+<         168          168                     2
+<         177          177                     3
+<         189          189                     4
+<         199          199                     2
+<         203          203                     2
+<         221          221                     0
+<         243          243                     2
+<         296          296                     3
+<         308          308                     3
+<         313          313                     1
+<         336          336                     4
+<         373          373                     1
+<         376          376                     0
+<         387          387                     0
+<         393          393                     2
+<         416          416                     2
+<         421          421                     4
+<         505          505                     3
+<         550          550                     3
+<         569          569                     1
+<         578          578                     1
+<         583          583                     3
+<         590          590                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrchj4
+< >>------------------------------------------------------------------
+< >>--  Force a hash join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(hybrid_hash_join(
+< +>             exchange(scan('T01')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>------------------------------------------------------
+< >>--  Both IDX04B00 and IDX05B00 have key columns     --
+< >>-- which satisfy the right scan in the query below, --
+< >>-- but only IDX04B00 is partitioned correctly.      --
+< >>------------------------------------------------------
+< >>prepare P from
+< +>select T01.uInt32_uniq, T00.uInt32_uniq, T00.sInt32_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.uInt32_uniq = T00.uInt32_uniq
+< +>        and T00.sInt32_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  UINT32_UNIQ  SINT32_100
+< -----------  -----------  -----------
+< 
+<          53           53            0
+<          85           85            3
+<         177          177            4
+<         183          183            1
+<         207          207            2
+<         229          229            2
+<         232          232            3
+<         240          240            2
+<         246          246            3
+<         247          247            0
+<         249          249            1
+<         252          252            1
+<         257          257            4
+<         264          264            0
+<         317          317            4
+<         323          323            0
+<         334          334            1
+<         335          335            2
+<         344          344            2
+<         382          382            2
+<         422          422            1
+<         428          428            1
+<         457          457            0
+<         473          473            4
+<         494          494            3
+<         514          514            3
+<         515          515            4
+<         522          522            4
+<         523          523            0
+<         528          528            3
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlcmj1
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in left child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             sort(exchange(exchange(scan('T00')))),
+< +>             sort(exchange(exchange(scan('T01'))))
+< +>                     )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-------------------------------------------------------------
+< >>--  None of the indexes nor the base table are partitioned --
+< >>-- correctly for the query below.  Key columns of IDX01B00 --
+< >>-- satisfy left child's scan.                              --
+< >>-------------------------------------------------------------
+< >>prepare P from
+< +>select T00.int64_100,T01.int64_100,T01.sInt32_100,
+< +>       T00.uInt16_10,T00.sInt32_100
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.int64_100 = T01.int64_100
+< +>        and T01.sInt32_100 = 0;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< INT64_100             INT64_100             SINT32_100   UINT16_10  SINT32_100
+< --------------------  --------------------  -----------  ---------  -----------
+< 
+<                   52                    52            0          0           79
+<                   52                    52            0          2           51
+<                   52                    52            0          2           86
+<                   52                    52            0          2           97
+<                   52                    52            0          6            0
+<                   52                    52            0          9           57
+<                   56                    56            0          0           41
+<                   56                    56            0          1           13
+<                   56                    56            0          1           14
+<                   56                    56            0          1           88
+<                   56                    56            0          4           38
+<                   56                    56            0          9            0
+<                   61                    61            0          3           98
+<                   61                    61            0          4           60
+<                   61                    61            0          5            0
+<                   61                    61            0          8           20
+<                   61                    61            0          8           24
+<                   61                    61            0          9           96
+<                   62                    62            0          1            0
+<                   62                    62            0          2           40
+<                   62                    62            0          2           53
+<                   62                    62            0          2           78
+<                   62                    62            0          4           40
+<                   62                    62            0          6           65
+<                   66                    66            0          2           34
+<                   66                    66            0          2           54
+<                   66                    66            0          6           22
+<                   66                    66            0          7            0
+<                   66                    66            0          7           88
+<                   66                    66            0          8           88
+<                   80                    80            0          1           43
+<                   80                    80            0          6           26
+<                   80                    80            0          7            0
+<                   80                    80            0          7           30
+<                   80                    80            0          7           56
+<                   80                    80            0          8           21
+< 
+< --- 36 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlcmj2
+< >>-----------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T03'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>----------------------------------------------------
+< >>--  IDX03B00 partitioning matches that of PTAB03. --
+< >>-- Its key columns entirely satisfy the left scan --
+< >>-- for the query below.                           --
+< >>----------------------------------------------------
+< >>prepare P from
+< +>select T00.sInt32_uniq,T03.sInt32_uniq,T00.sInt32_100,T03.int64_100
+< +>  from  PTAB00 T00, PTAB03 T03
+< +>  where     T00.sInt32_uniq = T03.sInt32_uniq
+< +>        and T03.int64_100 < 5
+< +>order by T00.sInt32_uniq,T00.sInt32_100;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  SINT32_100   INT64_100
+< -----------  -----------  -----------  --------------------
+< 
+<           9            9           95                     4
+<          12           12           55                     1
+<          40           40           62                     0
+<          73           73           68                     0
+<          76           76           47                     4
+<         105          105            1                     0
+<         149          149           68                     4
+<         168          168           42                     2
+<         177          177           13                     3
+<         189          189           71                     4
+<         199          199           11                     2
+<         203          203            4                     2
+<         221          221           66                     0
+<         243          243           16                     2
+<         296          296           62                     3
+<         308          308           92                     3
+<         313          313           90                     1
+<         336          336           90                     4
+<         373          373           94                     1
+<         376          376           76                     0
+<         387          387           68                     0
+<         393          393           73                     2
+<         416          416           11                     2
+<         421          421           85                     4
+<         505          505           69                     3
+<         550          550           15                     3
+<         569          569           28                     1
+<         578          578           58                     1
+<         583          583           15                     3
+<         590          590           71                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlcmj3
+< >>-----------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T01'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>--------------------------------------------------------------
+< >>--  IDX02B00 key columns satisfy the left scan of the query --
+< >>-- below but it is not partitioned the same as PTAB01.      --
+< >>-- PTAB00 is partitioned the same as PTAB01, however, so    --
+< >>-- the query effectively sets up a competition between      --
+< >>-- an index only scan and correct partitioning.             --
+< >>--------------------------------------------------------------
+< >>prepare P from
+< +>select T00.sInt32_uniq,T01.uInt32_uniq,T00.sInt32_100,T01.sInt32_uniq
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.sInt32_uniq = T01.uInt32_uniq
+< +>        and T01.sInt32_uniq < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  UINT32_UNIQ  SINT32_100   SINT32_UNIQ
+< -----------  -----------  -----------  -----------
+< 
+<          30           30           61            4
+<          44           44           30            2
+<         391          391           96            3
+<         453          453           72            1
+<         514          514            0            0
+< 
+< --- 5 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlcmj4
+< >>-----------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in left child.
+< >>-----------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T00')),
+< +>             exchange(scan('T01'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-----------------------------------------------------
+< >>--  Both IDX04B00 and IDX05B00 have key columns    --
+< >>-- which satisfy the left scan in the query below, --
+< >>-- but only IDX04B00 is partitioned correctly.     --
+< >>-----------------------------------------------------
+< >>prepare P from
+< +>select T00.uInt32_uniq, T01.uInt32_uniq, T01.int64_100
+< +>  from  PTAB00 T00, PTAB01 T01
+< +>  where     T00.uInt32_uniq = T01.uInt32_uniq
+< +>        and T01.int64_100 < 5
+< +>order by T00.uint32_uniq,T00.sInt32_100;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  UINT32_UNIQ  INT64_100
+< -----------  -----------  --------------------
+< 
+<           9            9                     4
+<          12           12                     1
+<          40           40                     0
+<          73           73                     0
+<          76           76                     4
+<         105          105                     0
+<         149          149                     4
+<         168          168                     2
+<         177          177                     3
+<         189          189                     4
+<         199          199                     2
+<         203          203                     2
+<         221          221                     0
+<         243          243                     2
+<         296          296                     3
+<         308          308                     3
+<         313          313                     1
+<         336          336                     4
+<         373          373                     1
+<         376          376                     0
+<         387          387                     0
+<         393          393                     2
+<         416          416                     2
+<         421          421                     4
+<         505          505                     3
+<         550          550                     3
+<         569          569                     1
+<         578          578                     1
+<         583          583                     3
+<         590          590                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcmj1
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             sort(exchange(exchange(scan('T01')))),
+< +>             sort(exchange(exchange(scan('T00'))))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-------------------------------------------------------------
+< >>--  None of the indexes nor the base table are partitioned --
+< >>-- correctly for the query below.  Key columns of IDX01B00 --
+< >>-- satisfy right child's scan.                             --
+< >>-------------------------------------------------------------
+< >>prepare P from
+< +>select T01.int64_100,T00.int64_100,T00.sInt32_100,
+< +>       T00.uInt16_10,T00.sInt32_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.int64_100 = T00.int64_100
+< +>        and T00.sInt32_100 = 0;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< INT64_100             INT64_100             SINT32_100   UINT16_10  SINT32_100
+< --------------------  --------------------  -----------  ---------  -----------
+< 
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   52                    52            0          6            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   56                    56            0          9            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   61                    61            0          5            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   62                    62            0          1            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   66                    66            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+<                   80                    80            0          7            0
+< 
+< --- 36 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcmj2
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T03')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>-----------------------------------------------------
+< >>--  IDX03B00 partitioning matches that of PTAB03.  --
+< >>-- Its key columns entirely satisfy the right scan --
+< >>-- for the query below.                            --
+< >>-----------------------------------------------------
+< >>prepare P from
+< +>select T03.sInt32_uniq, T00.sInt32_uniq, T00.sInt32_100
+< +>  from  PTAB03 T03, PTAB00 T00
+< +>  where     T03.sInt32_uniq = T00.sInt32_uniq
+< +>        and T00.sInt32_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  SINT32_100
+< -----------  -----------  -----------
+< 
+<          32           32            3
+<          77           77            3
+<          96           96            1
+<         105          105            1
+<         110          110            3
+<         117          117            1
+<         136          136            4
+<         139          139            1
+<         167          167            0
+<         200          200            0
+<         203          203            4
+<         232          232            0
+<         276          276            4
+<         295          295            2
+<         304          304            3
+<         316          316            4
+<         326          326            2
+<         330          330            2
+<         348          348            0
+<         370          370            2
+<         423          423            3
+<         435          435            3
+<         440          440            1
+<         463          463            4
+<         500          500            1
+<         503          503            0
+<         514          514            0
+<         520          520            2
+<         543          543            2
+<         548          548            4
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcmj3
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T01')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>---------------------------------------------------------------
+< >>--  IDX02B00 key columns satisfy the right scan of the query --
+< >>-- below but it is not partitioned the same as PTAB01.       --
+< >>-- PTAB00 is partitioned the same as PTAB01, however, so     --
+< >>-- the query effectively sets up a competition between       --
+< >>-- an index only scan and correct partitioning.              --
+< >>---------------------------------------------------------------
+< >>prepare P from
+< +>select T01.uInt32_uniq,T00.sInt32_uniq,T00.int64_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.uInt32_uniq = T00.sInt32_uniq
+< +>        and T00.int64_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  SINT32_UNIQ  INT64_100
+< -----------  -----------  --------------------
+< 
+<           9            9                     4
+<          12           12                     1
+<          40           40                     0
+<          73           73                     0
+<          76           76                     4
+<         105          105                     0
+<         149          149                     4
+<         168          168                     2
+<         177          177                     3
+<         189          189                     4
+<         199          199                     2
+<         203          203                     2
+<         221          221                     0
+<         243          243                     2
+<         296          296                     3
+<         308          308                     3
+<         313          313                     1
+<         336          336                     4
+<         373          373                     1
+<         376          376                     0
+<         387          387                     0
+<         393          393                     2
+<         416          416                     2
+<         421          421                     4
+<         505          505                     3
+<         550          550                     3
+<         569          569                     1
+<         578          578                     1
+<         583          583                     3
+<         590          590                     1
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcmj4
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential index only scan in right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(
+< +>             exchange(scan('T01')),
+< +>             exchange(scan('T00'))
+< +>                           )
+< +>          );
+< 
+< --- SQL operation complete.
+< >>
+< >>------------------------------------------------------
+< >>--  Both IDX04B00 and IDX05B00 have key columns     --
+< >>-- which satisfy the right scan in the query below, --
+< >>-- but only IDX04B00 is partitioned correctly.      --
+< >>------------------------------------------------------
+< >>prepare P from
+< +>select T01.uInt32_uniq, T00.uInt32_uniq, T00.sInt32_100
+< +>  from  PTAB01 T01, PTAB00 T00
+< +>  where     T01.uInt32_uniq = T00.uInt32_uniq
+< +>        and T00.sInt32_100 < 5;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< UINT32_UNIQ  UINT32_UNIQ  SINT32_100
+< -----------  -----------  -----------
+< 
+<          53           53            0
+<          85           85            3
+<         177          177            4
+<         183          183            1
+<         207          207            2
+<         229          229            2
+<         232          232            3
+<         240          240            2
+<         246          246            3
+<         247          247            0
+<         249          249            1
+<         252          252            1
+<         257          257            4
+<         264          264            0
+<         317          317            4
+<         323          323            0
+<         334          334            1
+<         335          335            2
+<         344          344            2
+<         382          382            2
+<         422          422            1
+<         428          428            1
+<         457          457            0
+<         473          473            4
+<         494          494            3
+<         514          514            3
+<         515          515            4
+<         522          522            4
+<         523          523            0
+<         528          528            3
+< 
+< --- 30 row(s) selected.
+< >>--<pb>
+< >>
+< >>-----------------------------------------------------------------
+< >>-----------------------------------------------------------------
+< >>-- ALTERNATE INDEX TESTS
+< >>-----------------------------------------------------------------
+< >>-----------------------------------------------------------------
+< >>
+< >>?section qlcmjalt
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential alternate index scan in left child.
+< >>--  Index IDX01B06 is on (sInt32_100,uInt16_10), and sInt16_10 is
+< >>--  one of the pkey columns of T06, so should evaluate all predicates
+< >>--  on the index using EIP and there should be very few accesses
+< >>--  to the T06 base table.
+< >>--  Because the order by is on table T06, the optimizer should choose
+< >>--  T06 as the left child and T14 as the right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(cut,cut));
+< 
+< --- SQL operation complete.
+< >>
+< >>prepare P from
+< +>select T06.sInt32_100,T14.sInt32_60,T06.uInt16_10,T06.sInt16_10,
+< +>       T06.varchar_100
+< +>  from  PTAB06 T06, PTAB14 T14
+< +>  where     T06.sInt32_100 = T14.sInt32_60
+< +>        and T06.uInt16_10 <= 0
+< +>        and T06.sInt16_10 <= 0
+< +>  order by T06.sInt32_100, T06.uInt16_10;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_100   SINT32_60    UINT16_10  SINT16_10  VARCHAR_100
+< -----------  -----------  ---------  ---------  ----------------
+< 
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+< 
+< --- 40 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qlcnjalt
+< >>------------------------------------------------------------------
+< >>--  Force a nested join with potential alternate index scan in left child.
+< >>--  Index IDX01B07 is on (sInt32_uniq,uInt16_10), and sInt16_10 is
+< >>--  one of the pkey columns of T07, so should evaluate all predicates
+< >>--  on the index using EIP and there should be very few accesses
+< >>--  to the T07 base table.
+< >>--  Because the order by is on table T07, the optimizer should choose
+< >>--  T07 as the left child and T03 as the right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(nested_join(cut,cut));
+< 
+< --- SQL operation complete.
+< >>
+< >>prepare P from
+< +>select T07.sInt32_uniq,T03.sInt32_uniq,T07.uInt16_10,T07.sInt16_10,
+< +>       T07.varchar_100
+< +>  from  PTAB07 T07, PTAB03 T03
+< +>  where     T07.sInt32_uniq = T03.sInt32_uniq
+< +>        and T07.uInt16_10 <= 0
+< +>        and T07.sInt16_10 <= 0
+< +>  order by T07.sInt32_uniq, T07.uInt16_10;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  UINT16_10  SINT16_10  VARCHAR_100
+< -----------  -----------  ---------  ---------  ----------------
+< 
+<         162          162          0          0  CMAAAAAAAAAAAAAA
+<         211          211          0          0  DLAAAAAAAAAAAAAA
+<         251          251          0          0  DBAAAAAAAAAAAAAA
+<         252          252          0          0  ACAAAAAAAAAAAAAA
+<         318          318          0          0  CSAAAAAAAAAAAAAA
+<         363          363          0          0  DNAAAAAAAAAAAAAA
+<         411          411          0          0  DLAAAAAAAAAAAAAA
+<         570          570          0          0  CUAAAAAAAAAAAAAA
+< 
+< --- 8 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcmjalt
+< >>------------------------------------------------------------------
+< >>--  Force a merge join with potential alternate index scan in right child.
+< >>--  Index IDX01B06 is on (sInt32_100,uInt16_10), and sInt16_10 is
+< >>--  one of the pkey columns of T06, so should evaluate all predicates
+< >>--  on the index using EIP and there should be very few accesses
+< >>--  to the T06 base table.
+< >>--  Because the order by is on table T14, the optimizer should choose
+< >>--  T14 as the left child and T06 as the right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(merge_join(cut,cut));
+< 
+< --- SQL operation complete.
+< >>
+< >>prepare P from
+< +>select T06.sInt32_100,T14.sInt32_60,T06.uInt16_10,T06.sInt16_10,
+< +>       T06.varchar_100
+< +>  from  PTAB06 T06, PTAB14 T14
+< +>  where     T06.sInt32_100 = T14.sInt32_60
+< +>        and T06.uInt16_10 <= 0
+< +>        and T06.sInt16_10 <= 0
+< +>  order by T14.sInt32_60, T14.uInt16_10;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_100   SINT32_60    UINT16_10  SINT16_10  VARCHAR_100
+< -----------  -----------  ---------  ---------  ----------------
+< 
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           2            2          0          0  DLAAAAAAAAAAAAAA
+<           2            2          0          0  DNAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           6            6          0          0  ACAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<           7            7          0          0  CMAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+<          54           54          0          0  DBAAAAAAAAAAAAAA
+< 
+< --- 50 row(s) selected.
+< >>--<pb>
+< >>
+< >>?section qrcnjalt
+< >>------------------------------------------------------------------
+< >>--  Force a nested join with potential alternate index scan in right child.
+< >>--  Index IDX01B07 is on (sInt32_uniq,uInt16_10).
+< >>--  Because the order by is on table T03, the optimizer should choose
+< >>--  T03 as the left child and T07 as the right child.
+< >>------------------------------------------------------------------
+< >>control query shape
+< +>  exchange(nested_join(cut,cut));
+< 
+< --- SQL operation complete.
+< >>
+< >>prepare P from
+< +>select T03.sInt32_uniq,T07.sInt32_uniq,T03.uInt32_uniq,
+< +>       T07.char_10
+< +>  from  PTAB03 T03, PTAB07 T07
+< +>  where     T03.sInt32_uniq = T07.sInt32_uniq
+< +>        and T03.uInt32_uniq < 20
+< +>  order by T03.sInt32_uniq;
+< 
+< --- SQL command prepared.
+< >>
+< >>execute P;
+< 
+< SINT32_UNIQ  SINT32_UNIQ  UINT32_UNIQ  CHAR_10
+< -----------  -----------  -----------  ---------
+< 
+<          42           42           17  AAAAAAAA
+<          89           89           14  AEAAAAAA
+<          95           95           16  BAAAAAAA
+<         107          107            8  BCAAAAAA
+<         209          209           15  AEAAAAAA
+<         269          269            7  BCAAAAAA
+<         278          278           10  BDAAAAAA
+<         336          336            3  AAAAAAAA
+<         339          339           18  AEAAAAAA
+<         398          398            1  ACAAAAAA
+<         436          436           13  BBAAAAAA
+<         445          445           19  ACAAAAAA
+<         458          458           11  BDAAAAAA
+<         459          459            0  BEAAAAAA
+<         493          493            6  BBAAAAAA
+<         508          508            9  BCAAAAAA
+<         526          526            5  ACAAAAAA
+<         561          561           12  BCAAAAAA
+<         575          575            4  BCAAAAAA
+<         589          589            2  AEAAAAAA
+< 
+< --- 20 row(s) selected.
+< >>--<pb>
+< >>
+< >>
+< >>?section dropIDX2
+< >>------------------
+< >>-- Drop Indexes --
+< >>------------------
+< >>drop index IDX01B00;
+< 
+< --- SQL operation complete.
+< >>drop index IDX02B00;
+< 
+< --- SQL operation complete.
+< >>drop index IDX03B00;
+< 
+< --- SQL operation complete.
+< >>drop index IDX04B00;
+< 
+< --- SQL operation complete.
+< >>drop index IDX05B00;
+< 
+< --- SQL operation complete.
+< >>drop index IDX01B06;
+< 
+< --- SQL operation complete.
+< >>drop index IDX01B07;
+< 
+< --- SQL operation complete.
+---
+> >>--obey opttest03;

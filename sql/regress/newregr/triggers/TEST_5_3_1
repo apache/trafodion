@@ -1,0 +1,100 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- cascading triggers
+-- 'after' triggers, mixed granularity
+-- runs on cat1.schm and cat1.schm_alt
+----------------------------------------
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_5_3_1(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_5_3_1(clean_up);
+
+-- start logging
+log   LOG_5_3_1 clear;
+
+set schema CAT1.SCHM;
+obey TEST_5_3_1(set_up);
+obey TEST_5_3_1(tests);
+obey TEST_5_3_1(clean_up);
+
+-- switch schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_5_3_1(set_up);
+obey TEST_5_3_1(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_5_3_1(clean_up);
+
+exit;
+----------------------------------------
+
+
+?section clean_up
+
+DROP TRIGGER atrig51;
+DROP TRIGGER atrig52;
+obey clearTables;
+
+?section set_up
+
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,5);
+INSERT INTO tab1A VALUES (3,4,5,6);
+INSERT INTO tab1B VALUES (10,10);
+
+---------------------------------
+-- DEFINE TRIGGER atrig51
+---------------------------------
+
+CREATE TRIGGER atrig51
+AFTER UPDATE ON tab1A
+REFERENCING OLD AS oldT
+INSERT INTO tab1B (SELECT a, b FROM oldT);
+
+---------------------------------
+-- DEFINE TRIGGER atrig52
+---------------------------------
+
+CREATE TRIGGER atrig52
+AFTER INSERT ON tab1B
+REFERENCING NEW AS newR
+FOR EACH ROW
+INSERT INTO cat2.schm.tab2A VALUES (newR.a, newR.b);
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b = b+10 WHERE a<3;
+
+SELECT * FROM tab1A; -- check result
+
+SELECT * FROM tab1B; -- check result
+
+SELECT * FROM cat2.schm.tab2A; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

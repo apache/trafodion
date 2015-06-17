@@ -1,0 +1,344 @@
+#! /bin/sh
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+######################################################################
+# This is the MVQR initialization script to be run after
+# installing SQL/MX [from the SUT] and T0725 product. It can be run by the
+# super ID only.
+#-----------------------------------------------------------------------
+#  Usage:
+#          installMvqr    -- A.1 creates MANAGEABILITY.MV_REWRITE schema.
+#                         -- A.2 creates table
+#                         --     MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+#                         -- B.  starts tdm_arkqmm as persistent process.
+#
+#          installMvqr crpubtab    -- pefromns only A.1 and A.2 above.
+#          installMvqr startqmm    -- performs only B above.
+#
+####################################################################
+version=1.0
+
+# -- tdm_arkqmm location
+typeset qmmloc
+qmmloc="$MY_SQROOT/export/bin32"
+
+#--QMM process name
+qmmName="ZQM0003"
+
+
+# The script can start from anywhere
+thome=`pwd`
+
+# who is the current user
+currentUser=`whoami`
+
+# script name
+qmmscr="$thome/startQmm"
+
+# OUtput files
+mvqrLog="$thome/startQmm.log"
+crTabLog="$thome/crPubTab.log"
+
+ARG1="$1"
+NULL=/dev/null
+TRUE=1
+FALSE=0
+
+# by default we assume we are running on a cluster
+thisIsACluster=1
+
+isSuperSuper=$FALSE
+
+# check if this is a real cluster
+function checkCluster
+{
+  if [ -f $SQ_PDSH ]; then
+     thisIsACluster=1
+     echo "running the mvqr initialization script in a cluster ....."
+     echo " "
+  else
+     thisIsACluster=0
+     echo "running the mvqr initialization script in a workstation ....."
+     echo " "
+     qmmName="ZQM0000"
+  fi
+}
+
+function printVersion
+{
+   echo Version $version
+   exit 0
+}
+
+function Usage
+{
+  echo "Usage: installMvqr [ crpubtab | startqmm | help | -h | version | -v ]"
+  echo "initializes MVQR. Must be run after SQSTART and T0725 installation"
+  echo " "
+  echo "    crpubtab      - creates REWRITE_PUBLISH table."
+  echo "    startqmm      - starts tdm_arkqmm as persistent process."
+  echo "    help (-h)     - Help information"
+  echo "    version (-v)  - Version information of this script"
+  echo " "
+  echo "Default is to create REWRITE_PUBLISH table and start tdm_arkqmm."
+#  exit 0
+}
+
+function startQMM
+{
+  # Remove script and its LOG file.
+  rm $mvqrLog > /dev/null 2>&1
+  rm $qmmscr > /dev/null 2>&1
+
+  # checking if tdm_arkqmm is already running.
+  if [[ $thisIsACluster = 1 ]]; then
+    sqps | grep -e $qmmName > /dev/null 2>&1
+  else
+    ps -fu $currentUser | grep -e $qmmName | grep -v grep > /dev/null 2>&1
+  fi
+
+  result=$?
+  # to make screen msgs look better
+  echo " "
+
+  if [[ $result = 0 ]]; then
+    echo "tdm_arkqmm persistent process $qmmName is already running..." |  tee -a $mvqrLog
+    echo "Invoke uninstallMvqr script before starting again" |  tee -a $mvqrLog
+    echo " "
+  else
+    start_qmm;
+    rm $qmmscr
+  fi
+}
+
+function start_qmm
+{
+
+  # to make screen messages look better
+  echo "Starting tdm_arkqmm as persistent process. Please wait...."
+  echo " "
+
+# constrct script
+if [[ $thisIsACluster = 1 ]]; then
+cat > $qmmscr <<EOF
+  sqshell -a <<eof
+  set  {process \\\$$qmmName} PERSIST_RETRIES=10,60
+  set  {process \\\$$qmmName} PERSIST_ZONES=0
+  exec {name \\\$$qmmName, nid 3, nowait, out stdout_$qmmName} tdm_arkqmm
+  exit
+eof
+EOF
+else
+cat > $qmmscr <<EOF
+  sqshell -a <<eof
+  set  {process \\\$$qmmName} PERSIST_RETRIES=10,60
+  set  {process \\\$$qmmName} PERSIST_ZONES=0
+  exec {name \\\$$qmmName, nid 0, nowait, out stdout_$qmmName} tdm_arkqmm
+  exit
+eof
+EOF
+fi
+
+  chmod 777 $qmmscr
+  sh $qmmscr > $mvqrLog  2>&1
+
+  # while a minute to allow for qms processes to start
+  sleep 10
+
+  # verify persistent process $qmmName started successfully
+  if [[ $thisIsACluster = 1 ]]; then
+    sqps | grep -e $qmmName > /dev/null 2>&1
+  else
+    ps -fu $currentUser | grep -e $qmmName | grep -v grep > /dev/null 2>&1
+  fi
+
+  result=$?
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+
+  if [[ $result = 0 ]];then
+     echo " " > $mvqrLog
+     echo "tdm_arkqmm process $qmmName started successfully." | tee -a $mvqrLog
+  else
+     echo "Failed to start tdm_arkqmm as persistent process."
+     echo "Please see $mvqrLog for more details."
+  fi
+
+  # to make screen messages look better
+  echo " " | tee -a $mvqrLog
+}
+
+function createTable
+{
+  echo "tdm_arkqmm is from $qmmloc"
+  #echo "Deleting previous log file $crTabLog."
+  rm $crTabLog > /dev/null 2>&1
+  crTab;
+  # Check to see if the create table was successful
+  grep -i "Error" $crTabLog > /dev/null 2>&1
+  result=$?
+
+  # to make screen messages look better
+  echo " "
+
+  #Check if return value of grep,
+  #   0 is at least one match found,
+  #   1 is no matches found,
+  #   2 is error
+  if [[ $result = 1 ]]; then
+     echo "REWRITE_PUBLISH table created successfully."
+  else
+     echo "*** ERROR: create REWRITE_PUBLISH table has failed. Check $crTabLog for details."
+  fi
+}
+
+
+function crTab
+{
+  echo " "
+  echo "creating REWRITE_PUBLISH table. Please wait...."
+  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+  log $crTabLog clear;
+--
+    create schema MANAGEABILITY.MV_REWRITE;
+    set schema MANAGEABILITY.MV_REWRITE;
+    control query default POS 'off';
+    CREATE TABLE MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH   (
+      OPERATION_TIMESTAMP   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , REDEF_TIME            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , REFRESH_AT_TIME       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_UID            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , CATALOG_UID           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_NAME        CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+      , OBJECT_NEW_NAME    CHAR(499) CHARACTER SET UCS2 COLLATE DEFAULT DEFAULT NULL
+      , DESCRIPTOR_INDEX      INT NO DEFAULT
+      , OPERATION_TYPE      CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+      , IGNORE_CHANGES_USED CHAR(2) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+      ,PRIMARY KEY (OPERATION_TIMESTAMP, REDEF_TIME)) NO PARTITION;
+--
+    exit;
+aeof
+
+#############################################################################
+##       SHOULD BE ENABLED WHEN PRIVILIGES ISSUES ARE RESOLVED IN SQ       ##
+#############################################################################
+
+  # Super.services should be running this script, but if super.super installs
+  # it then privileges to the MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+  # table need to be assigned  to super.services
+#  if [ $isSuperSuper = $TRUE ] ; then
+#
+#  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+#       log $crTabLog;
+#       begin work;
+#       GRANT ALL PRIVILEGES ON TABLE
+#       MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH
+#       --TO "super.services" WITH GRANT OPTION;
+#       TO PUBLIC;
+#       commit work;
+#       exit;
+#aeof
+#  fi
+
+}
+
+####################################################################
+#                                                                  #
+#                  Main Script starts here                         #
+#                                                                  #
+####################################################################
+TITLEBAR=$0;
+
+#
+# Default option
+#
+if [ -z "$ARG1" ]; then
+  ARG1="both"
+fi
+
+# Only SUPER.SERVICES can run this script.
+# Check who is executing the script.
+
+whoami | grep "SUPER.SERVICES" > /dev/null 2>&1
+result=$?
+# Check if return value of grep, 0 is at least one match found, 1 is no
+# matches found, 2 is error
+if [[ $result != 0 ]]; then
+  whoami | grep -i "SUPER.SUPER" > /dev/null 2>&1
+  result1=$?
+  if [ $result1 != 0 ]; then
+    whoami | grep -i "superuser" > /dev/null 2>&1
+    result2=$?
+    if [ $result2 != 0 ]; then
+    whoami | grep -i "hpsupport" > /dev/null 2>&1
+    result3=$?
+      if [[ $result3 != 0 ]]; then
+        echo " "
+#        echo "*** ERROR[100] You do not have the correct authority to install MVQR"
+#        echo "The MVQR installation has aborted."
+#        exit 0
+# TBD (enforce privileges)
+      fi
+    fi
+  fi
+  isSuperSuper=$TRUE;
+fi
+
+
+#Convert ARG1 to all lowercase
+typeset  temp
+temp=$ARG1
+ARG1=$temp
+
+#check where we are running this script
+checkCluster;
+
+
+#
+# Call the functions depending on the given argument
+#
+case $ARG1 in
+
+  ( "-help" | "-h" )
+          { Usage; } ;;
+
+  ( "-version" | "-v" )
+          { printVersion; } ;;
+
+  ( "crpubtab" )
+         { createTable; } ;;
+
+  ( "startqmm" )
+         { startQMM; } ;;
+
+
+  ( "both" )
+        { createTable; startQMM; } ;;
+
+  ( * )
+          {
+            echo $0: Invalid argument \'$ARG1\';
+            echo " "
+            Usage;
+          } ;;
+
+esac

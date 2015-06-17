@@ -1,0 +1,1214 @@
+>>-- Run Tests
+>>	set schema c.s;
+
+--- SQL operation complete.
+>>	obey TESTMV501(CATAPIREQ);
+>>  obey ./MVEXTERNALS/CATAPI.TXT;
+>>------------------------------------------------------
+>>-- CatApiRequest
+>>
+>>
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>create table t1 ( a int ) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv mv1 refresh on request initialize on create as select * from t1 group by a;
+
+*** WARNING[12112] A secondary index C.S.MV1_353589561_1583 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------------------
+>>-- RefreshedAt
+>>
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             Y         N          A       
+
+--- 1 row(s) selected.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 18 3 @C.S.MV1@ @16@ @32@;
+
+--- SQL operation complete.
+>>
+>>-- this should result in 68719476768
+>>select refreshed_at from HP_DEFINITION_SCHEMA.MVS;
+
+REFRESHED_AT        
+--------------------
+
+         68719476768
+
+--- 1 row(s) selected.
+>>
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>
+>>----------------------------------
+>>-- MVSTATUS
+>>
+>>create table t1 ( a int ) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create mv mv1 refresh on request initialize on refresh as select * from t1 group by a;
+
+*** WARNING[12112] A secondary index C.S.MV1_844689561_1583 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>-- not initialized to initialized 
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             Y         N          A       
+
+--- 1 row(s) selected.
+>>
+>>-- initialized to unavailable 
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             U         N          A       
+
+--- 1 row(s) selected.
+>>
+>>-- unavailable to initialized
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             Y         N          A       
+
+--- 1 row(s) selected.
+>>
+>>-- initialized to unavailable 
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+--- SQL operation complete.
+>>
+>>-- unavailable to not initialized
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @2@;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             N         N          A       
+
+--- 1 row(s) selected.
+>>
+>>-- not initialized to unavailable
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @1@;
+
+--- SQL operation complete.
+>>
+>>SET PARAM ?mv_name 'MV1';
+>>execute select_mvs_table;
+
+COMMIT_REFRESH_EACH  MV_TYPE  REWRITE_ENABLED  LEFT_LINEAR  INCREMENTALY_MAINTAINABLE  CREATION_REFRESH_TYPE  CONTAINS_MVS  MVSTATUS  IS_MINMAX  MV_AUDIT
+-------------------  -------  ---------------  -----------  -------------------------  ---------------------  ------------  --------  ---------  --------
+
+                  0  A        N                Y            Y                          R                      N             U         N          A       
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------------------
+>>-- MVSTATUS - ALTER rule 41
+>>-- non init to init for on statement mvs causes redef time for all underling objects
+>>
+>>create table t1 ( a int )
++>location $$partition2$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2 ( b int )
++>location $$partition2$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>prepare ins_1 from
++>insert into t1 values (2);
+
+--- SQL command prepared.
+>>
+>>prepare sel_1 from 
++>select * from t1 where a <0;
+
+--- SQL command prepared.
+>>
+>>prepare del_1 from
++>delete from t1 where a<0;
+
+--- SQL command prepared.
+>>
+>>prepare upd_1 from
++>update t1 set a=1 where a<0;
+
+--- SQL command prepared.
+>>
+>>prepare ins_2 from
++>insert into t2 values (2);
+
+--- SQL command prepared.
+>>
+>>prepare sel_2 from 
++>select * from t2 where b <0;
+
+--- SQL command prepared.
+>>
+>>prepare del_2 from
++>delete from t2 where b<0;
+
+--- SQL command prepared.
+>>
+>>prepare upd_2 from
++>update t2 set b=1 where b<0;
+
+--- SQL command prepared.
+>>
+>>create mv mv1 refresh on statement initialize on refresh 
++>location $$partition2$$
++>as select a from t1, t2 where a=b;
+
+*** WARNING[12112] A secondary index C.S.MV1_448789561_1583 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- not initialized to initialized 
+>>CREATE TANDEM_CAT_REQUEST&1 17 2 @C.S.MV1@ @0@;
+
+--- SQL operation complete.
+>>
+>>
+>>-- check redef time for t1 and t2;
+>>
+>>execute ins_1;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T1.
+
+--- 1 row(s) inserted.
+>>execute del_1;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T1.
+
+--- 0 row(s) deleted.
+>>execute upd_1;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T1.
+
+--- 0 row(s) updated.
+>>execute sel_1;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T1.
+
+--- 0 row(s) selected.
+>>
+>>execute ins_2;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T2.
+
+--- 1 row(s) inserted.
+>>execute del_2;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T2.
+
+--- 0 row(s) deleted.
+>>execute upd_2;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T2.
+
+--- 0 row(s) updated.
+>>execute sel_2;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8575] Timestamp mismatch on table C.S.T2.
+
+--- 0 row(s) selected.
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>drop table t2;
+
+--- SQL operation complete.
+>>
+>>
+>>	obey TESTMV501(MVGROUPS);
+>>  obey ./MVEXTERNALS/MVGROUPS.TXT;
+>>------------------------------------------------------
+>>-- MVGROUPS
+>>
+>>create table t1 ( a int not null not droppable , primary key (a)) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2 ( b int not null not droppable , primary key (b)) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv mv1 refresh on request initialize on refresh as select * from t1 group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv mv2 refresh on request initialize on refresh as select a from mv1 group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv mv3 refresh on request initialize on refresh as select a from t2, mv2 where a=b group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mvgroup g1;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>alter mvgroup g1 add mv3;
+
+*** ERROR[12209] Some materialized views used by this materialized view must appear in the MVGroup as well.
+
+--- SQL operation failed with errors.
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv2;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>alter mvgroup g1 add mv3;
+
+*** ERROR[12209] Some materialized views used by this materialized view must appear in the MVGroup as well.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv1;
+
+--- SQL operation complete.
+>>
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv3;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>alter mvgroup g1 remove mv1;
+
+*** ERROR[12210] Materialized views depending on this materialized view are already in the MVGroup.
+
+--- SQL operation failed with errors.
+>>
+>>-- FAIL
+>>alter mvgroup g1 remove mv2;
+
+*** ERROR[12210] Materialized views depending on this materialized view are already in the MVGroup.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- PASS
+>>alter mvgroup g1 remove mv3;
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>alter mvgroup g1 remove mv1;
+
+--- SQL operation complete.
+>>
+>>-- PASS
+>>alter mvgroup g1 remove mv2;
+
+--- SQL operation complete.
+>>
+>>
+>>-- PASS
+>>drop mvgroup g1;
+
+--- SQL operation complete.
+>>drop mv mv3;
+
+--- SQL operation complete.
+>>drop mv mv2;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>drop table t2;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>create table t1 ( a int not null not droppable , primary key (a)) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2 ( b int not null not droppable , primary key (b)) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv mv1 refresh on request initialize on refresh as select * from t1 group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv mv2 refresh on request initialize on refresh as select a from mv1 group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv mv3 refresh on request initialize on refresh as select a from t2, mv2 where a=b group by a;
+
+--- SQL operation complete.
+>>ALTER MV mv3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>create mvgroup g1;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>alter mvgroup g1 add mv3;
+
+*** ERROR[12209] Some materialized views used by this materialized view must appear in the MVGroup as well.
+
+--- SQL operation failed with errors.
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv2;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>alter mvgroup g1 add mv3;
+
+*** ERROR[12209] Some materialized views used by this materialized view must appear in the MVGroup as well.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv1;
+
+--- SQL operation complete.
+>>
+>>
+>>-- PASS
+>>alter mvgroup g1 add mv3;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>-- like alter mvgroup g1 remove mv1;
+>>drop mv mv1;
+
+*** ERROR[12009] Object C.S.MV1 cannot be dropped because it is being used by materialized view C.S.MV2.
+
+*** ERROR[1031] Object C.S.MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-- FAIL
+>>-- like alter mvgroup g1 remove mv2;
+>>drop mv mv2;
+
+*** ERROR[12009] Object C.S.MV2 cannot be dropped because it is being used by materialized view C.S.MV3.
+
+*** ERROR[1031] Object C.S.MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-- PASS
+>>-- like alter mvgroup g1 remove mv3;
+>>drop mv mv3;
+
+--- SQL operation complete.
+>>
+>>-- FAIL
+>>-- like alter mvgroup g1 remove mv1 but is used by mv2;
+>>drop mv mv1;
+
+*** ERROR[12009] Object C.S.MV1 cannot be dropped because it is being used by materialized view C.S.MV2.
+
+*** ERROR[1031] Object C.S.MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>-- PASS
+>>--like alter mvgroup g1 remove mv2;
+>>drop mv mv2;
+
+--- SQL operation complete.
+>>
+>>drop mv mv3;
+
+*** ERROR[1004] Object C.S.MV3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object C.S.MV3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv mv2;
+
+*** ERROR[1004] Object C.S.MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object C.S.MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>drop table t2;
+
+--- SQL operation complete.
+>>drop mvgroup g1;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>	obey TESTMV501(TEMPTABLE);
+>>  obey ./MVEXTERNALS/TEMPTABLE.TXT;
+>>------------------------------------------------------
+>>-- TempTable - on statement Vs. Triggers
+>>
+>>
+>>prepare select_objects FROM  
++>select SUBSTRING (OBJECT_NAME from 0 for 20 ) object_name, OBJECT_NAME_SPACE from HP_DEFINITION_SCHEMA.objects
++> where OBJECT_TYPE in ('BT', 'MV') and 
++> OBJECT_NAME_SPACE in ('TA', 'RL', 'IL', 'TT')
++> and OBJECT_SECURITY_CLASS = 'UT' 
++> order by OBJECT_NAME;
+
+--- SQL command prepared.
+>>
+>>
+>>create table t1 ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table t2 ( b int );
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T2                                        TA               
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- create tempTable
+>>create trigger trig1 
++>AFTER INSERT ON t1
++>FOR EACH ROW
++>UPDATE t2 SET b = b+1;
+
+--- SQL operation complete.
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- drop tempTable
+>>drop trigger trig1;
+
+--- SQL operation complete.
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T2                                        TA               
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- create tempTable
+>>create mv mv1 refresh on statement initialize on refresh as select * from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+MV1                                       TA               
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- drop tempTable
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T2                                        TA               
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- TRIGGERS AND ON STATEMENT
+>>
+>>create trigger trig1 
++>AFTER INSERT ON t1
++>FOR EACH ROW
++>UPDATE t2 SET b = b+1;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv mv1 refresh on statement initialize on refresh as select * from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+MV1                                       TA               
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 4 row(s) selected.
+>>
+>>
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>
+>>-- the tempTable should remain
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 3 row(s) selected.
+>>
+>>
+>>
+>>-- drop tempTable
+>>drop trigger trig1;
+
+--- SQL operation complete.
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T2                                        TA               
+
+--- 2 row(s) selected.
+>>
+>>
+>>
+>>create trigger trig1 
++>AFTER INSERT ON t1
++>FOR EACH ROW
++>UPDATE t2 SET b = b+1;
+
+--- SQL operation complete.
+>>
+>>
+>>create mv mv1 refresh on statement initialize on refresh as select * from t1;
+
+--- SQL operation complete.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+MV1                                       TA               
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 4 row(s) selected.
+>>
+>>
+>>-- the tempTable should remain
+>>drop trigger trig1;
+
+--- SQL operation complete.
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+MV1                                       TA               
+T1                                        TA               
+T1__TEMP                                  TT               
+T2                                        TA               
+
+--- 4 row(s) selected.
+>>
+>>-- drop tempTable
+>>drop mv mv1;
+
+--- SQL operation complete.
+>>
+>>execute select_objects;
+
+OBJECT_NAME                               OBJECT_NAME_SPACE
+----------------------------------------  -----------------
+
+T1                                        TA               
+T2                                        TA               
+
+--- 2 row(s) selected.
+>>
+>>drop table t2;
+
+--- SQL operation complete.
+>>drop table t1;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>	obey TESTMV501(MAVSI);
+>>  obey ./MVEXTERNALS/MAVSI.TXT;
+>>--------------------------------------------------------------
+>>-- MAV SECONDARY INDEX
+>>set envvar DEBUG_LOG_TABLE;
+
+--- SQL operation complete.
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>PREPARE select_index FROM
++>select ?t_name as index_for_table,valid_def
++>from HP_DEFINITION_SCHEMA.OBJECTS
++>where OBJECT_NAME_SPACE = 'IX' AND
++>	OBJECT_UID IN ( select  ACCESS_PATH_UID 
++>				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>				   where ACCESS_PATH_UID <> table_uid 
++>				   and table_uid =( select OBJECT_UID from
++>				    HP_DEFINITION_SCHEMA.OBJECTS
++>					where OBJECT_NAME = ?t_name
++>                                          and OBJECT_NAME_SPACE = 'TA')
++>				   );
+
+--- SQL command prepared.
+>>control query default pos 'off';
+
+--- SQL operation complete.
+>>
+>>create table t1 ( a int not null not droppable, 
++>			b int not null not droppable, 
++>			c int not null not droppable,
++>			d int not null not droppable) LOCATION $$partition1$$ store by (b,c);
+
+--- SQL operation complete.
+>>ALTER TABLE t1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>-- CASE 1
+>>-- user did not specify the store by clause
+>>-- this should result with a primary key containing the group by columns
+>>
+>>
+>>create mv mv1 refresh on request 
++>initialized on refresh
++>location $$partition1$$ 
++>range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
++>ADD FIRST KEY 3000 LOCATION $$partition0$$)
++>MVATTRIBUTES NO AUDITONREFRESH
++>as select max(a) as max_a, b, c 
++>from t1 
++>group by b ,c;
+
+*** WARNING[8427] MV COLUMNS : MAX_A  INT NOT NULL NOT DROPPABLE, B  INT NOT NULL NOT DROPPABLE, C  INT NOT NULL NOT DROPPABLE, SYS_COUNTSTAR1  LARGEINT NOT NULL NOT DROPPABLE, PRIMARY KEY ( B, C )
+
+*** WARNING[8427] FILE OPTIONS: location $DATA1  range partition ( ADD FIRST KEY 1000 LOCATION $DATA2,  ADD FIRST KEY 3000 LOCATION $DATA) MVATTRIBUTES NO AUDITONREFRESH  STORE BY PRIMARY KEY
+
+*** WARNING[8427] CREATE TABLE C.S.T1 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(8) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A INT NOT NULL NOT DROPPABLE ,B INT NOT NULL NOT DROPPABLE ,C INT NOT NULL NOT DROPPABLE, PRIMARY KEY ( "@EPOCH", B ASC, C ASC, "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDX74LV_XGQNVC00 
+ RANGE PARTITION BY (B, C) 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+*** WARNING[8427] CREATE TABLE C.S.T1  ("@EPOCH" INT NOT NULL NOT DROPPABLE, "@RANGE_ID" LARGEINT NOT NULL NOT DROPPABLE, "@RANGE_TYPE" INT UNSIGNED, "@BR_B" INT NOT NULL NOT DROPPABLE, "@BR_C" INT NOT NULL NOT DROPPABLE, "@BR_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE, "@ER_B" INT NOT NULL NOT DROPPABLE, "@ER_C" INT NOT NULL NOT DROPPABLE, "@ER_SYSKEY" LARGEINT NOT NULL NOT DROPPABLE,  PRIMARY KEY ( "@EPOCH", "@ER_B", "@ER_C", "@ER_SYSKEY", "@RANGE_ID" )  )  STORE BY PRIMARY KEY   LOCATION \NSK.$DATA1  
+ RANGE PARTITION 
+ ATTRIBUTE ALIGNED FORMAT AUDIT ;
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl mv1;
+
+
+CREATE MATERIALIZED VIEW C.S.MV1
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (B ASC, C ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT max(C.S.T1.A) AS MAX_A, C.S.T1.B AS B, C.S.T1.C AS C
+   FROM C.S.T1 GROUP BY C.S.T1.B, C.S.T1.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+
+--- SQL operation complete.
+>>control query default pos 'MULTI_NODE';
+
+--- SQL operation complete.
+>>
+>>-- CASE 2
+>>-- user did specify a store by clause with the group by 
+>>-- this should result with a primary key containing the group by columns
+>>
+>>create mv mv2 refresh on request 
++>initialized on refresh
++>location $$partition1$$ 
++>range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
++>ADD FIRST KEY 3000 LOCATION $$partition0$$)
++>MVATTRIBUTES NO AUDITONREFRESH
++>STORE BY (b, c)
++>as select max(a) as max_a, b, c 
++>from t1 
++>group by b ,c;
+
+*** WARNING[8427] MV COLUMNS : MAX_A  INT NOT NULL NOT DROPPABLE, B  INT NOT NULL NOT DROPPABLE, C  INT NOT NULL NOT DROPPABLE, SYS_COUNTSTAR1  LARGEINT NOT NULL NOT DROPPABLE, PRIMARY KEY ( B, C )
+
+*** WARNING[8427] FILE OPTIONS:  LOCATION $DATA1 RANGE PARTITION (ADD FIRST KEY ( 1000) LOCATION $DATA2 , ADD FIRST KEY ( 3000) LOCATION $DATA )  MVATTRIBUTES NO AUDITONREFRESH STORE BY PRIMARY KEY
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl mv2;
+
+
+CREATE MATERIALIZED VIEW C.S.MV2
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (B ASC, C ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT max(C.S.T1.A) AS MAX_A, C.S.T1.B AS B, C.S.T1.C AS C
+   FROM C.S.T1 GROUP BY C.S.T1.B, C.S.T1.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- CASE 3
+>>-- user specified store by clause, containing the same cols as in the group by clause
+>>-- this should result with a primary key containing the store by columns
+>>
+>>create mv mv3 refresh on request 
++>initialized on refresh
++>location $$partition1$$ 
++>range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
++>ADD FIRST KEY 3000 LOCATION $$partition0$$)
++>MVATTRIBUTES NO AUDITONREFRESH
++>STORE BY (c, b ,d)
++>as select max(a) as max_a, d, b, c 
++>from t1 
++>group by b ,c, d;
+
+*** WARNING[8427] MV COLUMNS : MAX_A  INT NOT NULL NOT DROPPABLE, D  INT NOT NULL NOT DROPPABLE, B  INT NOT NULL NOT DROPPABLE, C  INT NOT NULL NOT DROPPABLE, SYS_COUNTSTAR1  LARGEINT NOT NULL NOT DROPPABLE, PRIMARY KEY ( C, B, D )
+
+*** WARNING[8427] FILE OPTIONS:  LOCATION $DATA1 RANGE PARTITION (ADD FIRST KEY ( 1000) LOCATION $DATA2 , ADD FIRST KEY ( 3000) LOCATION $DATA )  MVATTRIBUTES NO AUDITONREFRESH STORE BY PRIMARY KEY
+
+*** WARNING[8427] DROP TABLE C.S.T1
+
+*** WARNING[8427] CREATE TABLE C.S.T1 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(8) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A INT NOT NULL NOT DROPPABLE ,B INT NOT NULL NOT DROPPABLE ,C INT NOT NULL NOT DROPPABLE ,D INT NOT NULL NOT DROPPABLE, PRIMARY KEY ( "@EPOCH", B ASC, C ASC, "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDX74LV_XGQNVC00 
+ RANGE PARTITION BY (B, C) 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl mv3;
+
+
+CREATE MATERIALIZED VIEW C.S.MV3
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (C ASC, B ASC, D ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT max(C.S.T1.A) AS MAX_A, C.S.T1.D AS D, C.S.T1.B AS B, C.S.T1.C AS C
+   FROM C.S.T1 GROUP BY C.S.T1.B, C.S.T1.C, C.S.T1.D;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- CASE 4
+>>-- user did specify the store by clause without all group by cols
+>>-- all group by cols are not null
+>>-- this should result with a primary key containing the group by columns
+>>
+>>create mv mv4 refresh on request 
++>initialized on refresh
++>location $$partition1$$ 
++>range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
++>ADD FIRST KEY 3000 LOCATION $$partition0$$)
++>MVATTRIBUTES NO AUDITONREFRESH
++>STORE BY (b)
++>as select max(a) as max_a, b, c 
++>from t1 
++>group by b ,c;
+
+*** WARNING[12109] To ensure optimal refresh performance, the STORE BY clause should include the following GROUP BY columns: C.
+
+*** WARNING[8427] MV COLUMNS : MAX_A  INT NOT NULL NOT DROPPABLE, B  INT NOT NULL NOT DROPPABLE, C  INT NOT NULL NOT DROPPABLE, SYS_COUNTSTAR1  LARGEINT NOT NULL NOT DROPPABLE, PRIMARY KEY ( B, C )
+
+*** WARNING[8427] FILE OPTIONS:  LOCATION $DATA1 RANGE PARTITION (ADD FIRST KEY ( 1000) LOCATION $DATA2 , ADD FIRST KEY ( 3000) LOCATION $DATA )  MVATTRIBUTES NO AUDITONREFRESH STORE BY PRIMARY KEY
+
+--- SQL operation completed with warnings.
+>>ALTER MV mv4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl mv4;
+
+
+CREATE MATERIALIZED VIEW C.S.MV4
+  REFRESH ON REQUEST 
+  INITIALIZE ON REFRESH 
+  STORE BY (B ASC, C ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  MVATTRIBUTES NO AUDITONREFRESH 
+  AS SELECT max(C.S.T1.A) AS MAX_A, C.S.T1.B AS B, C.S.T1.C AS C
+   FROM C.S.T1 GROUP BY C.S.T1.B, C.S.T1.C;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+
+--- SQL operation complete.
+>>
+>>
+>>create table t2 ( 	a int not null not droppable, 
++>			b int , 
++>			c int not null not droppable) LOCATION $$partition1$$;
+
+--- SQL operation complete.
+>>ALTER TABLE t2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>-- CASE 5
+>>-- user did not specify the store by clause and a group by column is nullable
+>>-- this should result in creating a secondary index
+>>-- because the mv is no auditonrefresh the index is created non populated and 
+>>-- will not be shown with showddl
+>>
+>>
+>>--create mv mv5 refresh on request 
+>>--initialized on refresh
+>>--location $$partition1$$ 
+>>--range partition ( ADD FIRST KEY 1000 LOCATION $$partition2$$, 
+>>--ADD FIRST KEY 3000 LOCATION $$partition0$$)
+>>--MVATTRIBUTES NO AUDITONREFRESH
+>>--as select max(a) as max_a, b, c 
+>>--from t2 
+>>--group by b ,c;
+>>--ALTER MV mv5 attribute all mvs allowed;
+>>
+>>--showddl mv5;
+>>
+>>--set param ?t_name 'MV5';
+>>--execute select_index;
+>>
+>>
+>>drop mv mv4;
+
+--- SQL operation complete.
+>>drop mv mv3;
+
+*** WARNING[8427] DROP TABLE C.S.T1
+
+*** WARNING[8427] CREATE TABLE C.S.T1 (
+  "@EPOCH"    INT NOT NULL NOT DROPPABLE
+ , "@OPERATION_TYPE"   INT UNSIGNED 
+ , "@IGNORE"   INT UNSIGNED DEFAULT 0 
+ , "@RANGE_SIZE"     INT UNSIGNED 
+ , "@UPDATE_BITMAP" CHAR(8) CHARACTER SET ISO88591 
+ ,"@SYSKEY" LARGEINT NOT NULL NOT DROPPABLE ,"@TS"   LARGEINT NOT NULL NOT DROPPABLE 
+ ,A INT NOT NULL NOT DROPPABLE ,B INT NOT NULL NOT DROPPABLE ,C INT NOT NULL NOT DROPPABLE, PRIMARY KEY ( "@EPOCH", B ASC, C ASC, "@SYSKEY", "@TS" ) )  LOCATION \NSK.$DATA1  NAME NSK_DATA1_ZSDX74LV_XGQNVC00 
+ RANGE PARTITION BY (B, C) 
+ ATTRIBUTE AUDIT ALIGNED FORMAT EXTENT (16 , 64) MAXEXTENTS 160;
+
+--- SQL operation completed with warnings.
+>>drop mv mv2;
+
+--- SQL operation complete.
+>>drop mv mv1;
+
+*** WARNING[8427] DROP TABLE C.S.T1
+
+*** WARNING[8427] DROP TABLE C.S.T1
+
+--- SQL operation completed with warnings.
+>>drop table t1;
+
+--- SQL operation complete.
+>>drop mv mv5;
+
+*** ERROR[1004] Object C.S.MV5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object C.S.MV5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table t2;
+
+--- SQL operation complete.
+>>
+>>
+>>-- Clean and exit
+>>log;

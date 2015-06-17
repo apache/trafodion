@@ -1,0 +1,1407 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+>>
+>>set schema BENCH9X4.HPITD;
+
+--- SQL operation complete.
+>>
+>>-- Query 1
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.65E+006           
+2     HYBRID_HASH_JOIN                                 1.65E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       PROD_LN_D)       3.40E+002           
+5     FILE_SCAN                       CTRY_D)          2.96E+002           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select geo.CTRY_KY, prod.PROD_LN_KY 
++>from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  ;
+Histograms for query showstats for query select geo.CTRY_KY, prod.PROD_LN_KY  from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod  where fact.CTRY_KY = geo.CTRY_KY  and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  ;
+**************************************************************
+VEGcolumn:
+
+ 184: VEGRef_184((FACT.CTRY_KY = GEO.CTRY_KY))
+Merge state:
+
+   4: FACT.CTRY_KY
+  66: GEO.CTRY_KY
+Applied preds:
+
+ 185: (FACT.CTRY_KY = GEO.CTRY_KY)
+   TotalUEC = 81.000000 
+
+   Rowcount = 1654065.000000 
+
+   BaseUEC  = 81.000000 (pre-current-join-uec)
+
+   Max Frequency = 1187733.000000 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 255.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      255.0000 ) : rows=1654065.000000,uec=81.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 187: VEGRef_187((FACT.QTA_PROD_LN_KY = PROD.PROD_LN_KY))
+Merge state:
+
+   5: FACT.QTA_PROD_LN_KY
+ 117: PROD.PROD_LN_KY
+Applied preds:
+
+ 188: (FACT.QTA_PROD_LN_KY = PROD.PROD_LN_KY)
+   TotalUEC = 67.000000 
+
+   Rowcount = 1654065.000000 
+
+   BaseUEC  = 67.000000 (pre-current-join-uec)
+
+   Max Frequency = 248541.000000 
+   Encoded MinValue = ( 4.0000 )
+
+   Encoded MaxValue = ( 320.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      320.0000 ) : rows=1654065.000000,uec=67.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 2
+>>control query shape implicit enforcers sort_groupby(sort_groupby(
++>hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>Select count(*) from PERF_SUM_F fact, CTRY_D geo
++>Where fact.CTRY_KY = geo.CTRY_KY 
++>AND geo.ISO_CTRY_NM = _UCS2'United States';
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       CTRY_D)          1.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 3
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(path 'BENCH9X4.HPITD.PROD_LN_PERF_TRCKG_F'),
++>scan(path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PROD_LN_PERF_TRCKG_F , CTRY_D , DT_MTH_D  
++>where PROD_LN_PERF_TRCKG_F.CTRY_KY = CTRY_D.CTRY_KY and PROD_LN_PERF_TRCKG_F.DT_MTH_KY = DT_MTH_D.DT_MTH_KY ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 6.60E+004           
+2     HYBRID_HASH_JOIN                                 6.60E+004           
+3     FILE_SCAN                       PROD_LN_PERF_TR  6.60E+004           
+4     FILE_SCAN                       CTRY_D           2.96E+002           
+5     FILE_SCAN                       DT_MTH_D         1.32E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 4
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY  
++>and dmth.FISC_YR_NM in('FY2007','FY2008')  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.10E+006           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       DT_MTH_D)        2.40E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 5
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       CTRY_D)          1.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select fact.ctry_ky from PERF_SUM_F fact, CTRY_D geo 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+Histograms for query showstats for query select fact.ctry_ky from PERF_SUM_F fact, CTRY_D geo  where fact.CTRY_KY = geo.CTRY_KY  and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+**************************************************************
+VEGcolumn:
+
+ 124: VEGRef_124((FACT.CTRY_KY = GEO.CTRY_KY))
+Merge state:
+
+   4: FACT.CTRY_KY
+  66: GEO.CTRY_KY
+Applied preds:
+
+ 125: (FACT.CTRY_KY = GEO.CTRY_KY)
+   TotalUEC = 1.000000 
+
+   Rowcount = 1187733.000000 
+
+   BaseUEC  = 81.000000 (pre-current-join-uec)
+
+   Max Frequency = 852874.390843 
+   Encoded MinValue = ( 1.0000 )
+
+   Encoded MaxValue = ( 255.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      255.0000 ) : rows=20420.555556,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 6
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.37E+005           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 7
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and geo.ISO_CTRY_NM = _UCS2'United States'  
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     HYBRID_HASH_JOIN                                 1.18E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       CTRY_D)          1.00E+000           
+5     FILE_SCAN                       PROD_LN_D)       1.60E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 8
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust 
++>where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY and AL1.SO_TYPE_KY = 12  
++>and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
++>and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN' and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.40E+002           
+2     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+3     FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 9
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, RTE_TO_MKT_D rtm 
++>where rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and rtm.SLS_CHNL_RTE_CD = 'B1' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.03E+004           
+2     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+3     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 10
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       CTRY_D)          1.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>showstats for query
++>select geo.iso_ctry_nm from PERF_SUM_F fact, CTRY_D geo 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+Histograms for query showstats for query select geo.iso_ctry_nm from PERF_SUM_F fact, CTRY_D geo  where fact.CTRY_KY = geo.CTRY_KY  and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+**************************************************************
+VEGcolumn:
+
+ 202: VEGRef_202((GEO.ISO_CTRY_NM = 'U\0n\0i\0t\0e\0d\0 \0S\0t\0a\0t\0e\0s\0'))
+
+Merge state:
+  68: GEO.ISO_CTRY_NM
+Applied preds:
+
+ 203: (GEO.ISO_CTRY_NM = 'U\0n\0i\0t\0e\0d\0 \0S\0t\0a\0t\0e\0s\0')
+***MIN
+MAX SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1187733.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 1187733.000000 
+   Encoded MinValue = (
+23365083470400.0000 )
+   Encoded MaxValue = ( 23365083470400.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      23365083470400.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     23365083470400.0000 ) : rows=1187733.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 11
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.37E+005           
+2     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+3     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 12
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and geo.ISO_CTRY_NM = _UCS2'United States'  
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     HYBRID_HASH_JOIN                                 1.18E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       CTRY_D)          1.00E+000           
+5     FILE_SCAN                       PROD_LN_D)       1.60E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 13
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, RTE_TO_MKT_D rtm 
++>where rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and rtm.SLS_CHNL_RTE_CD = 'B1' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 2.03E+004           
+2     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+3     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+
+--- 3 row(s) selected.
+>>
+>>-- Query 14
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo, RTE_TO_MKT_D rtm 
++>where fact.CTRY_KY = geo.CTRY_KY 
++>and fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
++>and rtm.SLS_CHNL_RTE_NM = _UCS2'Direct' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.65E+006           
+2     HYBRID_HASH_JOIN                                 1.65E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       CTRY_D)          2.96E+002           
+5     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 15
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'),
++>hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CUST_ACCT_HIER_D cust, CTRY_D geo 
++>where fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
++>and fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     FILE_SCAN                       CUST_ACCT_HIER_  1.85E+006           
+3     HYBRID_HASH_JOIN                                 1.18E+006           
+4     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+5     FILE_SCAN                       CTRY_D)          1.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select cust.CUST_ACCT_HIER_KY, geo.ISO_CTRY_NM 
++>from PERF_SUM_F fact, CUST_ACCT_HIER_D cust, CTRY_D geo 
++>where fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
++>and fact.CTRY_KY = geo.CTRY_KY 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+Histograms for query showstats for query select cust.CUST_ACCT_HIER_KY, geo.ISO_CTRY_NM  from PERF_SUM_F fact, CUST_ACCT_HIER_D cust, CTRY_D geo  where fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY  and fact.CTRY_KY = geo.CTRY_KY  and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+**************************************************************
+VEGcolumn:
+
+ 257: VEGRef_257((FACT.SLDT_CUST_ACCT_HIER_KY = CUST.CUST_ACCT_HIER_KY))
+
+Merge state:
+   7: FACT.SLDT_CUST_ACCT_HIER_KY
+
+  66: CUST.CUST_ACCT_HIER_KY
+Applied preds:
+
+ 258: (FACT.SLDT_CUST_ACCT_HIER_KY = CUST.CUST_ACCT_HIER_KY)
+
+   TotalUEC = 72890.000000 
+   Rowcount = 1187733.000000 
+
+   BaseUEC  = 72890.000000 (pre-current-join-uec)
+
+   Max Frequency = 86.168294 
+   Encoded MinValue = ( -1.0000 )
+
+   Encoded MaxValue = ( 11440782.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      -1.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      11440782.0000 )
+ : rows=1187733.000000,uec=72890.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 503: VEGRef_503((GEO.ISO_CTRY_NM = 'U\0n\0i\0t\0e\0d\0 \0S\0t\0a\0t\0e\0s\0'))
+
+Merge state:
+ 191: GEO.ISO_CTRY_NM
+Applied preds:
+
+ 504: (GEO.ISO_CTRY_NM = 'U\0n\0i\0t\0e\0d\0 \0S\0t\0a\0t\0e\0s\0')
+***MIN
+MAX SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 1187733.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 1187733.000000 
+   Encoded MinValue = (
+23365083470400.0000 )
+   Encoded MaxValue = ( 23365083470400.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      23365083470400.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     23365083470400.0000 ) : rows=1187733.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 16
+>>control query shape implicit enforcers nested_join(
++>ordered_cross_product(
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth, CTRY_D geo 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and fact.CTRY_KY = geo.CTRY_KY 
++>and dmth.FISC_YR_QTR_CD = '2008Q4' 
++>and geo.ISO_CTRY_NM = _UCS2'United States'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     NESTED_JOIN                                      9.89E+004           
+2     FILE_SCAN                       PERF_SUM_F)      3.29E+004           
+3     ORDERED_CROSS_PRODUCT                            3.00E+000           
+4     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+5     FILE_SCAN                       CTRY_D)          1.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 17
+>>control query shape implicit enforcers hybrid_hash_join(
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'),
++>hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth, CUST_ACCT_HIER_D cust 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY 
++>and dmth.FISC_YR_QTR_CD = '2008Q4' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.37E+005           
+2     FILE_SCAN                       CUST_ACCT_HIER_  1.85E+006           
+3     HYBRID_HASH_JOIN                                 1.37E+005           
+4     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+5     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 18
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth, PROD_LN_D prod 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and dmth.FISC_YR_QTR_CD = '2008Q4' 
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.37E+005           
+2     HYBRID_HASH_JOIN                                 1.37E+005           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+5     FILE_SCAN                       PROD_LN_D)       1.60E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 19
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth, RTE_TO_MKT_D rtm 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY 
++>and fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
++>and dmth.FISC_YR_QTR_CD = '2008Q4' 
++>and rtm.SLS_CHNL_RTE_NM = _UCS2'Direct' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.37E+005           
+2     HYBRID_HASH_JOIN                                 1.37E+005           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       DT_MTH_D)        3.00E+000           
+5     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 20
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, RTE_TO_MKT_D rtm, PROD_LN_D prod 
++>where fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.65E+006           
+2     HYBRID_HASH_JOIN                                 1.65E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       PROD_LN_D)       1.60E+002           
+5     FILE_SCAN                       RTE_TO_MKT_D)    1.20E+002           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query
++>select fact.RTE_TO_MKT_KY, fact.QTA_PROD_LN_KY 
++>from PERF_SUM_F fact, RTE_TO_MKT_D rtm, PROD_LN_D prod 
++>where fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY  
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+Histograms for query showstats for query select fact.RTE_TO_MKT_KY, fact.QTA_PROD_LN_KY  from PERF_SUM_F fact, RTE_TO_MKT_D rtm, PROD_LN_D prod  where fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY   and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY   and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+**************************************************************
+VEGcolumn:
+
+ 165: VEGRef_165((FACT.QTA_PROD_LN_KY = PROD.PROD_LN_KY))
+Merge state:
+
+   5: FACT.QTA_PROD_LN_KY
+  93: PROD.PROD_LN_KY
+Applied preds:
+
+ 166: (FACT.QTA_PROD_LN_KY = PROD.PROD_LN_KY)
+   TotalUEC = 67.000000 
+
+   Rowcount = 1654065.000000 
+
+   BaseUEC  = 67.000000 (pre-current-join-uec)
+
+   Max Frequency = 248541.000000 
+   Encoded MinValue = ( 4.0000 )
+
+   Encoded MaxValue = ( 320.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      320.0000 ) : rows=1654065.000000,uec=67.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 168: VEGRef_168((FACT.RTE_TO_MKT_KY = RTM.RTE_TO_MKT_KY))
+Merge state:
+
+   6: FACT.RTE_TO_MKT_KY
+  66: RTM.RTE_TO_MKT_KY
+Applied preds:
+
+ 169: (FACT.RTE_TO_MKT_KY = RTM.RTE_TO_MKT_KY)
+   TotalUEC = 14.000000 
+
+   Rowcount = 1654065.000000 
+
+   BaseUEC  = 14.000000 (pre-current-join-uec)
+
+   Max Frequency = 1129620.000000 
+   Encoded MinValue = ( 12.0000 )
+
+   Encoded MaxValue = ( 111.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      12.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      111.0000 ) : rows=1654065.000000,uec=14.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 21
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D')),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CTRY_D geo , DT_DAY_D AL6  
++>where geo.CTRY_KY = AL1.CTRY_KY  
++>and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
++>and AL1.SO_TYPE_KY = 12  and AL6.FISC_YR_NM = 'FY2005' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.97E+004           
+2     HYBRID_HASH_JOIN                                 3.97E+004           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       DT_DAY_D)        3.65E+002           
+5     FILE_SCAN                       CTRY_D)          2.96E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 22
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CTRY_D geo , PROD_D_1 AL5 
++>where geo.CTRY_KY = AL1.CTRY_KY  
++>and AL5.PROD_KY = AL1.PROD_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and geo.RGN_CD = 'REGAMECAS ' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.40E+004           
+2     HYBRID_HASH_JOIN                                 1.40E+004           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       CTRY_D)          5.70E+001           
+5     FILE_SCAN                       PROD_D_1)        5.86E+005           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 23
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CTRY_D geo , RTE_TO_MKT_D rtm 
++>where geo.CTRY_KY = AL1.CTRY_KY  
++>and rtm.RTE_TO_MKT_KY = AL1.RTE_TO_MKT_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and geo.RGN_CD = 'REGAMECAS ' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.40E+004           
+2     HYBRID_HASH_JOIN                                 1.40E+004           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       CTRY_D)          5.70E+001           
+5     FILE_SCAN                       RTE_TO_MKT_D)    1.20E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 24
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, CTRY_D geo  
++>where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
++>and geo.CTRY_KY = AL1.CTRY_KY  
++>and AL1.SO_TYPE_KY = 12  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.97E+004           
+2     HYBRID_HASH_JOIN                                 3.97E+004           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       CUST_ACCT_HIER_  1.85E+006           
+5     FILE_SCAN                       CTRY_D)          2.96E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 25
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
++>scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, DT_DAY_D AL6  
++>where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
++>and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
++>and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'
++>and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 9.40E+002           
+2     HYBRID_HASH_JOIN                                 9.40E+002           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004           
+5     FILE_SCAN                       DT_DAY_D)        4.01E+003           
+
+--- 5 row(s) selected.
+>>
+>>showstats for query 
++>select AL1.FIN_CLOSE_DT_DAY_KY, cust.CUST_AMID_LVL_2_IND_VERT_CD 
++>from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, DT_DAY_D AL6  
++>where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
++>and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY  
++>and AL1.SO_TYPE_KY = 12  
++>and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN' 
++>and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'
++>and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+Histograms for query showstats for query  select AL1.FIN_CLOSE_DT_DAY_KY, cust.CUST_AMID_LVL_2_IND_VERT_CD  from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, DT_DAY_D AL6   where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY  and AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY   and AL1.SO_TYPE_KY = 12   and cust.CUST_AMID_LVL_2_IND_VERT_CD = 'FIN'  and cust.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN' and cust.CUST_AMID_LVL_4_CLS_1_CD = 'COR' ;
+**************************************************************
+VEGcolumn:
+
+ 381: VEGRef_381((AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY))
+Merge state:
+
+   3: AL1.FIN_CLOSE_DT_DAY_KY
+ 190: AL6.DT_DAY_KY
+Applied preds:
+
+ 382: (AL1.FIN_CLOSE_DT_DAY_KY = AL6.DT_DAY_KY)
+   TotalUEC = 365.000000 
+
+   Rowcount = 940.000000 
+   BaseUEC  = 365.000000 (pre-current-join-uec)
+
+   Max Frequency = 5.263971 
+   Encoded MinValue = ( 2453311.0000 )
+
+   Encoded MaxValue = ( 2453675.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      2453311.0000 ) : rows=0.000000,uec=0.000000 
+
+     Bound  <=      (      2453675.0000 )
+ : rows=940.000000,uec=365.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 540: VEGRef_540((CUST.CUST_AMID_LVL_2_IND_VERT_CD = CUST.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'))
+
+Merge state:
+  75: CUST.CUST_AMID_LVL_2_IND_VERT_CD
+Applied preds:
+
+ 541: (CUST.CUST_AMID_LVL_2_IND_VERT_CD = CUST.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN')
+
+***MINMAX SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 940.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 940.000000 
+   Encoded MinValue = (
+4945962066249736.0000 )
+   Encoded MaxValue = ( 4945962066249736.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4945962066249736.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4945962066249736.0000 ) : rows=940.000000,uec=1.000000 
+
+-------------------------------------------------------
+VEGcolumn:
+
+ 540: VEGRef_540((CUST.CUST_AMID_LVL_2_IND_VERT_CD = CUST.CUST_AMID_LVL_4_IND_VERT_CD = 'FIN'))
+
+Merge state:
+ 107: CUST.CUST_AMID_LVL_4_IND_VERT_CD
+Applied preds:
+***MIN
+MAX SET BY PRED***
+   TotalUEC = 1.000000 
+   Rowcount = 940.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 940.000000 
+   Encoded MinValue = (
+4945962066249736.0000 )
+   Encoded MaxValue = ( 4945962066249736.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      4945962066249736.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     4945962066249736.0000 ) : rows=940.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 26
+>>control query shape implicit enforcers hybrid_hash_join(
++>hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.DLY_SO_SUM_F'),
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
++>scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D cust, PROD_D_1 AL5 
++>where cust.CUST_ACCT_HIER_KY = AL1.SLDT_CUST_ACCT_HIER_KY 
++>and AL5.PROD_KY = AL1.PROD_KY  
++>and AL1.SO_TYPE_KY = 12 ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 3.97E+004           
+2     HYBRID_HASH_JOIN                                 3.97E+004           
+3     FILE_SCAN                       DLY_SO_SUM_F)    3.97E+004           
+4     FILE_SCAN                       CUST_ACCT_HIER_  1.85E+006           
+5     FILE_SCAN                       PROD_D_1)        5.86E+005           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 27
+>>control query shape implicit enforcers hybrid_hash_join(nested_join(
++>scan(path 'BENCH9X4.HPITD.DT_MTH_D'),
++>scan(path 'BENCH9X4.HPITD.PROD_LN_PERF_TRCKG_F')),
++>scan(path 'BENCH9X4.HPITD.CTRY_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PROD_LN_PERF_TRCKG_F , CTRY_D , DT_MTH_D  
++>where PROD_LN_PERF_TRCKG_F.CTRY_KY = CTRY_D.CTRY_KY and PROD_LN_PERF_TRCKG_F.DT_MTH_KY = DT_MTH_D.DT_MTH_KY 
++>and DT_MTH_D.CLDR_YR_MTH_DSPLY_CD = '2005/01'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.59E+003           
+2     NESTED_JOIN                                      1.59E+003           
+3     FILE_SCAN                       PROD_LN_PERF_TR  1.59E+003           
+4     FILE_SCAN                       DT_MTH_D         1.00E+000           
+5     FILE_SCAN                       CTRY_D           2.96E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 28
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, DT_MTH_D dmth, PROD_LN_D prod 
++>where fact.DT_MTH_KY = dmth.DT_MTH_KY  
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and dmth.FISC_YR_NM in('FY2007','FY2008')  
++>and prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'  ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.10E+006           
+2     HYBRID_HASH_JOIN                                 1.10E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       DT_MTH_D)        2.40E+001           
+5     FILE_SCAN                       PROD_LN_D)       1.60E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 29
+>>control query shape implicit enforcers hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D'));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select * from PERF_SUM_F fact, CTRY_D geo, PROD_LN_D prod 
++>where fact.CTRY_KY = geo.CTRY_KY  
++>and fact.QTA_PROD_LN_KY = prod.PROD_LN_KY  
++>and geo.ISO_CTRY_NM = _UCS2'United States' ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.18E+006           
+2     HYBRID_HASH_JOIN                                 1.18E+006           
+3     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+4     FILE_SCAN                       CTRY_D)          1.00E+000           
+5     FILE_SCAN                       PROD_LN_D)       3.40E+002           
+
+--- 5 row(s) selected.
+>>
+>>-- Query 30
+>>control query shape implicit enforcers hash_groupby(
++>hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'AL1', path 'BENCH9X4.HPITD.TEMP_INDEX'),
++>scan(TABLE 'AL4', path 'BENCH9X4.HPITD.RTE_TO_MKT_D')),
++>scan(TABLE 'AL3', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'AL7', path 'BENCH9X4.HPITD.PROD_LN_D')),
++>scan(TABLE 'AL6', path 'BENCH9X4.HPITD.DT_DAY_D')),
++>scan(TABLE 'AL2', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D')),
++>scan(TABLE 'AL5', path 'BENCH9X4.HPITD.PROD_D_1')));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*)
++>FROM DLY_SO_SUM_F AL1,
++>CUST_ACCT_HIER_D AL2,
++>CTRY_D AL3,
++>RTE_TO_MKT_D AL4,
++>PROD_D_1 AL5,
++>DT_DAY_D AL6,
++>PROD_LN_D AL7
++>WHERE (AL2.CUST_ACCT_HIER_KY=AL1.SLDT_CUST_ACCT_HIER_KY
++>AND AL3.CTRY_KY=AL1.CTRY_KY
++>AND AL4.RTE_TO_MKT_KY=AL1.RTE_TO_MKT_KY
++>AND AL5.PROD_KY=AL1.PROD_KY
++>AND AL1.FIN_CLOSE_DT_DAY_KY=AL6.DT_DAY_KY
++>AND AL7.PROD_LN_KY=AL1.QTA_PROD_LN_KY)
++>AND AL3.RGN_CD='REGAMECAS '
++>AND AL6.FISC_YR_NM='FY2005'
++>AND AL2.CUST_AMID_LVL_2_IND_VERT_CD='FIN'
++>AND AL2.CUST_AMID_LVL_4_IND_VERT_CD='FIN'
++>AND AL1.SO_TYPE_KY=12 AND AL4.SLS_CHNL_RTE_CD='B1'
++>AND AL2.CUST_AMID_LVL_4_CLS_1_CD='COR'
++>AND AL7.PROD_HIER_VALU_VOL_CD='1'
++>GROUP BY AL5.SLS_PROD_NM, AL2.CUST_AMID_LVL_2_NM, AL6.FISC_MTH_YR_CD;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 1.17E+002           
+2     HYBRID_HASH_JOIN                                 1.17E+002           
+3     HYBRID_HASH_JOIN                                 4.95E+003           
+4     HYBRID_HASH_JOIN                                 4.95E+003           
+5     HYBRID_HASH_JOIN                                 7.21E+003           
+6     HYBRID_HASH_JOIN                                 2.03E+004           
+7     INDEX_SCAN                      DLY_SO_SUM_F)    3.97E+004           
+8     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+9     FILE_SCAN                       CTRY_D)          5.70E+001           
+10    FILE_SCAN                       PROD_LN_D)       7.00E+001           
+11    FILE_SCAN                       DT_DAY_D)        3.65E+002           
+12    FILE_SCAN                       CUST_ACCT_HIER_  1.56E+004           
+13    FILE_SCAN                       PROD_D_1)        5.86E+005           
+
+--- 13 row(s) selected.
+>>
+>>showstats for query
++>select count(*)
++>FROM DLY_SO_SUM_F AL1,
++>CUST_ACCT_HIER_D AL2,
++>CTRY_D AL3,
++>RTE_TO_MKT_D AL4,
++>PROD_D_1 AL5,
++>DT_DAY_D AL6,
++>PROD_LN_D AL7
++>WHERE (AL2.CUST_ACCT_HIER_KY=AL1.SLDT_CUST_ACCT_HIER_KY
++>AND AL3.CTRY_KY=AL1.CTRY_KY
++>AND AL4.RTE_TO_MKT_KY=AL1.RTE_TO_MKT_KY
++>AND AL5.PROD_KY=AL1.PROD_KY
++>AND AL1.FIN_CLOSE_DT_DAY_KY=AL6.DT_DAY_KY
++>AND AL7.PROD_LN_KY=AL1.QTA_PROD_LN_KY)
++>AND AL3.RGN_CD='REGAMECAS '
++>AND AL6.FISC_YR_NM='FY2005'
++>AND AL2.CUST_AMID_LVL_2_IND_VERT_CD='FIN'
++>AND AL2.CUST_AMID_LVL_4_IND_VERT_CD='FIN'
++>AND AL1.SO_TYPE_KY=12 AND AL4.SLS_CHNL_RTE_CD='B1'
++>AND AL2.CUST_AMID_LVL_4_CLS_1_CD='COR'
++>AND AL7.PROD_HIER_VALU_VOL_CD='1'
++>GROUP BY AL5.SLS_PROD_NM, AL2.CUST_AMID_LVL_2_NM, AL6.FISC_MTH_YR_CD;
+Histograms for query showstats for query select count(*) FROM DLY_SO_SUM_F AL1, CUST_ACCT_HIER_D AL2, CTRY_D AL3, RTE_TO_MKT_D AL4, PROD_D_1 AL5, DT_DAY_D AL6, PROD_LN_D AL7 WHERE (AL2.CUST_ACCT_HIER_KY=AL1.SLDT_CUST_ACCT_HIER_KY AND AL3.CTRY_KY=AL1.CTRY_KY AND AL4.RTE_TO_MKT_KY=AL1.RTE_TO_MKT_KY AND AL5.PROD_KY=AL1.PROD_KY AND AL1.FIN_CLOSE_DT_DAY_KY=AL6.DT_DAY_KY AND AL7.PROD_LN_KY=AL1.QTA_PROD_LN_KY) AND AL3.RGN_CD='REGAMECAS ' AND AL6.FISC_YR_NM='FY2005' AND AL2.CUST_AMID_LVL_2_IND_VERT_CD='FIN' AND AL2.CUST_AMID_LVL_4_IND_VERT_CD='FIN' AND AL1.SO_TYPE_KY=12 AND AL4.SLS_CHNL_RTE_CD='B1' AND AL2.CUST_AMID_LVL_4_CLS_1_CD='COR' AND AL7.PROD_HIER_VALU_VOL_CD='1' GROUP BY AL5.SLS_PROD_NM, AL2.CUST_AMID_LVL_2_NM, AL6.FISC_MTH_YR_CD;
+**************************************************************
+VEGcolumn:
+
+1674: VEGRef_1674((AL7.PROD_HIER_VALU_VOL_CD = '1'))
+Merge state:
+
+ 666: AL7.PROD_HIER_VALU_VOL_CD
+Applied preds:
+
+1675: (AL7.PROD_HIER_VALU_VOL_CD = '1')
+***MINMAX SET BY PRED***
+
+   TotalUEC = 1.000000 
+   Rowcount = 117.000000 
+
+   BaseUEC  = 1.000000 (pre-current-join-uec)
+
+   Max Frequency = 117.000000 
+   Encoded MinValue = (
+3456899052210184.0000 )
+   Encoded MaxValue = ( 3456899052210184.0000 )
+
+   RowRedFactor = 1.000000;  UecRedFactor = 1.000000 
+   Histogram : 
+
+     Bound  <       (      3456899052210184.0000 )
+ : rows=0.000000,uec=0.000000 
+     Bound  <=      (
+     3456899052210184.0000 ) : rows=117.000000,uec=1.000000 
+
+**************************************************************
+
+
+--- SQL operation complete.
+>>
+>>-- Query 31
+>>control query shape implicit enforcers hash_groupby(
++>hash_groupby(hybrid_hash_join(hybrid_hash_join(hybrid_hash_join(
++>hybrid_hash_join(hybrid_hash_join(
++>scan(TABLE 'FACT', path 'BENCH9X4.HPITD.PERF_SUM_F'),
++>scan(TABLE 'GEO', path 'BENCH9X4.HPITD.CTRY_D')),
++>scan(TABLE 'RTM', path 'BENCH9X4.HPITD.RTE_TO_MKT_D')),
++>scan(TABLE 'DMTH', path 'BENCH9X4.HPITD.DT_MTH_D')),
++>scan(TABLE 'PROD', path 'BENCH9X4.HPITD.PROD_LN_D')),
++>scan(TABLE 'CUST', path 'BENCH9X4.HPITD.CUST_ACCT_HIER_D'))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>Select   count(*)
++>From  PERF_SUM_F fact,  DT_MTH_D dmth,
++>CUST_ACCT_HIER_D cust,  CTRY_D geo,
++>RTE_TO_MKT_D rtm,  PROD_LN_D prod
++>Where  fact.DT_MTH_KY = dmth.DT_MTH_KY
++>AND  fact.SLDT_CUST_ACCT_HIER_KY = cust.CUST_ACCT_HIER_KY
++>AND  fact.CTRY_KY = geo.CTRY_KY
++>AND  fact.QTA_PROD_LN_KY = prod.PROD_LN_KY
++>AND  fact.RTE_TO_MKT_KY = rtm.RTE_TO_MKT_KY
++>AND  dmth.FISC_YR_NM in('FY2007','FY2008')
++>AND  rtm.SLS_CHNL_RTE_NM = _UCS2'Direct'
++>AND  prod.PROD_HIER_VALU_VOL_NM = _UCS2'Volume'
++>AND  geo.ISO_CTRY_NM = _UCS2'United States'
++>Group By cust.CUST_AMID_LVL_4_NM ;
+
+--- SQL command prepared.
+>>
+>>execute explainCard;
+
+NUM   OP                              TAB_NAME         Expected Cardinality
+----  ------------------------------  ---------------  --------------------
+
+1     HYBRID_HASH_JOIN                                 7.91E+005           
+2     HYBRID_HASH_JOIN                                 7.91E+005           
+3     HYBRID_HASH_JOIN                                 7.91E+005           
+4     HYBRID_HASH_JOIN                                 1.18E+006           
+5     HYBRID_HASH_JOIN                                 1.18E+006           
+6     FILE_SCAN                       PERF_SUM_F)      1.65E+006           
+7     FILE_SCAN                       CTRY_D)          1.00E+000           
+8     FILE_SCAN                       RTE_TO_MKT_D)    2.20E+001           
+9     FILE_SCAN                       DT_MTH_D)        2.40E+001           
+10    FILE_SCAN                       PROD_LN_D)       1.60E+002           
+11    FILE_SCAN                       CUST_ACCT_HIER_  1.85E+006           
+
+--- 11 row(s) selected.
+>>
+>>LOG;

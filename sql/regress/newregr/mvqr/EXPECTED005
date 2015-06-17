@@ -1,0 +1,2149 @@
+>>obey TEST005(set_up);
+>>----------------------------------------------------
+>>-------------------- set up section ----------------
+>>----------------------------------------------------
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>control query default QUERY_CACHE '0';
+
+--- SQL operation complete.
+>>control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+
+--- SQL operation complete.
+>>control query default MVQR_USE_RI_FOR_EXTRA_HUB_TABLES 'ON';
+
+--- SQL operation complete.
+>>
+>>obey GetMvDesc;
+>>--set pattern $$VERS_CURR_SCHEMA_VERSION$$ 2400;
+>>set param ?mvDescSubId  -2;
+>>set param ?mvName 'SUMBY_DAY';
+>>set param ?mvSchemaName 'SUMBY';
+>>
+>>-- query the TEXT SMD table for the descriptor of an MV
+>>-- Note: Cast to UTF8, but we don't want to exceed the 20000 byte line
+>>--       length limit of the NT version of awk (file CropDescriptor.ksh).
+>>prepare getMVDescFromTEXT from
++>  select cast(text0 || coalesce(text1, '') || coalesce(text2, '') || coalesce(text3, '')
++>                    || coalesce(text4, '') || coalesce(text5, '') || coalesce(text6, '')
++>                    || coalesce(text7, '') || coalesce(text8, '') as char(15000 bytes) character set utf8)  as mv_descriptor_text
++>  from
++>		 (SELECT o.object_uid as uid0, text as text0
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 0 ) as row0
++>	left outer join
++>		 (SELECT o.object_uid as uid1, text as text1
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 1 ) as row1
++>		 on uid0 = uid1
++>	left outer join
++>		 (SELECT o.object_uid as uid2, text as text2
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 2 ) as row2
++>		 on uid0 = uid2
++>	left outer join
++>		 (SELECT o.object_uid as uid3, text as text3
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 3 ) as row3
++>		 on uid0 = uid3
++>	left outer join
++>		 (SELECT o.object_uid as uid4, text as text4
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 4 ) as row4
++>		 on uid0 = uid4
++>	left outer join
++>		 (SELECT o.object_uid as uid5, text as text5
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 5 ) as row5
++>		 on uid0 = uid5
++>	left outer join
++>		 (SELECT o.object_uid as uid6, text as text6
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 6 ) as row6
++>		 on uid0 = uid6
++>	left outer join
++>		 (SELECT o.object_uid as uid7, text as text7
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 7 ) as row7
++>		 on uid0 = uid7
++>	left outer join
++>		 (SELECT o.object_uid as uid8, text as text8
++>		         from  HP_DEFINITION_SCHEMA.TEXT t,
++>		               HP_DEFINITION_SCHEMA.objects o,
++>		               HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.schemata s
++>		         where o.object_name = ?mvName
++>		           and o.OBJECT_TYPE = 'MV'
++>		           and o.object_uid = t.object_uid
++>		           and o.schema_uid = s.schema_uid
++>		           and s.schema_name = ?mvSchemaName
++>		           and t.object_sub_id = ?mvDescSubId
++>		           and sequence_num = 8 ) as row8
++>		 on uid0 = uid8;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare checkPlan from
++>  select operator, tname
++>  from table(explain(NULL, 'QUERYSTMT'))
++>  where operator like '%_SCAN%'
++>  order by tname;
+
+--- SQL command prepared.
+>>
+>>create schema residual;
+
+--- SQL operation complete.
+>>set schema residual;
+
+--- SQL operation complete.
+>>set pattern $$MVSchemaName$$ RESIDUAL;
+>>
+>>create table fact (
++>	pk		 int not null not droppable primary key,
++>	f1     char(20),
++>	f2     char(20),
++>	f3     char(20),
++>	name   char(20),
++>	dimkey int)
++>	store by primary key;
+
+--- SQL operation complete.
+>>
+>>create table dim1 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>create table dim2 (dkey int not null not droppable primary key, dimdata int);
+
+--- SQL operation complete.
+>>
+>>insert into fact values
++>  ( 1, 'abc', 'def', 'ghi', 'jklmnop', 1),
++>  ( 2, '123', 'def', 'ghi', 'jVONnop', 2),
++>  ( 3, 'abc', '123', 'ghi', 'jVONXop', 3),
++>  ( 4, 'abc', 'def', '123', 'jklmnop', 4),
++>  ( 5, 'abc', 'def', 'ghi', 'jVONnop', 5),
++>  ( 6, '123', 'def', 'ghi', 'jVONXop', 6),
++>  ( 7, 'abc', '123', 'ghi', 'jklmnop', 7),
++>  ( 8, 'abc', 'def', '123', 'jVONnop', 8),
++>  ( 9, 'abc', 'def', 'ghi', 'jVONXop', 9),
++>  (10, '123', 'def', 'ghi', 'jklmnop', 1),
++>  (11, 'abc', '123', 'ghi', 'jVONnop', 2),
++>  (12, 'abc', 'def', '123', 'jVONXop', 3);
+
+--- 12 row(s) inserted.
+>>
+>>insert into dim1 values
++> (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10);
+
+--- 10 row(s) inserted.
+>>
+>>insert into dim2 values
++> (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10);
+
+--- 10 row(s) inserted.
+>>
+>>
+>>alter table fact add constraint fact_fk1 foreign key (dimkey) references dim1(dkey);
+
+--- SQL operation complete.
+>>alter table fact add constraint fact_fk2 foreign key (dimkey) references dim2(dkey);
+
+--- SQL operation complete.
+>>
+>>obey TEST005(create_mvs);
+>>--===========================================
+>>-- MJVs
+>>--===========================================
+>>
+>>-- No residual preds.
+>>create mv residual_mjv1
++>	refresh on request
++>	initialized on create
++>	as  select f1, f2, dimkey, name
++>	    from fact;
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RESIDUAL_MJV1;
+>>obey TEST005(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RESIDUAL.RESIDUAL_MJV1
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B10000'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212223874423609352' isKeyCovered='1' numCols='6'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </JBBCList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O93' name='SYS_PK1'>
+        <Column id='C77' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.RESIDUAL.FACT.PK
+        </Column>
+      </Output>
+      <Output id='O96' name='F1'>
+        <Column id='C78' tableId='T1' colIndex='1'>
+          CAT.RESIDUAL.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O99' name='F2'>
+        <Column id='C79' tableId='T1' colIndex='2'>
+          CAT.RESIDUAL.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O105' name='NAME'>
+        <Column id='C81' tableId='T1' colIndex='4'>
+          CAT.RESIDUAL.FACT.NAME
+        </Column>
+      </Output>
+      <Output id='O108' name='DIMKEY'>
+        <Column id='C82' tableId='T1' colIndex='5'>
+          CAT.RESIDUAL.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- Single column residual pred.
+>>create mv residual_mjv2
++>	refresh on request
++>	initialized on create
++>	as  select f1, f2, dimkey, name
++>	    from  fact
++>	    where name like '%VON%';
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RESIDUAL_MJV2;
+>>obey TEST005(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RESIDUAL.RESIDUAL_MJV2
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B10000'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212223874425906830' isKeyCovered='1' numCols='6' residualBits='00000080'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </JBBCList>
+      <ResidualPredList>
+        <Residual id='D96'>
+          <Function id='S96' op='like'>
+            <Column ref='C84'>
+            </Column>
+            <StringVal id='S95'><![CDATA['%VON%']]></StringVal>
+          </Function>
+        </Residual>
+      </ResidualPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O98' name='SYS_PK1'>
+        <Column id='C80' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.RESIDUAL.FACT.PK
+        </Column>
+      </Output>
+      <Output id='O101' name='F1'>
+        <Column id='C81' tableId='T1' colIndex='1'>
+          CAT.RESIDUAL.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O104' name='F2'>
+        <Column id='C82' tableId='T1' colIndex='2'>
+          CAT.RESIDUAL.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O110' name='NAME'>
+        <Column id='C84' tableId='T1' colIndex='4'>
+          CAT.RESIDUAL.FACT.NAME
+        </Column>
+      </Output>
+      <Output id='O113' name='DIMKEY'>
+        <Column id='C85' tableId='T1' colIndex='5'>
+          CAT.RESIDUAL.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- Multi-column residual pred.
+>>create mv residual_mjv3
++>	refresh on request
++>	initialized on create
++>	as  select f1, f2, dimkey, name
++>	    from  fact
++>	    where f2 || f3 like '%123%';
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RESIDUAL_MJV3;
+>>obey TEST005(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RESIDUAL.RESIDUAL_MJV3
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B10000'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212223874425906830' isKeyCovered='1' numCols='6' residualBits='00000003'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </JBBCList>
+      <ResidualPredList>
+        <Residual id='D102'>
+          <Function id='S102' op='like'>
+            <Function id='S98' op='||'>
+              <Function id='S99' op='cast'>
+                <Column ref='C85'>
+                </Column>
+              </Function>
+              <Function id='S100' op='cast'>
+                <Column id='C86' tableId='T1' colIndex='3'>
+                  CAT.RESIDUAL.FACT.F3
+                </Column>
+              </Function>
+            </Function>
+            <StringVal id='S101'><![CDATA['%123%']]></StringVal>
+          </Function>
+        </Residual>
+      </ResidualPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O104' name='SYS_PK1'>
+        <Column id='C83' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.RESIDUAL.FACT.PK
+        </Column>
+      </Output>
+      <Output id='O107' name='F1'>
+        <Column id='C84' tableId='T1' colIndex='1'>
+          CAT.RESIDUAL.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O110' name='F2'>
+        <Column id='C85' tableId='T1' colIndex='2'>
+          CAT.RESIDUAL.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O116' name='NAME'>
+        <Column id='C87' tableId='T1' colIndex='4'>
+          CAT.RESIDUAL.FACT.NAME
+        </Column>
+      </Output>
+      <Output id='O119' name='DIMKEY'>
+        <Column id='C88' tableId='T1' colIndex='5'>
+          CAT.RESIDUAL.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>-- Multiple preds using the same predicate text.
+>>create mv residual_mjv4
++>	refresh on request
++>	initialized on create
++>	as  select f1, f2, dimkey, name
++>	    from  fact
++>	    where f1 || f2 like '%123%'
++>	      and f2 || f3 like '%123%';
+
+--- SQL operation complete.
+>>
+>>set pattern $$MVName$$ RESIDUAL_MJV4;
+>>obey TEST005(dump_MV);
+>>--===========================================
+>>--== Create the MV descriptor XML
+>>--===========================================
+>>
+>>log $$MVName$$.tmp clear;
+<Publish TS='0'>
+<MV>
+  <Version>
+    1.0
+  </Version>
+  <Table>
+    CAT.RESIDUAL.RESIDUAL_MJV4
+  </Table>
+  <Misc isIncremental='1'>
+  </Misc>
+  <JBB id='B10000'>
+    <Hub>
+      <JBBCList>
+        <Table id='T1' TS='212223874440066795' isKeyCovered='1' numCols='6' residualBits='00000007'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </JBBCList>
+      <ResidualPredList>
+        <Residual id='D109'>
+          <Function id='S109' op='like'>
+            <Function id='S105' op='||'>
+              <Function id='S106' op='cast'>
+                <Column ref='C91'>
+                </Column>
+              </Function>
+              <Function id='S107' op='cast'>
+                <Column ref='C92'>
+                </Column>
+              </Function>
+            </Function>
+            <StringVal id='S108'><![CDATA['%123%']]></StringVal>
+          </Function>
+        </Residual>
+        <Residual id='D113'>
+          <Function id='S113' op='like'>
+            <Function id='S110' op='||'>
+              <Function id='S111' op='cast'>
+                <Column ref='C92'>
+                </Column>
+              </Function>
+              <Function id='S112' op='cast'>
+                <Column id='C93' tableId='T1' colIndex='3'>
+                  CAT.RESIDUAL.FACT.F3
+                </Column>
+              </Function>
+            </Function>
+            <StringVal id='S108'><![CDATA['%123%']]></StringVal>
+          </Function>
+        </Residual>
+      </ResidualPredList>
+    </Hub>
+    <ExtraHub>
+    </ExtraHub>
+    <OutputList>
+      <Output id='O115' name='SYS_PK1'>
+        <Column id='C90' tableId='T1' colIndex='0' isNullable='0'>
+          CAT.RESIDUAL.FACT.PK
+        </Column>
+      </Output>
+      <Output id='O118' name='F1'>
+        <Column id='C91' tableId='T1' colIndex='1'>
+          CAT.RESIDUAL.FACT.F1
+        </Column>
+      </Output>
+      <Output id='O121' name='F2'>
+        <Column id='C92' tableId='T1' colIndex='2'>
+          CAT.RESIDUAL.FACT.F2
+        </Column>
+      </Output>
+      <Output id='O127' name='NAME'>
+        <Column id='C94' tableId='T1' colIndex='4'>
+          CAT.RESIDUAL.FACT.NAME
+        </Column>
+      </Output>
+      <Output id='O130' name='DIMKEY'>
+        <Column id='C95' tableId='T1' colIndex='5'>
+          CAT.RESIDUAL.FACT.DIMKEY
+        </Column>
+      </Output>
+    </OutputList>
+  </JBB>
+</MV>
+<Update op='Refresh' TS='1'> </Update>
+</Publish>
+>>
+>>
+>>obey TEST005(match_jq1);
+>>--===========================================
+>>--== No preds, should match only MJV1
+>>--===========================================
+>>set pattern $$QueryName$$ RESIDUAL_JQ1;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST005(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor                                                      
+----------------------------------------------------------------------
+
+<Query>                                                               
+  <Version>                                                           
+    1.0                                                               
+  </Version>                                                          
+  <Misc rewriteLevel='3'>                                             
+  </Misc>                                                             
+  <JBB id='B0'>                                                       
+    <Hub>                                                             
+      <JBBCList>                                                      
+        <Table id='T2' TS='212223874440066795' numCols='6'>           
+          CAT.RESIDUAL.FACT                                           
+          <Key>                                                       
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'> 
+              CAT.RESIDUAL.FACT.PK                                    
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </JBBCList>                                                     
+    </Hub>                                                            
+    <ExtraHub>                                                        
+      <TableList>                                                     
+        <Table id='T1' TS='212223874421483795' numCols='2'>           
+          CAT.RESIDUAL.DIM1                                           
+          <Key>                                                       
+            <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>
+              CAT.RESIDUAL.DIM1.DKEY                                  
+            </Column>                                                 
+          </Key>                                                      
+        </Table>                                                      
+      </TableList>                                                    
+      <JoinPredList>                                                  
+        <JoinPred id='J38'>                                           
+          <Column ref='C16'>                                          
+          </Column>                                                   
+          <Column ref='C6'>                                           
+          </Column>                                                   
+        </JoinPred>                                                   
+      </JoinPredList>                                                 
+    </ExtraHub>                                                       
+    <OutputList>                                                      
+      <Output id='O26'>                                               
+        <Column id='C2' tableId='T2' colIndex='1'>                    
+          CAT.RESIDUAL.FACT.F1                                        
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O29'>                                               
+        <Column id='C3' tableId='T2' colIndex='2'>                    
+          CAT.RESIDUAL.FACT.F2                                        
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O38'>                                               
+        <Column id='C6' tableId='T2' colIndex='5'>                    
+          CAT.RESIDUAL.FACT.DIMKEY                                    
+        </Column>                                                     
+      </Output>                                                       
+      <Output id='O44'>                                               
+        <Column id='C17' tableId='T1' colIndex='1'>                   
+          CAT.RESIDUAL.DIM1.DIMDATA                                   
+        </Column>                                                     
+      </Output>                                                       
+    </OutputList>                                                     
+  </JBB>                                                              
+</Query>                                                              
+
+--- 63 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                >> residual1.in;
+>>sh echo PUBLISH RESIDUAL_MJV1.xml >> residual1.in;
+>>sh echo PUBLISH RESIDUAL_MJV2.xml >> residual1.in;
+>>sh echo PUBLISH RESIDUAL_MJV3.xml >> residual1.in;
+>>sh echo PUBLISH RESIDUAL_MJV4.xml >> residual1.in;
+>>sh echo MATCH RESIDUAL_JQ1.xml    >> residual1.in;
+>>
+>>sh sh -c "$QMS residual1.in residual.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV1
+          </MVName>
+          <OutputList>
+            <Output ref='O26' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O29' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O38' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV2 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV3 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV4 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>-- Verify the MV is picked by the optimizer.
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV1';
+
+--- SQL operation complete.
+>>obey TEST005(compare);
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.RESIDUAL_MJV1                                  
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             1            1
+123                   def                             2            2
+123                   def                             6            6
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+abc                   def                             1            1
+abc                   def                             3            3
+abc                   def                             4            4
+abc                   def                             5            5
+abc                   def                             8            8
+abc                   def                             9            9
+
+--- 12 row(s) selected.
+>>
+>>log T005_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.FACT                                           
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             1            1
+123                   def                             2            2
+123                   def                             6            6
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+abc                   def                             1            1
+abc                   def                             3            3
+abc                   def                             4            4
+abc                   def                             5            5
+abc                   def                             8            8
+abc                   def                             9            9
+
+--- 12 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T005_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST005(match_jq2);
+>>--===========================================
+>>--== One, different residual pred. Should match MJV1 only.
+>>--===========================================
+>>set pattern $$QueryName$$ RESIDUAL_JQ2;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VONX%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST005(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+-----------------------------------------------------------------------------------
+
+<Query>                                                                            
+  <Version>                                                                        
+    1.0                                                                            
+  </Version>                                                                       
+  <Misc rewriteLevel='3'>                                                          
+  </Misc>                                                                          
+  <JBB id='B0'>                                                                    
+    <Hub>                                                                          
+      <JBBCList>                                                                   
+        <Table id='T2' TS='212223874440066795' numCols='6' residualBits='00000080'>
+          CAT.RESIDUAL.FACT                                                        
+          <Key>                                                                    
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>              
+              CAT.RESIDUAL.FACT.PK                                                 
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </JBBCList>                                                                  
+      <ResidualPredList>                                                           
+        <Residual id='D23'>                                                        
+          <Function id='S23' op='like'>                                            
+            <Column id='C5' tableId='T2' colIndex='4'>                             
+              CAT.RESIDUAL.FACT.NAME                                               
+            </Column>                                                              
+            <StringVal id='S22'><![CDATA['%VONX%']]></StringVal>                   
+          </Function>                                                              
+        </Residual>                                                                
+      </ResidualPredList>                                                          
+    </Hub>                                                                         
+    <ExtraHub>                                                                     
+      <TableList>                                                                  
+        <Table id='T1' TS='212223874421483795' numCols='2'>                        
+          CAT.RESIDUAL.DIM1                                                        
+          <Key>                                                                    
+            <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>             
+              CAT.RESIDUAL.DIM1.DKEY                                               
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </TableList>                                                                 
+      <JoinPredList>                                                               
+        <JoinPred id='J40'>                                                        
+          <Column ref='C16'>                                                       
+          </Column>                                                                
+          <Column ref='C6'>                                                        
+          </Column>                                                                
+        </JoinPred>                                                                
+      </JoinPredList>                                                              
+    </ExtraHub>                                                                    
+    <OutputList>                                                                   
+      <Output id='O28'>                                                            
+        <Column id='C2' tableId='T2' colIndex='1'>                                 
+          CAT.RESIDUAL.FACT.F1                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O31'>                                                            
+        <Column id='C3' tableId='T2' colIndex='2'>                                 
+          CAT.RESIDUAL.FACT.F2                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O40'>                                                            
+        <Column id='C6' tableId='T2' colIndex='5'>                                 
+          CAT.RESIDUAL.FACT.DIMKEY                                                 
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O46'>                                                            
+        <Column id='C17' tableId='T1' colIndex='1'>                                
+          CAT.RESIDUAL.DIM1.DIMDATA                                                
+        </Column>                                                                  
+      </Output>                                                                    
+    </OutputList>                                                                  
+  </JBB>                                                                           
+</Query>                                                                           
+
+--- 73 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                >> residual2.in;
+>>sh echo PUBLISH RESIDUAL_MJV1.xml >> residual2.in;
+>>sh echo PUBLISH RESIDUAL_MJV2.xml >> residual2.in;
+>>sh echo PUBLISH RESIDUAL_MJV3.xml >> residual2.in;
+>>sh echo PUBLISH RESIDUAL_MJV4.xml >> residual2.in;
+>>sh echo MATCH RESIDUAL_JQ2.xml    >> residual2.in;
+>>
+>>sh sh -c "$QMS residual2.in residual.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV1
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D23' result='NotProvided'>
+              <Function ref='S23' op='like'>
+                <MVColumn ref='C5'>
+                  NAME
+                </MVColumn>
+                <StringVal ref='S22'><![CDATA['%VONX%']]></StringVal>
+              </Function>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O28' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O40' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV2 was disqualified because MV residual predicate D96 was not matched by the query.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV3 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV4 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>-- Verify the MV is picked by the optimizer.
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV1';
+
+--- SQL operation complete.
+>>obey TEST005(compare);
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VONX%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.RESIDUAL_MJV1                                  
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             6            6
+abc                   123                             3            3
+abc                   def                             3            3
+abc                   def                             9            9
+
+--- 4 row(s) selected.
+>>
+>>log T005_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VONX%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.FACT                                           
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             6            6
+abc                   123                             3            3
+abc                   def                             3            3
+abc                   def                             9            9
+
+--- 4 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T005_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST005(match_jq3);
+>>--===========================================
+>>--== One, exact residual pred, should match MJV2.
+>>--===========================================
+>>set pattern $$QueryName$$ RESIDUAL_JQ3;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VON%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST005(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+-----------------------------------------------------------------------------------
+
+<Query>                                                                            
+  <Version>                                                                        
+    1.0                                                                            
+  </Version>                                                                       
+  <Misc rewriteLevel='3'>                                                          
+  </Misc>                                                                          
+  <JBB id='B0'>                                                                    
+    <Hub>                                                                          
+      <JBBCList>                                                                   
+        <Table id='T2' TS='212223874440066795' numCols='6' residualBits='00000080'>
+          CAT.RESIDUAL.FACT                                                        
+          <Key>                                                                    
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>              
+              CAT.RESIDUAL.FACT.PK                                                 
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </JBBCList>                                                                  
+      <ResidualPredList>                                                           
+        <Residual id='D23'>                                                        
+          <Function id='S23' op='like'>                                            
+            <Column id='C5' tableId='T2' colIndex='4'>                             
+              CAT.RESIDUAL.FACT.NAME                                               
+            </Column>                                                              
+            <StringVal id='S22'><![CDATA['%VON%']]></StringVal>                    
+          </Function>                                                              
+        </Residual>                                                                
+      </ResidualPredList>                                                          
+    </Hub>                                                                         
+    <ExtraHub>                                                                     
+      <TableList>                                                                  
+        <Table id='T1' TS='212223874421483795' numCols='2'>                        
+          CAT.RESIDUAL.DIM1                                                        
+          <Key>                                                                    
+            <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>             
+              CAT.RESIDUAL.DIM1.DKEY                                               
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </TableList>                                                                 
+      <JoinPredList>                                                               
+        <JoinPred id='J40'>                                                        
+          <Column ref='C16'>                                                       
+          </Column>                                                                
+          <Column ref='C6'>                                                        
+          </Column>                                                                
+        </JoinPred>                                                                
+      </JoinPredList>                                                              
+    </ExtraHub>                                                                    
+    <OutputList>                                                                   
+      <Output id='O28'>                                                            
+        <Column id='C2' tableId='T2' colIndex='1'>                                 
+          CAT.RESIDUAL.FACT.F1                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O31'>                                                            
+        <Column id='C3' tableId='T2' colIndex='2'>                                 
+          CAT.RESIDUAL.FACT.F2                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O40'>                                                            
+        <Column id='C6' tableId='T2' colIndex='5'>                                 
+          CAT.RESIDUAL.FACT.DIMKEY                                                 
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O46'>                                                            
+        <Column id='C17' tableId='T1' colIndex='1'>                                
+          CAT.RESIDUAL.DIM1.DIMDATA                                                
+        </Column>                                                                  
+      </Output>                                                                    
+    </OutputList>                                                                  
+  </JBB>                                                                           
+</Query>                                                                           
+
+--- 73 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                >> residual3.in;
+>>sh echo PUBLISH RESIDUAL_MJV1.xml >> residual3.in;
+>>sh echo PUBLISH RESIDUAL_MJV2.xml >> residual3.in;
+>>sh echo PUBLISH RESIDUAL_MJV3.xml >> residual3.in;
+>>sh echo PUBLISH RESIDUAL_MJV4.xml >> residual3.in;
+>>sh echo MATCH RESIDUAL_JQ3.xml    >> residual3.in;
+>>
+>>sh sh -c "$QMS residual3.in residual.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV1
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D23' result='NotProvided'>
+              <Function ref='S23' op='like'>
+                <MVColumn ref='C5'>
+                  NAME
+                </MVColumn>
+                <StringVal ref='S22'><![CDATA['%VON%']]></StringVal>
+              </Function>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O28' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O40' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV2
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D23' result='Provided'>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O28' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O40' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV3 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV4 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>-- Verify the MV is picked by the optimizer.
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV2';
+
+--- SQL operation complete.
+>>obey TEST005(compare);
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VON%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.RESIDUAL_MJV2                                  
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             2            2
+123                   def                             6            6
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   def                             3            3
+abc                   def                             5            5
+abc                   def                             8            8
+abc                   def                             9            9
+
+--- 8 row(s) selected.
+>>
+>>log T005_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and name like '%VON%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.FACT                                           
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+123                   def                             2            2
+123                   def                             6            6
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   def                             3            3
+abc                   def                             5            5
+abc                   def                             8            8
+abc                   def                             9            9
+
+--- 8 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T005_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST005(match_jq4);
+>>--===========================================
+>>--== One, exact residual pred, should match MJV3.
+>>--===========================================
+>>set pattern $$QueryName$$ RESIDUAL_JQ4;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST005(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+-----------------------------------------------------------------------------------
+
+<Query>                                                                            
+  <Version>                                                                        
+    1.0                                                                            
+  </Version>                                                                       
+  <Misc rewriteLevel='3'>                                                          
+  </Misc>                                                                          
+  <JBB id='B0'>                                                                    
+    <Hub>                                                                          
+      <JBBCList>                                                                   
+        <Table id='T2' TS='212223874440066795' numCols='6' residualBits='00000003'>
+          CAT.RESIDUAL.FACT                                                        
+          <Key>                                                                    
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>              
+              CAT.RESIDUAL.FACT.PK                                                 
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </JBBCList>                                                                  
+      <ResidualPredList>                                                           
+        <Residual id='D26'>                                                        
+          <Function id='S26' op='like'>                                            
+            <Function id='S22' op='||'>                                            
+              <Function id='S23' op='cast'>                                        
+                <Column ref='C3'>                                                  
+                </Column>                                                          
+              </Function>                                                          
+              <Function id='S24' op='cast'>                                        
+                <Column id='C4' tableId='T2' colIndex='3'>                         
+                  CAT.RESIDUAL.FACT.F3                                             
+                </Column>                                                          
+              </Function>                                                          
+            </Function>                                                            
+            <StringVal id='S25'><![CDATA['%123%']]></StringVal>                    
+          </Function>                                                              
+        </Residual>                                                                
+      </ResidualPredList>                                                          
+    </Hub>                                                                         
+    <ExtraHub>                                                                     
+      <TableList>                                                                  
+        <Table id='T1' TS='212223874421483795' numCols='2'>                        
+          CAT.RESIDUAL.DIM1                                                        
+          <Key>                                                                    
+            <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>             
+              CAT.RESIDUAL.DIM1.DKEY                                               
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </TableList>                                                                 
+      <JoinPredList>                                                               
+        <JoinPred id='J43'>                                                        
+          <Column ref='C16'>                                                       
+          </Column>                                                                
+          <Column ref='C6'>                                                        
+          </Column>                                                                
+        </JoinPred>                                                                
+      </JoinPredList>                                                              
+    </ExtraHub>                                                                    
+    <OutputList>                                                                   
+      <Output id='O31'>                                                            
+        <Column id='C2' tableId='T2' colIndex='1'>                                 
+          CAT.RESIDUAL.FACT.F1                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O34'>                                                            
+        <Column id='C3' tableId='T2' colIndex='2'>                                 
+          CAT.RESIDUAL.FACT.F2                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O43'>                                                            
+        <Column id='C6' tableId='T2' colIndex='5'>                                 
+          CAT.RESIDUAL.FACT.DIMKEY                                                 
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O49'>                                                            
+        <Column id='C17' tableId='T1' colIndex='1'>                                
+          CAT.RESIDUAL.DIM1.DIMDATA                                                
+        </Column>                                                                  
+      </Output>                                                                    
+    </OutputList>                                                                  
+  </JBB>                                                                           
+</Query>                                                                           
+
+--- 81 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                >> residual4.in;
+>>sh echo PUBLISH RESIDUAL_MJV1.xml >> residual4.in;
+>>sh echo PUBLISH RESIDUAL_MJV2.xml >> residual4.in;
+>>sh echo PUBLISH RESIDUAL_MJV3.xml >> residual4.in;
+>>sh echo PUBLISH RESIDUAL_MJV4.xml >> residual4.in;
+>>sh echo MATCH RESIDUAL_JQ4.xml    >> residual4.in;
+>>
+>>sh sh -c "$QMS residual4.in residual.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV1
+          </MVName>
+          <TableList>
+            <Table ref='T2'>
+              CAT.RESIDUAL.FACT
+            </Table>
+          </TableList>
+          <JoinPredList>
+            <JoinPred>
+              <Column ref='C1' tableId='T2'>
+                CAT.RESIDUAL.FACT.PK
+              </Column>
+              <MVColumn>
+                SYS_PK1
+              </MVColumn>
+            </JoinPred>
+          </JoinPredList>
+          <ResidualPredList>
+            <Residual ref='D26' result='NotProvided'>
+              <Function ref='S26' op='like'>
+                <Function ref='S22' op='||'>
+                  <Function ref='S23' op='cast'>
+                    <MVColumn ref='C3'>
+                      F2
+                    </MVColumn>
+                  </Function>
+                  <Function ref='S24' op='cast'>
+                    <Column ref='C4' tableId='T2'>
+                      CAT.RESIDUAL.FACT.F3
+                    </Column>
+                  </Function>
+                </Function>
+                <StringVal ref='S25'><![CDATA['%123%']]></StringVal>
+              </Function>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O34' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O43' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV3
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D26' result='Provided'>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O31' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O34' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O43' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV2 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV4 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>-- Verify the MV is picked by the optimizer.
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV3';
+
+--- SQL operation complete.
+>>obey TEST005(compare);
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.RESIDUAL_MJV3                                  
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+abc                   def                             3            3
+abc                   def                             4            4
+abc                   def                             8            8
+
+--- 6 row(s) selected.
+>>
+>>log T005_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.FACT                                           
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+abc                   def                             3            3
+abc                   def                             4            4
+abc                   def                             8            8
+
+--- 6 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T005_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST005(match_jq5);
+>>--===========================================
+>>--== Two, exact residual preds, should match MJV3 and MJV4.
+>>--===========================================
+>>set pattern $$QueryName$$ RESIDUAL_JQ5;
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f1 || f2 like '%123%'
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST005(dump_Query);
+>>--===========================================
+>>--== Create the query descriptor XML
+>>--===========================================
+>>
+>>log $$QueryName$$.tmp clear;
+>>sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+>>-- and once for the test log file
+>>execute QueryStmt;
+
+Query Descriptor
+-----------------------------------------------------------------------------------
+
+<Query>                                                                            
+  <Version>                                                                        
+    1.0                                                                            
+  </Version>                                                                       
+  <Misc rewriteLevel='3'>                                                          
+  </Misc>                                                                          
+  <JBB id='B0'>                                                                    
+    <Hub>                                                                          
+      <JBBCList>                                                                   
+        <Table id='T2' TS='212223874440066795' numCols='6' residualBits='00000007'>
+          CAT.RESIDUAL.FACT                                                        
+          <Key>                                                                    
+            <Column id='C1' tableId='T2' colIndex='0' isNullable='0'>              
+              CAT.RESIDUAL.FACT.PK                                                 
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </JBBCList>                                                                  
+      <ResidualPredList>                                                           
+        <Residual id='D26'>                                                        
+          <Function id='S26' op='like'>                                            
+            <Function id='S22' op='||'>                                            
+              <Function id='S23' op='cast'>                                        
+                <Column ref='C2'>                                                  
+                </Column>                                                          
+              </Function>                                                          
+              <Function id='S24' op='cast'>                                        
+                <Column ref='C3'>                                                  
+                </Column>                                                          
+              </Function>                                                          
+            </Function>                                                            
+            <StringVal id='S25'><![CDATA['%123%']]></StringVal>                    
+          </Function>                                                              
+        </Residual>                                                                
+        <Residual id='D30'>                                                        
+          <Function id='S30' op='like'>                                            
+            <Function id='S27' op='||'>                                            
+              <Function id='S28' op='cast'>                                        
+                <Column ref='C3'>                                                  
+                </Column>                                                          
+              </Function>                                                          
+              <Function id='S29' op='cast'>                                        
+                <Column id='C4' tableId='T2' colIndex='3'>                         
+                  CAT.RESIDUAL.FACT.F3                                             
+                </Column>                                                          
+              </Function>                                                          
+            </Function>                                                            
+            <StringVal id='S25'><![CDATA['%123%']]></StringVal>                    
+          </Function>                                                              
+        </Residual>                                                                
+      </ResidualPredList>                                                          
+    </Hub>                                                                         
+    <ExtraHub>                                                                     
+      <TableList>                                                                  
+        <Table id='T1' TS='212223874421483795' numCols='2'>                        
+          CAT.RESIDUAL.DIM1                                                        
+          <Key>                                                                    
+            <Column id='C16' tableId='T1' colIndex='0' isNullable='0'>             
+              CAT.RESIDUAL.DIM1.DKEY                                               
+            </Column>                                                              
+          </Key>                                                                   
+        </Table>                                                                   
+      </TableList>                                                                 
+      <JoinPredList>                                                               
+        <JoinPred id='J47'>                                                        
+          <Column ref='C16'>                                                       
+          </Column>                                                                
+          <Column ref='C6'>                                                        
+          </Column>                                                                
+        </JoinPred>                                                                
+      </JoinPredList>                                                              
+    </ExtraHub>                                                                    
+    <OutputList>                                                                   
+      <Output id='O35'>                                                            
+        <Column id='C2' tableId='T2' colIndex='1'>                                 
+          CAT.RESIDUAL.FACT.F1                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O38'>                                                            
+        <Column id='C3' tableId='T2' colIndex='2'>                                 
+          CAT.RESIDUAL.FACT.F2                                                     
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O47'>                                                            
+        <Column id='C6' tableId='T2' colIndex='5'>                                 
+          CAT.RESIDUAL.FACT.DIMKEY                                                 
+        </Column>                                                                  
+      </Output>                                                                    
+      <Output id='O53'>                                                            
+        <Column id='C17' tableId='T1' colIndex='1'>                                
+          CAT.RESIDUAL.DIM1.DIMDATA                                                
+        </Column>                                                                  
+      </Output>                                                                    
+    </OutputList>                                                                  
+  </JBB>                                                                           
+</Query>                                                                           
+
+--- 96 row(s) selected.
+>>
+>>
+>>control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+--- SQL operation complete.
+>>
+>>sh echo INITIALIZE                >> residual5.in;
+>>sh echo PUBLISH RESIDUAL_MJV1.xml >> residual5.in;
+>>sh echo PUBLISH RESIDUAL_MJV2.xml >> residual5.in;
+>>sh echo PUBLISH RESIDUAL_MJV3.xml >> residual5.in;
+>>sh echo PUBLISH RESIDUAL_MJV4.xml >> residual5.in;
+>>sh echo MATCH RESIDUAL_JQ5.xml    >> residual5.in;
+>>
+>>sh sh -c "$QMS residual5.in residual.out";
+>>
+>>log;
+<Result>
+  <Version>
+    1.0
+  </Version>
+  <JbbResult ref='B0'>
+    <JbbSubset hasGroupby='0'>
+      <TableList>
+        <Table ref='T2'>
+          CAT.RESIDUAL.FACT
+        </Table>
+      </TableList>
+      <CandidateList>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV1
+          </MVName>
+          <TableList>
+            <Table ref='T2'>
+              CAT.RESIDUAL.FACT
+            </Table>
+          </TableList>
+          <JoinPredList>
+            <JoinPred>
+              <Column ref='C1' tableId='T2'>
+                CAT.RESIDUAL.FACT.PK
+              </Column>
+              <MVColumn>
+                SYS_PK1
+              </MVColumn>
+            </JoinPred>
+          </JoinPredList>
+          <ResidualPredList>
+            <Residual ref='D26' result='NotProvided'>
+              <Function ref='S26' op='like'>
+                <Function ref='S22' op='||'>
+                  <Function ref='S23' op='cast'>
+                    <MVColumn ref='C2'>
+                      F1
+                    </MVColumn>
+                  </Function>
+                  <Function ref='S24' op='cast'>
+                    <MVColumn ref='C3'>
+                      F2
+                    </MVColumn>
+                  </Function>
+                </Function>
+                <StringVal ref='S25'><![CDATA['%123%']]></StringVal>
+              </Function>
+            </Residual>
+            <Residual ref='D30' result='NotProvided'>
+              <Function ref='S30' op='like'>
+                <Function ref='S27' op='||'>
+                  <Function ref='S28' op='cast'>
+                    <MVColumn ref='C3'>
+                      F2
+                    </MVColumn>
+                  </Function>
+                  <Function ref='S29' op='cast'>
+                    <Column ref='C4' tableId='T2'>
+                      CAT.RESIDUAL.FACT.F3
+                    </Column>
+                  </Function>
+                </Function>
+                <StringVal ref='S25'><![CDATA['%123%']]></StringVal>
+              </Function>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O38' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV3
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D26' result='NotProvided'>
+              <Function ref='S26' op='like'>
+                <Function ref='S22' op='||'>
+                  <Function ref='S23' op='cast'>
+                    <MVColumn ref='C2'>
+                      F1
+                    </MVColumn>
+                  </Function>
+                  <Function ref='S24' op='cast'>
+                    <MVColumn ref='C3'>
+                      F2
+                    </MVColumn>
+                  </Function>
+                </Function>
+                <StringVal ref='S25'><![CDATA['%123%']]></StringVal>
+              </Function>
+            </Residual>
+            <Residual ref='D30' result='Provided'>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O38' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+        <Candidate isPreferredMatch='0' statsOnly='0'>
+          <MVName TS='0'>
+            CAT.RESIDUAL.RESIDUAL_MJV4
+          </MVName>
+          <ResidualPredList>
+            <Residual ref='D26' result='Provided'>
+            </Residual>
+            <Residual ref='D30' result='Provided'>
+            </Residual>
+          </ResidualPredList>
+          <OutputList>
+            <Output ref='O35' result='Provided'>
+              <MVColumn ref='C2'>
+                F1
+              </MVColumn>
+            </Output>
+            <Output ref='O38' result='Provided'>
+              <MVColumn ref='C3'>
+                F2
+              </MVColumn>
+            </Output>
+            <Output ref='O47' result='Provided'>
+              <MVColumn ref='C6'>
+                DIMKEY
+              </MVColumn>
+            </Output>
+          </OutputList>
+        </Candidate>
+      </CandidateList>
+    </JbbSubset>
+    <Info><![CDATA[MV CAT.RESIDUAL.RESIDUAL_MJV2 was disqualified because Table CAT.RESIDUAL.FACT failed on residual bitmap.]]></Info>
+  </JbbResult>
+</Result>
+>>
+>>-- Verify the MV is picked by the optimizer.
+>>control query default MVQR_REWRITE_CANDIDATES 'CAT.RESIDUAL.RESIDUAL_MJV3';
+
+--- SQL operation complete.
+>>obey TEST005(compare);
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f1 || f2 like '%123%'
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.RESIDUAL_MJV3                                  
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+
+--- 3 row(s) selected.
+>>
+>>log T005_C1.txt clear;
+>>
+>>-- Verify the data is correct
+>>control query default MVQR_REWRITE_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST005($$QueryName$$);
+>>prepare QueryStmt from
++>	    select f1, f2, 
++>		         dimkey, dimdata
++>	    from fact, dim1
++>	    where dimkey=dkey
++>	      and f1 || f2 like '%123%'
++>	      and f2 || f3 like '%123%'
++>	    order by f1, f2, dimkey;
+
+--- SQL command prepared.
+>>
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.RESIDUAL.DIM1                                           
+FILE_SCAN                       CAT.RESIDUAL.FACT                                           
+
+--- 2 row(s) selected.
+>>
+>>execute QueryStmt;
+
+F1                    F2                    DIMKEY       DIMDATA    
+--------------------  --------------------  -----------  -----------
+
+abc                   123                             2            2
+abc                   123                             3            3
+abc                   123                             7            7
+
+--- 3 row(s) selected.
+>>
+>>control query default MVQR_REWRITE_LEVEL '3';
+
+--- SQL operation complete.
+>>
+>>log T005_C2.txt clear;
+>>
+>>-- Diff query results
+>>log;
+>>-- Diff is done.
+>>
+>>
+>>obey TEST005(clean_up);
+>>----------------------------------------------------
+>>------------------ clean up section ----------------
+>>----------------------------------------------------
+>>drop schema residual cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

@@ -35,17 +35,6 @@
 -- ============================================================================
 
 obey TEST136(clean_up);
-register user sql_user1;
-register user sql_user2;
-register user sql_user3;
-register user sql_user4;
-register user sql_user5;
-register user sql_user6;
-register user sql_user7;
-register user sql_user8;
-register user sql_user9;
-register user sql_user10;
-initialize authorization;
 set parserflags 64;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG136 clear;
@@ -72,7 +61,6 @@ drop role baseball_players;
 drop table "delimited_sch136".t1;
 drop schema "delimited_sch136";
 obey TEST136(drop_users);
-initialize authorization, drop;
 
 ?section drop_users
 unregister user test136_user1;

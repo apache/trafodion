@@ -1,0 +1,107 @@
+>>
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_1_3(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig31
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig31
++>AFTER INSERT ON cat3.schm.tab3a
++>REFERENCING NEW AS newT
++>UPDATE cat3.schm.tab3a SET b=a WHERE a NOT IN (SELECT a FROM newT);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig32
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig32
++>AFTER UPDATE ON cat3.schm.tab3a
++>insert into cat3.schm.tab3a values (100, 100);
+
+--- SQL operation complete.
+>>
+>>obey TEST_5_1_3(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>INSERT INTO cat3.schm.tab3a (SELECT a, b FROM tab1A);
+
+*** WARNING[11002] Trigger CAT1.SCHM_ALT.ATRIG31 on table CAT3.SCHM.TAB3A may be triggered recursively more than 16 times.
+
+*** ERROR[11003] Trigger CAT1.SCHM_ALT.ATRIG31 on table CAT3.SCHM.TAB3A was triggered recursively more than 16 times.
+
+*** ERROR[11028] Action statement of trigger CAT1.SCHM_ALT.ATRIG32 on table CAT3.SCHM.TAB3A has failed.
+
+--- 0 row(s) inserted.
+>>
+>>------------------------------------------------------------------
+>>--          CHECK RSULTS
+>>-------------------------------------------------------------------
+>>
+>>SELECT * FROM cat3.schm.tab3a;
+
+--- 0 row(s) selected.
+>> -- check result
+>>
+>>
+>>------------------------------------------------------------------
+>>obey TEST_5_1_3(clean_up);
+>>
+>>DROP TRIGGER atrig31;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig32;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 2 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- end logging
+>>LOG;

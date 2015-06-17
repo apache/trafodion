@@ -1,0 +1,121 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+--  Test different situations of the subject table that affect the way
+--  a primary key is cerated for the temporary table:
+--
+--  1. ST's PK is too long, and it has no SYSKEY -> TT creation fails !
+--  2. ST's PK is too long, and is has a SYSKEY --> TT's PK includes SYSKEY
+--  3. ST has no PK (must have SYSKEY then) --> TT's PK includes that SYSKEY
+--
+
+-- Make CREATE TRIGGER print its CREATE (TEMP) TABLE (as a "Warning")
+set define DEBUG_TEMP_TABLE 1;
+
+set schema cat1.schm;
+
+obey TEST_2_3_4(clean_up);
+log  LOG_2_3_4 clear;
+obey TEST_2_3_4(tests);
+LOG;
+obey TEST_2_3_4(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+drop trigger trg234PKnoSK;
+drop trigger trg234PKSK;
+drop trigger trg234noPK;
+
+drop table DUMMY234;
+drop table t234PKnoSK;
+drop table t234PKSK;
+drop table t234noPK;
+
+?section tests
+
+create table DUMMY234 (x int, y int, s char(240));
+---------------------------------------------------------------------------
+-- Primary Key is too long, and no SYSKEY
+---------------------------------------------------------------------------
+create table t234PKnoSK (
+	a int not null not droppable,
+	b int,
+	c char(240) not null not droppable,
+	d int,
+	primary key (a,c) not droppable)
+	store by primary key
+	location $data;
+
+-- (temp. table creation) should fail 
+create trigger trg234PKnoSK after insert on t234PKnoSK
+delete from t234PKnoSK;
+
+---------------------------------------------------------------------------
+-- Primary Key is too long, but there's a SYSKEY
+---------------------------------------------------------------------------
+create table t234PKSK (
+	a int not null not droppable,
+	b int,
+	c char(240) not null not droppable,
+	d int,
+	primary key (a,c))
+	store by (c)
+	location $data;
+
+-- SYSKEY should be used for the PK
+create trigger trg234PKSK after insert on t234PKSK
+referencing new as mynew
+insert into DUMMY234 select a,d,c from mynew;
+
+insert into t234PKSK values 
+  (11, 21, 'ABCDEFG', 30),
+  (22, 32, 'BCDEFGH', 40),
+  (33, 43, 'CDEFGHI', 50),
+  (44, 54, 'DEFGHIJ', 60),
+  (55, 65, 'EFGHIJK', 70);
+
+---------------------------------------------------------------------------
+-- No Primary Key, (there is a SYSKEY)
+---------------------------------------------------------------------------
+create table t234noPK (
+	a int not null not droppable,
+	b int,
+	c char(240) not null not droppable,
+	d int)
+	store by (c)
+	location $data;
+
+-- SYSKEY should be used for the PK
+create trigger trg234noPK after insert on t234noPK
+referencing new as mynew
+insert into DUMMY234 select a,d,c from mynew;
+
+insert into t234noPK values 
+  (11, 29, 'ABCDEFGX', 37),
+  (22, 39, 'BCDEFGHX', 47),
+  (33, 49, 'CDEFGHIX', 57),
+  (44, 59, 'DEFGHIJX', 67),
+  (55, 69, 'EFGHIJKX', 77);
+
+select * from DUMMY234;
+
+
+
+

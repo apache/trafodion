@@ -90,6 +90,8 @@ public:
   void setNumPassThroughInputs(ComUInt32 numPassThroughInputs);
   void setPassThroughInput(ComUInt32 index, void *data, ComUInt32 dataLen);
 
+  virtual LmResult handleFinalCall(ComDiagsArea *diagsArea = NULL);
+
 protected:
 
   LmResult processReturnStatus(ComSInt32 result, ComDiagsArea *diags);

@@ -656,6 +656,7 @@ int CHbaseTM::registerRegion(int64 pv_transid,
 
   _tlp_jenv->SetByteArrayRegion(jba_regionInfo, 0, pv_regionInfo_Length, (const jbyte*)pa_regionInfo);
 
+//  printf("JavaObjectInterfaceTM::registerRegion calling client callRegisterRegion with trans: %ld and startid: %ld\n", jlv_transid, jlv_startid);
   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
 					JavaMethods_[JM_REGREGION].methodID,
 					jlv_transid,

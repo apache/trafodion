@@ -1,0 +1,17 @@
+>>obey TEST_1_1_1_3(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER trig3 AFTER UPDATE OF (c, d)
++>	ON tab1A
++>	REFERENCING NEW AS newRow, OLD oldRow -- notice that AS is optional
++>	FOR EACH ROW
++>		WHEN ((newRow.c > oldRow.c) AND (newRow.a = oldRow.a))
++>
++>		DELETE FROM tab1B WHERE tab1b.a = newRow.a;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------------
+>>LOG;

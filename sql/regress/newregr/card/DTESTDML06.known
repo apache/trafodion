@@ -1,0 +1,51 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+1234c1234,1237
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+1238,1249c1241
+< NUM   OP                              TAB_NAME         Expected Cardinality
+< ----  ------------------------------  ---------------  --------------------
+< 
+< 1     HYBRID_HASH_JOIN                                 1.00E+000
+< 2     HYBRID_HASH_JOIN                                 2.00E+000
+< 3     FILE_SCAN                       HUNDRED1000      1.00E+005
+< 4     HASH_GROUPBY                                     2.00E+000
+< 5     NESTED_JOIN                                      6.00E+002
+< 6     FILE_SCAN                       FACTS            3.00E+002
+< 7     HASH_GROUPBY                                     2.00E+000
+< 
+< --- 7 row(s) selected.
+---
+> --- 0 row(s) selected.
+2169,2170c2161,2162
+< 2     HYBRID_HASH_JOIN                                 8.00E+002
+< 3     HYBRID_HASH_JOIN                                 8.00E+002
+---
+> 2     HYBRID_HASH_JOIN                                 1.00E+002
+> 3     HYBRID_HASH_JOIN                                 1.00E+002
+2327,2328c2319,2320
+< 2     HYBRID_HASH_JOIN                                 8.00E+002
+< 3     HYBRID_HASH_JOIN                                 8.00E+002
+---
+> 2     HYBRID_HASH_JOIN                                 1.00E+002
+> 3     HYBRID_HASH_JOIN                                 1.00E+002

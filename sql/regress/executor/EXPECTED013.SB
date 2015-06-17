@@ -434,6 +434,7 @@ CONTROL QUERY DEFAULT
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_SERIALIZATION           	ON
   HBASE_FILTER_PREDS            	ON
+  TRAF_INDEX_CREATE_OPT         	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH

@@ -1,0 +1,54 @@
+>>obey TEST_3_2_3(tests);
+>>
+>>CREATE TRIGGER tr BEFORE INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (newrow.a > (SELECT count (*) FROM tab1B))
++>		   set newrow.a=1000;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>DROP TABLE tab1B;
+
+*** ERROR[11033] Object CAT1.SCHM.TAB1B cannot be dropped because it is being used by trigger CAT1.SCHM.TR.
+
+*** ERROR[1031] Object CAT1.SCHM.TAB1B could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------------------
+>>
+>>drop trigger tr;
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER tr AFTER INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newrow
++>	FOR EACH ROW
++>		WHEN (newrow.a > 1000)
++>
++>		INSERT INTO tab1B VALUES (newrow.a,newrow.b);
+
+--- SQL operation complete.
+>>
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>DROP TABLE tab1B;
+
+*** ERROR[11033] Object CAT1.SCHM.TAB1B cannot be dropped because it is being used by trigger CAT1.SCHM.TR.
+
+*** ERROR[1031] Object CAT1.SCHM.TAB1B could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>--------------------------------------------------------
+>>LOG;

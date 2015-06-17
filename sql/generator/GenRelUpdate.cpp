@@ -1247,6 +1247,9 @@ short HbaseDelete::codeGen(Generator * generator)
 		      keyColValTuppIndex,
 		      0, // hbaseFilterValTuppIndex
 
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
+
 		      tdbListOfRangeRows,
 		      tdbListOfUniqueRows,
 		      listOfFetchedColNames,
@@ -2068,6 +2071,9 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      keyColValTuppIndex,
 		      0, // hbaseFilterValTuppIndex
 
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
+
 		      tdbListOfRangeRows,
 		      tdbListOfUniqueRows,
 		      listOfFetchedColNames,
@@ -2185,6 +2191,8 @@ short HbaseInsert::codeGen(Generator *generator)
   MapTable * last_map_table = generator->getLastMapTable();
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
+  if (getIsTrafLoadPrep())
+    returnRow = isReturnRow();
 
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
   ex_cri_desc * returnedDesc = givenDesc;
@@ -2710,6 +2718,9 @@ short HbaseInsert::codeGen(Generator *generator)
 		      0, // keyColValTuppIndex
 		      0, // hbaseFilterValTuppIndex
 
+                      0, // hbaseTimestamp
+                      0, // hbaseVersion
+
 		      NULL,
 		      NULL, //tdbListOfDelRows,
 		      NULL,
@@ -2798,7 +2809,7 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setContinueOnError(CmpCommon::getDefault(TRAF_LOAD_CONTINUE_ON_ERROR) == DF_ON);
         hbasescan_tdb->setLogErrorRows(CmpCommon::getDefault(TRAF_LOAD_LOG_ERROR_ROWS) == DF_ON);
         hbasescan_tdb->setMaxErrorRows((UInt32)CmpCommon::getDefaultNumeric(TRAF_LOAD_MAX_ERROR_ROWS));
-        NAString errCountRowIdNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_ID);
+        NAString errCountRowIdNAS = CmpCommon::getDefaultString(TRAF_LOAD_ERROR_COUNT_ID);
         char * errCountRowId = NULL;
         if (errCountRowIdNAS.length() > 0)
         {

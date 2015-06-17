@@ -1894,8 +1894,6 @@ void ItemExpr::synthTypeAndValueId(NABoolean redriveTypeSynthesisFlag, NABoolean
   if (nodeIsBound() AND NOT redriveTypeSynthesisFlag) return;
 
   Int32 nc = getArity();
-  ValueDesc *vdesc;
-  DomainDesc *ddesc;
 
   // do it recursively on the children
   for (Lng32 i = 0; i < (Lng32)nc; i++)
@@ -1909,6 +1907,24 @@ void ItemExpr::synthTypeAndValueId(NABoolean redriveTypeSynthesisFlag, NABoolean
 	}
       // else leave the RelExpr alone
     }
+
+  // Now do the non-recursive part
+  synthTypeAndValueId2( redriveTypeSynthesisFlag, redriveChildTypeSynthesis );
+  
+} // ItemExpr::synthTypeAndValueId()
+
+//
+// ItemExpr::synthTypeAndValueId2() - a helper routine for synthTypeAndValueId()
+// NOTE: The code for this routine came from the previous version of
+//       ItemExpr::synthTypeAndValueId().  It was pulled out as a separate
+//       routine so that the C++ compiler would generate code for
+//       ItemExpr::synthTypeAndValueId() that used significantly less stack space.
+//
+void ItemExpr::synthTypeAndValueId2(NABoolean redriveTypeSynthesisFlag, NABoolean redriveChildTypeSynthesis)
+{
+  Int32 nc = getArity();
+  ValueDesc *vdesc;
+  DomainDesc *ddesc;
 
   // make sure the expression has a value id
   if (valId_ == NULL_VALUE_ID)
@@ -1960,7 +1976,7 @@ void ItemExpr::synthTypeAndValueId(NABoolean redriveTypeSynthesisFlag, NABoolean
 
   // mark me as bound
   markAsBound();
-} // ItemExpr::synthTypeAndValueId()
+} // ItemExpr::synthTypeAndValueId2()
 
 // -----------------------------------------------------------------------
 // ItemExpr::isCovered()
@@ -2229,21 +2245,26 @@ void ItemExpr::display()
 }
 // LCOV_EXCL_STOP
 
-void ItemExpr::unparse(NAString &result,
-		       PhaseEnum phase,
-		       UnparseFormatEnum form,
-		       TableDesc * tabId) const
+
+//
+// computeKwdAndFlags() - a helper routine for ItemExpr::unparse()
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::unparse().   It has been pulled out into
+//       a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       recursive ItemExpr::unparse() routine.
+//
+void ItemExpr::computeKwdAndFlags( NAString &kwd,
+		                   NABoolean &prefixFns,
+		                   NABoolean &specialPrefixFns,
+		                   PhaseEnum phase,
+		                   UnparseFormatEnum form,
+		                   TableDesc * tabId ) const
 {
-  // Avoid creating large strings which will only be truncated later
-  // by EXPLAIN.
-  if (form == EXPLAIN_FORMAT && (result.length() > 4096)) 
-  {
-    return;
-  }
+  OperatorTypeEnum operatorType = getOperatorType();
 
-  NAString kwd(CmpCommon::statementHeap());
-
-  if (getOperatorType() == ITM_BASECOLUMN)
+  if ( operatorType == ITM_BASECOLUMN)
   {
     if (form == QUERY_FORMAT)
     {
@@ -2258,14 +2279,14 @@ void ItemExpr::unparse(NAString &result,
     else
       kwd = getText();
   }
-  else if (getOperatorType() == ITM_RENAME_COL)
+  else if ( operatorType == ITM_RENAME_COL)
   {
     if (form == HIVE_MD_FORMAT)
       kwd = ((RenameCol *)this)->getNewColRefName()->getColName();
     else
       kwd = getText();
   }
-  else if ((getOperatorType() == ITM_CACHE_PARAM) &&
+  else if (( operatorType == ITM_CACHE_PARAM) &&
            (form == QUERY_FORMAT) )
     ((ConstantParameter *)this)->getConstVal()->unparse(kwd, phase, QUERY_FORMAT, tabId);
   else
@@ -2278,12 +2299,6 @@ void ItemExpr::unparse(NAString &result,
       TrimNAStringSpace(kwd);
       kwd.toUpper();
     }
-
-  Int32 arity = getArity();
-
-  OperatorTypeEnum operatorType = getOperatorType();
-  NABoolean prefixFns = FALSE;          // prefix function, some with infix, arity 2
-  NABoolean specialPrefixFns = FALSE;   // require special prefix argument, arity 1 or 2
 
   switch (operatorType)
   {
@@ -2324,8 +2339,213 @@ void ItemExpr::unparse(NAString &result,
           // day of the month
           specialPrefixFns = TRUE;
         }
-
   }
+}
+//
+// computeKwdAndPostfix() - a helper routine for ItemExpr::unparse()
+//
+// NOTE: Either computes or augments kwd, depending on the item expr involved.
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::unparse().   It has been pulled out into
+//       a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       recursive ItemExpr::unparse() routine.
+//
+void ItemExpr::computeKwdAndPostfix( NAString &kwd,
+                                     NAString &postfix,
+                                     UnparseFormatEnum form ) const
+{
+        // print function syntax of the form <kwd> <children> <postfix>
+        //     <fname>(<prefix-args,> <children> <,postfix-args>)
+        //     <--------kwd--------->            <----postfix--->
+
+        // handle special prefix argument cases by adding to 'kwd' and 'postfix'
+
+        OperatorTypeEnum operatorType = getOperatorType();
+        switch (operatorType)
+          {
+          case ITM_CAST:
+            {
+              if (form == QUERY_FORMAT || form == COMPUTED_COLUMN_FORMAT)
+                {
+                  kwd += "(";
+                  postfix = " AS ";
+
+                  // Get the Data type after the Cast
+                  const NAType *naType = ((Cast *) this)->getType();
+
+                  // ignore NULLs description in getTypeSQLName
+                  postfix += naType->getTypeSQLname(TRUE);
+                  postfix += ")";
+                }
+              else
+                kwd += "(";
+            }
+            break;
+
+          case ITM_EXTRACT:
+          case ITM_EXTRACT_ODBC:
+            switch(((Extract*) this)->getExtractField())
+              {
+              case REC_DATE_YEAR:
+                kwd = "YEAR(";
+                break;
+              case REC_DATE_MONTH:
+                kwd = "MONTH(";
+                break;
+              case REC_DATE_DAY:
+                kwd = "DAY(";
+                break;
+              case REC_DATE_HOUR:
+                kwd = "HOUR(";
+                break;
+              case REC_DATE_MINUTE:
+                kwd = "MINUTE(";
+                break;
+              case REC_DATE_SECOND:
+                kwd = "SECOND(";
+                break;
+              case REC_DATE_YEARQUARTER_EXTRACT:
+                kwd = "DATE_PART('YEARQUARTER',";
+                break;
+              case REC_DATE_YEARMONTH_EXTRACT:
+                kwd = "DATE_PART('YEARMONTH',";
+                break;
+              case REC_DATE_YEARQUARTER_D_EXTRACT:
+                kwd = "DATE_PART('YEARQUARTERD',";
+                break;
+              case REC_DATE_YEARMONTH_D_EXTRACT:
+                kwd = "DATE_PART('YEARMONTHD',";
+                break;
+                // YEARWEEK gets transformed into ITM_YEARWEEK, see below
+              default:
+                kwd += "(";
+                break;
+              }
+            break;
+
+          case ITM_DATE_TRUNC_YEAR:
+            kwd = "DATE_TRUNC('YEAR',";
+            break;
+          case ITM_DATE_TRUNC_MONTH:
+            kwd = "DATE_TRUNC('MONTH',";
+            break;
+          case ITM_DATE_TRUNC_DAY:
+            kwd = "DATE_TRUNC('DAY',";
+            break;
+          case ITM_DATE_TRUNC_HOUR:
+            kwd = "DATE_TRUNC('HOUR',";
+            break;
+          case ITM_DATE_TRUNC_MINUTE:
+            kwd = "DATE_TRUNC('MINUTE',";
+            break;
+          case ITM_DATE_TRUNC_SECOND:
+            kwd = "DATE_TRUNC('SECOND',";
+            break;
+          case ITM_DATE_TRUNC_CENTURY:
+            kwd = "DATE_TRUNC('CENTURY',";
+            break;
+          case ITM_DATE_TRUNC_DECADE:
+            kwd = "DATE_TRUNC('DECADE',";
+            break;
+          case ITM_DATEDIFF_YEAR:
+            kwd = "DATEDIFF(YEAR,";
+            break;
+          case ITM_DATEDIFF_QUARTER:
+            kwd = "DATEDIFF(QUARTER,";
+            break;
+          case ITM_DATEDIFF_MONTH:
+            kwd = "DATEDIFF(MONTH,";
+            break;
+          case ITM_DATEDIFF_WEEK:
+            kwd = "DATEDIFF(WEEK,";
+            break;
+          case ITM_YEARWEEK:
+            kwd = "DATE_PART('YEARWEEK',";
+            break;
+          case ITM_YEARWEEKD:
+            kwd = "DATE_PART('YEARWEEKD',";
+            break;
+
+          case ITM_PLUS:
+          case ITM_MINUS:
+            // we come here for special datetime functions that
+            // get represented by a + or - operator with
+            // isStandardNormalization() set
+            if (((BiArith *) this)->isStandardNormalization())
+              {
+                // Here are the original expressions and their transformations,
+                // (+) and (-) indicate the +/- operators with the standard
+                // normalization flag set:
+                //
+                // ADD_MONTHS(<datetime_expr>, <num_expr> [, 0])  ==>
+                //                <datetime_expr> (+) CAST(<num_expr> AS INTERVAL MONTHS)
+                // DATE_ADD(<datetime_expr>, <interval_expr>)  ==>
+                //                <datetime_expr> (+) <interval_expr>
+                // DATE_SUB(<datetime_expr>, <interval_expr>)  ==>
+                //                <datetime_expr> (-) <interval_expr>
+                // DATEADD(<keyword>, <num_expr>, <datetime_expr>)  ==>
+                //                <datetime_expr> (+) CAST(<num_expr> AS ...)
+                // TIMESTAMPADD(<keyword>, <num_expr>, <datetime_expr>)  ==>
+                //                <datetime_expr> (+) CAST(<num_expr> AS ...)
+                //
+                // We unparse all those as the equivalent DATE_ADD and DATE_SUB
+                // functions:
+                if (operatorType == ITM_PLUS)
+                  kwd = "DATE_ADD(";
+                else
+                  kwd = "DATE_SUB(";
+              }
+            else if (((BiArith *) this)->isKeepLastDay() && operatorType == ITM_PLUS)
+              {
+                // Here are the original expressions and their transformations,
+                // (+) and (-) indicate the +/- operators with the "keep last day"
+                // normalization flag set:
+                //
+                // ADD_MONTHS(<datetime_expr>, <num_expr>, 1)  ==>
+                //                <datetime_expr> (+) CAST(<num_expr> AS INTERVAL MONTHS)
+                CMPASSERT(child(1)->getValueId().getType().getTypeQualifier() == NA_INTERVAL_TYPE &&
+                          child(1)->getValueId().getType().getFSDatatype() == REC_INT_MONTH);
+                kwd = "ADD_MONTHS(";
+                postfix = ", 1" + postfix;
+              }
+            else
+              DCMPASSERT(FALSE); // the above should have covered all datetime math expressions
+            break;
+
+          default:
+            kwd += "(";
+            break;
+          }
+}
+
+void ItemExpr::unparse(NAString &result,
+		       PhaseEnum phase,
+		       UnparseFormatEnum form,
+		       TableDesc * tabId) const
+{
+  // Avoid creating large strings which will only be truncated later
+  // by EXPLAIN.
+  if (form == EXPLAIN_FORMAT && (result.length() > 4096)) 
+  {
+    return;
+  }
+
+  // Allocate 3 procedure local variables and initialize them here.
+  // They may get changed by the call to ItemExpr::computeKwdAndFlags() 
+  // which follows, but we initialize them here so source analysis
+  // tools won't complain about unitialized variables.
+  //
+  NAString  kwd(CmpCommon::statementHeap());
+  NABoolean prefixFns = FALSE;          // prefix function, some with infix, arity 2
+  NABoolean specialPrefixFns = FALSE;   // require special prefix argument, arity 1 or 2
+
+  computeKwdAndFlags( kwd, prefixFns, specialPrefixFns, phase, form, tabId );
+
+  OperatorTypeEnum operatorType = getOperatorType();
+
+  Int32 arity = getArity();
 
   if (operatorType != origOpType() &&
       form == QUERY_FORMAT ||
@@ -2499,167 +2719,9 @@ void ItemExpr::unparse(NAString &result,
       }
       else
       {
-        // print function syntax of the form <kwd> <children> <postfix>
-        //     <fname>(<prefix-args,> <children> <,postfix-args>)
-        //     <--------kwd--------->            <----postfix--->
         NAString postfix = ")";
 
-        // handle special prefix argument cases by adding to 'kwd' and 'postfix'
-        switch (operatorType)
-          {
-          case ITM_CAST:
-            {
-              if (form == QUERY_FORMAT || form == COMPUTED_COLUMN_FORMAT)
-                {
-                  kwd += "(";
-                  postfix = " AS ";
-
-                  // Get the Data type after the Cast
-                  const NAType *naType = ((Cast *) this)->getType();
-
-                  // ignore NULLs description in getTypeSQLName
-                  postfix += naType->getTypeSQLname(TRUE);
-                  postfix += ")";
-                }
-              else
-                kwd += "(";
-            }
-            break;
-
-          case ITM_EXTRACT:
-          case ITM_EXTRACT_ODBC:
-            switch(((Extract*) this)->getExtractField())
-              {
-              case REC_DATE_YEAR:
-                kwd = "YEAR(";
-                break;
-              case REC_DATE_MONTH:
-                kwd = "MONTH(";
-                break;
-              case REC_DATE_DAY:
-                kwd = "DAY(";
-                break;
-              case REC_DATE_HOUR:
-                kwd = "HOUR(";
-                break;
-              case REC_DATE_MINUTE:
-                kwd = "MINUTE(";
-                break;
-              case REC_DATE_SECOND:
-                kwd = "SECOND(";
-                break;
-              case REC_DATE_YEARQUARTER_EXTRACT:
-                kwd = "DATE_PART('YEARQUARTER',";
-                break;
-              case REC_DATE_YEARMONTH_EXTRACT:
-                kwd = "DATE_PART('YEARMONTH',";
-                break;
-              case REC_DATE_YEARQUARTER_D_EXTRACT:
-                kwd = "DATE_PART('YEARQUARTERD',";
-                break;
-              case REC_DATE_YEARMONTH_D_EXTRACT:
-                kwd = "DATE_PART('YEARMONTHD',";
-                break;
-                // YEARWEEK gets transformed into ITM_YEARWEEK, see below
-              default:
-                kwd += "(";
-                break;
-              }
-            break;
-
-          case ITM_DATE_TRUNC_YEAR:
-            kwd = "DATE_TRUNC('YEAR',";
-            break;
-          case ITM_DATE_TRUNC_MONTH:
-            kwd = "DATE_TRUNC('MONTH',";
-            break;
-          case ITM_DATE_TRUNC_DAY:
-            kwd = "DATE_TRUNC('DAY',";
-            break;
-          case ITM_DATE_TRUNC_HOUR:
-            kwd = "DATE_TRUNC('HOUR',";
-            break;
-          case ITM_DATE_TRUNC_MINUTE:
-            kwd = "DATE_TRUNC('MINUTE',";
-            break;
-          case ITM_DATE_TRUNC_SECOND:
-            kwd = "DATE_TRUNC('SECOND',";
-            break;
-          case ITM_DATE_TRUNC_CENTURY:
-            kwd = "DATE_TRUNC('CENTURY',";
-            break;
-          case ITM_DATE_TRUNC_DECADE:
-            kwd = "DATE_TRUNC('DECADE',";
-            break;
-          case ITM_DATEDIFF_YEAR:
-            kwd = "DATEDIFF(YEAR,";
-            break;
-          case ITM_DATEDIFF_QUARTER:
-            kwd = "DATEDIFF(QUARTER,";
-            break;
-          case ITM_DATEDIFF_MONTH:
-            kwd = "DATEDIFF(MONTH,";
-            break;
-          case ITM_DATEDIFF_WEEK:
-            kwd = "DATEDIFF(WEEK,";
-            break;
-          case ITM_YEARWEEK:
-            kwd = "DATE_PART('YEARWEEK',";
-            break;
-          case ITM_YEARWEEKD:
-            kwd = "DATE_PART('YEARWEEKD',";
-            break;
-
-          case ITM_PLUS:
-          case ITM_MINUS:
-            // we come here for special datetime functions that
-            // get represented by a + or - operator with
-            // isStandardNormalization() set
-            if (((BiArith *) this)->isStandardNormalization())
-              {
-                // Here are the original expressions and their transformations,
-                // (+) and (-) indicate the +/- operators with the standard
-                // normalization flag set:
-                //
-                // ADD_MONTHS(<datetime_expr>, <num_expr> [, 0])  ==>
-                //                <datetime_expr> (+) CAST(<num_expr> AS INTERVAL MONTHS)
-                // DATE_ADD(<datetime_expr>, <interval_expr>)  ==>
-                //                <datetime_expr> (+) <interval_expr>
-                // DATE_SUB(<datetime_expr>, <interval_expr>)  ==>
-                //                <datetime_expr> (-) <interval_expr>
-                // DATEADD(<keyword>, <num_expr>, <datetime_expr>)  ==>
-                //                <datetime_expr> (+) CAST(<num_expr> AS ...)
-                // TIMESTAMPADD(<keyword>, <num_expr>, <datetime_expr>)  ==>
-                //                <datetime_expr> (+) CAST(<num_expr> AS ...)
-                //
-                // We unparse all those as the equivalent DATE_ADD and DATE_SUB
-                // functions:
-                if (operatorType == ITM_PLUS)
-                  kwd = "DATE_ADD(";
-                else
-                  kwd = "DATE_SUB(";
-              }
-            else if (((BiArith *) this)->isKeepLastDay() && operatorType == ITM_PLUS)
-              {
-                // Here are the original expressions and their transformations,
-                // (+) and (-) indicate the +/- operators with the "keep last day"
-                // normalization flag set:
-                //
-                // ADD_MONTHS(<datetime_expr>, <num_expr>, 1)  ==>
-                //                <datetime_expr> (+) CAST(<num_expr> AS INTERVAL MONTHS)
-                CMPASSERT(child(1)->getValueId().getType().getTypeQualifier() == NA_INTERVAL_TYPE &&
-                          child(1)->getValueId().getType().getFSDatatype() == REC_INT_MONTH);
-                kwd = "ADD_MONTHS(";
-                postfix = ", 1" + postfix;
-              }
-            else
-              DCMPASSERT(FALSE); // the above should have covered all datetime math expressions
-            break;
-
-          default:
-            kwd += "(";
-            break;
-          }
+        computeKwdAndPostfix( kwd, postfix, form );
 
         // function name, open parenthesis, initial arguments
         result += kwd;
@@ -12574,7 +12636,7 @@ ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) LOBconvert(NULL, obj_, tgtSize_);
+    result = new (outHeap) LOBconvert(NULL,obj_,tgtSize_);
   else
     result = derivedNode;
 
@@ -13534,7 +13596,106 @@ ItemExpr * SequenceValue::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   return BuiltinFunction::copyTopNode(result, outHeap);
 
 } // SequenceValue::copyTopNode()
-                                                  
+        
+// HbaseTimestamp                                          
+HbaseTimestamp::~HbaseTimestamp()
+{
+}
+
+ItemExpr * HbaseTimestamp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  HbaseTimestamp *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) HbaseTimestamp(col_);
+  else
+    result = (HbaseTimestamp*)derivedNode;
+
+  result->colIndex_ = colIndex_;
+  result->colName_ = colName_;
+  result->tsVals_ = tsVals_;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+} // HbaseTimestamp::copyTopNode()
+  
+// HbaseTimestampRef                                          
+HbaseTimestampRef::~HbaseTimestampRef()
+{
+}
+
+ItemExpr * HbaseTimestampRef::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  HbaseTimestampRef *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) HbaseTimestampRef(col_);
+  else
+    result = (HbaseTimestampRef*)derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+} // HbaseTimestamp::copyTopNode()
+  
+NABoolean HbaseTimestamp::isCovered
+(const ValueIdSet& newExternalInputs,
+ const GroupAttributes& coveringGA,
+ ValueIdSet& referencedInputs,
+ ValueIdSet& coveredSubExpr,
+ ValueIdSet& unCoveredExpr) const
+{
+  //return TRUE;
+  return FALSE;
+}
+
+// HbaseVersion                                          
+HbaseVersion::~HbaseVersion()
+{
+}
+
+ItemExpr * HbaseVersion::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  HbaseVersion *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) HbaseVersion(col_);
+  else
+    result = (HbaseVersion*)derivedNode;
+
+  result->colIndex_ = colIndex_;
+  result->colName_ = colName_;
+  result->tsVals_ = tsVals_;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+} // HbaseVersion::copyTopNode()
+  
+// HbaseVersionRef                                          
+HbaseVersionRef::~HbaseVersionRef()
+{
+}
+
+ItemExpr * HbaseVersionRef::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  HbaseVersionRef *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) HbaseVersionRef(col_);
+  else
+    result = (HbaseVersionRef*)derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+} // HbaseVersion::copyTopNode()
+  
+NABoolean HbaseVersion::isCovered
+(const ValueIdSet& newExternalInputs,
+ const GroupAttributes& coveringGA,
+ ValueIdSet& referencedInputs,
+ ValueIdSet& coveredSubExpr,
+ ValueIdSet& unCoveredExpr) const
+{
+  //return TRUE;
+  return FALSE;
+}
+
+// RowNumFunc                        
 RowNumFunc::~RowNumFunc()
 {
 }

@@ -437,6 +437,7 @@ void TableMappingUDF::rewriteNode(NormWA & normWARef)
     childInfo_[i]->orderBy_.normalizeNode(normWARef);
     childInfo_[i]->outputs_.normalizeNode(normWARef);
   }
+  udfOutputToChildInputMap_.normalizeNode(normWARef);
   // rewrite group attributes and selection pred
   RelExpr::rewriteNode(normWARef);
 }
@@ -577,82 +578,107 @@ void TableMappingUDF::finishSynthEstLogProp()
 };
 
 
-void TableMappingUDF::synthEstLogProp(const EstLogPropSharedPtr& inputLP)
+void TableMappingUDF::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
-  // get child(ren) histograms
-  EstLogPropSharedPtr childrenInputEstLogProp;
-  CostScalar inputFromParentCard = inputLP->getResultCardinality();
-  
-  EstLogPropSharedPtr myEstProps(new (HISTHEAP) EstLogProp(*inputLP));
-  CostScalar udfCard = csOne;
-  
-  // Set tmUdf output cardinality
-  // 1. no children: children histograms will have cardinality of 1
-  if(getArity() < 1)
-  {  
-    udfCard = 
-      ActiveSchemaDB()->getDefaults().getAsDouble(TMUDF_LEAF_CARDINALITY);
-  }
-  // 2. one child
-  else if(getArity()==1)
-  {
-    childrenInputEstLogProp = child(0).outputLogProp(inputLP);
-    CostScalar udfCardFactor = 
-       ActiveSchemaDB()->getDefaults().getAsDouble(TMUDF_CARDINALITY_FACTOR);
+  if (getGroupAttr()->isPropSynthesized(inputEstLogProp)) return;
 
-    udfCard = childrenInputEstLogProp->getResultCardinality() * udfCardFactor;
-  }
-  // 3. more than one child
-  else{
-    // not implemented yet
-    CMPASSERT(FALSE);
-  }
-  
+  CostScalar inputFromParentCard = inputEstLogProp->getResultCardinality();
 
-  
-  // use child(ren) histograms to figure out rowcount and column uec
-  //const ColStatDescList & childColStatsDescList = childrenInputEstLogProp->getColStats();
-  ValueIdSet tmUdfOutputs = getGroupAttr()->getCharacteristicOutputs();
-  
-  // compute output cardinality, it is a function of
-  // * the input from the child(ren) 
-  // * a factor (specified via a comp_int)
-  myEstProps->setResultCardinality(udfCard);
-  
-  ColStatDescList & udfColStatDescList = myEstProps->colStats();
-  
-  for(ValueId udfOutputCol=tmUdfOutputs.init(); 
-              tmUdfOutputs.next(udfOutputCol);
-              tmUdfOutputs.advance(udfOutputCol))
-  {
-    NABoolean inputHistFound = FALSE;
-    ValueId inputValId;
-    ColStatsSharedPtr inputColStats;
-    
-    udfOutputToChildInputMap_.mapValueIdDown(udfOutputCol, inputValId);
+  // create an empty result
+  EstLogPropSharedPtr myEstProps(new (HISTHEAP) EstLogProp(*inputEstLogProp));
 
-    // if output is not found then inputValId is set to 
-    // udfOutputCol in such a case set inputValId to NULL_VALUE_ID
-    if(inputValId == udfOutputCol)
-      inputValId = NULL_VALUE_ID;
-    
-    if(inputValId != NULL_VALUE_ID)
+  // call the compiler UDF interaction, this may produce row counts and UECs
+  // for the output columns of the UDF, if specified by the UDF writer
+  NABoolean status = dllInteraction_->describeStatistics(this, inputEstLogProp);
+
+  CostScalar udfCard = dllInteraction_->getResultCardinality(this);
+  NABoolean udfSpecifiedCard = (udfCard >= 0);
+  int arity = getArity();
+
+  // Set tmUdf output cardinality, unless specified by UDF writer
+  if (!udfSpecifiedCard)
     {
-      for (CollIndex c=0; c<getArity() && !inputHistFound; c++)
+      // 1. no children: children histograms will have cardinality of 1
+      if(arity < 1)
         {
-          // try to get child histogram from this child
-          inputColStats = child(c).outputLogProp(inputLP)->getColStats().
-            getColStatsPtrForColumn(inputValId);
-      
-          if(inputColStats != NULL)
-            inputHistFound = TRUE;
+          // CQD is used for default cardinality of a leaf TMUDF
+          udfCard = 
+            ActiveSchemaDB()->getDefaults().getAsDouble(TMUDF_LEAF_CARDINALITY);
+        }
+      else
+        {
+          // use information about the function type (e.g. mapper, reducer) to
+          // estimate the row count
+          CostScalar udfCardFactor =
+            dllInteraction_->getCardinalityScaleFactorFromFunctionType(this);
+
+          // if the function type does not help, use a CQD
+          if (udfCardFactor < 0)
+            udfCardFactor =
+              ActiveSchemaDB()->getDefaults().getAsDouble(TMUDF_CARDINALITY_FACTOR);
+
+          // base the result cardinality of the child with the highest cardinality
+          for (CollIndex c=0; c<getArity(); c++)
+            {
+              EstLogPropSharedPtr childrenInputEstLogProp = child(c).outputLogProp(inputEstLogProp);
+              CostScalar childCard = child(c).outputLogProp(inputEstLogProp)->getResultCardinality();
+
+              myEstProps->unresolvedPreds() += childrenInputEstLogProp->getUnresolvedPreds();
+
+              if (childCard > udfCard)
+                udfCard = childCard;
+            }
+
+          udfCard = udfCard * udfCardFactor;
         }
     }
 
+  myEstProps->setResultCardinality(udfCard);
+
+  // use child(ren) histograms to figure out output column uecs
+  ValueIdList &tmudfOutputs = getProcOutputParamsVids();
+  ColStatDescList udfColStatDescList(CmpCommon::statementHeap());
+
+  for(CollIndex c=0; c<tmudfOutputs.entries(); c++)
+  {
+    ValueId udfOutputCol = tmudfOutputs[c];
+    NABoolean inputHistFound = FALSE;
+    ValueId inputValId;
+    ColStatsSharedPtr inputColStats;
+    // initialize the uec with the value specified by the UDF, or -1
+    CostScalar colUec = dllInteraction_->getOutputColumnUEC(this, c);
+    
+    if (arity > 0)
+      {
+        udfOutputToChildInputMap_.mapValueIdDown(udfOutputCol, inputValId);
+
+        if(inputValId == udfOutputCol)
+          // udfOutputCol is not passed through from a child
+          inputValId = NULL_VALUE_ID;
+
+        if(inputValId != NULL_VALUE_ID)
+          {
+            for (CollIndex c=0; c<arity && !inputHistFound; c++)
+              {
+                // try to get child histogram from this child
+                inputColStats =
+                  child(c).outputLogProp(inputEstLogProp)->
+                  getColStats().getColStatsPtrForColumn(inputValId);
+
+                if(inputColStats != NULL)
+                  inputHistFound = TRUE;
+              }
+          }
+      }
+
     if(!inputHistFound)
     {
-      double colUec = udfCard.getValue() * 
-        ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_MODIFY_DEFAULT_UEC);
+      // if the UDF didn't specify a UEC and we have no histogram, use a CQD
+      if (colUec < 1)
+        colUec = udfCard.getValue() * 
+          ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_MODIFY_DEFAULT_UEC);
+
+      // create a fake histogram with the specified cardinality and UEC
       udfColStatDescList.addColStatDescForVirtualCol(colUec,
                                                      udfCard, 
                                                      udfOutputCol,
@@ -661,20 +687,70 @@ void TableMappingUDF::synthEstLogProp(const EstLogPropSharedPtr& inputLP)
                                                      NULL,
                                                      TRUE);
     }
-    else{
+    else
+    {
       ColStatDescSharedPtr outputColStatDescSharedPtr(
         new(HISTHEAP) ColStatDesc(inputColStats,udfOutputCol, HISTHEAP),HISTHEAP);
+
+      if (colUec >= 1)
+        {
+          // We have information from two sources: The UDF specified a column UEC
+          // and we also have a histogram from the corresponding child column.
+          // Try to consolidate these two pieces of information by scaling the
+          // UECs in the histogram to match those specified by the UDF.
+          outputColStatDescSharedPtr->getColStats()->setRowsAndUec(udfCard, colUec);
+        }
+
       udfColStatDescList.insert(outputColStatDescSharedPtr);
     }
   }
+
+  const ValueIdSet & inputValues = getGroupAttr()->getCharacteristicInputs();
+  ValueIdSet outerReferences;
+  CollIndex outerRefCount;
+  ValueIdSet predsEvaluatedForStats(getSelectionPred());
+
+  if (inputValues.entries() > 0)
+    inputValues.getOuterReferences(outerReferences);
+  outerRefCount = outerReferences.entries();
+
+  if (!udfSpecifiedCard)
+    // The UDF writer did not specify a cardinality, use our conventional
+    // methods to estimate the effect of predicates evaluated in the
+    // UDF. Note that if the UDF did specify a result cardinality, we
+    // assume that it is the cardinality after evaluating those predicates.
+    predsEvaluatedForStats += predsEvaluatedByUDF_;
   
   // synchronize output colum rowcounts
   udfColStatDescList.synchronizeStats(udfCard,udfColStatDescList.entries());
   
+  // apply predicates
+  udfCard = udfColStatDescList.estimateCardinality(
+         udfCard,                /*in*/
+         predsEvaluatedForStats, /*in*/
+         outerReferences,        /*in*/
+         NULL,                   /* no join */
+         NULL,                   /* for selectivity hint, which can only be given for scan */
+         NULL,                   /* for cardinality hint, which can only be given for scan */
+         outerRefCount,          /*in/out*/
+         myEstProps->unresolvedPreds(), /*in/out*/
+         INNER_JOIN_MERGE,       /*in*/
+         ITM_FIRST_ITEM_OP,      /*no-op*/
+         NULL);                  /* no max. cardinality */
+
+  // This is the number of rows we think we will return
+  myEstProps->setResultCardinality(udfCard);
+
+  // From the given ColStatDescList, populate columnStats with column
+  // descriptors that are useful based on the characteristic outputs
+  // for the group. 
+  myEstProps->pickOutputs(udfColStatDescList,
+                          inputEstLogProp, 
+                          getGroupAttr()->getCharacteristicOutputs(),
+                          predsEvaluatedForStats);
+
   // attach histograms to group attributes
-  getGroupAttr()->addInputOutputLogProp (inputLP, myEstProps);
-  
-  //RelExpr::synthEstLogProp(inputLP);
+  getGroupAttr()->addInputOutputLogProp (inputEstLogProp, myEstProps);
 };
 
   ///////////////////////////////////////////////////////////

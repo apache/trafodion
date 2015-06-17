@@ -1,0 +1,1338 @@
+>>obey TESTMV060(SET_UP);
+>>-- Create the base tables
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table catmvs.mvschm.Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE catmvs.mvschm.Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE T_60_A (a int, b char(2)) ATTRIBUTE AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>ALTER TABLE T_60_A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE T_60_B (a int NOT NULL NOT DROPPABLE,b numeric (2), c date,PRIMARY KEY    (a) NOT DROPPABLE)
++>        ATTRIBUTE AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>ALTER TABLE T_60_B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE T_60_C (a INT NOT NULL,b int,PRIMARY KEY (a) NOT DROPPABLE) ATTRIBUTE AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>ALTER TABLE T_60_C attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE tab1A (a INT NOT NULL, b INT, c INT, d INT NOT NULL NOT DROPPABLE, 
++>	PRIMARY KEY (a, d) NOT DROPPABLE, 
++>	CONSTRAINT constr1 CHECK (100000 > a+b+c))
++>	STORE BY (a, d)
++>        Location $$partition1$$
++>        Partition (add first key (30) location $$partition1$$,
++>                   add first key (60) location $$partition2$$)
++>        ATTRIBUTE AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>ALTER TABLE tab1A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE tab1B (a INT NOT NULL, b INT NOT NULL NOT DROPPABLE, PRIMARY KEY (a) NOT DROPPABLE)
++>	STORE BY (a)
++>        Location $$partition0$$
++>        Partition (add first key (30) location $$partition1$$,
++>                   add first key (60) location $$partition2$$)
++>        ATTRIBUTE AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>ALTER TABLE tab1B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE T_60_L (a int NOT NULL NOT DROPPABLE, PRIMARY KEY (a)) STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_60_L attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>INSERT INTO T_60_L VALUES 
++>    (0) , (1) , (2) , (3) , (4) , (5) , (6) , (7) , (8) , (9) ,
++>    (10), (11), (12), (13), (14), (15), (16), (17), (18), (19),
++>    (20), (21), (22), (23), (24), (25), (26), (27), (28), (29),
++>    (30), (31), (32), (33), (34), (35), (36), (37), (38), (39),
++>    (40), (41), (42), (43), (44), (45), (46), (47), (48), (49),
++>    (50), (51), (52), (53), (54), (55), (56), (57), (58), (59),
++>    (60), (61), (62), (63), (64), (65), (66), (67), (68), (69),
++>    (70), (71), (72), (73), (74), (75), (76), (77), (78), (79),
++>    (80), (81), (82), (83), (84), (85), (86), (87), (88), (89),
++>    (90), (91), (92), (93), (94), (95), (96), (97), (98), (99);
+
+--- 100 row(s) inserted.
+>>
+>>INSERT INTO T_60_C VALUES (1,2), (2,3), (3,4), (10, 2), (11, 1), (12, 3), (13, 4), (14, 2),
++>                          (15, 3), (16, 9), (17, 2), (18, 9), (19, 8), (20, 3), (21, 3),
++>                          (22, 3), (23, 4), (24, 1), (25, 9), (26, 2), (27, 9), (28, 3), (29, 8);
+
+--- 23 row(s) inserted.
+>>
+>>create mvgroup MVG1_60 ;
+
+--- SQL operation complete.
+>>
+>>--create materialized view T_60_MV1
+>>--	Refresh on request
+>>--	initialize on create 
+>>--	as
+>>--	select T_60_A.b 
+>>--	from T_60_A,T_60_B
+>>--	where T_60_A.a=T_60_B.a
+>>--    group by T_60_A.b;
+>>
+>>
+>>--create materialized view T_60_MV2
+>>--	Refresh on request
+>>--	initialize on create
+>>--	as
+>>--	select tab1A.a,tab1B.b
+>>--	from tab1A,tab1B
+>>--	where tab1A.a = tab1B.a
+>>--   group by tab1A.a, tab1b.b;
+>>
+>>
+>>create mv T_60_MV3
++>	Refresh on request
++>	initialize on create
++>	as
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_60_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG1_60 add T_60_MV3;
+
+--- SQL operation complete.
+>>
+>>create materialized view T_60_MV4
++>	Refresh on request
++>	initialize on create 
++>	as
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	  group by T_60_A.a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_60_MV4_936235516_8481 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MVGroup MVG1_60 add T_60_MV4;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @0@ @120@ ;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------
+>>
+>>-- Run Tests
+>>
+>>	obey TESTMV060(ALTERTABLEADDCOL);
+>>Alter Table T_60_B
++>Add Column newcol numeric(7) ;
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV060(LOGGING1);
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,4,5,5);
+
+--- 1 row(s) inserted.
+>>UPDATE tab1a SET B=B+1;
+
+--- 3 row(s) updated.
+>>delete from tab1A
++>where d=4;
+
+--- 2 row(s) deleted.
+>>-- increase epoch
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>-- increase epoch 
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>-- data
+>>
+>>-- bulk insert
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+
+--- 20 row(s) inserted.
+>>control query default vsbb_test_mode 'OFF';
+
+--- SQL operation complete.
+>>
+>>select * from tab1a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            4
+          3            5            5            5
+         10           10           10           10
+         11           11           11           11
+         12           12           12           12
+         13           13           13           13
+         14           14           14           14
+         15           15           15           15
+         16           16           16           16
+         17           17           17           17
+         18           18           18           18
+         19           19           19           19
+         20           20           20           20
+         21           21           21           21
+         22           22           22           22
+         23           23           23           23
+         24           24           24           24
+         25           25           25           25
+         26           26           26           26
+         27           27           27           27
+         28           28           28           28
+         29           29           29           29
+
+--- 23 row(s) selected.
+>>select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>                end
++>    from table(iud_log_table tab1a)
++>    order by a,b,c,d,"@TS";
+
+A            B            C            D            (EXPR)     
+-----------  -----------  -----------  -----------  -----------
+
+          1            2            3            4  INSERT     
+          1            2            3            4  D-UPDATE   
+          1            2            3            4  INSERT     
+          1            3            3            4  I-UPDATE   
+          1            3            3            4  DELETE     
+          2            3            4            4  INSERT     
+          2            3            4            4  D-UPDATE   
+          2            3            4            4  INSERT     
+          2            4            4            4  I-UPDATE   
+          2            4            4            4  DELETE     
+          3            4            5            5  INSERT     
+          3            4            5            5  D-UPDATE   
+          3            5            5            5  I-UPDATE   
+         10           10           10           10  INSERT     
+         11           11           11           11  INSERT     
+         12           12           12           12  BEGIN-RANGE
+         29           29           29           29  END-RANGE  
+
+--- 17 row(s) selected.
+>>
+>>obey TESTMV060(REFRESH_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CONTROL TABLE CATMVS.MVSCHM.TAB1A MDAM  'ON'; 
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 was found up to date.
+USING THE FOLLOWING CONTROL STATMENTS :
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV060(LOGGING2);
+>>delete from tab1a;
+
+--- 23 row(s) deleted.
+>>
+>>obey TESTMV060(RECOMPUTE_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed (by recompute) in a single transaction...
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @0@ @200@ ;
+
+--- SQL operation complete.
+>>CREATE TRIGGER atrig1
++>	AFTER UPDATE OF (c) ON tab1A
++>	REFERENCING OLD AS oldR, NEW AS newR
++>	FOR EACH ROW
++>	WHEN (newR.a < 3)
++>	INSERT INTO tab1B VALUES (newR.c, oldR.c);
+
+--- SQL operation complete.
+>>
+>>CREATE TRIGGER btrig1
++>	BEFORE UPDATE OF (c) ON tab1A
++>	REFERENCING NEW AS newR 
++>	FOR EACH ROW
++>	SET newR.c = newR.c + 1;
+
+--- SQL operation complete.
+>>CREATE INDEX i1 ON tab1a (b);
+
+--- SQL operation complete.
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,4,5,5);
+
+--- 1 row(s) inserted.
+>>UPDATE tab1a SET B=B+1;
+
+--- 3 row(s) updated.
+>>delete from tab1A
++>where d=4;
+
+--- 2 row(s) deleted.
+>>-- increase epoch
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>-- increase epoch 
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>-- bulk insert
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+
+--- 20 row(s) inserted.
+>>control query default vsbb_test_mode 'OFF';
+
+--- SQL operation complete.
+>>
+>>-- data
+>>
+>>select * from tab1a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            4
+          3            5            5            5
+         10           10           10           10
+         11           11           11           11
+         12           12           12           12
+         13           13           13           13
+         14           14           14           14
+         15           15           15           15
+         16           16           16           16
+         17           17           17           17
+         18           18           18           18
+         19           19           19           19
+         20           20           20           20
+         21           21           21           21
+         22           22           22           22
+         23           23           23           23
+         24           24           24           24
+         25           25           25           25
+         26           26           26           26
+         27           27           27           27
+         28           28           28           28
+         29           29           29           29
+
+--- 23 row(s) selected.
+>>select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>                end
++>    from table(iud_log_table tab1a)
++>    order by a,b,c,d,"@TS";
+
+A            B            C            D            (EXPR)     
+-----------  -----------  -----------  -----------  -----------
+
+          1            2            3            4  INSERT     
+          1            2            3            4  D-UPDATE   
+          1            2            3            4  INSERT     
+          1            3            3            4  I-UPDATE   
+          1            3            3            4  DELETE     
+          2            3            4            4  INSERT     
+          2            3            4            4  D-UPDATE   
+          2            3            4            4  INSERT     
+          2            4            4            4  I-UPDATE   
+          2            4            4            4  DELETE     
+          3            4            5            5  INSERT     
+          3            4            5            5  D-UPDATE   
+          3            5            5            5  I-UPDATE   
+         10           10           10           10  INSERT     
+         11           11           11           11  INSERT     
+         12           12           12           12  BEGIN-RANGE
+         29           29           29           29  END-RANGE  
+
+--- 17 row(s) selected.
+>>
+>>
+>>obey TESTMV060(REFRESH_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CONTROL TABLE CATMVS.MVSCHM.TAB1A MDAM  'ON'; 
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 was found up to date.
+USING THE FOLLOWING CONTROL STATMENTS :
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV060(LOGGING3);
+>>
+>>delete from tab1a;
+
+--- 23 row(s) deleted.
+>>
+>>obey TESTMV060(RECOMPUTE_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed (by recompute) in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 has been refreshed (by recompute) in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed (by recompute) in a single transaction...
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>Alter table tab1a
++>Add FOREIGN KEY ( a) REFERENCES T_60_C(a);
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1A@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>CREATE INDEX i2 ON tab1a (b);
+
+--- SQL operation complete.
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,4,5,5);
+
+--- 1 row(s) inserted.
+>>UPDATE tab1a SET B=B+1;
+
+--- 3 row(s) updated.
+>>delete from tab1A
++>where d=4;
+
+--- 2 row(s) deleted.
+>>-- increase epoch
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,4);
+
+--- 1 row(s) inserted.
+>>-- bulk insert
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>INSERT INTO tab1A SELECT a + 10, a + 10 , a + 10 , a + 10 FROM T_60_L WHERE a < 20;
+
+--- 20 row(s) inserted.
+>>control query default vsbb_test_mode 'OFF';
+
+--- SQL operation complete.
+>>
+>>-- increase epoch 
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.tab1a@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>-- data
+>>
+>>select * from tab1a;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+          2            3            4            4
+          3            5            5            5
+         10           10           10           10
+         11           11           11           11
+         12           12           12           12
+         13           13           13           13
+         14           14           14           14
+         15           15           15           15
+         16           16           16           16
+         17           17           17           17
+         18           18           18           18
+         19           19           19           19
+         20           20           20           20
+         21           21           21           21
+         22           22           22           22
+         23           23           23           23
+         24           24           24           24
+         25           25           25           25
+         26           26           26           26
+         27           27           27           27
+         28           28           28           28
+         29           29           29           29
+
+--- 23 row(s) selected.
+>>select a,b,c,d, case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>                end
++>    from table(iud_log_table tab1a)
++>    order by a,b,c,d,"@TS";
+
+A            B            C            D            (EXPR)     
+-----------  -----------  -----------  -----------  -----------
+
+          1            2            3            4  INSERT     
+          1            2            3            4  D-UPDATE   
+          1            2            3            4  INSERT     
+          1            3            3            4  I-UPDATE   
+          1            3            3            4  DELETE     
+          2            3            4            4  INSERT     
+          2            3            4            4  D-UPDATE   
+          2            3            4            4  INSERT     
+          2            4            4            4  I-UPDATE   
+          2            4            4            4  DELETE     
+          3            4            5            5  INSERT     
+          3            4            5            5  D-UPDATE   
+          3            5            5            5  I-UPDATE   
+         10           10           10           10  INSERT     
+         11           11           11           11  INSERT     
+         12           12           12           12  BEGIN-RANGE
+         29           29           29           29  END-RANGE  
+
+--- 17 row(s) selected.
+>>
+>>
+>>obey TESTMV060(REFRESH_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CONTROL TABLE CATMVS.MVSCHM.TAB1A MDAM  'ON'; 
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV4 was found up to date.
+USING THE FOLLOWING CONTROL STATMENTS :
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>----------------------------------------------------------------
+>>	obey TESTMV060(LOGGING5);
+>>
+>>INSERT INTO T_60_B VALUES (1,20,current_date,3),(2,30,current_date,4);
+
+--- 2 row(s) inserted.
+>>update T_60_B 
++>set b =50;
+
+--- 2 row(s) updated.
+>>delete from T_60_B
++>where a = 1;
+
+--- 1 row(s) deleted.
+>>-- bulk insert
+>>control query default vsbb_test_mode 'ON';
+
+--- SQL operation complete.
+>>INSERT INTO T_60_B SELECT a + 10, a + 20, current_date, a FROM T_60_L WHERE a < 20;
+
+--- 20 row(s) inserted.
+>>control query default vsbb_test_mode 'OFF';
+
+--- SQL operation complete.
+>>
+>>select a,b, case "@OPERATION_TYPE" when 0 then 'INSERT' 
++>				 when 1 then 'DELETE' 
++>				 when 2 then 'I-UPDATE'
++>				 when 3 then 'D-UPDATE'
++>				 when 4 then 'END-RANGE'
++>				 when 12 then 'BEGIN-RANGE'
++>            end
++>from table(iud_log_table T_60_B)
++>order by a,b,"@TS";
+
+A            B       (EXPR)     
+-----------  ------  -----------
+
+          1      20  INSERT     
+          1      20  D-UPDATE   
+          1      50  I-UPDATE   
+          1      50  DELETE     
+          2      30  INSERT     
+          2      30  D-UPDATE   
+          2      50  I-UPDATE   
+         10      20  INSERT     
+         11      21  INSERT     
+         12      22  BEGIN-RANGE
+         29      39  END-RANGE  
+
+--- 11 row(s) selected.
+>>
+>>
+>>obey TESTMV060(REFRESH_AND_COMPARE);
+>>--------------------------------------------------------
+>>refresh mvgroup MVG1_60 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.TAB1A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_A.
+Finished the log cleanup of table CATMVS.MVSCHM.T_60_B.
+Starting the log cleanup of table CATMVS.MVSCHM.TAB1A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_A...
+Starting the log cleanup of table CATMVS.MVSCHM.T_60_B...
+The materialized view CATMVS.MVSCHM.T_60_MV3 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_60_MV3 was found up to date.
+The materialized view CATMVS.MVSCHM.T_60_MV4 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_60_MV4 is being refreshed in a single transaction...
+>>
+>>
+>>PREPARE stat1 FROM
++>	select a,sum (b) sum_b
++>	from tab1A
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV3
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM
++>	select T_60_A.a , count(T_60_B.b) cnt 
++>	from T_60_A,T_60_B
++>	where T_60_A.a=T_60_B.a
++>  	 group by T_60_A.a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_60_MV4
++>	order by a;
+
+--- SQL command prepared.
+>>
+>>
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>
+>>--------------------------------------------------------
+>>
+>>----------------------------------------------------------------
+>>--	obey TESTMV060(LOGGING6);  Bug 491 ,  expected of this section in regress/triggers/expected_13_1
+>>
+>>-- Check the drop statement on the way out
+>>obey TESTMV060(CLEAN_UP);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>refresh mvgroup MVG1_60 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>drop mv T_60_MV4;
+
+--- SQL operation complete.
+>>drop mv T_60_MV3;
+
+--- SQL operation complete.
+>>drop materialized view T_60_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop materialized view T_60_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP INDEX i1;
+
+--- SQL operation complete.
+>>DROP INDEX i2;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig7;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG7 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig2;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig3;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig1;
+
+--- SQL operation complete.
+>>DROP TRIGGER btrig1;
+
+--- SQL operation complete.
+>>drop table T_60_A;
+
+--- SQL operation complete.
+>>drop table T_60_B;
+
+--- SQL operation complete.
+>>drop table T_60_C;
+
+*** ERROR[1059] Request failed.  Dependent constraint T_60_C_371621285_8481 exists.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_C could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab1a;
+
+--- SQL operation complete.
+>>drop table tab1b;
+
+--- SQL operation complete.
+>>drop table tab2a;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB2A does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB2A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab2b;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB2B does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB2B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_60_L;
+
+--- SQL operation complete.
+>>
+>>drop table T_60_C;
+
+--- SQL operation complete.
+>>drop materialized view T_60_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop materialized view T_60_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP INDEX i1;
+
+*** ERROR[1006] Index CATMVS.MVSCHM.I1 does not exist.
+
+--- SQL operation failed with errors.
+>>DROP INDEX i2;
+
+*** ERROR[1006] Index CATMVS.MVSCHM.I2 does not exist.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig7;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG7 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig2;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig3;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER atrig1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.ATRIG1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER btrig1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.BTRIG1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_60_A;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_A does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_60_B;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_B does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_60_C;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_C does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_C could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab1a;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB1A does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB1A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab1b;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB1B does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB1B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab2a;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB2A does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB2A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table tab2b;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.TAB2B does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.TAB2B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_60_L;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_60_L does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_60_L could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop mvgroup MVG1_60;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------
+>>log;

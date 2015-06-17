@@ -1,0 +1,895 @@
+>>set parserflags 3;
+
+--- SQL operation complete.
+>>obey TESTMV700(SET_UP);
+>>-- ============================================================================
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>
+>>insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+
+--- 1 row(s) inserted.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create table T_700_T1 (a int NOT NULL NOT DROPPABLE, 
++>                       b char(2), 
++>                       c numeric(4,2), 
++>                       y int NOT NULL NOT DROPPABLE, 
++>                       primary key (a asc, y desc) )
++>                       STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_700_T2 (d int NOT NULL NOT DROPPABLE, 
++>                       e char(2), 
++>                       f numeric(4,2), 
++>                       z int NOT NULL NOT DROPPABLE,
++>                       primary key (d asc, z desc) )
++>                       STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_700_T1 values (1, 'a', 12.2, 5), (2, 'b', 19.9, 5), (3, 'c', 12.3, 5), (4, 'd', 22.3, 5), (5, 'r', 11.2, 6),
++>                            (1, 'd', 15.3, 4), (2, 'w', 99.3, 4), (3, 'e', 12.4, 4), (4, 'e', 32.2, 4), (5, 'e', 93.4, 4),
++>                            (1, 'd', 15.3, 6), (2, 'w', 99.3, 6), (3, 'e', 12.4, 3), (4, 'e', 32.2, 3), (5, 'e', 93.4, 3),
++>                            (1, 'f', 43.8, 9), (2, 'j', 77.9, 9), (3, 'l', 14.3, 6), (4, 'l', 44.3, 6), (5, 'l', 14.2, 5),
++>                            (1, 'g', 65.5, 7), (2, 'k', 65.3, 7), (3, 'k', 12.5, 7), (4, 'k', 34.4, 7), (5, 'k', 96.4, 7),
++>                            (1, 'h', 44.3, 8), (2, 'l', 94.5, 8), (3, 'j', 17.6, 8), (4, 'j', 22.2, 8), (5, 'j', 93.4, 8);
+
+--- 30 row(s) inserted.
+>>insert into T_700_T2 values (1, 'f', 13.2, 5), (2, 't', 19.5, 5), (3, '4', 22.3, 5), (4, 't', 25.3, 5), (5, 'h', 11.2, 6),
++>                            (1, 'd', 15.3, 2), (2, '2', 99.5, 4), (3, 'y', 12.4, 4), (2, 'm', 34.2, 8), (5, 'r', 93.5, 3),
++>                            (1, 'd', 54.3, 4), (2, 'w', 44.3, 3), (3, '8', 12.3, 2), (1, 'n', 32.2, 3), (5, 'e', 23.4, 2);
+
+--- 15 row(s) inserted.
+>>
+>>create mv T_700_MV1
++>refresh on request
++>initialize on create
++>as 
++>select a, sum(c * f) as total
++>from T_700_T1, T_700_T2
++>where a = d
++>group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_700_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_700_MV2
++>refresh on request
++>initialize on create
++>as 
++>select a, total
++>from T_700_MV1
++>group by a, total;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_700_MV2_712677721_7839 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_700_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_700_MV3
++>refresh on request
++>initialize on create
++>as 
++>select a, sum(c * f) as total
++>from T_700_T1, T_700_T2
++>where a = d
++>group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_700_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create index T_700_I1 on T_700_MV3(a);
+
+--- SQL operation complete.
+>>
+>>
+>>-- ============================================================================
+>>
+>>-- Run Tests
+>>    obey TESTMV700(TEST1);
+>>-- ============================================================================
+>>-- Checks that MV's log doesn't change after "delete from mv"
+>>log;
+>>
+>>update T_700_T1
++>set b = 'oh'
++>where c = 19.9;
+
+--- 1 row(s) updated.
+>>
+>>update T_700_T2
++>set f = f - 1;
+
+--- 15 row(s) updated.
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_700_MV1
++>from multidelta T_700_T1 between 10 and 10 de level 0 use no rangelog use iudlog,
++>                T_700_T2 between 10 and 10 de level 0 use no rangelog use iudlog
++>     phase 0;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_MV1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_700_MV2
++>from singledelta T_700_MV1 between 10 and 10 de level 0 use no rangelog use iudlog;
+
+--- SQL operation complete.
+>>
+>>-- MV1's log before "Delete from... "
+>>PREPARE stat1 FROM  
++>select "@EPOCH", "@OPERATION_TYPE", "@IGNORE", "@RANGE_SIZE", "@TS", A, TOTAL
++>from table (iud_log_table catmvs.mvschm.T_700_MV1)
++>order by "@TS";
+
+--- SQL command prepared.
+>>
+>>log;
+>>delete from T_700_MV1;
+
+--- 5 row(s) deleted.
+>>
+>>-- MV1's log after "Delete from... "
+>>PREPARE stat2 FROM
++>select "@EPOCH", "@OPERATION_TYPE", "@IGNORE", "@RANGE_SIZE", "@TS", A, TOTAL
++>from table (iud_log_table catmvs.mvschm.T_700_MV1)
++>order by "@TS";
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>-- ============================================================================
+>>    obey TESTMV700(TEST2);
+>>-- ============================================================================
+>>
+>>create table T_700_T3 (a int, b int, c int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>insert into T_700_T3 values (1, 1, 1), (1, 2, 2), (3, 2, 1), (1, 2, 3), (4, 4, 3);
+
+--- 5 row(s) inserted.
+>>
+>>create mv T_700_MV4
++>refresh on request
++>initialize on create
++>as
++>select count(a) as cnta,
++>       sum(b)   as sumb
++>from T_700_T3
++>group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_700_MV4_782597721_7839 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_700_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- updating T3 so sql_user2 can try to refresh it
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @0@ @20@ ;
+
+--- SQL operation complete.
+>>insert into T_700_T3 values (8, 6, 5), (8, 7, 6), 
++>                            (8, 9, 7), (8, 4, 5);
+
+--- 4 row(s) inserted.
+>>update T_700_T3
++>set b = b + 1;
+
+--- 9 row(s) updated.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>----- User 2 should not be able to perform his operations
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+>>-- User 2 do :
+>>-- 1). refresh
+>>refresh T_700_MV4 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>
+>>log;
+
+
+
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+*** ERROR[20552] The current user does not have the refresh privilege for materialized view CATMVS.MVSCHM.T_700_MV4.
+Time: Mon Jan 16 16:24:15 2012 Started the REFRESH operation.
+Time: Mon Jan 16 16:24:22 2012 Finished the REFRESH operation.
+>>
+>>-- 2). select
+>>select * from T_700_mv4;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CATMVS.MVSCHM.T_700_MV4.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>log;
+>>
+>>revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+
+*** WARNING[1015] Some of the specified privileges could not be revoked.
+
+--- SQL operation completed with warnings.
+>>grant select on T_700_MV4 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>
+>>----- User 2 should be able to perform select BUT NOT refresh.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+>>-- User 2 do :
+>>-- 1). refresh
+>>refresh T_700_MV4 outfile REFRESH.LOG;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>
+>>log;
+
+
+
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+*** ERROR[20552] The current user does not have the refresh privilege for materialized view CATMVS.MVSCHM.T_700_MV4.
+Time: Mon Jan 16 16:24:27 2012 Started the REFRESH operation.
+Time: Mon Jan 16 16:24:35 2012 Finished the REFRESH operation.
+>>
+>>-- 2). select
+>>select * from T_700_mv4;
+
+CNTA                  SUMB                
+--------------------  --------------------
+
+                   1                     2
+                   3                     5
+                   1                     4
+
+--- 3 row(s) selected.
+>>log;
+>>
+>>revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant insert on T_700_MV4 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>
+>>----- User 2 should be able to perform refresh BUT NOT select.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+>>-- User 2 do :
+>>-- 1). refresh
+>>refresh T_700_MV4 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_700_T3.
+Starting the log cleanup of table CATMVS.MVSCHM.T_700_T3...
+The materialized view CATMVS.MVSCHM.T_700_MV4 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_700_MV4 was found up to date.
+Time: Mon Jan 16 16:24:47 2012 Started the REFRESH operation.
+Time: Mon Jan 16 16:25:06 2012 Finished the REFRESH operation.
+>>
+>>-- 2). select
+>>select * from T_700_mv4;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view CATMVS.MVSCHM.T_700_MV4.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>log;
+>>
+>>revoke all on T_700_MV4 from $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant insert on T_700_MV4 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>grant select on T_700_MV4 to $$SQLUSER2Q$$;
+
+--- SQL operation complete.
+>>
+>>----- User 2 should be able to perform both operations.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T3@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>sh sh runmxci.ksh -i "TestMV700(User2Attempt)" -u $$SQLUSER2X$$;
+>>-- User 2 do :
+>>-- 1). refresh
+>>refresh T_700_MV4 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>log;
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_700_T3.
+Starting the log cleanup of table CATMVS.MVSCHM.T_700_T3...
+The materialized view CATMVS.MVSCHM.T_700_MV4 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_700_MV4 was found up to date.
+Time: Mon Jan 16 16:25:12 2012 Started the REFRESH operation.
+Time: Mon Jan 16 16:25:22 2012 Finished the REFRESH operation.
+>>
+>>-- 2). select
+>>select * from T_700_mv4;
+
+CNTA                  SUMB                
+--------------------  --------------------
+
+                   1                     2
+                   3                     5
+                   1                     4
+
+--- 3 row(s) selected.
+>>log;
+>>
+>>-- clean
+>>drop mv T_700_MV4;
+
+--- SQL operation complete.
+>>drop table T_700_T3;
+
+--- SQL operation complete.
+>>
+>>-- ============================================================================
+>>    obey TESTMV700(TEST3);
+>>-- ============================================================================
+>>select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (ASC  , ASC);
+
+A            Y            B   C      
+-----------  -----------  --  -------
+
+          4            7  k     34.40
+          4            8  j     22.20
+          5            3  e     93.40
+          5            6  r     11.20
+          5            4  e     93.40
+          5            7  k     96.40
+          5            5  l     14.20
+          4            6  l     44.30
+          5            8  j     93.40
+
+--- 9 row(s) selected.
+>>select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (DESC , ASC);
+
+A            Y            B   C      
+-----------  -----------  --  -------
+
+          1            5  a     12.20
+          1            4  d     15.30
+          2            4  w     99.30
+          1            9  f     43.80
+          1            8  h     44.30
+          1            7  g     65.50
+          3            7  k     12.50
+          3            6  l     14.30
+          3            3  e     12.40
+          2            8  l     94.50
+          3            5  c     12.30
+          3            4  e     12.40
+          3            8  j     17.60
+          4            7  k     34.40
+          2            6  w     99.30
+          4            8  j     22.20
+          1            6  d     15.30
+          2            9  j     77.90
+          2            7  k     65.30
+          2            5  oh    19.90
+          4            6  l     44.30
+
+--- 21 row(s) selected.
+>>select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (ASC  ,DESC);
+
+A            Y            B   C      
+-----------  -----------  --  -------
+
+          4            4  e     32.20
+          5            3  e     93.40
+          5            6  r     11.20
+          5            4  e     93.40
+          5            7  k     96.40
+          5            5  l     14.20
+          4            3  e     32.20
+          5            8  j     93.40
+
+--- 8 row(s) selected.
+>>select a, y, b, c from T_700_T1 where (a, y) > (4, 5) DIRECTEDBY (DESC ,DESC);
+
+A            Y            B   C      
+-----------  -----------  --  -------
+
+          1            5  a     12.20
+          1            4  d     15.30
+          2            4  w     99.30
+          1            9  f     43.80
+          1            8  h     44.30
+          1            7  g     65.50
+          3            7  k     12.50
+          3            6  l     14.30
+          3            3  e     12.40
+          2            8  l     94.50
+          3            5  c     12.30
+          3            4  e     12.40
+          1            6  d     15.30
+          2            9  j     77.90
+          2            7  k     65.30
+          3            8  j     17.60
+          4            4  e     32.20
+          2            6  w     99.30
+          2            5  oh    19.90
+          4            3  e     32.20
+
+--- 20 row(s) selected.
+>>
+>>
+>>-- ============================================================================
+>>    obey TESTMV700(TEST4);
+>>-- ============================================================================
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @0@ @40@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @0@ @40@ ;
+
+--- SQL operation complete.
+>>
+>>-- for compare
+>>PREPARE stat1 FROM
++>    select a from T_700_MV3
++>    order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>    select a from table (index_table T_700_I1)
++>    order by a;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- -- -- -- -- -- -- 
+>>
+>>-- inserting new lines to MV
+>>insert into T_700_T1 values (7, 'o', 5.5, 8);
+
+--- 1 row(s) inserted.
+>>insert into T_700_T2 values (7, 'p', 12.5, 5);
+
+--- 1 row(s) inserted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_700_MV3
++>from multidelta T_700_T1 between 40 and 40 de level 0 use no rangelog use iudlog,
++>                T_700_T2 between 40 and 40 de level 0 use no rangelog use iudlog
++>     phase 0;
+
+--- SQL operation complete.
+>>
+>>-- another row should be added to MV3 and I1
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- -- -- -- -- -- -- 
+>>
+>>-- deleting a line from mv
+>>delete from T_700_T1 where a = 1;
+
+--- 6 row(s) deleted.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T1@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @CATMVS.MVSCHM.T_700_T2@ @1@ @0@ ;
+
+--- SQL operation complete.
+>>
+>>internal refresh T_700_MV3
++>from singledelta T_700_T1 between 41 and 41 de level 0 use no rangelog use iudlog;
+
+--- SQL operation complete.
+>>
+>>
+>>-- 1 row should be deleted from MV3 and I1
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- ============================================================================
+>>    obey TESTMV700(TEST5);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table T_700_T3 (a int,b int,c int ,d int,e int,f int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_700_MV_ON_STAT
++>	Refresh on statement
++>initialized on refresh
++>	as 
++>	select a,b,c,d,e,sum(f) as sum_f
++>	from T_700_T3
++>	group by a,b,c,d,e;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_700_MV_ON_STAT_967528721_7839 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_700_MV_ON_STAT attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- PASS without any warnings
+>>drop table T_700_T3 cascade;
+
+--- SQL operation complete.
+>>
+>>-- ============================================================================
+>>    obey TESTMV700(TEST6);
+>>
+>>-- The test checks the parser flag 16 which allows selecting all columns from mv
+>>-- including the system added ones
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table T_700_T6 ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_700_MV6
++>  refresh on request
++>  initialize on create
++>  as select avg(a) as avga,
++>	    sum(a) as suma,
++>	    count(a) as cnta
++>  from T_700_T6;
+
+--- SQL operation complete.
+>>ALTER MV T_700_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>showddl T_700_MV6;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_700_MV6
+  REFRESH ON REQUEST 
+  INITIALIZE ON CREATE 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT avg(CATMVS.MVSCHM.T_700_T6.A) AS AVGA, sum(CATMVS.MVSCHM.T_700_T6.A) AS SUMA, count(CATMVS.MVSCHM.T_700_T6.A) AS CNTA
+   FROM CATMVS.MVSCHM.T_700_T6;
+
+-- The system added the following columns to the select list:
+--  count(*) AS SYS_COUNTSTAR1
+
+
+
+--- SQL operation complete.
+>>
+>>reset PARSERFLAGS;
+
+--- SQL operation complete.
+>>
+>>-- No system added columns should be shown
+>>select * from T_700_MV6;
+
+AVGA                  SUMA                  CNTA                
+--------------------  --------------------  --------------------
+
+                   ?                     ?                     0
+
+--- 1 row(s) selected.
+>>
+>>set PARSERFLAGS 1;
+
+--- SQL operation complete.
+>>
+>>-- No system added columns should be shown
+>>select * from T_700_MV6;
+
+AVGA                  SUMA                  CNTA                
+--------------------  --------------------  --------------------
+
+                   ?                     ?                     0
+
+--- 1 row(s) selected.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>-- No system added columns should be shown
+>>select * from T_700_MV6;
+
+AVGA                  SUMA                  CNTA                
+--------------------  --------------------  --------------------
+
+                   ?                     ?                     0
+
+--- 1 row(s) selected.
+>>
+>>set PARSERFLAGS 128;
+
+--- SQL operation complete.
+>>
+>>-- All columns include the system added ones should be shown
+>>select * from T_700_MV6;
+
+AVGA                  SUMA                  CNTA                  SYS_COUNTSTAR1
+--------------------  --------------------  --------------------  --------------------
+
+                   ?                     ?                     0                     0
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_700_MV6;
+
+--- SQL operation complete.
+>>drop table T_700_T6;
+
+--- SQL operation complete.
+>>
+>>-- ============================================================================
+>>    obey TESTMV700(TEST7);
+>>
+>>CREATE TABLE T_700_T11	(
++>				a1 	INT NOT NULL NOT DROPPABLE, 
++>				b1  INT NOT NULL NOT DROPPABLE, 
++>				c1  INT NOT NULL NOT DROPPABLE, 
++>				PRIMARY KEY(b1, a1, c1) DROPPABLE
++>) STORE BY (a1,b1,c1);
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T11	 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE  T_700_T12	(
++>				a2 	INT NOT NULL NOT DROPPABLE, 
++>				b2  INT NOT NULL NOT DROPPABLE, 
++>				c2  INT NOT NULL NOT DROPPABLE,
++>				PRIMARY KEY(b2, a2, c2)
++>) STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T12 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE  T_700_T13	(
++>				a3 	INT NOT NULL NOT DROPPABLE, 
++>				b3  INT NOT NULL NOT DROPPABLE, 
++>				c3  INT NOT NULL NOT DROPPABLE,
++>				PRIMARY KEY(b3,a3)
++>) STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T13 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE  T_700_T14	(
++>				a4 	INT NOT NULL NOT DROPPABLE, 
++>				b4  INT NOT NULL NOT DROPPABLE, 
++>				c4  INT NOT NULL NOT DROPPABLE,
++>				PRIMARY KEY(b4,c4)
++>) STORE BY PRIMARY KEY;
+
+--- SQL operation complete.
+>>ALTER TABLE T_700_T14 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- creation should pass
+>>CREATE MV T_700_MV11 REFRESH ON STATEMENT initialized on refresh
++>AS
++>			SELECT 	a1,b2,c3,c4 
++>			FROM 	T_700_T11, T_700_T12, T_700_T13, T_700_T14 
++>			WHERE 	a1=a2 AND a2=a3 
++>				AND b1=b2 AND b2=b3 AND b3=b4
++>				AND c1=c2;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_700_MV11_989538721_7839 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_700_MV11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>drop mv T_700_MV11;
+
+--- SQL operation complete.
+>>drop table T_700_T14;
+
+--- SQL operation complete.
+>>drop table T_700_T13;
+
+--- SQL operation complete.
+>>drop table T_700_T12;
+
+--- SQL operation complete.
+>>drop table T_700_T11;
+
+--- SQL operation complete.
+>>
+>>
+>>-- ============================================================================
+>>
+>>-- Clean and Exit
+>>obey TESTMV700(CLEAN_UP);
+>>-- ============================================================================
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
++>where attribute = 'MV_REFRESH_MAX_PIPELINING';
+
+--- 1 row(s) deleted.
+>>
+>>drop mv T_700_MV_ON_STAT;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_700_MV_ON_STAT does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_700_MV_ON_STAT could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_700_T3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_700_T3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_700_T3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_700_MV3;
+
+--- SQL operation complete.
+>>drop mv T_700_MV2;
+
+--- SQL operation complete.
+>>drop mv T_700_MV1;
+
+--- SQL operation complete.
+>>drop table T_700_T1;
+
+--- SQL operation complete.
+>>drop table T_700_T2;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>log;

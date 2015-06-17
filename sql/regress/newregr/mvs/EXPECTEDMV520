@@ -1,0 +1,682 @@
+>>obey TESTMV520(SET_UP);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>create table T_520_T1 ( a int, b int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>PREPARE select_mvs_table_info FROM
++>    SELECT CURRENT_EPOCH, MV_ATTRIBUTES_BITMAP, IS_LOCKONREFRESH, 
++>	IS_INSERTLOG, RANGELOG_TYPE,MVSALLOWED_TYPE
++>	FROM HP_DEFINITION_SCHEMA.mvs_table_info
++>	WHERE base_table_uid = (SELECT object_uid 
++>	FROM HP_DEFINITION_SCHEMA.objects 
++>	  WHERE object_name = ?table_name and OBJECT_NAME_SPACE = 'TA'
++>	FOR READ UNCOMMITTED ACCESS);
+
+--- SQL command prepared.
+>>
+>>---------------------------------------------------------------
+>>
+>>-- Run tests
+>>  obey TESTMV520(INSERTLOG);
+>>
+>>alter table T_520_T1 attribute INSERTLOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both IS_INSERTLOG should be Y
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                471040  Y                 Y             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                471040  Y                 Y             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute NO INSERTLOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both IS_INSERTLOG should be N
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>  obey TESTMV520(LOCKONREFRESH);
+>>
+>>alter table T_520_T1 attribute NO LOCKONREFRESH;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both IS_LOCKONREFRESH should be N
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                458752  N                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                458752  N                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute LOCKONREFRESH;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both IS_LOCKONREFRESH should be Y
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------------------------------------
+>>  obey TESTMV520(RANGELOG);
+>>
+>>alter table T_520_T1 attribute NO RANGELOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both RANGELOG_TYPE should be N
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute AUTOMATIC RANGELOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both RANGELOG_TYPE should be A
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467456  Y                 N             A              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467456  Y                 N             A              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute MANUAL RANGELOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both RANGELOG_TYPE should be M
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467200  Y                 N             M              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467200  Y                 N             M              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute MIXED RANGELOG;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>-- both RANGELOG_TYPE should be X
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467968  Y                 N             X              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467968  Y                 N             X              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>  obey TESTMV520(MVSALLOWED);
+>>
+>>alter table T_520_T1 attribute NO MVS ALLOWED;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>
+>>-- MVS_ALLOWED_TYPE should be N
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                  9216  Y                 N             X              N              
+
+--- 1 row(s) selected.
+>>
+>>-- MVS_ALLOWED_TYPE should be N
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                  9216  Y                 N             X              N              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute ALL MVS ALLOWED;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>
+>>-- MVS_ALLOWED_TYPE should be A
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467968  Y                 N             X              A              
+
+--- 1 row(s) selected.
+>>
+>>-- MVS_ALLOWED_TYPE should be A
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                467968  Y                 N             X              A              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute ON REQUEST MVS ALLOWED;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>
+>>-- MVS_ALLOWED_TYPE should be R
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                140288  Y                 N             X              R              
+
+--- 1 row(s) selected.
+>>
+>>-- MVS_ALLOWED_TYPE should be R
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                140288  Y                 N             X              R              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute ON STATEMENT MVS ALLOWED;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>
+>>-- MVS_ALLOWED_TYPE should be S
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                 74752  Y                 N             X              S              
+
+--- 1 row(s) selected.
+>>
+>>-- MVS_ALLOWED_TYPE should be S
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                 74752  Y                 N             X              S              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>alter table T_520_T1 attribute RECOMPUTE MVS ALLOWED;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T2 like T_520_T1;
+
+--- SQL operation complete.
+>>
+>>-- MVS_ALLOWED_TYPE should be C
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                271360  Y                 N             X              C              
+
+--- 1 row(s) selected.
+>>
+>>-- MVS_ALLOWED_TYPE should be C
+>>set param ?table_name T_520_T2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                271360  Y                 N             X              C              
+
+--- 1 row(s) selected.
+>>
+>>drop table T_520_T2;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------
+>>  obey TESTMV520(MVATTRIBUTE);
+>>
+>>drop table T_520_T1;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T1 ( a int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>create table T_520_T2 ( b int );
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_520_MV1
++>  refresh on request 
++>initialized on refresh
++>  as select a, sum(a) as suma
++>  from T_520_T1, T_520_T2
++>  where a = b
++>  group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_520_MV1_103415158_0007 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_520_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_520_T1 values (12), (23), (344), (11), (33);
+
+--- 5 row(s) inserted.
+>>insert into T_520_T2 values (12), (11), (90);
+
+--- 3 row(s) inserted.
+>>
+>>refresh T_520_MV1;
+
+--- SQL operation complete.
+>>
+>>create table T_520_T3 like T_520_T1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?table_name T_520_T1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          102                466965  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_T3;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>drop mv T_520_MV1;
+
+--- SQL operation complete.
+>>drop table T_520_T3;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------
+>>  obey TESTMV520(LIKEMV1);
+>>
+>>create table T_520_T10 (a int);
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_T10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create mv T_520_MV1
++>  refresh on request
++>initialized on refresh
++>  as select avg(a) as aa 
++>  from T_520_T10;
+
+--- SQL operation complete.
+>>ALTER MV T_520_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T_520_T10 values (2), (4), (5);
+
+--- 3 row(s) inserted.
+>>
+>>create table T_520_MV1_LIKE_1 like T_520_MV1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_MV1_LIKE_1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?table_name T_520_MV1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100              17244224  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_MV1_LIKE_1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>----------------------------------------------------------------
+>>  obey TESTMV520(LIKEMV2);
+>>
+>>create mv T_520_MV2
++>  refresh on request 
++>initialized on refresh
++>  as select sum(aa) as sa
++>  from T_520_MV1;
+
+--- SQL operation complete.
+>>ALTER MV T_520_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table T_520_MV1_LIKE_2 like T_520_MV1;
+
+--- SQL operation complete.
+>>ALTER TABLE T_520_MV1_LIKE_2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?table_name T_520_MV1;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          101              17244245  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>set param ?table_name T_520_MV1_LIKE_2;
+>>execute select_mvs_table_info;
+
+CURRENT_EPOCH  MV_ATTRIBUTES_BITMAP  IS_LOCKONREFRESH  IS_INSERTLOG  RANGELOG_TYPE  MVSALLOWED_TYPE
+-------------  --------------------  ----------------  ------------  -------------  ---------------
+
+          100                466944  Y                 N             N              A              
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>---------------------------------------------------------------
+>>-- Clean and Exit
+>>log;

@@ -1,0 +1,1659 @@
+>>
+>>obey TESTMV286(SETUP);
+>>-----------------------------------------------------------------
+>>set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+--- SQL operation complete.
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create mvgroup MVG286_cancel;
+
+--- SQL operation complete.
+>>
+>>create table T1_286 ( a int not null not droppable,
++>			  b int not null not droppable, 
++>			  c int not null not droppable, primary key (a))
++>			  store by primary key number of partitions 4;
+
+--- SQL operation complete.
+>>ALTER TABLE T1_286 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T1_286 values ( 1,1, 1),(2,1, 2),(3,4, 3),(5,4, 2);
+
+--- 4 row(s) inserted.
+>>
+>>create table T2_286 ( a int ,b int);
+
+--- SQL operation complete.
+>>ALTER TABLE T2_286 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>insert into T2_286 values ( 1,1),(2,1),(3,4),(5,4);
+
+--- 4 row(s) inserted.
+>>
+>>
+>>PREPARE select_index FROM
++>  select  RUNNINGCOUNT(*) num,valid_data
++>    from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>    where ACCESS_PATH_UID <> table_uid 
++>    and table_uid =( select OBJECT_UID from
++>        HP_DEFINITION_SCHEMA.OBJECTS
++>	where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
++>	for read uncommitted access)
++>  SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>PREPARE select_audit_status FROM
++>  select  AUDITED 
++>    from HP_DEFINITION_SCHEMA.ACCESS_PATHS
++>    where ACCESS_PATH_UID = table_uid 
++>    and table_uid =( select OBJECT_UID from
++>        HP_DEFINITION_SCHEMA.OBJECTS
++>	where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
++>	for read uncommitted access);
+
+--- SQL command prepared.
+>>
+>>PREPARE select_audited_index_status FROM
++>  select  RUNNINGCOUNT(*) num,audited
++>    from HP_DEFINITION_SCHEMA.access_paths a
++>    where table_uid =( select OBJECT_UID from
++>          HP_DEFINITION_SCHEMA.OBJECTS
++>          where OBJECT_NAME = ?t_name and OBJECT_NAME_SPACE = 'TA'
++>          for read uncommitted access)
++>      and access_path_uid <> table_uid
++>  SEQUENCE BY ACCESS_PATH_UID ;
+
+--- SQL command prepared.
+>>
+>>
+>>
+>>create index another_index on T1_286 ( a );
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>
+>>-- Run Tests
+>>	obey TESTMV286(TEST1);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV1
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV1;
+
+--- SQL operation complete.
+>>
+>>-- expected - 0 (no index)
+>>set param ?t_name 'T_286_MV1';
+>>execute select_index;
+
+--- 0 row(s) selected.
+>>
+>>-- expected : no purgedata, NoDelete
+>>refresh T_286_MV1 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV1 is being refreshed (by recompute) in a single transaction...
+
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV1...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV1 RECOMPUTE NODELETE 
+The materialized view CATMVS.MVSCHM.T_286_MV1 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+IUD log has 0 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>set param ?t_name 'T_286_MV1';
+>>-- expected - MV1 - no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>prepare stat1 from
++>	select b, sum(a) sa
++>	from T1_286
++>	group by b
++>	order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>	select * from T_286_MV1
++>	order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>create mv T_286_MV2
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV2;
+
+--- SQL operation complete.
+>>
+>>-- expected - 0 (no index)
+>>set param ?t_name 'T_286_MV2';
+>>execute select_index;
+
+--- 0 row(s) selected.
+>>
+>>-- expected : no purgedata, NoDelete
+>>refresh T_286_MV2 debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV2 is being refreshed (by recompute) in a single transaction...
+
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV2...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV2 RECOMPUTE NODELETE 
+The materialized view CATMVS.MVSCHM.T_286_MV2 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+IUD log has 0 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>set param ?t_name 'T_286_MV2';
+>>-- expected - MV2 -audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>prepare stat1 from
++>	select b, sum(a) sa
++>	from T1_286
++>	group by b
++>	order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>	select * from T_286_MV2
++>	order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST3);
+>>-----------------------------------------------------------------
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>create mv T_286_MV5
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV5;
+
+--- SQL operation complete.
+>>
+>>
+>>Refresh T_286_MV5 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV5 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV5 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>-- expected -  0 ( no index)
+>>set param ?t_name 'T_286_MV5';
+>>execute select_index;
+
+--- 0 row(s) selected.
+>>
+>>insert into T1_286 values (33,33, 33),(34,35,36),(36,35,34);
+
+--- 3 row(s) inserted.
+>>
+>>-- Purgedata executed, NoDelete 
+>>Refresh T_286_MV5 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV5 is being refreshed (by recompute) in a single transaction...
+
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV5...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV5 RECOMPUTE NODELETE 
+The materialized view CATMVS.MVSCHM.T_286_MV5 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+IUD log has 3 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>set param ?t_name 'T_286_MV5';
+>>-- expected - MV5 - no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>prepare stat1 from 
++>select b, sum(a) sa
++>from T1_286
++>group by b
++>order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>select * from T_286_MV5
++>order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST6);
+>>-----------------------------------------------------------------
+>>insert into T2_286 values (15,12),(16,12),(17,12),(21,33),(22,33);
+
+--- 5 row(s) inserted.
+>>
+>>create mv T_286_MV8
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDIT
++>as
++>select b, min(a) min_a
++>from T2_286
++>group by b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_286_MV8_844216375_4596 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_286_MV8 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV8;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV8 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV8 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV8 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T2_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T2_286.
+
+
+>>
+>>
+>>-- expected -  not 0 ( system_added index)
+>>set param ?t_name 'T_286_MV8';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  Y         
+
+--- 1 row(s) selected.
+>>
+>>delete from T2_286 where a=15;
+
+--- 1 row(s) deleted.
+>>
+>>-- recompute ,no Purgedata , NoDelete 
+>>Refresh T_286_MV8 debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T2_286)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 102
+AND "@OPERATION_TYPE" = 0;
+ Compiling Statement : 
+ SELECT [FIRST 1] "@EPOCH"
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T2_286)
+WHERE "@EPOCH" >= CAST (? AS INT)
+AND "@EPOCH" <= 102
+AND ("@OPERATION_TYPE" = 1 OR "@OPERATION_TYPE" = 3);
+The materialized view CATMVS.MVSCHM.T_286_MV8 is being refreshed in a single transaction...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV8
+ FROM SINGLEDELTA 
+	CATMVS.MVSCHM.T2_286 BETWEEN 102 AND 102 DE LEVEL 0
+	 USE NO RANGELOG
+	USE IUDLOG 
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV8 RECOMPUTE 
+The materialized view CATMVS.MVSCHM.T_286_MV8 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T2_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T2_286)
+IUD log has 1 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T2_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T2_286.
+
+
+>>
+>>
+>>prepare stat1 from 
++>select b, min(a) min_a
++>from T2_286
++>group by b
++>order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>select * from T_286_MV8
++>order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>set param ?t_name 'T_286_MV8';
+>>-- expected - MV8  no audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST8);
+>>-----------------------------------------------------------------
+>>create table T3_286 ( a int not null not droppable,
++>			  b int not null not droppable, 
++>			  c int , primary key (a))
++>			  store by primary key number of partitions 4;
+
+--- SQL operation complete.
+>>ALTER TABLE T3_286 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into T3_286 values ( 1,1, 1),(2,1, 2),(3,4, 3),(5,4, 2);
+
+--- 4 row(s) inserted.
+>>insert into T3_286 values (33,33, 33),(34,35,36),(36,35,34);
+
+--- 3 row(s) inserted.
+>>
+>>create index another_index3 on T3_286 ( a );
+
+--- SQL operation complete.
+>>
+>>create mv T_286_MV10
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>location $$partition1$$
++>range partition (ADD FIRST KEY (40) location $$partition2$$)
++>as
++>select b, c, sum(a) sa
++>from T3_286
++>group by b, c;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_286_MV10_811651995_4596 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_286_MV10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV10;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV10 debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV10 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV10 and its secondary indexes...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV10 RECOMPUTE NODELETE 
+ Compiling Statement : 
+
+Populating the secondary indexes of materialized view CATMVS.MVSCHM.T_286_MV10...
+
+ Compiling Statement : 
+ Compiling Statement : 
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV10 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T3_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T3_286)
+IUD log has 0 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T3_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T3_286.
+
+
+>>
+>>-- expected -   not 0 ( system_added index)
+>>set param ?t_name 'T_286_MV8';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  Y         
+
+--- 1 row(s) selected.
+>>
+>>insert into T3_286 values (121,123, 120),(122,111,110);
+
+--- 2 row(s) inserted.
+>>
+>>-- Purgedata executed, NoDelete,populate indexes
+>>refresh T_286_MV10 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV10 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV10 and its secondary indexes...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV10 RECOMPUTE NODELETE 
+ Compiling Statement : 
+
+Populating the secondary indexes of materialized view CATMVS.MVSCHM.T_286_MV10...
+
+ Compiling Statement : 
+ Compiling Statement : 
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV10 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T3_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T3_286)
+IUD log has 2 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T3_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T3_286.
+
+
+>>
+>>prepare stat1 from
++>select b, c, sum(a) sa
++>from T3_286
++>group by b, c
++>order by b, c, sa;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>select * from T_286_MV10
++>order by b, c, sa;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>set param ?t_name 'T_286_MV10';
+>>-- expected - MV10  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>insert into T3_286 values (126,123, 120),(127,111,110),(226,123, 120),(227,111,110);
+
+--- 4 row(s) inserted.
+>>
+>>refresh T_286_MV10 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV10 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV10 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T3_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T3_286.
+
+
+>>
+>>prepare stat1 from
++>select b, c, sum(a) sa
++>from T3_286
++>group by b, c
++>order by b, c, sa;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>select * from T_286_MV10
++>order by b, c, sa;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>set param ?t_name 'T_286_MV10';
+>>-- expected - MV10  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>prepare stat1 from 
++>select a
++>from T3_286
++>order by a;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>select a
++>from table(index_table another_index3)
++>order by a;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>
+>>	obey TESTMV286(TEST11);
+>>-----------------------------------------------------------------
+>>insert into T1_286 values (121,123, 120),(122,111,110);
+
+--- 2 row(s) inserted.
+>>
+>>create  mv T_286_MV13
++>refresh on request
++>initialize on create
++>as
++>select a, sum(b) sb, avg(b) ab
++>from T2_286
++>group by a;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_286_MV13_688439846_4596 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER mv T_286_MV13 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV13;
+
+--- SQL operation complete.
+>>
+>>create  mv T_286_MV14
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>as
++>select ab , count(a) cnt
++>from T_286_MV13
++>group by ab;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_286_MV14_234545256_4596 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER mv T_286_MV14 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV14;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV14 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV14 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV14 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_286_MV13...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_286_MV13.
+
+
+>>
+>>-- expected -   not 0 ( system_added index)
+>>set param ?t_name 'T_286_MV14';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  Y         
+
+--- 1 row(s) selected.
+>>
+>>insert into T2_286 values (118,12),(118,13),(119,11),(119,12);
+
+--- 4 row(s) inserted.
+>>
+>>refresh T_286_MV13 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV13 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV13 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T2_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T2_286.
+
+
+>>
+>>
+>>prepare stat1 from 
++>select a, sum(b) sb, avg(b) ab
++>from T2_286
++>group by a
++>order by a;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>select * from T_286_MV13
++>order by a;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-- Purgedata,NoDelete ,Populate index
+>>refresh T_286_MV14 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV14 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV14 and its secondary indexes...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV14 RECOMPUTE NODELETE 
+ Compiling Statement : 
+
+Populating the secondary indexes of materialized view CATMVS.MVSCHM.T_286_MV14...
+
+ Compiling Statement : 
+ Compiling Statement : 
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV14 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T_286_MV13...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T_286_MV13)
+IUD log has 2 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T_286_MV13)
+WHERE
+("@EPOCH" BETWEEN 101 AND 102)
+OR
+("@EPOCH" BETWEEN -102 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T_286_MV13.
+
+
+>>
+>>
+>>prepare stat1 from 
++>select ab , count(a) CNT
++>from T_286_MV13
++>group by ab
++>order by ab;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>select * from T_286_MV14
++>order by ab;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>set param ?t_name 'T_286_MV14';
+>>-- expected - MV12  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST13);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV15
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV15 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create index ind_on_mv15 on  T_286_MV15 (sa) no populate;
+
+--- SQL operation complete.
+>>
+>>-- refresh for initialization 
+>>refresh T_286_MV15 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>
+>>insert into T1_286 values (1128,126, 231),(1129,124,234),(1130,148,534);
+
+--- 3 row(s) inserted.
+>>
+>>-- purgedata,NoDelete,populate index
+>>Refresh T_286_MV15 recompute debug 51,65,66;
+
+--- SQL operation complete.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV15 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+
+Purging the data from materialized view CATMVS.MVSCHM.T_286_MV15 and its secondary indexes...
+
+ Compiling Statement : 
+ INTERNAL REFRESH CATMVS.MVSCHM.T_286_MV15 RECOMPUTE NODELETE 
+ Compiling Statement : 
+
+Populating the secondary indexes of materialized view CATMVS.MVSCHM.T_286_MV15...
+
+ Compiling Statement : 
+ Compiling Statement : 
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV15 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+ Compiling Statement : 
+ SELECT COUNT(*) FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+IUD log has 8 rows, and 1 partitions. Safety factor is 200. Using simple delete.
+
+ Compiling Statement : 
+ DELETE 
+FROM TABLE(IUD_LOG_TABLE CATMVS.MVSCHM.T1_286)
+WHERE
+("@EPOCH" BETWEEN 101 AND 101)
+OR
+("@EPOCH" BETWEEN -101 AND 0);
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>-- expected -  user created populated index  
+>>set param ?t_name 'T_286_MV15';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  Y         
+
+--- 1 row(s) selected.
+>>
+>>set param ?t_name 'T_286_MV15';
+>>-- expected - MV15  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST15);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV17
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV17 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV17;
+
+--- SQL operation complete.
+>>
+>>create index ind_on_mv17 on  T_286_MV17 (sa);
+
+*** WARNING[12106] The index was created with a NO POPULATE clause. The index will be populated during the first refresh.
+
+--- SQL operation completed with warnings.
+>>
+>>-- expected -  user created index, not populated
+>>set param ?t_name 'T_286_MV17';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  N         
+
+--- 1 row(s) selected.
+>>
+>>-----------------------------------------------------------------
+>>
+>>	obey TESTMV286(TEST16);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV18
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV18 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV18;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV18 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV18 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV18 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>create index ind_on_mv18 on  T_286_MV18 (sa);
+
+--- SQL operation complete.
+>>
+>>-- expected -  user created index, populated
+>>set param ?t_name 'T_286_MV18';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  Y         
+
+--- 1 row(s) selected.
+>>
+>>insert into T1_286 values (1172,162,234),(1173,12,54),(1175,12,65),(1176,162,765);
+
+--- 4 row(s) inserted.
+>>
+>>refresh T_286_MV18 recompute debug 51,102;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+ Compiling Statement : 
+The materialized view CATMVS.MVSCHM.T_286_MV18 is being refreshed (by recompute) in a single transaction...
+
+ Compiling Statement : 
+*** ERROR[20516] Simulating a crash of the refresh utility at testpoint #102 !!!
+*** ERROR[20527] Failed to complete the task REC(CATMVS.MVSCHM.T_286_MV18) correctly.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>--expected failure - mv  unavailable
+>>select count(*) cnt from T_286_MV18;
+
+CNT                 
+--------------------
+
+                   9
+
+--- 1 row(s) selected.
+>>
+>>-- expected 1 ddl_locks
+>>select count(*) from HP_DEFINITION_SCHEMA.ddl_locks;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>-- fail
+>>refresh T_286_MV18 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>-- expected 1 ddl_locks
+>>select count(*) from HP_DEFINITION_SCHEMA.ddl_locks;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>
+>>refresh T_286_MV18 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV18 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV18 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>--expected success
+>>select count(*) cnt from T_286_MV18;
+
+CNT                 
+--------------------
+
+                  11
+
+--- 1 row(s) selected.
+>>
+>>prepare stat1 from 
++>select b, sum(a) sa
++>from T1_286
++>group by b
++>order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from
++>select * from T_286_MV18
++>order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>set param ?t_name 'T_286_MV18';
+>>-- expected - MV18  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+NUM                   AUDITED
+--------------------  -------
+
+                   1  Y      
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST21);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV23
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV23 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV23;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV23 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV23 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV23 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>prepare stat_for_MV23 from
++>select count(*) cnt from T_286_MV23;
+
+--- SQL command prepared.
+>>
+>>insert into T1_286 values (211,22,342),(212,23,376),(213,23,950),(215,22,345);
+
+--- 4 row(s) inserted.
+>>
+>>refresh T_286_MV23 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV23 is being refreshed in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV23 has been refreshed in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>set param ?t_name 'T_286_MV23';
+>>-- expected - MV23  audit
+>>execute select_audit_status;
+
+AUDITED
+-------
+
+Y      
+
+--- 1 row(s) selected.
+>>execute select_audited_index_status;
+
+--- 0 row(s) selected.
+>>
+>>execute stat_for_MV23;
+
+CNT                 
+--------------------
+
+                  13
+
+--- 1 row(s) selected.
+>>
+>>prepare stat1 from
++>select b, sum(a) sa
++>from T1_286
++>group by b
++>order by b;
+
+--- SQL command prepared.
+>>prepare stat2 from 
++>select * from T_286_MV23
++>order by b;
+
+--- SQL command prepared.
+>>begin work;
+
+--- SQL operation complete.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>commit;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>	obey TESTMV286(TEST22);
+>>-----------------------------------------------------------------
+>>create mv T_286_MV24
++>refresh on request
++>initialize on refresh
++>--MVAttributes NO AUDITONREFRESH
++>store by (b)
++>as
++>select b, sum(a) sa
++>from T1_286
++>group by b;
+
+--- SQL operation complete.
+>>ALTER MV T_286_MV24 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER mvgroup MVG286_cancel ADD T_286_MV24;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV24 outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+The materialized view CATMVS.MVSCHM.T_286_MV24 is being refreshed (by recompute) in a single transaction...
+
+The materialized view CATMVS.MVSCHM.T_286_MV24 has been refreshed (by recompute) in a single transaction.
+
+Starting the log cleanup of table CATMVS.MVSCHM.T1_286...
+
+Finished the log cleanup of table CATMVS.MVSCHM.T1_286.
+
+
+>>
+>>create index ind_on_mv24 on  T_286_MV24 (sa) no populate;
+
+--- SQL operation complete.
+>>
+>>-- expected -  user created index, not populated
+>>set param ?t_name 'T_286_MV24';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  N         
+
+--- 1 row(s) selected.
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 1 4 <CATMVS.MVSCHM.T_286_MV24_LOCK> <CATMVS.MVSCHM.T_286_MV24> <0> <3> ;
+
+--- SQL operation complete.
+>>
+>>refresh T_286_MV24 recompute debug 66;
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+--- SQL operation failed with errors.
+>>log;
+
+*** ERROR[20520] Object CATMVS.MVSCHM.T_286_MV24 cannot participate in refresh; a utility operation associated with a DDL lock on it is currently running.
+
+*** ERROR[20526] Refresh completed with errors. See REFRESH.LOG for description.
+
+
+>>
+>>-- expected -  user created index,remains not populated
+>>set param ?t_name 'T_286_MV24';
+>>execute select_index;
+
+NUM                   VALID_DATA
+--------------------  ----------
+
+                   1  N         
+
+--- 1 row(s) selected.
+>>
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 2 1 <CATMVS.MVSCHM.T_286_MV24_LOCK> ;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------------------
+>>
+>>-- Check the drop statement on the way out
+>>obey TESTMV286(CLEAN_UP);
+>>-----------------------------------------------------------------
+>>
+>>refresh mvgroup MVG286_cancel cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>
+>>
+>>drop table T1_286 cascade;
+
+--- SQL operation complete.
+>>drop table T2_286 cascade;
+
+--- SQL operation complete.
+>>drop table T3_286 cascade;
+
+--- SQL operation complete.
+>>
+>>drop mvgroup MVG286_cancel;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table catmvs.mvschm.Num_Obj;
+
+--- SQL operation complete.
+>>reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+
+--- SQL operation complete.
+>>
+>>log;

@@ -1,0 +1,17 @@
+>>obey TEST_1_1_1_8(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER trig8 BEFORE UPDATE
++>	ON tab1A
++>	REFERENCING NEW AS newrow, OLD  oldrow
++>	FOR EACH ROW
++>		WHEN (newrow.a > oldrow.b)
++>
++>		SIGNAL SQLSTATE 's1111' ('this is a message');
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>LOG;

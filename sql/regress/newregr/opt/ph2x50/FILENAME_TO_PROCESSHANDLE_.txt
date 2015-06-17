@@ -1,0 +1,35 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+FILENAME_TO_PROCESSHANDLE_:
+  ERROR                              FILENAME  PROCESSHANDLE  
+      0                      \PFB0102.$FC0000    512   252     0   314     0     0     2 -11548     0     2 
+      0                      \PFB0102.$FC0100    512   250     1   295     0     0     2 -11676     0     2 
+      0                      \PFB0102.$FC0200    512   248     2   291     0     0     2 -11804     0     2 
+      0                      \PFB0102.$FC0300    512   246     3   292     0     0     2 -11932     0     2 
+      0                      \PFB0102.$FC0400    512   244     4   294     0     0     2 -12060     0     2 
+      0                      \PFB0102.$FC0500    512   242     5   294     0     0     2 -12188     0     2 
+      0                      \PFB0102.$FC0600    512   240     6   293     0     0     2 -12316     0     2 
+      0                      \PFB0102.$FC0700    512   238     7   292     0     0     2 -12444     0     2 
+      0                      \PFB0102.$FC0800    512   236     8   295     0     0     2 -12572     0     2 
+      0                      \PFB0102.$FC0900    512   234     9   294     0     0     2 -12700     0     2 
+      0                      \PFB0102.$FC1000    512   232    10   292     0     0     2 -12828     0     2 
+      0                      \PFB0102.$FC1100    512   230    11   292     0     0     2 -12956     0     2 
+      0                      \PFB0102.$FC1200    512   228    12   293     0     0     2 -13084     0     2 
+      0                      \PFB0102.$FC1300    512   226    13   293     0     0     2 -13212     0     2 
+      0                      \PFB0102.$FC1400    512   224    14   292     0     0     2 -13340     0     2 
+      0                      \PFB0102.$FC1500    512   222    15   293     0     0     2 -13468     0     2 

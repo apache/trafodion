@@ -1,0 +1,264 @@
+>>
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_5_2_1(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,4,5,6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (10,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO cat2.schm.tab2A VALUES (20,20);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig31
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig31
++>AFTER UPDATE ON tab1A
++>REFERENCING OLD AS oldR
++>FOR EACH ROW
++>INSERT INTO tab1B VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig32
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig32
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>INSERT INTO cat2.schm.tab2A VALUES (newR.a, newR.b);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig33
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig33
++>AFTER INSERT ON cat2.schm.tab2A
++>FOR EACH ROW
++>UPDATE cat2.schm.tab2A SET b=b+1;
+
+--- SQL operation complete.
+>>
+>>obey TEST_5_2_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+10 WHERE a<3;
+
+--- 2 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1           12            3            4  
+          2           13            4            5  
+          3            4            5            6  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          2            3  
+         10           10  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM cat2.schm.tab2A;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            4  
+         20           22  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_5_2_1(clean_up);
+>>
+>>DROP TRIGGER atrig31;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig32;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig33;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 3 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 3 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 3 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- switch schemas
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_2_1(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,3,4,5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,4,5,6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (10,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO cat2.schm.tab2A VALUES (20,20);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig31
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig31
++>AFTER UPDATE ON tab1A
++>REFERENCING OLD AS oldR
++>FOR EACH ROW
++>INSERT INTO tab1B VALUES (oldR.a, oldR.b);
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig32
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig32
++>AFTER INSERT ON tab1B
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>INSERT INTO cat2.schm.tab2A VALUES (newR.a, newR.b);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig33
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig33
++>AFTER INSERT ON cat2.schm.tab2A
++>FOR EACH ROW
++>UPDATE cat2.schm.tab2A SET b=b+1;
+
+--- SQL operation complete.
+>>
+>>obey TEST_5_2_1(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+10 WHERE a<3;
+
+--- 2 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D            
+-----------  -----------  -----------  -----------  
+
+          1           12            3            4  
+          2           13            4            5  
+          3            4            5            6  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM tab1B;
+
+A            B            
+-----------  -----------  
+
+          1            2  
+          2            3  
+         10           10  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>SELECT * FROM cat2.schm.tab2A;
+
+A            B            
+-----------  -----------  
+
+          1            4  
+          2            4  
+         20           22  
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>
+>>-- end logging
+>>LOG;

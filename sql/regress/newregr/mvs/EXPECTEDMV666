@@ -1,0 +1,685 @@
+>>
+>>-- Run tests
+>>  obey TESTMV666(Test1);
+>>
+>>create mv T_666_MV1
++>  refresh on statement
++>initialized on refresh
++>  as select a, b b1, b b2
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV1 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV1';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A                                0            1  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     A                                0            1  DUP                   -1  N           Y                D           N        
+T_666_T1              B                     B1                               1            2  BAS                   -1  N           N                D           N        
+T_666_T1              B                     B2                               1            3  RED                    2  N           N                D           N        
+
+--- 4 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV1             SYSKEY                            0
+T_666_MV1             A                                 1
+T_666_MV1             B1                                2
+T_666_MV1             B2                                3
+
+--- 4 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV1             T_666_T1                        0            4            0  D           N           N                   
+T_666_MV1             T_666_T2                        0            5            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV1;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test2);
+>>
+>>create mv T_666_MV2
++>  refresh on statement
++>  initialize on create
++>  as select a, d
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV2 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV2';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A                                0            1  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     D                                0            2  RED                    1  N           Y                D           N        
+
+--- 2 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV2             SYSKEY                            0
+T_666_MV2             A                                 1
+T_666_MV2             D                                 2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV2             T_666_T1                        0            3            0  D           N           N                   
+T_666_MV2             T_666_T2                        0            4            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV2;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test3);
+>>
+>>create mv T_666_MV3
++>  refresh on statement
++>  initialize on create
++>  as select a
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV3';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A                                0            1  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     A                                0            1  DUP                   -1  N           Y                D           N        
+
+--- 2 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV3             SYSKEY                            0
+T_666_MV3             A                                 1
+
+--- 2 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV3             T_666_T1                        0            2            0  D           N           N                   
+T_666_MV3             T_666_T2                        0            3            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV3;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test4);
+>>
+>>create mv T_666_MV4
++>  refresh on statement
++>  initialize on create
++>  as select b
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV4';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              B                     B                                1            1  BAS                   -1  N           N                D           N        
+T_666_T1              A                     SYS_A1                           0            2  BAS                   -1  N           Y                D           Y        
+T_666_T2              D                     SYS_A1                           0            2  DUP                   -1  N           Y                D           N        
+
+--- 3 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV4             SYSKEY                            0
+T_666_MV4             B                                 1
+T_666_MV4             SYS_A1                            2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV4             T_666_T1                        0            3            0  D           N           N                   
+T_666_MV4             T_666_T2                        0            4            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV4;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test5);
+>>
+>>create mv T_666_MV5
++>  refresh on statement
++>  initialize on create
++>  as select b b1, b b2
++>  from T_666_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV5';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              B                     B1                               1            0  BAS                   -1  N           N                D           N        
+T_666_T1              B                     B2                               1            1  RED                    0  N           N                D           N        
+T_666_T1              A                     SYS_A1                           0            2  BAS                   -1  N           Y                D           Y        
+
+--- 3 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV5             B1                                0
+T_666_MV5             B2                                1
+T_666_MV5             SYS_A1                            2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+--- 0 row(s) selected.
+>>drop mv T_666_MV5;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test6);
+>>
+>>create mv T_666_MV6
++>  refresh on statement
++>  initialize on create
++>  as select a a1, a a2
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV6';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A1                               0            1  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     A1                               0            1  DUP                   -1  N           Y                D           N        
+T_666_T1              A                     A2                               0            2  RED                    1  N           N                D           N        
+
+--- 3 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV6             SYSKEY                            0
+T_666_MV6             A1                                1
+T_666_MV6             A2                                2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV6             T_666_T1                        0            3            0  D           N           N                   
+T_666_MV6             T_666_T2                        0            4            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV6;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test7);
+>>
+>>create mv T_666_MV7
++>  refresh on statement
++>  initialize on create
++>  as select (b+c) bc
++>    from T_666_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV7 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV7';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+?                     ?                     BC                              -1            0  FUN                   -1  Y           N                D           N        
+T_666_T1              B                     BC                               1            0  CPX                   -1  N           Y                D           N        
+T_666_T1              C                     BC                               2            0  CPX                   -1  N           Y                D           N        
+T_666_T1              A                     SYS_A1                           0            1  BAS                   -1  N           Y                D           Y        
+
+--- 4 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV7             BC                                0
+T_666_MV7             SYS_A1                            1
+
+--- 2 row(s) selected.
+>>execute mvs_join_cols;
+
+--- 0 row(s) selected.
+>>drop mv T_666_MV7;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test8);
+>>
+>>create mv T_666_MV8
++>  refresh on statement
++>  initialize on create
++>  as select a a1, a a2, c, d, a+b+c abc, a+d ad, b+c bc
++>    from T_666_T1, T_666_T2
++>    where a = d;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV8 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV8';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A1                               0            1  BAS                   -1  N           Y                D           N        
+T_666_T1              A                     A2                               0            2  RED                    1  N           N                D           N        
+T_666_T1              C                     C                                2            3  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     D                                0            4  RED                    1  N           Y                D           N        
+?                     ?                     ABC                             -1            5  FUN                   -1  Y           N                D           N        
+T_666_T1              A                     ABC                              0            5  CPX                   -1  N           N                D           N        
+T_666_T2              D                     ABC                              0            5  CPX                   -1  N           N                D           N        
+T_666_T1              B                     ABC                              1            5  CPX                   -1  N           Y                D           N        
+T_666_T1              C                     ABC                              2            5  CPX                   -1  N           N                D           N        
+?                     ?                     AD                              -1            6  FUN                   -1  Y           N                D           N        
+T_666_T1              A                     AD                               0            6  CPX                   -1  N           N                D           N        
+T_666_T2              D                     AD                               0            6  CPX                   -1  N           N                D           N        
+?                     ?                     BC                              -1            7  FUN                   -1  Y           N                D           N        
+T_666_T1              B                     BC                               1            7  CPX                   -1  N           N                D           N        
+T_666_T1              C                     BC                               2            7  CPX                   -1  N           N                D           N        
+
+--- 15 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV8             SYSKEY                            0
+T_666_MV8             A1                                1
+T_666_MV8             A2                                2
+T_666_MV8             C                                 3
+T_666_MV8             D                                 4
+T_666_MV8             ABC                               5
+T_666_MV8             AD                                6
+T_666_MV8             BC                                7
+
+--- 8 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV8             T_666_T1                        0            8            0  D           N           N                   
+T_666_MV8             T_666_T2                        0            9            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV8;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test9);
+>>
+>>create mv T_666_MV9A
++>  refresh on statement
++>  initialize on create
++>  as select b b1, b b2
++>    from T_666_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV9A attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV9A';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              B                     B1                               1            0  BAS                   -1  N           N                D           N        
+T_666_T1              B                     B2                               1            1  RED                    0  N           N                D           N        
+T_666_T1              A                     SYS_A1                           0            2  BAS                   -1  N           Y                D           Y        
+
+--- 3 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV9             B1                                0
+T_666_MV9             B2                                1
+T_666_MV9             SYS_A1                            2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+--- 0 row(s) selected.
+>>
+>>create mv T_666_MV9B
++>  refresh on statement
++>  initialize on create
++>  as select b1+b2 bb
++>  from T_666_MV9A;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV9B attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV9B';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+?                     ?                     BB                              -1            0  FUN                   -1  Y           N                D           N        
+T_666_MV9             B1                    BB                               0            0  CPX                   -1  N           Y                D           N        
+T_666_MV9             B2                    BB                               1            0  CPX                   -1  N           Y                D           N        
+T_666_MV9             SYS_A1                SYS_SYS_A                        2            1  BAS                   -1  N           Y                D           Y        
+
+--- 4 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV9             BB                                0
+T_666_MV9             SYS_SYS_A                         1
+
+--- 2 row(s) selected.
+>>execute mvs_join_cols;
+
+--- 0 row(s) selected.
+>>
+>>drop mv T_666_MV9B;
+
+--- SQL operation complete.
+>>drop mv T_666_MV9A;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test10);
+>>
+>>create mv T_666_MV10
++>  refresh on statement
++>  initialize on create
++>  as select a 
++>    from T_666_T1, T_666_T2
++>    where b = e;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_666_MV10_555541263_6917 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_666_MV10 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV10';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A                                0            1  BAS                   -1  N           Y                D           N        
+T_666_T2              D                     SYS_D1                           0            2  BAS                   -1  N           Y                D           Y        
+
+--- 2 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV1             SYSKEY                            0
+T_666_MV1             A                                 1
+T_666_MV1             SYS_D1                            2
+
+--- 3 row(s) selected.
+>>execute mvs_join_cols;
+
+MV_NAME               TABLE_NAME            COL_NUM      SEQ_NUMBER   VEG_INDEX    USAGE_TYPE  IS_COMPLEX  LEFT_JOIN_TABLE_TYPE
+--------------------  --------------------  -----------  -----------  -----------  ----------  ----------  --------------------
+
+T_666_MV1             T_666_T1                        1            3            0  D           N           N                   
+T_666_MV1             T_666_T2                        1            4            0  D           N           N                   
+
+--- 2 row(s) selected.
+>>drop mv T_666_MV10;
+
+--- SQL operation complete.
+>>-------------------------------------------------------------------------------
+>>  obey TESTMV666(Test11);
+>>
+>>insert into T_666_T1 values (1, 2, 3);
+
+--- 1 row(s) inserted.
+>>
+>>alter table T_666_T1 attribute insertlog;
+
+--- SQL operation complete.
+>>
+>>create mv T_666_MV11
++>  refresh on statement
++>  initialize on create
++>  as select a, a a1, a a2
++>    from T_666_T1;
+
+--- SQL operation complete.
+>>ALTER MV T_666_MV11 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?name 'T_666_MV11';
+>>execute cols;
+
+T_NAME                ORIG_COL_NAME         MV_COL_NAME           ORIG_COL_NUM  MV_COL_NUM   COLUMN_TYPE  DEP1         IS_COMPLEX  IS_USED_BY_JOIN  USAGE_TYPE  IS_SYSTEM
+--------------------  --------------------  --------------------  ------------  -----------  -----------  -----------  ----------  ---------------  ----------  ---------
+
+T_666_T1              A                     A                                0            1  BAS                   -1  N           Y                D           N        
+T_666_T1              A                     A1                               0            2  RED                    1  N           N                D           N        
+T_666_T1              A                     A2                               0            3  RED                    1  N           N                D           N        
+
+--- 3 row(s) selected.
+>>execute mvs_base_table;
+
+MV_NAME               COLUMN_NAME           COLUMN_NUMBER
+--------------------  --------------------  -------------
+
+T_666_MV1             SYSKEY                            0
+T_666_MV1             A                                 1
+T_666_MV1             A1                                2
+T_666_MV1             A2                                3
+
+--- 4 row(s) selected.
+>>execute mvs_join_cols;
+
+--- 0 row(s) selected.
+>>
+>>alter table T_666_T1 attribute no insertlog;
+
+--- SQL operation complete.
+>>
+>>showddl T_666_MV11;
+
+
+CREATE MATERIALIZED VIEW CATMVS.MVSCHM.T_666_MV11
+  REFRESH ON STATEMENT 
+  INITIALIZE ON CREATE 
+  STORE BY (A ASC) 
+  ATTRIBUTES ALL MVS ALLOWED
+  AS SELECT CATMVS.MVSCHM.T_666_T1.A AS A, CATMVS.MVSCHM.T_666_T1.A AS A1, CATMVS.MVSCHM.T_666_T1.A AS A2
+   FROM CATMVS.MVSCHM.T_666_T1;
+
+
+--- SQL operation complete.
+>>drop mv T_666_MV11;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------------------------------------
+>>
+>>-- Clean and Exit
+>>obey TESTMV666(clean_up);
+>>
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>drop mv T_666_MV11;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV11 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV11 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV10;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV10 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV10 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV9B;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV9B does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV9B could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV9A;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV9A does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV9A could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV8;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV8 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV8 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV7;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV7 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV7 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV6;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV6 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV6 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV5;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV5 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV5 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV4;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV4 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV4 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV3;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV3 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV3 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_666_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_666_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_666_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop table T_666_T2;
+
+--- SQL operation complete.
+>>drop table T_666_T1;
+
+--- SQL operation complete.
+>>log;

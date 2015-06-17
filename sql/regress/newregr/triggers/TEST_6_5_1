@@ -1,0 +1,89 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets
+-- SIGNAL from within a conflict-set
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+
+obey TEST_6_5_1(clean_up);
+obey TEST_6_5_1(set_up);
+log   LOG_6_5_1 clear;
+obey TEST_6_5_1(tests);
+LOG;
+obey TEST_6_5_1(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+DROP TRIGGER atrigA;
+DROP TRIGGER atrigB;
+DROP TRIGGER atrigC;
+------------------------------------------------------------------
+obey clearTables2;
+
+?section set_up
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,5);
+INSERT INTO tab1A VALUES (3,4,5,6);
+
+---------------------------------
+-- DEFINE TRIGGER atrigA
+---------------------------------
+
+CREATE TRIGGER atrigA
+AFTER UPDATE ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+INSERT INTO tab1B VALUES (newR.a, newR.b);
+
+---------------------------------
+-- DEFINE TRIGGER atrigB
+---------------------------------
+
+CREATE TRIGGER atrigB
+AFTER UPDATE ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+INSERT INTO cat2.schm.tab2A VALUES (newR.a, newR.b);
+
+---------------------------------
+-- DEFINE TRIGGER atrigC
+---------------------------------
+
+CREATE TRIGGER atrigC
+AFTER UPDATE ON tab1A
+REFERENCING NEW AS newR
+FOR EACH ROW
+WHEN (newR.a = 2) SIGNAL SQLSTATE 's9999' ('atrig6112c signalled');
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b = b+1, c=c+1, d=d+1 WHERE a<3;
+
+SELECT * FROM tab1A ORDER BY a; -- check result
+
+SELECT * FROM tab1B ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

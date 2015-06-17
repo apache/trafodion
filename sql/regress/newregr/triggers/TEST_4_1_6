@@ -1,0 +1,136 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- tentative execution of before triggers
+-- Before triggers and sub-queries.
+-- known diff was created for MV project bug 618 (fix known diff after closing the bug)
+-- known diff already existed before!
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+
+obey TEST_4_1_6(clean_up);
+obey TEST_4_1_6(set_up);
+log   LOG_4_1_6 clear;
+obey TEST_4_1_6(tests);
+LOG;
+obey TEST_4_1_6(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+DROP TRIGGER btrig416i;
+DROP TRIGGER btrig416u1;
+DROP TRIGGER btrig416u2;
+DROP TRIGGER btrig416d;
+
+obey clearTables;
+
+?section set_up
+INSERT INTO tab1A VALUES ( 1, 1, 1, 1);
+INSERT INTO tab1A VALUES (11,11,11,11);
+INSERT INTO tab1A VALUES (21,21,21,21);
+INSERT INTO tab1A VALUES (31,31,31,31);
+INSERT INTO tab1A VALUES (41,41,41,41);
+INSERT INTO tab1A VALUES (51,51,51,51);
+
+INSERT INTO TAB1B VALUES (11,11), (21,21), (31,31), (41,41);
+
+---------------------------------
+-- DEFINE TRIGGER btrig2
+---------------------------------
+
+CREATE TRIGGER btrig416i
+	BEFORE INSERT ON tab1A
+	REFERENCING NEW AS newrow 
+	WHEN (newrow.c > (SELECT MAX(a) FROM tab1b))
+	SET newrow.c = (SELECT MAX(a) FROM tab1b)-1;
+
+CREATE TRIGGER btrig416u1
+	BEFORE UPDATE ON tab1A
+	REFERENCING OLD AS oldrow, NEW AS newrow 
+	WHEN (newrow.c > (SELECT MAX(a) FROM tab1b))
+	SET newrow.c = (SELECT MAX(a) FROM tab1b)-1;
+
+CREATE TRIGGER btrig416u2
+	BEFORE UPDATE ON tab1A
+	REFERENCING OLD AS oldrow
+	WHEN (oldrow.c < (SELECT MIN(a) FROM tab1b))
+	SIGNAL SQLSTATE 'S9999' ('Can not change this!');
+
+CREATE TRIGGER btrig416d
+	BEFORE DELETE ON tab1A
+	REFERENCING OLD AS oldrow
+	WHEN (oldrow.c < (SELECT MIN(a) FROM tab1b))
+	SIGNAL SQLSTATE 'S9999' ('Can not delete this!');
+
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+INSERT INTO TAB1A VALUES ( 2, 2, 2, 2); -- Should work.
+INSERT INTO TAB1A VALUES (22,22,22,22); -- Should work.
+INSERT INTO TAB1A VALUES (62,62,62,62); -- Should set c=40.
+
+INSERT INTO TAB1A SELECT  3, 3, 3, COUNT(A) FROM tab1b; -- Should work (d=4).
+INSERT INTO TAB1A SELECT 23,23,23, COUNT(A) FROM tab1b; -- Should work (d=4).
+INSERT INTO TAB1A SELECT 63,63,63, COUNT(A) FROM tab1b; -- Should set c=40.
+
+INSERT INTO TAB1A VALUES ( 4, 4, 4, (SELECT SUM(A) FROM tab1b)); -- Should work (d=104).
+INSERT INTO TAB1A VALUES (24,24,24, (SELECT SUM(A) FROM tab1b)); -- Should work (d=104).
+INSERT INTO TAB1A VALUES (64,64,64, (SELECT SUM(A) FROM tab1b)); -- Should set c=40.
+
+INSERT INTO TAB1A VALUES ( 5, 5, 5, (SELECT COUNT(*) FROM tab1b)); -- Should work (d=4).
+INSERT INTO TAB1A VALUES (25,25,25, (SELECT COUNT(*) FROM tab1b)); -- Should work (d=4).
+INSERT INTO TAB1A VALUES (65,65,65, (SELECT COUNT(*) FROM tab1b)); -- Should set c=40.
+
+DELETE FROM TAB1A WHERE A= 1; -- Should SIGNAL.
+DELETE FROM TAB1A WHERE A=31; -- Should work.
+DELETE FROM TAB1A WHERE A=51; -- Should work.
+
+DELETE FROM TAB1A WHERE A IN (SELECT A FROM TAB1B); -- Should work.
+
+UPDATE TAB1A 
+	SET C=30, 
+		B=(SELECT COUNT(*) FROM tab1b)
+	WHERE A= 2;                        -- Should SIGNAL.
+
+UPDATE TAB1A 
+	SET C=30, 
+		B=(SELECT COUNT(*) FROM tab1b)
+	WHERE A=22;                        -- Should work.
+
+UPDATE TAB1A 
+	SET C=60,
+		B=(SELECT COUNT(*) FROM tab1b)
+	WHERE A= 3;                        -- Should SIGNAL.
+
+UPDATE TAB1A 
+	SET C=60,
+		B=(SELECT COUNT(*) FROM tab1b)
+	WHERE A=23;                        -- Should work.
+
+SELECT * FROM tab1A; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------
+
+

@@ -1,0 +1,730 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--===================================================================
+-- TestMV652
+-- ---------
+-- nullable columns
+--===================================================================
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+control query default insert_vsbb 'USER';
+control query default vsbb_test_mode 'ON';
+
+obey TESTMV652(CLEAN_UP);
+log LOGMV652 clear;
+
+obey TESTMV652(SET_UP);
+
+-- Run Tests
+
+	obey TESTMV652(SINGLE_ROW_INSERT);
+	obey TESTMV652(SINGLE_ROW_UPDATE);
+	obey TESTMV652(SINGLE_ROW_DELETE);
+	obey TESTMV652(VSBB_INSERT);
+	obey TESTMV652(MVLOG1);
+	obey TESTMV652(SIDEINSERT);
+	obey TESTMV652(MINMAX);
+	obey TESTMV652(SUM_A_GROUP_BY_A);
+	
+
+-- Clean and Exit
+
+obey TESTMV652(CLEAN_UP);
+log;
+exit;
+
+
+---------------------------------------------------------------
+?section SET_UP
+---------------------------------------------------------------
+
+set schema catmvs.mvschm;
+
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG1_652;
+create mvgroup MVG2_652;
+
+create table T_652_T1(a int, b int , c int,d int);
+ALTER TABLE T_652_T1 attribute all mvs allowed;
+create table T_652_T2(a int, b int , c int,d int not null not droppable,
+					primary key (d) )
+	store by primary key;
+ALTER TABLE T_652_T2 attribute all mvs allowed;
+
+create table temp_652 (a int, b int , c int,d int);
+ALTER TABLE temp_652 attribute all mvs allowed;
+
+create mv T_652_MV1_a
+	refresh on request 
+	initialize on create 
+	as
+	select a,avg(b) sb
+	from T_652_T1
+	group by a;
+ALTER MV T_652_MV1_a attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV1_a;
+
+
+create mv T_652_MV2_a
+	refresh on request 
+	initialize on create 
+	as
+	select a,c,sum(b) sb
+	from T_652_T2
+	group by c,a;
+ALTER MV T_652_MV2_a attribute all mvs allowed;
+ALTER MVGroup MVG2_652 add T_652_MV2_a;
+
+create mv T_652_MV1_mtx                 
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,c,sum(b) sb
+	from T_652_T1
+	group by c,a;
+ ALTER MV T_652_MV1_mtx attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV1_mtx;
+
+create mv T_652_MV2_mtx                  
+	refresh on request 
+	initialize on create
+	MVAttributes COMMIT Refresh EACH 5 
+	as
+	select a,c,sum(b) sb
+	from T_652_T2
+	group by c,a;
+ ALTER MV T_652_MV2_mtx attribute all mvs allowed;
+ALTER MVGroup  MVG2_652 add T_652_MV2_mtx;
+
+create mv T_652_MV1_min
+	refresh on request 
+	initialize on create
+	as
+	select a,d,min(b) min_b
+	from T_652_T1
+	group by d,a;
+ALTER MV T_652_MV1_min attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV1_min;
+
+
+
+create mv T_652_MV2_min
+	refresh on request 
+	initialize on create
+	as
+	select a,d,min(b) min_b
+	from T_652_T2
+	group by d,a;
+ALTER MV T_652_MV2_min attribute all mvs allowed;
+ALTER MVGroup MVG2_652 add T_652_MV2_min;
+
+create mv T_652_MV_mdelta
+	refresh on request 
+	initialize on create
+	as
+	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
+	from T_652_T1,T_652_T2
+	where T_652_T1.a=T_652_T2.a
+	group by T_652_T1.a,T_652_T2.d,T_652_T1.b;
+ ALTER MV T_652_MV_mdelta attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV_mdelta;
+
+create mv T_652_MV1_pipe    
+	refresh on request 
+	initialize on create
+	as
+	select a,c,d, sum(b) sb
+	from T_652_T1
+	group by a,d,c;
+ ALTER MV T_652_MV1_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV1_pipe;
+
+create mv T_652_MV2_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,sb,avg(d) avg_d
+	from T_652_MV1_pipe
+	group by a,sb;
+ ALTER MV T_652_MV2_pipe attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV2_pipe;
+
+
+create mv T_652_MV3_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,c,d, sum(b) sb
+	from T_652_T2
+	group by a,d,c;
+ ALTER MV T_652_MV3_pipe attribute all mvs allowed;
+ALTER MVGroup MVG2_652 add T_652_MV3_pipe;
+
+create mv T_652_MV4_pipe
+	refresh on request 
+	initialize on create
+	as
+	select a,sb,avg(d) avg_d
+	from T_652_MV3_pipe
+	group by a,sb;
+ ALTER MV T_652_MV4_pipe attribute all mvs allowed;
+ALTER MVGroup MVG2_652 add T_652_MV4_pipe;
+
+create table T_652_T3(a int, b int , c int,d int);
+ALTER TABLE T_652_T3 attribute all mvs allowed;
+
+create mv T_652_MV3_min
+	refresh on request 
+	initialize on create
+	as
+	select a,d,min(b) min_b
+	from T_652_T3
+	group by d,a;
+ALTER MV T_652_MV3_min attribute all mvs allowed;
+
+create table T_652_A(a int , b int);
+ALTER TABLE T_652_A attribute all mvs allowed;
+
+create mv T_652_MV15
+	refresh on request 
+	initialize on create 
+	as
+	select sum(a) sum_a, a ,count(a) cnt_a
+	from T_652_A
+	group by a;
+ALTER MV T_652_MV15 attribute all mvs allowed;
+
+
+
+prepare select_from_log_of_T3 from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+		   a,b,c,d
+	from table (iud_log_table T_652_T3)
+	order by   syskey;
+
+
+prepare select_from_log_of_T1 from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+		   a,b,c,d
+	from table (iud_log_table T_652_T1)
+	order by   syskey;
+
+prepare select_from_log_of_T2 from
+	select "@EPOCH", 
+		   case "@OPERATION_TYPE" when  0 then 'INSERT'
+		                          when  4 then 'END-RANGE'
+		                          when 12 then 'BEGIN-RANGE'
+		   					else         '???'
+		   end,
+		  d
+	from table (iud_log_table T_652_T2)
+	order by  d, syskey;
+-------------------------------------------------------
+?section SINGLE_ROW_INSERT
+-------------------------------------------------------
+insert into T_652_T1 values
+	(1,null,null,4),(null,3,4,null),(1,5,null,3),(null,8,4,22),(null,12,22,null), (null,3,8,2),
+	(null,2,4,5),(13,23,13,null);
+
+insert into T_652_T2 values
+	(1,null,null,4),(null,3,4,5),(1,5,null,6),(null,8,4,22),(null,12,22,7), (null,3,8,8),
+	(null,2,4,9),(13,23,13,10);
+
+refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+
+-------------------------------------------------------
+?section SINGLE_ROW_UPDATE
+-------------------------------------------------------
+
+update T_652_T1 set d=null  where d = 22 ;
+update T_652_T1 set a=null  where a=1 ;
+
+execute select_from_log_of_T1;
+
+refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+
+
+-------------------------------------------------------
+?section SINGLE_ROW_DELETE
+-------------------------------------------------------
+delete from T_652_T1 where a is null;
+
+execute select_from_log_of_T1;
+
+refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+-------------------------------------------------------
+?section VSBB_INSERT
+-------------------------------------------------------
+alter table T_652_T1  Attributes automatic RANGELOG ;
+
+insert into T_652_T1 values (1,null,null,1),(1,null,2,2),(1,null,3,2),(2,null,null,null),
+(2,null,2,2),(2,null,2,3),(2,null,2,4);
+
+execute select_from_log_of_T1;
+
+
+refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+-------------------------------------------------------
+?section MVLOG1
+-------------------------------------------------------
+delete 	from table (iud_log_table T_652_T2);
+
+drop mv T_652_MV_mdelta;
+
+refresh mvgroup MVG2_652 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+alter table T_652_T2  Attributes manual RANGELOG ;
+
+delete from temp_652;
+
+insert into temp_652 values (10,null,null,11),(10,null,null,12),(10,null,2,13),
+				(12,null,2,14),(11,2,null,15),(null, 1,1,16),(11,111,11,17);
+
+insert NOMVLOG into T_652_T2  select * from  temp_652;
+
+
+MVLOG INTO RANGELOG OF T_652_T2 ( d ) BETWEEN (11) AND 	(17);
+
+
+execute select_from_log_of_T2;
+
+refresh MVGroup MVG2_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS2);
+
+
+alter table T_652_T2  Attributes no RANGELOG ;
+create mv T_652_MV_mdelta
+	refresh on request 
+	initialize on create
+	as
+	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
+	from T_652_T1,T_652_T2
+	where T_652_T1.a=T_652_T2.a
+	group by T_652_T1.a,T_652_T2.d,T_652_T1.b;
+ ALTER MV T_652_MV_mdelta attribute all mvs allowed;
+ALTER MVGroup MVG1_652 add T_652_MV_mdelta;
+
+-------------------------------------------------------
+?section SIDEINSERT
+-------------------------------------------------------
+
+delete from T_652_T1;
+
+refresh mvgroup MVG1_652 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK | sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+alter table T_652_T1  Attributes automatic RANGELOG ;
+
+
+
+Insert into temp_652
+Values  (12,null,12,null),(null,null,23,11),(null,25,null,10),(1,null,null,6),
+		(15,24,null,5),	(90,8,null,3),(null,7,23,4),(90,null,23,15),(90,6,23,null),
+		(90,null,null,17),(90,6,null ,18),(80,16,14,null),(80,34,14,null),
+		(79,33,null,27),(null,11,22,34);
+
+set parserflags 1024; -- allow no audit
+ALTER table T_652_T1 attribute no audit;
+reset parserflags 1024;
+
+insert using sideinserts into T_652_T1(a,b,c,d) select * from temp_652 ;
+
+set parserflags 1024; -- allow no audit
+ALTER table T_652_T1 attribute audit;
+reset parserflags 1024;
+
+-- IUD LOG 
+execute select_from_log_of_T1;
+
+
+refresh MVGroup MVG1_652 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+obey TESTMV652(COMPARE_MVS);
+
+--------------------------------------------------------
+?section MINMAX
+--------------------------------------------------------
+
+
+-- single row insert
+insert into T_652_T3 values
+	(1,null,null,4),(null,3,4,null),(1,5,null,3),(null,8,4,22),(null,12,22,null), (null,3,8,2),
+	(null,2,4,5),(13,23,13,null);
+
+refresh T_652_MV3_min outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_652_T3
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_652_MV3_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+delete from T_652_T3 where a=1 and d=3 ;
+
+insert into T_652_T3 values (1,null,null,3) ;
+
+
+refresh T_652_MV3_min outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_652_T3
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_652_MV3_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+--vsbb insert																		
+alter table T_652_T3 Attributes automatic RANGELOG ;
+
+delete from T_652_T3 where a=13 and d is null ;
+
+insert into T_652_T3 values (1,null,null,1),(1,null,2,2),(1,null,3,2),(2,null,null,null),
+(2,null,2,2),(2,null,2,3),(2,null,2,4);
+
+execute select_from_log_of_T3;
+
+
+refresh T_652_MV3_min outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV652;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_652_T3
+	group by a,d
+	order by a,d;
+PREPARE stat2 FROM
+	select * from T_652_MV3_min
+	order by a,d;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+--------------------------------------------------------
+?section SUM_A_GROUP_BY_A
+--------------------------------------------------------
+
+insert into T_652_A values (1,2),(2,3),(3,4),(3,4),(4,5),(4,6),(4,7);
+
+refresh T_652_MV15 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV652;
+log LOGMV652;
+
+PREPARE stat1 FROM
+	select sum(a) sum_a, a ,count(a) cnt_a
+	from T_652_A
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_652_MV15
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+insert into T_652_A values (null ,null), (null,2) ,(null,3),(3,3),(null,4);
+
+refresh T_652_MV15 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV652;
+log LOGMV652;
+
+PREPARE stat1 FROM
+	select sum(a) sum_a, a ,count(a) cnt_a
+	from T_652_A
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from T_652_MV15
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+
+--------------------------------------------------------
+?section COMPARE_MVS
+--------------------------------------------------------
+PREPARE stat1 FROM 
+	select a,avg(b) sb
+	from T_652_T1
+	group by a
+	order by a;
+PREPARE stat2 FROM
+	select * from  T_652_MV1_a
+	order by a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_652_T1
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_652_MV1_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_652_T1
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_652_MV1_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+PREPARE stat1 FROM
+	select T_652_T1.a , T_652_T2.d, T_652_T1.b, sum(T_652_T1.c) sum_c
+	from T_652_T1,T_652_T2
+	where T_652_T1.a=T_652_T2.a
+	group by T_652_T1.a,T_652_T2.d,T_652_T1.b
+	order by a,d,b;
+-- momentarily disable preparser caching to avoid disrupting this test's
+-- expected output (note that table T_652_MV_mdelta no longer exists now)
+--control query default query_text_cache 'off';
+PREPARE stat2 FROM
+	select * from T_652_MV_mdelta
+	order by a,d,b;
+--control query default query_text_cache 'on';
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_652_T1
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+select * from T_652_MV1_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_652_MV1_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_652_MV2_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+--------------------------------------------------------
+?section COMPARE_MVS2
+--------------------------------------------------------
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_652_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_652_MV2_a
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,c,sum(b) sb
+	from T_652_T2
+	group by c,a
+	order by c,a;
+PREPARE stat2 FROM
+	select * from  T_652_MV2_mtx
+	order by c,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM 
+	select a,d,min(b) min_b
+	from T_652_T2
+	group by d,a
+	order by d,a;
+PREPARE stat2 FROM
+	select * from T_652_MV2_min
+	order by d,a;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+PREPARE stat1 FROM
+	select a,c,d, sum(b) sb
+	from T_652_T2
+	group by a,d,c
+	order by a,d,c;
+PREPARE stat2 FROM
+	select * from T_652_MV3_pipe
+	order by a,d,c;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+PREPARE stat1 FROM
+	select a,sb,avg(d) avg_d
+	from T_652_MV3_pipe
+	group by a,sb
+	order by a,sb;
+PREPARE stat2 FROM
+	select * from T_652_MV4_pipe
+	order by a,sb;
+obey COMPARE; 
+sh diff TEMP1 TEMP2>> LOGMV652 ;
+log LOGMV652;
+
+
+--------------------------------------------------------
+?section CLEAN_UP
+-------------------------------------------------------
+Alter mvgroup MVG1_652 add T_652_MV3_min,T_652_MV15;
+
+refresh mvgroup MVG1_652 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV652;
+log LOGMV652;
+
+refresh mvgroup MVG2_652 cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV652;
+log LOGMV652;
+
+drop mv T_652_MV15;
+drop table T_652_A;
+
+drop mv T_652_MV4_pipe;
+drop mv T_652_MV3_pipe;
+drop mv T_652_MV2_pipe;
+drop mv T_652_MV1_pipe;
+drop mv T_652_MV_mdelta;
+
+drop mv T_652_MV2_min;
+drop mv T_652_MV1_min;
+drop mv T_652_MV2_mtx;
+drop mv T_652_MV1_mtx;
+drop mv T_652_MV2_a;
+drop mv T_652_MV1_a;
+
+drop mv T_652_MV3_min;
+
+drop table T_652_T2;
+drop table T_652_T1;
+drop table T_652_T3;
+drop table temp_652;
+
+
+drop mvgroup MVG1_652;
+drop mvgroup MVG2_652;
+
+set param ?schema_name 'MVSCHM';
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;
+

@@ -1,0 +1,18 @@
+>>obey TEST_1_1_1_10(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>CREATE TRIGGER tr10 AFTER UPDATE OF (b) 
++>	ON cat2.schm.tab2A
++>	REFERENCING OLD AS oldtab, NEW AS newtab
++>	FOR EACH STATEMENT
++>
++>		UPDATE cat3.schm.tab3A
++>		SET a=3 WHERE (a,b) IN (SELECT t1.b, t2.a
++>					FROM cat1.schm.tab1A t1, newtab t2);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>LOG;

@@ -1,0 +1,230 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--=============================================================
+-- TestMV519
+-- -----------
+-- 
+-- Redef time on different range logs
+--=============================================================
+
+obey TESTMV519(CLEAN_UP);
+obey TESTMV519(SET_UP);
+
+log LOGMV519 clear;
+
+-- Run Tests
+  obey TESTMV519(TEST1);
+  obey TESTMV519(TEST2);
+  obey TESTMV519(TEST3);
+  obey TESTMV519(TEST4);
+
+
+-- Clean and Exit
+
+obey TESTMV519(CLEAN_UP);
+exit;
+
+---------------------------------------------------------------
+?section SET_UP
+
+set schema catmvs.mvschm;
+
+create table time_table (time_ largeint);
+ALTER TABLE time_table attribute all mvs allowed;
+
+prepare compare_timestamps from 
+	select case (redef_time - time_)
+		when 0 then 'Redef time NOT performed'
+		else 'Redef time performed'
+		end
+		from HP_DEFINITION_SCHEMA.objects o, time_table,
+		     HP_SYSTEM_CATALOG.system_schema.schemata s
+		where s.schema_uid = o.schema_uid
+		      and s.schema_name = 'MVSCHM'
+		      and object_name = 'T1'
+		      and OBJECT_NAME_SPACE = 'TA'
+		for read uncommitted access;
+
+
+---------------------------------------------------------------
+?section CLEAN_UP
+
+set schema catmvs.mvschm;
+drop table time_table;
+
+---------------------------------------------------------------
+?section TEST1
+
+-- table with no rangelog, create and drop an on request MV on it
+
+create table t1 (a int) attribute no rangelog;
+ALTER TABLE t1 attribute all mvs allowed;
+
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+create mv mv1 refresh on request 
+initialized on refresh
+as
+select sum(a) 
+as
+sa from t1;
+ALTER MV mv1 attribute all mvs allowed;
+ 
+execute compare_timestamps ;
+
+delete from time_table;
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+drop mv mv1;
+execute compare_timestamps ;
+
+delete from time_table;
+
+drop table t1;
+---------------------------------------------------------------
+?section TEST2
+
+-- table with manual rangelog, create and drop an on request MV on it
+
+create table t1 (a int) attribute manual rangelog;
+ALTER TABLE t1 attribute all mvs allowed;
+
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+create mv mv1 refresh on request 
+initialized on refresh
+as
+select sum(a) 
+as
+sa from t1;
+ALTER MV mv1 attribute all mvs allowed;
+ 
+execute compare_timestamps ;
+
+delete from time_table;
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+drop mv mv1;
+execute compare_timestamps ;
+
+delete from time_table;
+drop table t1;
+----------------------------------------------------------------
+?section TEST3
+
+-- table with automatic rangelog, create and drop an on request MV on it
+
+create table t1 (a int) attribute automatic rangelog;
+ALTER TABLE t1 attribute all mvs allowed;
+
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+create mv mv1 refresh on request 
+initialized on refresh
+as
+select sum(a) 
+as
+sa from t1;
+ALTER MV mv1 attribute all mvs allowed;
+ 
+execute compare_timestamps ;
+
+delete from time_table;
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+drop mv mv1;
+execute compare_timestamps ;
+
+delete from time_table;
+drop table t1;
+----------------------------------------------------------------
+?section TEST4
+
+-- table with mixed rangelog, create and drop an on request MV on it
+
+create table t1 (a int) attribute mixed rangelog;
+ALTER TABLE t1 attribute all mvs allowed;
+
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+create mv mv1 refresh on request 
+initialized on refresh
+as
+select sum(a) 
+as
+sa from t1;
+ALTER MV mv1 attribute all mvs allowed;
+ 
+execute compare_timestamps ;
+
+delete from time_table;
+insert into time_table (select redef_time
+                        from HP_DEFINITION_SCHEMA.objects o,
+		             HP_SYSTEM_CATALOG.system_schema.schemata s
+		        where s.schema_uid = o.schema_uid
+			      and s.schema_name = 'MVSCHM'
+			      and object_name = 'T1'
+			      and OBJECT_NAME_SPACE = 'TA');
+
+drop mv mv1;
+execute compare_timestamps ;
+
+delete from time_table;
+drop table t1;

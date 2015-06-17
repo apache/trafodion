@@ -5783,7 +5783,7 @@ void PCodeCfg::layoutNativeCode()
 
   if ( NExprDbgLvl_ >= VV_I0 )
   {
-    std::cout << std::endl ; // Flush anything in the data buffer
+    std::cout << std::flush ; // Flush anything in the data buffer
     (void) getrusage( RUSAGE_THREAD, &begTime );
 
     char*  StTime = ctime((const time_t*)&begTime.ru_utime.tv_sec);
@@ -5806,7 +5806,7 @@ void PCodeCfg::layoutNativeCode()
           NExLog( "\n==\n" );
        }
     }
-    std::cout << std::endl ; // Flush anything in the data buffer
+    std::cout << std::flush ; // Flush anything in the data buffer
   }
 #endif // NExprDbgLvl >= VV_I0
 
@@ -5887,9 +5887,9 @@ void PCodeCfg::layoutNativeCode()
     EngineBuilder(TheModule).setErrorStr(&ErrStr).setMArch("x86-64").setMAttrs(MAttrs).setTargetOptions(target_opts).setRelocationModel(llvm::Reloc::PIC_).setOptLevel(CodeGenOpt::Default).create();
   if ( !TheExecutionEngine )
   {
-    std::cout << ErrStr << std::endl;
+    std::cout << ErrStr << std::flush;
     printf("EXITING FROM layoutNativeCode() -could not create function !!\n");
-    std::cout << std::endl ; // Flush anything in the data buffer
+    std::cout << std::flush ; // Flush anything in the data buffer
 
     delete Bldr ;
 
@@ -9000,7 +9000,7 @@ void PCodeCfg::layoutNativeCode()
 
 #if NExprDbgLvl >= VV_BD
   if ( NExprDbgLvl_ >= VV_BD )
-     std::cout << std::endl ; // Flush anything in the data buffer
+     std::cout << std::flush ; // Flush anything in the data buffer
 #endif
 
   std::stringstream myBuffer;
@@ -9009,11 +9009,11 @@ void PCodeCfg::layoutNativeCode()
 #if NExprDbgLvl >= VV_BD
   if ( NExprDbgLvl_ >= VV_BD )
   {
-     std::cerr << std::endl ; // Flush anything in the data buffer
+     std::cerr << std::flush ; // Flush anything in the data buffer
      std::cerr << "QRST\n"  ; // Put out marker so we can see that we got here
 
      DPT0( "VVzzz08: ", VV_BD, "CALLING verifyFunction() !!! \n");
-     std::cerr << std::endl ; // Flush anything in the data buffer
+     std::cerr << std::flush ; // Flush anything in the data buffer
   }
 #endif // NExprDbgLvl >= VV_BD
 
@@ -9027,7 +9027,7 @@ void PCodeCfg::layoutNativeCode()
   if ( NExprDbgLvl_ >= VV_BD )
   {
     DPT0( "VVzzz10: ", VV_VD, "RETURNED FROM verifyFunction() !!! \n");
-    std::cerr << std::endl ; // Flush anything in the data buffer
+    std::cerr << std::flush ; // Flush anything in the data buffer
     if ( VF_rtn )
     {
        DPT0( "VVzzz12: ", VV_VD, "llvm::verifyFunction returned TRUE -- "
@@ -9158,7 +9158,7 @@ void PCodeCfg::layoutNativeCode()
 
 
      printf("EXITING FROM layoutNativeCode() - funcBufLen >= 65536 \n");
-     std::cout << std::endl ; // Flush anything in the data buffer
+     std::cout << std::flush ; // Flush anything in the data buffer
      expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
      return;
   }
@@ -9192,7 +9192,7 @@ void PCodeCfg::layoutNativeCode()
      {
         NExLog( "MACHINE CODE LENGTH <= 0\n");
         NExLog("EXITING FROM layoutNativeCode() - funcBufLen <= 0 !!\n");
-        std::cout << std::endl ; // Flush anything in the data buffer
+        std::cout << std::flush ; // Flush anything in the data buffer
         delete Bldr;
         //delete TheModule;
         delete TheExecutionEngine;

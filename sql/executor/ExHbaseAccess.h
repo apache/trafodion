@@ -277,9 +277,14 @@ protected:
   short createColumnwiseRow();
   short createRowwiseRow();
   Lng32 createSQRowFromHbaseFormat();
+  Lng32 createSQRowFromHbaseFormatMulti();
   Lng32 createSQRowFromAlignedFormat();
   short copyCell();
   Lng32 createSQRowDirect();
+  Lng32 setupSQMultiVersionRow();
+
+  void extractColNameFields
+    (char * inValPtr, short &colNameLen, char* &colName);
 
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
   short applyPred(ex_expr * expr,UInt16 tuppIndex = 0,
@@ -390,6 +395,7 @@ protected:
   char * endRowIdRow_;
   char * asciiRowMissingCols_;
   long * latestTimestampForCols_;
+  long * latestVersionNumForCols_;
   char * beginKeyRow_;
   char * endKeyRow_;
   char * encodedKeyRow_;
@@ -419,9 +425,12 @@ protected:
   char *rowIDAllocatedVal_;
   // Direct Buffer to store multiple rowIDs
   // Format for rowID direct buffer
-  // numRowIds + rowId + rowId + …
+  // numRowIds + rowIDSuffix + rowId + rowIDSuffix + rowId + …
   // rowId len is passed as a parameter to Java functions
-  //
+  // rowIDSuffix is '0' then the subsequent rowID is of length 
+  //                             =  passed rowID len
+  //                '1' then the subsequent rowID is of length
+  //                              = passed rowID len+1
   BYTE *directRowIDBuffer_;
   Lng32 directRowIDBufferLen_;
   // Current row num in the Direct Buffers
@@ -452,6 +461,18 @@ protected:
   HbaseStr row_;
   // Structure to keep track of current position in direct row buffer
   HbaseStr rows_;
+
+  struct ColValVec
+  {
+    Lng32 numVersions_;
+    char ** versionArray_;
+    Int64 * timestampArray_;
+    Int64 * versionNumArray_;
+  };
+
+  ColValVec * colValVec_;
+  Lng32 colValVecSize_;
+  Lng32 colValEntry_;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
 
@@ -549,6 +570,7 @@ public:
     , NEXT_CELL
     , SCAN_CLOSE
     , APPEND_ROW
+    , SETUP_MULTI_VERSION_ROW
     , CREATE_ROW
     , RETURN_ROW
     , APPLY_PRED
@@ -1278,6 +1300,7 @@ public:
  private:
   enum {
       NOT_STARTED
+    , GET_NAME
     , LOAD_CLEANUP
     , COMPLETE_LOAD
     , LOAD_CLOSE

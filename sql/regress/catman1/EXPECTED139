@@ -2,9 +2,6 @@
 >>set schema "_PRIVMGR_MD_";
 
 --- SQL operation complete.
->>initialize authorization;
-
---- SQL operation complete.
 >>prepare get_owner_privs from
 +>select distinct
 +>   substring (object_name,1,10) as object_name,
@@ -528,6 +525,8 @@ ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
 --- SQL operation complete.
 >>revoke all_dml on games from sql_user2;
 
+*** WARNING[1018] Grant of role or privilege ALL_DML from DB__ROOT to SQL_USER2 not found, revoke request ignored.
+
 --- SQL operation complete.
 >>showddl games;
 
@@ -554,6 +553,8 @@ ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
 
 --- SQL operation complete.
 >>revoke all_dml on teams from sql_user3;
+
+*** WARNING[1018] Grant of role or privilege ALL_DML from DB__ROOT to SQL_USER3 not found, revoke request ignored.
 
 --- SQL operation complete.
 >>showddl teams;

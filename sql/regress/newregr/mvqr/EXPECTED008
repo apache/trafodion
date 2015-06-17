@@ -1,0 +1,278 @@
+>>control query default MVQR_REWRITE_LEVEL '4';
+
+--- SQL operation complete.
+>>control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+
+--- SQL operation complete.
+>>control query default MVQR_PUBLISH_TO 'PRIVATE';
+
+--- SQL operation complete.
+>>control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+
+--- SQL operation complete.
+>>control query default MVQR_ALL_JBBS_IN_QD 'ON';
+
+--- SQL operation complete.
+>>control query default multi_join_threshold '2';
+
+--- SQL operation complete.
+>>
+>>create mv dmv1
++>REFRESH BY USER
++>INITIALIZE BY USER
++>ENABLE QUERY REWRITE
++>as
++>select t1.b b1
++>     , t2.b b2
++>     ,sum(distinct t1.c) s2
++>from t1, t2
++>where t1.a=t2.a
++>group by t1.b, t2.b;
+
+--- SQL operation complete.
+>>
+>>-- initialize mv
+>>insert into dmv1
++>select t1.b b1
++>           , t2.b b2
++>           ,sum(distinct t1.c) s2
++>      from t1, t2
++>      where t1.a=t2.a
++>      group by t1.b, t2.b
++>      ;
+
+--- 1 row(s) inserted.
+>>
+>>
+>>create mv mv1
++>REFRESH on request INITIALIZE on create ENABLE QUERY REWRITE as
++>--REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE as
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a
++>;
+
+--- SQL operation complete.
+>>
+>>create mv mv2
++>REFRESH on request INITIALIZE on create ENABLE QUERY REWRITE as
++>--REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE as
++>select b1, b2, c1, c2
++>from mv1
++>where c1=1 and c2<20
++>;
+
+--- SQL operation complete.
+>>
+>>
+>>-- verify fix for soln 10-100426-9686
+>>prepare xx from 
++>select t1.b b1
++>           , t2.b b2
++>           ,sum(distinct t1.c) s2
++>      from t1, t2
++>      where t1.a=t2.a
++>      group by t1.b, t2.b
++>      ;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MVQR_SCH008.DMV1                                        
+
+--- 1 row(s) selected.
+>>execute xx;
+
+B1           B2           S2                  
+-----------  -----------  --------------------
+
+          1            1                    16
+
+--- 1 row(s) selected.
+>>
+>>cqd query_text_cache 'on';
+
+--- SQL operation complete.
+>>cqd query_template_cache 'on';
+
+--- SQL operation complete.
+>>
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>cqd query_cache reset;
+
+--- SQL operation complete.
+>>
+>>cqd mvqr_rewrite_candidates 'CAT.MVQR_SCH008.MV2';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a and t1.c=1 and t2.c<20
++>;
+
+--- SQL command prepared.
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MVQR_SCH008.MV1                                         
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>-- should be an mvqr "w" plan
+>>
+>>obey test008(show_cache_entries);
+>>select num_hits hits, phase, cast(substring(text,1,70) as char(70)) query_text
++>from table(querycacheentries());
+
+--- 0 row(s) selected.
+>>-- should have no cache entries
+>>
+>>execute xx;
+
+B1           B2           C1           C2         
+-----------  -----------  -----------  -----------
+
+          1            1            1            5
+          1            1            1            5
+
+--- 2 row(s) selected.
+>>
+>>-- should not hit any cache entry
+>>prepare xx from
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a and t1.c=1 and t2.c<20
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MVQR_SCH008.MV1                                         
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>-- should be an mvqr "w" plan
+>>
+>>obey test008(show_cache_entries);
+>>select num_hits hits, phase, cast(substring(text,1,70) as char(70)) query_text
++>from table(querycacheentries());
+
+--- 0 row(s) selected.
+>>-- should have no cache entries
+>>
+>>execute xx;
+
+B1           B2           C1           C2         
+-----------  -----------  -----------  -----------
+
+          1            1            1            5
+          1            1            1            5
+
+--- 2 row(s) selected.
+>>
+>>-- used to hit cache and RETURNS WRONG RESULT !!!!!!!
+>>prepare xx from
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a and t1.c=15 and t2.c<20
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MVQR_SCH008.MV1                                         
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>-- should be an mvqr "w" plan
+>>
+>>obey test008(show_cache_entries);
+>>select num_hits hits, phase, cast(substring(text,1,70) as char(70)) query_text
++>from table(querycacheentries());
+
+--- 0 row(s) selected.
+>>-- should have no cache entries
+>>
+>>execute xx;
+
+B1           B2           C1           C2         
+-----------  -----------  -----------  -----------
+
+          1            1           15           15
+          1            1           15           15
+
+--- 2 row(s) selected.
+>>-- should return correct results
+>>
+>>-- any mv plan should not be cacheable
+>>prepare xx from
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a
++>order by 1,2,3,4
++>;
+
+--- SQL command prepared.
+>>
+>>execute checkPlan;
+
+OPERATOR                        TNAME
+------------------------------  ------------------------------------------------------------
+
+FILE_SCAN                       CAT.MVQR_SCH008.MV1                                         
+
+--- 1 row(s) selected.
+>> --explain options 'f' xx;
+>>-- should be an mvqr plan
+>>obey test008(show_cache_entries);
+>>select num_hits hits, phase, cast(substring(text,1,70) as char(70)) query_text
++>from table(querycacheentries());
+
+--- 0 row(s) selected.
+>>-- shoule be cached
+>>execute xx;
+
+B1           B2           C1           C2         
+-----------  -----------  -----------  -----------
+
+          1            1            1            5
+          1            1            1            5
+          1            1           15           15
+          1            1           15           15
+
+--- 4 row(s) selected.
+>>
+>>-- should not be compiled as a cache hit
+>>prepare xx from
++>select t1.b b1, t2.b b2, t1.c c1, t2.c c2
++>from t1, t2
++>where t1.a=t2.a
++>order by 1,2,3,4
++>;
+
+--- SQL command prepared.
+>>obey test008(show_cache_entries);
+>>select num_hits hits, phase, cast(substring(text,1,70) as char(70)) query_text
++>from table(querycacheentries());
+
+--- 0 row(s) selected.
+>>-- shoule show a cache hit
+>>
+>>log;

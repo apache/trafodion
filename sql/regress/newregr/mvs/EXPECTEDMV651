@@ -1,0 +1,693 @@
+>>
+>>obey TESTMV651(SET_UP);
+>>---------------------------------------------------------------
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>
+>>--create mvgroup MVG1_651;
+>>create mvgroup MVG2_651;
+
+--- SQL operation complete.
+>>create mvgroup MVG3_651;
+
+--- SQL operation complete.
+>>
+>>CREATE TABLE T_651_EntryOrder (a int, b int ,c int) 
++>;
+
+--- SQL operation complete.
+>>ALTER TABLE T_651_EntryOrder attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>create table temp_651(a int ,b int,c int);
+
+--- SQL operation complete.
+>>ALTER TABLE temp_651 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>create mv T_651_MV3
++>	refresh on request
++>	initialize on create
++>	as
++>	select a,b,sum(c) sum_c
++>	from T_651_EntryOrder
++>	group by a,b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_651_MV3_267824843_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_651_MV3 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_651 add T_651_MV3;
+
+--- SQL operation complete.
+>>
+>>create mv T_651_MV4 
++>	refresh on request 
++>	initialize on create
++>	MVAttributes COMMIT Refresh EACH 5 
++>	as
++>	select a,b,sum(c) sum_c
++>	from T_651_EntryOrder
++>	group by a,b;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.T_651_MV4_895575353_3588 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>ALTER MV T_651_MV4 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG2_651 add T_651_MV4;
+
+--- SQL operation complete.
+>>
+>>prepare select_from_log_of_T_EntryOrder from
++>	select "@EPOCH", 
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>		   					else         '???'
++>		   end,
++>			"@SYSKEY"
++>	from table (iud_log_table T_651_EntryOrder)
++>	order by  "@TS";
+
+--- SQL command prepared.
+>>
+>>
+>>
+>>create table T_651_Hash ( a int not null not droppable, b int not null not droppable, 
++>			primary key(a))
++>			store by primary key
++>			location $$partition2$$
++>			hash PARTITION by (a)
++>           (add location $$partition1$$);
+
+--- SQL operation complete.
+>>ALTER TABLE T_651_Hash attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>create mv T_651_MV5
++>	refresh on request
++>	initialize on create
++>	as
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_651_MV5 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>ALTER MVGroup MVG3_651 add T_651_MV5;
+
+--- SQL operation complete.
+>>
+>>create mv T_651_MV6
++>	refresh on request 
++>	initialize on create
++>	MVAttributes COMMIT Refresh EACH 5 
++>	as
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a;
+
+--- SQL operation complete.
+>>ALTER MV T_651_MV6 attribute all mvs allowed;
+
+--- SQL operation complete.
+>>ALTER MVGroup MVG3_651 add T_651_MV6;
+
+--- SQL operation complete.
+>>
+>>prepare select_from_log_of_T_Hash from
++>	select "@EPOCH", 
++>		   case "@OPERATION_TYPE" when  0 then 'INSERT'
++>		                          when  4 then 'END-RANGE'
++>		                          when 12 then 'BEGIN-RANGE'
++>		   					else         '???'
++>		   end,
++>			a
++>	from table (iud_log_table T_651_Hash)
++>	order by  a,"@TS";
+
+--- SQL command prepared.
+>>
+>>
+>>-------------------------------------------------------
+>>
+>>-- Run Tests
+>>
+>>	obey TESTMV651(VERTICAL);
+>>-------------------------------------------------------
+>>-- vertical partiotion
+>>create table T_651_Vertical( a int, b int , c int) 
++>			location $$partition1$$ separate by column;
+
+*** ERROR[3074] The SEPARATE BY clause is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>ALTER TABLE T_651_Vertical attribute all mvs allowed;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_651_VERTICAL does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>-- expected failure
+>>create mv T_651_MV1
++>	refresh on request
++>	initialize on create
++>	as
++>	select a,b,sum(c) sum_c
++>	from T_651_Vertical
++>	group by a,b;
+
+*** ERROR[4082] Object CATMVS.MVSCHM.T_651_VERTICAL does not exist or is inaccessible.
+
+*** ERROR[1079] SQL/MX was not able to prepare the statement.
+
+--- SQL operation failed with errors.
+>>
+>>-------------------------------------------------------
+>>
+>>?ignore
+>>-- entry seq tables are not supported in sql/mx r2.
+>>-- Commenting out these tests.
+>>	obey TESTMV651(ENTRYSEQUENCE_SINGLE);
+>>	obey TESTMV651(ENTRYSEQUENCE_VSBB);
+>>	obey TESTMV651(ENTRYSEQUENCE_SIDEINSERT);
+>>	obey TESTMV651(ENTRYSEQUENCE_MANUAL);
+>>	obey TESTMV651(ENTRYSEQUENCE_MIXED);
+>>?ignore
+>>
+>>	obey TESTMV651(HASH_SINGLE);
+>>-------------------------------------------------------
+>>
+>>insert into T_651_Hash values ( 1,1),(2,2),(3,3),(4,23),(5,4),
++>		(6,5),(7,6),(8,7);
+
+--- 8 row(s) inserted.
+>>
+>>execute select_from_log_of_T_Hash;
+
+@EPOCH       (EXPR)       A          
+-----------  -----------  -----------
+
+        102  INSERT                 1
+        102  INSERT                 2
+        102  INSERT                 3
+        102  INSERT                 4
+        102  INSERT                 5
+        102  INSERT                 6
+        102  INSERT                 7
+        102  INSERT                 8
+
+--- 8 row(s) selected.
+>>
+>>refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_651_HASH.
+Starting the log cleanup of table CATMVS.MVSCHM.T_651_HASH...
+The materialized view CATMVS.MVSCHM.T_651_MV5 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_651_MV5 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_651_MV6 has been refreshed in 3 transaction(s).
+The materialized view CATMVS.MVSCHM.T_651_MV6 is being refreshed in multiple transactions...
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV5
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV6
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-- Bug 517
+>>
+>>--delete from T_651_Hash where a = 2 ;
+>>--update T_651_Hash set b = 24 where a =4;
+>>
+>>--refresh MVGroup MVG3_651 ;
+>>--log;
+>>--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK |sort>> LOGMV651;
+>>--log LOGMV651;
+>>
+>>--PREPARE stat1 FROM 
+>>--	select a,sum(b) sum_b
+>>--	from T_651_Hash
+>>--	group by a
+>>--	order by a;
+>>--PREPARE stat2 FROM
+>>--	select * from T_651_MV5
+>>--	order by a;
+>>--obey COMPARE; 
+>>--sh diff TEMP1 TEMP2>> LOGMV651 ;
+>>--log LOGMV651;
+>>
+>>--PREPARE stat1 FROM 
+>>--	select a,sum(b) sum_b
+>>--	from T_651_Hash
+>>--	group by a
+>>--	order by a;
+>>--PREPARE stat2 FROM
+>>--	select * from T_651_MV6
+>>--	order by a;
+>>--obey COMPARE; 
+>>--sh diff TEMP1 TEMP2>> LOGMV651 ;
+>>--log LOGMV651;
+>>
+>>-------------------------------------------------------
+>> -- Bug 517 
+>>	obey TESTMV651(HASH_VSBB);
+>>-------------------------------------------------------
+>>-- expected failure
+>>alter table T_651_Hash  Attributes automatic RANGELOG ;
+
+*** ERROR[12083] Hash partitioning and an automatic or mixed range log cannot coexist.
+
+--- SQL operation failed with errors.
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV651(HASH_MANUAL);
+>>-------------------------------------------------------
+>>-- expected success
+>>alter table T_651_Hash  Attributes manual RANGELOG ;
+
+--- SQL operation complete.
+>>
+>>insert  into T_651_Hash values (12,12),(13,14),(14,15),(16,36),(65,65);
+
+--- 5 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (12) AND 	(65);
+
+--- SQL operation complete.
+>>
+>>insert  into T_651_Hash values (71,12),(73,14),(74,15),(76,36),(78,65);
+
+--- 5 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (71) AND 	(78);
+
+--- SQL operation complete.
+>>
+>>execute select_from_log_of_T_Hash;
+
+@EPOCH       (EXPR)       A          
+-----------  -----------  -----------
+
+       -103  BEGIN-RANGE           12
+       -103  END-RANGE             65
+       -103  BEGIN-RANGE           71
+       -103  END-RANGE             78
+
+--- 4 row(s) selected.
+>>
+>>refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_651_HASH.
+Starting the log cleanup of table CATMVS.MVSCHM.T_651_HASH...
+The materialized view CATMVS.MVSCHM.T_651_MV5 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_651_MV5 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_651_MV6 has been refreshed in 4 transaction(s).
+The materialized view CATMVS.MVSCHM.T_651_MV6 is being refreshed in multiple transactions...
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV5
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV6
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>-- expected 2 (number of partitions of iud_log) 
+>>select count(*) cnt 
++>  from HP_DEFINITION_SCHEMA.PARTITIONS
++>  where OBJECT_UID = ( select  OBJECT_UID from HP_DEFINITION_SCHEMA.objects
++>    where object_name = 'T_651_HASH' and OBJECT_NAME_SPACE = 'TA'
++>    for read uncommitted access);
+
+CNT                 
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV651(HASH_MIXED);
+>>-------------------------------------------------------
+>>-- expected failure
+>>alter table T_651_Hash  Attributes mixed RANGELOG ;
+
+*** ERROR[12083] Hash partitioning and an automatic or mixed range log cannot coexist.
+
+--- SQL operation failed with errors.
+>>
+>>-------------------------------------------------------
+>>	obey TESTMV651(HASH_SIDEINSERT);
+>>-------------------------------------------------------
+>>delete from T_651_Hash;
+
+--- 18 row(s) deleted.
+>>refresh MVGroup MVG3_651 recompute outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_651_Hash attribute no audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>insert using sideinserts into T_651_Hash(a,b) values (20,21),(21,22),(23,21),(250,26),(270,24),(280,20);
+
+--- 6 row(s) inserted.
+>>
+>>MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (20) AND 	(300);
+
+--- SQL operation complete.
+>>
+>>--insert using sideinserts into T_651_Hash(a,b) values (321,21),(323,22),(325,21),(351,26),(371,24),(381,20);
+>>
+>>--MVLOG INTO RANGELOG OF T_651_Hash ( a ) BETWEEN (321) AND 	(381);
+>>
+>>execute select_from_log_of_T_Hash;
+
+@EPOCH       (EXPR)       A          
+-----------  -----------  -----------
+
+       -105  BEGIN-RANGE           20
+       -105  END-RANGE            300
+
+--- 2 row(s) selected.
+>>
+>>set parserflags 1024;
+
+--- SQL operation complete.
+>> -- allow no audit
+>>ALTER table T_651_Hash attribute audit;
+
+--- SQL operation complete.
+>>reset parserflags 1024;
+
+--- SQL operation complete.
+>>
+>>refresh MVGroup MVG3_651 outfile REFRESH.LOG ;
+
+--- SQL operation complete.
+>>log;
+
+
+
+
+
+
+
+
+Finished the log cleanup of table CATMVS.MVSCHM.T_651_HASH.
+Starting the log cleanup of table CATMVS.MVSCHM.T_651_HASH...
+The materialized view CATMVS.MVSCHM.T_651_MV5 has been refreshed in a single transaction.
+The materialized view CATMVS.MVSCHM.T_651_MV5 is being refreshed in a single transaction...
+The materialized view CATMVS.MVSCHM.T_651_MV6 has been refreshed in 3 transaction(s).
+The materialized view CATMVS.MVSCHM.T_651_MV6 is being refreshed in multiple transactions...
+>>
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV5
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>PREPARE stat1 FROM 
++>	select a,sum(b) sum_b
++>	from T_651_Hash
++>	group by a
++>	order by a;
+
+--- SQL command prepared.
+>>PREPARE stat2 FROM
++>	select * from T_651_MV6
++>	order by a;
+
+--- SQL command prepared.
+>>obey COMPARE;
+>>  log TEMP1 clear;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>--------------------------------------------------------
+>>
+>>
+>>obey TESTMV651(CLEAN_UP);
+>>-------------------------------------------------------
+>>--refresh mvgroup MVG1_651 cancel;
+>>--log;
+>>--sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV651;
+>>--log LOGMV651;
+>>
+>>refresh mvgroup MVG2_651 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>
+>>refresh mvgroup MVG3_651 cancel outfile REFRESH.LOG;
+
+--- SQL operation complete.
+>>log;
+
+
+>>
+>>
+>>drop mv T_651_MV6;
+
+--- SQL operation complete.
+>>drop mv T_651_MV5;
+
+--- SQL operation complete.
+>>drop mv T_651_MV4;
+
+--- SQL operation complete.
+>>drop mv T_651_MV3;
+
+--- SQL operation complete.
+>>drop mv T_651_MV2;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_651_MV2 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_651_MV2 could not be dropped.
+
+--- SQL operation failed with errors.
+>>drop mv T_651_MV1;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_651_MV1 does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_651_MV1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table T_651_EntryOrder;
+
+--- SQL operation complete.
+>>drop table T_651_Hash;
+
+--- SQL operation complete.
+>>drop table  temp_651;
+
+--- SQL operation complete.
+>>--drop mvgroup MVG1_651;
+>>drop mvgroup MVG2_651;
+
+--- SQL operation complete.
+>>drop mvgroup MVG3_651;
+
+--- SQL operation complete.
+>>
+>>drop table T_651_Vertical;
+
+*** ERROR[1004] Object CATMVS.MVSCHM.T_651_VERTICAL does not exist or object type is invalid for the current operation.
+
+*** ERROR[1031] Object CATMVS.MVSCHM.T_651_VERTICAL could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>log;

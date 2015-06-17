@@ -1858,8 +1858,12 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_, NOOP_
+    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_, NOOP_
   };
+  enum ExtractFileActionType
+  {
+    ERROR_IF_NOT_EXISTS =1, TRUNCATE_EXISTING };
+  
   
  ExeUtilLobExtract(ItemExpr * handle, 
 		   ExtractToType toType,
@@ -1896,8 +1900,8 @@ public:
   
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
 
-  virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
-  
+  //virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
+  virtual NABoolean producesOutput() { return  TRUE ; }
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
   
@@ -1937,8 +1941,8 @@ public:
   ItemExpr * bufAddrExpr_;
   ItemExpr * bufSizeExpr_;
   
-  Int64 intParam_;  // output row size of each row for TO_STRING_.  Max file size for TO_FILE_.
-  Int64 intParam2_;
+  Int64 intParam_;   // options for create or size limit
+  Int64 intParam2_;// options for file behavior
   NAString stringParam_; // output file name for TO_FILE_.
 
   NAString stringParam2_;
@@ -2158,7 +2162,7 @@ public:
     LOG_ERROR_ROWS_,
     STOP_AFTER_N_ERROR_ROWS_,
     NO_DUPLICATE_CHECK_,
-    NO_POPULATE_INDEXES_,
+    REBUILD_INDEXES_,
     CONSTRAINTS_,
     NO_OUTPUT_,
     INDEX_TABLE_ONLY_,
@@ -2197,10 +2201,11 @@ public:
     continueOnError_(FALSE),
     logErrorRows_(FALSE),
     noDuplicates_(TRUE),
-    indexes_(TRUE),
+    rebuildIndexes_(FALSE),
     constraints_(FALSE),
     noOutput_(FALSE),
     indexTableOnly_(FALSE),
+    hasUniqueIndexes_(FALSE),
     upsertUsingLoad_(FALSE),
     pQueryExpression_(queryExpression),
     maxErrorRows_(0)
@@ -2285,14 +2290,14 @@ public:
    constraints_ = constraints;
   }
 
-  NABoolean getIndexes() const
+  NABoolean getRebuildIndexes() const
   {
-   return indexes_;
+   return rebuildIndexes_;
   }
 
-  void setIndexes(NABoolean indexes)
+  void setRebuildIndexes(NABoolean indexes)
   {
-   indexes_ = indexes;
+   rebuildIndexes_ = indexes;
   }
 
   NABoolean getNoOutput() const
@@ -2312,6 +2317,15 @@ public:
  void setIndexTableOnly(NABoolean indexTableOnly) {
    indexTableOnly_ = indexTableOnly;
  }
+
+  NABoolean getHasUniqueIndexes() const {
+   return hasUniqueIndexes_;
+ }
+
+ void setHasUniqueIndexes(NABoolean uniqIndex) {
+   hasUniqueIndexes_ = uniqIndex;
+ }
+
   NABoolean getUpsertUsingLoad() const
   {
    return upsertUsingLoad_;
@@ -2362,11 +2376,13 @@ private:
   NABoolean continueOnError_;
   NABoolean logErrorRows_;
   NABoolean noDuplicates_;
-  NABoolean indexes_;
+  NABoolean rebuildIndexes_;
   NABoolean constraints_;
   NABoolean noOutput_;
   //target table is index table
   NABoolean indexTableOnly_;
+  // target table has unique indexes
+  NABoolean hasUniqueIndexes_;
   NABoolean upsertUsingLoad_;
   RelExpr *pQueryExpression_;
   UInt32     maxErrorRows_;
@@ -2403,6 +2419,8 @@ public:
   {
 
   };
+
+  virtual RelExpr * bindNode(BindWA *bindWA);
 
   virtual const NAString getText() const;
 

@@ -1,0 +1,35 @@
+>>obey TEST_1_2_1_1(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>-- NOTE: the following statement should add a row to tab1B
+>>
+>>UPDATE tab1A SET b=20 WHERE a=1;
+
+--- 1 row(s) updated.
+>>
+>>DROP TRIGGER trig;
+
+--- SQL operation complete.
+>>
+>>-- NOTE: the following statement should NOT add a row to tab1B
+>>
+>>UPDATE tab1A SET b=30 WHERE a=1;
+
+--- 1 row(s) updated.
+>>
+>>-- RESULT: tab1B should have one row only
+>>
+>>SELECT count(*) FROM tab1B;
+
+(EXPR)                
+--------------------  
+
+                   1  
+
+--- 1 row(s) selected.
+>>
+>>--------------------------------------------------------
+>>LOG;

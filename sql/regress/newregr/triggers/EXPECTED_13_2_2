@@ -1,0 +1,849 @@
+>>obey TEST_13_2_2(tests);
+>>
+>>-- Special env. var. to show the CREATE TEMP TABLE statement
+>>-- set envvar DEBUG_TEMP_TABLE 1;
+>>
+>>-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+>>-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>
+>>---   Check the Interaction between Various Primary Key settings
+>>---   and storage options  -- by defining a trigger on each test table,
+>>---   thus creating a temporary table.
+>>
+>>set schema cat1.schm;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------
+>>--  STORE BY PRIMARY KEY  (SPK)
+>>-----------------------------------
+>>
+>>-- STORE BY PK   non-droppable PK
+>>create trigger mytrg after insert on   TSPKnodr
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSPKnodr__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSPKNODR__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSPKNODR__TEMP_454861841_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.P2N26C00
+  NAME NSK_DATA1_ZSDJQ416_P2N26C00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSPKnodr  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY PK   droppable PK
+>>-- this table does not exist:   TSPKdrop
+>>
+>>-- STORE BY PK   no PK !!
+>>-- this table does not exist:   TSPKnopk 
+>>
+>>---------------------------------------------------
+>>--  STORE BY IMPLICIT PK (same col. as PK)   (IPK)
+>>---------------------------------------------------
+>>-- STORE BY IMPLICIT PK (same col. as PK)   non-droppable PK
+>>create trigger mytrg after insert on   TIPKnodr 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TIPKnodr__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TIPKNODR__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TIPKNODR__TEMP_564663351_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.FB1MCD00
+  NAME NSK_DATA1_ZSDJQ416_FB1MCD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TIPKnodr  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY IMPLICIT PK (same col. as PK)   droppable PK
+>>create trigger mytrg after insert on   TIPKdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TIPKdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TIPKDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TIPKDROP__TEMP_969387451_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC,
+      "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.RDB8DD00
+  NAME NSK_DATA1_ZSDJQ416_RDB8DD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TIPKdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY IMPLICIT PK (same col. as PK)   no PK !!
+>>create trigger mytrg after insert on   TIPKnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TIPKnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TIPKNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TIPKNOPK__TEMP_952716651_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC,
+      "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.Z2D7GD00
+  NAME NSK_DATA1_ZSDJQ416_Z2D7GD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TIPKnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------
+>>-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   (IDO)
+>>------------------------------------------------------------------
+>>
+>>-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   droppable PK
+>>create trigger mytrg after insert on   TIDOdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TIDOdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TIDODROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TIDODROP__TEMP_918254851_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC, D ASC, C ASC,
+      "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.CMX6JD00
+  NAME NSK_DATA1_ZSDJQ416_CMX6JD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC, D ASC, C
+    ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TIDOdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   no PK !!
+>>create trigger mytrg after insert on   TIDOnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TIDOnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TIDONOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TIDONOPK__TEMP_938734161_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC, D ASC, C ASC,
+      "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.JXKCMD00
+  NAME NSK_DATA1_ZSDJQ416_JXKCMD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC, D ASC, C
+    ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TIDOnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>--  STORE BY SUPERSET OF PK columns     (SUP)
+>>---------------------------------------------------------
+>>-- STORE BY SUPERSET OF PK columns   droppable PK
+>>create trigger mytrg after insert on   TSUPdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUPdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUPDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUPDROP__TEMP_151493361_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, B ASC, D ASC, A
+      ASC, "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.JRFHPD00
+  NAME NSK_DATA1_ZSDJQ416_JRFHPD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, B ASC, D
+    ASC, A ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUPdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY SUPERSET OF PK columns    no PK !!
+>>create trigger mytrg after insert on   TSUPnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUPnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUPNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUPNOPK__TEMP_312716561_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, B ASC, D ASC, A
+      ASC, "@SYSKEY" ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.K25WRD00
+  NAME NSK_DATA1_ZSDJQ416_K25WRD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, B ASC, D
+    ASC, A ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUPnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>--  STORE BY (ORDERED PREFIX) SUBSET OF PK columns     (SUB)
+>>---------------------------------------------------------
+>>-- STORE BY SUBSET OF PK columns    non-droppable PK
+>>create trigger mytrg after insert on   TSUBnodr 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUBnodr__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUBNODR__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUBNODR__TEMP_755576761_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.JFM6TD00
+  NAME NSK_DATA1_ZSDJQ416_JFM6TD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUBnodr  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY SUBSET OF PK columns   droppable PK
+>>create trigger mytrg after insert on   TSUBdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUBdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUBDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUBDROP__TEMP_523773961_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.SRC1WD00
+  NAME NSK_DATA1_ZSDJQ416_SRC1WD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUBdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY SUBSET OF PK columns    no PK !!
+>>create trigger mytrg after insert on   TSUBnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUBnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUBNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUBNOPK__TEMP_188462271_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.M8J2ZD00
+  NAME NSK_DATA1_ZSDJQ416_M8J2ZD00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUBnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>--  STORE BY (UNORDERED and/or NONPREFIX) SUBSET OF PK columns     (SUX)
+>>---------------------------------------------------------
+>>-- STORE BY SUBSET OF PK columns   droppable PK
+>>create trigger mytrg after insert on   TSUXdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUXdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUXDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUXDROP__TEMP_939489371_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, D ASC, A ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.QWH12D00
+  NAME NSK_DATA1_ZSDJQ416_QWH12D00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, D ASC, A ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUXdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY SUBSET OF PK columns    no PK !!
+>>create trigger mytrg after insert on   TSUXnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TSUXnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TSUXNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TSUXNOPK__TEMP_957291671_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, D ASC, A ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.CVHB5D00
+  NAME NSK_DATA1_ZSDJQ416_CVHB5D00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, D ASC, A ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TSUXnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------
+>>--  STORE BY UNRELATED (to PK) columns    (UNR)
+>>---------------------------------------------------------
+>>-- STORE BY UNRELATED (to PK) columns   droppable PK
+>>create trigger mytrg after insert on   TUNRdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TUNRdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TUNRDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TUNRDROP__TEMP_937757771_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, "@SYSKEY" ASC)
+      NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.JWS36D00
+  NAME NSK_DATA1_ZSDJQ416_JWS36D00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, "@SYSKEY"
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TUNRdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY UNRELATED (to PK) columns    no PK !!
+>>create trigger mytrg after insert on   TUNRnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TUNRnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TUNRNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TUNRNOPK__TEMP_675266971_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, "@SYSKEY" ASC)
+      NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.DFN58D00
+  NAME NSK_DATA1_ZSDJQ416_DFN58D00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, "@SYSKEY"
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TUNRnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-----------------------------------------------------
+>>--  STORE BY PARTIAL UNRELATED (to PK) columns   (PAR)
+>>-----------------------------------------------------
+>>-- STORE BY PARTIAL UNRELATED (to PK) columns   droppable PK
+>>create trigger mytrg after insert on   TPARdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TPARdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TPARDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TPARDROP__TEMP_881424281_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, D ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.C6B2BF00
+  NAME NSK_DATA1_ZSDJQ416_C6B2BF00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, D ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TPARdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-- STORE BY PARTIAL UNRELATED (to PK) columns    no PK !!
+>>create trigger mytrg after insert on   TPARnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TPARnopk__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TPARNOPK__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TPARNOPK__TEMP_175474481_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, D ASC, "@SYSKEY"
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.MMH9DF00
+  NAME NSK_DATA1_ZSDJQ416_MMH9DF00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, B ASC, D ASC,
+    "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TPARnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------------------
+>>--   No Store By    (NOC)
+>>-------------------------------------------------
+>>--  No Store By     non-droppable PK
+>>create trigger mytrg after insert on   TNOCnodr 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TNOCnodr__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TNOCNODR__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TNOCNODR__TEMP_717332681_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.L425GF00
+  NAME NSK_DATA1_ZSDJQ416_L425GF00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, C ASC, A ASC, D
+    ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TNOCnodr  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>--  No Store By       droppable PK
+>>create trigger mytrg after insert on   TNOCdrop 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp_table TNOCdrop__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.TNOCDROP__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@SYSKEY"                        LARGEINT NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.TNOCDROP__TEMP_563486781_7657 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC) NOT
+      DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJQ416.S8NSJF00
+  NAME NSK_DATA1_ZSDJQ416_S8NSJF00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, "@SYSKEY" ASC)
+  ;
+
+--- SQL operation complete.
+>>
+>>insert into  TNOCdrop  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>--  No Store By     no PK   !!!!!!!
+>>create trigger mytrg after insert on   TNOCnopk 
++>referencing new as mynew
++>insert into DUMMY1322 select d,b from mynew;
+
+--- SQL operation complete.
+>>
+>>showddl table (temp__table TNOCnopk__TEMP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+showddl table (temp__table TNOCnopk__TEMP);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>insert into  TNOCnopk  values (11,22,33,44),(55,66,77,88);
+
+--- 2 row(s) inserted.
+>>
+>>drop trigger mytrg;
+
+--- SQL operation complete.
+>>
+>>LOG;

@@ -101,10 +101,8 @@ revoke role library_ckout_clerks from sql_user1;
 revoke role library_ckout_clerks from sql_user2;
 revoke role library_ckout_clerks from sql_user3, sql_user4, sql_user5;
 drop role library_ckout_clerks;
-initialize authorization,drop;
 
 ?section set_up
-initialize authorization;
 prepare get_roles from
 select substring (auth_db_name,1,20) as role_name
 from "_MD_".AUTHS
@@ -414,9 +412,6 @@ sh sh runmxci.ksh -i "TEST137(user7_cc)" -u sql_user7;
 -- user8 (fails)
 sh sh runmxci.ksh -i "TEST137(user8_cc)" -u sql_user8;
 
--- reset state
-grant component privilege create_catalog on sql_operations to public;
-grant component privilege create_schema on sql_operations to public;
 showddl component sql_operations;
 
 ?section user1_tests
@@ -465,7 +460,6 @@ log;
 
 -- below is the setup and testing for various scenarios for revoke component privileges
 ?section revoke_comp_privs_setup
-initialize authorization;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 create role library_admin;

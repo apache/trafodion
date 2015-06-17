@@ -1,0 +1,40 @@
+>>obey TEST_SPJC_STX_012(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: BEFORE trigger with a compound statement as a triggered
+>>-- action. The compound statement has a statement other than SET, CALL,
+>>-- or SIGNAL.
+>>-- Result: Error (BEFORE Trigger does not allow a Compound statement
+>>-- at present)
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_STX_012 BEFORE UPDATE ON
++>TAB01_SPJC_STX_012
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>	BEGIN ATOMIC
++>		INSERT INTO TAB02_SPJC_STX_012 VALUES (O.A, O.B, O.C, O.D);
++>		IF (N.A > O.B) THEN
++>			SET N.A = N.A + 1;
++>			INSERT INTO TAB02_SPJC_STX_012 VALUES (N.A, N.B, N.C, N.D);
++>		ELSEIF (N.A < O.B) THEN
++>			CALL InsertFourCoulmns('CAT1.SCHM.TAB02_SPJC_STX_012',
++>					O.A, O.B, O.C, O.D);
++>		ELSE
++>			INSERT INTO TAB02_SPJC_STX_012 VALUES
++>					(O.A + N.A, O.B + N.B, O.C + N.C, O.D + N.D);
++>			SIGNAL SQLSTATE 'S0213'('TRIG01_SPJC_STX_012');
++>		END IF;
++>	END;
+
+*** ERROR[11014] A BEFORE trigger allows only SIGNAL and SET operations.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER TRIG01_SPJC_STX_012 BEFORE UPDATE ON TAB01_SPJC_STX_012 REFERENC
+ING OLD ROW AS O, NEW ROW AS N FOR EACH ROW  BEGIN ATOMIC   INSERT INTO TAB02_S
+                                                 ^ (129 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

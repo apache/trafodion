@@ -1,0 +1,538 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+------------------------------------------------------
+--- TESTMV250
+--  Utility privelege test
+------------------------------------------------------
+set schema catmvs.mvschm;
+obey TESTMV250(CLEAN_UP);
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PARALLELISM', '1');
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+(attribute, attr_value) values ('MV_REFRESH_MAX_PIPELINING', '1');
+log LOGMV250 clear;
+
+set envvar MV_UNSUPPORTED_FEATURE_DEBUG 1;
+
+obey TESTMV250(SET_UP);
+
+
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test6)" -u $$SQLUSER1X$$;
+	log LOGMV250;
+
+	obey TESTMV250(TEST10_USER8);
+
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test10_user7)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+
+	obey TESTMV250(TEST11_1);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test11_2)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+	
+		obey TESTMV250(TEST12_1);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test12_2)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+
+	obey TESTMV250(TEST13_1);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test13_2)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+
+	obey TESTMV250(TEST14_1);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(test14_2)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+
+
+	obey TESTMV250(TEST100_test1_user8);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(TEST100_test1_user7)" -u $$SQLUSER7X$$;   
+	log LOGMV250;
+
+	obey TESTMV250(TEST100_test2_user8);
+	log;
+	sh sh runmxci.ksh -i "TESTMV250(TEST100_test2_user7)" -u $$SQLUSER7X$$;
+	log LOGMV250;
+
+obey TESTMV250(CLEAN_UP);
+reset envvar MV_UNSUPPORTED_FEATURE_DEBUG;
+log;
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PARALLELISM';
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where attribute = 'MV_REFRESH_MAX_PIPELINING';
+exit;
+
+
+------------------------------------------------------
+?section SET_UP
+------------------------------------------------------
+set PARSERFLAGS 3;
+create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+ALTER TABLE Num_Obj attribute all mvs allowed;
+ 
+set param ?schema_name 'MVSCHM';
+obey INSERT_NUM_OF_OBJ;
+
+create mvgroup MVG250_cancel;
+
+PREPARE select_index FROM
+  select  RUNNINGCOUNT(*) num,valid_data
+				   from HP_DEFINITION_SCHEMA.ACCESS_PATHS
+				   where ACCESS_PATH_UID <> table_uid 
+				   and table_uid =( select OBJECT_UID from
+				    HP_DEFINITION_SCHEMA.OBJECTS
+					where OBJECT_NAME = ?t_name
+				    FOR READ UNCOMMITTED ACCESS)
+SEQUENCE BY ACCESS_PATH_UID ;
+
+
+create table T_250_T1 (a int not null not droppable,b int);
+ALTER TABLE T_250_T1 attribute all mvs allowed;
+create table T_250_T2 (c int,d int);
+ALTER TABLE T_250_T2 attribute all mvs allowed;
+create table T_250_T3 (e int,f int);
+ALTER TABLE T_250_T3 attribute all mvs allowed;
+create table T_250_T4 (g int,h int);
+ALTER TABLE T_250_T4 attribute all mvs allowed;
+create table T_250_T5 (c int,d int) attribute NO LOCKONREFRESH;
+ALTER TABLE T_250_T5 attribute all mvs allowed;
+ 
+insert into T_250_T1 values(1,1);
+insert into T_250_T2 values(1,1);
+insert into T_250_T3 values(1,1);
+insert into T_250_T4 values(1,1);
+insert into T_250_T5 values(1,1);
+
+create mv T_250_MV1 
+	refresh on request 
+	initialize on create
+	as 
+	select sum(a) as sum_a,b from T_250_T1, T_250_T2 
+	where b=d group by b;
+ALTER MV T_250_MV1 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add T_250_MV1;
+set PARSERFLAGS 3;
+create mv T_250_MV17
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDIT
+	as
+	select b,sum(a) aa
+	from T_250_T1
+	group by b;
+ALTER MV T_250_MV17 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add  T_250_MV17; 
+
+create mv T_250_MV18
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDIT
+	as
+	select a,sum(b) bb
+	from T_250_T1
+	group by a;
+ALTER MV T_250_MV18 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add  T_250_MV18; 
+
+create mv T_250_MV20
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDIT
+	as
+	select a,sum(b) bb
+	from T_250_T1
+	group by a;
+ALTER MV T_250_MV20 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add  T_250_MV20; 
+
+create mv T_250_MV21
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDIT
+	as
+	select a,sum(b) bb
+	from T_250_T1
+	group by a;
+ALTER MV T_250_MV21 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add  T_250_MV21; 
+
+------------------------------------------------------
+?section TEST100_test1_user8
+------------------------------------------------------
+log LOGMV250;
+set schema catmvs.mvschm;
+
+create table T_250_T100(a int,b int);
+ALTER table T_250_T100 attribute all mvs allowed;
+
+create mv T_250_MV1_test100
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDITONREFRESH
+	as 
+	select a, sum(b) sb
+	from T_250_T100
+	group by a;
+
+create mv T_250_MV2_test100
+	refresh on request
+	initialize on refresh
+	as 
+	select a, sum(b) sb
+	from T_250_T100
+	group by a;
+	
+-- initialization
+refresh T_250_MV1_test100 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+refresh T_250_MV2_test100 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+grant select on  T_250_T100 to $$SQLUSER7Q$$;
+grant insert on T_250_MV1_test100 to $$SQLUSER7Q$$;
+grant insert on T_250_MV2_test100 to $$SQLUSER7Q$$;
+
+insert into T_250_T100 values (1,2),(3,4),(5,6);
+
+log;
+------------------------------------------------------
+?section TEST100_test1_user7
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+
+-- expected FAIL
+refresh T_250_MV1_test100  outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+-- expected PATH
+refresh T_250_MV2_test100  outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+-- expected FAIL
+refresh T_250_MV1_test100 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+-- expected PATH
+refresh T_250_MV2_test100 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+------------------------------------------------------
+?section TEST100_test2_user8
+------------------------------------------------------
+log LOGMV250;
+set schema catmvs.mvschm;
+
+create table T_250_T200(a int,b int);
+ALTER table T_250_T200 attribute all mvs allowed;
+
+create mv T_250_MV1_test200
+	refresh on request
+	initialize on refresh
+	--MVAttributes NO AUDITONREFRESH
+	as 
+	select a, sum(b) sb
+	from T_250_T100
+	group by a;
+
+-- initialization
+refresh T_250_MV1_test200 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+grant select on  T_250_T200 to $$SQLUSER7Q$$;
+grant insert,delete,select on T_250_MV1_test200 to $$SQLUSER7Q$$;
+
+insert into T_250_T200 values (1,2),(3,4),(5,6);
+
+log;
+
+
+------------------------------------------------------
+?section TEST100_test2_user7
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+
+-- expected PATH
+refresh T_250_MV1_test200  outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+-- expected PATH
+refresh T_250_MV1_test200 recompute outfile REFRESH.LOG ;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+log;
+
+------------------------------------------------------
+?section TEST6
+------------------------------------------------------
+log LOGMV250;
+
+-- Privileges test should fail
+
+set schema catmvs.mvschm;
+log LOGMV250;
+
+refresh T_250_MV1 outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+	
+
+------------------------------------------------------
+?section TEST10_USER8
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+
+create mv T_250_MV_Priv10
+	refresh on statement 
+	initialize on refresh as select * from T_250_T1;
+ALTER MV T_250_MV_Priv10 attribute all mvs allowed;
+
+create mv T_250_MV_Priv_recompute1
+	recompute 
+	initialize on refresh 
+	as select a,b from T_250_T1,T_250_T3 where e=f;
+ALTER MV T_250_MV_Priv_recompute1 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add T_250_MV_Priv_recompute1;
+
+create mv T_250_MV_Priv_recompute2
+	recompute 
+	initialize on refresh 
+	as select a,b from T_250_MV_Priv_recompute1,T_250_T2 where a=d;
+ALTER MV T_250_MV_Priv_recompute2 attribute all mvs allowed;
+ALTER MVGroup MVG250_cancel add T_250_MV_Priv_recompute2;
+
+grant select,insert,delete on T_250_MV_Priv_recompute1 to $$SQLUSER7Q$$;
+grant select,insert,delete on T_250_MV_Priv_recompute2 to $$SQLUSER7Q$$;
+grant insert on T_250_MV1 to $$SQLUSER7Q$$;
+grant select,insert,delete on T_250_MV_Priv10 to $$SQLUSER7Q$$;
+
+grant select on  T_250_T1 to $$SQLUSER7Q$$;
+grant select on  T_250_T2 to $$SQLUSER7Q$$;
+grant select on  T_250_T3 to $$SQLUSER7Q$$;
+
+
+insert into T_250_T1 values(10,10);
+insert into T_250_T2 values(10,10);
+insert into T_250_T3 values(10,10);
+insert into T_250_T5 values(10,10);
+
+log;
+
+------------------------------------------------------
+?section TEST10_USER7
+------------------------------------------------------
+
+-- Privileges test , should pass 
+
+set schema catmvs.mvschm;
+
+log LOGMV250;
+-- on request mv;
+
+refresh T_250_MV1  debug 56,52;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+-- recompute mv;
+-- should pass 
+refresh T_250_MV_Priv_recompute2 cascade debug 56,52;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+-- On statement initialization;
+
+refresh T_250_MV_Priv10 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST11_1
+------------------------------------------------------
+grant insert on T_250_MV17 to $$SQLUSER7Q$$;
+
+------------------------------------------------------
+?section TEST11_2
+------------------------------------------------------
+
+log LOGMV250;
+
+set schema catmvs.mvschm;
+
+-- Expected error : cannot populate index
+refresh T_250_MV17 outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST12_1
+------------------------------------------------------
+grant insert on T_250_MV18 to $$SQLUSER7Q$$;
+
+refresh T_250_MV18 debug 102;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST12_2
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+-- Expected error : cannot performe purgedata
+refresh T_250_MV18 recompute outfile REFRESH.LOG; 
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+------------------------------------------------------
+?section TEST13_1
+------------------------------------------------------
+grant insert on T_250_MV20 to $$SQLUSER7Q$$;
+grant delete on T_250_MV20 to $$SQLUSER7Q$$;
+
+refresh T_250_MV20 debug 102;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST13_2
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+-- Expected error : cannot performe purgedata
+refresh T_250_MV20 recompute outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST14_1
+------------------------------------------------------
+grant insert on T_250_MV21 to $$SQLUSER7Q$$;
+grant select on T_250_MV21 to $$SQLUSER7Q$$;
+
+refresh T_250_MV21 debug 102;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section TEST14_2
+------------------------------------------------------
+set schema catmvs.mvschm;
+
+log LOGMV250;
+-- Expected error : cannot performe purgedata
+refresh T_250_MV21 recompute outfile REFRESH.LOG;
+
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+------------------------------------------------------
+?section CLEAN_UP
+------------------------------------------------------
+drop table T_250_T200 cascade;
+drop table T_250_T100 cascade;
+
+refresh T_250_MV21 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+refresh T_250_MV20 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+refresh T_250_MV18 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+refresh T_250_MV17 recompute outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+refresh mvgroup MVG250_cancel cancel outfile REFRESH.LOG;
+log;
+sh cat REFRESH.LOG | awk -f FILTER_TIME.AWK >> LOGMV250;
+log LOGMV250;
+
+
+drop table T_250_T1 cascade;
+drop table T_250_T2 cascade;
+drop table T_250_T3 cascade;
+drop table T_250_T4 cascade;
+drop table T_250_T5 cascade;
+
+drop mvgroup MVG250_cancel;
+
+set param ?schema_name 'MVSCHM';
+
+obey COMPARE_NUM_OF_OBJ;
+
+drop table Num_Obj;

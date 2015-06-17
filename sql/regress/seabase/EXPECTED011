@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Mon May 18 14:35:55 2015
+-- Definition current  Thu May 21 10:49:05 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1180,7 +1180,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Mon May 18 14:36:34 2015
+-- Definition current  Thu May 21 10:49:45 2015
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1362,7 +1362,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000031638212298744913961591000000000206U3333300_3346_EXPLSTMT
+MXID11000008581212298990535708589000000000206U3333300_1268_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1414,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000031638212298744913961591000000000206U3333300_3357_EXPLSTMT2
+MXID11000008581212298990535708589000000000206U3333300_1279_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1976,6 +1976,51 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>drop table t011t6b ;
+
+--- SQL operation complete.
+>>
+>>obey TEST011(clnup);
+>>drop table T011T1;
+
+--- SQL operation complete.
+>>drop table t011tT3;
+
+*** ERROR[1389] Object TRAFODION.SCH.T011TT3 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>drop table T011T2;
+
+--- SQL operation complete.
+>>drop table t011t4;
+
+--- SQL operation complete.
+>>
+>>drop view v;
+
+--- SQL operation complete.
+>>drop table t011t5;
+
+--- SQL operation complete.
+>>drop table t011t6a;
+
+*** ERROR[1389] Object TRAFODION.SCH.T011T6A does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>drop table t011t6b;
+
+*** ERROR[1389] Object TRAFODION.SCH.T011T6B does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- delete explain for statement explstmt from repository
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>delete from trafodion."_REPOS_".metric_query_table
++>  where query_id like 'MXID%EXPLSTMT%';
+
+--- 2 row(s) deleted.
+>>reset parserflags 131072;
 
 --- SQL operation complete.
 >>

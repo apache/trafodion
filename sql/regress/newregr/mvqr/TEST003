@@ -1,0 +1,1194 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+----------------------------------------------------
+-- TEST003
+-- Unit Test to test output list matching.
+-- Author: Yuval Sherman
+-- Owner: MV Query Rewrite team
+----------------------------------------------------
+
+obey TEST003(clean_up);
+obey TEST003(clean_up_files);
+log LOG003 clear;
+obey TEST003(set_up);
+obey TEST003(create_mvs);
+obey TEST003(match_JQ1);
+obey TEST003(match_JQ2);
+obey TEST003(match_JQ3);
+obey TEST003(match_JQ4);
+obey TEST003(match_JQ5);
+obey TEST003(match_JQ6);
+obey TEST003(match_AQ1);
+obey TEST003(match_AQ2);
+obey TEST003(match_AQ3);
+obey TEST003(match_AQ4);
+obey TEST003(match_AQ5);
+obey TEST003(match_AQ6);
+obey TEST003(match_AQ7);
+obey TEST003(match_fn);
+obey TEST003(clean_up);
+exit;
+
+?section clean_up
+----------------------------------------------------
+------------------ clean up section ----------------
+----------------------------------------------------
+drop schema outputs cascade;
+
+?section clean_up_files
+----------------------------------------------------
+------------------ clean up files section ----------
+----------------------------------------------------
+sh rm outputs*;
+sh rm OUTPUTS*;
+
+?section set_up
+----------------------------------------------------
+-------------------- set up section ----------------
+----------------------------------------------------
+
+control query default MVQR_REWRITE_LEVEL '4';
+control query default MVQR_REWRITE_ENABLED_OPTION 'ON';
+control query default MVQR_PUBLISH_TO 'PRIVATE';
+control query default REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT '1';
+control query default MVQR_ALL_JBBS_IN_QD 'ON';
+control query default MVQR_USE_RI_FOR_EXTRA_HUB_TABLES 'ON';
+cqd HIDE_INDEXES 'ALL';
+
+obey GetMvDesc;
+
+prepare checkPlan from
+  select operator, tname
+  from table(explain(NULL, 'QUERYSTMT'))
+  where operator like '%_SCAN%'
+  order by tname;
+
+create schema outputs;
+set schema outputs;
+set pattern $$MVSchemaName$$ OUTPUTS;
+
+create table fact (
+	fday   int,
+	fmonth int,
+	fyear  int,
+	fitem  int,
+	fquant int,
+	fprice numeric (8,2),
+	dimkey int) no partition;
+
+create table fact2 (
+	qitem  int,
+	qquant int,
+	qprice numeric (8,2),
+	qdimkey int) no partition;
+
+create table dim1 (dkey int not null not droppable primary key, dimdata int, fk1 int) 
+  store by primary key no partition;
+create table dim2 (dkey int not null not droppable primary key, dimdata int, fk1 int) 
+  store by primary key no partition;
+create table dim3 (dkey int not null not droppable primary key, dimdata int, fk1 int) 
+  store by primary key no partition;
+
+alter table fact  add constraint fact1_fk foreign key (dimkey) references dim1(dkey);
+alter table fact2 add constraint fact2_fk foreign key (qdimkey) references dim1(dkey);
+alter table dim1  add constraint dim1_fk foreign key (fk1) references dim2(dkey);
+alter table dim2  add constraint dim2_fk foreign key (fk1) references dim3(dkey);
+
+?section create_mvs
+--===========================================
+-- MJVs
+--===========================================
+
+-- Single hub table
+create mv outputs_mjv1
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             fday oday, fmonth omonth, fyear oyear,
+             dimkey
+      from fact;
+
+set pattern $$MVName$$ OUTPUTS_MJV1;
+obey TEST003(dump_MV);
+
+-- Hub table + extra-hub table.
+create mv outputs_mjv2
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dimdata, 
+	     fday oday, fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey;
+
+set pattern $$MVName$$ OUTPUTS_MJV2;
+obey TEST003(dump_MV);
+
+-- 3 cascaded dimension tables
+create mv outputs_mjv3
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             dimkey, dim3.dimdata
+      from fact, dim1, dim2, dim3
+      where dimkey=dim1.dkey
+        and dim1.fk1=dim2.dkey
+        and dim2.fk1=dim3.dkey;
+
+set pattern $$MVName$$ OUTPUTS_MJV3;
+obey TEST003(dump_MV);
+
+-- Two hub + one extra-hub
+create mv outputs_mjv4
+  refresh on request
+  initialized on create
+  as  select fprice, fquant, 
+             qprice,
+	     qdimkey, dimdata
+      from fact f1, fact2 f2, dim1
+      where dimkey=dkey
+        and fitem=qitem
+        and qdimkey=dkey;
+
+set pattern $$MVName$$ OUTPUTS_MJV4;
+obey TEST003(dump_MV);
+
+--===========================================
+-- MAVs
+--===========================================
+
+create mv outputs_mav1
+  refresh on request
+  initialized on create
+  as  select sum(fprice*fquant) total_price, 
+             sum(dimdata) sumdata, 
+	     fday oday, fmonth omonth, fyear oyear	           
+      from fact, dim1
+      where dimkey=dkey
+      group by fday, fmonth, fyear;
+
+set pattern $$MVName$$ OUTPUTS_MAV1;
+obey TEST003(dump_MV);
+
+create mv outputs_mav2
+  refresh on request
+  initialized on create
+  as  select sum(fprice*fquant) total_price, 
+             sum(dimdata) sumdata, 
+	     fmonth omonth, fyear oyear
+      from fact, dim1
+      where dimkey=dkey
+      group by fmonth, fyear;
+	    
+set pattern $$MVName$$ OUTPUTS_MAV2;
+obey TEST003(dump_MV);
+
+create mv outputs_mav3
+  refresh on request
+  initialized on create
+  as  select sum(fprice*fquant) total_price, 
+	     sum(dimdata) sumdata, 
+	     fyear oyear
+      from fact, dim1
+      where dimkey=dkey
+      group by fyear;
+	    
+set pattern $$MVName$$ OUTPUTS_MAV3;
+obey TEST003(dump_MV);
+
+create mv outputs_mav4
+  refresh on request
+  initialized on create
+  as  select count(*)                 countstar,
+             count(dimdata)           count_d,
+	   --count(distinct dimdata)  count_dis_d,
+  	     sum(dimdata)             sum_d, 
+	   --sum(distinct dimdata)    sum_dis_d, 
+	     min(dimdata)             min_d,
+	     max(dimdata)             max_d,
+	     stddev(dimdata)          stddev_d,
+	     stddev(dimdata, fyear)   stddev_dy,
+	     stddev(dimdata, fmonth)  stddev_dm,
+	     variance(dimdata)        variance_d,
+	     sum(dimdata*dimdata)     sum_dd,
+	     fyear                    oyear,
+	     fmonth                   omonth
+      from fact, dim1
+      where dimkey=dkey
+      group by fyear, fmonth;
+
+set pattern $$MVName$$ OUTPUTS_MAV4;
+obey TEST003(dump_MV);
+
+create mv outputs_mav5
+  refresh on request
+  initialized on create
+  as  select count(*)                 countstar,
+	     count(dimdata)           count_d,
+	     sum(dimdata)             sum_d, 
+	     min(dimdata)             min_d,
+	     max(dimdata)             max_d,
+	     stddev(dimdata)          stddev_d,
+	     stddev(dimdata, fyear)   stddev_dy,
+	     stddev(dimdata, fmonth)  stddev_dm,
+	     variance(dimdata)        variance_d,
+	     sum(dimdata*dimdata)     sum_dd,
+             fyear                    oyear
+      from fact, dim1
+      where dimkey=dkey
+      group by fyear;
+
+set pattern $$MVName$$ OUTPUTS_MAV5;
+obey TEST003(dump_MV);
+
+?section match_JQ1
+--===========================================
+--== Simple join query
+--===========================================
+-- The ORDER BY clause was added to avoid sorting the resulting XML
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select fprice*fquant total_price, 
+         dimkey, dimdata, 
+         fday oday, fmonth omonth, fyear oyear
+  from fact, dim1
+  where dimkey=dkey
+  order by dimkey;
+
+set pattern $$QueryName$$ OUTPUTS_JQ1;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_j1.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_j1.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_j1.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_j1.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_j1.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_j1.in;
+sh echo MATCH OUTPUTS_JQ1.xml    >> outputs_j1.in;
+
+sh sh -c "$QMS outputs_j1.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.OUTPUTS.OUTPUTS_MJV2';
+prepare QueryStmt from
+  select fprice*fquant total_price, 
+         dimkey, dimdata, 
+         fday oday, fmonth omonth, fyear oyear
+  from fact, dim1
+  where dimkey=dkey
+  order by dimkey;
+
+execute checkPlan;
+
+control query default MVQR_REWRITE_CANDIDATES '';
+
+?section match_JQ2
+--===========================================
+--== 3 cascaded dimension tables
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+-- First challenge - make this query match MJV3.
+-- To make this query more interesting, add dim2.dimdata to the select list.
+prepare QueryStmt from
+  select fprice, fquant, 
+         dimkey, dim1.dimdata, dim3.dimdata
+  from fact, dim1, dim2, dim3
+  where dimkey=dim1.dkey
+    and dim1.fk1=dim2.dkey
+    and dim2.fk1=dim3.dkey
+  order by dimkey;
+
+set pattern $$QueryName$$ OUTPUTS_JQ2;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MJV3.xml >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_j2.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_j2.in;
+sh echo MATCH OUTPUTS_JQ2.xml    >> outputs_j2.in;
+
+sh sh -c "$QMS outputs_j2.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select fprice, fquant, 
+         dimkey, dim1.dimdata, dim3.dimdata
+  from fact, dim1, dim2, dim3
+  where dimkey=dim1.dkey
+    and dim1.fk1=dim2.dkey
+    and dim2.fk1=dim3.dkey
+  order by dimkey;
+
+execute checkPlan;
+
+?section match_JQ3
+--===========================================
+--== Dimension table with wrong join pred
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+alter table fact add constraint fact_fk2 foreign key (fitem) references dim1(dkey);
+prepare QueryStmt from
+  select fprice, fquant, 
+         dimkey, dim1.dimdata
+  from fact, dim1
+  where fitem=dim1.dkey
+  order by dimkey;
+
+set pattern $$QueryName$$ OUTPUTS_JQ3;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MJV3.xml >> outputs_j3.in;
+--sh echo PUBLISH OUTPUTS_MJV4.xml >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_j3.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_j3.in;
+sh echo MATCH OUTPUTS_JQ3.xml    >> outputs_j3.in;
+
+-- Should match MJV1 but not MJV3.
+sh sh -c "$QMS outputs_j3.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+?section match_JQ4
+--===========================================
+--== Additional join pred to extra-hub table in query.
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select fprice, fquant, 
+	 qprice,
+         qdimkey, dimdata
+  from fact f1, fact2 f2, dim1
+  where dimkey=dkey
+    and fitem=qitem
+    and qdimkey=dkey
+  order by dimkey;
+
+set pattern $$QueryName$$ OUTPUTS_JQ4;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MJV3.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MJV4.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_j4.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_j4.in;
+sh echo MATCH OUTPUTS_JQ4.xml    >> outputs_j4.in;
+
+-- Should match MJV4, with additional join pred.
+sh sh -c "$QMS outputs_j4.in outputs.out";
+
+log;
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_MJV4';
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select fprice, fquant, 
+	 qprice,
+         qdimkey, dimdata
+  from fact f1, fact2 f2, dim1
+  where dimkey=dkey
+    and fitem=qitem
+    and qdimkey=dkey
+  order by dimkey;
+
+execute checkPlan;
+
+?section match_JQ5
+--===========================================
+--== Query uses CASE expression
+--===========================================
+-- The ORDER BY clause was added to avoid sorting the resulting XML
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select (month_name || ', ' || year_name) date_name,
+          dimkey, dimdata
+  from (select (case fmonth when 1 then 'Jan'
+	                    when 2 then 'Feb'
+	                    when 3 then 'Mar'
+	                    else        'else'
+	        end) month_name,
+	       (case fyear when 2000 then '2000'
+	                   when 2001 then '2001'
+	                   when 2002 then '2002'
+	                   else           'else'
+	        end) year_name, 
+         dimkey, dimdata, 
+         fday oday, fmonth omonth, fyear oyear
+  from fact, dim1
+  where dimkey=dkey) x  
+  order by dimkey;
+
+set pattern $$QueryName$$ OUTPUTS_JQ5;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_j5.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_j5.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_j5.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_j5.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_j5.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_j5.in;
+sh echo MATCH OUTPUTS_JQ1.xml    >> outputs_j5.in;
+
+sh sh -c "$QMS outputs_j5.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+control query default MVQR_REWRITE_CANDIDATES 'CAT.OUTPUTS.OUTPUTS_MJV1';
+prepare QueryStmt from
+  select (month_name || ', ' || year_name) date_name,
+          dimkey, dimdata
+  from (select (case fmonth when 1 then 'Jan'
+	                    when 2 then 'Feb'
+	                    when 3 then 'Mar'
+	                    else        'else'
+	        end) month_name,
+	       (case fyear when 2000 then '2000'
+	                   when 2001 then '2001'
+	                   when 2002 then '2002'
+	                   else           'else'
+	        end) year_name, 
+         dimkey, dimdata, 
+         fday oday, fmonth omonth, fyear oyear
+  from fact, dim1
+  where dimkey=dkey) x  
+  order by dimkey;
+
+execute checkPlan;
+
+control query default MVQR_REWRITE_CANDIDATES '';
+
+?section match_JQ6
+--===========================================
+--== Date/Time functions.
+--===========================================
+create table OUTPUTS_T61 (
+  a int not null
+, c1 date
+, c2 time
+, c3 timestamp
+, primary key(a));
+
+create table OUTPUTS_T62 like OUTPUTS_T61;
+
+insert into OUTPUTS_T61 values
+  (1, date'2010-11-21',time'11:22:33', timestamp'2010-11-21 11:22:33');
+insert into OUTPUTS_T62 values
+  (1, date'2010-11-21',time'11:22:33', timestamp'2010-11-21 11:22:33');
+  
+-- This MJV uses hour() and month() functions.
+create mv OUTPUTS_MJV61
+  --REFRESH on request
+  RECOMPUTE
+  INITIALIZE on create
+  ENABLE QUERY REWRITE 
+  as  select t1.c1
+            ,hour(t2.c2)  c2_hour
+            ,month(t1.c3) c3_month
+      from OUTPUTS_T61 t1, OUTPUTS_T62 t2
+      where t1.c1=t2.c1;
+
+set pattern $$MVName$$ OUTPUTS_MJV61;
+obey TEST003(dump_MV);
+
+-- This MJV uses minute() and week() functions.
+create mv OUTPUTS_MJV62
+  --REFRESH on request  
+  RECOMPUTE
+  INITIALIZE on create
+  ENABLE QUERY REWRITE 
+  as  select t1.c1
+            ,minute(t2.c2)     c2_minute
+            ,dayofmonth(t1.c3) c3_dayofmonth
+      from OUTPUTS_T61 t1, OUTPUTS_T62 t2
+      where t1.c1=t2.c1;
+      
+set pattern $$MVName$$ OUTPUTS_MJV62;
+obey TEST003(dump_MV);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+-- The query needs hour() and month()
+prepare QueryStmt from
+  select hour(t2.c2)  c2_hour
+        ,month(t1.c3) c3_month
+  from OUTPUTS_T61 t1, OUTPUTS_T62 t2
+  where t1.c1=t2.c1
+  order by t1.c1;
+
+set pattern $$QueryName$$ OUTPUTS_JQ6;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                >> outputs_j6.in;
+sh echo PUBLISH OUTPUTS_MJV61.xml >> outputs_j6.in;
+sh echo PUBLISH OUTPUTS_MJV62.xml >> outputs_j6.in;
+sh echo MATCH OUTPUTS_JQ6.xml     >> outputs_j6.in;
+
+sh sh -c "$QMS outputs_j6.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_MJV61';
+
+prepare QueryStmt from
+  select hour(t2.c2)  c2_hour
+        ,month(t1.c3) c3_month
+  from OUTPUTS_T61 t1, OUTPUTS_T62 t2
+  where t1.c1=t2.c1
+  order by t1.c1;
+
+execute checkPlan;
+-- Check the results
+execute QueryStmt;
+
+-- And compare to a plan that is not rewritten
+cqd mvqr_rewrite_level '0';
+prepare QueryStmt from
+  select hour(t2.c2)  c2_hour
+        ,month(t1.c3) c3_month
+  from OUTPUTS_T61 t1, OUTPUTS_T62 t2
+  where t1.c1=t2.c1
+  order by t1.c1;
+  
+execute checkPlan;
+-- Check the results
+execute QueryStmt;
+
+cqd MVQR_REWRITE_LEVEL '4';
+
+?section match_AQ1
+--===========================================
+--== Simple aggregate query
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select sum(fprice*fquant) total_price, 
+         sum(dimdata) sumdata, 
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+set pattern $$QueryName$$ OUTPUTS_AQ1;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MAV4.xml >> outputs_a1.in;
+sh echo PUBLISH OUTPUTS_MAV5.xml >> outputs_a1.in;
+sh echo MATCH OUTPUTS_AQ1.xml    >> outputs_a1.in;
+
+sh sh -c "$QMS outputs_a1.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_MJV2';
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select sum(fprice*fquant) total_price, 
+         sum(dimdata) sumdata, 
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+execute checkPlan;
+
+?section match_AQ2
+--===========================================
+--== Check simple aggregate functions over MJV1, MJV2, MAV4
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select count(*),
+	 count(dimdata),
+	 sum(dimdata), 
+	 min(dimdata),
+	 max(dimdata),
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+set pattern $$QueryName$$ OUTPUTS_AQ2;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MAV4.xml >> outputs_a2.in;
+sh echo PUBLISH OUTPUTS_MAV5.xml >> outputs_a2.in;
+sh echo MATCH OUTPUTS_AQ2.xml    >> outputs_a2.in;
+
+sh sh -c "$QMS outputs_a2.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_MJV2';
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select count(*),
+	 count(dimdata),
+	 sum(dimdata), 
+	 min(dimdata),
+	 max(dimdata),
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+execute checkPlan;
+
+?section match_AQ3
+--===========================================
+--== Check all aggregate functions over MJV1, MJV2, MAV4
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select count(*),
+	 count(dimdata),
+	 sum(dimdata), 
+	 avg(dimdata),
+	 min(dimdata),
+	 max(dimdata),
+	 stddev(dimdata),
+	 ----stddev(dimdata, fyear),
+	 ----stddev(dimdata, fmonth),
+	 variance(dimdata),
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+set pattern $$QueryName$$ OUTPUTS_AQ3;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MAV4.xml >> outputs_a3.in;
+sh echo PUBLISH OUTPUTS_MAV5.xml >> outputs_a3.in;
+sh echo MATCH OUTPUTS_AQ3.xml    >> outputs_a3.in;
+
+sh sh -c "$QMS outputs_a3.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_MJV2';
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select count(*),
+	 count(dimdata),
+	 sum(dimdata), 
+	 avg(dimdata),
+	 min(dimdata),
+	 max(dimdata),
+	 stddev(dimdata),
+	 variance(dimdata),
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+execute checkPlan;
+
+?section match_AQ4
+--===========================================
+--== Check distinct aggregate functions over MJV1, MJV2, MAV4
+--===========================================
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select count(*),
+	 count(distinct dimdata),
+	 sum(distinct dimdata), 
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+set pattern $$QueryName$$ OUTPUTS_AQ4;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE               >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MJV1.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MJV2.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MAV1.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MAV2.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MAV3.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MAV4.xml >> outputs_a4.in;
+sh echo PUBLISH OUTPUTS_MAV5.xml >> outputs_a4.in;
+sh echo MATCH OUTPUTS_AQ4.xml    >> outputs_a4.in;
+
+sh sh -c "$QMS outputs_a4.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+prepare QueryStmt from
+  select count(*),
+	 count(distinct dimdata),
+	 sum(distinct dimdata), 
+         fyear oyear	           
+  from fact, dim1
+  where dimkey=dkey
+  group by fyear
+  order by oyear;
+
+execute checkPlan;
+
+?section match_AQ5
+--===========================================
+--== Check Rollup over an MV grouping column.
+--===========================================
+create table Table1 (
+  a int not null
+, b int
+, c int
+, d int
+, e int
+, primary key(a)
+);
+
+insert into Table1 values
+ (1,0,1,1,1)
+,(2,1,1,1,2)
+,(3,1,1,1,3)
+,(6,1,2,2,6)
+,(7,1,2,1,7)
+,(8,1,2,1,8);
+
+-- Insert some rows with NULL values.
+insert into Table1(a,b,d,e) values
+ (4,0,  2,4)
+,(5,0,  2,5)
+,(9,1,  1,9);
+
+select t1.b, t1.c, count(*) countstar
+  from Table1 t1  
+  where t1.a>0 
+  group by t1.b,t1.c ;
+  
+-- An incremental MV will have a system added COUNT(*) column.
+create mv MAVwithCountStar 
+  REFRESH ON REQUEST 
+  INITIALIZE ON CREATE 
+  ENABLE QUERY REWRITE 
+  as select t1.b,
+            t1.c,
+            sum(t1.e) sum_e 
+     from Table1 t1 
+     where t1.a>0 
+     group by t1.b,t1.c;
+
+set pattern $$MVName$$ MAVWITHCOUNTSTAR;
+obey TEST003(dump_MV);
+
+-- Lets look at the data in the MV
+select *, SYS_COUNTSTAR1
+  from MAVwithCountStar;
+  
+-- A recompute MV will not have it.
+create mv MAVwithoutCountStar 
+  RECOMPUTE 
+  INITIALIZE ON CREATE 
+  ENABLE QUERY REWRITE 
+  as select t1.b,
+            t1.c,
+            sum(t1.e) sum_e 
+     from Table1 t1 
+     where t1.a>0 
+     group by t1.b,t1.c;
+
+set pattern $$MVName$$ MAVWITHOUTCOUNTSTAR;
+obey TEST003(dump_MV);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select t1.b,
+  	 count(*)             countstar,
+         count(t1.c)          count_c,
+         sum(t1.c)            sum_c,
+         count(distinct t1.c) count_d_c,
+         sum(distinct t1.c)   sum_d_c,
+         max(c)               max_c,
+         --sum(t1.c + 5)        sum_cplus5,
+         --sum(t1.c * t1.c)     sum_csquare
+         t1.b + sum(t1.e)     sume_plus_b
+  from Table1 t1 
+  where t1.a>0 
+  group by t1.b 
+  order by b;
+
+set pattern $$QueryName$$ OUTPUTS_AQ5;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                      >> outputs_a5.in;
+sh echo PUBLISH MAVWITHCOUNTSTAR.xml    >> outputs_a5.in;
+sh echo PUBLISH MAVWITHOUTCOUNTSTAR.xml >> outputs_a5.in;
+sh echo MATCH OUTPUTS_AQ5.xml    >> outputs_a5.in;
+
+sh sh -c "$QMS outputs_a5.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.MAVWITHCOUNTSTAR';
+prepare QueryStmt from
+  select t1.b,
+  	 count(*)             countstar,
+         count(t1.c)          count_c,
+         sum(t1.c)            sum_c,
+         count(distinct t1.c) count_d_c,
+         sum(distinct t1.c)   sum_d_c,
+         max(c)               max_c,
+         --sum(t1.c + 5)        sum_cplus5,
+         --sum(t1.c * t1.c)     sum_csquare
+         t1.b + sum(t1.e)     sume_plus_b
+  from Table1 t1 
+  where t1.a>0 
+  group by t1.b 
+  order by b;
+
+execute checkPlan;
+-- Check the results
+execute QueryStmt;
+
+-- And compare to a plan that is not rewritten
+cqd mvqr_rewrite_level '0';
+prepare QueryStmt from
+  select t1.b,
+  	 count(*)             countstar,
+         count(t1.c)          count_c,
+         sum(t1.c)            sum_c,
+         count(distinct t1.c) count_d_c,
+         sum(distinct t1.c)   sum_d_c,
+         max(c)               max_c,
+         --sum(t1.c + 5)        sum_cplus5,
+         --sum(t1.c * t1.c)     sum_csquare
+         t1.b + sum(t1.e)     sume_plus_b
+  from Table1 t1 
+  where t1.a>0 
+  group by t1.b 
+  order by b;
+  
+execute checkPlan;
+-- Check the results
+execute QueryStmt;
+
+cqd MVQR_REWRITE_LEVEL '4';
+
+?section match_AQ6
+--===========================================
+--== Check use of COUNT(*) instead of COUNT(not null a)
+--===========================================
+
+-- This MV has COUNT(a), instead of COUNT(*) column.
+create mv OUTPUTS_NoCountStar
+  refresh on request initialize on create
+  ENABLE QUERY REWRITE
+  as select b
+          , sum(a) s1
+          , count(a) c1
+          , sum(a*a) b1
+     from Table1
+     group by b;
+
+set pattern $$MVName$$ OUTPUTS_NOCOUNTSTAR;
+obey TEST003(dump_MV);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select b, stddev(a) s1
+  from Table1
+  group by b
+  order by b;
+
+set pattern $$QueryName$$ OUTPUTS_AQ6;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                      >> outputs_a6.in;
+sh echo PUBLISH OUTPUTS_NOCOUNTSTAR.xml >> outputs_a6.in;
+sh echo MATCH OUTPUTS_AQ6.xml           >> outputs_a6.in;
+
+sh sh -c "$QMS outputs_a6.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.OUTPUTS_NOCOUNTSTAR';
+prepare QueryStmt from
+  select b, stddev(a) s1
+  from Table1
+  group by b
+  order by b;
+
+execute checkPlan;
+
+?section match_AQ7
+--===========================================
+--== Check use of GROUP BY expressions
+--===========================================
+
+create table aq7_t1 (
+  pk int not null not droppable,
+  weekday int,
+  primary key (pk))
+  store by primary key;
+  
+create table aq7_t2 (
+  a int not null not droppable,
+  b int,
+  primary key (a))
+  store by primary key;
+
+create mv aq7_mv1 
+  REFRESH BY USER INITIALIZE BY USER ENABLE QUERY REWRITE
+  as  select (case weekday
+              when 1 then 'Sunday'
+              when 2 then 'Monday'
+              when 3 then 'Tuesday'
+              when 4 then 'Wednesday'
+              when 5 then 'Thursday'
+              when 6 then 'Friday'
+              when 7 then 'Saturday'
+              end) day_name,
+             count(*) count_star,
+	     sum(b) sum_b
+      from aq7_t1, aq7_t2
+      where weekday = a
+      group by 1;
+       
+set pattern $$MVName$$ AQ7_MV1;
+obey TEST003(dump_MV);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'DUMP';
+
+prepare QueryStmt from
+  select (case weekday
+          when 1 then 'Sunday'
+          when 2 then 'Monday'
+          when 3 then 'Tuesday'
+          when 4 then 'Wednesday'
+          when 5 then 'Thursday'
+          when 6 then 'Friday'
+          when 7 then 'Saturday'
+          end) day_name,
+         count(*) count_star,
+         sum(b) sum_b
+  from aq7_t1, aq7_t2
+  where weekday = a
+  group by 1
+  order by 1;
+
+set pattern $$QueryName$$ OUTPUTS_AQ7_Q;
+obey TEST003(dump_Query);
+
+control query default MVQR_LOG_QUERY_DESCRIPTORS 'OFF';
+
+sh echo INITIALIZE                 >> outputs_a7.in;
+sh echo PUBLISH AQ7_MV1.xml        >> outputs_a7.in;
+sh echo MATCH OUTPUTS_AQ7_Q.xml    >> outputs_a7.in;
+
+sh sh -c "$QMS outputs_a7.in outputs.out";
+
+log;
+sh cat outputs.out >> LOG003;
+log LOG003;
+
+-- Verify the MV is picked by the optimizer.
+cqd mvqr_rewrite_candidates 'CAT.TEMP.AQ7_MV1';
+prepare QueryStmt from
+  select (case weekday
+          when 1 then 'Sunday'
+          when 2 then 'Monday'
+          when 3 then 'Tuesday'
+          when 4 then 'Wednesday'
+          when 5 then 'Thursday'
+          when 6 then 'Friday'
+          when 7 then 'Saturday'
+          end) day_name,
+         count(*) count_star,
+         sum(b) sum_b
+  from aq7_t1, aq7_t2
+  where weekday = a
+  group by 1;
+
+execute checkPlan;
+
+
+?section match_fn
+--===========================================
+--== Test functions in query select lists that use output columns from the MV.
+--===========================================
+cqd MULTI_JOIN_THRESHOLD '2';
+create table fn_t1(i1 int not null not droppable primary key, ch1 char(20), dt1 date);
+create table fn_t2(i2 int not null not droppable primary key, ch2 char(20), dt2 date);
+create mv fn_mv1 refresh on request initialize on create as
+    select i1, ch1, dt1 from fn_t1,fn_t2 where i1=i2;
+
+cqd mvqr_rewrite_candidates 'CAT.OUTPUTS.FN_MV1';
+
+prepare QueryStmt from select trim(ch1) from fn_t1,fn_t2 where i1=i2;
+execute checkPlan;
+
+prepare QueryStmt from select dateformat(dt1,USA) from fn_t1,fn_t2 where i1=i2;
+execute checkPlan;
+
+prepare QueryStmt from select translate(ch1 using ISO88591TOUCS2) from fn_t1,fn_t2 where i1=i2;
+execute checkPlan;
+
+cqd MULTI_JOIN_THRESHOLD reset;
+drop mv fn_mv1;
+drop table fn_t1;
+drop table fn_t2;
+
+
+?section dump_MV
+--===========================================
+--== Create the MV descriptor XML
+--===========================================
+
+log $$MVName$$.tmp clear;
+set param ?mvName $$MVName$$;
+set param ?mvSchemaName $$MVSchemaName$$;
+execute getMVDescFromTEXT;
+log;
+
+#ifMX
+sh $$rundir$$/mvqr/FILTERCROP $$MVName$$.TMP > $$MVName$$.tmp.f;
+sh sh ./CropDescriptor.ksh -i $$MVName$$.tmp.f -o $$MVName$$.xml;
+#ifMX
+#ifNT
+sh sh ./CropDescriptor -i $$MVName$$.tmp -o $$MVName$$.xml;
+#ifNT
+sh sleep 1;
+sh cat $$MVName$$.xml >> LOG003;
+log LOG003;
+
+?section dump_Query
+--===========================================
+--== Create the query descriptor XML
+--===========================================
+
+log $$QueryName$$.tmp clear;
+-- Once for the XML file,
+execute QueryStmt;
+log LOG003;
+sh sh ./CropDescriptor.ksh -q -i $$QueryName$$.TMP -o $$QueryName$$.xml;
+-- and once for the test log file
+execute QueryStmt;
+

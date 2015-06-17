@@ -1,0 +1,147 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+SLEEPTIME=0
+WANTCOUNT=0
+NUMSAMPLES=0
+SAMPLEDECR=1
+USERTOFOLLOW=""
+# Anything that needs to be ignored, add -e <name> below
+IGNOREEXPR='-e lighthouse_coll
+            -e lighthouse_mana
+            -e sshd
+            -e ps
+            -e CMD
+            -e grep
+            -e bash
+            -e ssh
+            -e pdsh
+            -e sort
+            -e sq_check_myuser'
+VNCIGNORE='-e '' gnome''
+           -e '' nautilus''
+           -e '' bonobo''
+           -e '' notification''
+           -e '' gvfsd''
+           -e '' notification''
+           -e '' dbus''
+           -e '' vncconfig''
+           -e '' wnck''
+           -e Xvnc
+           -e '' ck-xinit''
+           -e '' gconf'''
+VNCIGNORE2='-e '' clock-applet''
+            -e '' gvfs-''
+            -e '' hydra_''
+            -e '' metacity''
+            -e '' pulseaudio''
+            -e '' rhsm-''
+            -e '' trashapplet''
+            -e '' gdm-'''
+
+while getopts 'n:s:chua' parmOpt
+do
+    case $parmOpt in
+    a)  while [ ${OPTIND} -le $# ] ; do
+           shift $((${OPTIND} - 1))
+           OPTIND=1
+           if [ ${1:0:1} = "-" ] ; then
+                break;
+           fi
+           IGNOREEXPR="${IGNOREEXPR} -e $1"
+           shift
+        done;;
+    c)  WANTCOUNT=1;;
+    h)  echo "Give a list with counts of all the processes running under one or more userids."
+        echo
+        echo "Syntax: $0 [-s <sleep secs>] [-n <num samples] [-c] [-u user ...] [-a prog ...]"
+        echo
+        echo "-c          is used to give a sorted count of the processes running."
+        echo "-s          means to do multiple sampling, sleeping in between."
+        echo "            Defaults to 1 minute if not specified and -n > 0"
+        echo "-n          means to do that many samples."
+        echo "            If -s is used, the default is forever, otherwise 1"
+        echo "-u user ... to specify which userid to watch, default is current user."
+        echo "-a prog ... to add additional program to ignore."
+        echo "            See script source for initial list of ignored programs."
+        exit 0;;
+    n)  NUMSAMPLES="${OPTARG}";;
+    s)  SLEEPTIME="${OPTARG}";;
+    u)  while [ ${OPTIND} -le $# ] ; do
+           shift $((${OPTIND} - 1))
+           OPTIND=1
+           if [ ${1:0:1} = "-" ] ; then
+                break;
+           fi
+           if [ ${#USERTOFOLLOW} -eq 0 ] ; then
+               USERTOFOLLOW=$1
+           else
+               USERTOFOLLOW=${USERTOFOLLOW},$1
+           fi
+           shift
+        done;;
+    ?)  echo "Invalid option specified.   Only -a,-c,-h,-n,-s and -u are allowed."
+        exit 0;;
+    esac
+done
+
+if [ ${#USERTOFOLLOW} -eq 0 ] ; then
+    USERTOFOLLOW=$USER
+fi
+if [ ${SLEEPTIME} -gt 0 ] || [ ${NUMSAMPLES} -gt 0 ] ; then
+    if [ ${SLEEPTIME} -eq 0 ] ; then
+        SLEEPTIME=60
+    fi
+    if [ ${NUMSAMPLES} -eq 0 ] ; then
+        SAMPLEDECR=0
+    fi
+fi
+
+if [ ${#MY_NODES} -eq 0 ] ; then
+    MY_NODES="-a"
+fi
+if [ -n "$(type -t pdsh)" ] ; then
+    pdsh_cmd="pdsh $MY_NODES "
+    cmd_num=5
+else
+    pdsh_cmd=""
+    cmd_num=4
+fi
+
+if [ ${NUMSAMPLES} -gt 0 ] ; then
+    NUMSAMPLES=$(($NUMSAMPLES - $SAMPLEDECR))
+fi
+while [ ${NUMSAMPLES} -ge 0 ] ; do
+    if [ ${WANTCOUNT} -eq 0 ] ; then
+        ${pdsh_cmd} ps -u $USERTOFOLLOW | grep -vw ${IGNOREEXPR} | grep -v ${VNCIGNORE} ${VNCIGNORE2} | sort
+    else
+	${pdsh_cmd} ps -u $USERTOFOLLOW | grep -vw ${IGNOREEXPR} | grep -v ${VNCIGNORE} ${VNCIGNORE2} | awk "{print \$${cmd_num}}" | sort | uniq --count | \
+	   awk 'BEGIN {sumval=0} \
+	        {print $0; if ($1 ~ /[0-9]+/ ) {sumval = sumval + $1}} \
+	        END {printf "------- ---------------\n%7d %s\n", sumval, "Total"}' | column
+    fi
+    date
+    NUMSAMPLES=$(($NUMSAMPLES - $SAMPLEDECR))
+    if [ ${NUMSAMPLES} -lt 0 ] ; then
+        break
+    fi
+    if [ ${SLEEPTIME} -gt 0 ] ; then
+        sleep ${SLEEPTIME}
+    fi
+done

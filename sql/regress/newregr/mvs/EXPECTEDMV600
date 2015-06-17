@@ -1,0 +1,511 @@
+>>obey TESTMV600(SET_UP);
+>>
+>>create table Num_Obj(schema_name CHARACTER(50), num_of_objects int);
+
+--- SQL operation complete.
+>>ALTER TABLE Num_Obj attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>set param ?schema_name 'MVSCHM';
+>>obey INSERT_NUM_OF_OBJ;
+>>insert into catmvs.mvschm.Num_Obj
++>select Substring(schemata.SCHEMA_NAME,1,20) as SCHEMA_NAME,
++>	count(objects.object_uid)  num_of_objcets
++>from HP_DEFINITION_SCHEMA.objects objects,
++>     HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>     where schemata.schema_uid = objects.schema_uid
++>     and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>group by SCHEMA_NAME;
+
+--- 1 row(s) inserted.
+>>
+>>create table sales (
++>	s_saleid	int,
++>	s_day	        int,
++>	s_month		int,
++>	s_year		int,
++>	sale_total	int);
+
+--- SQL operation complete.
+>>ALTER TABLE sales attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>create table weeks (
++>	w_day		int not null not droppable,
++>	w_month		int not null not droppable,
++>	w_year		int not null not droppable,
++>	w_week		int,
++>	primary key (w_day,w_month,w_year))
++>	store by primary key;
+
+--- SQL operation complete.
+>>ALTER TABLE weeks attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>insert into weeks values
++>	( 1, 1,2000, 1), ( 2, 1,2000, 1), ( 3, 1,2000, 1), ( 4, 1,2000, 1), ( 5, 1,2000, 1), ( 6, 1,2000, 1), ( 7, 1,2000, 1), 
++>	( 8, 1,2000, 2), ( 9, 1,2000, 2), (10, 1,2000, 2), (11, 1,2000, 2), (12, 1,2000, 2), (13, 1,2000, 2), (14, 1,2000, 2), 
++>	(15, 1,2000, 3), (16, 1,2000, 3), (17, 1,2000, 3), (18, 1,2000, 3), (19, 1,2000, 3), (20, 1,2000, 3), (21, 1,2000, 3), 
++>	(22, 1,2000, 4), (23, 1,2000, 4), (24, 1,2000, 4), (25, 1,2000, 4), (26, 1,2000, 4), (27, 1,2000, 4), (28, 1,2000, 4), 
++>	(29, 1,2000, 5), (30, 1,2000, 5), (31, 1,2000, 5), ( 1, 2,2000, 5), ( 2, 2,2000, 5), ( 3, 2,2000, 5), ( 4, 2,2000, 5), 
++>	( 5, 2,2000, 6), ( 6, 2,2000, 6), ( 7, 2,2000, 6), ( 8, 2,2000, 6), ( 9, 2,2000, 6), (10, 2,2000, 6), (11, 2,2000, 6), 
++>	(12, 2,2000, 7), (13, 2,2000, 7), (14, 2,2000, 7), (15, 2,2000, 7), (16, 2,2000, 7), (17, 2,2000, 7), (18, 2,2000, 7), 
++>	(19, 2,2000, 8), (20, 2,2000, 8), (21, 2,2000, 8), (22, 2,2000, 8), (23, 2,2000, 8), (24, 2,2000, 8), (25, 2,2000, 8), 
++>	(26, 2,2000, 9), (27, 2,2000, 9), (28, 2,2000, 9), (29, 2,2000, 9), ( 1, 3,2000, 9), ( 2, 3,2000, 9), ( 3, 3,2000, 9), 
++>	( 4, 3,2000,10), ( 5, 3,2000,10), ( 6, 3,2000,10), ( 7, 3,2000,10), ( 8, 3,2000,10), ( 9, 3,2000,10), (10, 3,2000,10), 
++>	(11, 3,2000,11), (12, 3,2000,11), (13, 3,2000,11), (14, 3,2000,11), (15, 3,2000,11), (16, 3,2000,11), (17, 3,2000,11), 
++>	(18, 3,2000,12), (19, 3,2000,12), (20, 3,2000,12), (21, 3,2000,12), (22, 3,2000,12), (23, 3,2000,12), (24, 3,2000,12), 
++>	(25, 3,2000,13), (26, 3,2000,13), (27, 3,2000,13), (28, 3,2000,13), (29, 3,2000,13), (30, 3,2000,13), (31, 3,2000,13), 
++>	( 1, 4,2000,14), ( 2, 4,2000,14), ( 3, 4,2000,14), ( 4, 4,2000,14), ( 5, 4,2000,14), ( 6, 4,2000,14), ( 7, 4,2000,14), 
++>	( 8, 4,2000,15), ( 9, 4,2000,15), (10, 4,2000,15), (11, 4,2000,15), (12, 4,2000,15), (13, 4,2000,15), (14, 4,2000,15), 
++>	(15, 4,2000,16), (16, 4,2000,16), (17, 4,2000,16), (18, 4,2000,16), (19, 4,2000,16), (20, 4,2000,16), (21, 4,2000,16), 
++>	(22, 4,2000,17), (23, 4,2000,17), (24, 4,2000,17), (25, 4,2000,17), (26, 4,2000,17), (27, 4,2000,17), (28, 4,2000,17), 
++>	(29, 4,2000,18), (30, 4,2000,18), ( 1, 5,2000,18), ( 2, 5,2000,18), ( 3, 5,2000,18), ( 4, 5,2000,18), ( 5, 5,2000,18), 
++>	( 6, 5,2000,19), ( 7, 5,2000,19), ( 8, 5,2000,19), ( 9, 5,2000,19), (10, 5,2000,19), (11, 5,2000,19), (12, 5,2000,19), 
++>	(13, 5,2000,20), (14, 5,2000,20), (15, 5,2000,20), (16, 5,2000,20), (17, 5,2000,20), (18, 5,2000,20), (19, 5,2000,20), 
++>	(20, 5,2000,21), (21, 5,2000,21), (22, 5,2000,21), (23, 5,2000,21), (24, 5,2000,21), (25, 5,2000,21), (26, 5,2000,21), 
++>	(27, 5,2000,22), (28, 5,2000,22), (29, 5,2000,22), (30, 5,2000,22), (31, 5,2000,22), ( 1, 6,2000,22), ( 2, 6,2000,22), 
++>	( 3, 6,2000,23), ( 4, 6,2000,23), ( 5, 6,2000,23), ( 6, 6,2000,23), ( 7, 6,2000,23), ( 8, 6,2000,23), ( 9, 6,2000,23), 
++>	(10, 6,2000,24), (11, 6,2000,24), (12, 6,2000,24), (13, 6,2000,24), (14, 6,2000,24), (15, 6,2000,24), (16, 6,2000,24), 
++>	(17, 6,2000,25), (18, 6,2000,25), (19, 6,2000,25), (20, 6,2000,25), (21, 6,2000,25), (22, 6,2000,25), (23, 6,2000,25), 
++>	(24, 6,2000,26), (25, 6,2000,26), (26, 6,2000,26), (27, 6,2000,26), (28, 6,2000,26), (29, 6,2000,26), (30, 6,2000,26), 
++>	( 1, 7,2000,27), ( 2, 7,2000,27), ( 3, 7,2000,27), ( 4, 7,2000,27), ( 5, 7,2000,27), ( 6, 7,2000,27), ( 7, 7,2000,27),
++>	( 8, 7,2000,28), ( 9, 7,2000,28), (10, 7,2000,28), (11, 7,2000,28), (12, 7,2000,28), (13, 7,2000,28), (14, 7,2000,28),
++>	(15, 7,2000,29), (16, 7,2000,29), (17, 7,2000,29), (18, 7,2000,29), (19, 7,2000,29), (20, 7,2000,29), (21, 7,2000,29),
++>	(22, 7,2000,30), (23, 7,2000,30), (24, 7,2000,30), (25, 7,2000,30), (26, 7,2000,30), (27, 7,2000,30), (28, 7,2000,30),
++>	(29, 7,2000,31), (30, 7,2000,31), (31, 7,2000,31), ( 1, 8,2000,31), ( 2, 8,2000,31), ( 3, 8,2000,31), ( 4, 8,2000,31),
++>	( 5, 8,2000,32), ( 6, 8,2000,32), ( 7, 8,2000,32), ( 8, 8,2000,32), ( 9, 8,2000,32), (10, 8,2000,32), (11, 8,2000,32),
++>	(12, 8,2000,33), (13, 8,2000,33), (14, 8,2000,33), (15, 8,2000,33), (16, 8,2000,33), (17, 8,2000,33), (18, 8,2000,33),
++>	(19, 8,2000,34), (20, 8,2000,34), (21, 8,2000,34), (22, 8,2000,34), (23, 8,2000,34), (24, 8,2000,34), (25, 8,2000,34),
++>	(26, 8,2000,35), (27, 8,2000,35), (28, 8,2000,35), (29, 8,2000,35), (30, 8,2000,35), (31, 8,2000,35), ( 1, 9,2000,35),
++>	( 2, 9,2000,36), ( 3, 9,2000,36), ( 4, 9,2000,36), ( 5, 9,2000,36), ( 6, 9,2000,36), ( 7, 9,2000,36), ( 8, 9,2000,36),
++>	( 9, 9,2000,37), (10, 9,2000,37), (11, 9,2000,37), (12, 9,2000,37), (13, 9,2000,37), (14, 9,2000,37), (15, 9,2000,37),
++>	(16, 9,2000,38), (17, 9,2000,38), (18, 9,2000,38), (19, 9,2000,38), (20, 9,2000,38), (21, 9,2000,38), (22, 9,2000,38), 
++>	(23, 9,2000,39), (24, 9,2000,39), (25, 9,2000,39), (26, 9,2000,39), (27, 9,2000,39), (28, 9,2000,39), (29, 9,2000,39), 
++>	(30, 9,2000,40), ( 1,10,2000,40), ( 2,10,2000,40), ( 3,10,2000,40), ( 4,10,2000,40), ( 5,10,2000,40), ( 6,10,2000,40), 
++>	( 7,10,2000,41), ( 8,10,2000,41), ( 9,10,2000,41), (10,10,2000,41), (11,10,2000,41), (12,10,2000,41), (13,10,2000,41), 
++>	(14,10,2000,42), (15,10,2000,42), (16,10,2000,42), (17,10,2000,42), (18,10,2000,42), (19,10,2000,42), (20,10,2000,42), 
++>	(21,10,2000,43), (22,10,2000,43), (23,10,2000,43), (24,10,2000,43), (25,10,2000,43), (26,10,2000,43), (27,10,2000,43), 
++>	(28,10,2000,44), (29,10,2000,44), (30,10,2000,44), (31,10,2000,44), ( 1,11,2000,44), ( 2,11,2000,44), ( 3,11,2000,44), 
++>	( 4,11,2000,45), ( 5,11,2000,45), ( 6,11,2000,45), ( 7,11,2000,45), ( 8,11,2000,45), ( 9,11,2000,45), (10,11,2000,45),
++>	(11,11,2000,46), (12,11,2000,46), (13,11,2000,46), (14,11,2000,46), (15,11,2000,46), (16,11,2000,46), (17,11,2000,46), 
++>	(18,11,2000,47), (19,11,2000,47), (20,11,2000,47), (21,11,2000,47), (22,11,2000,47), (23,11,2000,47), (24,11,2000,47), 
++>	(25,11,2000,48), (26,11,2000,48), (27,11,2000,48), (28,11,2000,48), (29,11,2000,48), (30,11,2000,48), ( 1,12,2000,48), 
++>	( 2,12,2000,49), ( 3,12,2000,49), ( 4,12,2000,49), ( 5,12,2000,49), ( 6,12,2000,49), ( 7,12,2000,49), ( 8,12,2000,49), 
++>	( 9,12,2000,50), (10,12,2000,50), (11,12,2000,50), (12,12,2000,50), (13,12,2000,50), (14,12,2000,50), (15,12,2000,50), 
++>	(16,12,2000,51), (17,12,2000,51), (18,12,2000,51), (19,12,2000,51), (20,12,2000,51), (21,12,2000,51), (22,12,2000,51), 
++>	(23,12,2000,52), (24,12,2000,52), (25,12,2000,52), (26,12,2000,52), (27,12,2000,52), (28,12,2000,52), (29,12,2000,52), 
++>	(30,12,2000,53), (31,12,2000,53);
+
+--- 366 row(s) inserted.
+>>
+>>CREATE MATERIALIZED VIEW daily_mv
++>	REFRESH ON REQUEST
++>--	mvattribute no audit
++>	initialize on create
++>	AS SELECT s_day, s_month, s_year, SUM(sale_total) AS daily_total, COUNT(*) AS tx
++>		FROM sales
++>		GROUP BY s_day, s_month, s_year;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.DAILY_MV_102641597_0006 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv daily_mv attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE MATERIALIZED VIEW weekly_mv
++>	REFRESH ON REQUEST
++>	IGNORE CHANGES ON weeks
++>--	mvattribute no audit
++>	initialize on create
++>	AS SELECT w_week, s_year, SUM(daily_total) AS weekly_total, COUNT(*) AS cnt
++>		FROM daily_mv, weeks
++>		WHERE daily_mv.s_day  =weeks.w_day 
++>		  AND daily_mv.s_month=weeks.w_month
++>		  AND daily_mv.s_year =weeks.w_year
++>		GROUP BY w_week, s_year;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.WEEKLY_MV_102641597_0009 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv weekly_mv attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE MATERIALIZED VIEW yearly_mv
++>	REFRESH ON REQUEST
++>--	mvattribute no audit
++>	initialize on create
++>	AS SELECT s_year, SUM(weekly_total) AS yearly_total
++>		FROM weekly_mv
++>		GROUP BY s_year;
+
+*** WARNING[12112] A secondary index CATMVS.MVSCHM.YEARLY_MV_102641598_0012 was created for the materialized view.
+
+--- SQL operation completed with warnings.
+>>alter mv yearly_mv attribute all mvs allowed;
+
+--- SQL operation complete.
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.SALES@ @0@ @10@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.WEEKS@ @0@ @10@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.DAILY_MV@ @0@ @10@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.WEEKLY_MV@ @0@ @10@;
+
+--- SQL operation complete.
+>>
+>>insert into sales values
++>	( 1, 2, 1,2000,10), 
++>	( 1, 3, 1,2000,10), 
++>	( 1, 4, 1,2000,10), 
++>	( 1, 5, 1,2000,10), 
++>	( 1, 6, 1,2000,10), 
++>	( 1, 9, 1,2000,10), ( 2, 9, 1,2000,10), 
++>	( 1,10, 1,2000,10), ( 2,10, 1,2000,10), 
++>	( 1,11, 1,2000,10), ( 2,11, 1,2000,10), 
++>	( 1,12, 1,2000,10), ( 2,12, 1,2000,10), 
++>	( 1,13, 1,2000,10), ( 2,13, 1,2000,10), 
++>	( 1,16, 1,2000,10), ( 2,16, 1,2000,10), ( 3,16, 1,2000,10),
++>	( 1,17, 1,2000,10), ( 2,17, 1,2000,10), ( 3,17, 1,2000,10),
++>	( 1,18, 1,2000,10), ( 2,18, 1,2000,10), ( 3,18, 1,2000,10),
++>	( 1,19, 1,2000,10), ( 2,19, 1,2000,10), ( 3,19, 1,2000,10),
++>	( 1,20, 1,2000,10), ( 2,20, 1,2000,10), ( 3,20, 1,2000,10),
++>	( 1,23, 1,2000,10), ( 2,23, 1,2000,10), ( 3,23, 1,2000,10), ( 4,23, 1,2000,10), 
++>	( 1,24, 1,2000,10), ( 2,24, 1,2000,10), ( 3,24, 1,2000,10), ( 4,24, 1,2000,10), 
++>	( 1,25, 1,2000,10), ( 2,25, 1,2000,10), ( 3,25, 1,2000,10), ( 4,25, 1,2000,10), 
++>	( 1,26, 1,2000,10), ( 2,26, 1,2000,10), ( 3,26, 1,2000,10), ( 4,26, 1,2000,10), 
++>	( 1,27, 1,2000,10), ( 2,27, 1,2000,10), ( 3,27, 1,2000,10), ( 4,27, 1,2000,10), 
++>	( 1,30, 1,2000,10), ( 2,30, 1,2000,10), ( 3,30, 1,2000,10), ( 4,30, 1,2000,10), ( 5,30, 1,2000,10), 
++>	( 1,31, 1,2000,10), ( 2,31, 1,2000,10), ( 3,31, 1,2000,10), ( 4,31, 1,2000,10), ( 5,31, 1,2000,10), 
++>	( 1, 1, 2,2000,10), ( 2, 1, 2,2000,10), ( 3, 1, 2,2000,10), ( 4, 1, 2,2000,10), ( 5, 1, 2,2000,10), 
++>	( 1, 2, 2,2000,10), ( 2, 2, 2,2000,10), ( 3, 2, 2,2000,10), ( 4, 2, 2,2000,10), ( 5, 2, 2,2000,10), 
++>	( 1, 3, 2,2000,10), ( 2, 3, 2,2000,10), ( 3, 3, 2,2000,10), ( 4, 3, 2,2000,10), ( 5, 3, 2,2000,10);
+
+--- 75 row(s) inserted.
+>>
+>>internal refresh catmvs.mvschm.daily_mv 
++>	from singledelta catmvs.mvschm.sales between 10 and 10 de level 0 use no rangelog use iudlog;
+
+--- SQL operation complete.
+>>
+>>obey TESTMV600(VERIFY_DAILY_MV);
+>>-- Verify daily_mv 
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>  select s_day, s_month, s_year, SUM(sale_total) AS daily_total
++>	FROM sales
++>	GROUP BY s_day, s_month, s_year
++>	order by s_year, s_month, s_day;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select s_day, s_month, s_year, daily_total 
++>	from daily_mv 
++>	order by s_year, s_month, s_day;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>-----------------------------------------------
+>>
+>>-- Refresh weekly_mv
+>>internal refresh catmvs.mvschm.weekly_mv 
++>	from singledelta catmvs.mvschm.daily_mv between 10 and 10 de level 0 use no rangelog use iudlog;
+
+--- SQL operation complete.
+>>
+>>obey TESTMV600(VERIFY_WEEKLY_MV);
+>>-- Verify weekly_mv
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>SELECT w_week, s_year, SUM(daily_total) AS weekly_total, COUNT(*) AS cnt
++>		FROM daily_mv, weeks
++>		WHERE daily_mv.s_day  =weeks.w_day 
++>		  AND daily_mv.s_month=weeks.w_month
++>		  AND daily_mv.s_year =weeks.w_year
++>		GROUP BY w_week, s_year
++>		ORDER BY s_year, w_week;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select w_week, s_year, weekly_total ,cnt
++>	from weekly_mv
++>	order by s_year, w_week;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------
+>>
+>>-- Refresh yearly_mv
+>>internal refresh catmvs.mvschm.yearly_mv 
++>	from singledelta catmvs.mvschm.weekly_mv between 10 and 10 de level 0 use no rangelog use iudlog;
+
+--- SQL operation complete.
+>>
+>>obey TESTMV600(VERIFY_YEARLY_MV);
+>>-- Verify yearly_mv
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>	select s_year, SUM(weekly_total) AS yearly_total
++>	FROM weekly_mv
++>	GROUP BY s_year
++>	order by s_year;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select s_year, yearly_total 
++>	from yearly_mv
++>	order by s_year;
+
+--- SQL command prepared.
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------------
+>>obey TESTMV600(TEST);
+>>--=========================================================
+>>--=== Now Do Updates
+>>--=========================================================
+>>
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.SALES@ @0@ @20@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.WEEKS@ @0@ @20@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.DAILY_MV@ @0@ @20@;
+
+--- SQL operation complete.
+>>CREATE TANDEM_CAT_REQUEST&1 16 3 @catmvs.mvschm.WEEKLY_MV@ @0@ @20@;
+
+--- SQL operation complete.
+>>
+>>
+>>insert into sales values
++>	( 2, 2, 1,2000,20), ( 2, 3, 1,2000,20), ( 2, 4, 1,2000,20), ( 2, 5, 1,2000,20), ( 2, 6, 1,2000,20), 
++>	( 3, 9, 1,2000,10), ( 3,10, 1,2000,10), ( 3,11, 1,2000,10), ( 3,12, 1,2000,10), ( 3,13, 1,2000,10);
+
+--- 10 row(s) inserted.
+>>
+>>delete from sales 
++>	where s_month = 1 and
++>	     (s_day = 23 or 
++>	      s_day = 24 or 
++>	      s_day = 25 or 
++>	      s_day = 26 or 
++>	      s_day = 27) and
++>		  s_saleid = 4;
+
+--- 5 row(s) deleted.
+>>
+>>delete from sales 
++>	where s_month = 1 and
++>	     (s_day = 30 or 
++>	      s_day = 31);
+
+--- 10 row(s) deleted.
+>>
+>>delete from sales 
++>	where s_month = 2 and
++>	     (s_day = 1 or 
++>	      s_day = 2 or
++>	      s_day = 3);
+
+--- 15 row(s) deleted.
+>>
+>>insert into sales values
++>	( 1, 6, 2,2000,30), 
++>	( 1, 7, 2,2000,30), 
++>	( 1, 8, 2,2000,30), 
++>	( 1, 9, 2,2000,30), 
++>	( 1,10, 2,2000,30);
+
+--- 5 row(s) inserted.
+>>
+>>internal refresh catmvs.mvschm.daily_mv -- !!!
++>	from singledelta catmvs.mvschm.sales between 20 and 20 de level 0 use no rangelog use iudlog
++>    pipeline (catmvs.mvschm.weekly_mv)
++>    weekly_mv pipeline (yearly_mv);
+
+--- SQL operation complete.
+>>
+>>obey TESTMV600(VERIFY_DAILY_MV);
+>>-- Verify daily_mv 
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>  select s_day, s_month, s_year, SUM(sale_total) AS daily_total
++>	FROM sales
++>	GROUP BY s_day, s_month, s_year
++>	order by s_year, s_month, s_day;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select s_day, s_month, s_year, daily_total 
++>	from daily_mv 
++>	order by s_year, s_month, s_day;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>
+>>-----------------------------------------------
+>>
+>>obey TESTMV600(VERIFY_WEEKLY_MV);
+>>-- Verify weekly_mv
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>SELECT w_week, s_year, SUM(daily_total) AS weekly_total, COUNT(*) AS cnt
++>		FROM daily_mv, weeks
++>		WHERE daily_mv.s_day  =weeks.w_day 
++>		  AND daily_mv.s_month=weeks.w_month
++>		  AND daily_mv.s_year =weeks.w_year
++>		GROUP BY w_week, s_year
++>		ORDER BY s_year, w_week;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select w_week, s_year, weekly_total ,cnt
++>	from weekly_mv
++>	order by s_year, w_week;
+
+--- SQL command prepared.
+>>
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>-------------------------------------------------
+>>
+>>obey TESTMV600(VERIFY_YEARLY_MV);
+>>-- Verify yearly_mv
+>>-- for compare 
+>>PREPARE stat1 FROM 
++>	select s_year, SUM(weekly_total) AS yearly_total
++>	FROM weekly_mv
++>	GROUP BY s_year
++>	order by s_year;
+
+--- SQL command prepared.
+>>
+>>PREPARE stat2 FROM 
++>	select s_year, yearly_total 
++>	from yearly_mv
++>	order by s_year;
+
+--- SQL command prepared.
+>>log;
+1,2c1,2
+< >>  log TEMP1;
+< >>  execute stat1;
+---
+> >>  log TEMP2;
+> >>  execute stat2;
+>>
+>>------------------------------------------------
+>>
+>>-- Clean and exit
+>>set schema catmvs.mvschm;
+
+--- SQL operation complete.
+>>obey TESTMV600(CLEAN_UP);
+>>set schema     catmvs.mvschm;
+
+--- SQL operation complete.
+>>
+>>set PARSERFLAGS 3;
+
+--- SQL operation complete.
+>>
+>>DROP MATERIALIZED VIEW yearly_mv;
+
+--- SQL operation complete.
+>>DROP MATERIALIZED VIEW weekly_mv;
+
+--- SQL operation complete.
+>>DROP MATERIALIZED VIEW daily_mv;
+
+--- SQL operation complete.
+>>DROP TABLE sales;
+
+--- SQL operation complete.
+>>DROP TABLE weeks;
+
+--- SQL operation complete.
+>>
+>>
+>>set param ?schema_name 'MVSCHM';
+>>
+>>obey COMPARE_NUM_OF_OBJ;
+>>-- expected 'EQUAL'
+>>select 'EQUAL' as rel
++>from catmvs.mvschm.Num_Obj
++>where  SCHEMA_NAME = ?schema_name and 
++>       num_of_objects
++>	=
++>	(select count(objects.object_uid)  num_of_objcts
++>	from HP_DEFINITION_SCHEMA.objects objects,
++>    HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SCHEMATA SCHEMATA
++>    	where schemata.schema_uid = objects.schema_uid
++>   	and objects.OBJECT_NAME_SPACE <> 'CN'and ?schema_name =SCHEMA_NAME
++>	group by SCHEMA_NAME);
+
+REL  
+-----
+
+EQUAL
+
+--- 1 row(s) selected.
+>>
+>>drop table Num_Obj;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------
+>>log;

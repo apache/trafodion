@@ -1,0 +1,26 @@
+>>obey TEST_1_1_3_5(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig AFTER INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newTable
++>	FOR EACH ROW
++>		WHEN (newTable.a < 5 )
++>
++>		SET newTable.d = newTable.a;
+
+*** ERROR[11015] An AFTER trigger does not support the SET operation.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig AFTER INSERT  ON tab1A  REFERENCING NEW AS newTable  FOR EA
+CH ROW   WHEN (newTable.a < 5 )    SET newTable.d = newTable.a;
+                                     ^ (117 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--------------------------------------------------------
+>>LOG;

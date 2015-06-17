@@ -226,6 +226,91 @@ static NABoolean processConstHBaseKeys(Generator * generator,
   return TRUE;
 }
 
+//
+// replaceVEGExpressions1() - a helper routine for ItemExpr::replaceVEGExpressions()
+//
+// NOTE: The code in this routine came from the previous version of 
+//       ItemExpr::replaceVEGExpressions().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the 
+//       recursive ItemExpr::replaceVEGExpressions() routine.
+//
+ItemExpr * ItemExpr::replaceVEGExpressions1( VEGRewritePairs* lookup )
+{
+   // see if this expression is already in there
+   ValueId rewritten;
+   if (lookup->getRewritten(rewritten /* out */, getValueId()))
+   {
+     if (rewritten == NULL_VALUE_ID)
+       return NULL;
+     else
+       return rewritten.getItemExpr();
+   }
+   return (ItemExpr *)( (char *)(NULL) -1 ) ;
+}
+
+//
+// replaceVEGExpressions2() - a helper routine for ItemExpr::replaceVEGExpressions()
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::replaceVEGExpressions().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       recursive ItemExpr::replaceVEGExpressions() routine.
+//
+void ItemExpr::replaceVEGExpressions2( Int32 index 
+                                     , const ValueIdSet& availableValues
+                                     , const ValueIdSet& inputValues
+                                     ,       ValueIdSet& currAvailableValues
+                                     , const GroupAttributes * left_ga
+                                     , const GroupAttributes * right_ga
+                                     )
+{
+   // If we have asked that the EquiPredicate resolve 
+   // each child of the equipred by available values from the 
+   // respectively input GAs, make sure we pick the right one.
+
+   // First we find out what GA covers the current EquiPred child
+   // we are processing (0 or 1), and pick the one that covers, unless
+   // both GAs do. If both GAs cover, the just make sure we pick a 
+   // different one for each child. The hash join will later fix up
+   // the predicate expression to match its children.
+   // If none of the GAs covers, we have a problem...
+
+   // This fix was put in to solve solution: 10-100722-1962
+
+   ValueIdSet dummy;
+
+   NABoolean leftGaCovers = left_ga->covers(child(index)->getValueId(),
+                                             inputValues,
+                                             dummy);
+   NABoolean rightGaCovers = right_ga->covers(child(index)->getValueId(),
+                                             inputValues,
+                                             dummy);
+
+   if (leftGaCovers == FALSE && rightGaCovers == FALSE)
+     {
+       // for the moment it is assumed that this code is only
+       // executed for hash and merge joins, and in general each 
+       // side of the expression should be coverd by a child.
+       // So if we have neither, we have a problem ..
+       cout << "Unable to pick GA to use: " << getArity() << endl;
+       CMPASSERT(FALSE);
+     }
+   else
+     {
+       const GroupAttributes *coveringGa =  NULL;
+       currAvailableValues.clear();
+       currAvailableValues += inputValues;
+       if (leftGaCovers && rightGaCovers)
+         coveringGa = (index == 0 ? left_ga : right_ga);
+       else
+         coveringGa = (leftGaCovers ? left_ga : right_ga);
+
+       currAvailableValues += coveringGa->getCharacteristicOutputs();
+       
+     }
+}
 
 // -----------------------------------------------------------------------
 // ItemExpr::replaceVEGExpressions()
@@ -265,15 +350,9 @@ ItemExpr * ItemExpr::replaceVEGExpressions
 
   if (lookup && replicateExpression)  // if lookup table is present
     {
-      // see if this expression is already in there
-      ValueId rewritten;
-      if (lookup->getRewritten(rewritten /* out */, getValueId()))
-	{
-	  if (rewritten == NULL_VALUE_ID)
-	    return NULL;
-	  else
-	    return rewritten.getItemExpr();
-	}
+       ItemExpr* tmpIePtr = ItemExpr::replaceVEGExpressions1( lookup ) ;
+       if ( tmpIePtr != (ItemExpr *)( (char *)(NULL) -1 ) )
+          return tmpIePtr ;
     };
 
   if (replicateExpression)
@@ -300,7 +379,6 @@ ItemExpr * ItemExpr::replaceVEGExpressions
       GENASSERT(left_ga == NULL && right_ga == NULL);
 #endif
 
-      const ValueIdSet emptySet;
       switch (getArity())
 	{
 	case 0: // const, VEGRef, and VEGPred have arity 0
@@ -494,52 +572,15 @@ ItemExpr * ItemExpr::replaceVEGExpressions
             right_ga != NULL && 
             getArity() == 2 )
           {
-            // If we have asked that the EquiPredicate resolve 
-            // each child of the equipred by available values from the 
-            // respectively input GAs, make sure we pick the right one.
- 
-            // First we find out what GA covers the current EquiPred child
-            // we are processing (0 or 1), and pick the one that covers, unless
-            // both GAs do. If both GAs cover, the just make sure we pick a 
-            // different one for each child. The hash join will later fix up
-            // the predicate expression to match its children.
-            // If none of the GAs covers, we have a problem...
- 
-            // This fix was put in to solve solution: 10-100722-1962
-
-            ValueIdSet dummy;
-
-            NABoolean leftGaCovers = left_ga->covers(child(index)->getValueId(),
-                                                      inputValues,
-                                                      dummy);
-            NABoolean rightGaCovers = right_ga->covers(child(index)->getValueId(),
-                                                      inputValues,
-                                                      dummy);
-
-            if (leftGaCovers == FALSE && rightGaCovers == FALSE)
-              {
-                // for the moment it is assumed that this code is only
-                // executed for hash and merge joins, and in general each 
-                // side of the expression should be coverd by a child.
-                // So if we have neither, we have a problem ..
-                cout << "Unable to pick GA to use: " << getArity() << endl;
-                CMPASSERT(FALSE);
-              }
-            else
-              {
-                const GroupAttributes *coveringGa =  NULL;
-                currAvailableValues.clear();
-                currAvailableValues += inputValues;
-                if (leftGaCovers && rightGaCovers)
-                  coveringGa = (index == 0 ? left_ga : right_ga);
-                else
-                  coveringGa = (leftGaCovers ? left_ga : right_ga);
-
-                currAvailableValues += coveringGa->getCharacteristicOutputs();
-                
-              }
-
+            ItemExpr::replaceVEGExpressions2( index 
+                                            , availableValues
+                                            , inputValues
+                                            , currAvailableValues
+                                            , left_ga
+                                            , right_ga
+                                            ) ;
           }
+
 	ItemExpr *newChild = child(index)->replaceVEGExpressions(
              currAvailableValues,
 	     inputValues,
@@ -3658,6 +3699,7 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
   // or a characteristic input for this RelExpr. Supply these values for
   // rewriting the VEG expressions.
   ValueIdSet availableValues;
+
   getInputAndPotentialOutputValues(availableValues);
 
   sampledColumns().replaceVEGExpressions
@@ -4519,8 +4561,9 @@ static NABoolean hasColReference(ItemExpr * ie)
   return FALSE;
 }
 
-void HbaseAccess::addColReferenceFromItemExprTree(ItemExpr * ie,
-						  ValueIdSet &colRefVIDset)
+void HbaseAccess::addReferenceFromItemExprTree(ItemExpr * ie,
+                                               NABoolean addCol, NABoolean addHBF,
+                                               ValueIdSet &colRefVIDset)
 {
   if (! ie)
     return;
@@ -4529,15 +4572,35 @@ void HbaseAccess::addColReferenceFromItemExprTree(ItemExpr * ie,
       (ie->getOperatorType() == ITM_INDEXCOLUMN) ||
       (ie->getOperatorType() == ITM_REFERENCE))
     {
-      //      if (NOT colRefVIDlist.containt(ie->getValueId()))
-      colRefVIDset.insert(ie->getValueId());
+      if (addCol)
+        colRefVIDset.insert(ie->getValueId());
+
+      return;
+    }
+
+  if (ie->getOperatorType() == ITM_HBASE_TIMESTAMP)
+    {
+      if (addHBF)
+        {
+          colRefVIDset.insert(ie->getValueId());
+        }
+
+      return;
+    }
+
+  if (ie->getOperatorType() == ITM_HBASE_VERSION)
+    {
+      if (addHBF)
+        {
+          colRefVIDset.insert(ie->getValueId());
+        }
 
       return;
     }
 
   for (Lng32 i = 0; i < ie->getArity(); i++)
     {
-      addColReferenceFromItemExprTree(ie->child(i), colRefVIDset);
+      addReferenceFromItemExprTree(ie->child(i), addCol, addHBF, colRefVIDset);
     }
   
   return;
@@ -4548,16 +4611,18 @@ void HbaseAccess::addColReferenceFromVIDlist(const ValueIdList &exprList,
 {
   for (CollIndex i = 0; i < exprList.entries(); i++)
     {
-      addColReferenceFromItemExprTree(exprList[i].getItemExpr(), colRefVIDset);
+      addReferenceFromItemExprTree(exprList[i].getItemExpr(), 
+                                   TRUE, FALSE, colRefVIDset);
     }
 }
 
-void HbaseAccess::addColReferenceFromVIDset(ValueIdSet &exprList,
-					    ValueIdSet  &colRefVIDset)
+void HbaseAccess::addReferenceFromVIDset(const ValueIdSet &exprList,
+                                         NABoolean addCol, NABoolean addHBF,
+                                         ValueIdSet  &colRefVIDset)
 {
   for (ValueId v = exprList.init(); exprList.next(v); exprList.advance(v))
     {
-      addColReferenceFromItemExprTree(v.getItemExpr(), colRefVIDset);
+      addReferenceFromItemExprTree(v.getItemExpr(), addCol, addHBF, colRefVIDset);
     }
 }
 
@@ -4567,7 +4632,8 @@ void HbaseAccess::addColReferenceFromRightChildOfVIDarray(ValueIdArray &exprList
 
   for (CollIndex i = 0; i < exprList.entries(); i++)
     {
-      addColReferenceFromItemExprTree(exprList[i].getItemExpr()->child(1), colRefVIDset);
+      addReferenceFromItemExprTree(exprList[i].getItemExpr()->child(1), 
+                                   TRUE, FALSE, colRefVIDset);
     }
 }
 
@@ -4751,7 +4817,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
       // create the list of columns that need to be retrieved from hbase .
       // first add all columns referenced in the executor pred.
-      HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
+      HbaseAccess::addReferenceFromVIDset(executorPred(), TRUE, TRUE, colRefSet);
 
       if ((getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE))
         {
@@ -4784,7 +4850,18 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
         {
           ValueId dummyValId;
           if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
-            retColRefSet_.insert(valId);
+            {
+              if ((valId.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP) ||
+                  (valId.getItemExpr()->getOperatorType() == ITM_HBASE_VERSION))
+                {
+                  *CmpCommon::diags() << DgSqlCode(-3242)
+                                      << DgString0("Illegal use of Hbase Timestamp or Hbase Version function.");
+
+                  GenExit();
+                }
+
+              retColRefSet_.insert(valId);
+            }
         }
 
       if (NOT ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
@@ -4983,7 +5060,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
       // create the list of columns that need to be retrieved from hbase .
       // first add all columns referenced in the executor pred.
-      HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
+      HbaseAccess::addReferenceFromVIDset(executorPred(), TRUE, TRUE, colRefSet);
 
       if ((getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE))
         {
@@ -5004,7 +5081,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
       HbaseAccess::addColReferenceFromRightChildOfVIDarray(newRecExprArray(), colRefSet);
 
       if (isMerge())
-	HbaseAccess::addColReferenceFromVIDset(mergeUpdatePred(), colRefSet);
+	HbaseAccess::addReferenceFromVIDset(mergeUpdatePred(), TRUE, FALSE, colRefSet);
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
@@ -5023,7 +5100,18 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	    {
 	      ValueId dummyValId;
 	      if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
-		retColRefSet_.insert(valId);
+                {
+                  if ((valId.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP) ||
+                      (valId.getItemExpr()->getOperatorType() == ITM_HBASE_VERSION))
+                    {
+                      *CmpCommon::diags() << DgSqlCode(-3242)
+                                          << DgString0("Illegal use of Hbase Timestamp or Hbase Version function.");
+                      
+                      GenExit();
+                    }
+                  
+                  retColRefSet_.insert(valId);
+                }
 	    }
 	}
 
@@ -5199,6 +5287,12 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
+  // char. outputs are set to empty after in RelExpr::genPreCode sometimes,
+  // after a call to resolveCharOutputs. We need to remember if a returnRow
+  // tdb flag should be set, even if no output columns are required
+  if (getIsTrafLoadPrep() && !getGroupAttr()->getCharacteristicOutputs().isEmpty())
+    setReturnRow(TRUE);
+
   if (! GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
@@ -5222,8 +5316,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       ((getInsertType() == Insert::VSBB_INSERT_USER) ||
        (getInsertType() == Insert::UPSERT_LOAD)))
     {
-      if ((inlinedActions) ||
-	  (producesOutputs()))
+      if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
  	setInsertType(Insert::SIMPLE_INSERT);
     }
 
@@ -5361,7 +5454,6 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	    } // lob
 	}
     }
-  // sss #endif
 
 
   if ((getInsertType() == Insert::SIMPLE_INSERT)  &&
@@ -8702,7 +8794,6 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
       
       child(0) = lc;
     }
-  // sss #endif
 
   if (getArity() > 1)
     {
@@ -9378,6 +9469,31 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
   return ie;
 }
 
+ItemExpr * HbaseTimestamp::preCodeGen(Generator * generator)
+{
+  if (nodeIsPreCodeGenned())
+    return getReplacementExpr();
+
+  if (! ItemExpr::preCodeGen(generator))
+    return NULL;
+
+  markAsPreCodeGenned();
+
+  return this;
+}
+
+ItemExpr * HbaseVersion::preCodeGen(Generator * generator)
+{
+  if (nodeIsPreCodeGenned())
+    return getReplacementExpr();
+
+  if (! ItemExpr::preCodeGen(generator))
+    return NULL;
+
+  markAsPreCodeGenned();
+
+  return this;
+}
 
 ItemExpr * LOBoper::preCodeGen(Generator * generator)
 {
@@ -9398,11 +9514,12 @@ ItemExpr * LOBconvert::preCodeGen(Generator * generator)
   
   return LOBoper::preCodeGen(generator);
 }
+
+
 ItemExpr * LOBupdate::preCodeGen(Generator * generator)
 {
   return LOBoper::preCodeGen(generator);
 }
-// sss #endif
 
 ItemExpr * MathFunc::preCodeGen(Generator * generator)
 {
@@ -10532,7 +10649,6 @@ ItemExpr * PositionFunc::preCodeGen(Generator * generator)
 
   setCollation(coll1);
 
-//LCOV_EXCL_START : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
   if (CollationInfo::isSystemCollation(coll1))
   {
     
@@ -10560,9 +10676,6 @@ ItemExpr * PositionFunc::preCodeGen(Generator * generator)
     }
 
   }
-//LCOV_EXCL_STOP : cnu - Should not count in Code Coverage until we support non-binary collation in SQ
-
-
 
   markAsPreCodeGenned();
   return this;
@@ -11079,6 +11192,41 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
   return 0;
 }
 
+void HbaseAccess::computeRetrievedCols()
+{
+  GroupAttributes     fakeGA;
+  ValueIdSet          requiredValueIds(getGroupAttr()->
+				       getCharacteristicOutputs());
+  ValueIdSet          coveredExprs;
+
+  // ---------------------------------------------------------------------
+  // Make fake group attributes with all inputs that are available to
+  // the file scan node and with no "native" values.
+  // Then call the "coverTest" method, offering it all the index columns
+  // as additional inputs. "coverTest" will mark those index columns that
+  // it actually needs to satisfy the required value ids, and that is
+  // what we actually want. The actual cover test should always succeed,
+  // otherwise the FileScan node would have been inconsistent.
+  // ---------------------------------------------------------------------
+
+  fakeGA.addCharacteristicInputs(getGroupAttr()->getCharacteristicInputs());
+  requiredValueIds += selectionPred();
+  requiredValueIds += executorPred();
+
+  fakeGA.coverTest(requiredValueIds,              // char outputs + preds
+		   getIndexDesc()->getIndexColumns(), // all index columns
+		   coveredExprs,                  // dummy parameter
+		   retrievedCols());               // needed index cols
+
+  //
+  // *** This CMPASSERT goes off sometimes, indicating an actual problem.
+  // Hans has agreed to look into it (10/18/96) but I (brass) am
+  // commenting it out for now, for sake of my time in doing a checking.
+  //
+  //  CMPASSERT(coveredExprs == requiredValueIds);
+
+}
+
 RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 				  const ValueIdSet & externalInputs,
 				  ValueIdSet &pulledNewInputs)
@@ -11151,7 +11299,10 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
     {
       // create the list of columns that need to be retrieved from hbase .
       // first add all columns referenced in the executor pred.
-      HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
+      HbaseAccess::addReferenceFromVIDset(executorPred(), TRUE, TRUE, colRefSet);
+
+      HbaseAccess::addReferenceFromVIDset
+        (getGroupAttr()->getCharacteristicOutputs(), TRUE, TRUE, colRefSet);
 
       for (ValueId valId = colRefSet.init();
 	   colRefSet.next(valId);
@@ -11159,9 +11310,26 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	{
 	  ValueId dummyValId;
 	  if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
-	    retColRefSet_.insert(valId);
-	}
-  
+            {
+              retColRefSet_.insert(valId);
+
+              if (valId.getItemExpr()->getOperatorType() == ITM_HBASE_TIMESTAMP)
+                {
+                  Lng32 colNumber = ((BaseColumn*)((HbaseTimestamp*)valId.getItemExpr())->col())->getColNumber();
+                  ValueId colVID = getIndexDesc()->getIndexColumns()[colNumber];
+                  retColRefSet_.insert(colVID);
+                }
+
+              if (valId.getItemExpr()->getOperatorType() == ITM_HBASE_VERSION)
+                {
+                  Lng32 colNumber = ((BaseColumn*)((HbaseVersion*)valId.getItemExpr())->col())->getColNumber();
+                  ValueId colVID = getIndexDesc()->getIndexColumns()[colNumber];
+                  retColRefSet_.insert(colVID);
+                }
+
+            }
+        }
+
       // add all the key columns. If values are missing in hbase, then atleast the key
       // value is needed to retrieve a row.
       HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);

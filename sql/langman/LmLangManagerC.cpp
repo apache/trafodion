@@ -254,9 +254,9 @@ LmResult LmLanguageManagerC::getRoutine(
 
 LmResult LmLanguageManagerC::getObjRoutine(
      const char            *serializedInvocationInfo,
-     int                    invocationInfoLen,
+     int                    serializedInvocationInfoLen,
      const char            *serializedPlanInfo,
-     int                    planInfoLen,
+     int                    serializedPlanInfoLen,
      ComRoutineLanguage     language,
      ComRoutineParamStyle   paramStyle,
      const char            *externalName,
@@ -298,19 +298,19 @@ LmResult LmLanguageManagerC::getObjRoutine(
 
   try
     {
-      if (invocationInfoLen > 0)
+      if (serializedInvocationInfoLen > 0)
         {
           // unpack invocation and plan infos
           invocationInfo = new tmudr::UDRInvocationInfo;
           invocationInfo->deserializeObj(serializedInvocationInfo,
-                                         invocationInfoLen);
+                                         serializedInvocationInfoLen);
         }
 
-      if (planInfoLen > 0)
+      if (serializedPlanInfoLen > 0)
         {
           planInfo = new tmudr::UDRPlanInfo(invocationInfo, 0);
           planInfo->deserializeObj(serializedPlanInfo,
-                                   planInfoLen);
+                                   serializedPlanInfoLen);
         }
 
       tmudr::CreateInterfaceObjectFunc fPtr =
@@ -403,24 +403,13 @@ LmResult LmLanguageManagerC::putRoutine(
   if (routine == NULL)
     return LM_OK;
 
-  LmResult result = LM_OK;
-
-  // For now we assume all C routine bodies require a FINAL call. In
-  // the future we can make the FINAL optional, controlled by a flag
-  // in the LmRoutine instance. C++ routines do not have a final call.
-
-  if (routine->getLanguage() == COM_LANGUAGE_C)
-    {
-      LmRoutineC *routineC = (LmRoutineC *) routine;
-
-      routineC->setFinalCall();
-      result = routineC->invokeRoutine(NULL, NULL, diagsArea);
-    }
+  // make a final call or the equivalent, if needed
+  LmResult result = routine->handleFinalCall();
 
   // De-ref the container.
   if (routine->container())
     contManager_->putContainer(routine->container());
-  
+
   // De-allocate the handle.
   delete routine;
 

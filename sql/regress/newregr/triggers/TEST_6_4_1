@@ -1,0 +1,98 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- conflict sets
+-- Conflict set of ‘before’ triggers
+
+-- runs on cat1.schm and cat1.schm_alt
+----------------------------------------
+
+-- clean_up on all schemas
+
+set schema CAT1.SCHM;
+obey TEST_6_4_1(clean_up);
+set schema CAT1.SCHM_ALT;
+obey TEST_6_4_1(clean_up);
+
+-- start logging
+log   LOG_6_4_1 clear;
+
+set schema CAT1.SCHM;
+obey TEST_6_4_1(set_up);
+obey TEST_6_4_1(tests);
+obey TEST_6_4_1(clean_up);
+
+-- switch schemas
+set schema CAT1.SCHM_ALT;
+obey TEST_6_4_1(set_up);
+obey TEST_6_4_1(tests);
+
+-- end logging
+LOG;
+
+-- cleanup (last schema)
+obey TEST_6_4_1(clean_up);
+
+exit;
+----------------------------------------
+
+?section clean_up
+
+DROP TRIGGER btrigA;
+DROP TRIGGER btrigB;
+obey clearTables2;
+
+?section set_up
+
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,5);
+INSERT INTO tab1A VALUES (3,4,5,6);
+
+---------------------------------
+-- DEFINE TRIGGER btrigA
+---------------------------------
+
+CREATE TRIGGER btrigA
+BEFORE UPDATE OF (b) 
+ON tab1A
+REFERENCING NEW AS newR, OLD AS oldR FOR EACH ROW
+WHEN (newR.b = oldR.b +1)
+SET newR.b = oldR.b +2;
+
+---------------------------------
+-- DEFINE TRIGGER btrigB
+---------------------------------
+
+CREATE TRIGGER btrigB
+BEFORE UPDATE OF (b) 
+ON tab1A
+REFERENCING NEW AS newR, OLD AS oldR FOR EACH ROW
+WHEN (newR.b = oldR.b +2)
+SET newR.b = oldR.b +3;
+?section tests
+
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+UPDATE tab1A SET b = b+1 WHERE a<3;
+
+SELECT * FROM tab1A ORDER BY a; -- check result
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

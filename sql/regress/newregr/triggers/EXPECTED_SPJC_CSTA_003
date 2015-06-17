@@ -1,0 +1,41 @@
+>>obey TEST_SPJC_CSTA_003(tests);
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 01: CS with one or more SET statements (row trigger)
+>>-- Result: ERROR[11014] A BEFORE trigger allows only SIGNAL and SET
+>>-- operations.
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG01_SPJC_CSTA_003 BEFORE UPDATE ON
++>TAB01_SPJC_CSTA_003
++>REFERENCING OLD ROW AS O, NEW ROW AS N
++>FOR EACH ROW
++>	INSERT INTO TAB02_SPJC_CSTA_003 VALUES(N.A, N.B, N.C, N.D);
+
+*** ERROR[11014] A BEFORE trigger allows only SIGNAL and SET operations.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER TRIG01_SPJC_CSTA_003 BEFORE UPDATE ON TAB01_SPJC_CSTA_003 REFERE
+NCING OLD ROW AS O, NEW ROW AS N FOR EACH ROW  INSERT INTO TAB02_SPJC_CSTA_003 
+                                                    ^ (132 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>
+>>------------------------------------------------------------------
+>>-- TEST CASE 02: CS with one or more SET statements (statement trigger)
+>>-- Result: ERROR[11010] A BEFORE trigger works only at row granularity.
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER TRIG02_SPJC_CSTA_003 BEFORE UPDATE ON
++>TAB01_SPJC_CSTA_003
++>FOR EACH STATEMENT
++>	INSERT INTO TAB02_SPJC_CSTA_003 values(11, 22, 33, 44);
+
+*** ERROR[11010] A BEFORE trigger works only at row granularity.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>------------------------------------------------------------------
+>>LOG;

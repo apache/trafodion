@@ -1608,11 +1608,10 @@ static TableDesc *createTableDesc2(BindWA *bindWA,
   //
   CollIndex i = 0;
   for (i = 0; i < naTable->getColumnCount(); i++) {
-#pragma nowarn(1506)   // warning elimination
     BaseColumn *baseCol = new (bindWA->wHeap()) BaseColumn(tdesc, i);
-#pragma warn(1506)  // warning elimination
     baseCol->bindNode(bindWA);
-    if (bindWA->errStatus()) return NULL;
+    if (bindWA->errStatus()) 
+      return NULL;
     ValueId valId = baseCol->getValueId();
     tdesc->addToColumnList(valId);
   }
@@ -6232,6 +6231,102 @@ ItemExpr * RelRoot::removeAssignmentStTree()
 }
 // LCOV_EXCL_STOP
 
+bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType)
+
+{
+
+  NATable* table = getTable();
+  NAString columns = "";
+
+  if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_OFF || !isColumnPrivType(privType))
+  {
+    *CmpCommon::diags() << DgSqlCode(-4481)
+                        << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str())
+                        << DgString1(table->getTableName().getQualifiedNameAsAnsiString())
+                        << DgString2(columns);
+    return false;  
+  }
+
+  bool hasPriv = true;
+
+  // initialize to something, gets set appropriately below
+  LIST (Lng32) * colList = NULL ;
+  switch (privType)
+  {
+    case INSERT_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getInsertColList());
+      break;
+    }
+    case UPDATE_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getUpdateColList());
+      break;
+    }
+    case SELECT_PRIV:
+    {
+      colList = (LIST (Lng32) *)&(getSelectColList());
+      break;
+    }
+    default:
+      CMPASSERT(FALSE); // delete has no column privileges.
+  }
+
+  bool collectColumnNames = false;
+  if (table->getPrivInfo()->hasAnyColPriv(privType))
+  {
+    collectColumnNames = true;
+    columns += "(columns:" ; 
+  }
+  bool firstColumn = true;
+  for(size_t i = 0; i < colList->entries(); i++)
+  {
+    size_t columnNumber = (*colList)[i];
+    if (!(table->getPrivInfo()->hasColPriv(privType,columnNumber)))
+    {
+      hasPriv = false;
+      if (firstColumn && collectColumnNames)
+      {
+        columns += " ";
+        firstColumn = false;
+      }
+      else 
+        if (collectColumnNames)
+          columns += ", ";
+
+      if (collectColumnNames)
+        columns += table->getNAColumnArray()[columnNumber]->getColName();
+    }
+  }
+
+  if (collectColumnNames)
+    columns += ")" ;
+
+  // (colList->entries() == 0) ==> we have a select count(*) type query or a
+  // select 1 from T type query. In other words the table needs to be accessed
+  // but no column has been explicitly referenced.
+  // For such queries if the user has privilege on any one column that is 
+  // sufficient. collectColumnNames indicates whether the user has privilege
+  // on at least one column. The following if statement applies only to selects
+  // For update and insert we do not expect colList to be empty.
+
+  if ((colList->entries() == 0)&& !collectColumnNames)
+  {
+    hasPriv = false;
+    columns = "";
+  }
+
+  if (!hasPriv)
+    *CmpCommon::diags() << DgSqlCode(-4481)
+                        << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str())
+                        << DgString1(table->getTableName().getQualifiedNameAsAnsiString())
+                        << DgString2(columns);
+
+  return hasPriv;
+  
+}
+
+
 NABoolean RelRoot::checkFirstNRowsNotAllowed(BindWA *bindWA)
 {
   // do not call this method on a true root.
@@ -6365,29 +6460,16 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
     // Check each primary DML privilege to see if the query requires it. If 
     // so, verify that the user has the privilege
-    NABoolean insertQIKeys = FALSE;
-    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
-      insertQIKeys = TRUE;
+    bool insertQIKeys = (QI_enabled && tab->getSecKeySet().entries() > 0);
     for (int_32 i = FIRST_DML_PRIV; i <= LAST_PRIMARY_DML_PRIV; i++)
     {
       if (stoi->getPrivAccess((PrivType)i))
       {
-        if (pPrivInfo->hasPriv((PrivType)i))
-        {
-          // do this only if QI is enabled and object has security keys defined
-          if ( insertQIKeys )
-            findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, (PrivType)(i));
-        }
-
-        // plan requires privilege but user has none, report an error
-        else
-        {
+        if (!pPrivInfo->hasPriv((PrivType)i) && !optStoi->checkColPriv((PrivType)i))
           RemoveNATableEntryFromCache = TRUE;
-          *CmpCommon::diags() 
-            << DgSqlCode( -4481 )
-            << DgString0( PrivMgrUserPrivs::convertPrivTypeToLiteral((PrivType)i).c_str() )
-            << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-        }
+        else
+          if (insertQIKeys)    
+            findKeyAndInsertInOutputList(tab->getSecKeySet(),userHashValue,(PrivType)(i));
       }
     }
 
@@ -7478,8 +7560,9 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // as the output values that can be produced by this scan.
   //
   getGroupAttr()->addCharacteristicOutputs(getTableDesc()->getColumnList());
+  getGroupAttr()->addCharacteristicOutputs(getTableDesc()->hbaseTSList());
 
-  // MV --
+   // MV --
   if (getInliningInfo().isMVLoggingInlined())
     projectCurrentEpoch(bindWA);
 
@@ -7616,6 +7699,18 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      return NULL;
     }
   }
+
+   if (hbaseAccessOptions_)
+     {
+       if (hbaseAccessOptions_->isMaxVersions())
+         {
+           hbaseAccessOptions_->setHbaseVersions
+             (
+              getTableDesc()->getClusteringIndex()->getNAFileSet()->numMaxVersions()
+              );
+         }
+     }
+
   return boundExpr;
 } // Scan::bindNode()
 
@@ -9477,12 +9572,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   setTargetUserColPosList();
   bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
   bindWA->getCurrentScope()->setRETDesc(currRETDesc);
+  NABoolean bulkLoadIndex = bindWA->isTrafLoadPrep() && noIMneeded() ;
 
-  if (someNonDefaultValuesSpecified) // query-expr child specified
+  if (someNonDefaultValuesSpecified) 
+    // query-expr child specified
     {
 
       const RETDesc &sourceTable = *child(0)->getRETDesc();
-      if (sourceTable.getDegree() != newTgtColList.entries()) {
+      if ((sourceTable.getDegree() != newTgtColList.entries())&& !bulkLoadIndex) {
       // 4023 degree of row value constructor must equal that of target table
       *CmpCommon::diags() << DgSqlCode(-4023)
 #pragma nowarn(1506)   // warning elimination
@@ -9515,12 +9612,22 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getBoundView())
       viewColumns = getBoundView()->getRETDesc()->getColumnList();
 
+     if (bulkLoadIndex) {
+       setRETDesc(child(0)->getRETDesc());
+      } 
+
     for (i = 0; i < tgtColList.entries() && i2 < newTgtColList.entries(); i++) {
       if(tgtColList[i] != newTgtColList[i2])
         continue;
 
       ValueId target = tgtColList[i];
-      ValueId source = sourceTable.getValueId(i2);
+      ValueId source ;
+      if (!bulkLoadIndex)
+        source = sourceTable.getValueId(i2);
+      else {
+        ColRefName & cname = ((ColReference *)(baseColRefs()[i2]))->getColRefNameObj();
+        source = sourceTable.findColumn(cname)->getValueId();
+      }
       CMPASSERT(target != source);
 
       const NAColumn *nacol = target.getNAColumn();
@@ -9966,14 +10073,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         getOptStoi()->getStoi()->setUpdateColumn(i,scanStoi->getUpdateColumn(i));
   }
    
-  if ((getIsTrafLoadPrep() ) && getTableDesc()->hasSecondaryIndexes())
-  {
-
-   //this is safe guard. Indexes are supposed to be disabled already before reaching this point from the bulk load utility
-    //4484--Indexes not supported yet with bulk load. Disable the indexes and try again.
-    *CmpCommon::diags() << DgSqlCode(-4484)
-                        << DgString0("bulk load");
-  }
   if ((getIsTrafLoadPrep()) &&
       (getTableDesc()->getCheckConstraints().entries() != 0 ||
           getTableDesc()->getNATable()->getRefConstraints().entries() != 0  ))
@@ -9998,7 +10097,11 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     }
 
   }
-  if (NOT isMerge())
+  if (isUpsertThatNeedsMerge()) {
+    boundExpr = xformUpsertToMerge(bindWA);
+    return boundExpr;
+  }
+  else if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10011,13 +10114,15 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
   
   
-  // When mtsStatement_ is set Insert needs to return rows;
+  // When mtsStatement_ or bulkLoadIndex is set Insert needs to return rows;
   // so potential outputs are added (note that it's not replaced) to 
   // the Insert node. Currently mtsStatement_ is set
   // for MTS queries and embedded insert queries.
-  if (isMtsStatement())
+  if (isMtsStatement() || bulkLoadIndex)
     {
-      setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getTableDesc()));
+      if(isMtsStatement())
+        setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getTableDesc()));
+
       bindWA->getCurrentScope()->setRETDesc(getRETDesc());
 
       ValueIdList outputs;
@@ -10034,6 +10139,131 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
   return boundExpr;
 } // Insert::bindNode()
+
+/* Upsert into a table with an index is converted into a Merge to avoid
+the problem described in LP 1460771. An upsert may overwrite an existing row
+in the base table (identical to the update when matched clause of Merge) or
+it may insert a new row into the base table (identical to insert when not
+matched clause of merge). If the upsert caused a row to be updated in the 
+base table then the old version of the row will have to be deleted from 
+indexes, and a new version inserted. Upsert is being transformed to merge
+so that we can delete the old version of an updated row from the index.
+*/
+NABoolean Insert::isUpsertThatNeedsMerge() const
+{
+  if (!isUpsert() || 
+      getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
+      !(getTableDesc()->hasSecondaryIndexes()))
+    return FALSE;
+
+  return TRUE;
+}
+RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
+{
+
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+		    
+  Scan * inputScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  ItemExpr * setAssign = NULL;
+  ItemExpr * setAssignPrev = NULL;
+  ItemExpr * insertVal = NULL;
+  ItemExpr * insertValPrev = NULL;
+  ItemExpr * insertCol = NULL;
+  ItemExpr * insertColPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  int setCount = 0;
+  ValueIdSet myOuterRefs;
+
+  for (CollIndex i = 0; i<tableCols.entries(); i++)
+  {
+    baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+    if (baseCol->getNAColumn()->isSystemColumn())
+      continue;
+
+    targetColRef = new(bindWA->wHeap()) ColReference(
+         new(bindWA->wHeap()) ColRefName(
+              baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    if (baseCol->getNAColumn()->isClusteringKey())
+    {
+      keyPredPrev = keyPred;
+      keyPred = new (bindWA->wHeap())
+        BiRelat(ITM_EQUAL, targetColRef, 
+                sourceVals[i].getItemExpr());
+      predCount++;
+      if (predCount > 1) 
+      {
+         keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+                                                keyPredPrev,
+                                                keyPred);  
+      }
+    }
+    else
+    {
+      setAssignPrev = setAssign;
+      setAssign = new (bindWA->wHeap())
+        Assign(targetColRef, sourceVals[i].getItemExpr());
+      setCount++;
+      if (setCount > 1) 
+      {
+        setAssign = new(bindWA->wHeap()) ItemList(setAssign,setAssignPrev);
+      }
+    }
+    myOuterRefs += sourceVals[i];
+
+    insertValPrev = insertVal;
+    insertColPrev = insertCol ;
+    insertVal = sourceVals[i].getItemExpr();
+    insertCol =  new(bindWA->wHeap()) ColReference(
+                     new(bindWA->wHeap()) ColRefName(
+                          baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    if (i > 0) 
+    {
+      insertVal = new(bindWA->wHeap()) ItemList(insertVal,insertValPrev);
+      insertCol = new(bindWA->wHeap()) ItemList(insertCol,insertColPrev);
+    }
+  }   
+  inputScan->addSelPredTree(keyPred);
+  RelExpr * re = NULL;
+
+  re = new (bindWA->wHeap())
+    MergeUpdate(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()),
+                NULL,
+                REL_UNARY_UPDATE,
+                inputScan,
+                setAssign,
+                insertCol, 
+                insertVal,
+                bindWA->wHeap(),
+                NULL);
+
+  ValueIdSet debugSet;
+  if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
+  {
+    re = new(bindWA->wHeap()) Join
+      (child(0), re, REL_TSJ_FLOW, NULL);
+    ((Join*)re)->doNotTransformToTSJ();
+    ((Join*)re)->setTSJForMerge(TRUE);	
+    ((Join*)re)->setTSJForMergeWithInsert(TRUE);
+    ((Join*)re)->setTSJForWrite(TRUE);
+    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+  } 
+  
+  re = re->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return re;
+}
 
 RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 {
@@ -11090,8 +11320,15 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    // scan for satisfying order requirements specified by an order by clause
    // on new columns, e.g.
    // select * from (update t set y = y + 1 return new.a) t order by a;
+   // we cannot get the benefit of this VEG for a merge statement when IM is required
+   // allowing a VEG in this case causes corruption on base table key values because
+   // we use the "old" value of key column from fetchReturnedExpr, which can be junk
+   // in case there is no row to update/delete, and a brand bew row is being inserted
 
-   if (NOT onRollback){
+   NABoolean mergeWithIndex = isMerge() && getTableDesc()->hasSecondaryIndexes() ;
+
+
+   if ((NOT onRollback) && (NOT mergeWithIndex)){
      for (i = 0;i < totalColCount; i++){
        if (!(holeyArray.used(i))){
          oldToNewMap().addMapEntry(
@@ -15971,9 +16208,15 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       childName = "_inputTable" + bindWA->fabricateUniqueName();
     }
     
+    // ask for histograms of all child outputs, since we don't
+    // know what the UDF will need and what predicates exist
+    // on passthru columns of the UDF
+    bindWA->getCurrentScope()->context()->inWhereClause() = TRUE;
+
     // Get NAColumns
-    for(CollIndex j=0; 
-      j < (CollIndex) childRetDesc->getColumnList()->entries(); j++)
+    
+    CollIndex numChildCols = childRetDesc->getColumnList()->entries();
+    for(CollIndex j=0; j < numChildCols; j++)
     {
       NAColumn * childCol = new (heap) NAColumn(
         childRetDesc->getColRefNameObj(j).getColName().data(),
@@ -15981,7 +16224,10 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
         childRetDesc->getType(j).newCopy(heap),
         heap);
       childColumns.insert(childCol);
+
+      bindWA->markAsReferencedColumn(childRetDesc->getValueId(j));
     }
+    bindWA->getCurrentScope()->context()->inWhereClause() = FALSE;
 
     // get child root
     CMPASSERT(child(i)->getOperator().match(REL_ROOT) ||
@@ -15998,6 +16244,9 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     childRetDesc->getValueIdList(vidList, USER_COLUMN);
     ValueIdSet childPartition(myChild->partitionArrangement());
     ValueIdList childOrder(myChild->reqdOrder());
+
+    // request multi-column histograms for the PARTITION BY columns
+    bindWA->getCurrentScope()->context()->inGroupByClause() = TRUE;
 
     // replace 1-based ordinals in the child's partition by / order by with
     // actual columns
@@ -16034,7 +16283,9 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
               return NULL;
             }
         }
+        bindWA->markAsReferencedColumn(cp);
       }
+    bindWA->getCurrentScope()->context()->inGroupByClause() = FALSE;
 
     for (CollIndex co=0; co<childOrder.entries(); co++)
       {
@@ -16449,4 +16700,31 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
   return true;
   
 }// ControlRunningQuery::isUserAuthorized()
+
+RelExpr * OSIMControl::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+  //Create OptimizerSimulator if this is called first time.
+  if(!CURRCONTEXT_OPTSIMULATOR)
+      CURRCONTEXT_OPTSIMULATOR = new(CTXTHEAP) OptimizerSimulator(CTXTHEAP);
+      
+  //in respond to force option of osim load, 
+  //e.g. osim load from '/xxx/xxx/osim-dir', force
+  //if true, when loading osim tables/views/indexes
+  //existing objects with same qualified name 
+  //will be droped first
+  CURRCONTEXT_OPTSIMULATOR->setForceLoad(isForceLoad());
+  //Set OSIM mode
+  if(!CURRCONTEXT_OPTSIMULATOR->setOsimModeAndLogDir(targetMode_, osimLocalDir_.data()))
+  {
+      bindWA->setErrStatus();
+      return this;
+  }
+
+  return ControlAbstractClass::bindNode(bindWA);
+}
 

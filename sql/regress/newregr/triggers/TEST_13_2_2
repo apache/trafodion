@@ -1,0 +1,585 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+---
+---  Test tables: Interaction between Various Primary Key settings
+---               and storage options
+---
+
+obey TEST_13_2_2(clean_up);
+obey TEST_13_2_2(set_up);
+LOG LOG_13_2_2 clear;
+obey TEST_13_2_2(tests);
+LOG;
+obey TEST_13_2_2(clean_up);
+exit;
+
+
+?section clean_up
+set schema CAT1.SCHM;
+ 
+drop table TSPKnodr;
+drop table TSPKdrop;
+drop table TSPKnopk;
+
+drop table TIPKnodr;
+drop table TIPKdrop;
+drop table TIPKnopk;
+
+drop table TIDOdrop;
+drop table TIDOnopk;
+
+drop table TSUPdrop;
+drop table TSUPnopk;
+
+drop table TSUBnodr;
+drop table TSUBdrop;
+drop table TSUBnopk;
+
+drop table TSUXdrop;
+drop table TSUXnopk;
+
+drop table TUNRdrop;
+drop table TUNRnopk;
+
+drop table TPARdrop;
+drop table TPARnopk;
+
+drop table TNOCnodr;
+drop table TNOCdrop;
+drop table TNOCnopk;
+
+drop trigger mytrg;
+
+drop table DUMMY1322;
+
+
+?section set_up
+
+set schema cat1.schm;
+-----------------------------------
+--  STORE BY PRIMARY KEY  (SPK)
+-----------------------------------
+-- STORE BY PK   non-droppable PK
+create table TSPKnodr (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) not droppable)
+store by PRIMARY KEY
+LOCATION $$partition1$$;
+
+-- STORE BY PK   droppable PK
+create table TSPKdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by PRIMARY KEY
+LOCATION $$partition1$$;
+
+-- STORE BY PK   no PK !!
+create table TSPKnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by PRIMARY KEY
+LOCATION $$partition1$$;
+
+---------------------------------------------------
+--  STORE BY IMPLICIT PK (same col. as PK)   (IPK)
+---------------------------------------------------
+-- STORE BY IMPLICIT PK (same col. as PK)   non-droppable PK
+create table TIPKnodr (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) not droppable)
+store by (c, a, d)
+LOCATION $$partition1$$;
+
+-- STORE BY IMPLICIT PK (same col. as PK)   droppable PK
+create table TIPKdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (c, a, d)
+LOCATION $$partition1$$;
+
+-- STORE BY IMPLICIT PK (same col. as PK)   no PK !!
+create table TIPKnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (c, a, d)
+LOCATION $$partition1$$;
+
+------------------------------------------------------------------
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   (IDO)
+------------------------------------------------------------------
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   droppable PK
+create table TIDOdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (a, d, c)
+LOCATION $$partition1$$;
+
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   no PK !!
+create table TIDOnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (a, d, c)
+LOCATION $$partition1$$;
+
+---------------------------------------------------------
+--  STORE BY SUPERSET OF PK columns     (SUP)
+---------------------------------------------------------
+-- STORE BY SUPERSET OF PK columns   droppable PK
+create table TSUPdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (c, b, d, a)
+LOCATION $$partition1$$;
+
+-- STORE BY SUPERSET OF PK columns    no PK !!
+create table TSUPnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (c, b, d, a)
+LOCATION $$partition1$$;
+
+-------------------------------------------------------------
+--  STORE BY (ORDERED PREFIX) SUBSET OF PK columns     (SUB)
+-------------------------------------------------------------
+-- STORE BY (ORDERED PREFIX) SUBSET OF PK columns    non-droppable PK
+create table TSUBnodr (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) not droppable)
+store by (c, a)
+LOCATION $$partition1$$;
+
+-- STORE BY (ORDERED PREFIX) SUBSET OF PK columns   droppable PK
+create table TSUBdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (c, a)
+LOCATION $$partition1$$;
+
+-- STORE BY (ORDERED PREFIX) SUBSET OF PK columns    no PK !!
+create table TSUBnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (c, a)
+LOCATION $$partition1$$;
+
+-------------------------------------------------------------------------
+--  STORE BY (UNORDERED and/or NON-PREFIX) SUBSET OF PK columns     (SUX)
+-------------------------------------------------------------------------
+-- STORE BY SUBSET OF PK columns   droppable PK
+create table TSUXdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (d, a)
+LOCATION $$partition1$$;
+
+-- STORE BY SUBSET OF PK columns    no PK !!
+create table TSUXnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (d, a)
+LOCATION $$partition1$$;
+
+---------------------------------------------------------
+--  STORE BY UNRELATED (to PK) columns    (UNR)
+---------------------------------------------------------
+-- STORE BY UNRELATED (to PK) columns   droppable PK
+create table TUNRdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (b)
+LOCATION $$partition1$$;
+
+-- STORE BY UNRELATED (to PK) columns    no PK !!
+create table TUNRnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (b)
+LOCATION $$partition1$$;
+
+-----------------------------------------------------
+--  STORE BY PARTIAL UNRELATED (to PK) columns   (PAR)
+-----------------------------------------------------
+-- STORE BY PARTIAL UNRELATED (to PK) columns   droppable PK
+create table TPARdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable)
+store by (b, d)
+LOCATION $$partition1$$;
+
+-- STORE BY PARTIAL UNRELATED (to PK) columns    no PK !!
+create table TPARnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+store by (b, d)
+LOCATION $$partition1$$;
+
+-------------------------------------------------
+--   No Store-By    (NOC)
+-------------------------------------------------
+--  No Store By     non-droppable PK
+create table TNOCnodr (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) not droppable) 
+LOCATION $$partition1$$;
+
+--  No Store By       droppable PK
+create table TNOCdrop (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable,
+primary key (c, a, d) droppable) 
+LOCATION $$partition1$$;
+
+--  No Store By     no PK   !!!!!!!
+create table TNOCnopk (
+a int not null not droppable,
+b int not null not droppable,
+c int not null not droppable,
+d int not null not droppable)
+LOCATION $$partition1$$;
+
+-- dummy
+create table DUMMY1322 (i int, j int);
+
+?section tests
+
+-- Special env. var. to show the CREATE TEMP TABLE statement
+-- set envvar DEBUG_TEMP_TABLE 1;
+
+-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+set parserflags 1;
+
+---   Check the Interaction between Various Primary Key settings
+---   and storage options  -- by defining a trigger on each test table,
+---   thus creating a temporary table.
+
+set schema cat1.schm;
+
+-----------------------------------
+--  STORE BY PRIMARY KEY  (SPK)
+-----------------------------------
+
+-- STORE BY PK   non-droppable PK
+create trigger mytrg after insert on   TSPKnodr
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSPKnodr__TEMP);
+
+insert into  TSPKnodr  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY PK   droppable PK
+-- this table does not exist:   TSPKdrop
+
+-- STORE BY PK   no PK !!
+-- this table does not exist:   TSPKnopk 
+
+---------------------------------------------------
+--  STORE BY IMPLICIT PK (same col. as PK)   (IPK)
+---------------------------------------------------
+-- STORE BY IMPLICIT PK (same col. as PK)   non-droppable PK
+create trigger mytrg after insert on   TIPKnodr 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TIPKnodr__TEMP);
+
+insert into  TIPKnodr  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY IMPLICIT PK (same col. as PK)   droppable PK
+create trigger mytrg after insert on   TIPKdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TIPKdrop__TEMP);
+
+insert into  TIPKdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY IMPLICIT PK (same col. as PK)   no PK !!
+create trigger mytrg after insert on   TIPKnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TIPKnopk__TEMP);
+
+insert into  TIPKnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+------------------------------------------------------------------
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   (IDO)
+------------------------------------------------------------------
+
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   droppable PK
+create trigger mytrg after insert on   TIDOdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TIDOdrop__TEMP);
+
+insert into  TIDOdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY IMPLICIT Diff order PK (unordered col. as PK)   no PK !!
+create trigger mytrg after insert on   TIDOnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TIDOnopk__TEMP);
+
+insert into  TIDOnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+---------------------------------------------------------
+--  STORE BY SUPERSET OF PK columns     (SUP)
+---------------------------------------------------------
+-- STORE BY SUPERSET OF PK columns   droppable PK
+create trigger mytrg after insert on   TSUPdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUPdrop__TEMP);
+
+insert into  TSUPdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY SUPERSET OF PK columns    no PK !!
+create trigger mytrg after insert on   TSUPnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUPnopk__TEMP);
+
+insert into  TSUPnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+---------------------------------------------------------
+--  STORE BY (ORDERED PREFIX) SUBSET OF PK columns     (SUB)
+---------------------------------------------------------
+-- STORE BY SUBSET OF PK columns    non-droppable PK
+create trigger mytrg after insert on   TSUBnodr 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUBnodr__TEMP);
+
+insert into  TSUBnodr  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY SUBSET OF PK columns   droppable PK
+create trigger mytrg after insert on   TSUBdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUBdrop__TEMP);
+
+insert into  TSUBdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY SUBSET OF PK columns    no PK !!
+create trigger mytrg after insert on   TSUBnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUBnopk__TEMP);
+
+insert into  TSUBnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+---------------------------------------------------------
+--  STORE BY (UNORDERED and/or NONPREFIX) SUBSET OF PK columns     (SUX)
+---------------------------------------------------------
+-- STORE BY SUBSET OF PK columns   droppable PK
+create trigger mytrg after insert on   TSUXdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUXdrop__TEMP);
+
+insert into  TSUXdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY SUBSET OF PK columns    no PK !!
+create trigger mytrg after insert on   TSUXnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TSUXnopk__TEMP);
+
+insert into  TSUXnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+---------------------------------------------------------
+--  STORE BY UNRELATED (to PK) columns    (UNR)
+---------------------------------------------------------
+-- STORE BY UNRELATED (to PK) columns   droppable PK
+create trigger mytrg after insert on   TUNRdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TUNRdrop__TEMP);
+
+insert into  TUNRdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY UNRELATED (to PK) columns    no PK !!
+create trigger mytrg after insert on   TUNRnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TUNRnopk__TEMP);
+
+insert into  TUNRnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-----------------------------------------------------
+--  STORE BY PARTIAL UNRELATED (to PK) columns   (PAR)
+-----------------------------------------------------
+-- STORE BY PARTIAL UNRELATED (to PK) columns   droppable PK
+create trigger mytrg after insert on   TPARdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TPARdrop__TEMP);
+
+insert into  TPARdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-- STORE BY PARTIAL UNRELATED (to PK) columns    no PK !!
+create trigger mytrg after insert on   TPARnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TPARnopk__TEMP);
+
+insert into  TPARnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+-------------------------------------------------
+--   No Store By    (NOC)
+-------------------------------------------------
+--  No Store By     non-droppable PK
+create trigger mytrg after insert on   TNOCnodr 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TNOCnodr__TEMP);
+
+insert into  TNOCnodr  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+--  No Store By       droppable PK
+create trigger mytrg after insert on   TNOCdrop 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp_table TNOCdrop__TEMP);
+
+insert into  TNOCdrop  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+--  No Store By     no PK   !!!!!!!
+create trigger mytrg after insert on   TNOCnopk 
+referencing new as mynew
+insert into DUMMY1322 select d,b from mynew;
+
+showddl table (temp__table TNOCnopk__TEMP);
+
+insert into  TNOCnopk  values (11,22,33,44),(55,66,77,88);
+
+drop trigger mytrg;
+
+LOG;
+
+
+

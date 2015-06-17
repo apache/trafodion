@@ -1,0 +1,134 @@
+>>
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_5_4_2(set_up);
+>>
+>>INSERT INTO tab1A VALUES (1,1,1,1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (2,2,2,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1A VALUES (3,3,3,3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (1,1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (2,2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO tab1B VALUES (10,10);
+
+--- 1 row(s) inserted.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig542a
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig542a
++>AFTER UPDATE OF (b) ON tab1A
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>UPDATE tab1B SET b=newR.b WHERE NOT (a > newR.a) AND NOT (a < newR.a);
+
+--- SQL operation complete.
+>>
+>>---------------------------------
+>>-- DEFINE TRIGGER atrig542b
+>>---------------------------------
+>>
+>>CREATE TRIGGER atrig542b
++>AFTER UPDATE OF (b) ON tab1B
++>REFERENCING NEW AS newR
++>FOR EACH ROW
++>WHEN (newR.b < 5)
++>UPDATE tab1A SET b=newR.b +1
++>WHERE NOT (a > newR.a) AND NOT (a < newR.a);
+
+--- SQL operation complete.
+>>obey TEST_5_4_2(tests);
+>>
+>>------------------------------------------------------------------
+>>--          TEST CASE
+>>------------------------------------------------------------------
+>>
+>>UPDATE tab1A SET b = b+1;
+
+*** WARNING[11002] Trigger CAT1.SCHM_ALT.ATRIG542A on table CAT1.SCHM_ALT.TAB1A may be triggered recursively more than 16 times.
+
+--- 3 row(s) updated.
+>>
+>>SELECT * FROM tab1A;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            5            1            1
+          2            5            2            2
+          3            4            3            3
+
+--- 3 row(s) selected.
+>> -- check result
+>>SELECT * FROM tab1B;
+
+A            B          
+-----------  -----------
+
+          1            5
+          2            5
+         10           10
+
+--- 3 row(s) selected.
+>> -- check result
+>>
+>>------------------------------------------------------------------
+>>--           END
+>>------------------------------------------------------------------
+>>obey TEST_5_4_2(clean_up);
+>>
+>>DROP TRIGGER atrig542a;
+
+--- SQL operation complete.
+>>DROP TRIGGER atrig542b;
+
+--- SQL operation complete.
+>>obey clearTables;
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 0 row(s) deleted.
+>>
+>>DELETE FROM cat2.schm.tab2A;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat2.schm.tab2B;
+
+--- 0 row(s) deleted.
+>>DELETE FROM cat3.schm.tab3A;
+
+--- 0 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm_alt;
+
+--- SQL operation complete.
+>>DELETE FROM tab1A;
+
+--- 3 row(s) deleted.
+>>DELETE FROM tab1B;
+
+--- 3 row(s) deleted.
+>>
+>>SET SCHEMA cat1.schm;
+
+--- SQL operation complete.
+>>
+>>
+>>-- end logging
+>>LOG;

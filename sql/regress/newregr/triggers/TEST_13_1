@@ -1,0 +1,188 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+-- Integration of triggers and IM
+
+------------------------------------------------------------------
+-- SET ENVIRONMENT
+------------------------------------------------------------------
+
+
+obey TEST_13_1(clean_up);
+log   LOG_13_1 clear;
+obey TEST_13_1(set_up);
+control query default TEMPORARY_TABLE_HASH_PARTITIONS $$TrigTempTablePartition1$$;
+obey TEST_13_1(tests);
+LOG;
+obey TEST_13_1(clean_up);
+exit;
+
+?section clean_up
+set schema CAT1.SCHM;
+DROP INDEX i1;
+DROP TRIGGER atrig2;
+DROP TRIGGER atrig3;
+DROP TRIGGER btrig4;
+DROP TRIGGER btrig5;
+DROP TRIGGER btrig6;
+DROP TRIGGER atrig7;
+DROP TRIGGER btrig8;
+
+------------------------------------------------------------------
+obey clearTables;
+
+?section set_up
+INSERT INTO tab1A VALUES (1,2,3,4);
+INSERT INTO tab1A VALUES (2,3,4,5);
+INSERT INTO tab1A VALUES (3,4,5,6);
+
+---------------------------------
+-- Define an index on column B
+---------------------------------
+CREATE INDEX i1 ON tab1a (b);
+SET parserflags 1; -- Allow select from index table.
+
+?section tests
+------------------------------------------------------------------
+--          TEST CASE
+------------------------------------------------------------------
+
+-- Step 1: No triggers.
+
+UPDATE tab1a SET B=B+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+DELETE FROM tab1a;                    -- re-initialize
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 2: An after trigger on a different column.
+
+CREATE TRIGGER atrig2
+	AFTER UPDATE OF (c) ON tab1A
+	REFERENCING OLD AS oldR, NEW AS newR
+	FOR EACH ROW
+	WHEN (newR.a < 3)
+	INSERT INTO tab1B VALUES (newR.c, oldR.c); 
+
+UPDATE tab1a SET B=B+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+SELECT * FROM TAB1b;
+DELETE FROM tab1a;                    -- re-initialize
+DELETE FROM tab1b;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 3: An after trigger on the same column.
+
+CREATE TRIGGER atrig3
+	AFTER UPDATE OF (b) ON tab1A
+	REFERENCING OLD AS oldR, NEW AS newR
+	FOR EACH ROW
+	WHEN (newR.a < 3)
+	INSERT INTO tab1B VALUES (newR.b+10, oldR.b+10); 
+
+UPDATE tab1a SET B=B+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+SELECT * FROM TAB1b;
+DELETE FROM tab1a;                    -- re-initialize
+DELETE FROM tab1b;
+DROP TRIGGER atrig2;
+DROP TRIGGER atrig3;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 4: A before trigger on a different column.
+
+CREATE TRIGGER btrig4
+	BEFORE UPDATE OF (c) ON tab1A
+	REFERENCING NEW AS newR 
+	FOR EACH ROW
+	SET newR.c = newR.c + 1;
+
+UPDATE tab1a SET B=B+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+DELETE FROM tab1a;                    -- re-initialize
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 5: A before trigger on the same column.
+
+CREATE TRIGGER btrig5
+	BEFORE UPDATE OF (b) ON tab1A
+	REFERENCING NEW AS newR 
+	FOR EACH ROW
+	SET newR.b = newR.b + 1;
+
+UPDATE tab1a SET B=B+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+DELETE FROM tab1a;                    -- re-initialize
+DROP TRIGGER btrig4;
+DROP TRIGGER btrig5;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 6: A before trigger promoting the indexed column
+
+CREATE TRIGGER btrig6
+	BEFORE UPDATE OF (c) ON tab1A
+	REFERENCING NEW AS newR 
+	FOR EACH ROW
+	SET newR.b = newR.b + 1;
+
+UPDATE tab1a SET C=C+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+DELETE FROM tab1a;                    -- re-initialize
+DROP TRIGGER btrig6;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 7: An after trigger, IM not activated.
+
+CREATE TRIGGER atrig7
+	AFTER UPDATE ON tab1A
+	REFERENCING OLD AS oldR, NEW AS newR
+	FOR EACH ROW
+	WHEN (newR.a < 3)
+	INSERT INTO tab1B VALUES (newR.c, oldR.c); 
+
+UPDATE tab1a SET C=C+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+SELECT * FROM TAB1b;
+DELETE FROM tab1a;                    -- re-initialize
+DELETE FROM tab1b;
+DROP TRIGGER atrig7;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+-- Step 8: A before trigger, IM not activated.
+
+CREATE TRIGGER btrig8
+	BEFORE UPDATE ON tab1A
+	REFERENCING NEW AS newR 
+	FOR EACH ROW
+	SET newR.c = newR.c + 1;
+
+UPDATE tab1a SET C=C+1;
+SELECT * FROM TAB1A;                  -- check result
+SELECT * FROM TABLE(INDEX_TABLE i1);  -- check the index
+DELETE FROM tab1a;                    -- re-initialize
+DROP TRIGGER btrig8;
+INSERT INTO tab1a VALUES (1,2,3,4), (2,3,4,5), (3,4,5,6);
+
+------------------------------------------------------------------
+--           END
+------------------------------------------------------------------

@@ -837,13 +837,14 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 	{
 		if (errno == EINVAL || errno == ENAMETOOLONG) 
 			gDrvrGlobal.gComputerName[60] = '\0';	
-		else 
-			strcpy(inContext.computerName, "UNKNOWN");
+		else
+		{
+			strncpy(inContext.computerName, "UNKNOWN", sizeof(inContext.computerName));
+			inContext.computerName[sizeof(inContext.computerName) - 1] = '\0';
+		}
 	}
-	char *cp = strchr(gDrvrGlobal.gComputerName, '.');
-	if (cp != NULL) 
-		*cp = '\0';
-	strcpy(inContext.computerName, gDrvrGlobal.gComputerName);
+	strncpy(inContext.computerName, gDrvrGlobal.gComputerName, sizeof(inContext.computerName));
+	inContext.computerName[sizeof(inContext.computerName) - 1] = '\0';
 
 
 	if (GetWindowText(currentWindow, windowText, sizeof(windowText)) == 0)

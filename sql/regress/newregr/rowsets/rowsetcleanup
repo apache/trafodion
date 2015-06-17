@@ -1,0 +1,93 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+set schema $$TEST_SCHEMA$$;
+
+drop table RSSTAFF;
+drop table RSPROJ;
+drop table RSWORKS;
+drop table RSTEMPS;
+drop table RSVTABLE;
+drop table dt;
+drop table dtintval;
+drop table intval;
+drop table exact;
+drop table DECNUM;
+drop table rsints;
+drop table table1;
+drop table table2;
+drop table table3;
+drop table table4;
+drop table s;
+drop table t;
+drop table u;
+drop table m;
+drop view partsfor;
+drop table parts;
+drop table ch;
+drop table rownum1;
+drop table rownum2;
+drop table rownum3;
+drop table rownum4;
+drop table dynamic1;
+drop table dynamic2;
+drop table dynamic3;
+drop table dynamic4;
+drop table dynamic5;
+drop view ntv1;
+drop table nt1;
+drop table nt2;
+drop view ntv1set;
+drop table nt1set;
+drop view sntv1;
+drop table snt1 cascade;
+drop table nt2 cascade;
+
+#ifMX
+drop trigger itertrig1;
+drop trigger itertrig2;
+drop trigger itertrig3;
+drop trigger itertrig4;
+drop mv MV_rownum9;
+drop mv MV_rownum12;
+drop table rownum5;
+drop table rownum6;
+drop table rownum7;
+drop table rownum8;
+drop table rownum9;
+drop table rownum10;
+drop table rownum11;
+drop table ri_fatal_error_dependent;
+drop table ri_fatal_error_referenced;
+drop table rownum12;
+drop table rownum7temptab;
+drop table rownum265;
+drop table tab1_irm cascade;
+drop table tab1_irm_ct2;
+
+drop table ct1 cascade;
+drop table ct2;
+
+drop table tab1_rm cascade;
+drop table tab1_rm_ct2 cascade;
+
+drop table tab1_im cascade;
+drop table tab1_irm2 cascade;
+drop table dt2;
+drop table tab1_dupkey cascade;
+#ifMX
+

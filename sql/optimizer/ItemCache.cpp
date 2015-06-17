@@ -734,6 +734,22 @@ void Extract::generateCacheKey(CacheWA& cwa) const
   cwa += fieldFunction_ ? "1" : "0";
 }
 
+// append an ascii-version of HbaseTimestamp into cachewa.qryText_
+void HbaseTimestamp::generateCacheKey(CacheWA& cwa) const
+{
+  BuiltinFunction::generateCacheKey(cwa); 
+
+  col()->generateCacheKey(cwa);
+}
+
+// append an ascii-version of HbaseVersion into cachewa.qryText_
+void HbaseVersion::generateCacheKey(CacheWA& cwa) const
+{
+  BuiltinFunction::generateCacheKey(cwa); 
+
+  col()->generateCacheKey(cwa);
+}
+
 // does this entire ItemExpr qualify query to be cacheable after this phase?
 NABoolean HostVar::isCacheableExpr(CacheWA& cwa)
 {
@@ -833,6 +849,20 @@ void ItemExpr::generateCacheKey(CacheWA& cwa) const
       break;
     }
   }
+  addSelectivityFactor( cwa ) ;
+}
+
+//
+// addSelectivityFactor() - a helper routine for ItemExpr::generateCacheKey()
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::generateCacheKey().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       recursive ItemExpr::generateCacheKey() routine.
+//
+void ItemExpr::addSelectivityFactor( CacheWA& cwa ) const
+{
   if(((ItemExpr *)this)->isSelectivitySetUsingHint()) 
   {
     char str[100];

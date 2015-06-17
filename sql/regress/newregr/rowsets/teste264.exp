@@ -1,0 +1,149 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+ *** Expecting -8102 on row 10 ***
+Number of conditions  : 2
+Number of rows inserted: 19
+
+Condition number : 1
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ *** Expecting -8102 on row 10 ***
+Number of conditions  : 2
+Number of rows inserted: 19
+
+Condition number : 1
+ROW INDEX : 10
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ *** Expecting -8102 on row 15,16,17,18 ***
+Number of conditions  : 5
+Number of rows inserted: 16
+
+Condition number : 1
+ROW INDEX : 15
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 16
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 17
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : 18
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 5
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ *** Expecting 0 errors .. 17 rows inserted ***
+
+ *** Expecting -8102 on row 16,17,18 : 16 rows inserted ***
+Number of conditions  : 4
+Number of rows inserted: 16
+
+Condition number : 1
+ROW INDEX : 16
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : 17
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 3
+ROW INDEX : 18
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 4
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+
+
+ *** Expecting -8102 on row 15: 18 rows should be inserted ***
+Number of conditions  : 2
+Number of rows inserted: 18
+
+Condition number : 1
+ROW INDEX : 15
+SQLCODE : -8102
+SQLSTATE  : 23000
+MESSAGE : *** ERROR[8102] The operation is prevented by a unique constraint.
+TABLE   : <table_name_will_go_here>
+
+Condition number : 2
+ROW INDEX : -1
+SQLCODE : 30022
+SQLSTATE  : 01U0M
+MESSAGE : *** WARNING[30022] At least one row was successfully inserted by the NOT ATOMIC INSERT, but one or more errors occurred. Some warnings may also have occurred. 
+TABLE   : 
+

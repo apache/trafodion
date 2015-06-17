@@ -1,0 +1,283 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--------------------------------------------------------------------------
+-- TESTMV555
+-- insertlog index re-builder tests
+--------------------------------------------------------------------------
+-- should remove this
+control query default POS 'OFF';
+
+
+obey TESTMV555(clean_up);
+obey TESTMV555(set_up);
+log LOGMV555 clear;
+
+-- Run tests
+  obey TESTMV555(Test1);
+  obey TESTMV555(Test2);
+  obey TESTMV555(Test3);
+  obey TESTMV555(Test4);
+  obey TESTMV555(Test5);
+
+-- clean and exit
+obey TESTMV555(clean_up);
+log;
+exit;
+
+--------------------------------------------------------------------------
+?section set_up
+
+set schema catmvs.mvschm;
+set PARSERFLAGS 3;
+
+?section clean_up
+set schema catmvs.mvschm;
+drop mv T_555_MV3;
+drop mv T_555_MV2;
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+drop table T_555_T3;
+
+
+
+--------------------------------------------------------------------------
+?section Test1
+-- test1:
+-- T_555_T1(a, b) CI(syskey)
+-- T_555_T2(c, d) CI(c)
+-- indexes:
+-- (sys_syskey1), (a) {since a = c}
+
+create table T_555_T1 (a int, b int) attribute insertlog;
+ALTER TABLE T_555_T1 attribute all mvs allowed;
+create table T_555_T2 (c int not null not droppable, d int, primary key (c)) 
+		store by primary key attribute insertlog;
+ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+create mv T_555_MV1
+refresh on statement
+initialize on create
+as select a, d from T_555_T1, T_555_T2
+where a = c;
+ALTER MV T_555_MV1 attribute all mvs allowed;
+
+showddl T_555_MV1;
+
+alter table T_555_T1 attribute no insertlog;
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+showddl T_555_MV1;
+
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+
+---------------------------------------------------------------------------
+?section Test2
+-- test2
+-- T_555_T1(a, b) CI(syskey)
+-- T_555_T2(c, d) CI(c)
+-- indexes:
+-- (syskey1), (b or c) {since b = c}
+
+create table T_555_T1 (a int, b int) attribute insertlog;
+ALTER TABLE T_555_T1 attribute all mvs allowed;
+create table T_555_T2 (c int not null not droppable, d int, 
+	primary key(c)) store by primary key attribute insertlog;
+ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+create mv T_555_MV1
+refresh on statement
+initialize on create
+as select a, b, c from T_555_T1, T_555_T2
+where b = c;
+ALTER MV T_555_MV1 attribute all mvs allowed;
+
+showddl T_555_MV1;
+
+alter table T_555_T1 attribute no insertlog;
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+showddl T_555_MV1;
+
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+
+---------------------------------------------------------------------------
+?section Test3
+-- test3
+-- T_555_T1 (a, b) CI(syskey)
+-- T_555_T2 (c, d) CI(c, d)
+-- indexes:
+-- (syskey1), (a, d) 
+
+create table T_555_T1 (a int, b int) attribute insertlog;
+ALTER TABLE T_555_T1 attribute all mvs allowed;
+create table T_555_T2 (c int not null not droppable, 
+		 d int not null not droppable, 
+		 primary key (c, d)) store by primary key
+		 attribute insertlog;
+ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+create mv T_555_MV1
+refresh on statement
+initialize on create
+as select a, b, d from T_555_T1, T_555_T2
+where a = c;
+ALTER MV T_555_MV1 attribute all mvs allowed;
+
+showddl T_555_MV1;
+
+alter table T_555_T1 attribute no insertlog;
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+showddl T_555_MV1;
+
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+----------------------------------------------------------------------------
+?section Test4
+-- test4
+-- T_555_T1 (a, b) CI(syskey)
+-- T_555_T2 (c, d) CI(c, d)
+-- user specified index with the right prefix, don't create index 
+
+create table T_555_T1 (a int, b int) attribute insertlog;
+ALTER TABLE T_555_T1 attribute all mvs allowed;
+create table T_555_T2 (c int not null not droppable, 
+		 d int not null not droppable, 
+		 primary key (c, d)) store by primary key
+		 attribute insertlog;
+ALTER TABLE T_555_T2 attribute all mvs allowed;
+
+create mv T_555_MV1
+refresh on statement
+initialize on create
+as select a, b, d from T_555_T1, T_555_T2
+where a = c;
+ALTER MV T_555_MV1 attribute all mvs allowed;
+
+create index i1 on T_555_MV1(a, d, b);
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+-- no change
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute insertlog;
+
+drop index i1;
+
+-- another index with a right prefix
+create index i1 on T_555_MV1(d, a, b);
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+-- no change
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute insertlog;
+drop index i1;
+
+-- an index that have a wrong prefix - this will cause another
+-- index (a, d) to be created
+create index i1 on T_555_MV1(d, b, a);
+
+showddl T_555_MV1;
+
+alter table T_555_T2 attribute no insertlog;
+
+showddl T_555_MV1;
+
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+----------------------------------------------------------------------
+?section Test5
+
+create table T_555_T1 (a int not null not droppable, b int, primary key(a))
+	store by primary key;
+ALTER TABLE T_555_T1 attribute all mvs allowed;
+create table T_555_T2 (c int not null not droppable, d int not null not droppable,
+		e int, primary key (c, d)) store by primary key attribute insertlog;
+ALTER TABLE T_555_T2 attribute all mvs allowed;
+create table T_555_T3 (f int not null not droppable, g int, primary key(f))
+	store by primary key;
+ALTER TABLE T_555_T3 attribute all mvs allowed;
+
+create mv T_555_MV1
+refresh on statement
+initialize on create
+as select a, b, d
+from T_555_T1, T_555_T2
+where a = c;
+ALTER MV T_555_MV1 attribute all mvs allowed;
+
+create mv T_555_MV2
+refresh on statement
+initialize on create
+as select c, d, g
+from T_555_T2, T_555_T3
+where c = f;
+ALTER MV T_555_MV2 attribute all mvs allowed;
+
+create mv T_555_MV3
+refresh on statement
+initialize on create
+as select a, b, d
+from T_555_T1, T_555_T2
+where a = c;
+ALTER MV T_555_MV3 attribute all mvs allowed;
+	
+create index i1 on T_555_MV3(d, a, b);
+
+showddl T_555_MV1;
+showddl T_555_MV2;
+showddl T_555_MV3;
+
+alter table T_555_T2 attribute no insertlog;
+
+-- indexes should be created to T_555_MV1, T_555_MV2 but not T_555_MV3.
+showddl T_555_MV1;
+showddl T_555_MV2;
+showddl T_555_MV3;
+
+drop mv T_555_MV3;
+drop mv T_555_MV2;
+drop mv T_555_MV1;
+drop table T_555_T1;
+drop table T_555_T2;
+drop table T_555_T3;
+
+

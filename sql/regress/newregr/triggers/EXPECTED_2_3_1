@@ -1,0 +1,200 @@
+>>obey TEST_2_3_1(tests);
+>>
+>>-- This env variable is set to enum value ALLOW_SPECIALTABLETYPE_SYNTAX,
+>>-- which allows sqlci to use the "TEMP_TABLE(tmpTblName)" syntax.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>-- Clear this env variable to ensure that "showddl" won't show the LOCATION
+>>set envvar SQLMX_CMP_DESCRIBE_MORE_INFO ;
+
+--- SQL operation complete.
+>>reset envvar SQLMX_CMP_DESCRIBE_MORE_INFO ;
+
+--- SQL operation complete.
+>>
+>>set schema cat1.schm;
+
+--- SQL operation complete.
+>>
+>>-------------------------------------
+>>-- Test a table with range-partitions
+>>-------------------------------------
+>>create table t231range(
++>	a int not null not droppable, b int not null, c int not null,
++>	d int,
++>	constraint t231bplus check (b > 0), constraint t231ubc unique(b,c),
++>	primary key(a) not droppable)
++>	location $$partition3$$
++>	range partition(add first key  (100) location $$partition$$,
++>		  add first key  (200) location $$partition1$$,
++>		  add first key  (300) location $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>create table t231B (x int, y int, z int);
+
+--- SQL operation complete.
+>>
+>>create trigger trg231 after update on t231range
++> referencing old as myold, new as mynew
++>  for each statement
++>    insert into t231B select a,b,c from mynew
++>        where mynew.d > (select MAX(d) from myold);
+
+--- SQL operation complete.
+>>
+>>insert into t231range values (10,20,30,40),(110,120,130,140),(210,220,230,240),
++>	(310,320,330,340);
+
+--- 4 row(s) inserted.
+>>
+>>update t231range set d=d+1;
+
+--- 4 row(s) updated.
+>>
+>>update t231range set b=d+b;
+
+--- 4 row(s) updated.
+>>
+>>update t231range set d=b-1;
+
+--- 4 row(s) updated.
+>>
+>>select * from t231B;
+
+X            Y            Z          
+-----------  -----------  -----------
+
+        310          320          330
+        210          461          230
+        310          661          330
+
+--- 3 row(s) selected.
+>>
+>>showddl TABLE ( TEMP_TABLE t231range__TEMP);
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T231RANGE__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , D                                INT DEFAULT NULL
+  , CONSTRAINT CAT1.SCHM.T231RANGE__TEMP_895351979_4757 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$SYSTEM.ZSDVXMZC.SHR2WW00
+  NAME NSK_SYSTEM_ZSDVXMZC_SHR2WW00
+  RANGE PARTITION
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, A ASC)
+  ;
+
+--- SQL operation complete.
+>>-- remember to remove the __TEMP suffix when the code is changed!!
+>>
+>>drop trigger trg231 ;
+
+--- SQL operation complete.
+>>-- the temporary table is dropped
+>>
+>>------------------------------------
+>>-- Test a table with hash-partition
+>>------------------------------------
+>>create table t231hash ( 
++>	ordernum      NUMERIC (6) UNSIGNED  NO DEFAULT NOT NULL,
++>	partnum       NUMERIC (4) UNSIGNED  NO DEFAULT NOT NULL,  
++>  	unit_price    NUMERIC (8,2)         NO DEFAULT NOT NULL,
++>  	qty_ordered   NUMERIC (5) UNSIGNED  NO DEFAULT NOT NULL,
++>  	PRIMARY KEY (ordernum, partnum) NOT DROPPABLE ) 
++>  	STORE BY PRIMARY KEY
++>  	LOCATION $$partition$$
++>  	HASH PARTITION (ADD LOCATION $$partition1$$,  ADD LOCATION $$partition2$$);
+
+--- SQL operation complete.
+>>
+>>create trigger trg231 after update of (qty_ordered) on t231hash
++> referencing old as myold, new as mynew
++>  for each statement
++>    insert into t231B select ordernum, unit_price, qty_ordered from mynew
++>        where mynew.qty_ordered > (select MAX(qty_ordered) from myold);
+
+--- SQL operation complete.
+>>
+>>delete from t231B;
+
+--- 3 row(s) deleted.
+>>
+>>insert into t231hash values (11,21,331,40),(12,22,332,140),(13,23,333,240),
++>	(14,24,334,340);
+
+--- 4 row(s) inserted.
+>>
+>>update t231hash set qty_ordered = qty_ordered + 5;
+
+--- 4 row(s) updated.
+>>
+>>update t231hash set unit_price = unit_price + qty_ordered;
+
+--- 4 row(s) updated.
+>>
+>>update t231hash set qty_ordered = ordernum + 500;
+
+--- 4 row(s) updated.
+>>
+>>select * from t231B;
+
+X            Y            Z          
+-----------  -----------  -----------
+
+         14          334          345
+         11          376          511
+         12          477          512
+         13          578          513
+         14          679          514
+
+--- 5 row(s) selected.
+>>
+>>showddl TABLE ( TEMP_TABLE t231hash__TEMP), INTERNAL;
+
+CREATE TABLE (TEMP_TABLE CAT1.SCHM.T231HASH__TEMP)
+  (
+    "@UNIQUE_EXECUTE_ID"             CHAR(12) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , "@UNIQUE_IUD_ID"                 INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , ORDERNUM                         NUMERIC(6, 0) UNSIGNED NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , PARTNUM                          NUMERIC(4, 0) UNSIGNED NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , UNIT_PRICE                       NUMERIC(8, 2) NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , QTY_ORDERED                      NUMERIC(5, 0) UNSIGNED NO DEFAULT
+      -- NOT NULL NOT DROPPABLE
+  , CONSTRAINT CAT1.SCHM.T231HASH__TEMP_834964789_4757 PRIMARY KEY
+      ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, ORDERNUM ASC, PARTNUM
+      ASC) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA.ZSDVXMZC.DJ426W00
+  NAME NSK_DATA_ZSDVXMZC_DJ426W00
+  HASH PARTITION BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC)
+  STORE BY ("@UNIQUE_EXECUTE_ID" ASC, "@UNIQUE_IUD_ID" ASC, ORDERNUM ASC,
+    PARTNUM ASC)
+  ;
+
+--- SQL operation complete.
+>>-- remember to remove the __TEMP suffix when the code is changed!!
+>>
+>>drop trigger trg231 ;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>log;

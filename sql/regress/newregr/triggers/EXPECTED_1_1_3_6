@@ -1,0 +1,26 @@
+>>obey TEST_1_1_3_6(tests);
+>>
+>>------------------------------------------------------------------
+>>-- 	TEST CASE
+>>------------------------------------------------------------------
+>>
+>>CREATE TRIGGER trig BEFORE INSERT
++>	ON tab1A
++>	REFERENCING NEW AS newTable
++>	FOR EACH ROW
++>		WHEN (newTable.a < 5 )
++>
++>		INSERT INTO tab1B VALUES (100, 100);
+
+*** ERROR[11014] A BEFORE trigger allows only SIGNAL and SET operations.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CREATE TRIGGER trig BEFORE INSERT  ON tab1A  REFERENCING NEW AS newTable  FOR E
+ACH ROW   WHEN (newTable.a < 5 )    INSERT INTO tab1B VALUES (100, 100);
+                                         ^ (121 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--------------------------------------------------------
+>>LOG;

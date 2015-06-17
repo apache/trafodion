@@ -30,15 +30,16 @@ CPPSRC := CmpDescribe.cpp \
 	CmpSeabaseDDLtable.cpp \
 	CmpSeabaseDDLupgrade.cpp \
 	CmpSeabaseDDLview.cpp \
+	PrivMgr.cpp \
         PrivMgrCommands.cpp \
-        PrivMgrMD.cpp \
-        PrivMgrMDTable.cpp \
-        PrivMgrPrivileges.cpp \
         PrivMgrDesc.cpp \
         PrivMgrComponents.cpp \
         PrivMgrComponentOperations.cpp \
         PrivMgrComponentPrivileges.cpp \
+        PrivMgrMD.cpp \
+        PrivMgrMDTable.cpp \
         PrivMgrObjects.cpp \
+        PrivMgrPrivileges.cpp \
         PrivMgrRoles.cpp \
 	DefaultValidator.cpp \
 	nadefaults.cpp \

@@ -89,7 +89,6 @@
 #include "MvRefreshBuilder.h"
 #include "OptHints.h"
 #include "CmpStatement.h"
-#include "OptimizerSimulator.h"
 #include "charinfo.h"
 #include "SqlParserGlobals.h"		// must be last #include
 #include "ItmFlowControlFunction.h"
@@ -5459,7 +5458,8 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->logErrorRowsLocation_= logErrorRowsLocation_;
   result->logErrorRows_ = logErrorRows_;
   result->noDuplicates_= noDuplicates_;
-  result->indexes_= indexes_;
+  result->rebuildIndexes_= rebuildIndexes_;
+  result->hasUniqueIndexes_ = hasUniqueIndexes_;
   result->constraints_= constraints_;
   result->noOutput_= noOutput_;
   result->indexTableOnly_= indexTableOnly_;
@@ -5503,6 +5503,16 @@ RelExpr * ExeUtilHBaseBulkLoad::bindNode(BindWA *bindWA)
   boundExpr = ExeUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;
+
+  // Allocate a TableDesc and attach it to this.
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus()) 
+    return this;
+
+  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
+  if (bindWA->errStatus())
+    return this;
+  setHasUniqueIndexes(getUtilTableDesc()->hasUniqueIndexes());
 
   return boundExpr;
 }
@@ -5575,16 +5585,16 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         setNoDuplicates(FALSE);
       }
       break;
-      case NO_POPULATE_INDEXES_:
+      case REBUILD_INDEXES_:
       {
-        if (!getIndexes())
+        if (getRebuildIndexes())
         {
           //4488 bulk load option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4488)
-                  << DgString0("NO POPULATE INDEXES");
+                  << DgString0("REBUILD INDEXES");
           return 1;
         }
-        setIndexes(FALSE);
+        setRebuildIndexes(TRUE);
       }
       break;
       case CONSTRAINTS_:
@@ -5705,13 +5715,37 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
     // target table is index then : no output, no secondary index maintenance
     // and no constraint maintenance
     setNoOutput(TRUE);
-    setIndexes(FALSE);
+    setRebuildIndexes(FALSE);
     setConstraints(FALSE);
   }
 
   return 0;
 
 };
+
+RelExpr * ExeUtilHBaseBulkLoadTask::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // Allocate a TableDesc and attach it to this.
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus()) 
+    return this;
+
+  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
+  if (bindWA->errStatus())
+    return this;
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  return boundExpr;
+}
+
 RelExpr * ExeUtilHBaseBulkLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   ExeUtilHBaseBulkLoadTask *result;

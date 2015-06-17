@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -314,6 +314,9 @@ public:
   }
   NABoolean isActive(const CollIndex position) const;
   Lng32      getNodeNumber(const CollIndex position) const;
+  Lng32      getPopularNodeNumber(const CollIndex beginPos, 
+                                  const CollIndex endPos) const;
+  Lng32      mapNodeNameToNodeNum(const NAString node) const;
   Lng32      getClusterNumber(const CollIndex position) const;
   Int32       getTableIdent(void) const  {return tableIdent_; }
   NABoolean isMultiCluster(CollIndex start, CollIndex end, 
@@ -330,6 +333,8 @@ public:
   CollIndex getEstNumActivePartitionsAtRuntime();
 
   CollIndex getNumActiveDP2Volumes();
+
+  Int32 getNumberOfUniqueNodes() const;
 
   NABoolean isCoLocated(const NodeMap*) const;
 

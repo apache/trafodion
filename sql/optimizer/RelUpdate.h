@@ -136,7 +136,10 @@ GenericUpdate(const CorrName &name,
     uniqueRowsetHbaseOper_(FALSE),
     canDoCheckAndUpdel_(FALSE),
     noDTMxn_(FALSE),
-    noCheck_(FALSE)
+    noCheck_(FALSE),
+    noIMneeded_(FALSE),
+    useMVCC_(FALSE),
+    useSSCC_(FALSE)
   {}
 
   // copy ctor
@@ -263,6 +266,15 @@ GenericUpdate(const CorrName &name,
                                        { return indexBeginKeyPredArray_; }
   ARRAY(ValueIdList) &indexEndKeyPredArray()
                                          { return indexEndKeyPredArray_; }
+
+  void setNoIMneeded(NABoolean v)
+  {
+    noIMneeded_ = v;
+  }
+  NABoolean noIMneeded()
+  {
+    return noIMneeded_;
+  }
 
   // The generator needs a reference to the original scan columns
   // ##IM: not needed any more (?) -- REMOVE the scanIndexDesc_ member! (?)
@@ -507,6 +519,16 @@ GenericUpdate(const CorrName &name,
 
   NABoolean noCheck() { return noCheck_; }
   void setNoCheck(NABoolean v) { noCheck_ = v; }
+
+  NABoolean &useMVCC() { return useMVCC_; }
+
+  NABoolean &useSSCC() { return useSSCC_; }
+ 
+  NABoolean useMVCCorSSCC() { if (useSSCC_ || useMVCC_)
+                                return TRUE;
+                               else
+                                 return FALSE; 
+                            }
 protected:
   
 private:
@@ -873,6 +895,17 @@ private:
   // For delete, rows are deleted if they exist. Caller doesn't get an indication if
   // a row existed or not.
   NABoolean noCheck_;
+
+  // curently used by Delete and Bulk Load Insert only. Other operators
+  // have different schemes to avoid IM
+  NABoolean noIMneeded_;
+
+  // if set to ON, then this statement will run under MVCC mode
+  NABoolean useMVCC_;
+
+  // if set to ON, then this statement will run under SSCC mode
+  NABoolean useSSCC_;
+
 };
 
 // -----------------------------------------------------------------------
@@ -1086,6 +1119,15 @@ public:
     createUstatSample_ = val;
   }
 
+  const ItemExprList &baseColRefs() const       { return *baseColRefs_; }
+
+  void setBaseColRefs(ItemExprList * val) {
+    baseColRefs_ = val;
+  }
+
+  NABoolean isUpsertThatNeedsMerge() const;
+  RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
+
 protected:
 
   InsertType       insertType_;
@@ -1190,6 +1232,10 @@ private:
   // If this is TRUE, a sample table will be created during the bulk load for
   // use by Update Statistics.
   NABoolean createUstatSample_;
+
+  // ColReference list of the base table columns used in creating the
+  // newRecExprArray_ during bindNode(). Used only for index maintenance.
+  ItemExprList *baseColRefs_;
 };
 
 // -----------------------------------------------------------------------
@@ -1203,9 +1249,8 @@ public:
              ItemExprList *afterColumns,
              OperatorTypeEnum otype = REL_LEAF_INSERT,
              CollHeap *oHeap = CmpCommon::statementHeap())
-  : Insert(name, tabId, otype, NULL, NULL, NULL, oHeap),
-    baseColRefs_(afterColumns)
-  {}
+  : Insert(name, tabId, otype, NULL, NULL, NULL, oHeap)
+  {setBaseColRefs(afterColumns);}
 
   // copy ctor
   LeafInsert (const LeafInsert &) ; // not written
@@ -1215,13 +1260,6 @@ public:
 
   // a virtual function for performing name binding within the query tree
   virtual RelExpr *bindNode(BindWA *bindWA);
-
-  const ItemExprList &baseColRefs() const       { return *baseColRefs_; }
-
-private:
-  // ColReference list of the new(after) columns used in creating the
-  // newRecExprArray_ during bindNode().
-  ItemExprList *baseColRefs_;
 
 };
 
@@ -1450,15 +1488,7 @@ public:
   {
     return isFastDelete_;
   }
-  void setNoIMneeded(NABoolean v)
-  {
-    noIMneeded_ = v;
-  }
-  NABoolean noIMneeded()
-  {
-    return noIMneeded_;
-  }
-
+  
   ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
 
   ConstStringList* &csl() { return csl_; }
@@ -1470,7 +1500,6 @@ public:
 
 private:
   NABoolean isFastDelete_;
-  NABoolean noIMneeded_;
 
   ValueIdList  lobDeleteExpr_;
 
@@ -1766,8 +1795,9 @@ public:
                RelExpr *child = NULL,
                CollHeap *oHeap = CmpCommon::statementHeap(),
                InsertType insertType = SIMPLE_INSERT)
-  : Insert(name,tabId,otype,child,NULL,NULL,oHeap, insertType)
-    {};
+       : Insert(name,tabId,otype,child,NULL,NULL,oHeap, insertType),
+         returnRow_(FALSE)
+       {};
 
   // copy ctor
   HbaseInsert(const HbaseInsert&) ; // not written
@@ -1789,6 +1819,9 @@ public:
   // get a printable string that identifies the operator
   const NAString getText() const;
 
+  void setReturnRow(NABoolean val) {returnRow_ = val;}
+  NABoolean isReturnRow() {return returnRow_;}
+
   // method to do code generation
   virtual RelExpr *preCodeGen(Generator * generator,
                               const ValueIdSet & externalInputs,
@@ -1801,6 +1834,7 @@ private:
 
   // used when lob colums are being loaded. Set in GenPreCode.
   ValueIdList lobLoadExpr_;
+  NABoolean returnRow_ ; // currently used only for bulk load incremental IM
 
 
 };

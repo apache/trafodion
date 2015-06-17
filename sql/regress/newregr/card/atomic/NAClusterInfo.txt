@@ -1,0 +1,74 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+localCluster_: 93
+localSMP_: 0
+dp2NameToInfoMap_: 44 :
+           dp2name_  clusterNumber_  primaryCPU_  secondaryCPU_
+     \NEOPRF2.$SWAP              93            0              1
+   \NEOPRF2.$PRF1B1              93            7              6
+   \NEOPRF2.$PRF1A1              93            6              7
+   \NEOPRF2.$PRF191              93            5              4
+   \NEOPRF2.$PRF181              93            4              5
+   \NEOPRF2.$PRF171              93            3              2
+   \NEOPRF2.$SYSTEM              93            0              1
+   \NEOPRF2.$PRF161              93            2              3
+   \NEOPRF2.$PRF151              93            1              0
+   \NEOPRF2.$PRF141              93            0              1
+    \NEOPRF2.$AUDIT              93            0              1
+      \NEOPRF2.$OSS              93            1              0
+   \NEOPRF2.$FC0703              93            7              6
+   \NEOPRF2.$FC0702              93            7              6
+   \NEOPRF2.$FC0603              93            6              7
+   \NEOPRF2.$FC0701              93            7              6
+   \NEOPRF2.$FC0602              93            6              7
+   \NEOPRF2.$FC0503              93            5              4
+   \NEOPRF2.$FC0700              93            7              6
+   \NEOPRF2.$FC0601              93            6              7
+   \NEOPRF2.$FC0502              93            5              4
+   \NEOPRF2.$FC0403              93            4              5
+   \NEOPRF2.$FC0600              93            6              7
+   \NEOPRF2.$FC0501              93            5              4
+   \NEOPRF2.$FC0402              93            4              5
+   \NEOPRF2.$FC0303              93            3              2
+   \NEOPRF2.$FC0500              93            5              4
+   \NEOPRF2.$FC0401              93            4              5
+   \NEOPRF2.$FC0302              93            3              2
+   \NEOPRF2.$FC0203              93            2              3
+   \NEOPRF2.$FC0400              93            4              5
+   \NEOPRF2.$FC0301              93            3              2
+   \NEOPRF2.$FC0202              93            2              3
+   \NEOPRF2.$FC0103              93            1              0
+   \NEOPRF2.$FC0300              93            3              2
+   \NEOPRF2.$FC0201              93            2              3
+   \NEOPRF2.$FC0102              93            1              0
+   \NEOPRF2.$FC0003              93            0              1
+   \NEOPRF2.$FC0200              93            2              3
+   \NEOPRF2.$FC0101              93            1              0
+   \NEOPRF2.$FC0002              93            0              1
+   \NEOPRF2.$FC0100              93            1              0
+   \NEOPRF2.$FC0001              93            0              1
+   \NEOPRF2.$FC0000              93            0              1
+clusterToCPUMap_: 1 :
+  clusterNum  cpuList
+          93  8 :   0   1   2   3   4   5   6   7 
+discsOnCluster_: 44
+frequency_: 1600
+iorate_: 50
+seekTime_: 0.0038
+pageSize_: 16
+totalMemoryAvailable_: 8388608

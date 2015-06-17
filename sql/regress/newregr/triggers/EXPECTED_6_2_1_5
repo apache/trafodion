@@ -1,0 +1,561 @@
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_6_2_1_5(set_up);
+>>prepare countIt from
++>  select count(*) as NO_OF_TEMP_SCANS
++>  from table (explain(NULL, 'XX'))
++>  where operator like 'FILE_SCAN%' and tname like '%__TEMP%';
+
+--- SQL command prepared.
+>>
+>>obey TEST_6_2_1_5(tests);
+>>------------------------------------------------------------------------------
+>>-- Test case 1: using NEW only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing new as newr
++>for each row
++>insert into tab1A values(newr.a, newr.b, newr.c, newr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 2: using OLD only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, oldr.c, oldr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 3: using OLD & NEW
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, newr.c, newr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 2
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 4: using CI cols only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 5: using CI cols and OLD only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 6: using OLD only although referencing NEW & OLD
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(oldr.a, newr.b, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 7: using neither OLD nor NEW
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(0, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 8: using before triggers
+>>------------------------------------------------------------------------------
+>>
+>>create trigger BT1
++>before update on tab1A
++>referencing new as newr
++>set newr.b=newr.b+1;
+
+--- SQL operation complete.
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(0, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 4
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>drop trigger BT1;
+
+--- SQL operation complete.
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_6_2_1_5(set_up);
+>>prepare countIt from
++>  select count(*) as NO_OF_TEMP_SCANS
++>  from table (explain(NULL, 'XX'))
++>  where operator like 'FILE_SCAN%' and tname like '%__TEMP%';
+
+--- SQL command prepared.
+>>
+>>obey TEST_6_2_1_5(tests);
+>>------------------------------------------------------------------------------
+>>-- Test case 1: using NEW only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing new as newr
++>for each row
++>insert into tab1A values(newr.a, newr.b, newr.c, newr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 2: using OLD only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, oldr.c, oldr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 3: using OLD & NEW
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, newr.c, newr.d);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 2
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 4: using CI cols only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 5: using CI cols and OLD only
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr
++>for each row
++>insert into tab1A values(oldr.a, oldr.b, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 6: using OLD only although referencing NEW & OLD
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(oldr.a, newr.b, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 7: using neither OLD nor NEW
+>>------------------------------------------------------------------------------
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(0, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 1
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>
+>>------------------------------------------------------------------------------
+>>-- Test case 8: using before triggers
+>>------------------------------------------------------------------------------
+>>
+>>create trigger BT1
++>before update on tab1A
++>referencing new as newr
++>set newr.b=newr.b+1;
+
+--- SQL operation complete.
+>>
+>>create trigger RT1
++>after update on tab1A
++>referencing old as oldr, new as newr
++>for each row
++>insert into tab1A values(0, 0, 0, 0);
+
+--- SQL operation complete.
+>>
+>>prepare XX from update tab1A set b=b+1,c=c+1;
+
+--- SQL command prepared.
+>>
+>>-- expected: 4
+>>execute countIt;
+
+NO_OF_TEMP_SCANS    
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>drop trigger RT1;
+
+--- SQL operation complete.
+>>drop trigger BT1;
+
+--- SQL operation complete.
+>>set schema CAT1.SCHM;
+
+--- SQL operation complete.
+>>obey TEST_6_2_1_5(clean_up);
+>>DROP TRIGGER RT1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.RT1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER BT1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM.BT1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>set schema CAT1.SCHM_ALT;
+
+--- SQL operation complete.
+>>obey TEST_6_2_1_5(clean_up);
+>>DROP TRIGGER RT1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM_ALT.RT1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>DROP TRIGGER BT1;
+
+*** ERROR[11030] Trigger does not exist.
+
+*** ERROR[1031] Object CAT1.SCHM_ALT.BT1 could not be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>LOG;

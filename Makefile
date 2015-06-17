@@ -32,7 +32,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb check-copyrights
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
 
 package: pkg-product pkg-client
 

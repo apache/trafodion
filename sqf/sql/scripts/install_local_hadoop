@@ -332,6 +332,7 @@ MY_CMD=$0
 MY_IMPLICIT_Y=
 NOACTION=
 VERBOSE=
+MISSING_P_VAL="ERROR: -p option should be followed by <start port num>, rand or fromDisplay"
 
 # process command line arguments
 ################################
@@ -340,11 +341,15 @@ while [ $# -gt 0 ];
 do
   case $1 in
 -p) shift
+    if [[ -z "$1" ]]; then
+      echo "$MISSING_P_VAL"
+      exit 1
+    fi
     MY_START_PORT=$1
     if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" ]; then
       test $MY_START_PORT -gt 0 >/dev/null 2>&1
       if [ $? -ne 0 ]; then
-        echo "-p option should be followed by <start port num>, rand or fromDisplay"
+        echo "$MISSING_P_VAL"
         exit 1
       fi
     fi
@@ -362,7 +367,7 @@ do
     ;;
 -v) VERBOSE="y"
     ;;
-*)  echo "Unexpected argument $1"
+*)  echo "ERROR: Unexpected argument $1"
     echo
     cat <<EOF
 Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]  [-n] [-v]
