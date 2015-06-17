@@ -312,14 +312,16 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    Int64 &requestTag,
 			    Int64 xnId,
 			    Int64 &descSyskey,
+			    LobsOper lo,
 
 			    Lng32 * cliError,
 			    LobsSubOper so,
-			    Lng32 checkStatus,
+			    
 			    Lng32 waitedOp,
 			    
 			    char * srcLobData, 
 			    Int64  srcLobLen,
+			    Int64 lobMaxSize,
 			    int   bufferSize ,
 			    short replication ,
 			    int   blockSize)
@@ -334,25 +336,13 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
   Int64 outDescSyskey  = -1;
   if (srcLobData)
     inDescSyskey = descSyskey;
-  
-  LobsOper lo;
-  if (checkStatus)
-    lo = Lob_Check_Status;
-  else if (lobHandle == NULL)
-    {
-      requestTag = -1;
-      lo = Lob_InsertDataSimple;
-    }
-  else if (srcLobData == NULL)
-    {
-      requestTag = -1;
-      lo = Lob_InsertDesc;
-    }
-  else
-    {
-      requestTag = -1;
-      lo = Lob_InsertData;
-    }
+ 
+ 
+  if (( lo == Lob_InsertDataSimple) || 
+      ( lo == Lob_InsertDesc) || 
+      (lo == Lob_InsertData))
+    requestTag = -1;
+      
 
   LobsStorage ls = (LobsStorage)lobType;
 
@@ -368,12 +358,13 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 		   lobStorageLocation, ls, //Lob_HDFS_File,
 		   srcLobData, srcLobLen, //strlen(srcLobData),
 		   0,NULL,
-		   lo, //(checkStatus ? Lob_Check_Status : Lob_Insert),
+		   lo, 
 		   so,
                    waitedOp,
 		   lobGlob,
 		   xnId, 
 		   blackBox, blackBoxLen,
+		   lobMaxSize,
 		   bufferSize,
 		   replication,
 		   blockSize
@@ -481,7 +472,8 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS)
+				  Int64 srcDescTS
+				  )
 {
   Ex_Lob_Error err;
 
@@ -690,7 +682,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 handleLen,
 			    char * lobHandle,
 			    Int64 &requestTag,
-
+			    LobsSubOper so,
 			    Int64 xnId,
 			    Lng32 checkStatus,
 			    Lng32 waitedOp,
@@ -717,7 +709,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
       requestTag = -1;
       lo = Lob_Read;
     }
-
+ 
   LobsStorage ls = (LobsStorage)lobType;
 
   err = ExLobsOper(lobName, 
@@ -732,7 +724,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 		   lobData, inLen, 
 		   0, NULL,
 		   lo,
-		   Lob_Memory,
+		   so,
                    waitedOp, 
 		   lobGlob,
 		   xnId, 

@@ -270,7 +270,8 @@ public:
 			Lng32 snapTimeout = 0,
 			char * snapName = NULL,
 			char * tmpLoc = NULL,
-			Lng32 espNum = 0);
+			Lng32 espNum = 0,
+                        Lng32 versions = 0);
   HTC_RetCode startGet(Int64 transID, const HbaseStr& rowID, const LIST(HbaseStr) & cols, 
 		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
@@ -319,7 +320,7 @@ public:
               int colNo,
               BYTE **colVal,
               Lng32 &colValLen);
-  HTC_RetCode getNumCols(int &numCols);
+  HTC_RetCode getNumCellsPerRow(int &numCells);
   HTC_RetCode getRowID(HbaseStr &rowID);
   HTC_RetCode nextCell(HbaseStr &rowId,
                  HbaseStr &colFamName,

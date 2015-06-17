@@ -1858,8 +1858,12 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_, NOOP_
+    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_, NOOP_
   };
+  enum ExtractFileActionType
+  {
+    ERROR_IF_NOT_EXISTS =1, TRUNCATE_EXISTING };
+  
   
  ExeUtilLobExtract(ItemExpr * handle, 
 		   ExtractToType toType,
@@ -1896,8 +1900,8 @@ public:
   
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
 
-  virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
-  
+  //virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
+  virtual NABoolean producesOutput() { return  TRUE ; }
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
   
@@ -1937,8 +1941,8 @@ public:
   ItemExpr * bufAddrExpr_;
   ItemExpr * bufSizeExpr_;
   
-  Int64 intParam_;  // output row size of each row for TO_STRING_.  Max file size for TO_FILE_.
-  Int64 intParam2_;
+  Int64 intParam_;   // options for create or size limit
+  Int64 intParam2_;// options for file behavior
   NAString stringParam_; // output file name for TO_FILE_.
 
   NAString stringParam2_;

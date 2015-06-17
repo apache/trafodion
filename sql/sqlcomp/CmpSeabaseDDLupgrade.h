@@ -487,7 +487,8 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
 
   short restoreOldMDtables(ExpHbaseInterface *ehi);
 
-  short upgradePrivMgr();
+  short upgradePrivMgr(ExeCliInterface *cliInterface, NAString 
+                       &privMgrDoneMsg);
 
   short customizeNewMD(CmpDDLwithStatusInfo *mdui, ExeCliInterface &cliInterface);
   short customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,

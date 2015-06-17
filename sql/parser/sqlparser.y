@@ -529,6 +529,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COLUMN_CREATE
 %token <tokval> TOK_COLUMN_LOOKUP
 %token <tokval> TOK_COLUMN_DISPLAY
+%token <tokval> TOK_HBASE_TIMESTAMP
+%token <tokval> TOK_HBASE_VERSION
 %token <tokval> TOK_COMMANDS
 %token <tokval> TOK_COMMAND_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_COMMENT
@@ -1158,6 +1160,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_VARWCHAR
 %token <tokval> TOK_VARYING
 %token <tokval> TOK_VERSION
+%token <tokval> TOK_VERSIONS
 %token <tokval> TOK_VPROC
 %token <tokval> TOK_VERSION_INFO        /* Versioning. Non-reserved */
 %token <tokval> TOK_VOLATILE
@@ -1635,6 +1638,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   RelExpr              		*relx;
   double              		     doubleVal;
   Hint              		    *hint;
+  HbaseAccessOptions          *hbaseAccessOptions;
   RelExpr::AtomicityType        atomicityType;
   SchemaName                    *pSchemaName;
   SequenceOfLong                *longSeq;
@@ -1922,6 +1926,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hint>      		hints
 %type <hint>      		index_hints
 %type <hint>      		ignore_ms4_hints
+%type <hbaseAccessOptions>     hbase_access_options
 %type <stringval>    	index_hint
 %type <doubleVal>       number
 %type <doubleVal>       selectivity_number
@@ -6176,6 +6181,39 @@ global_hint : empty { $$ = FALSE; }
     | TOK_BEGIN_HINT TOK_ORDERED TOK_END_HINT 
       { $$ = TRUE; QueryAnalysis::Instance()->setJoinOrderByUser(); }
 
+/* type hbaseAccessOptions */
+hbase_access_options : empty 
+       {
+         Lng32 n = CmpCommon::getDefaultNumeric(TRAF_NUM_HBASE_VERSIONS);
+         if (n == -1)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(-1, PARSERHEAP());
+         else if (n == -2)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(-2, PARSERHEAP());
+         else if (n > 1)
+           $$ = new (PARSERHEAP()) HbaseAccessOptions(n, PARSERHEAP());
+         else
+           $$ = NULL; 
+       }
+    | '{' TOK_VERSIONS NUMERIC_LITERAL_EXACT_NO_SCALE '}'
+      {
+        Int64 value = atoInt64($3->data()); 
+        if (value <= 0)
+          YYERROR;
+
+        if (value > 1)
+          $$ = new (PARSERHEAP()) HbaseAccessOptions(value, PARSERHEAP());
+        else
+          $$ = NULL;
+      }
+    | '{' TOK_VERSIONS TOK_MAX '}'
+      {
+        $$ = new (PARSERHEAP()) HbaseAccessOptions(-1, PARSERHEAP());
+      }
+    | '{' TOK_VERSIONS TOK_ALL '}'
+      {
+        $$ = new (PARSERHEAP()) HbaseAccessOptions(-2, PARSERHEAP());
+      }
+
 /* type hint */
 optimizer_hint : empty { $$ = NULL; }
     | TOK_BEGIN_HINT hints TOK_END_HINT { $$ = $2; }
@@ -6557,10 +6595,15 @@ table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
     $$ = $3;
   }
 
-table_name_and_hint : table_name optimizer_hint
+table_name_and_hint : table_name optimizer_hint hbase_access_options
                       {
                         $$ = new (PARSERHEAP()) Scan(*$1);
-                        if ($2) $$->setHint($2);
+                        if ($2) 
+                          $$->setHint($2);
+
+                        if ($3)
+                          ((Scan*)$$)->setHbaseAccessOptions($3);
+                        
                         delete $1;
                       }
                     | '(' table_name_and_hint ')'
@@ -6858,13 +6901,17 @@ del_stmt_w_acc_type_rtn_list_and_as_clause_col_list : '('  delete_statement acce
                    $$ = $2;
                  }
 
-table_name_as_clause_and_hint : table_name as_clause optimizer_hint
+table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access_options
                                 {
                                   $1->setCorrName(*$2);
                                   $$ = new (PARSERHEAP()) Scan(*$1);
-                                  if ($3) $$->setHint($3);
-                                     delete $1;
-                                     delete $2;
+                                  if ($3) 
+                                    $$->setHint($3);
+                                  if ($4)
+                                    ((Scan*)$$)->setHbaseAccessOptions($4);
+                                   
+                                  delete $1;
+                                  delete $2;
                                 }
                               | '(' table_name_as_clause_and_hint ')'
                                 {
@@ -6872,12 +6919,18 @@ table_name_as_clause_and_hint : table_name as_clause optimizer_hint
                                   $$ = $2;
                                 }
 
-table_name_as_clause_hint_and_col_list : table_name as_clause optimizer_hint '(' derived_column_list ')'
+table_name_as_clause_hint_and_col_list : table_name as_clause optimizer_hint hbase_access_options '(' derived_column_list ')'
                                          {
+                                           Scan * sc = new (PARSERHEAP()) Scan(*$1);
                                            $$ = new (PARSERHEAP())
-				             RenameTable(
-				               new (PARSERHEAP()) Scan(*$1), *$2, $5);
-                                           if ($3) $$->setHint($3);
+				             RenameTable(sc, *$2, $6);
+
+                                           if ($3) 
+                                             $$->setHint($3);
+
+                                           if ($4)
+                                             sc->setHbaseAccessOptions($4);
+                                           
                                            delete $1;
                                            delete $2;
                                          }
@@ -9755,6 +9808,15 @@ misc_function :
                                   $$ = new (PARSERHEAP()) RowNumFunc();
                                 }
 
+       | TOK_HBASE_VERSION '(' dml_column_reference  ')'
+                              {
+                                $$ = new (PARSERHEAP()) HbaseVersionRef($3);
+			      }
+
+       | TOK_HBASE_TIMESTAMP '(' dml_column_reference  ')'
+                              {
+                                $$ = new (PARSERHEAP()) HbaseTimestampRef($3);
+			      }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
@@ -12574,18 +12636,14 @@ insert_obj_to_lob_function :
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
-				}
-                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
-			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::FILE_, FALSE);
-				}
+				}			       
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
 				}
-                          | TOK_FILETOLOB '(' literal ')'
+                          | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
-                                  YYERROR;
+                                  
                                   $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::FILE_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ')'
@@ -12615,10 +12673,12 @@ update_obj_to_lob_function :
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ',' TOK_APPEND ')'
 			        {
+				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, TRUE);
 				}
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
@@ -12666,17 +12726,18 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBselect( $3, $5, LOBoper::FILE_);
 				  
 				}
+                         
 			  | TOK_LOBTOSTRING '(' value_expression ')'
 			        {
 				  
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,LOBoper::STRING_);
 				 
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
 			        {
 				 
 				  Int64 tgtSize = atoInt64($5->data());
-				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_, (Lng32)tgtSize);
+				  $$ = new (PARSERHEAP()) LOBconvert( $3,  LOBoper::STRING_, (Lng32)tgtSize);
 				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' TOK_EXTRACT ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
@@ -12693,6 +12754,7 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  $$ = new (PARSERHEAP()) LOBextract( $3, (Lng32)rowSize);
 				  
 				}
+                           
 
 table_value_constructor : TOK_VALUES '(' insert_value_expression_list ')' 
 				{
@@ -15531,7 +15593,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
-		    ExeUtilLobExtract::TO_STRING_,
+		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
 		    NULL, NULL, 0, 0);
 
 		 $$ = lle;
@@ -15585,10 +15647,11 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 $$ = lle;
 	       }
 
-               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ')'
+              
+            | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING  ','  QUOTED_STRING ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file');
+                 // extract lobtofile (lob 'abc',  'file');
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15596,16 +15659,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 0 /* truncate*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE  ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_CREATE  ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15613,16 +15677,17 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 0 /* truncate */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0, 
+		    ExeUtilLobExtract::TRUNCATE_EXISTING ,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
+               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ','  QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
                {
                  // if file exists, append. if file doesn't exist, create
-                 // extract lobtofile (lob 'abc', output file 'file', create);
+                 // extract lobtofile (lob 'abc',  'file', create);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15630,16 +15695,18 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 1 /*CreateIfNotExist*/, 1 /* append */,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    0,
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_APPEND ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_APPEND ')'
                {
                  // if file exists, append. if file doesn't exist, error
-                 // extract lobtofile (lob 'abc', output file 'file', append);
+                 // extract lobtofile (lob 'abc',  'file', append);
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
@@ -15647,8 +15714,10 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
-		    NULL, NULL, 0, 1 /*append*/,
-		    (char*)$8->data(), (char*)$11->data());
+		    NULL, NULL, 
+		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
+		    0,
+		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
@@ -32888,6 +32957,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_VARIABLE_POINTER
                       | TOK_VOLATILE			
                       | TOK_VERSION
+                      | TOK_VERSIONS
                       | TOK_VPROC
                       | TOK_VERSION_INFO		// Versioning
                       | TOK_VIEWS
@@ -32999,6 +33069,8 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_GREATEST
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
+                      | TOK_HBASE_TIMESTAMP
+                      | TOK_HBASE_VERSION
                       | TOK_HIVEMD
                       | TOK_INITIAL
                       | TOK_INSTR

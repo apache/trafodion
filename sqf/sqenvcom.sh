@@ -185,6 +185,8 @@ unset USE_HADOOP_1
 # HADOOP_INC_DIR           directory with header files for libhdfs
 # THRIFT_LIB_DIR           directory of Thrift library libthrift.so
 # THRIFT_INC_DIR           directory with header files for thrift
+# CURL_LIB_DIR           directory of Thrift library libcurl.so
+# CURL_INC_DIR           directory with header files for curl
 # LOC_JVMLIBS              directory of the JNI C++ DLL libjvm.so
 # LOG4CXX_LIB_DIR          directory of log4cxx library lib4cxx.so
 # LOG4CXX_INC_DIR          directory with header files for log4cxx
@@ -223,7 +225,8 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
   export HADOOP_INC_DIR=$YARN_HOME/include
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
-
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="$YARN_HOME/share/hadoop/common
                           $YARN_HOME/share/hadoop/common/lib
@@ -257,6 +260,8 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   export HADOOP_INC_DIR=$TOOLSDIR/hadoop-2.4.0/include
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="$TOOLSDIR/hadoop-2.4.0/share/hadoop/common
@@ -293,6 +298,10 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
  
+
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
+
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
@@ -335,6 +344,8 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   ### Thrift not supported on Hortonworks yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
@@ -394,6 +405,8 @@ elif [[ -d /opt/mapr ]]; then
   ### Thrift not supported on MapR (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
 
   # native library directories and include directories
   if [[ -r $MAPR_HADOOPDIR/lib/native/Linux-amd64-64/libhdfs.so ]]; then

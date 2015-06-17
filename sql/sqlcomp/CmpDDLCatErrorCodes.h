@@ -221,7 +221,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_RESERVED_METADATA_SCHEMA_NAME             = 1187
                   , CAT_RI_CIRCULAR_DEPENDENCY                    = 1188
                   , CAT_VIEW_NAME_VALID                           = 1189
-                  
+
                   , CAT_DROP_LABEL_ERROR_FELABELBAD               = 1194
                   , CAT_INVALID_SYSTEM_NAME                       = 1196
                   , CAT_INVALID_SALTED_UNIQUE_IDX                 = 1201
@@ -429,10 +429,6 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   // Collation for Catlog & Schema
                   , CAT_CATALOG_COLLATION_NOT_SUPPORTED           = 1580
                   , CAT_SCHEMA_COLLATION_NOT_SUPPORTED            = 1581
-
-                  // This block of error numbers are also used by mxtool verify
-                  // in the file sqlutils/inc/sqlutils_msg.h.  If changed
-                  // makesure they are still workable for mxtool verify.
 
                   // Sequence Generator alter table errors
                   , CAT_SG_ALTER_NOT_IDENTITY_COLUMN_ERROR        = 1590

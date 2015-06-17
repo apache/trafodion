@@ -40,6 +40,7 @@
 #include "opt.h"
 #include "HDFSHook.h"
 #include "CliSemaphore.h"
+#include "ExpHbaseDefs.h"
 
 NAFileSet::NAFileSet(const QualifiedName & fileSetName,
 		     const QualifiedName & extFileSetObj,
@@ -113,11 +114,26 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
            keysDesc_(keysDesc),
            hHDFSTableStats_(hHDFSTableStats),
            numSaltPartns_(numSaltPartns),
-           hbaseCreateOptions_(hbaseCreateOptions)
+           hbaseCreateOptions_(hbaseCreateOptions),
+           numMaxVersions_(1)
 {
   setUniqueIndex(isUniqueSecondaryIndex);
   setIsVolatile(isVolatile);
   setInMemoryObjectDefn(inMemObjectDefn);
+
+  if (hbaseCreateOptions_)
+    {
+      for (Lng32 i = 0; i < hbaseCreateOptions_->entries(); i++)
+        {
+          HbaseCreateOption * hco = (*hbaseCreateOptions_)[i];
+          
+          if (hco->key() == "MAX_VERSIONS")
+            {
+              numMaxVersions_ = atoInt64(hco->val().data());
+            }
+        }
+      
+    }
 }
 
 NAFileSet::~NAFileSet()

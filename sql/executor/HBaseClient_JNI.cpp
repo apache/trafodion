@@ -2971,7 +2971,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
-    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZZILjava/lang/String;Ljava/lang/String;I)Z";
+    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZZILjava/lang/String;Ljava/lang/String;II)Z";
     JavaMethods_[JM_GET_OPEN   ].jm_name      = "startGet";
     JavaMethods_[JM_GET_OPEN   ].jm_signature = "(J[B[Ljava/lang/Object;J)I";
     JavaMethods_[JM_GETS_OPEN  ].jm_name      = "startGet";
@@ -3038,7 +3038,8 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 					Lng32 snapTimeout,
 					char * snapName ,
 					char * tmpLoc,
-					Lng32 espNum)
+					Lng32 espNum,
+                                        Lng32 versions)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startScan() called.");
 
@@ -3094,8 +3095,6 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   numReqRows_ = numCacheRows;
   currentRowNum_ = -1;
   currentRowCellNum_ = -1;
-  
-
 
   jobjectArray j_colnamestofilter = NULL;
   if ((inColNamesToFilter) && (!inColNamesToFilter->isEmpty()))
@@ -3160,6 +3159,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   jboolean j_useSnapshotScan = useSnapshotScan;
   jint j_snapTimeout = snapTimeout;
   jint j_espNum = espNum;
+  jint j_versions = versions;
 
   jstring js_snapName = jenv_->NewStringUTF(snapName != NULL ? snapName : "Dummy");
    if (js_snapName == NULL)
@@ -3182,12 +3182,14 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
       hbs_->getTimer().start();
 
   tsRecentJMFromJNI = JavaMethods_[JM_SCAN_OPEN].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-            JavaMethods_[JM_SCAN_OPEN].methodID, 
-            j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
-            j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
-            j_smplPct, j_preFetch, j_useSnapshotScan,
-            j_snapTimeout, js_snapName, js_tmp_loc, j_espNum);
+  jboolean jresult = jenv_->CallBooleanMethod(
+                                              javaObj_, 
+                                              JavaMethods_[JM_SCAN_OPEN].methodID, 
+                                              j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
+                                              j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
+                                              j_smplPct, j_preFetch, j_useSnapshotScan,
+                                              j_snapTimeout, js_snapName, js_tmp_loc, j_espNum,
+                                              j_versions);
 
   if (hbs_)
   {
@@ -5264,11 +5266,11 @@ HTC_RetCode HTableClient_JNI::getColVal(NAHeap *heap, int colNo, BYTE **colVal,
     return HTC_OK;
 }
 
-HTC_RetCode HTableClient_JNI::getNumCols(int &numCols)
+HTC_RetCode HTableClient_JNI::getNumCellsPerRow(int &numCells)
 {
     jint kvsPerRow = p_kvsPerRow_[currentRowNum_];
-    numCols = kvsPerRow;
-    if (numCols == 0)
+    numCells = kvsPerRow;
+    if (numCells == 0)
        return HTC_DONE_DATA;
     else
        return HTC_OK;

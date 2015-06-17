@@ -48,46 +48,30 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------
 
-          1  LOBH000002000100073799409368804257171637851416934573018212285097957215483017"TRAFODION"."SCH"       
-          2  LOBH000002000100073799409368804257171637851417317319618212285097963203014017"TRAFODION"."SCH"       
-          3  LOBH000002000100073799409368804257171637851417635354318212285097966389715017"TRAFODION"."SCH"       
+          1  LOBH000002000100013579647185009197177606709209127596718212300980818700469017"TRAFODION"."SCH"       
+          2  LOBH000002000100013579647185009197177606709209460413718212300980822060824017"TRAFODION"."SCH"       
+          3  LOBH000002000100013579647185009197177606709209768095018212300980825169591017"TRAFODION"."SCH"       
 
 --- 3 row(s) selected.
 >>
 >>
 >>select lobtostring(c2,10) from t130lob2;
 
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 (EXPR)    
 ----------
 
 inserted r
-
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 inserted r
-
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 inserted r
 
 --- 3 row(s) selected.
 >>select lobtostring(c2,2) from t130lob2;
 
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 (EXPR)
 ------
 
 in    
-
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 in    
-
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
-
 in    
 
 --- 3 row(s) selected.
@@ -204,8 +188,6 @@ C1           (EXPR)
 
 --- 3 row(s) updated.
 >>select c1, lobtostring(c2,50) from t130lob2;
-
-*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
 
 C1           (EXPR)                                            
 -----------  --------------------------------------------------

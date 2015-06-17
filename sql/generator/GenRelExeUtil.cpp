@@ -3580,7 +3580,7 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     {
       ConstValue * cv = (ConstValue*)handle_;
       
-      NAString h = cv->getConstStr();
+      NAString h = *(cv->getRawText());
       handleLen = h.length();
 
       handle = space->allocateAlignedSpace(handleLen + 1);
@@ -3631,10 +3631,10 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 	     &handle_->child(0)->getValueId().getType());
         */
 	Cast(handle_, 
-	     &handle_->getValueId().getType());
+	     &handle_->getValueId().getType()); // Leave it in string format.
  
-      //	 SQLVarChar(handle_->getValueId().getType().getNominalSize(),
-      //		    handle_->getValueId().getType().supportsSQLnull()));
+      //SQLVarChar(handle_->getValueId().getType().getNominalSize(),
+      //      		    handle_->getValueId().getType().supportsSQLnull()));
       inputExpr->bindNode(generator->getBindWA());
       NAType &nat = (NAType&)inputExpr->getValueId().getType();
       nat.setNullable(TRUE);
@@ -3703,11 +3703,21 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      32000);
 #pragma warn(1506)  // warning elimination 
 
-  if (handleInStringFormat_)
+if (handleInStringFormat_)
     exe_util_tdb->setHandleInStringFormat(TRUE);
 
   if (handle_ == NULL)
     exe_util_tdb->setSrcIsFile(TRUE);
+
+  if (ExtractFileActionType::ERROR_IF_NOT_EXISTS)
+    exe_util_tdb->setErrorIfNotExists(TRUE);   
+  else
+    exe_util_tdb->setErrorIfNotExists(FALSE);
+
+  if (ExtractFileActionType::TRUNCATE_EXISTING)
+    exe_util_tdb->setTruncateExisting(TRUE);
+  else
+    exe_util_tdb->setTruncateExisting(FALSE);
 
   exe_util_tdb->setWithCreate(withCreate_);
 
@@ -3720,6 +3730,11 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, childExplainTuple, 0, generator));
   }
+  if (toType_ == RETRIEVE_LENGTH_)
+    {
+      exe_util_tdb->setRetrieveLength(TRUE);
+    }
+  exe_util_tdb->setBufSize(CmpCommon::getDefaultNumeric(LOB_OUTPUT_SIZE));
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);

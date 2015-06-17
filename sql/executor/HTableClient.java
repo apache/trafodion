@@ -357,18 +357,19 @@ public class HTableClient {
 	}
 
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
-	    Object[]  columns, long timestamp,
-	    boolean cacheBlocks, int numCacheRows,
-	    Object[] colNamesToFilter, 
-	    Object[] compareOpList, 
-	    Object[] colValuesToCompare,
-	    float samplePercent,
-	    boolean inPreFetch,
-	    boolean useSnapshotScan,
-	    int snapTimeout,
-	    String snapName,
-	    String tmpLoc,
-	    int espNum) 
+                                 Object[]  columns, long timestamp,
+                                 boolean cacheBlocks, int numCacheRows,
+                                 Object[] colNamesToFilter, 
+                                 Object[] compareOpList, 
+                                 Object[] colValuesToCompare,
+                                 float samplePercent,
+                                 boolean inPreFetch,
+                                 boolean useSnapshotScan,
+                                 int snapTimeout,
+                                 String snapName,
+                                 String tmpLoc,
+                                 int espNum,
+                                 int versions)
 	        throws IOException, Exception {
 	  if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID+ " CacheBlocks: " + cacheBlocks + " numCacheRows: " + numCacheRows + " Bulkread: " + useSnapshotScan);
 
@@ -384,15 +385,31 @@ public class HTableClient {
 	  else
 	    scan = new Scan();
 
-		if (cacheBlocks == true) {
-	    scan.setCacheBlocks(true);
-			// Disable block cache for full table scan
-			if (startRow == null && stopRow == null)
-				scan.setCacheBlocks(false);
-		}
+          if (versions != 0)
+            {
+              if (versions == -1)
+                scan.setMaxVersions();
+              else if (versions == -2)
+                {
+                  scan.setMaxVersions();
+                  scan.setRaw(true);
+                  columns = null;
+                }
+              else if (versions > 0)
+               {
+                 scan.setMaxVersions(versions);
+               }
+           }
+
+          if (cacheBlocks == true) {
+              scan.setCacheBlocks(true);
+              // Disable block cache for full table scan
+              if (startRow == null && stopRow == null)
+                  scan.setCacheBlocks(false);
+          }
 	  else
-	    scan.setCacheBlocks(false);
-		
+              scan.setCacheBlocks(false);
+          
 	  scan.setCaching(numCacheRows);
 	  numRowsCached = numCacheRows;
 	  if (columns != null) {

@@ -6187,12 +6187,6 @@ void CmpSeabaseDDL::initSeabaseMD()
 
   Queue * tempQueue = NULL;
 
-  // Determine if security features should be enabled
-  NABoolean securityFeaturesEnabled = FALSE;
-  char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
-  if (env)
-     securityFeaturesEnabled = (strcmp(env, "YES") == 0) ? TRUE : FALSE;
-
   // create metadata tables in hbase
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -6389,16 +6383,10 @@ void CmpSeabaseDDL::initSeabaseMD()
      goto label_error;
    }
 
-  // During install, the customer can choose to enable security features through 
-  // a new installation option but not initialize trafodion.  When this happens,
-  // the installer sets the environment variable TRAFODION_ENABLE_AUTHENTICATION
-  // to YES. In this case initialize trafodion needs to enable authorization 
-  if (securityFeaturesEnabled)
-    {
-      initSeabaseAuthorization();
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
-        goto label_error;
-    }
+ if (createPrivMgrRepos(&cliInterface))
+   {
+     goto label_error;
+   }
 
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
@@ -6587,6 +6575,39 @@ short CmpSeabaseDDL::createSchemaObjects(ExeCliInterface *cliInterface)
   
 }
 
+// ----------------------------------------------------------------------------
+// method: createPrivMgrRepos
+//
+// This method is called during initialize trafodion to create the privilege
+// manager repository.
+//
+// Params: 
+//   cliInterface - pointer to a CLI helper class
+//
+// returns:
+//   0: successful
+//  -1: failed
+//
+//  The diags area is populated with any unexpected errors
+// ---------------------------------------------------------------------------- 
+short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface)
+{
+  // During install, the customer can choose to enable security features through 
+  // an installation option which sets the the environment variable 
+  // TRAFODION_ENABLE_AUTHENTICATION to YES. Check to see if security features
+  // should be enabled.
+  char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+  if (strcmp(env, "NO") == 0)
+    return 0;
+
+  std::vector<std::string> tablesCreated;
+  std::vector<std::string> tablesUpgraded;
+
+  if (initSeabaseAuthorization(cliInterface, tablesCreated, tablesUpgraded) < 0)
+    return -1;
+
+  return 0;
+}
 
 void CmpSeabaseDDL::createSeabaseSeqTable()
 {
@@ -7119,59 +7140,106 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
   cleanupLOBDataDescFiles(lobHdfsServer,lobHdfsPort,lobHdfsLoc);
 }
 
-
-
-void CmpSeabaseDDL::initSeabaseAuthorization()
+// ----------------------------------------------------------------------------
+// method:  initSeabaseAuthorization
+//
+// This method:
+//   creates privilege manager metadata, if it does not yet exist
+//   upgrades privilege manager metadata, if it already exists
+//
+// Params:
+//   cliInterface - a pointer to a CLI helper class 
+//   tablesCreated - the list of tables that were created
+//   tablesUpgraded - the list of tables that were upgraded
+//
+// returns
+//   0: successful
+//  -1: failed
+//
+// The diags area is populated with any unexpected errors
+// ----------------------------------------------------------------------------
+short CmpSeabaseDDL::initSeabaseAuthorization(
+  ExeCliInterface *cliInterface,
+  std::vector<std::string> &tablesCreated,
+  std::vector<std::string> &tablesUpgraded)
 { 
+  Lng32 cliRC = 0;
+  NABoolean xnWasStartedHere = FALSE;
+
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+  {
+    SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+    return -1;
+  }
+
+  NAString mdLocation;
+  CONCAT_CATSCH(mdLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
+
+  NAString objectsLocation = mdLocation + NAString(".") + SEABASE_OBJECTS;
+  NAString authsLocation   = mdLocation + NAString(".") + SEABASE_AUTHS;  
+  NAString colsLocation    = mdLocation + NAString(".") + SEABASE_COLUMNS  ; 
+
   NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
 
-  NAString objectsLocation;
-  CONCAT_CATSCH(objectsLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
-  objectsLocation += NAString(".") + SEABASE_OBJECTS;
-
-  NAString authsLocation;
-  CONCAT_CATSCH(authsLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
-  authsLocation += NAString(".") + SEABASE_AUTHS; 
-
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
   PrivStatus retcode = privInterface.initializeAuthorizationMetadata
-    (std::string(objectsLocation.data()), std::string(authsLocation.data())); 
-  if (retcode == STATUS_ERROR && 
-      CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("initialize authorization command");
+    (std::string(objectsLocation.data()), 
+     std::string(authsLocation.data()), 
+     std::string(colsLocation.data()),
+     tablesCreated, tablesUpgraded); 
+
   if (retcode != STATUS_ERROR)
+  {
+    // change authorization status in compiler context and kill arkcmps
     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+  }
+  else
+  {
+    // Add an error if none yet defined in the diags area
+    if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+    cliRC = -1;
+  }
 
-  // define context changed, kill arkcmps, if they are running.
-  for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-    GetCliGlobals()->getArkcmp(i)->endConnection();
-  
-  return;
+  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+
+  return cliRC;
 }
 
-void CmpSeabaseDDL::dropSeabaseAuthorization()
+void CmpSeabaseDDL::dropSeabaseAuthorization(ExeCliInterface *cliInterface)
 {
-  dropSeabaseAuthorization(SEABASE_PRIVMGR_SCHEMA);
-  return;
-}
+  Lng32 cliRC = 0;
+  NABoolean xnWasStartedHere = FALSE;
 
-void CmpSeabaseDDL::dropSeabaseAuthorization (NAString schemaName)
-{
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+  {
+    SEABASEDDL_INTERNAL_ERROR("drop authorization");
+    return;
+  }
+
   NAString privMgrMDLoc;
-  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), schemaName);
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
-  if (retcode == STATUS_ERROR && 
-      CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("drop authorization command");
-  if (retcode != STATUS_ERROR)
+  if (retcode == STATUS_ERROR)
+  {
+    cliRC = -1; 
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+     SEABASEDDL_INTERNAL_ERROR("drop authorization");
+  }
+  else
+  {
     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
-
-  // define context changed, kill arkcmps, if they are running.
-  for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-    GetCliGlobals()->getArkcmp(i)->endConnection();
+    // define context changed, kill arkcmps, if they are running.
+    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+  }
   
+  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
+
   return;
 }
 
@@ -7793,11 +7861,39 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
   else if (ddlExpr->initAuthorization())
     {
-      initSeabaseAuthorization();
+      std::vector<std::string> tablesCreated;
+      std::vector<std::string> tablesUpgraded;
+
+      // Can ignore status returned, diags area contains any unexpected errors
+      initSeabaseAuthorization(&cliInterface, tablesCreated, tablesUpgraded);
+
+#ifdef _DEBUG
+      // Do we want to display this information?  Base it on a cqd or envvar?
+      // Do it in debug mode or log it somewhere instead?
+      NAString msgBuf ("tables created: ");
+      if (tablesCreated.size() == 0)
+        msgBuf += "none";
+      else
+      {
+        for (size_t i = 0; i < tablesCreated.size(); i++)
+          msgBuf += tablesCreated[i].c_str() + NAString(" ");
+      }
+    
+      msgBuf += "\ntables upgraded: ";
+      if (tablesUpgraded.size() == 0)
+        msgBuf += "none";
+      else
+      {
+        for (size_t i = 0; i < tablesUpgraded.size(); i++)
+          msgBuf += tablesUpgraded[i].c_str() + NAString(" ");
+      }
+   
+      cout << msgBuf.data() << endl;
+#endif
     }
   else if (ddlExpr->dropAuthorization())
     {
-      dropSeabaseAuthorization();
+      dropSeabaseAuthorization(&cliInterface);
     }
   else if (ddlExpr->addSeqTable())
     {

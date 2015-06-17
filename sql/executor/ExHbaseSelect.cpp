@@ -86,7 +86,11 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
-					   tcb_->getSamplePercentage());
+					   tcb_->getSamplePercentage(),
+                                           FALSE, 0, NULL, NULL, 0,
+                                           (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
+                                            ? tcb_->hbaseAccessTdb().getHbaseAccessOptions()->getNumVersions() : 0));
+                                           
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -266,7 +270,11 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
-					   tcb_->getSamplePercentage());
+					   tcb_->getSamplePercentage(),
+                                           FALSE, 0, NULL, NULL, 0,
+                                           (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
+                                            ? tcb_->hbaseAccessTdb().getHbaseAccessOptions()->getNumVersions() : 0));
+                                           
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -468,13 +476,15 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
-					    tcb_->getSamplePercentage(),
-					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getUseSnapshotScan(),
-					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotScanTimeout(),
-					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotName(),
-					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation(),
-					    tcb_->getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber()
-					    );
+                                           tcb_->getSamplePercentage(),
+                                           tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getUseSnapshotScan(),
+                                           tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotScanTimeout(),
+                                           tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotName(),
+                                           tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation(),
+                                           tcb_->getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber(),
+                                           (tcb_->hbaseAccessTdb().multiVersions()
+                                            ? tcb_->hbaseAccessTdb().getHbaseAccessOptions()->getNumVersions() : 0)
+                                           );
 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
@@ -497,11 +507,35 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		break;
 	      }
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
-               step_ = HANDLE_ERROR; 
+               step_ = HANDLE_ERROR;
+            else if (tcb_->hbaseAccessTdb().multiVersions())
+              step_ = SETUP_MULTI_VERSION_ROW;
             else
 	       step_ = CREATE_ROW;
 	  }
 	  break;
+
+        case SETUP_MULTI_VERSION_ROW:
+          {
+	    retcode = tcb_->setupSQMultiVersionRow();
+	    if (retcode == HBASE_ACCESS_NO_ROW)
+              {
+	        step_ = NEXT_ROW;
+	        break;
+              }
+
+	    if (retcode < 0)
+              {
+	        rc = (short)retcode;
+	        tcb_->setupError(rc, "setupSQMultiVersionRow");
+	        step_ = HANDLE_ERROR;
+	        break;
+              }
+
+            step_ = CREATE_ROW;
+          }
+          break;
+
 	case CREATE_ROW:
 	  {
 	    retcode = tcb_->createSQRowDirect();
@@ -534,7 +568,9 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	      step_ = RETURN_ROW;
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
-	    else
+	    else if (tcb_->hbaseAccessTdb().multiVersions())
+              step_ = CREATE_ROW;
+            else
               step_ = NEXT_ROW;
 	  }
 	  break;
@@ -555,7 +591,10 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		break;
 	      }
 
-            step_ = NEXT_ROW;
+            if (tcb_->hbaseAccessTdb().multiVersions())
+              step_ = CREATE_ROW;
+            else
+              step_ = NEXT_ROW;
 	  }
 	  break;
 

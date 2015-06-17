@@ -46,6 +46,7 @@
 #include "CmpContext.h"
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
+#include "OptHints.h"
 #include <vector>
 
 // -----------------------------------------------------------------------
@@ -229,6 +230,7 @@ public:
           // QSTUFF
          isRewrittenMV_(FALSE)
          ,matchingMVs_(oHeap)
+           , hbaseAccessOptions_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -256,6 +258,7 @@ public:
           // QSTUFF
          isRewrittenMV_(FALSE)
          ,matchingMVs_(CmpCommon::statementHeap())
+           , hbaseAccessOptions_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -286,6 +289,7 @@ public:
           // QSTUFF
          isRewrittenMV_(FALSE)
          ,matchingMVs_(oHeap)
+           ,hbaseAccessOptions_(NULL)
      {} 
 
   Scan(OperatorTypeEnum otype,
@@ -312,7 +316,8 @@ public:
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
           // QSTUFF
-         isRewrittenMV_(FALSE)
+           isRewrittenMV_(FALSE),
+           hbaseAccessOptions_(NULL)
      {} 
 
   // virtual destructor
@@ -358,6 +363,9 @@ public:
                                                 { return possibleIndexJoins_; }
   Lng32 getNumIndexJoins()                       { return numIndexJoins_; }
   void setNumIndexJoins(Lng32 n)                 { numIndexJoins_ = n; }
+
+  void setHbaseAccessOptions(HbaseAccessOptions *v) { hbaseAccessOptions_ = v; }
+  HbaseAccessOptions *getHbaseAccessOptions() const { return hbaseAccessOptions_; }
 
   // the maximal number of index joins that a scan node will be
   // transformed into
@@ -744,6 +752,9 @@ private:
   CostScalar selectivityFactor_;
   CostScalar cardinalityHint_;
 
+  // hbase options. Like: number of trafodion row versions to retrieve from hbase.
+  HbaseAccessOptions *hbaseAccessOptions_;
+
   // List of MV matches that can be substituted for the SCAN using query rewrite.
   NAList<MVMatch*> matchingMVs_;
 };
@@ -831,10 +842,6 @@ public:
   // Obtain a pointer to a CostMethod object that provides access
   // to the cost estimation functions for nodes of this type.
   virtual CostMethod* costMethod() const;
-
-
-  // determine which columns to retrieve from the file
-  void computeRetrievedCols();
 
   // method to do code generation
   virtual RelExpr * preCodeGen(Generator * generator,
@@ -1278,6 +1285,9 @@ public:
   //  computes the output values the node can generate
   //  Relies on TableValuedFunctions implementation.
 
+  // determine which columns to retrieve from the file
+  void computeRetrievedCols();
+
   //! preCodeGen method 
   //  method to do preCode generation
   virtual RelExpr * preCodeGen(Generator * generator,
@@ -1376,15 +1386,17 @@ public:
 				 ValueIdList &columnList,
 				 Queue* &listOfColNames);
 
-  static void addColReferenceFromItemExprTree(ItemExpr * ie,
-					      ValueIdSet &colRefVIDset);
-
+  static void addReferenceFromItemExprTree(ItemExpr * ie,
+                                    NABoolean addCol, NABoolean addHBF,
+                                    ValueIdSet &colRefVIDset);
+  
   static void addColReferenceFromVIDlist(const ValueIdList &exprList,
 					 ValueIdSet &colRefVIDset);
 
-  static void addColReferenceFromVIDset(ValueIdSet &exprList,
-					ValueIdSet &colRefVIDset);
-
+  static void addReferenceFromVIDset(const ValueIdSet &exprList,
+                                     NABoolean addCol, NABoolean addHBF,
+                                     ValueIdSet &colRefVIDset);
+  
   static void addColReferenceFromRightChildOfVIDarray(ValueIdArray &exprList,
 						      ValueIdSet &colRefVIDset);
 

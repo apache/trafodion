@@ -127,6 +127,10 @@ LIBHDFS_INC=-I$(HADOOP_INC_DIR)
 LIBHDFS_LIB=-ljvm -lhdfs
 LIBHDFS_SO=libhdfs.so
 
+LIBCURL_INC=-I/usr/include
+LIBCURL_LIB=-lcurl
+LIBCURL_SO=libcurl.so
+
 THRIFT_INC=-I$(THRIFT_INC_DIR) -I$(THRIFT_INC_DIR)/thrift
 THRIFT_LIB=-lthrift
 THRIFT_SO=libthrift-*.so
@@ -136,33 +140,12 @@ LOG4CXX_LIB=-L$(LOG4CXX_LIB_DIR) -llog4cxx
 LOG4CXX_SO=liblog4cxx*.so
 
 # for now, include these libs (copied to our local lib dir) everywhere
-GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB) $(LOG4CXX_LIB)
+GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB) $(LIBCURL_LIB) $(LOG4CXX_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
 EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv mxlobsrvr sscp ssmp
 	# mxCompileUserModule mxsqlcfe mxsqlcofe sqlfe
-
-
-# LIBS defines the libraries that are built for release and debug builds.
-# These are built as archive libraries, such as liboptimizer.a
-
-# SS LIBS := anparse sqlcomp ustat sqlcat parser optimizer generator \
-	tdm_sqllangman arkcmplib qmscommon qms
-
-# SS eliminating static libs
-#LIBS := optimizer generator sqlcomp arkcmplib parser ustat \
-	sqlcat tdm_sqllangman qmscommon qms \
-        LLVMScalarOpts LLVMInstCombine LLVMTransformUtils LLVMTableGen LLVMVectorize \
-        LLVMipo LLVMipa LLVMInstrumentation LLVMBitWriter LLVMBitReader LLVMAsmParser \
-        LLVMArchive LLVMX86CodeGen LLVMX86Utils LLVMCore LLVMX86Info LLVMX86Disassembler \
-        LLVMX86Desc LLVMX86AsmPrinter LLVMX86AsmParser LLVMTarget LLVMSelectionDAG LLVMAnalysis \
-        LLVMObject LLVMMCParser LLVMLinker LLVMInterpreter LLVMDebugInfo LLVMCppBackendInfo \
-        LLVMCppBackendCodeGen LLVMAsmPrinter LLVMMCDisassembler LLVMMC LLVMMCJIT \
-        LLVMRuntimeDyld LLVMExecutionEngine LLVMJIT LLVMRuntimeDyld LLVMObject \
-	LLVMCodeGen LLVMMC LLVMScalarOpts LLVMTransformUtils LLVMAnalysis LLVMSupport profile_rt
-
-
 
 # LIBS defines the libraries that are built for release and debug builds.
 # These are all built as shared objects with names such as libtdm_sqlcli.so.
@@ -174,12 +157,8 @@ DLLS := comexe common executor sort sqlmsg \
 	sqlcilib cli porting_layer tdm_sqlmxmsg_intl \
 	arkcmp_dll smdio udr_predef
 
-
 DLLS += sqlcomp ustat sqlcat parser optimizer generator \
 	tdm_sqllangman arkcmplib qmscommon
-#DLLS += sqlcomp ustat sqlcat parser optimizer generator \
-#	tdm_sqllangman arkcmplib qmscommon qms
-
 
 # SqlCompilerDebugger should be build after other components
 GUI_CMP_DBG := SqlCompilerDebugger
@@ -187,13 +166,11 @@ GUI_CMP_DBG := SqlCompilerDebugger
 # For Linux, this is included, but not through the normal means.  It is
 # needed so the sqlmxmsgs.h file is build correctly.  Only Makefiles that
 # do not build libraries or executables should be specified below.
-# From R2.4 on Linux, tdm_sqlmxmsg_intl should be built.
-#SPECIAL_NON_TARGETS := tdm_sqlmxmsg_intl
+#SPECIAL_NON_TARGETS :=
 
 LIB_DIRS := $(LIBS)
-DLL_DIRS := $(DLLS) $(UTILDLLS:%=sqlutils/%)
-EXE_DIRS := $(EXECUTABLES) $(EXES_NO_EXPORT) \
-            $(UTILS_EXES:%=sqlutils/%) $(UTILS_EXES_NO_EXPORT:%=sqlutils/%)
+DLL_DIRS := $(DLLS)
+EXE_DIRS := $(EXECUTABLES) $(EXES_NO_EXPORT) 
 
 # These definitions are used for all targets when building for linux
 SYS_DEFS := -DNA_LINUX -DSQ_LINUX -DNGG -D_M_DG -D_NSKFS_ -D_FULL_BUILD \
@@ -202,7 +179,6 @@ SYS_DEFS := -DNA_LINUX -DSQ_LINUX -DNGG -D_M_DG -D_NSKFS_ -D_FULL_BUILD \
 	-D_REENTRANT -D_GLIBCXX_DEPRECATED -D_TNS_R_TARGET \
 	-D_MSC_VER -D_X86_ -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x402 \
 	-DNA_ITOA_NOT_SUPPORTED -DMPI_ -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -DNA_CMPDLL 
-
 
 SYS_DEFS += -DSQ_CPP_INTF
 
@@ -224,9 +200,8 @@ SYS_INCLUDES :=
    SYS_INCLUDES += -I$(NSK_SQ)/inc \
 	-I$(NSK_SQ)/export/include \
         -I$(PROTOBUFS_INC) \
-	$(LIBHDFS_INC) $(THRIFT_INC) $(LOG4CXX_INC)	   \
+	$(LIBHDFS_INC) $(THRIFT_INC) $(LOG4CXX_INC)	 $(LIBCURL_INC)  \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
-
 
 OTHER_INCLUDES := -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT) \
@@ -311,32 +286,12 @@ PIC_FLAG = $(if $(filter $(OBJDIR),$(DLL_DIRS)),-fPIC)
 
 # ALL_CXXFLAGS combines all of the C++ flags.
 ALL_CXXFLAGS = $(SYS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_OPT_FLAGS) $(PIC_FLAG)\
-	$(if $(findstring sqlutils/,$(obj)),\
-	    $(SQLUTILS_CXXFLAGS),\
-	    $(WARNING_FLAGS)) \
+	$(WARNING_FLAGS) \
 	$(SYS_WARNING_FLAG)
 
-# BASE_SYSTEM_INCLUDES includes all of the system-wide directories when not
-# building under the sqlutils directory.
+# BASE_SYSTEM_INCLUDES includes all of the system-wide directories.
 BASE_SYSTEM_INCLUDES := $(SYS_INCLUDES) \
 	$(patsubst %,-I$(TOPDIR)/%,$(BASE_INCLUDE_DIRS) $(BASE_MISC_DIRS)) \
-	$(OTHER_INCLUDES)
-
-SQLUTILS_INCLUDE_DIRS := sqlutils/inc \
-	comexe common porting_layer catman ddl executor sqlfe exp filesystem \
-	export dml cli client parser sqlcomp optimizer eh sqlci \
-	smdio sqlshare nskcre sort sqlmxevents sqlcat sqlmsg ustat \
-	arkcmp udrserv arkfsinopen arkfsindp2 bin langman generator
-
-SQLUTILS_NSK_INCLUDES := $(NSK_SQ)/inc $(NSK)/inc $(NSK_SQ)/inc/cextdecs \
-	$(NSK_SQ)/inc/fs $(NSK)/inc/sqlcli_shadow $(NSK_SQ)/inc/fs2 \
-	$(NSK)/src $(NSK_SQ)/export/include
-
-# SQLUTILS_SYSTEM_INCLUDES includes all of the system-wide directories when
-# building under the sqlutils directory.
-SQLUTILS_SYSTEM_INCLUDES := $(SQLUTILS_NSK_INCLUDES:%=-I%) \
-	$(patsubst %,-I$(TOPDIR)/%,\
-          $(SQLUTILS_INCLUDE_DIRS) $(SQLUTILS_MISC_DIRS)) \
 	$(OTHER_INCLUDES)
 
 # SRC_INCLUDES includes the directory containing the source code so each
@@ -350,20 +305,11 @@ USER_INCLUDES = $(patsubst %,-I%/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR),$(YINC)) \
         $(patsubst %,-I$(TOPDIR)/%, $(INCLUDE_DIRS)) \
 	$(patsubst %,-I%,$(GMAKE_INC_DIRS))
 
-# ALL_INCLUDES builds the correct list of include files based on whether
-# or not the source is under the sqlutils directory.  The second line below
-# defines the include files for sqlutils.  The third line below defines the
-# base include files.
-ALL_INCLUDES = $(if $(findstring sqlutils/,$(obj)),\
-        $(USER_INCLUDES) $(SRC_INCLUDES) $(SQLUTILS_SYSTEM_INCLUDES),\
-        $(USER_INCLUDES) $(SRC_INCLUDES) $(BASE_SYSTEM_INCLUDES))
-
-# SQLUTILS_DEFS := -D_AFXDLL -D_MBCS
+# ALL_INCLUDES builds the correct list of include files.
+ALL_INCLUDES = $(USER_INCLUDES) $(SRC_INCLUDES) $(BASE_SYSTEM_INCLUDES)
 
 # ALL_DEFS combines the preprocessor definitions into one.
-ALL_DEFS = $(if $(findstring sqlutils/,$(obj)),\
-	$(SYS_DEFS) $(SQLUTILS_DEFS) $(DEFS),\
-	$(SYS_DEFS) $(DEFS))
+ALL_DEFS = $(SYS_DEFS) $(DEFS)
 
 link_lib_rule = $(AR) crv $@ $(OBJ_PATHS)
 link_dll_rule = $(CXX) $(SO_OPTS) $(ALL_CXXFLAGS) -shared -o $@ $(LOC_LIBS) \
@@ -373,9 +319,9 @@ build_lib_rule = $(link_lib_rule)
 build_lib_dll_rule = $(link_lib_dll_rule) 
 build_dll_rule = $(link_dll_rule)
 
-  # The gcc compiler needs some extra options for putting the path in
-  # the dependency file.
-  dependency_option = -Wp,-MD,$(DEP_FILE) -Wp,-MT,$@
+# The gcc compiler needs some extra options for putting the path in
+# the dependency file.
+dependency_option = -Wp,-MD,$(DEP_FILE) -Wp,-MT,$@
 
 compile_cpp_rule = $(CXX) $(ALL_CXXFLAGS) $(ALL_DEFS) $(ALL_INCLUDES) \
 	$(dependency_option) -c -o $@ $<
@@ -392,13 +338,11 @@ build_cpp_rule = $(compile_cpp_rule)
 build_c_rule = $(compile_c_rule)
 
 
-
-
 ALL_EXE_LDFLAGS = $(ALL_CXXFLAGS) $(OPT_EXE_LDFLAGS)
 
 # link_exe defines how to link an executable for OSS
 link_exe = $(CXX) $(ALL_EXE_LDFLAGS) $(EARLY_DLLS) $(OBJ_PATHS) \
-	$(LOC_LIBS) $(SQLUTILS_LIBS) $(EXTRA_LIBS) $(DEP_DLL_NAMES:%=-l%) \
+	$(LOC_LIBS) $(EXTRA_LIBS) $(DEP_DLL_NAMES:%=-l%) \
 	$(DEP_LIB_NAMES:%=-l%) $(EXTERN_OBJS) $(SYS_LIBS) $(GLOBAL_SYS_LIBS) $(LINK_EXTERN_LIB) \
 	-Wl,--rpath -Wl,$(RESULTDIR) \
 	-o $@
@@ -437,15 +381,6 @@ build_yacc_rule = $(YACC) -l -v -d -o $(basename $@).cpp $<;\
 	sed "s/! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED/1/g" \
 	   $(basename $@).hpp > $(basename $@).h; \
 	rm $(basename $@).hpp $(basename $@).cpp.tmp
-
-# sqlutils_lex_rule defines how to generate c++ code from lex files
-# in the sqlutils directories.  On Linux, there is a file 
-# /usr/include/FlexLexer.h.  For SQL utilities, we want to include
-# flexlexer.h instead to pick up some altered definitions.
-sqlutils_lex_rules = $(LEX) -d -B -o$(basename $@).cpp $<; \
-	sed 's/FlexLexer.h/flexlexer.h/g' $(basename $@).cpp >\
-	$(basename $@).cpp.tmp; \
-	rm $(basename $@).cpp;
 
 # Include any special Makefiles
 include $(SPECIAL_NON_TARGETS:%=%/Makefile)
@@ -494,7 +429,8 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 copytoolslibs:
 	mkdir -p $(NSKLIB)
 	(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
-	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
+	          $(THRIFT_LIB_DIR)/$(THRIFT_SO) \
+		  $(CURL_LIB_DIR)/$(LIBCURL_SO);	\
 	 do\
 	   cp -Pf $$i* $(NSKLIB); \
 	 done\

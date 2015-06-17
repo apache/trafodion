@@ -252,6 +252,7 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   strcpy(lobHdfsServer_,"default");
   lobHdfsPort_ = 0;
   descSchName_[0] = 0;
+  lobMaxSize_ = 0;
 };
 
 
@@ -559,6 +560,7 @@ ExpLOBiud::ExpLOBiud(OperatorTypeEnum oper_type,
   : ExpLOBoper(oper_type, numAttrs, attr, space),
     objectUID_(objectUID),
     liudFlags_(0)
+   
     //    descSchNameLen_(descSchNameLen),
     //    liFlags_(0)
 {
@@ -677,6 +679,20 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     }
 
   Lng32 cliError = 0;
+  char * lobData = NULL;
+  //send lobData only if it's a lob_file operation
+  if (so == Lob_File)
+    lobData = op_data[1];
+  LobsOper lo ;
+ 
+  if (lobOperStatus == CHECK_STATUS_)
+    lo = Lob_Check_Status;
+  else if (lobHandle == NULL)       
+    lo = Lob_InsertDataSimple;
+  else
+    lo = Lob_InsertDesc;
+  
+    
   rc = ExpLOBInterfaceInsert
     (getExeGlobals()->lobGlobal(), 
      tgtLobName, 
@@ -690,11 +706,11 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
      requestTag_,
      getExeGlobals()->lobGlobals()->xnId(),
      descSyskey,
+     lo,
      &cliError,
      so,
-     (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
      waitedOp,
-     NULL, lobLen);
+     lobData, lobLen, getLobMaxSize());
   
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -773,6 +789,14 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 
   lobLen = getOperand(1)->getLength();
   char * lobData = op_data[1];
+LobsOper lo ;
+ 
+  if (lobOperStatus == CHECK_STATUS_)
+    lo = Lob_Check_Status;
+  else if (handle == NULL)       
+    lo = Lob_InsertDataSimple;
+  else
+    lo = Lob_InsertData;
 
   LobsSubOper so = Lob_None;
   if (fromFile())
@@ -782,6 +806,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   else if (fromLob())
     so = Lob_Foreign_Lob;
 
+ 
   Lng32 waitedOp = 0;
 #ifdef __EID
   waitedOp = 0; // nowaited op from EID/TSE process
@@ -831,12 +856,10 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 				 getExeGlobals()->lobGlobals()->xnId(),
 				 
 				 descSyskey, 
-				 
+				 lo,
 				 &cliError,
 				 so,
-				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
-				 waitedOp,
-				 
+				 waitedOp,				 
 				 lobData,
 				 lobLen);
     }
@@ -1225,15 +1248,17 @@ ExpLOBselect::ExpLOBselect(OperatorTypeEnum oper_type,
 			   Space * space)
   : ExpLOBoper(oper_type, 2, attr, space),
     lsFlags_(0)
+   
 {
+  tgtLocation_[0] = 0;
+  tgtFile_[0] = 0;
 };
 
 void ExpLOBselect::displayContents(Space * space, const char * displayStr, 
 				   Int32 clauseNum, char * constsArea)
 
 {
-  ExpLOBoper::displayContents(space, "ExpLOBselect", clauseNum, constsArea);
-
+  ExpLOBoper::displayContents(space, "ExpLOBselect", clauseNum, constsArea); 
 }
 
 
@@ -1242,7 +1267,7 @@ ex_expr::exp_return_type ExpLOBselect::eval(char *op_data[],
 					    ComDiagsArea** diagsArea)
 {
   char * result = op_data[0];
-
+  Lng32 rc = 0;
   Int64 uid;
   Lng32 lobType;
   Lng32 lobNum;
@@ -1251,22 +1276,24 @@ ex_expr::exp_return_type ExpLOBselect::eval(char *op_data[],
   Int64 descTS = -1;
   short schNameLen = 0;
   char  schName[500];
+  LobsSubOper so;
+  Lng32 waitedOp = 0;
+  Int64 lobLen = 0; 
+  char *lobData = NULL;
+  Lng32 cliError = 0;
+  Lng32 lobOperStatus = checkLobOperStatus();
+  if (lobOperStatus == DO_NOTHING_)
+    return ex_expr::EXPR_OK;
+  Int32 handleLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  char * lobHandle = op_data[1];
   extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
 		       &descKey, &descTS, 
 		       &schNameLen, schName,
-		       op_data[1]);
-
-  char lobHandleBuf[500];
-  createLOBhandleString(flags, 1, uid, lobNum, 
-			descKey, descTS, 
-			schNameLen, schName,
-			lobHandleBuf);
-
-  // call function with the lobname and offset to select it.
-  // TBD
+		       lobHandle);
+  // select returns lobhandle only
   str_pad(result, getOperand(0)->getLength());
-  str_cpy_all(result, lobHandleBuf, strlen(lobHandleBuf));
-
+  str_cpy_all(result, lobHandle, strlen(lobHandle));
+  
   return ex_expr::EXPR_OK;
 }
 
@@ -1278,7 +1305,8 @@ ExpLOBconvert::ExpLOBconvert(OperatorTypeEnum oper_type,
 					 Attributes ** attr, 
 					 Space * space)
   : ExpLOBoper(oper_type, 2, attr, space),
-    lcFlags_(0)
+    lcFlags_(0),
+    convertSize_(0)
 {
 };
 
@@ -1302,6 +1330,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 
   char * result = op_data[0];
   char * lobHandle = op_data[1];
+  char *tgtFileName = NULL;
   Int32 handleLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
 
   Int64 uid;
@@ -1312,10 +1341,12 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
   Int16 flags;
   short schNameLen = 0;
   char schName[500];
-
+  LobsSubOper so;
   Lng32 cliError = 0;
 
   Lng32 waitedOp = 0;
+  Int64 lobLen = 0; 
+  char *lobData = NULL;
 #ifdef __EID
   waitedOp = 0; // nowaited op from EID/TSE process
 #else
@@ -1324,24 +1355,19 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 
   //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
-
-  if (toString())
-    {
-      extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
+  extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
 			   &descKey, &descTS, 
 			   &schNameLen, schName,
 			   lobHandle);
-
-      // get the lob name where data need to be inserted
-      char lobNameBuf[100];
-      char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
+  // get the lob name where data need to be inserted
+  char lobNameBuf[100];
+  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
       
-      if (lobName == NULL)
-	return ex_expr::EXPR_ERROR;
-      
-      // call function with the lobname and offset to select it.
-      Int64 lobLen = 1001; // temptemp
-      char *lobData = new(h) char[(Lng32)lobLen];
+ 
+  if(toFile())
+    {
+      so = Lob_File;
+      tgtFileName = tgtFileName_;
       rc = ExpLOBInterfaceSelect(getExeGlobals()->lobGlobal(), 
 				 lobName, 
 				 lobStorageLocation(),
@@ -1350,7 +1376,32 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 
 				 handleLen, lobHandle,
 				 requestTag_,
+                                 so,
+				 getExeGlobals()->lobGlobals()->xnId(),
+				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
+ 				 waitedOp,
 
+				 descKey, lobLen, lobLen, tgtFileName);
+    }
+  else if (toString())
+    {
+      so = Lob_Memory;
+      
+      if (lobName == NULL)
+	return ex_expr::EXPR_ERROR;
+      
+      
+      lobLen = getConvertSize(); 
+      lobData = new(h) char[(Lng32)lobLen];
+      rc = ExpLOBInterfaceSelect(getExeGlobals()->lobGlobal(), 
+				 lobName, 
+				 lobStorageLocation(),
+				 lobType,
+				 getLobHdfsServer(), getLobHdfsPort(),
+
+				 handleLen, lobHandle,
+				 requestTag_,
+                                 so,
 				 getExeGlobals()->lobGlobals()->xnId(),
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,

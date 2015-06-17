@@ -21,6 +21,7 @@
 #ifndef PRIVMGR_H
 #define PRIVMGR_H
 
+#include <set>
 #include <string>
 #include <vector>
 #include "PrivMgrDefs.h"
@@ -142,7 +143,7 @@ class PrivMgr
   protected:
   // Returns status of privilege manager metadata
 
-    PrivMDStatus authorizationEnabled();
+    PrivMDStatus authorizationEnabled(std::set<std::string> &existingObjectList);
     
     // -------------------------------------------------------------------
     // Data members:

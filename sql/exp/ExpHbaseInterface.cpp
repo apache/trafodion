@@ -278,7 +278,7 @@ Lng32  ExpHbaseInterface::fetchAllRows(
      if (retcode != HBASE_ACCESS_SUCCESS)
         break;
      int numCols;
-     retcode = getNumCols(numCols);
+     retcode = getNumCellsPerRow(numCols);
      if (retcode == HBASE_ACCESS_SUCCESS)
      {	
         for (int colNo = 0; colNo < numCols; colNo++)
@@ -701,7 +701,8 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      Lng32 snapTimeout,
 				      char * snapName,
 				      char * tmpLoc,
-				      Lng32 espNum  )
+				      Lng32 espNum,
+                                      Lng32 versions)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc_ == NULL)
@@ -716,17 +717,18 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
   else
     transID = getTransactionIDFromContext();
   retCode_ = htc_->startScan(transID, startRow, stopRow, columns, timestamp, 
-					  cacheBlocks, numCacheRows, 
-                                          preFetch,
-					  inColNamesToFilter,
-					  inCompareOpList,
-					  inColValuesToCompare,
-					  samplePercent,
-					  useSnapshotScan,
-					  snapTimeout,
-					  snapName,
-					  tmpLoc,
-					  espNum);
+                             cacheBlocks, numCacheRows, 
+                             preFetch,
+                             inColNamesToFilter,
+                             inCompareOpList,
+                             inColValuesToCompare,
+                             samplePercent,
+                             useSnapshotScan,
+                             snapTimeout,
+                             snapName,
+                             tmpLoc,
+                             espNum,
+                             versions);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -1500,11 +1502,11 @@ Lng32 ExpHbaseInterface_JNI::getRowID(HbaseStr &rowID)
   return HBASE_ACCESS_SUCCESS;
 }
 
-Lng32 ExpHbaseInterface_JNI::getNumCols(int &numCols)
+Lng32 ExpHbaseInterface_JNI::getNumCellsPerRow(int &numCells)
 {
   HTC_RetCode retCode = HTC_OK;
   if (htc_ != NULL)
-     retCode = htc_->getNumCols(numCols);
+     retCode = htc_->getNumCellsPerRow(numCells);
   else
      return HBC_ERROR_GET_HTC_EXCEPTION;
  

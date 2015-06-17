@@ -26,7 +26,7 @@
 #
 # ****************************************************************************
 
-ifeq ($(filter-out nt yos linux, $(TARGTYPE)),$(TARGTYPE))
+ifeq ($(filter-out linux, $(TARGTYPE)),$(TARGTYPE))
 $(error Makerules.mk is included improperly. TARGTYPE is incorrectly set)
 endif
 
@@ -60,24 +60,12 @@ ifeq ($(BUILD_TARGET),1)
 # Create output directory for final objects if it doesn't exist.
   _dummy := $(if $(wildcard $(RESULTDIR)),,$(shell mkdir -p $(RESULTDIR)))
 
-  # Rename the existing output log file to $(LOGFILE).old
-  ifndef VERBOSE
-    # Do not use output log file on Linux
-    ifneq (,$(findstring $(TARGTYPE), nt yos))
-      _dummy := $(shell [ -r $(LOGFILE) ] && mv $(LOGFILE) $(LOGFILE).old;\
-	touch $(LOGFILE))
-    endif
-  endif
 endif
 
 SHELL := sh
 
-YACC       = $(if $(findstring sqlutils/,$(obj)),\
-               $(TOPDIR)/sqlutils/toolbin/bison.exe,\
-               export BISON_PKGDATADIR=$(TOPDIR)/toolbin/bison; export M4=$(TOPDIR)/toolbin/m4; $(TOPDIR)/toolbin/bison.exe -p $(YACC_VAR_PREFIX))
-LEX        = $(if $(findstring sqlutils/,$(obj)),\
-               $(TOPDIR)/toolbin/flex.exe,\
-               $(TOPDIR)/toolbin/flex.exe -P$(YACC_VAR_PREFIX))
+YACC       = export BISON_PKGDATADIR=$(TOPDIR)/toolbin/bison; export M4=$(TOPDIR)/toolbin/m4; $(TOPDIR)/toolbin/bison.exe -p $(YACC_VAR_PREFIX)
+LEX        = $(TOPDIR)/toolbin/flex.exe -P$(YACC_VAR_PREFIX)
 AWK       := awk.exe
 JAVAC     := $(JAVA_HOME)/bin/javac
 JAR       := $(JAVA_HOME)/bin/jar
@@ -89,19 +77,12 @@ JAR       := $(JAVA_HOME)/bin/jar
 .SUFFIXES:
 .SUFFIXES: .h .cpp .obj .lib .dll .exe .tlo .o
 
-# BASE_INCLUDE_DIRS defines the directories that are included during
-# the compilation of files that are not under the sqlutils directory.
+# BASE_INCLUDE_DIRS defines the directories that are included during compilation.
 BASE_INCLUDE_DIRS := sqlci arkcmp comexe sqlfe eh export sqlmsg sqlcomp \
 	sqlcat executor parser generator exp filesystem optimizer cli \
 	nskcre common dml arkfsindp2 arkfsinopen ddl sort catman \
 	smdio ustat sqlshare sqlmxevents bin langman sqludr udrserv \
 	security runtimestats qmscommon qms porting_layer
-
-# SQLUTILS_INCLUDE_DIRS defines the directories that are included
-# during the compilation of all files that are under the sqlutils
-# directory.
-SQLUTILS_INCLUDE_DIRS := sqlutils/inc arkcmp ddl dml cli common \
-	export sqlcomp sqlmsg sqlshare sqlmxevents langman bin porting_layer
 
 # These rules display the messages on the console as SQL/MX compiles.
 ifndef VERBOSE
@@ -208,9 +189,8 @@ endef
 # compiling java classes into class files.
 compile_java_rule = $(JAVAC) ${JAVA_COMPILE_FLAGS} -d $(TARGOBJDIR)/java -classpath '$(CLASSPATH)' $<
 
-
-  append_jar_rule = cp $(JAR_APPEND) $$(JARFILE);$(JAR) uvmf $$(JARMANIFEST) $$(JARFILE) -C $$(TARGOBJDIR)/java $$(PACKAGE)
-  compile_jar_rule = $(JAR) cvmf $$(JARMANIFEST) $$(JARFILE)_temp -C $$(TARGOBJDIR)/java $$(PACKAGE) -C $$(TARGOBJDIR)/java $$(ORCPACKAGE); mv -f $$(JARFILE)_temp $$(JARFILE)
+append_jar_rule = cp $(JAR_APPEND) $$(JARFILE);$(JAR) uvmf $$(JARMANIFEST) $$(JARFILE) -C $$(TARGOBJDIR)/java $$(PACKAGE)
+compile_jar_rule = $(JAR) cvmf $$(JARMANIFEST) $$(JARFILE)_temp -C $$(TARGOBJDIR)/java $$(PACKAGE) -C $$(TARGOBJDIR)/java $$(ORCPACKAGE); mv -f $$(JARFILE)_temp $$(JARFILE)
 
 build_java_rule = $(JAVAC_ECHO_RULE) \
 		HEADING="Compiling $(<) --> $(@)"; $(starting_logfile) \
@@ -284,12 +264,9 @@ $(C_RESULTOBJ) : DEP_FILE:=$(DEP_FILE)
 $(C_RESULTOBJ) : CPP_OBJ:=$(CPP_OBJ)
 endef
 
-# YACC generated files in the sqlutils directory start with "yy".
 # BISON_SIMPLE defines which bison.simple file to use.
-YACC_PREFIX=$(if $(findstring sqlutils/,$(obj)),yy,)
-BISON_SIMPLE=$(if $(findstring sqlutils/,$(obj))\
-	,$(TOPDIR)/sqlutils/toolbin/bison.simple\
-	,$(TOPDIR)/toolbin/bison.simple)
+YACC_PREFIX=
+BISON_SIMPLE=$(TOPDIR)/toolbin/bison.simple
 
 # This creates the rules for creating the C++ code from the YACC files
 # and for compiling the code.  This template is used within Makerules.build.
@@ -313,17 +290,14 @@ $(1).$(OBJSUFFIX): DEP_FILE:=$(DEP_FILE)
 endef
 
 # base_lex_rule defines how to generate c++ code from lex files in
-# all directories other than the sqlutils directories.
+# all directories.
 base_lex_rule = $(LEX) -iB -o$(basename $@).cpp $<;\
 	$(AWK) -f ./flexstep.awk arkstr="$(LEX_PREFIX)" \
 	   $(basename $@).cpp > $(basename $@).cpp.tmp;
 
-# This is how the C++ code is generated from lex code.  The lex files
-# under the sqlutils directory are handled differently than the lex
-# files that are under the base directories.
+# This is how the C++ code is generated from lex code.
 build_lex_rule = rm -f $(basename $@).cpp;\
-	$(if $(findstring sqlutils/,$(obj)),$(sqlutils_lex_rules),\
-	    $(base_lex_rule))\
+	$(base_lex_rule)\
 	cp -fpv $(basename $@).cpp.tmp $(basename $@).cpp
 
 # This rule template defines the dependencies and rules for creating
@@ -373,9 +347,6 @@ clean:
 	@echo "Removing intermediate objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"
 	@rm -rf */$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)
 	@rmdir */$(TARGTYPE) > /dev/null 2>&1 || true
-	@echo "Removing intermediate sqlutils objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"
-	@rm -rf sqlutils/*/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)
-	@rmdir sqlutils/*/$(TARGTYPE)/$(ARCHBITS) > /dev/null 2>&1 || true
 	@echo "Removing final objects directory"
 	@rm -rf $(RESULTDIR)
 	@rmdir $(TOPDIR)/$(TOPLIBDIR)/$(TARGTYPE) > /dev/null 2>&1 || true
@@ -383,5 +354,5 @@ clean:
 	@rm -rf $(LOGFILE) $(LOGFILE).old
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
-	@cd ..; mvn clean
+	@cd ..; $(MAVEN) clean
 

@@ -826,10 +826,14 @@ PrivStatus privStatus = STATUS_GOOD;
 // ----------------------------------------------------------------------------
 PrivStatus PrivMgrCommands::initializeAuthorizationMetadata(
     const std::string &objectsLocation,
-    const std::string &authsLocation)
+    const std::string &authsLocation,
+    const std::string &colsLocation,
+    std::vector<std::string> &tablesCreated,
+    std::vector<std::string> &tablesUpgraded)
 {
    PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
-   return metadata.initializeMetadata(objectsLocation, authsLocation);
+   return metadata.initializeMetadata(objectsLocation, authsLocation, colsLocation,
+                                      tablesCreated, tablesUpgraded);
 }
    
 

@@ -55,7 +55,37 @@
 #include "ComUser.h"
 
 // *****************************************************************************
-//    PrivMgrMDAdmin methods
+//    PrivMgrMDAdmin static methods
+// *****************************************************************************
+
+static bool compareTableDefs (
+  const char * tableNameOne,
+  const char * tableNameTwo,
+  const std::string &objectsLocation,
+  const std::string &colsLocation,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
+
+static int32_t createTable (
+  const char *tableName,
+  const TableDDLString *tableDDL,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
+
+static int32_t dropTable (
+  const char *objectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
+
+static int32_t renameTable (
+  const char *originalObjectName,
+  const char *newObjectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags);
+
+
+// *****************************************************************************
+//    PrivMgrMDAdmin class methods
 // *****************************************************************************
 // -----------------------------------------------------------------------
 // Default Constructor
@@ -225,112 +255,203 @@ int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATI
 //
 // A cli error is put into the diags area if there is an error
 // ----------------------------------------------------------------------------
-PrivStatus PrivMgrMDAdmin::initializeMetadata (const std::string &objectsLocation,
-                                               const std::string &authsLocation)
+PrivStatus PrivMgrMDAdmin::initializeMetadata (
+  const std::string &objectsLocation,
+  const std::string &authsLocation,
+  const std::string &colsLocation,
+  std::vector<std::string> &tablesCreated,
+  std::vector<std::string> &tablesUpgraded)
+
 {
-  std::vector<std::string> tablesCreated;
   PrivStatus retcode = STATUS_GOOD;
+
+  // Authorization check
+  if (!isAuthorized())
+  {
+    *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+    return STATUS_ERROR;
+  }
+
+  Int32 cliRC = 0;
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                          CmpCommon::context()->sqlSession()->getParentQid());
+  
+  // See what tables exist
+  std::set<std::string> existingObjectList;
+  PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
+
+  // If unable to access metadata, return STATUS_ERROR 
+  //   (pDiags contains error details)
+  if (initStatus == PRIV_INITIALIZE_UNKNOWN)
+    return STATUS_ERROR;
+
+  // Create the privilege manager schema if it doesn't yet exists.
+  if (initStatus == PRIV_UNINITIALIZED)
+  {
+    std::string schemaCommand("CREATE PRIVATE SCHEMA IF NOT EXISTS ");
+  
+    schemaCommand += metadataLocation_;
+    cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
+    if (cliRC < 0)
+      return STATUS_ERROR;
+  }
+    
+  // Create or upgrade the tables
+  //   If table does not exist - create it
+  //   If table exists 
+  //     If doesn't need upgrading - done
+  //     else - upgrade table 
+  bool populateObjectPrivs = false;
+  bool populateRoleGrants = false;
+
   try
   {
-    // Authorization check
-    if (!isAuthorized())
-    {
-       *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-       return STATUS_ERROR;
-     }
-
-    // See what does and does not exist
-    PrivMDStatus initStatus = authorizationEnabled();
-
-    // If unable to access metadata, return STATUS_ERROR 
-    //   (pDiags_ contains error details)
-    if (initStatus == PRIV_INITIALIZE_UNKNOWN)
-      return STATUS_ERROR;
-
-    // If metadata tables already initialize, just return STATUS_GOOD
-    if (initStatus == PRIV_INITIALIZED)
-      return STATUS_GOOD;
-      
-    // Create the privilege manager schema.
-    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
-    std::string schemaCommand("CREATE PRIVATE SCHEMA ");
-    
-    schemaCommand += metadataLocation_;
-    Int32 cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
-    if (cliRC < 0)
-    {
-      // If schema already exists, change to warning and continue
-      cliInterface.retrieveSQLDiagnostics(pDiags_);
-      if (cliRC == -CAT_SCHEMA_ALREADY_EXISTS)
-      {
-        NegateAllErrors(pDiags_);
-        retcode = STATUS_WARNING;
-      }
-      else
-        throw cliRC;
-    }
-      
-    // Create the tables
-    //   If table already exists, skip it and continue
-    //   TBD: if the table already exists, then see if it needs to be upgraded
     size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
-    bool populateObjectPrivs = true;
-    bool populateRoleGrants = true;
+    bool doCreate = (initStatus == PRIV_UNINITIALIZED);
+
     for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
     {
       const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
-      std::string tableDDL("CREATE TABLE ");
-      tableDDL += deriveTableName(tableDefinition.tableName);
-      tableDDL += tableDefinition.tableDDL->str;
-      Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
-      if (cliRC < 0)
+      std::string tableName = deriveTableName(tableDefinition.tableName);
+
+      if (initStatus == PRIV_PARTIALLY_INITIALIZED)
       {
-        // If object already exists, change to warning and continue
-        cliInterface.retrieveSQLDiagnostics(pDiags_);
-        if (cliRC == -CAT_TRAFODION_OBJECT_EXISTS)
-        {
-          NegateAllErrors(pDiags_);
-          retcode = STATUS_WARNING;
-
-          // If the table is OBJECT_PRIVILEGES no need to populate again
-          if (tableDefinition.tableName == "OBJECT_PRIVILEGES")
-            populateObjectPrivs = false;
-          // If the table is ROLE_USAGE no need to populate again
-          if (tableDefinition.tableName == "ROLE_USAGE")
-            populateRoleGrants = false;
-        }
-        else
-          throw cliRC;
+        // See if table needs to be created
+        std::string metadataTable (tableDefinition.tableName);
+        std::set<std::string>::iterator it;
+        it = std::find(existingObjectList.begin(), existingObjectList.end(), metadataTable);
+        doCreate = (it == existingObjectList.end());
       }
-      // Add to list of tables created.
-      else
+
+      // Create tables for installations or upgrades 
+      if (doCreate)
+      {
+
+        cliRC = createTable(tableName.c_str(), tableDefinition.tableDDL, 
+                            cliInterface, pDiags_);
+
+        // Temp code to verify error handling
+        if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_ON) 
+        {
+          std::string schemaName ("SCHEMA_PRIVILEGES");
+          if (tableName.find(schemaName) !=std::string::npos)
+          {
+            *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+            cliRC = -CAT_NOT_AUTHORIZED;
+          }
+        }
+
+        // If create was successful, set flags to load default data
+        if (cliRC < 0)
+          throw STATUS_ERROR;
+       
         tablesCreated.push_back(tableDefinition.tableName);
+
+        if (tableDefinition.tableName == PRIVMGR_OBJECT_PRIVILEGES)
+          populateObjectPrivs = true;
+        if (tableDefinition.tableName == PRIVMGR_ROLE_USAGE)
+          populateRoleGrants = true;
+      }
+
+      // upgrade tables
+      else 
+      {
+#if 0
+        retcode = upgradeMetadata(tableDefinition, cliInterface,
+                                  objectsLocation, colsLocation); 
+        if (retcode == STATUS_ERROR)
+          throw STATUS_ERROR;
+
+        tablesUpgraded.push_back(tableDefinition.tableName);
+#endif
+      }
     }
-    
-PrivStatus privStatus = STATUS_GOOD;
-
-   privStatus = updatePrivMgrMetadata(objectsLocation,authsLocation,
-                                      populateObjectPrivs,populateRoleGrants);
-
+ 
+    // populate metadata tables
+    PrivStatus privStatus = updatePrivMgrMetadata
+      (objectsLocation,authsLocation,
+       populateObjectPrivs,populateRoleGrants);
 
     // if error occurs, drop tables already created
     if (privStatus == STATUS_ERROR)
-    {
-      PrivStatus dropRetcode = dropMetadata(tablesCreated);
-      *pDiags_ << DgSqlCode(-CAT_INIT_AUTHORIZATION_FAILED);
-    }  
-  }
+      throw STATUS_ERROR;
+
+    //TODO: should notify QI?
+  } 
 
   catch (...)
   {
-    // drop any tables created before returning
-    PrivStatus dropRetcode = dropMetadata(tablesCreated);
-    *pDiags_ << DgSqlCode(-CAT_INIT_AUTHORIZATION_FAILED);
-    return STATUS_ERROR;
+     tablesCreated.clear();
+     tablesUpgraded.clear();
+
+     // assume ddlTxn will be turned on
+     // if not need to redo work just performed
+     return STATUS_ERROR;
   }
-//TODO: should notify QI
-  return retcode;
+  return STATUS_GOOD;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  upgradeMetadata
+//
+// This method checks to see if the metadata tables needs to be upgraded.
+// If so, it is upgraded.
+//
+// Params:
+//    tableDefinition - definition of table that may need upgrading
+//    cliInterface - infrastructure for making SQL calls
+//    objectsLocation - name of OBJECTS system metadata table
+//    colsLocation - name of COLUMNS system metadata table
+//
+// Returns PrivStatus
+//    STATUS_GOOD
+//    STATUS_ERROR
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------
+//
+PrivStatus PrivMgrMDAdmin::upgradeMetadata (
+  const PrivMgrTableStruct &tableDefinition,
+  ExeCliInterface &cliInterface,
+  const std::string &objectsLocation,
+  const std::string &colsLocation)
+{
+  // create a different table with the current definition
+  std::string newTableName = tableDefinition.tableName + std::string("_NEW");
+  std::string qualNewTableName = deriveTableName(newTableName.c_str());
+  Int32 cliRC = createTable(qualNewTableName.c_str(), tableDefinition.tableDDL, 
+                            cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  // if tables match, no upgrade is needed, return STATUS_GOOD
+  if (compareTableDefs(newTableName.c_str(), tableDefinition.tableName, 
+                       objectsLocation, colsLocation, 
+                       cliInterface, pDiags_))
+    {
+      // Done with new table, go ahead and drop
+      cliRC = dropTable(qualNewTableName.c_str(), cliInterface, pDiags_);
+      if (cliRC < 0)
+        return STATUS_ERROR;
+      return STATUS_GOOD;
+    }
+
+
+  // TDB -- copy data
+
+  // drop original table 
+  cliRC = dropTable(qualNewTableName.c_str(), cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  // rename new version table
+  // When using this code, error 1390 is returned:  <table> already exists
+  cliRC = renameTable(tableDefinition.tableName, qualNewTableName.c_str(), 
+                      cliInterface, pDiags_);
+  if (cliRC < 0)
+    return STATUS_ERROR;
+
+  return STATUS_GOOD;
 }
 
 // ----------------------------------------------------------------------------
@@ -349,64 +470,45 @@ PrivStatus privStatus = STATUS_GOOD;
 PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objectsToDrop)
 {
   PrivStatus retcode = STATUS_GOOD;
-  try
+    
+  // Authorization check
+  if (!isAuthorized())
   {
-    // Authorization check
-    if (!isAuthorized())
-    {
-       *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-       return STATUS_ERROR;
-     }
+     *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+     return STATUS_ERROR;
+   }
 
-    // See what does and does not exist
-    PrivMDStatus initStatus = authorizationEnabled();
+  // See what does and does not exist
+  std::set<std::string> existingObjectList;
+  PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
 
-    // If unable to access metadata, return STATUS_ERROR 
-    //   (pDiags contains error details)
-    if (initStatus == PRIV_INITIALIZE_UNKNOWN)
-      return STATUS_ERROR;
-
-    // If metadata tables don't exist, just return STATUS_GOOD
-    if (initStatus == PRIV_UNINITIALIZED)
-      return STATUS_GOOD;
-
-    // Call Trafodion to drop the requested tables
-    // If one of the tables fail to drop, save retcode and continue
-    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
-    for (int32_t i = 0; i < objectsToDrop.size();++i)
-    {
-      std::string objectName = objectsToDrop[i];
-      std::string tableDDL("DROP TABLE IF EXISTS ");
-      tableDDL += deriveTableName(objectName.c_str());
-      tableDDL += ";";
-
-      Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
-      if (cliRC < 0)
-      {
-        cliInterface.retrieveSQLDiagnostics(pDiags_);
-        retcode = STATUS_ERROR;
-      }
-    }
-    
-    std::string schemaDDL("DROP SCHEMA ");
-    schemaDDL += metadataLocation_;
-    Int32 cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
-    if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(pDiags_);
-      retcode = STATUS_ERROR;
-    }
-    CmpSeabaseDDLrole role;
-    
-    role.dropStandardRole(DB_ROOTROLE_NAME);
-    
-  }
-
-  catch (...)
-  {
+  // If unable to access metadata, return STATUS_ERROR 
+  //   (pDiags contains error details)
+  if (initStatus == PRIV_INITIALIZE_UNKNOWN)
     return STATUS_ERROR;
+
+  // If metadata tables don't exist, just return STATUS_GOOD
+  if (initStatus == PRIV_UNINITIALIZED)
+    return STATUS_GOOD;
+
+  // Call Trafodion to drop the schema cascade
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, CmpCommon::context()->sqlSession()->getParentQid());
+  Int32 cliRC = 0;
+
+  std::string schemaDDL("DROP SCHEMA ");
+  schemaDDL += metadataLocation_;
+  schemaDDL += "CASCADE";
+  cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    retcode = STATUS_ERROR;
   }
+  CmpSeabaseDDLrole role;
+    
+  role.dropStandardRole(DB_ROOTROLE_NAME);
+    
+
 //TODO: should notify QI
   return retcode;
 }
@@ -954,6 +1056,220 @@ int32_t diagsMark = pDiags_->mark();
   return true;
 }
 
+// ----------------------------------------------------------------------------
+// method: compareTableDefs
+//
+// this method looks at column attributes from two Seabase tables by
+//   performing a query that compares column attributes of the two tables
+//
+// params:
+//   tableNameOne 
+//   tableNameTwo - current definition of the table
+//   cliInterface - cli details 
+//   objectsLocation - location of the system metadata table OBJECTS
+//   colsLocation - loction of the system metadata table COLUMNS
+//
+// returns:
+//   true  - table structures match
+//   false - table structures don't match or unexpected error
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------
+static bool compareTableDefs (
+  const char *tableNameOne,
+  const char *tableNameTwo,
+  const std::string &objectsLocation,
+  const std::string &colsLocation,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  // Perform a SQL command that compares column differences between two tables:
+  //  select column_name, column_number, column_size, sql_data_type
+  //  from 
+  //   (select column_name, column_number, sql_data_type, column_size)
+  //    from <colsLocation>
+  //    where object_uid in 
+  //     (select object_uid from <objectsLocation>
+  //      where object_name in ('<tableNameOne> <tableNameTwo>') 
+  //            and schema_name = '_PRIVMGR_MD_')
+  //   group by column_name,column_number, 
+  //            fs_data_type,sql_data_type, column_size
+  //   having count(1)=1)
+  // order by column_name
+
+
+  // This code only checks a subset of column attributes.  These attributes are
+  // sufficient for now.  If future changes require other attributes, then this
+  // query should change.
+
+  // Calculate size of generated query - 2 catalogs, 3 schemas, 4 tables, plus 300 for text
+  char query[MAX_SQL_IDENTIFIER_NAME_LEN*2 + 
+             MAX_SQL_IDENTIFIER_NAME_LEN*3 + 
+             MAX_SQL_IDENTIFIER_NAME_LEN*4 + 300];
+
+  Queue * tableColDiffs = NULL;
+  str_sprintf(query, 
+    "select column_name, column_number, fs_data_type, column_size "
+    "from %s where object_uid in "
+    "(select object_uid from %s where object_name in ('%s', '%s') "
+    "and schema_name = '%s') " 
+    "group by column_name, column_number, fs_data_type, column_size "
+    "having count(1) = 1 order by column_name",
+    colsLocation.c_str(), objectsLocation.c_str(),
+    tableNameOne, tableNameTwo, SEABASE_PRIVMGR_SCHEMA); 
+
+  Int32 cliRC = cliInterface.fetchAllRows(tableColDiffs, query, 0, FALSE, FALSE, TRUE);
+
+  // Check the results of the select statement
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return false;
+  }
+
+  // If no rows are returned, then table structures match
+  return (tableColDiffs->numEntries() == 0);
+
+  // could return the list of rows that don't match
+#if 0
+  std::vector<ColumnRow> colInfoArray;
+  tableColDiffs->position();
+  for (Lng32 idx = 0; idx < tableColDiffs->numEntries(); idx++)
+  {
+      OutputInfo * oi = (OutputInfo*)tableColDiffs->getNext();
+      
+      ColumnRow colInfo;
+      char * data = NULL;
+      Lng32 len = 0;
+
+      // get the column name
+      oi->get(0, data, len);
+      colInfo.colName = new(STMTHEAP) char[len + 1];
+      strcpy((char*)colInfo.colName, data);
+
+      colInfo.colNumber = *(Lng32*)oi->get(1);
+      colInfo.datatype = *(Lng32*)oi->get(2);
+      colInfo.length = *(Lng32*)oi->get(3);
+
+      // may want to include these in comparison
+      colInfo.columnClass = COM_UNKNOWN_CLASS;
+      colInfo.precision = 0;
+      colInfo.scale = 0;
+      colInfo.dtStart = 0;
+      colInfo.dtEnd = 0;
+      colInfo.upshifted = 0;
+      colInfo.hbaseColFlags = 0;
+      colInfo.nullable = 1;
+      colInfo.charset = (SQLCHARSET_CODE)CharInfo::UnknownCharSet;
+      colInfo.defaultClass = COM_NO_DEFAULT;
+      colInfo.colHeading = NULL;
+      colInfo.hbaseColFam = NULL;
+      colInfo.hbaseColQual = NULL;
+      strcpy(colInfo.paramDirection, " ");
+      colInfo.isOptional = 0;
+      colInfo.colFlags = 0;
+      colInfoArray.push_back(colInfo);
+   }
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// Method:  createTable
+//
+// This method creates a table
+//
+// Params:
+//   tableName - fully qualified name of table to create 
+//   tableDDL - a TableDDLString describing the table
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the create statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t createTable (
+  const char *tableName,
+  const TableDDLString *tableDDL,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string createStmt("CREATE TABLE ");
+  createStmt += tableName;
+  createStmt += tableDDL->str;
+
+  Int32 cliRC = cliInterface.executeImmediate(createStmt.c_str());
+  if (cliRC != 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  dropTable
+//
+// This method drops a table
+//
+// Params:
+//   tableName - fully qualified name of table to drop
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the drop statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t dropTable (
+  const char *tableName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string tableDDL("DROP TABLE IF EXISTS ");
+  tableDDL += tableName;
+
+  Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
+  if (cliRC < 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  renameTable
+//
+// This method renames a table
+//
+// Params:
+//   originalObjectName - fully qualified name of object to rename
+//   newObjectName - fully qualified new name
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// Returns:
+//   The cli code returned from the rename statement
+//
+// A cli error is put into the diags area if there is an error
+// ----------------------------------------------------------------------------   
+static int32_t renameTable (
+  const char *originalObjectName,
+  const char *newObjectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string tableDDL("ALTER TABLE  ");
+  tableDDL += newObjectName;
+  tableDDL += " RENAME TO ";
+  tableDDL += originalObjectName;
+
+  Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
+  if (cliRC < 0)
+    cliInterface.retrieveSQLDiagnostics(pDiags);
+
+  return cliRC;
+}
+
 // ****************************************************************************
 // method:  updatePrivMgrMetadata
 //
@@ -993,11 +1309,14 @@ CmpSeabaseDDLrole role;
          return STATUS_ERROR;
    }
     
-   privStatus = initializeComponentPrivileges();
+      privStatus = initializeComponentPrivileges();
    
-   if (privStatus != STATUS_GOOD)
-      return STATUS_ERROR;
+      if (privStatus != STATUS_GOOD)
+         return STATUS_ERROR;
       
+   // When new components and component operations are added
+   // add an upgrade procedure
+   
    return STATUS_GOOD;
    
 }

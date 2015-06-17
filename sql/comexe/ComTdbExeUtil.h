@@ -2652,8 +2652,9 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_, NOOP_
+    TO_EXTERNAL_FROM_FILE_,  NOOP_
   };
+  
 
   ComTdbExeUtilLobExtract()
   : ComTdbExeUtil()
@@ -2726,29 +2727,48 @@ public:
  void setWithCreate(NABoolean v)
   {(v ? flags_ |= WITH_CREATE : flags_ &= ~WITH_CREATE); };
   NABoolean withCreate() { return (flags_ & WITH_CREATE) != 0; };
+ 
+  void setRetrieveLength(NABoolean v)
+  {(v ? flags_ |= RETRIEVE_LENGTH : flags_ &= ~RETRIEVE_LENGTH); };
+  NABoolean retrieveLength() { return (flags_ & RETRIEVE_LENGTH) != 0; };
+
+  void setErrorIfNotExists(NABoolean v)
+  {(v ? flags_ |= ERROR_IF_NOT_EXISTS : flags_ &= ~ERROR_IF_NOT_EXISTS); };
+  NABoolean errorIfNotExists() { return (flags_ & ERROR_IF_NOT_EXISTS) != 0; };
+  
+  void setTruncateExisting(NABoolean v)
+  {(v ? flags_ |= TRUNCATE_EXISTING : flags_ &= ~TRUNCATE_EXISTING); };
+  NABoolean truncateExisting() { return (flags_ & TRUNCATE_EXISTING) != 0; };
+
+  void setRowSize(Int64 rowSize) { rowSize_ = rowSize; };
+  void setBufSize(Int64 bufSize) { bufSize_ = bufSize;};
+
 
 private:
   enum
   {
     STRING_FORMAT    = 0x0001,
     SRC_IS_FILE           = 0x0002,
-    WITH_CREATE        = 0x0004
+    WITH_CREATE        = 0x0004,
+    RETRIEVE_LENGTH    =0x0008,
+    ERROR_IF_NOT_EXISTS =0x0010,
+    TRUNCATE_EXISTING = 0x0020
   };
 
   NABasicPtr handle_;                                      // 00-07
   short toType_;                                           // 08-09
-  short flags_;                                            // 10-11
+  Int32 flags_;    
   Lng32 handleLen_;
-  Int64 size_; // row size
-  Int64 size2_; // buf size
-  Lng32 lobStorageType_ ; // valid when handle is null and extract is from a file.
+  Int64 rowSize_; // row size
+  Int64 bufSize_; // buf size
+  Lng32 lobStorageType_ ; // valid when  extract is from a file.
   Lng32 lobHdfsPort_;
   NABasicPtr lobHdfsServer_;
   NABasicPtr stringParam1_;
   NABasicPtr stringParam2_;
   NABasicPtr stringParam3_;
 
-  char fillersComTdbExeUtilLobExtract_[40];            // 12-55
+  char fillersComTdbExeUtilLobExtract_[40];            
 };
 
 class ComTdbExeUtilLobShowddl : public ComTdbExeUtil

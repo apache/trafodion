@@ -25,7 +25,6 @@
 #include "PrivMgr.h"
 
 // c++ includes
-#include <set>
 #include <string>
 #include <algorithm>
 
@@ -160,7 +159,8 @@ PrivMgr::~PrivMgr()
 //
 // A cli error is put into the diags area if there is an error
 // ----------------------------------------------------------------------------
-PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled()
+PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled(
+  std::set<std::string> &existingObjectList)
 {
 // Will require QI to reset on INITIALIZE AUTHORIZATION [,DROP]
   // get the list of tables from the schema
@@ -199,7 +199,6 @@ int32_t diagsMark = pDiags_->mark();
     return PRIV_UNINITIALIZED;
 
   // Gather the returned list of tables in existingObjectList
-  std::set<std::string> existingObjectList;
   schemaQueue->position();
   for (int idx = 0; idx < schemaQueue->numEntries(); idx++)
   {
@@ -839,8 +838,9 @@ ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
 bool PrivMgr::isAuthorizationEnabled()
 {
   // If authorizationEnabled_ not setup in class, go determine status
+  std::set<std::string> existingObjectList;
   if (authorizationEnabled_ == PRIV_INITIALIZE_UNKNOWN)
-    authorizationEnabled_ = authorizationEnabled();
+    authorizationEnabled_ = authorizationEnabled(existingObjectList);
 
   // return true if PRIV_INITIALIZED
   return (authorizationEnabled_ == PRIV_INITIALIZED);

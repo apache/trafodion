@@ -9548,9 +9548,7 @@ Lng32 SQLCLI_LOBcliInterface
    	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, numChunks int not null, lobLen largeint not null) salt using 8 partitions store by (descPartnKey, syskey) ",
 		    lobDescHandleName);
 	
-	/*	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, numChunks int not null, lobLen largeint not null) store by (descPartnKey, syskey) ",
-		lobDescHandleName); */
-	// set parserflags to allow ghost table
+
 	currContext.setSqlParserFlags(0x1);
 	
 	cliRC = cliInterface->executeImmediate(query);
@@ -9566,17 +9564,10 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-	/*	// create lob descriptor chunks table salted
+           	// create lob descriptor chunks table salted
        	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, intParam largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) salt using 8 partitions",
-	lobDescChunksName); */
+	lobDescChunksName); 
 
-// create lob descriptor chunks table salted
-       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, intParam largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) ",
-	   lobDescChunksName); 
-
-
-	/*str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, intParam largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) ",
-	  lobDescChunksName); */
 
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
@@ -9857,18 +9848,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-#ifdef __ignore
-	//***ssss** temp workaround for cursor delete problem 
-	cliRC = cliInterface->executeImmediate("cqd hbase_updel_cursor_opt 'OFF'; " );
-       
-	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-	    goto error_return;
-	  }
-	//**** ssss*** end temp workaround
-#endif
+
 
 	// delete all chunks from lob descriptor chunks table
 	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and descSysKey = %Ld",
@@ -9936,19 +9916,6 @@ Lng32 SQLCLI_LOBcliInterface
 
     case LOB_CLI_DELETE:
       {
-#ifdef __ignore
-	//***ssss** temp workaround for cursor delete problem 
-	cliRC = cliInterface->executeImmediate("cqd hbase_updel_cursor_opt 'OFF'; " );
-       
-	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
-	    goto error_return;
-	  }
-	//**** ssss*** end temp workaround
-#endif
-
 	// delete from lob descriptor handle table
 	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and syskey = %Ld",
 		    lobDescHandleName, descPartnKey, inDescSyskey);
@@ -10172,19 +10139,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 	else
 	  {
-	    /*	    cliRC = cliInterface->fetchRowsEpilogue(0);
-	    if (cliRC < 0)
-	      {
-		cliInterface->retrieveSQLDiagnostics(myDiags);
-
-		if (inCliInterface)
-		  *inCliInterface = NULL;
-		goto error_return;
-	      }
-
-	    if (inCliInterface)
-	      *inCliInterface = NULL;
-	      */
+	    
 	    cliRC = 100;
 	  }
       }
@@ -10249,7 +10204,40 @@ Lng32 SQLCLI_LOBcliInterface
 
       }
       break;
+  case LOB_CLI_SELECT_LOBLENGTH:
+      {
+	
+	//aggregate on chunklen for this lob.
 
+	str_sprintf (query,  "select sum(chunklen) from %s   where descpartnkey = %Ld and descsyskey = %Ld ", lobDescChunksName, descPartnKey, inDescSyskey );
+
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+
+	Int64 outlen = 0;Lng32 len = 0;
+	cliRC = cliInterface->executeImmediate(query,(char *)dataLen, &len, FALSE);
+	    if (outDescPartnKey)
+	      *outDescPartnKey = descPartnKey;
+
+	    if (outDescSyskey)
+	      *outDescSyskey = inDescSyskey;
+	    
+
+
+	Lng32 saveCliErr = cliRC;
+
+	
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+
+	cliRC = saveCliErr;
+      }
+      break;
     } // switch 
 
   // normal return. Fall down to deallocate of structures.
@@ -10390,6 +10378,11 @@ Lng32 SQLCLI_LOBddlInterface
 	    if (rc)
 	      {
 		cliRC = -9999;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
+			    getLobErrStr(rc));
 		goto error_return;
 	      }
 	    
@@ -10457,6 +10450,11 @@ Lng32 SQLCLI_LOBddlInterface
 	    if (rc)
 	      {
 		cliRC = -9999;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
+			    getLobErrStr(rc));
 		goto error_return;
 	      }
 	    
@@ -10508,9 +10506,9 @@ Lng32 SQLCLI_LOBddlInterface
 	
 	if (cliRC < 0)
 	  {
-	    //	    cliInterface->retrieveSQLDiagnostics(&diags);
+	    cliInterface->retrieveSQLDiagnostics(&diags);
 	    
-	    //  goto error_return;
+	    goto error_return;
 	  }
 	
 	// drop descriptor table
@@ -10524,6 +10522,11 @@ Lng32 SQLCLI_LOBddlInterface
 	    if (rc)
 	      {
 		cliRC = -9999;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
+			    getLobErrStr(rc));
 		goto error_return;
 	      }
 	    
@@ -10743,12 +10746,13 @@ Lng32 SQLCLI_LOBloader2sqlInterface
 				      requestTag, 
 				      0,
 				      inDescSyskey, 
+				      Lob_InsertDataSimple,
 				      &cliError,
 				      Lob_Memory,
-				      FALSE, // checkStatus
+				     
 				      1, // waited
 				      dataLoc,
-				      dataLen);
+				      dataLen); 
 	
 	if (cliRC < 0)
 	  {
@@ -10756,7 +10760,7 @@ Lng32 SQLCLI_LOBloader2sqlInterface
 	    ComDiagsArea * da = &diags;
 	    ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &intParam1, 
-			    &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
+			    &cliError, NULL, (char*)"ExpLOInterfaceInsert",
 			    getLobErrStr(intParam1));
 	    goto error_return;
 	  }

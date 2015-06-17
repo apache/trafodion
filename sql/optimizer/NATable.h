@@ -430,6 +430,8 @@ public:
         { return qualifiedName_; }
   const QualifiedName &getTableName() const
         { return qualifiedName_.getQualifiedNameObj(); }
+  QualifiedName &getTableName() 
+        { return qualifiedName_.getQualifiedNameObj(); }
   const NAString getSynonymReferenceName() const
         { return synonymReferenceName_; }
   const ComUID &getSynonymReferenceObjectUid() const 

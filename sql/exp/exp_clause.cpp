@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -498,6 +498,12 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_HEADER:
 	  setClassID(FUNC_HEADER);
 	  break;
+	case ITM_HBASE_TIMESTAMP:
+	  setClassID(FUNC_HBASE_TIMESTAMP);
+	  break;
+	case ITM_HBASE_VERSION:
+	  setClassID(FUNC_HBASE_VERSION);
+	  break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
 	  break;
@@ -561,6 +567,9 @@ ex_clause::ex_clause(clause_type type,
     Lng32 i = 0;
     Attributes *attr = NULL;
     for (i=0; i<num_operands;i++) {
+      if (! op[i])
+        continue;
+
       if ((op[i]->getAtp() < 0) ||
 	  (op[i]->getAtpIndex() < 0) ||
 	  (op[i]->getTupleFormat() == ExpTupleDesc::UNINITIALIZED_FORMAT))
@@ -952,6 +961,12 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_PIVOT_GROUP:
       GetVTblPtr(vtblPtr, ex_pivot_group_clause);
+      break;
+    case ex_clause::FUNC_HBASE_TIMESTAMP:
+      GetVTblPtr(vtblPtr, ExFunctionHbaseTimestamp);
+      break;
+    case ex_clause::FUNC_HBASE_VERSION:
+      GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1441,6 +1456,8 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
     case ITM_HBASE_COLUMNS_DISPLAY: return "ITM_HBASE_COLUMNS_DISPLAY";
     case ITM_HBASE_COLUMN_CREATE: return "ITM_HBASE_COLUMN_CREATE";
+    case ITM_HBASE_TIMESTAMP: return "ITM_HBASE_TIMESTAMP";
+    case ITM_HBASE_VERSION: return "ITM_HBASE_VERSION";
 
     case ITM_SEQUENCE_VALUE: return "ITM_SEQUENCE_VALUE";
 
@@ -1959,6 +1976,30 @@ void ExAuditImage::displayContents(Space * space, const char * /*displayStr*/, I
     str_sprintf(buf, "End of %s (Clause #%d: %s) \n", "ExAuditRowImageExpr", clauseNum, "ExAuditImage"); 
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));  
 #endif 
+}
+
+void ExFunctionHbaseTimestamp::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ExFunctionHbaseTimestamp", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    colIndex_ = %d", colIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
+}
+
+void ExFunctionHbaseVersion::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ExFunctionHbaseVersion", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    colIndex_ = %d", colIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
 }
 
 // Function to compare two strings. 

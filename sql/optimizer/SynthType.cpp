@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -6391,6 +6391,25 @@ const NAType * SequenceValue::synthesizeType()
   return type;
 }
 
+const NAType * HbaseTimestamp::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE,  
+                              col_->getValueId().getType().supportsSQLnull());
+
+  return type;
+}
+
+const NAType * HbaseVersion::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE, FALSE); 
+
+  return type;
+}
+
 const NAType * RowNumFunc::synthesizeType()
 {
   NAType * type = NULL;
@@ -6399,8 +6418,6 @@ const NAType * RowNumFunc::synthesizeType()
 
   return type;
 }
-
-
 
 const NAType *LOBoper::synthesizeType()
 {
@@ -6608,7 +6625,7 @@ const NAType *LOBconvert::synthesizeType()
   ValueId vid1 = child(0)->getValueId();
   const NAType &typ1 = (NAType&)vid1.getType();
 
-  if (obj_ == STRING_)
+  if (obj_ == STRING_ || obj_ == FILE_)
     {
       if (typ1.getTypeQualifier() != NA_LOB_TYPE)
 	{

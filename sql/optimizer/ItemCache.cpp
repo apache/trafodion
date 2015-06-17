@@ -734,6 +734,22 @@ void Extract::generateCacheKey(CacheWA& cwa) const
   cwa += fieldFunction_ ? "1" : "0";
 }
 
+// append an ascii-version of HbaseTimestamp into cachewa.qryText_
+void HbaseTimestamp::generateCacheKey(CacheWA& cwa) const
+{
+  BuiltinFunction::generateCacheKey(cwa); 
+
+  col()->generateCacheKey(cwa);
+}
+
+// append an ascii-version of HbaseVersion into cachewa.qryText_
+void HbaseVersion::generateCacheKey(CacheWA& cwa) const
+{
+  BuiltinFunction::generateCacheKey(cwa); 
+
+  col()->generateCacheKey(cwa);
+}
+
 // does this entire ItemExpr qualify query to be cacheable after this phase?
 NABoolean HostVar::isCacheableExpr(CacheWA& cwa)
 {
