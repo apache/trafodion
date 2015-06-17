@@ -469,12 +469,12 @@ bool CClusterConfig::LoadConfig( void )
             sqlite3_finalize(prepPersistKeysStmt);
         }
     }
-    else
+    else if ( rc != SQLITE_DONE )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
-                , "[%s] Configuration database select persist keys failed, %s\n"
-                , method_name,  sqlite3_errmsg(db_) );
+                , "[%s] Configuration database select persist keys failed, %s (rc=%d)\n"
+                , method_name,  sqlite3_errmsg(db_), rc );
         mon_log_write(MON_CLUSTERCONF_LOAD_9, SQ_LOG_CRIT, la_buf);
     }
 
