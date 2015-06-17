@@ -476,7 +476,6 @@ bool CClusterConfig::LoadConfig( void )
                 , "[%s] Configuration database select persist keys failed, %s\n"
                 , method_name,  sqlite3_errmsg(db_) );
         mon_log_write(MON_CLUSTERCONF_LOAD_9, SQ_LOG_CRIT, la_buf);
-        abort();
     }
 
 
