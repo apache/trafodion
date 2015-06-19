@@ -365,6 +365,7 @@ string getQueryStateStringRes(unsigned short state)
 	case QUERY_COMPLETED_HOLD_TIMEOUT:
 	case QUERY_COMPLETED_EXEC_TIMEOUT:
 	case QUERY_COMPLETED_BY_ADMIN:
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:
 	case QUERY_COMPLETED_QUERY_NOT_FOUND:
 	case QUERY_COMPLETED_CONNECTION_FAILED:
 	case QUERY_COMPLETED_NDCS_PROCESS_FAILED:
@@ -473,6 +474,7 @@ string getQuerySubStateStringRes(unsigned short state)
 	case QUERY_COMPLETED_EXEC_TIMEOUT:			return FMT_EXEC_TIMEOUT;
 //
 	case QUERY_COMPLETED_BY_ADMIN:				return FMT_CANCELLED_BY_ADMIN;
+	case QUERY_COMPLETED_BY_ADMIN_SERVER:			return FMT_CANCELLED_BY_ADMIN_SERVER;
 	case QUERY_COMPLETED_BY_CLIENT:			return FMT_CANCELLED_BY_CLIENT;
 //
 	case QUERY_COMPLETED_QUERY_NOT_FOUND:		return FMT_QUERY_NOT_FOUND;
@@ -2470,6 +2472,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_master_execution_time = queryExecutionTime;
 	pQuery_info->m_master_elapse_time = queryElapseTime;
 	pQuery_info->m_query_status = getQueryStateStringRes(pSrvrStmt->m_state);
+	pQuery_info->m_query_sub_status = getQuerySubStateStringRes(pSrvrStmt->m_state);
 	pQuery_info->m_error_code = errorCode;
 	pQuery_info->m_sql_error_code = sqlErrorCode;
 	pQuery_info->m_error_text = getErrorText(inSqlError, inSqlErrorLength, MAX_ERROR_TEXT_LENGTH);

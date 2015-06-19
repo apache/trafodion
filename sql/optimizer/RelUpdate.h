@@ -1125,6 +1125,9 @@ public:
     baseColRefs_ = val;
   }
 
+  NABoolean isUpsertThatNeedsMerge() const;
+  RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
+
 protected:
 
   InsertType       insertType_;
