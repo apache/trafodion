@@ -82,12 +82,12 @@ Int32 main(Int32 argc, char **argv)
   }
 
   atexit(my_mpi_fclose);
-  // setup log4cpp, need to be done here so initLog4cpp can have access to
+  // setup log4cxx, need to be done here so initLog4cxx can have access to
   // process information since it is needed to compose the log name
-  // the log4cpp log name for this ssmp process  will be
+  // the log4cxx log name for this ssmp process  will be
   // based on this process' node number sscp_<nid>.log
   QRLogger::instance().setModule(QRLogger::QRL_SSCP);
-  QRLogger::instance().initLog4cpp("log4cpp.trafodion.sscp.config");
+  QRLogger::instance().initLog4cxx("log4cxx.trafodion.sscp.config");
 
   // Synchronize C and C++ output streams
   ios::sync_with_stdio();

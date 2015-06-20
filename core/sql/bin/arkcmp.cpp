@@ -272,7 +272,7 @@ Int32 main(Int32 argc, char **argv)
            cmpContextHeap);
 
         QRLogger::instance().setModule(QRLogger::QRL_MXCMP);
-        QRLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config");
+        QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
       }
       catch (...)
       {

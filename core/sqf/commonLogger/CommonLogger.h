@@ -24,7 +24,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
-#include <log4cpp/Category.hh>
+#include <log4cxx/logger.h>
+#include <log4cxx/level.h>
+#include <log4cxx/appender.h>
+#include <log4cxx/helpers/exception.h>
+
+using namespace log4cxx;
+using namespace log4cxx::helpers;
 
 /**
  * \file
@@ -33,22 +39,22 @@
  */
 
 // Indicator for logging level.
-enum logLevel {
-   LL_FATAL = log4cpp::Priority::FATAL
-  ,LL_ALERT = log4cpp::Priority::ALERT
-  ,LL_ERROR = log4cpp::Priority::ERROR
-  ,LL_WARN  = log4cpp::Priority::WARN
-  ,LL_INFO  = log4cpp::Priority::INFO
-  ,LL_DEBUG = log4cpp::Priority::DEBUG
+  enum logLevel {
+   LL_FATAL = log4cxx::Level::FATAL_INT
+  ,LL_ERROR = log4cxx::Level::ERROR_INT
+  ,LL_WARN  = log4cxx::Level::WARN_INT
+  ,LL_INFO  = log4cxx::Level::INFO_INT
+  ,LL_DEBUG = log4cxx::Level::DEBUG_INT
+  ,LL_TRACE = log4cxx::Level::TRACE_INT
 
   // This is the level we use for an error that prevents rewriting a query, but
   // allows the query to proceed without being rewritten. It's value places it
   // between LL_WARN and LL_ERROR in terms of priority.
-  ,LL_MVQR_FAIL = 350
+  ,LL_MVQR_FAIL = 35000
 };
 
 /**
- * A generic logger class encapsulating the log4cpp library.
+ * A generic logger class encapsulating the log4cxx library.
  */
 class CommonLogger
 {
@@ -71,13 +77,13 @@ public:
   static CommonLogger& instance();
 
   /**
-    * Initializes log4cpp by using the configuration file.
+    * Initializes log4cxx by using the configuration file.
     * If the path given is relative (does not start with a
     * slash), it is appended to the $MY_SQROOT environment variable.
-    * @param configFileName name of the log4cpp configuration file.
+    * @param configFileName name of the log4cxx configuration file.
     * @return FALSE if the configuration file is not found.
     */
-  virtual bool initLog4cpp(const char* configFileName, const char* fileSuffix=NULL);
+  virtual bool initLog4cxx(const char* configFileName, const char* fileSuffix=NULL);
 
   /**
     * Enters a message in the log. \c logMsgTemplate supplies a

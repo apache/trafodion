@@ -206,8 +206,8 @@ protected:
   // log to a user table
   void logIntervalInPrivateTable();
 
-  // log to a log4cpp appender
-  void logIntervalInLog4Cpp();
+  // log to a log4cxx appender
+  void logIntervalInLog4Cxx();
 
 private:
   ~CompilerTrackingInfo();

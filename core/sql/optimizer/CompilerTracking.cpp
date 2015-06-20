@@ -129,8 +129,8 @@ CompilerTrackingInfo::logCompilerStatusOnInterval(Int32 intervalLengthMins)
        logIntervalInPrivateTable();    
     }
 
-    // always log to log4cpp log
-    logIntervalInLog4Cpp();
+    // always log to log4cxx log
+    logIntervalInLog4Cxx();
         
     // since the interval is expired, reset to begin tracking new interval
     resetInterval();        
@@ -684,13 +684,13 @@ CompilerTrackingInfo::logIntervalInPrivateTable()
 }
 
 /************************************************************************
-method CompilerTrackingInfo::logIntervalInLog4Cpp
+method CompilerTrackingInfo::logIntervalInLog4Cxx
 
-helper to simply print the tracker info into a log4cpp appender
+helper to simply print the tracker info into a log4cxx appender
 
 ************************************************************************/
 void
-CompilerTrackingInfo::logIntervalInLog4Cpp()
+CompilerTrackingInfo::logIntervalInLog4Cxx()
 {
    QRLogger::log(CAT_SQL_COMP, LL_MVQR_FAIL, "dumping a CompilerTrackingInfo event");
 }

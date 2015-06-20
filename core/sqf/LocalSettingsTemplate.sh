@@ -7,7 +7,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -49,5 +49,6 @@ PROTOBUFS="/usr"
 QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
 # Explicitly unset QT_TOOLKIT here if Qt is not installed and you don't want to build the SqlCompilerDebugger
 # unset QT_TOOLKIT
+LOG4CXX_DIR="$TOOLSDIR/apache-log4cxx-0.10.0"
 
 # HBASE*, HIVE*, HADOOP* locations may be overridden here - see sqf/sqenvcom.sh

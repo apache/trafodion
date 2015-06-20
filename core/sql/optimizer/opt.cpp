@@ -735,7 +735,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
                 "A previously logged assertion failure may contain " 
                 "more information about the nature of the problem. ";
 
-          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_ALERT);
+          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_WARN);
 
           CmpInternalException("Pass1 Failed", __FILE__ , __LINE__).throwException();
       }
@@ -746,7 +746,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
           msg = "SQL compiler: Optimization failed at pass two or higher. " 
                 "Execution will use the plan generated at pass one instead.";
 
-          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_ALERT);
+          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_WARN);
       }
 
       // ASSUME : if we're looking at the debugging messages,

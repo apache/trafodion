@@ -157,7 +157,7 @@ export PATH=$MPI_ROOT/bin:$MY_SQROOT/export/bin"$SQ_MBTYPE":$MY_SQROOT/sql/scrip
 # The guiding principle is that the user's own software is preferred over anything else;
 # system customizations are likewise preferred over default software.
 
-CC_LIB_RUNTIME=/usr/lib
+CC_LIB_RUNTIME=/lib64:/usr/lib64
 VARLIST=""
 
 
@@ -188,6 +188,8 @@ unset USE_HADOOP_1
 # CURL_LIB_DIR           directory of Thrift library libcurl.so
 # CURL_INC_DIR           directory with header files for curl
 # LOC_JVMLIBS              directory of the JNI C++ DLL libjvm.so
+# LOG4CXX_LIB_DIR          directory of log4cxx library lib4cxx.so
+# LOG4CXX_INC_DIR          directory with header files for log4cxx
 
 # Elements of the CLASSPATH for Trafodion
 
@@ -295,6 +297,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+ 
+
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
@@ -456,10 +460,18 @@ fi
 
 export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
 export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4
-
 export PROTOBUFS=/usr
 
-export LOG4CPP_VER=log4cpp-1.1.1
+# LOG4CXX
+if [[ -d $TOOLSDIR/apache-log4cxx-0.10.0 ]]
+then
+  export LOG4CXX_LIB_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/lib
+  export LOG4CXX_INC_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/include
+else
+  export LOG4CXX_LIB_DIR=/lib64:/usr/lib64
+  export LOG4CXX_INC_DIR=/usr/include/log4cxx
+fi
+
 
 # ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 # end of customization variables
@@ -622,7 +634,7 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 
 ######################
 # Library Path may include local over-rides
-export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:.
+export LD_LIBRARY_PATH=$CC_LIB_RUNTIME:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:$LOG4CXX_LIB_DIR:.
 
 ######################
 # classpath calculation may include local over-rides

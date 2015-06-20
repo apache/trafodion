@@ -113,9 +113,10 @@ INCLUDEPATH += ../eh \
                ../ddl \
                ../dml \
                ../arkcmp \
-	       ../../log4cpp/$$(LOG4CPP_VER)/include \
                ../../sqf/export/include \
-               ../../sqf/commonLogger
+               ../../sqf/commonLogger \
+               $$(LOG4CXX_INC_DIR) \
+               $$(LOG4CXX_INC_DIR)/lib4cxx
 
 
 INCLUDEPATH += ../../sqf/sql/inc \

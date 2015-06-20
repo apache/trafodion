@@ -737,8 +737,8 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
     if (workState_ == IDLE)
       return WORK_OK;
       
-    // inject events to test log4cpp
-    if (splitBottomTdb().getAbendType() == ComTdbSplitBottom::TEST_LOG4CPP)
+    // inject events to test log4cxx
+    if (splitBottomTdb().getAbendType() == ComTdbSplitBottom::TEST_LOG4CXX)
     {
         Int32 LEN = 100;
         char espInfo[LEN];
@@ -828,7 +828,7 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
             break;
             // LCOV_EXCL_STOP
           }
-        case ComTdbSplitBottom::TEST_LOG4CPP:
+        case ComTdbSplitBottom::TEST_LOG4CXX:
           {
             // nothing done here - should have been handled above
             break;

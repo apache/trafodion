@@ -154,7 +154,7 @@ Int32 main(Int32 argc, char *argv[])
   Lng32 result = 0;
   
   QRLogger::instance().setModule(QRLogger::QRL_QMP);
-  QRLogger::instance().initLog4cpp("log4cpp.qmp.config");
+  QRLogger::instance().initLog4cxx("log4cxx.qmp.config");
 
   QRLogger::log(CAT_QMP, LL_INFO, "MXQMP process was started.");
 

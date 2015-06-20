@@ -55,6 +55,3 @@ Linux-x86_64/
 
 # sql regressions
 /rundir/
-
-# packaged log4cpp source
-/sources/log4cpp*.tar
