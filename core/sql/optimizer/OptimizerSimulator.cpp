@@ -1226,7 +1226,9 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
     
     cmd =       "load data local inpath '" + *modifiedPath + "' into table ";
     cmd +=      qualifiedName->getCatalogName()+"_"+qualifiedName->getSchemaName()+"_"+qualifiedName->getObjectName();
+
     execHiveSQL(cmd.data());
+
     
     //create sb_histograms
     cmd =      "CREATE TABLE IF NOT EXISTS " + qualifiedName->getQualifiedNameAsString();
@@ -1261,19 +1263,21 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-        NAString errMsg = "Load histogram data error:  " ;
+        NAString errMsg = "Load histogram data error while creating sb_histograms:  " ;
         errMsg += std::to_string((long long)(retcode)).c_str();
         OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }
     
     cmd = "upsert using load into " + qualifiedName->getQualifiedNameAsString() + " select * from hive.hive.";
     cmd += qualifiedName->getCatalogName()+"_"+qualifiedName->getSchemaName()+"_"+qualifiedName->getObjectName(); 
+
+
     retcode = executeInMetaContext(cmd.data());
     
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-        NAString errMsg = "Load histogram data error:  " ;
+        NAString errMsg = "Load histogram data error while upsert using load:  " ;
         errMsg += std::to_string((long long)(retcode)).c_str();
         OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }

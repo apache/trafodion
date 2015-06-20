@@ -14882,34 +14882,43 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         // CQDs related to # of ESPs for a HBase table scan
         maxESPs = getDefaultAsLong(HBASE_MAX_ESPS);
 
-        NABoolean fakeEnv = FALSE; 
-        CollIndex totalESPsAllowed = defs.getTotalNumOfESPsInCluster(fakeEnv);
+        Int32 numOfPartitions = -1;
+
+        if ( ixDescPartFunc ) 
+           numOfPartitions = ixDescPartFunc->getCountOfPartitions();  
+
+        if ( maxESPs == 0 && minESPs <= numOfPartitions ) {
+           minESPs = maxESPs = numOfPartitions;
+        } else {
+           NABoolean fakeEnv = FALSE; 
+           CollIndex totalESPsAllowed = defs.getTotalNumOfESPsInCluster(fakeEnv);
+      
+           if ( !fakeEnv ) {
+              // limit the number of ESPs to max(totalESPsAllowed, HBASE_MAX_ESPS)
+               maxESPs = MAXOF(MINOF(totalESPsAllowed, maxESPs),1);
    
-        if ( !fakeEnv ) {
-           // limit the number of ESPs to max(totalESPsAllowed, HBASE_MAX_ESPS)
-           maxESPs = MAXOF(MINOF(totalESPsAllowed, maxESPs),1);
-
-           if (!partReq && minESPs == 1) {
-             minESPs = rppForMe->getCountOfPipelines();
-
-             if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
-                minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
-             }
-
+              if (!partReq && minESPs == 1) {
+                minESPs = rppForMe->getCountOfPipelines();
+   
+                if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
+                   minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
+                }
+   
+              }
+   
+              if ( getDefaultAsLong(AFFINITY_VALUE) != -2 && ixDescPartFunc ) {
+                 Int32 numOfUniqueNodes = 
+                     ixDescPartFunc->getNodeMap()->getNumberOfUniqueNodes();
+   
+                 // #ESPs performing reading from HBase tables is capped at by 
+                 // the # of unique nodes or region servers.
+                 if ( numOfUniqueNodes > 0 )
+                    minESPs = MINOF(minESPs, numOfUniqueNodes);
+              }
            }
-
-           if ( getDefaultAsLong(AFFINITY_VALUE) != -2 && ixDescPartFunc ) {
-              Int32 numOfUniqueNodes = 
-                  ixDescPartFunc->getNodeMap()->getNumberOfUniqueNodes();
-
-              // #ESPs performing reading from HBase tables is capped at by 
-              // the # of unique nodes or region servers.
-              if ( numOfUniqueNodes > 0 )
-                 minESPs = MINOF(minESPs, numOfUniqueNodes);
+           else  {
+              maxESPs = totalESPsAllowed;
            }
-        }
-        else  {
-           maxESPs = totalESPsAllowed;
         }
      }
    
