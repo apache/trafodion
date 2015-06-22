@@ -216,6 +216,7 @@ public:
   ValueIdSet getDivisioningColumns() ;
 
   ValueIdSet getSaltColumnAsSet() ;
+  NABoolean hasIdentityColumnInClusteringKey() const ;
 
 private:
 

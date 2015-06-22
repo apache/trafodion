@@ -98,9 +98,11 @@ create table t019_g
   (uniqb int not null,
    str1  varchar(50) not null) no partition ;
 
+cqd hbase_serialization 'off' ;
 create table upsertx(id int not null, a int, b int,
                           primary key (id));
 create index upsertix1 on upsertx(a);
+cqd hbase_serialization 'on' ;
 
 
 

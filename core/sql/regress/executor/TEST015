@@ -36,6 +36,8 @@ drop table t015t8 cascade;
 drop table t015t9 cascade;
 drop table t015t10 cascade;
 drop table t015t11 cascade;
+drop table t015t12 cascade ;
+drop table t015t13 cascade ;
 drop table temp cascade;
 
 --control query default POS 'OFF';
@@ -143,6 +145,12 @@ hash partition by (i)
 #ifNT
 ;
 
+cqd hbase_serialization 'off' ;
+create table t015t12 (a int not null, b int not null, c int, primary key(a)) salt using 2 partitions ;
+cqd hbase_serialization 'on' ;
+
+create table t015t13 (a largeint generated always as identity, b int not null, c int, primary key(a,b));
+
 set session default ESP_RELEASE_WORK_TIMEOUT '-2';
 log log015 clear;
 
@@ -175,6 +183,12 @@ create unique index t015t8i2 on t015t8(k);
 
 create unique index t015t10i1 on t015t10(j);
 create unique index t015t10i2 on t015t10(k);
+
+create index t015t12i1 on t015t12(b) ;
+create index t015t12i2 on t015t12(c) salt like table;
+
+create index t015t13i1 on t015t13(c) ;
+
 
 insert into t015t1 values (1,1), (2,2);
 insert into t015t3 values (1,1,1), (2,2,2), (3,3,3);
@@ -677,7 +691,24 @@ select * from table (index_table t015t8i2);
 alter table t015t11 add column j int default 0 not null;
 merge into t015t11 on i = 'c' 
   when matched then update set j = 4
-  when not matched then insert values ('c', 2);    
+  when not matched then insert values ('c', 2);  
+
+-- Upsert that gets converted to merge
+upsert into t015t12 values (1,1,1) ;
+select * from t015t12;
+upsert into t015t12 values (1,-1,1) ;  
+select * from t015t12 ;
+upsert into t015t12 values (2,2,2),(3,3,3),(1,-1,-1);
+select * from t015t12 ;
+set parserflags 1;
+select * from table(index_table t015t12i1) ;
+select * from table(index_table t015t12i2) ;
+
+upsert into t015t13(b,c) values (1,1);
+upsert into t015t13(b,c) values (1,2);
+upsert into t015t13(b,c) values (2,2),(3,3),(4,4);
+select * from t015t13; 
+explain options 'f' upsert into t015t13 (b,c) values (1,1) ;
 
 log;
 

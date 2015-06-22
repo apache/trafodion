@@ -298,6 +298,19 @@ NABoolean TableDesc::isIdentityColumnGeneratedAlways(NAString * value) const
     return result;
 }
 
+NABoolean TableDesc::hasIdentityColumnInClusteringKey() const
+{
+  ValueIdSet pKeyColumns = clusteringIndex_->getIndexKey();
+  NAColumn * column = NULL;
+  for(ValueId id = pKeyColumns.init(); pKeyColumns.next(id);
+      pKeyColumns.advance(id))
+  {
+      column = id.getNAColumn();
+      if (column && column->isIdentityColumn())
+          return TRUE;
+  }
+  return FALSE;
+}
  
 // -----------------------------------------------------------------------
 // Given a column list providing identifiers for columns of this table,

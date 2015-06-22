@@ -4963,18 +4963,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       new (bindWA->wHeap()) AssignmentStHostVars(bindWA);
   }
 
-  if (isTrueRoot())
-    {
-      RelExpr * mergeExpr = NULL;
-      if (child(0) && child(0)->getOperatorType() == REL_TSJ_FLOW)
-        mergeExpr = child(0)->child(1);
-      else
-        mergeExpr = child(0);
-
-      if ((mergeExpr && mergeExpr->getOperatorType() == REL_UNARY_UPDATE) &&
-          (((GenericUpdate*)mergeExpr)->isMerge()))
-        setDisableESPParallelism(TRUE);
-    }
 
   // If there are one or more output rowset variables, then we introduce
   // a RowsetInto node below this Root node. The RowsetInto node will
@@ -9056,7 +9044,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   // to indicate to the EID that 8108 should be raised in place of 8102.
   // This variable is used to indicate that there is an IDENTITY column
   // in the table for which the system is generating the value
-  NABoolean systemGeneratedIdentityValue = FALSE;
 
   // This is NULL if "DEFAULT VALUES" was specified,
   // non-NULL if a query-expr child was specified:  VALUES.., TABLE.., SELECT..
@@ -10151,7 +10138,9 @@ so that we can delete the old version of an updated row from the index.
 */
 NABoolean Insert::isUpsertThatNeedsMerge() const
 {
-  if (!isUpsert() || 
+  if (!isUpsert() || getIsTrafLoadPrep() || 
+      (systemGeneratesIdentityValue() && 
+       getTableDesc()->hasIdentityColumnInClusteringKey()) ||
       getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
       !(getTableDesc()->hasSecondaryIndexes()))
     return FALSE;
@@ -10161,6 +10150,13 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
+  if (getTableDesc()->getNATable()->hasSerializedColumn())
+  {
+    *CmpCommon::diags() << DgSqlCode(-3241) 
+                        << DgString0(" upsert on a serialzed table with indexes is not allowed.");
+    bindWA->setErrStatus();
+    return NULL;
+  }
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 
@@ -10246,6 +10242,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                 bindWA->wHeap(),
                 NULL);
 
+  ((MergeUpdate *)re)->setXformedUpsert();
   ValueIdSet debugSet;
   if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
   {
@@ -11325,10 +11322,12 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    // we use the "old" value of key column from fetchReturnedExpr, which can be junk
    // in case there is no row to update/delete, and a brand bew row is being inserted
 
-   NABoolean mergeWithIndex = isMerge() && getTableDesc()->hasSecondaryIndexes() ;
+   NABoolean xformedUpsert = FALSE ;
+   if (isMergeUpdate())
+     xformedUpsert = ((MergeUpdate *)this)->xformedUpsert();
 
 
-   if ((NOT onRollback) && (NOT mergeWithIndex)){
+   if ((NOT onRollback) && (NOT xformedUpsert)){
      for (i = 0;i < totalColCount; i++){
        if (!(holeyArray.used(i))){
          oldToNewMap().addMapEntry(
@@ -12716,6 +12715,13 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
 
   }
 
+  if (getTableDesc()->hasUniqueIndexes())
+  {
+    *CmpCommon::diags() << DgSqlCode(-3241) 
+                        << DgString0(" unique indexes not allowed.");
+    bindWA->setErrStatus();
+    return TRUE;
+  }
   if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
