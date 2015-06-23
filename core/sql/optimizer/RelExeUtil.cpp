@@ -5512,6 +5512,13 @@ RelExpr * ExeUtilHBaseBulkLoad::bindNode(BindWA *bindWA)
   setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
   if (bindWA->errStatus())
     return this;
+  if ((CmpCommon::getDefault(COMP_BOOL_226) == DF_OFF) && 
+      getUtilTableDesc()->hasSecondaryIndexes() && 
+      !(getUtilTableDesc()->isIdentityColumnGeneratedAlways() && 
+        getUtilTableDesc()->hasIdentityColumnInClusteringKey()) &&
+       !getUtilTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())
+    setRebuildIndexes(TRUE) ;
+  if (!getRebuildIndexes())
   setHasUniqueIndexes(getUtilTableDesc()->hasUniqueIndexes());
 
   return boundExpr;

@@ -10528,7 +10528,7 @@ const NAString HbaseUpdate::getText() const
   NAString text;
   if (isMerge())
     {
-      text = (isSeabase ? "seabase_merge" : "hbase_merge");
+      text = (isSeabase ? "trafodion_merge" : "hbase_merge");
     }
   else
     {
@@ -12757,7 +12757,7 @@ MergeUpdate::MergeUpdate(const CorrName &name,
 			 ItemExpr *where)
      : Update(name,tabId,otype,child,setExpr,NULL,oHeap),
        insertCols_(insertCols), insertValues_(insertValues),
-       where_(where)
+       where_(where),xformedUpsert_(FALSE)
 {
   setCacheableNode(CmpMain::BIND);
   
@@ -12787,6 +12787,8 @@ RelExpr * MergeUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 				       outHeap, where_);
   else
     result = (MergeUpdate *) derivedNode;
+  if (xformedUpsert())
+    result->setXformedUpsert();
 
   return Update::copyTopNode(result, outHeap);
 }

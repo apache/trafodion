@@ -392,7 +392,7 @@ load with no output, no duplicate check into t015t6 select a,a,a from t015t1 ;
 select * from t015t4 order by a;
 
 
---Add  tests with indexes on bulloaded tables
+--Add  tests with indexes on bulkoaded tables
 drop table customer_demographics_salt cascade;
 drop table customer_demographics cascade;
 create table customer_demographics
@@ -405,9 +405,8 @@ create table customer_demographics
   cd_credit_rating        char(10),
   cd_dep_count            int,
   cd_dep_employed_count   int,
-  cd_dep_college_count    int,
-  primary key (cd_demo_sk)
-); 
+  cd_dep_college_count    int
+) store by (cd_demo_sk); 
 
 create table customer_demographics_salt
 (
@@ -427,9 +426,10 @@ create index cd_dep_count_IDX on customer_demographics(cd_dep_count);
 create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count);
 
 explain options 'f' 
-load  transform into customer_demographics 
+load  transform into customer_demographics
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
+cqd comp_bool_226 'off' ;
 load  into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
@@ -459,7 +459,7 @@ select count(*) from table(index_table cd_dep_college_count_IDX2);
 drop index cd_dep_count_IDX2;
 drop index cd_dep_college_count_IDX2;
 
-
+cqd comp_bool_226 'on' ;
 
 -- --load with upsert using load
 -- drop table customer_demographics_salt cascade;

@@ -1062,7 +1062,7 @@ public:
   NABoolean &enableTransformToSTI() { return enableTransformToSTI_;}
   NABoolean &enableAqrWnrEmpty()    { return enableAqrWnrEmpty_; }
 
-  NABoolean systemGeneratesIdentityValue() 
+  NABoolean systemGeneratesIdentityValue()  const
   { return systemGeneratesIdentityValue_;};
 
   void setSystemGeneratesIdentityValue(NABoolean value) 
@@ -1417,10 +1417,13 @@ public:
 
   ItemExpr * insertCols() {return insertCols_;}
   ItemExpr * insertValues() { return insertValues_;}
+  NABoolean xformedUpsert() {return xformedUpsert_;}
+  void setXformedUpsert() {xformedUpsert_ = TRUE;}
 private:
   ItemExpr *insertCols_;
   ItemExpr *insertValues_;
   ItemExpr *where_;
+  NABoolean xformedUpsert_;
 };
 
 
