@@ -277,8 +277,6 @@ const char *WrapperDataTypeStr(jbyte dataType);
 
 #define BENCHMARK_ADD_COUNTER(index,name,value)
 
-extern unsigned long debugLevel;
-
 #else /* !_DEBUG */
 
 #ifdef _BENCHMARK
@@ -361,7 +359,7 @@ SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle, const
 #define CLI_ClearDiagnostics(statement_id) CliDebug_ClearDiagnostics(statement_id, __FILE__, __LINE__)
 SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id, const char *filename, unsigned long line);
 #define CLI_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item) CliDebug_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item, __FILE__, __LINE__)
-SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, int *numeric_value, char *string_value, long max_string_len, int *len_of_item, const char *filename, unsigned long line);
+SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, long what_to_get, void *numeric_value, char *string_value, long max_string_len, int *len_of_item, const char *filename, unsigned long line);
 #define CLI_DeallocDesc(desc_id) CliDebug_DeallocDesc(desc_id, __FILE__, __LINE__)
 SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id, const char *filename, unsigned long line);
 #define CLI_DeallocStmt(statement_id) CliDebug_DeallocStmt(statement_id, __FILE__, __LINE__)
