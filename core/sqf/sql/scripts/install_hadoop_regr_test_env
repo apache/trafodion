@@ -52,6 +52,7 @@ Options:
    --hdfsCmd=<cmd1>     HDFS command
    --hiveCmd=<cmd2>     Hive command
    --force              Force re-install
+   --check              Check for show stoppers only and exit
    -h | --help          Display this help information
 
 Set environment variable MY_LOCAL_SW_DIST to the directory of a local
@@ -61,6 +62,7 @@ EOF
 }
 
 FORCE=""
+CHECKONLY=""
 
 while [ $# -gt 0 ];
 do
@@ -87,6 +89,10 @@ do
 
     --force)
                      FORCE="true"
+                     ;;
+
+    --check)
+                     CHECKONLY="true"
                      ;;
 
     -h)
@@ -122,6 +128,23 @@ then
 fi
 
 #####################################################
+
+if [ ! -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
+  # Right now there is no URL to download this tool automatically
+  echo '*********************** ERROR *************************'
+  echo "Please download the tpcds_kit.zip file from"
+  echo "http://www.tpc.org/tpcds/dsgen-download-request.asp"
+  echo "and place it into a directory pointed to by the MY_LOCAL_SW_DIST"
+  echo "environment variable. Then retry installing. Sorry, this is due"
+  echo "to the TPC wanting your email address."
+  exit 99
+fi
+
+if [ -n "$CHECKONLY" ]; then
+  echo "Requisite files exist, script should succeed if called."
+  exit 0
+fi
+
 echo "Downloading TPC-DS setup tools..."
 
 if [ -z "$MY_TPCDS_UNPACK_DIR" ]; then
@@ -135,8 +158,10 @@ fi
 if [ -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
   cp $MY_LOCAL_SW_DIST/${TPCDS_ZIP} .
 else
-  curl --output ${TPCDS_ZIP} ${TPCDS_MIRROR_URL}
-  fi
+  # Right now there is no URL to download this tool automatically
+  # curl --output ${TPCDS_ZIP} ${TPCDS_MIRROR_URL}
+  exit 99
+fi
 
   echo "Unzipping TPC-DS kit ${TPCDS_ZIP} into ${PWD} and making the tools..."
   unzip ${TPCDS_ZIP} >/dev/null

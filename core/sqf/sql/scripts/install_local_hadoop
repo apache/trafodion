@@ -541,7 +541,7 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=http://apache.cs.utah.edu/hive/hive-0.13.1
+HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-0.13.1
 HIVE_PREFIX=apache-hive-0.13.1-bin
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
@@ -576,6 +576,12 @@ if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN |
     echo "Alternatively, use non-standard ports with this option:"
     echo "$MY_CMD -p fromDisplay"
   fi
+  exit 1
+fi
+
+# check for missing tpcds_kit.zip file
+install_hadoop_regr_test_env --check
+if [ $? -ne 0 ]; then
   exit 1
 fi
 
