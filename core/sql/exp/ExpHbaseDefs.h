@@ -126,6 +126,7 @@ typedef enum
     HBASE_DOBULK_LOAD_ERROR,
     HBASE_CLEANUP_HFILE_ERROR,
     HBASE_INIT_HBLC_ERROR,
+    HBASE_RETRY_AGAIN,
     HBASE_MAX_ERROR_NUM     // keep this as the last element in enum list.
 
   } HbaseError;

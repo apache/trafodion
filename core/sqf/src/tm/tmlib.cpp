@@ -637,8 +637,8 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
    TM_Transid lv_transid((TM_Native_Type) transid);
    TM_Transseq_Type lv_startid((TM_Transseq_Type) startid);
    // instantiate a gp_trans_thr object for this thread if needed.
-   TMlibTrace(("TMLIB_TRACE : REGISTERREGION ENTRY: txid: (%d,%d), startId: %ld, port: %d, hostname %s, length: %d, startcode: %ld, regionInfo: %s, length: %d.\n",
-            lv_transid.get_node(), lv_transid.get_seq_num(), startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length), 2);
+   TMlibTrace(("TMLIB_TRACE : REGISTERREGION ENTRY: transid: %ld, txid: (%d,%d), startId: %ld, port: %d, hostname %s, length: %d, startcode: %ld, regionInfo: %s, length: %d.\n",
+            transid, lv_transid.get_node(), lv_transid.get_seq_num(), startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length), 2);
 
    if (gp_trans_thr == NULL){
       TMlibTrace(("REGISTERREGION gp_trans_thr is null\n"), 2);
@@ -647,6 +647,21 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
    }
 
    TM_Transaction *lp_currTrans = gp_trans_thr->get_current();
+   // Check if the passed-in transid is known to the thread
+   // if so, make that Transid current
+   if (lp_currTrans == NULL) {
+      lp_currTrans = gp_trans_thr->get_trans (lv_transid.get_native_type());
+      if (lp_currTrans != NULL) 
+         gp_trans_thr->set_current(lp_currTrans);
+   } 
+   // Check if the thread's current transid matches the passed-in transid
+   // If not, check if the passed-in transid is known to the thread
+   // if so, make that Transid current
+   else if (! lp_currTrans->equal(lv_transid)) {
+      lp_currTrans = gp_trans_thr->get_trans (lv_transid.get_native_type());
+      if (lp_currTrans != NULL) 
+         gp_trans_thr->set_current(lp_currTrans);
+   }
    TM_Transseq_Type lv_savedStartId = gp_trans_thr->get_startid();
 
    TMlibTrace(("REGISTERREGION lv_savedStartId is %ld.  Startid is %ld \n", (long) lv_savedStartId, startid), 2);
@@ -655,51 +670,22 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
       lv_savedStartId = lv_startid;
       gp_trans_thr->set_startid(lv_startid);
    }
-   if (lp_currTrans
-       /* Removed check that the registerregion request is for the current transaction for now. 
-          The test is failing for nodes > 0.  Also the else looks incorrect - it assumes that
-          the transaction is unknown to the TM Library which may not be the case.
-       &&
-       lp_currTrans->getTransid()->get_native_type() == lv_transid.get_native_type()*/) {
+   if (lp_currTrans != NULL)
+   {
       TMlibTrace(("TMLIB_TRACE : REGISTERREGION using current transid (%d,%d) and startId %ld.\n",
                   lv_transid.get_node(), lv_transid.get_seq_num(),lv_savedStartId ), 1);
       lv_error =  lp_currTrans->register_region(lv_savedStartId, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
    }
+   // Create a temp TM_transaction object to pass the trans id to REGION SERVER 
    else {
       lp_trans = new TM_Transaction();
       lp_trans->setTransid(lv_transid);
       lp_trans->setTag(gv_tmlib.new_tag());
-      gp_trans_thr->add_trans(lp_trans);
-
-      gp_trans_thr->set_current(lp_trans);
-      gp_trans_thr->set_startid(lv_startid);
-      if (lv_error == FEOK) {
-         TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) and startId (%ld) passed to REGISTERREGION.\n",
+      TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) and startId (%ld) passed to REGISTERREGION.\n",
                      lv_transid.get_node(), lv_transid.get_seq_num(),lv_startid), 1);
-         lv_error =  lp_trans->register_region(lv_startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
-      }
-      gp_trans_thr->set_current(lp_currTrans);
+     lv_error =  lp_trans->register_region(lv_startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
       delete lp_trans;
    }
-
-/*      lp_transid = gp_trans_thr->get_trans(lv_transid.get_native_type());
-      gp_trans_thr->set_current(lp_trans);  
-      gp_trans_thr->set_current_suspended(false); 
-      if (lp_transid) {
-         TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) passed to REGISTERREGION.\n", 
-                     lv_transid.get_node(), lv_transid.get_seq_num()), 1);
-         lv_error =  lp_trans->register_region(pv_port, pa_hostname, pv_hostname_length, pa_regionInfo, pv_regionInfo_length);
-         gp_trans_thr->set_current(lp_currTrans);
-      }
-      else {
-         TMlibTrace(("TMLIB_TRACE : REGISTERREGION ERROR %d transid (%d,%d) passed to REGISTERREGION invalid.\n", 
-                     lv_error, lv_transid.get_node(), lv_transid.get_seq_num()), 1);
-         fprintf(stderr,"** REGISTERREGION error %d, transid (%d,%d) passed in.\n",
-                  lv_error, lv_transid.get_node(), lv_transid.get_seq_num());
-         fflush(stderr);
-         abort();
-      }
-   } */
 
    TMlibTrace(("TMLIB_TRACE : REGISTERREGION EXIT: txid: (%d,%d), returning %d\n",
               lv_transid.get_node(), lv_transid.get_seq_num(), lv_error), 2);
@@ -1228,7 +1214,7 @@ short STATUSTRANSACTION(short *pp_status, int64 pv_transid)
         short           lv_error = FEOK;
         Tm_Req_Msg_Type lv_req;
         Tm_Rsp_Msg_Type lv_rsp;
-        TM_Transid      lv_transid (pv_transid);
+        TM_Transid      lv_transid ((TM_Native_Type)pv_transid);
 
         tmlib_init_req_hdr(TM_MSG_TYPE_STATUSTRANSACTION, &lv_req);
         lv_transid.set_external_data_type(&lv_req.u.iv_status_trans.iv_transid);
@@ -1668,7 +1654,7 @@ short DTM_STATUSTRANSACTION(int64 pv_transid, TM_STATUS_TRANS *pp_trans)
 
     if (pv_transid != 0) 
     {
-        TM_Transid  lv_transid (pv_transid);
+        TM_Transid  lv_transid ((TM_Native_Type)pv_transid);
  
         lv_error = tmlib_check_miss_param (pp_trans);
         if (lv_error){
@@ -1778,7 +1764,7 @@ short DTM_GETTRANSINFO(int64 pv_transid,
 
     if (pv_transid != 0) 
     {
-        TM_Transid  lv_transid (pv_transid);
+        TM_Transid  lv_transid ((TM_Native_Type)pv_transid);
         TM_Transid_Type lv_transid_type = lv_transid.get_data();
 
         lv_error = DTM_GETTRANSINFO_EXT(lv_transid_type, 

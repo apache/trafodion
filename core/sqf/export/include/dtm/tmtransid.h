@@ -60,9 +60,8 @@ class TM_Transid
 {
     public:
         TM_Transid ();
-        TM_Transid (int i);
         TM_Transid (TM_Transid &tx);
-        TM_Transid (TM_Native_Type &tx);
+        TM_Transid (TM_Native_Type tx);
         TM_Transid (TM_Txid_Internal &tx);
         ~TM_Transid(){}
 

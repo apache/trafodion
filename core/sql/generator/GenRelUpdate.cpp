@@ -2747,6 +2747,10 @@ short HbaseInsert::codeGen(Generator *generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
+  if (CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON
+           && t == ComTdbHbaseAccess::INSERT_)
+     hbasescan_tdb->setAsyncOperations(TRUE);
+
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
