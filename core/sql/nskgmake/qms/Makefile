@@ -40,7 +40,11 @@ DEP_LIBS :=	qmscommon common sqlmsg \
 		tdm_sqlerrormsg tdm_sqlexp tdm_sqlexport porting_layer \
 		arkcmp_dll
 
+
 SRCPATH := bin qms
 
 TARGET := tdm_arkqms
-DEP_LIBS += tdm_sqlcli log4cpp
+
+DEP_LIBS += tdm_sqlcli
+
+

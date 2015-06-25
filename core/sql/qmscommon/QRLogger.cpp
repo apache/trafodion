@@ -18,11 +18,14 @@
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 
+#include <log4cxx/rollingfileappender.h>
+#include <log4cxx/patternlayout.h>
+#include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/basicconfigurator.h>
+#include <log4cxx/helpers/exception.h>
+#include <log4cxx/level.h>
+
 #include <QRLogger.h>
-#include <log4cpp/RollingFileAppender.hh>
-#include <log4cpp/PatternLayout.hh>
-#include <log4cpp/PropertyConfigurator.hh>
-#include <log4cpp/Configurator.hh>
 
 #include "ComDiags.h"
 #include "logmxevent.h"
@@ -31,6 +34,10 @@
 #include "PortProcessCalls.h"
 #include "seabed/ms.h"
 #include "seabed/fserr.h"
+
+using namespace log4cxx;
+using namespace log4cxx::helpers;
+
 // SQL categories
 std::string CAT_SQL                           = "SQL";
 std::string CAT_SQL_EXE                       = "SQL.EXE";
@@ -166,12 +173,12 @@ void getMyNidSuffix(char stringNidSuffix[])
   snprintf (stringNidSuffix, 5+sizeof(Int32), "_%d.log", myNid);
 }
 // **************************************************************************
-// Call the superclass to configure log4cpp from the config file.
+// Call the superclass to configure log4cxx from the config file.
 // If the configuration file is not found, perform default initialization:
 // Create an appender, layout, and categories.
 // Attaches layout to the appender and appender to categories.
 // **************************************************************************
-NABoolean QRLogger::initLog4cpp(const char* configFileName)
+NABoolean QRLogger::initLog4cxx(const char* configFileName)
 {
   NAString logFileName;
 
@@ -200,7 +207,7 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
     }
 
   
-  if (CommonLogger::initLog4cpp(configFileName, logFileSuffix))
+  if (CommonLogger::initLog4cxx(configFileName, logFileSuffix))
   {
     introduceSelf();
     return TRUE;
@@ -209,38 +216,36 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
   logFileName += "sql_events";
   logFileName += logFileSuffix;
   
-  fileAppender_ = new log4cpp::RollingFileAppender("FileAppender", logFileName.data());
-
-  log4cpp::PatternLayout *fileLayout = new log4cpp::PatternLayout();
+  log4cxx::PatternLayout *fileLayout = new log4cxx::PatternLayout();
   fileLayout->setConversionPattern("%d, %p, %c, %m%n");
-  fileAppender_->setLayout(fileLayout);
+  fileAppender_ = new log4cxx::RollingFileAppender(fileLayout, logFileName.data());
 
   // Top level categories
-  initCategory(CAT_SQL_QMP, log4cpp::Priority::ERROR);
-  initCategory(CAT_SQL_QMM, log4cpp::Priority::ERROR);
-  initCategory(CAT_SQL_COMP_QR_COMMON, log4cpp::Priority::ERROR);
-  initCategory(CAT_SQL_QMS, log4cpp::Priority::ERROR);
+  initCategory(CAT_SQL_QMP, log4cxx::Level::getError());
+  initCategory(CAT_SQL_QMM, log4cxx::Level::getError());
+  initCategory(CAT_SQL_COMP_QR_COMMON, log4cxx::Level::getError());
+  initCategory(CAT_SQL_QMS, log4cxx::Level::getError());
 
-  initCategory(CAT_SQL, log4cpp::Priority::ERROR);
+  initCategory(CAT_SQL, log4cxx::Level::getError());
   switch (module_)
   {
     case QRL_NONE:
     case QRL_MXCMP:
-      initCategory(CAT_SQL_COMP, log4cpp::Priority::ERROR);
-      log4cpp::Category::getInstance(CAT_SQL_COMP).setPriority(log4cpp::Priority::INFO);
-      log4cpp::Category::getInstance(CAT_SQL_COMP).setAdditivity(false);
+      initCategory(CAT_SQL_COMP, log4cxx::Level::ERROR_INT);
+      log4cxx::Logger::getLogger(CAT_SQL_COMP)->setLevel(log4cxx::Level::getInfo());
+      log4cxx::Logger::getLogger(CAT_SQL_COMP)->setAdditivity(false);
       break;
 
     case QRL_ESP:
-      initCategory(CAT_SQL_ESP, log4cpp::Priority::ERROR);
-      log4cpp::Category::getInstance(CAT_SQL_ESP).setPriority(log4cpp::Priority::INFO);
-      log4cpp::Category::getInstance(CAT_SQL_ESP).setAdditivity(false);
+      initCategory(CAT_SQL_ESP, log4cxx::Level::ERROR_INT);
+      log4cxx::Logger::getLogger(CAT_SQL_ESP)->setLevel(log4cxx::Level::getInfo());
+      log4cxx::Logger::getLogger(CAT_SQL_ESP)->setAdditivity(false);
       break;
 
     case QRL_MXEXE:
-      initCategory(CAT_SQL_EXE, log4cpp::Priority::ERROR);
-      log4cpp::Category::getInstance(CAT_SQL_EXE).setPriority(log4cpp::Priority::INFO);
-      log4cpp::Category::getInstance(CAT_SQL_EXE).setAdditivity(false);
+      initCategory(CAT_SQL_EXE, log4cxx::Level::ERROR_INT);
+      log4cxx::Logger::getLogger(CAT_SQL_EXE)->setLevel(log4cxx::Level::getInfo());
+      log4cxx::Logger::getLogger(CAT_SQL_EXE)->setAdditivity(false);
       break;
       
   }
@@ -254,11 +259,11 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
 
 // **************************************************************************
 // **************************************************************************
-void QRLogger::initCategory(std::string &cat, log4cpp::Priority::PriorityLevel defaultPriority)
+void QRLogger::initCategory(std::string &cat, log4cxx::LevelPtr defaultPriority)
 {
-  log4cpp::Category& catObj = log4cpp::Category::getInstance(cat);
-  catObj.setAppender(fileAppender_);
-  catObj.setPriority(defaultPriority);
+  log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(cat));
+  myLogger->addAppender(fileAppender_);
+  myLogger->setLevel(defaultPriority);
 }
 
 
@@ -317,12 +322,14 @@ void QRLogger::introduceSelf ()
   char msg[300];
   std::string &myCat = getMyDefaultCat(); 
   // save previous default priority
-  log4cpp::Priority::PriorityLevel defaultPriority = (log4cpp::Priority::PriorityLevel) log4cpp::Category::getInstance(myCat).getPriority();
-
+  log4cxx::LevelPtr defaultPriority = log4cxx::Logger::getLogger(myCat)->getLevel();
+  
   NAString procInfo = getMyProcessInfo();
 
-  // change default priority to INFO to be able to printout some infomational messages
-  log4cpp::Category::getInstance(myCat).setPriority(log4cpp::Priority::INFO);
+  // change default priority to INFO to be able to printout some informational messages
+  log4cxx::LoggerPtr myLogger(log4cxx::Logger::getLogger(myCat));
+  myLogger->setLevel(log4cxx::Level::getInfo());
+ 
   switch (module_)
     {
     case QRL_NONE:
@@ -352,10 +359,10 @@ void QRLogger::introduceSelf ()
            
     }
 
-   log4cpp::Category::getInstance(myCat).info(msg);
+   LOG4CXX_INFO(myLogger,msg);
 
    // restore default priority
-   log4cpp::Category::getInstance(myCat).setPriority(defaultPriority);
+   myLogger->setLevel(defaultPriority);
 }
 
 
@@ -392,9 +399,13 @@ void QRLogger::logError(const char* file,
   va_start(args, logMsgTemplate);
 
   if (level == LL_FATAL)
-    log4cpp::Category::getInstance(cat).fatal(buffer);
+  {
+    LOG4CXX_FATAL(log4cxx::Logger::getLogger(cat), buffer);
+  }
   else
-    log4cpp::Category::getInstance(cat).error(buffer);
+  {
+    LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat), buffer);
+  }
 
   // format actual error message
   vsnprintf(buffer, BUFFER_SIZE, logMsgTemplate, args);
@@ -405,9 +416,13 @@ void QRLogger::logError(const char* file,
 
   // log actual error msg to logfile.
   if (level == LL_FATAL)
-    log4cpp::Category::getInstance(cat).fatal(logData2.data());
+  {
+    LOG4CXX_FATAL(log4cxx::Logger::getLogger(cat), logData2.data());
+  }
   else
-    log4cpp::Category::getInstance(cat).error(logData2.data());
+  {
+    LOG4CXX_ERROR(log4cxx::Logger::getLogger(cat), logData2.data());
+  }
 
   va_end(args);
 }
@@ -423,9 +438,19 @@ void QRLogger::logQVP(ULng32 eventId,
                           const char* logMsgTemplate...)
 {
   // Don't do anything if this message will be ignored anyway.
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
-    return;
+  log4cxx::LoggerPtr myLogger = log4cxx::Logger::getLogger(cat);
+  if ( myLogger ) 
+  {
+    log4cxx::LevelPtr myLevel = myLogger->getLevel();
+    log4cxx::LevelPtr paramLevel = log4cxx::Level::toLevel(level);
+    if ( myLevel && paramLevel ) 
+    {
+        if ( myLevel == log4cxx::Level::getOff() )
+          return;
+        if ( myLevel->toInt() < paramLevel->toInt() )
+          return;
+    }
+  }
 
   va_list args;
   va_start(args, logMsgTemplate);
@@ -443,31 +468,28 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
   NAString* diagStr;
   Int32 i;
   ComCondition* condition;
-  log4cpp::Category& myCat = log4cpp::Category::getInstance(cat);
-
-  if (myCat.getPriority() != log4cpp::Priority::NOTSET && myCat.getPriority() >= LL_ERROR)
-    for (i=1; i<=diagsArea->getNumber(DgSqlCode::ERROR_); i++)
+  
+  log4cxx::LoggerPtr myLogger = log4cxx::Logger::getLogger(cat);
+  if ( myLogger ) 
+  {
+    log4cxx::LevelPtr myLevel = myLogger->getLevel();
+    if ( myLevel ) 
+    {
+      if ( myLevel != log4cxx::Level::getOff() && myLevel->toInt() >= LL_WARN )
       {
-        condition = diagsArea->getErrorEntry(i);
-        diagMsg = condition->getMessageText();
-        diagStr = unicodeToChar(diagMsg, NAWstrlen(diagMsg),
+        for (i=1; i<=diagsArea->getNumber(DgSqlCode::WARNING_); i++)
+        {
+          condition = diagsArea->getWarningEntry(i);
+          diagMsg = condition->getMessageText();
+          diagStr = unicodeToChar(diagMsg, NAWstrlen(diagMsg),
                                           CharInfo::ISO88591, NULL, TRUE);
-        log(cat, LL_ERROR, condition->getSQLCODE(), "",
-          "  err condition %d: %s", i, diagStr->data());
-        delete diagStr;
+          log(cat, LL_WARN, condition->getSQLCODE(), "",
+            "  warn condition %d: %s", i, diagStr->data());
+          delete diagStr;
+        }
       }
-
-  if (myCat.getPriority() != log4cpp::Priority::NOTSET && myCat.getPriority() >= LL_WARN)
-    for (i=1; i<=diagsArea->getNumber(DgSqlCode::WARNING_); i++)
-      {
-        condition = diagsArea->getWarningEntry(i);
-        diagMsg = condition->getMessageText();
-        diagStr = unicodeToChar(diagMsg, NAWstrlen(diagMsg),
-                                          CharInfo::ISO88591, NULL, TRUE);
-        log(cat, LL_WARN, condition->getSQLCODE(), "",
-          "  warn condition %d: %s", i, diagStr->data());
-        delete diagStr;
-      }
+    }
+  }
 }
 
 // **************************************************************************
@@ -532,10 +554,21 @@ void QRLogger::log(std::string &cat,
                    const char  *queryId,
                    const char  *logMsgTemplate...)
 {
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
-    return;
 
+  log4cxx::LoggerPtr myLogger = log4cxx::Logger::getLogger(cat);
+  if ( myLogger ) 
+  {
+    log4cxx::LevelPtr myLevel = myLogger->getLevel();
+    log4cxx::LevelPtr paramLevel = log4cxx::Level::toLevel(level);
+    if ( myLevel && paramLevel ) 
+    {
+        if ( myLevel == log4cxx::Level::getOff() )
+          return;
+        if ( myLevel->toInt() < paramLevel->toInt() )
+          return;
+    }
+  }
+  
   va_list args ;
   va_start(args, logMsgTemplate);
 
@@ -565,9 +598,19 @@ void QRLogger::log(std::string &cat,
                    logLevel    level,
                    const char  *logMsgTemplate...)
 {
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
-    return;
+  log4cxx::LoggerPtr myLogger = log4cxx::Logger::getLogger(cat);
+  if ( myLogger ) 
+  {
+    log4cxx::LevelPtr myLevel = myLogger->getLevel();
+    log4cxx::LevelPtr paramLevel = log4cxx::Level::toLevel(level);
+    if ( myLevel && paramLevel ) 
+    {
+        if ( myLevel == log4cxx::Level::getOff() )
+          return;
+        if ( myLevel->toInt() < paramLevel->toInt() )
+          return;
+    }
+  }
 
   va_list args ;
   va_start(args, logMsgTemplate);

@@ -482,7 +482,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
   std::string eventLogFileName(sqroot);
 
   logDirName += "/logs";
-  confFileName += "/conf/log4cpp.trafodion.config";
+  confFileName += "/conf/log4cxx.trafodion.config";
 
   if (doTrace)
     {

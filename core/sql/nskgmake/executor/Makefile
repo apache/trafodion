@@ -137,8 +137,6 @@ endif
 SYS_LIBS := -lrt -lpthread
 SRCPATH := bin executor runtimestats porting_layer qmscommon
 
-EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so
-
 ### Java stuff - for building trafodion-HBaseAccess
 ################################################
 

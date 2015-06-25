@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ SQLMXLoggingArea::~SQLMXLoggingArea()
 };
 
 /* 
- * the format to all the log entries in the log4cpp logs is as follows:
+ * the format to all the log entries in the log4cxx logs is as follows:
 
  * GenerationTS  Severity  Component  NodeNumber CPU PIN  ProcessName   SQLCODE  QID MessageTxt 
  * Example:
@@ -142,7 +142,7 @@ void SQLMXLoggingArea::logCompNQCretryEvent(const char *stmt)
 {
   bool lockedMutex = lockMutex();
 
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_ALERT, "Statement was compiled as if query plan caching were off: %s", stmt);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_WARN, "Statement was compiled as if query plan caching were off: %s", stmt);
 
   if (lockedMutex)
     unlockMutex();

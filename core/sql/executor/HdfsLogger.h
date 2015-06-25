@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,15 +39,15 @@ class HdfsLogger : public CommonLogger
 public:
 
   /**
-    * Initializes log4cpp by using the configuration file.
+    * Initializes log4cxx by using the configuration file.
     * If the path given is relative (does not start with a
     * slash), it is appended to the $MY_SQROOT environment variable.
     * If the configuration file is not found, perform hard-coded
     * default configuration.
-    * @param configFileName name of the log4cpp configuration file.
+    * @param configFileName name of the log4cxx configuration file.
     * @return FALSE if the configuration file is not found.
     */
-  virtual NABoolean initLog4cpp(const char* configFileName);
+  virtual NABoolean initLog4cxx(const char* configFileName);
 
   /**
     * Returns a reference to the %QRLogger singelton instance in use.
@@ -57,7 +57,7 @@ public:
 
 protected:
 
-    void initCategory(const char* cat, log4cpp::Priority::PriorityLevel defaultPriority);
+    void initCategory(const char* cat, log4cxx::Priority::PriorityLevel defaultPriority);
 
 private:
     /**
@@ -74,7 +74,7 @@ private:
 private:
 
   /** The appender. */
-  log4cpp::Appender *fileAppender_;
+  log4cxx::Appender *fileAppender_;
 
 }; // HdfsLogger
 

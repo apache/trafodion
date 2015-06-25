@@ -29,14 +29,14 @@ int gv_dual_logging =1; // Write to both SeaLog and stdout by default
 static std::string TM_COMPONENT = "TM";
 int tm_init_logging()
 {
-	// Log4cpp logging
+	// Log4cxx logging
         MS_Mon_Process_Info_Type  proc_info;
         msg_mon_get_process_info_detail(NULL, &proc_info);
         int myNid = proc_info.nid;
         char logNameSuffix[32];
         sprintf( logNameSuffix, "_%d.log", myNid );
 
-	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.tm.config",logNameSuffix);
+	CommonLogger::instance().initLog4cxx("log4cxx.trafodion.tm.config",logNameSuffix);
 
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 
@@ -211,7 +211,7 @@ int tm_log_stdout(int event_id,
 		ll_severity = LL_FATAL;
 		break;
     case SQ_LOG_ALERT: printf("ALERT"); 
-		ll_severity = LL_ALERT;
+		ll_severity = LL_WARN;
 		break;
     case SQ_LOG_CRIT: printf("CRITICAL"); 
 		ll_severity = LL_FATAL;
@@ -281,7 +281,7 @@ int tm_log_stdout(int event_id,
        printf(", data4=%u",data4);
     printf("\n");
 
-	// Log4cpp logging
+	// Log4cxx logging
 	CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, Message: %s", my_nid, my_nid, my_pid, my_name, temp_string);
 
     return error;

@@ -70,8 +70,8 @@ typedef struct memLogEntry
 class CMonLog
 {
 public:
-    CMonLog( const char *log4cppConfig
-           , const char *log4cppComponent
+    CMonLog( const char *log4cxxConfig
+           , const char *log4cxxComponent
            , const char *logFilePrefix
            , int pnid
            , int nid
@@ -134,11 +134,11 @@ public:
 
 private:
 
-    // log4cpp configuration file name
-    string log4cppConfig_;
+    // log4cxx configuration file name
+    string log4cxxConfig_;
 
-    // log4cpp component
-    string log4cppComponent_;
+    // log4cxx component
+    string log4cxxComponent_;
 
     // Physical Node Id
     int myPNid_;

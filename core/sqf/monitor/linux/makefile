@@ -48,14 +48,13 @@ FLAGS+= -Wall -Wextra
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS)
 SBDIR = ../../src/seabed/src
 
-LOG4CPPDIR = ../../commonLogger
+COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
 LIBS = -L$(LIBEXPDIR) -lrt -lsblogalt
 
 LIBS+= -lmpich
-LIBS+= -llog4cpp
 
 ifeq ($(USE_DMALLOC),1)
     LIBS+= -L$(DMALLOCROOT) -ldmalloc
@@ -76,10 +75,12 @@ ifeq ($(USE_DMALLOC),1)
     INCLUDES+= -I$(DMALLOCROOT)
 endif
 INCLUDES+= -I../../inc
-INCLUDES+= -I../../../log4cpp/$(LOG4CPP_VER)/include
 INCLUDES+= -I../../commonLogger
+INCLUDES+= -I$(LOG4CXX_INC_DIR) 
+INCLUDES+= -I$(LOG4CXX_INC_DIR)/log4cxx
 
 LIBS+=  -lsqlite3
+LIBS+=  -L$(LOG4CXX_LIB_DIR) -llog4cxx
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
@@ -347,8 +348,8 @@ $(OUTDIR)/%.o:$(SBDIR)/%.cpp $(INCLUDE)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-# For compiling log4cpp module
-$(OUTDIR)/%.o:$(LOG4CPPDIR)/%.cpp $(INCLUDE)
+# For compiling common logger module
+$(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compiler'
 	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -c -o $@ $<

@@ -259,11 +259,11 @@ SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
 
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
 
-PKG_BIN_OBJS += trafci sources
+PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += export/limited-support-tools
 
 PKG_BIN_DIRS ?= sql export
-PKG_BIN_DIRS += trafci sources
+PKG_BIN_DIRS += trafci
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
 PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y

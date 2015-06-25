@@ -24,6 +24,7 @@
 #include "NABoolean.h"
 #include "NAString.h"
 #include "CommonLogger.h"
+
 // -----  these categories are currently not used
 // qmscomon
 extern std::string CAT_SQL_COMP_QR_COMMON;
@@ -170,20 +171,20 @@ public:
   };
 
   /**
-    * Initializes log4cpp by using the configuration file.
+    * Initializes log4cxx by using the configuration file.
     * If the path given is relative (does not start with a
     * slash), it is appended to the $MY_SQROOT environment variable.
     * If the configuration file is not found, perform hard-coded
     * default configuration.
-    * @param configFileName name of the log4cpp configuration file.
+    * @param configFileName name of the log4cxx configuration file.
     * @return FALSE if the configuration file is not found.
     */
-  virtual NABoolean initLog4cpp(const char* configFileName);
+  virtual NABoolean initLog4cxx(const char* configFileName);
 
   /**
    * Is this logger being used by QMS, QMM, QMP or MXCMP?
-   * Must be called before initLog4cpp().
-   * Used for the default initialization in case the log4cpp configuration
+   * Must be called before initlog4cxx().
+   * Used for the default initialization in case the log4cxx configuration
    * file is not found.
    * @param module Specify the module in use.
    */
@@ -257,7 +258,7 @@ public:
 
 protected:
 
-    void initCategory(std::string &cat, log4cpp::Priority::PriorityLevel defaultPriority);
+   void initCategory(std::string &cat, log4cxx::LevelPtr defaultPriority);
 
 private:
     /**
@@ -274,7 +275,7 @@ private:
 private:
 
   /** The appender. */
-  log4cpp::Appender *fileAppender_;
+  log4cxx::Appender *fileAppender_;
 
   /** Is this QMS, QMM, QMP or MXCMP? */
   ExecutableModule module_;

@@ -196,7 +196,7 @@ Int32 main(Int32 argc, char *argv[])
   Lng32 result = 0;
 
   QRLogger::instance().setModule(QRLogger::QRL_QMM);
-  QRLogger::instance().initLog4cpp("log4cpp.qmm.config");
+  QRLogger::instance().initLog4cxx("log4cxx.qmm.config");
 
   QRLogger::log(CAT_QMM, LL_INFO,
     "Command-line QMM invoked with %d arguments.", argc);

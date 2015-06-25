@@ -143,7 +143,7 @@ all:  $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libstmlib.so $(PROGS) $(LIBEXPDIR
 
 $(OUTDIR)/tm: $(TMOBJS) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libshbasetmlib.so $(PROGS) $(LIBEXPDIR)/libxarm.so cp_trx_jar
 	@echo "USE_THREADED_IO = " $(USE_THREADED_IO)
-	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) -L$(LIBEXPDIR) -llog4cpp -DTM_BUILD_
+	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -DTM_BUILD_
 
 	cp -fup $(OUTDIR)/tm $(BINEXPDIR)
 
@@ -155,17 +155,17 @@ $(OUTDIR)/idtmsrv: $(IDSRVOBJS)
 	cp -fup $(OUTDIR)/idtmsrv $(BINEXPDIR)
 
 $(LIBEXPDIR)/libstmlib.so: $(LIBSTMOBJS) 
-	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -llog4cpp -shared -o $@ $(LIBSTMOBJS)  
+	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -shared -o $@ $(LIBSTMOBJS)  
 
 $(LIBEXPDIR)/libsxatmlib.so: $(LIBSXATMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -llog4cpp  
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) cp_trx_jar
 	cd $(HBASETMLIB); $(MAKE)
 
 
 $(LIBEXPDIR)/libxarm.so: $(LIBXARMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -llog4cpp -DXARM_BUILD_
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -L$(LOG4CXX_LIB_DIR) -llog4cxx -DXARM_BUILD_
 
 $(OUTDIR)/CommonLogger.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
