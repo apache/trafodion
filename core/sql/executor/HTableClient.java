@@ -1173,7 +1173,7 @@ public class HTableClient {
               try {
                  future.get(30, TimeUnit.SECONDS);
               } catch(TimeoutException | InterruptedException e) {
-		  logger.error("Asynchronos Thread is Cancelled, " + e);
+		  logger.error("Asynchronous Thread is Cancelled, " + e);
                   retcode = true;
                   future.cancel(true); // Interrupt the thread
               } catch (ExecutionException ee)
