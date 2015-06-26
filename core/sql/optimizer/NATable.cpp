@@ -566,6 +566,8 @@ void HistogramCache::createColStatsList
                                            TRUE,        // look for unique index
                                            FALSE,       // look for primary key
                                            FALSE,       // look for any index or primary key
+                                           FALSE,       // sequence of cols doesn't matter
+                                           FALSE,       // don't exclude computed cols
                                            NULL         // index name
                                            ))
               col->setIsUnique(); 
@@ -6247,16 +6249,25 @@ NABoolean NATable::verifyMvIsInitializedAndAvailable(BindWA *bindWA) const
 // 
 // primaryKeyOnly: TRUE, get primary key 
 // indexName: return index name, if passed in
+// lookForSameSequenceOfCols: TRUE, look for an index in which the
+//                            columns appear in the same sequence
+//                            as in inputCols (whether they are ASC or
+//                            DESC doesn't matter).
+//                            FALSE, accept any index that has the
+//                            same columns, in any sequence.
 NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 					 NABoolean lookForExplicitIndex,
 					 NABoolean lookForUniqueIndex,
 					 NABoolean lookForPrimaryKey,
 					 NABoolean lookForAnyIndexOrPkey,
+                                         NABoolean lookForSameSequenceOfCols,
+                                         NABoolean excludeAlwaysComputedSystemCols,
 					 NAString *indexName)
 {
   NABoolean indexFound = FALSE;
+  CollIndex numInputCols = inputCols.entries();
 
-  if (inputCols.entries() == 0)
+  if (numInputCols == 0)
     {
       lookForPrimaryKey = TRUE;
       lookForUniqueIndex = FALSE;
@@ -6303,36 +6314,72 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
       if (NOT found)
 	continue;
 
-      const NAColumnArray &nacArr = naf->getIndexKeyColumns();
+      Int32 numMatchedCols = 0;
+      NABoolean allColsMatched = TRUE;
 
-      Lng32 numKeyCols = 
-	(isPrimaryKey ? nacArr.entries() : 
-         naf->getCountOfUserSpecifiedIndexCols());
+      if (numInputCols > 0)
+        {
+          const NAColumnArray &nacArr = naf->getIndexKeyColumns();
 
-      if (naf->numSaltPartns() > 0)
-        numKeyCols-- ; // for salted index, the SALT column is counted
-      // as a user specified column, but it is not present in inputCols
-      // We want to disregard the salt column when looking for a match.
+          Lng32 numKeyCols = naf->getCountOfColumns(
+               TRUE,           // exclude non-key cols
+               !isPrimaryKey,  // exclude cols other than user-specified index cols
+               FALSE,          // don't exclude all system cols like SYSKEY
+               excludeAlwaysComputedSystemCols);
 
-      if ((inputCols.entries() > 0) && (inputCols.entries() != numKeyCols))
-	continue;
+          // compare # of columns first and disqualify the index
+          // if it doesn't have the right number of columns
+          if (numInputCols != numKeyCols)
+            continue;
 
-      NASet<NAString> keyColNAS(HEAP, inputCols.entries());
-      NASet<NAString> indexNAS(HEAP, inputCols.entries());
-      for (Int32 j = 0; j < numKeyCols; j++)
-	{
-	  const NAString &colName = inputCols[j];
-	  keyColNAS.insert(colName);
-          if (naf->numSaltPartns() > 0)
-            indexNAS.insert(nacArr[j+1]->getColName()); //SALT column is first
-          else                                          // skip it.
-            indexNAS.insert(nacArr[j]->getColName());
-	}
+          // compare individual key columns with the provided input columns
+          for (Int32 j = 0; j < nacArr.entries() && allColsMatched; j++)
+            {
+              NAColumn *nac = nacArr[j];
 
-      if (inputCols.entries() == 0)
-	indexFound = TRUE; // primary key
-      else if (keyColNAS == indexNAS) // found a matching index
-	indexFound = TRUE;
+              // exclude the same types of columns that we excluded in
+              // the call to naf->getCountOfColumns() above
+              if (!isPrimaryKey &&
+                  nac->getIndexColName() == nac->getColName())
+                continue;
+
+              if (excludeAlwaysComputedSystemCols &&
+                  nac->isComputedColumnAlways() && nac->isSystemColumn())
+                continue;
+
+              const NAString &keyColName = nac->getColName();
+              NABoolean colFound = FALSE;
+
+              // look up the key column name in the provided input columns
+              if (lookForSameSequenceOfCols)
+                {
+                  // in this case we know exactly where to look
+                  colFound = (keyColName == inputCols[numMatchedCols]);
+                }
+              else
+                for (Int32 k = 0; !colFound && k < numInputCols; k++)
+                  {
+                    if (keyColName == inputCols[k])
+                      colFound = TRUE;
+                  } // loop over provided input columns
+
+              if (colFound)
+                numMatchedCols++;
+              else
+                allColsMatched = FALSE;
+            } // loop over key columns of the index
+
+          if (allColsMatched)
+            {
+              // just checking that the above loop and
+              // getCountOfColumns() don't disagree
+              CMPASSERT(numMatchedCols == numKeyCols);
+
+              indexFound = TRUE;
+            }
+        } // inputCols specified
+      else
+        indexFound = TRUE; // primary key, no input cols specified
       
       if (indexFound)
 	{
@@ -6341,7 +6388,7 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 	      *indexName = naf->getExtFileSetName();
 	    }
 	}
-    }
+    } // loop over indexes of the table
 
   return indexFound;
 }
@@ -6349,13 +6396,11 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 					      NABoolean uniqueConstr,
 					      NAString *constrName,
-					      NABoolean * isPkey)
+					      NABoolean * isPkey,
+                                              NAList<int> *reorderList)
 {
   NABoolean constrFound = FALSE;
-
-  NABoolean lookForPrimaryKey = FALSE;
-  if (inputCols.entries() == 0)
-    lookForPrimaryKey = TRUE;
+  NABoolean lookForPrimaryKey = (inputCols.entries() == 0);
 
   const AbstractRIConstraintList &constrList = 
     (uniqueConstr ? getUniqueConstraints() : getRefConstraints());
@@ -6376,25 +6421,60 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
       if ((NOT uniqueConstr) && (ariConstr->getOperatorType() != ITM_REF_CONSTRAINT))
 	continue;
 
-      if ((inputCols.entries() > 0) && (inputCols.entries() != ariConstr->keyColumns().entries()))
-	continue;
-
       if (NOT lookForPrimaryKey)
 	{
-	  NASet<NAString> keyColNAS(HEAP, inputCols.entries());
-	  NASet<NAString> constrNAS(HEAP, inputCols.entries());
-	  for (Int32 j = 0; j < ariConstr->keyColumns().entries(); j++)
+          Int32 numUniqueCols = 0;
+          NABoolean allColsMatched = TRUE;
+          NABoolean reorderNeeded = FALSE;
+
+          if (reorderList)
+            reorderList->clear();
+
+	  for (Int32 j = 0; j < ariConstr->keyColumns().entries() && allColsMatched; j++)
 	    {
-	      const NAString &colName = inputCols[j];
-	      keyColNAS.insert(colName);
-	      constrNAS.insert((ariConstr->keyColumns()[j])->getColName());
+              // The RI constraint contains a dummy NAColumn, get to the
+              // real one to test for computed columns
+              NAColumn *nac = getNAColumnArray()[ariConstr->keyColumns()[j]->getPosition()];
+
+              if (nac->isComputedColumnAlways() && nac->isSystemColumn())
+                // always computed system columns in the key are redundant,
+                // don't include them (also don't include them in the DDL)
+                continue;
+
+              const NAString &uniqueColName = (ariConstr->keyColumns()[j])->getColName();
+              NABoolean colFound = FALSE;
+
+              // compare the unique column name to the provided input columns
+              for (Int32 k = 0; !colFound && k < inputCols.entries(); k++)
+                if (uniqueColName == inputCols[k])
+                  {
+                    colFound = TRUE;
+                    numUniqueCols++;
+                    if (reorderList)
+                      reorderList->insert(k);
+                    if (j != k)
+                      // inputCols and key columns come in different order
+                      // (order/sequence of column names, ignoring ASC/DESC)
+                      reorderNeeded = TRUE;
+                  }
+
+              if (!colFound)
+                allColsMatched = FALSE;
 	    }
 	  
-	  if (keyColNAS == constrNAS)
-	    constrFound = TRUE;
+	  if (inputCols.entries() == numUniqueCols && allColsMatched)
+            {
+              constrFound = TRUE;
+
+              if (reorderList && !reorderNeeded)
+                reorderList->clear();
+            }
 	}
       else
-	constrFound = TRUE;
+        {
+          // found the primary key constraint we were looking for
+          constrFound = TRUE;
+        }
       
       if (constrFound)
 	{
@@ -6408,7 +6488,10 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 	     if ((uniqueConstr) && (((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
 	       *isPkey = TRUE;
 	   }
-       }
+        }
+      else
+        if (reorderList)
+          reorderList->clear();
     }
 
   return constrFound;

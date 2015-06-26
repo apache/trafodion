@@ -415,6 +415,7 @@ short CmpSeabaseDDL::convertColAndKeyInfoArrays(
       column_desc.datetimeend = (rec_datetime_field)ci.dtEnd;
       column_desc.datetimefractprec = ci.scale;
 
+      column_desc.intervalleadingprec = ci.precision;
       column_desc.defaultClass = ci.defaultClass;
       column_desc.colFlags = ci.colFlags;
 
@@ -5633,6 +5634,7 @@ short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
   ItemExpr  *topLevelCast      = NULL;
   NABoolean topLevelCastIsOk   = FALSE;
   const OperatorTypeEnum leafColType = ITM_NAMED_TYPE_TO_ITEM;
+  const NAType &origDivType    = divExpr->getValueId().getType();
 
   if (divExpr->getOperatorType() == ITM_CAST)
     {
@@ -5934,6 +5936,16 @@ short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
           unsupportedExpr->unparse(unparsed, BINDER_PHASE, COMPUTED_COLUMN_FORMAT);
           *CmpCommon::diags() << DgSqlCode(-4243) << DgString0(unparsed);
         }
+    }
+
+  if (origDivType.getTypeQualifier() == NA_NUMERIC_TYPE &&
+      !((NumericType &) origDivType).isExact())
+    {
+      // approximate numeric data types are not supported, since
+      // rounding errors could lead to incorrect computation of
+      // divisioning keys
+      result = -1;
+      *CmpCommon::diags() << DgSqlCode(-4257);
     }
 
   return result;

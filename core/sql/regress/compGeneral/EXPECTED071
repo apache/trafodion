@@ -1041,6 +1041,8 @@ TRAFODION_SCAN                  MTDN3                                           
 
 *** ERROR[4243] The DIVISION BY clause only supports very limited types of expressions. Expression cos(STORE_ID) is not supported.
 
+*** ERROR[4257] DIVISION BY with an approximate numeric data type is not supported.
+
 --- SQL operation failed with errors.
 >>-- 4243, expression not supported
 >>

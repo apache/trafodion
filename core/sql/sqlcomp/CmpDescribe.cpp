@@ -3034,7 +3034,11 @@ short CmpDescribeSeabaseTable (
 	  
 	  Lng32 numIndexCols = ((type == 1) ? 
                                 naf->getIndexKeyColumns().entries() :
-                                naf->getCountOfUserSpecifiedIndexCols());
+                                naf->getCountOfColumns(
+                                     TRUE,
+                                     TRUE,  // user-spedified index cols only
+                                     FALSE,
+                                     FALSE));
 
 	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), numIndexCols, 
 			       displaySystemCols,

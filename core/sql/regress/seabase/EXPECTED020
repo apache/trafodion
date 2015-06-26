@@ -408,7 +408,7 @@ ATEST        BTEST        CTEST        DTEST
 >>
 >>alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
 
-*** ERROR[1143] Validation of constraint TRAFODION.SCH.TEST020T29CNT2 failed; incompatible data exists in referencing base table TEST020T29 and referenced base table TEST020T28.  To display the data that violates the constraint, please use the following DML statement: TBD
+*** ERROR[1143] Validation of constraint TRAFODION.SCH.TEST020T29CNT2 failed; incompatible data exists in referencing base table TEST020T29 and referenced base table TEST020T28.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T29" where not (("A") in (select "A" from "TRAFODION"."SCH"."TEST020T28")) or "A" is null ;
 
 --- SQL operation failed with errors.
 >>-- expecting error reported
@@ -455,7 +455,7 @@ A
 >>--this alter should fail
 >>alter table TEST020T31 add constraint C44B FOREIGN KEY (ssnum) references TEST020T30(ssnum);
 
-*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: TBD
+*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T31" where not (("SSNUM") in (select "SSNUM" from "TRAFODION"."SCH"."TEST020T30")) or "SSNUM" is null ;
 
 --- SQL operation failed with errors.
 >>
@@ -543,6 +543,15 @@ A
 
 --- SQL operation complete.
 >>
+>>insert into test020t8 values
++>  (1,2,3),    -- to satisfy constraint test020t9ri3
++>  (2,3,1),    -- to satisfy constraint test020t9ri
++>  (11,22,33), -- to satisfy constraint test020t9ri3
++>  (22,33,11);
+
+--- 4 row(s) inserted.
+>> -- to satisfy constraint test020t9ri
+>>
 >>create table test020t9 (r1 int not null, r2 int not null, r3 int not null);
 
 --- SQL operation complete.
@@ -620,6 +629,10 @@ ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI
 >>create table test020t10 (c1 int not null primary key);
 
 --- SQL operation complete.
+>>
+>>insert into test020t10 values (1), (2), (3), (11), (22);
+
+--- 5 row(s) inserted.
 >>
 >>-- The foreign key (r1) of RI constraint test020t9ri2
 >>-- will take advantage of existing unique index test020t9ix
@@ -768,12 +781,29 @@ ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI3
 
 --- SQL operation complete.
 >>
->>-- The foreign keys (r2,r1) of RI constraint test020t9ri4
+>>-- insert a row that satisfies RI constraints test020t9ri,
+>>-- test020t9ri2 and test020t9ri3
+>>insert into test020t9 values (2,3,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- prepare table t8 for the next RI constraint, test020t9ri4
+>>insert into test020t8 values (1,3,2);
+
+--- 1 row(s) inserted.
+>>
+>>-- The foreign keys (r1,r2) of RI constraint test020t9ri4
 >>-- will NOT take advantage of existing unique index test020t9ix.
 >>-- A new non-unique index (named test020t9ri4) will be created for
->>-- RI constraint test020t9ri4.
->>alter table test020t9 add constraint test020t9ri4 foreign key (r2,r1)
-+> references test020t8 (c2,c3);
+>>-- RI constraint test020t9ri4. Note that we will internally reorder
+>>-- the constraint to "foreign key (r2,r1) references ... (c2,c3)"
+>>-- to match the unique index on test020t8(c2,c3). This could be
+>>-- optimized in the future by re-using the index on test020t9(r1,r2),
+>>-- but that would require additional metadata to store the two
+>>-- corresponding lists (r1,r2) == (c3,c2) in the KEYS or some other
+>>-- table.
+>>alter table test020t9 add constraint test020t9ri4 foreign key (r1,r2)
++> references test020t8 (c3,c2);
 
 --- SQL operation complete.
 >>showddl test020t9;
@@ -806,6 +836,14 @@ CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
 CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
   (
     R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI4 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  , R1 ASC
   )
 ;
 
@@ -863,6 +901,18 @@ ALTER TABLE TRAFODION.SCH.TEST020T9 ADD CONSTRAINT TRAFODION.SCH.TEST020T9RI4
 
 --- SQL operation complete.
 >>
+>>-- try to insert a row that satisfies  RI constraints test020t9ri,
+>>-- test020t9ri2 and test020t9ri3 but not test020t9ri4
+>>insert into test020t9 values (22,33,11);
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.SCH.TEST020T9RI4 on table TRAFODION.SCH.TEST020T9.
+
+--- 0 row(s) inserted.
+>>
+>>delete from test020t9;
+
+--- 1 row(s) deleted.
+>>
 >>-- The foreign key (r2) of RI constraint test020t9ri5
 >>-- will take advantage of the existing non-unique index test020t9ri4.
 >>alter table test020t9 add constraint test020t9ri5 foreign key (r2)
@@ -899,6 +949,14 @@ CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
 CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
   (
     R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI4 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  , R1 ASC
   )
 ;
 
@@ -1012,6 +1070,14 @@ CREATE INDEX TEST020T9RI ON TRAFODION.SCH.TEST020T9
 CREATE INDEX TEST020T9RI2 ON TRAFODION.SCH.TEST020T9
   (
     R1 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX TEST020T9RI4 ON TRAFODION.SCH.TEST020T9
+  (
+    R2 ASC
+  , R1 ASC
   )
 ;
 

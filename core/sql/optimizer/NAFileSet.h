@@ -134,10 +134,17 @@ public:
 
   const NAColumnArray & getAllColumns() const      { return allColumns_; }
 
-  // used by showddl. returns the number of columns in an index that are 
-  // specified directly by the user. Salt column is included in the count.
-  // Returns 0 when called on the clusteringindex.
-  Lng32 getCountOfUserSpecifiedIndexCols() const ;
+  // Method to get counts for various types of columns.
+  // - excludeNonUserSpecifiedAlternateIndexColumns returns the number
+  //   of columns in an index that are specified directly by the
+  //   user (salt included unless exludeSystemColumns is also set).
+  //   Returns 0 when called on the clusteringindex.
+  // - Other options should be self-explanatory.
+  Int32 getCountOfColumns(
+       NABoolean excludeNonKeyColumns = FALSE,
+       NABoolean excludeNonUserSpecifiedAlternateIndexColumns = FALSE,
+       NABoolean excludeSystemColumns = TRUE,
+       NABoolean excludeAlwaysComputedSystemColumns = FALSE) const;
 
   const NAColumnArray & getIndexKeyColumns() const
                                               { return indexKeyColumns_; }
