@@ -1,0 +1,1 @@
+basicsql.exe Default_Datasource user1 pwd1

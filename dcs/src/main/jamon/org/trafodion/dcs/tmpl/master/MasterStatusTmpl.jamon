@@ -1,0 +1,165 @@
+<%doc>
+(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+Copyright 2011 The Apache Software Foundation
+
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</%doc>
+<%args>
+DcsMaster master;
+String filter = "general";
+String format = "html";
+List<RunningServer> servers = null;
+JSONArray workloads = null;
+</%args>
+<%import>
+java.io.*;
+java.util.*;
+org.trafodion.dcs.master.DcsMaster;
+org.trafodion.dcs.master.RunningServer;
+org.trafodion.dcs.master.RegisteredServer;
+org.trafodion.dcs.util.DcsConfiguration;
+org.trafodion.dcs.Constants;
+org.trafodion.dcs.util.Bytes;
+org.codehaus.jettison.json.JSONArray;
+org.codehaus.jettison.json.JSONException;
+org.codehaus.jettison.json.JSONObject;
+</%import>
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
+     See tail of DCS-2110 for explaination.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<title>DcsMaster: <% master.getServerName() %></title>
+<link rel="stylesheet" type="text/css" href="/static/dcs.css" />
+</head>
+
+<& DcsServers2 &>
+
+<%def DcsServers2>
+<meta http-equiv="refresh" content="0; url=servers.jsp" />
+</%def>
+
+<%def DcsServers>
+<body>
+<h1 id="page_title">DcsMaster: <% master.getServerName() %>:<% master.getInfoPort() %></h1>
+<p id="links_menu">
+  <a href="/logs/">Dcs logs</a>,
+  <a href="/TrafodionLogs/">Trafodion logs</a>
+</p>
+
+<hr id="head_rule" />
+<h2>Attributes</h2>
+<table id="attributes_table">
+<col style="width: 10%;"/>
+<col />
+<col style="width: 20%;"/>
+<tr><th>Attribute Name</th><th>Value</th><th>Description</th></tr>
+<tr><td>Version</td><td><% org.trafodion.dcs.util.VersionInfo.getVersion() %>, r<% org.trafodion.dcs.util.VersionInfo.getRevision() %></td><td> The version and revision</td></tr>
+<tr><td>Compiled</td><td><% org.trafodion.dcs.util.VersionInfo.getDate() %>, <% org.trafodion.dcs.util.VersionInfo.getUser() %></td><td>When this version was compiled and by whom</td></tr>
+<tr><td>Start Time</td><td><% new Date(master.getStartTime()) %></td><td>When this server was started</td></tr>
+<tr><td>Listener</td><td><% master.getPort() + ":" + master.getPortRange() %></td><td>Listener starting port and range</td></tr>
+<tr><td>Zookeeper Quorum</td><td><% master.getZKQuorumServersString() %></td><td>Addresses of all registered ZK servers</td></tr>
+<tr><td>Zookeeper Znode</td><td><% master.getZKParentZnode() %></td><td>Parent ZK znode of this cluster</td></tr>
+<tr><td>Metrics</td><td><% master.getMetrics() %></td><td>Server Metrics; heap sizes are in megabytes</td></tr>
+</table>
+
+<h2>Dcs Servers</h2>
+<%if (servers != null && servers.size() > 0)%>
+<%java>
+     int totalServers = 0;
+     int totalChildServers = 0;
+</%java>
+
+<table>
+<tr>
+<th rowspan="<% servers.size() + 1%>"></th>
+<th>Host:Instance</th>
+<th>Start Time</th>
+<th>Child Server Details</th>
+</tr>
+<%java>
+     for (RunningServer aRunningServer: servers) {
+       int infoPort = aRunningServer.getInfoPort();
+       String url = "http://" + aRunningServer.getHostname() + ":" + infoPort + "/";
+</%java>
+<tr>
+<td><a href="<% url %>"><% aRunningServer.getHostname() + ":" + aRunningServer.getInstance() %></a></td>
+<td><% new Date(aRunningServer.getStartTime()) %></td>
+<td> 
+<table>
+<tr>
+<th rowspan="<% aRunningServer.getRegistered().size() + 1%>"></th>
+<th>Registered</th>
+<th>State</th>
+<th>Node</th>
+<th>Process Id</th>
+<th>Process Name</th>
+<th>Ip Address</th>
+<th>Port</th>
+<th>Client Name</th>
+<th>Client Appl</th>
+<th>Client Ip Address</th>
+<th>Client Port</th>
+</tr>
+<%java>
+       for (RegisteredServer aRegisteredServer: aRunningServer.getRegistered()) {
+</%java>
+<tr>
+<td><% aRegisteredServer.isRegistered() %></td>
+<td><% aRegisteredServer.getState() %></td>
+<td><% aRegisteredServer.getNid() %></td>
+<td><% aRegisteredServer.getPid() %></td>
+<td><% aRegisteredServer.getProcessName() %></td>
+<td><% aRegisteredServer.getIpAddress() %></td>
+<td><% aRegisteredServer.getPort() %></td>
+<td><% aRegisteredServer.getClientName() %></td>
+<td><% aRegisteredServer.getClientAppl() %></td>
+<td><% aRegisteredServer.getClientIpAddress() %></td>
+<td><% aRegisteredServer.getClientPort() %></td>
+</tr>
+<%java>
+         totalChildServers++;
+       }
+</%java>
+</table>
+</td>
+<%java>
+     }
+</%java>
+<tr><th>Total: </th><td>Dcs Servers: <% servers.size() %>, Child Servers: <% totalChildServers %> </td></tr>
+</table>
+</%if>
+</body>
+</html>
+</%def>

@@ -1,0 +1,50 @@
+[tox]
+minversion = 1.6
+envlist = py27,pep8
+skipsdist = True
+
+[testenv]
+setenv = VIRTUAL_ENV={envdir}
+         LANG=en_US.UTF-8
+         LANGUAGE=en_US:en
+         LC_ALL=C
+         ODBCHOME=TEMPLATE_ODBC_HOME
+         CPATH=TEMPLATE_ODBC_HOME/include
+         ODBCSYSINI={toxinidir}
+         ODBCINI={toxinidir}/odbc.ini
+         ODBCINST={toxinidir}/odbcinst.ini
+         AppUnicodeType=utf16
+         LD_LIBRARY_PATH={toxinidir}/odbc_driver:TEMPLATE_ODBC_LIB
+         LIBRARY_PATH={toxinidir}/odbc_driver:TEMPLATE_ODBC_LIB
+         TEMPLATE_HTTP_PROXY
+         TEMPLATE_HTTPS_PROXY
+         TEMPLATE_FTP_PROXY
+         
+whitelist_externals=
+    *
+install_command = pip install -U {opts} {packages}
+deps = -r{toxinidir}/test-requirements.txt
+commands = 
+    rm -rf {toxinidir}/.testrepository
+    testr init
+    testr run {posargs}
+    #testr run --parallel --concurrency=6
+#sitepackages=True
+
+[testenv:pep8]
+commands = flake8
+
+[testenv:py27-ucs2]
+commands = {posargs}
+
+[testenv:venv]
+commands = {posargs}
+
+[tox:jenkins]
+downloadcache = ~/cache/pip
+
+[flake8]
+ignore = E126,E202,W602,H302,H402,H231,H233
+max-line-length = 125
+show-source = True
+exclude = .venv,.git,.tox,dist,doc,*lib/python*,*egg,build,tools

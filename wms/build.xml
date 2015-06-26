@@ -1,0 +1,346 @@
+<?xml version="1.0"?>
+<project name="wms" basedir="." default="jar">
+    <property name="Name" value="wms" />
+    <property name="name" value="wms" />
+    <property environment="env"/>
+    <property name="version" value="1.0.0" />
+    <property name="final.name" value="${name}-${version}"/>
+    <property name="revision.dir" value="${basedir}/.revision" />
+    <property name="revision.properties" value="revision.properties" />
+    <property file="${basedir}/src/${revision.properties}" />
+    <property name="javac.target" value="1.6" />
+    <property name="javac.source" value="1.6" />
+    <property name="src.dir" value="${basedir}/src" />
+    <property name="java.src.dir" value="${src.dir}/main/java" />
+    <property name="lib.dir" value="${basedir}/lib" />
+    <property name="lib.dir.includes" value="**/*.jar" />
+    <property name="lib.dir.excludes" value="**/excluded/" />
+    <!-- prior to ant 1.7.1 fileset always fails if dir doesn't exist
+         so just point to bin directory and provide settings that exclude
+         everything - user can change as appropriate -->
+    <property name="additional.lib.dir" value="bin" />
+    <property name="additional.lib.dir.includes" value="**/*.jar" />
+    <property name="additional.lib.dir.excludes" value="**/*.jar" />
+    <property name="build.dir" value="${basedir}/build" />
+	<property name="dist.dir" value="${basedir}/distribution" />
+    <property name="src_generated.dir" value="${src.dir}/java/generated" />
+    <property name="c.src.dir" value="${src.dir}/main/cpp" />    
+    <property name="csrc_generated.dir" value="${c.src.dir}/src/generated" />
+    <property name="thirdparty.export.dir" value="${basedir}/thirdparty_export" />
+    <property name="build.classes" value="${build.dir}/classes"/>
+    <property name="build.docs" value="${build.dir}/docs" />
+    <property name="build.javadoc" value="${build.docs}/api" />
+    <property name="build.javadoc.dev" value="${build.docs}/dev-api"/>
+     <property name="conf.dir" value="${basedir}/conf"/>
+    <property name="docs.dir" value="${basedir}/docs"/>
+    <property name="docs.src" value="${basedir}/src/docs"/>
+    <property name="javadoc.link.java"
+              value="http://docs.oracle.com/javase/6/docs/api/" />
+    <property name="javadoc.packages" value="org.apache.*" />
+    <property name="thirdparty.dir" value="${basedir}/thirdparty" />
+
+	<available file="${c.src.dir}/Makefile" property="Makefile.present"/>
+	<exec dir="${basedir}" executable="hostname" outputproperty="host.name"/>
+
+    <!-- the normal classpath -->
+    <path id="java.classpath">
+      <pathelement location="${build.classes}"/>
+      <!-- allow the user to override (e.g. if there are local versions) -->
+      <fileset dir="${additional.lib.dir}">
+        <include name="${additional.lib.dir.includes}" />
+        <exclude name="${additional.lib.dir.excludes}" />
+      </fileset>
+      <fileset dir="${lib.dir}">
+        <include name="${lib.dir.includes}" />
+        <exclude name="${lib.dir.excludes}" />
+      </fileset>
+      <fileset dir="${ant.home}/lib">
+        <include name="ant.jar" />
+      </fileset>
+    </path>
+	
+	<!-- ================================================================== -->
+	<!-- D I S T R I B U T I O N                                            -->
+	<!-- ================================================================== -->
+    <target name="package" depends="jar" description="Build distribution">
+      <mkdir dir="${dist.dir}"/>
+      <mkdir dir="${dist.dir}/lib"/>
+      <mkdir dir="${dist.dir}/bin"/>
+      <mkdir dir="${dist.dir}/docs"/>
+      <mkdir dir="${dist.dir}/docs/api"/>
+
+      <copy todir="${dist.dir}/lib" includeEmptyDirs="false">
+        <fileset dir="${lib.dir}">
+         </fileset>
+      </copy>
+
+      <copy todir="${dist.dir}"> 
+        <fileset file="${build.dir}/${final.name}.jar"/>
+      </copy>
+	      
+	  <copy todir="${dist.dir}/bin">
+	    <fileset dir="bin"/>
+	  </copy>
+
+	  <copy todir="${dist.dir}/conf">
+	    <fileset dir="${conf.dir}" excludes="**/*.template"/>
+	  </copy>
+
+	  <copy todir="${dist.dir}/src" includeEmptyDirs="true">
+	    <fileset dir="src" excludes="**/*.template **/docs/build/**/* **/ivy*.jar"/>
+	  </copy>
+	  	  
+	  <chmod perm="ugo+x" type="file" parallel="false">
+	    <fileset dir="${dist.dir}/bin"/>
+	  </chmod>
+	</target>
+	
+	<!-- ================================================================== -->
+    <!-- Make release tarball                                               -->
+    <!-- ================================================================== -->
+    <target name="tar" depends="package" description="Make release tarball">
+      <macro_tar param.destfile="${build.dir}/${final.name}.tar.gz">
+        <param.listofitems>
+          <!-- it's unfortunate that the binaries have to be duplicated
+               however that's the only way ant currently supports afaik -->
+          <tarfileset dir="${build.dir}" mode="664">
+            <exclude name="${final.name}/bin/*" />
+            <exclude name="${final.name}/contrib/*/bin/*" />
+
+            <exclude name="${final.name}/**/compile" />
+            <exclude name="${final.name}/**/config.guess" />
+            <exclude name="${final.name}/**/config.sub" />
+            <exclude name="${final.name}/**/configure" />
+            <exclude name="${final.name}/**/depcomp" />
+            <exclude name="${final.name}/**/install-sh" />
+            <exclude name="${final.name}/**/ltmain.sh" />
+            <exclude name="${final.name}/**/missing" />
+
+            <exclude name="${final.name}/**/*.sh" />
+
+            <include name="${final.name}/**" />
+          </tarfileset>
+          <tarfileset dir="${build.dir}" mode="755">
+            <!-- be sure to add to exclude list above if you add here -->
+            <include name="${final.name}/bin/*" />
+            <include name="${final.name}/contrib/*/bin/*" />
+
+            <!-- autotools related commands -->
+            <include name="${final.name}/**/compile" />
+            <include name="${final.name}/**/config.guess" />
+            <include name="${final.name}/**/config.sub" />
+            <include name="${final.name}/**/configure" />
+            <include name="${final.name}/**/depcomp" />
+            <include name="${final.name}/**/install-sh" />
+            <include name="${final.name}/**/ltmain.sh" />
+            <include name="${final.name}/**/missing" />
+
+            <!-- any shell scripts -->
+            <include name="${final.name}/**/*.sh" />
+          </tarfileset>
+        </param.listofitems>
+      </macro_tar>
+    </target>
+
+    <!-- ====================================================== -->
+    <!-- Generate and compile the Java files                    -->
+    <!-- ====================================================== -->
+    <target name="init">    
+        <mkdir dir="${build.classes}" />
+        <tstamp>
+            <format property="build.time" pattern="MM/dd/yyyy HH:mm zz" timezone="GMT"/>
+            <format property="year" pattern="yyyy" timezone="GMT"/>
+        </tstamp>
+    </target>
+
+	<target name="avro-gen" >
+	    <java jar="${lib.dir}/avro-tools-1.7.3.jar" fork="true" failonerror="true">
+	     <arg value="idl"/>
+	     <arg value="${src.dir}/workload.avdl"/>
+	     <arg value="${src_generated.dir}/workload.avpr"/>
+	    </java>
+		
+	    <java jar="${lib.dir}/avro-tools-1.7.3.jar" fork="true" failonerror="true">
+          <arg value="compile"/>
+	      <arg value="protocol"/>
+	      <arg value="${src_generated.dir}/workload.avpr"/>
+	      <arg value="${src_generated.dir}"/>
+	      <classpath>
+	       	<pathelement location="${lib.dir}"/>
+	      </classpath>
+	    </java>
+	</target>
+	
+    <target name="thrift-gen" >
+	  <mkdir dir="${csrc_generated.dir}"/>
+      <exec executable="thrift" searchpath="yes" failonerror="yes">
+        <arg value="-out"/>
+        <arg value="${csrc_generated.dir}"/>
+        <arg value="-gen"/>
+        <arg value="cpp"/>
+        <arg value="${src.dir}/wms.thrift"/>
+      </exec>
+      
+      <exec executable="thrift" searchpath="yes" failonerror="yes">
+       <arg value="-out"/>
+        <arg value="${src_generated.dir}"/>          
+        <arg value="-gen"/>
+        <arg value="java"/>
+        <arg value="${src.dir}/wms.thrift"/>
+       </exec>      
+    </target>		
+    
+    <target name="ver-gen" depends="init">
+        <javac srcdir="${java.src.dir}" destdir="${build.classes}" includeantruntime="false"
+            target="${javac.target}" source="${javac.source}"
+            includes="org.trafodion.wms/version/util/**" debug="on" />
+    </target>
+    
+    <target name="svn-revision" unless="lastRevision">
+        <mkdir dir="${revision.dir}" />
+        <condition property="shell.name" value="cmd" else="sh">
+      	    <os family="windows"/>
+        </condition>
+        <condition property="revision.cmd.line" 
+        	value="/c ${src.dir}\lastRevision.bat" else="${src.dir}/lastRevision.sh">
+      	    <os family="windows"/>
+        </condition>
+        <exec executable="${shell.name}">
+           <arg line="${revision.cmd.line} ${revision.dir}${file.separator}${revision.properties}"/>
+        </exec>
+        <property file="${revision.dir}/${revision.properties}" />
+    </target>
+    
+    <target name="version-info" depends="ver-gen,svn-revision">
+        <mkdir dir="${src_generated.dir}" />
+        <java classname="org.trafodion.wms.version.util.VerGen" fork="true" 
+                dir="${src_generated.dir}">
+            <arg value="${version}" />
+            <arg value="${lastRevision}" />
+            <arg value="${build.time}" />
+            <classpath>
+                <pathelement path="${build.classes}" />
+            </classpath>
+        </java>
+    </target>
+    
+    <target name="build-generated" depends="version-info,avro-gen,thrift-gen" >
+        <javac srcdir="${src_generated.dir}" destdir="${build.classes}" includeantruntime="false"
+            target="${javac.target}" source="${javac.source}" debug="on" >
+    	    <classpath refid="java.classpath"/>
+        </javac>
+     </target>
+    
+    <target name="compile" depends="build-generated">
+        <javac srcdir="${java.src.dir}" destdir="${build.classes}" includeantruntime="false"
+            target="${javac.target}" source="${javac.source}" debug="on" >
+            <classpath refid="java.classpath"/>
+            <compilerarg value="-Xlint:all"/>
+            <compilerarg value="-Xlint:-path"/>
+        </javac>
+    </target>
+    
+    <target name="compile-native" depends="" description="Make C binding">
+     <condition property="shell.name" value="cmd" else="sh">
+  	    <os family="windows"/>
+    </condition>
+      <exec dir="${c.src.dir}" executable="${shell.name}" searchpath="yes" failonerror="yes">
+           <arg line="cmake_wmslib.sh"/>
+      </exec>
+    </target>
+
+    <!-- ====================================================== -->
+    <!-- Documentation                                          -->
+    <!-- ====================================================== -->
+
+    <!-- Javadoc -->
+    <target name="javadoc-dev" depends="jar"
+            description="Generate javadoc for WMS developers">
+      <mkdir dir="${build.javadoc.dev}"/>
+      <javadoc
+         overview="${java.src.dir}/overview.html"
+         packagenames="org.trafodion.wms.*"
+         destdir="${build.javadoc.dev}"
+         author="true"
+         version="true"
+         use="true"
+         windowtitle="${Name} ${version} API"
+         doctitle="${Name} ${version} API"
+         bottom="Copyright &amp;copy; ${year} The Hewlett Packard Company"
+         >
+    	<packageset dir="${java.src.dir}">
+          <include name="com/hp/**"/>
+     	</packageset>
+    	<packageset dir="${src_generated.dir}"/>
+        <link href="${javadoc.link.java}"/>
+        <classpath refid="java.classpath"/>
+      </javadoc>
+    </target>	
+
+    <!-- ====================================================== -->
+    <!-- Make wms.jar                                     -->
+    <!-- ====================================================== -->
+    <target name="jar" depends="compile,compile-native">
+        <jar jarfile="${basedir}/${final.name}.jar">
+            <fileset file="LICENSE.txt" />
+            <fileset dir="${build.classes}" excludes="**/.generated"/>
+            <fileset dir="${java.src.dir}"/>
+            <fileset dir="${src_generated.dir}" excludes="**/.generated"/>
+            <fileset file="${basedir}/src/wms-default.xml" />
+            <fileset file="${basedir}/src/trafodion-rms.avsc" />
+            <fileset file="${basedir}/src/workload.avsc" />
+            <fileset file="${basedir}/src/platform-stats.avsc" />
+            <manifest>
+                <attribute name="Main-Class" value="org.trafodion.wms.server.HwmsServer" />
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Built-At" value="${build.time}"/>
+                <attribute name="Built-On" value="${host.name}" />
+                <attribute name="Implementation-Title" value="org.trafodion.wms"/>
+                <attribute name="Implementation-Version" value="${version}"/> 
+                <attribute name="Implementation-Vendor" value="The Hewlett Packard Company"/>
+            </manifest>
+        </jar>
+    </target>
+    
+ 	<!-- ====================================================== -->
+    <!-- Make wms-sources.jar                                 -->
+    <!-- ====================================================== -->
+    <target name="src-jar" depends="build-generated">
+        <jar jarfile="${basedir}/${final.name}-sources.jar">
+            <fileset file="LICENSE.txt" />
+            <fileset dir="${java.src.dir}"/>
+            <fileset dir="${src_generated.dir}" excludes="**/.generated"/>
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Built-At" value="${build.time}"/>
+                <attribute name="Built-On" value="${host.name}" />
+                <attribute name="Implementation-Title" value="org.trafodion.wms"/>
+                <attribute name="Implementation-Version" value="${version}"/> 
+                <attribute name="Implementation-Vendor" value="The Hewlett Packard Company"/>
+            </manifest>
+        </jar>
+    </target>
+
+	<!-- ====================================================== -->
+    <!-- Clean.  Delete the build files, and their directories  -->
+    <!-- ====================================================== -->
+    <target name="clean" depends=""
+            description="Clean.  Delete the build files, and their directories">
+      <delete dir="${build.dir}"/>
+      <delete dir="${docs.src}/build"/>
+      <delete dir="${src_generated.dir}" />
+      <delete includeemptydirs="true">
+        <fileset dir="${c.src.dir}" defaultexcludes="false"> 
+            <include name="**/*build*/**"/>
+        </fileset>
+      </delete>
+      <delete dir="${csrc_generated.dir}" />
+      <delete dir="${dist.dir}"/>
+      <delete file="${jar.name}" />
+      <delete dir="${revision.dir}"/>
+      <delete>
+        <fileset dir="${basedir}" includes="*.jar,*.tar.gz"/>
+      </delete>
+    </target>
+
+</project>
