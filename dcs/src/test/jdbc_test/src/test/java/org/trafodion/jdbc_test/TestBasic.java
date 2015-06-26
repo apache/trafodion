@@ -1,3 +1,23 @@
+/*
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+*/
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -7,6 +27,7 @@ import java.lang.*;
 
 public class TestBasic 
 {
+	/* Test basic insert and update sql statements */
 	@Test
 	public void JDBCBasic1() throws InterruptedException, SQLException
 	{
@@ -50,6 +71,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic1 - Update : Done");
 	}
 	
+	/* Test Select Count * */
 	@Test
 	public void JDBCBasic2() throws InterruptedException, SQLException
 	{
@@ -81,7 +103,7 @@ public class TestBasic
             catch(SQLException ex)
             {
                 ex.printStackTrace();
-    			fail("Exception in resultset in test JDBC TestBasic2 - Update.." + ex.getMessage());
+    			fail("Exception in resultset in test JDBC TestBasic2 - SelectCount*.." + ex.getMessage());
             }
          	//rs.close();
 	        long endTime = System.currentTimeMillis();
@@ -97,6 +119,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic2 - SelectCount* : Done");
 	}
 
+	/* Test fetch of resultset metadata */
 	@Test
 	public void JDBCBasic3() throws InterruptedException, SQLException 
 	{
@@ -152,6 +175,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic3 - Metadata : Done");
     }
 
+	/* Test delete sql stmt */
 	@Test
 	public void JDBCBasic4 () throws InterruptedException, SQLException
 	{
@@ -189,6 +213,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic4 - Delete : Done");
 	}
 
+	/* Test delimited names */
 	@Test
 	public void JDBCBasic5 () throws SQLException, ClassNotFoundException 
 	{
@@ -249,6 +274,7 @@ public class TestBasic
 	   		System.out.println("JDBC TestBasic5 - Delim : Done");
 	}
 	
+	/* Test insert and update */
 	@Test
 	public void JDBCBasic6() throws SQLException, ClassNotFoundException 
 	{
@@ -304,6 +330,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic6 - Insert : Done");
 	}
 
+	/* Test upsert */
 	@Test
     public void TestBasic7() throws SQLException, ClassNotFoundException 
     {
@@ -369,6 +396,7 @@ public class TestBasic
         System.out.println("JDBC TestBasic7 - Upsert : Done");
      }
 
+	/* Test Get User Connection */
 	@Test
     public void TestBasic17() throws SQLException, ClassNotFoundException 
     {
@@ -388,7 +416,8 @@ public class TestBasic
        	} 
 		System.out.println("JDBC TestBasic17 - Get User Connection: Done");
     }
-	
+
+	/* Test Get Properties Cnnection */	
 	@Test
     public void TestBasic18() throws SQLException, ClassNotFoundException 
     {
@@ -409,6 +438,7 @@ public class TestBasic
 		System.out.println("JDBC TestBasic18 - Get Properties Connection : Done");
     }
 
+	/* Test all datatypes, insert using params*/
 	@Test
 	public void JDBCBasic19() throws InterruptedException, SQLException 
 	{

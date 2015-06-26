@@ -1,3 +1,23 @@
+/*
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+*/
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -7,6 +27,7 @@ import java.lang.*;
 
 public class TestBatch 
 {
+	/* Test Batch insert and update*/
 	@Test
 	public void JDBCBatch1() throws InterruptedException, SQLException 
 	{
@@ -151,46 +172,6 @@ public class TestBatch
         	}
         	pStmt.close();
         	pStmt = null;
-
-        	update = "update " + IN1 + " set points  = ? where TITLE = ? ";
-        	pStmt = conn.prepareStatement(update);
-        	pStmt.setInt(1, 9);
-        	pStmt.setString(2, "MGR");
-        	pStmt.addBatch();
-
-        	try {
-        		updateCount = pStmt.executeBatch();
-
-        		for (int i = 0; i < updateCount.length; i++) {
-        			if ((updateCount[i] != -2) && (updateCount[i] != 2)) {
-        				pass = false;
-        				System.out.println("Batch1 : ERROR: Unexpected return code (should be -2 or 1) for " + i + "th command: " + updateCount[i]);
-        			}
-        		}
-        	} catch (BatchUpdateException bue) {
-        		System.out.println("Batch1 : ERROR: Exception in update batch mode.....");
-        		handleBatchUpdateException(bue);
-        	}
-
-        	updateRowCount = pStmt.getUpdateCount();
-        	if (updateRowCount != totalMgr) {
-        		System.out.println("Batch1: ERROR: Expecting updateRowCount to be " + totalMgr);
-        		pass = false;
-        	}
-
-        	int ret = 0;
-        	rs = stmt.executeQuery("select POINTS from " + IN1 + " where TITLE = 'MGR'");
-        	if (rs != null) {
-        		while (rs.next()) {
-        			ret = rs.getInt("POINTS");
-        			if (ret != 9) {
-        				pass = false;
-        				System.out.println("Batch1: ERROR: points for MGR is not updated: " + ret);
-        			}
-        		}
-        		rs.close();
-        	}
-        	pStmt.close();
         	stmt.close();
         }// end of try
         catch (Exception e) {
@@ -209,6 +190,7 @@ public class TestBatch
 		System.out.println("JDBCBatch1 : Done");
 	}
 
+	/* Test Batch insert and update */
 	@Test
 	public void JDBCBatch2() throws InterruptedException, SQLException 
 	{
@@ -407,6 +389,7 @@ public class TestBatch
 		System.out.println("JDBCBatch2 :  Done");
 	}
 
+	/* Test batch insert with all datatypes */
 	@Test
 	public void JDBCBatch3() throws InterruptedException, SQLException 
 	{
@@ -531,7 +514,7 @@ public class TestBatch
 		System.out.println("JDBCBatch3 : Done");
 	}
 
-	//BATCH DELETE
+	/* Test Batch Delete */
 	@Test
 	public void JDBCBatch4() throws InterruptedException, SQLException 
 	{
@@ -671,7 +654,7 @@ public class TestBatch
         }
 	}
 
-	//BATCH UPSERT/UPDATE
+	/* Test BATCH UPSERT/UPDATE */
 	@Test
 	public void JDBCBatch5() throws InterruptedException, SQLException 
 	{
@@ -812,6 +795,7 @@ public class TestBatch
         }
 	}
 
+	/* Test Batch insert with all datatypes, using params for all datatypes */
 	@Test
 	public void JDBCBatch6() throws InterruptedException, SQLException 
 	{

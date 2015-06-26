@@ -1,3 +1,23 @@
+/*
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+*/
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -7,6 +27,7 @@ import java.lang.*;
 
 public class TestCat
 {	
+	/* Test Get Catalogs */
 	@Test
     public void TestBasic8() throws SQLException, ClassNotFoundException 
     {
@@ -41,6 +62,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic8 - Get Catalogs : Done");
      }
 
+	/* Test Get table Types */
 	@Test
     public void TestBasic9() throws SQLException, ClassNotFoundException 
     {
@@ -73,6 +95,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic9 - Get Table types : Done");
     }
 	
+	/* Test Get Columns using % for all columns */
 	@Test
     public void TestBasic10() throws SQLException, ClassNotFoundException 
     {
@@ -117,6 +140,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic10 - Get Columns : Done");
      }
 
+	/* Test Get columns with null for catalog, schema and colname */
 	@Test
     public void TestBasic11() throws SQLException, ClassNotFoundException 
     {
@@ -161,6 +185,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic11 - Get Columns 2 : Done");
      }
 	
+	/* Test Get columns by passing calaog, schema, table and null for colname */
 	@Test
     public void TestBasic12() throws SQLException, ClassNotFoundException 
     {
@@ -205,6 +230,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic12 - Get Columns 3 : Done");
     }
 	
+	/* Test Get columns by passing current catalog, literal schema/tablename and null colname */
 	@Test
     public void TestBasic13() throws SQLException, ClassNotFoundException 
     {
@@ -249,6 +275,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic13 - Get Columns 4 : Done");
     }
 	
+	/* Test Get columns by passing current catalog, literal schema/table/colname */
 	@Test
     public void TestBasic14() throws SQLException, ClassNotFoundException 
     {
@@ -293,6 +320,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic14 - Get Columns 5 : Done");
      }
 	
+	/* Test Get COlumsn for delimited column names */
 	@Test
     public void TestBasic14a() throws SQLException, ClassNotFoundException 
     {
@@ -337,6 +365,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic14a - Get Columns delimited : Done");
     }
 
+	/* Test get tables passing current catalog, literal schema/tablename */
 	@Test
     public void TestBasic15() throws SQLException, ClassNotFoundException 
     {
@@ -375,6 +404,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic15 - Get Tables : Done");
     }
 
+	/* Test get tables with delimited tablename */
 	@Test
     public void TestBasic15a() throws SQLException, ClassNotFoundException 
     {
@@ -412,6 +442,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic15a - Get Tables delimited : Done");
     }
 
+	/* Test GetTypeInfo */
 	@Test
     public void TestBasic16() throws SQLException, ClassNotFoundException 
     {
@@ -484,6 +515,7 @@ public class TestCat
 		System.out.println("JDBC TestBasic16 - Get Type Info : Done");
     }
 	
+	/* Test Get Primary Keys */
 	@Test
     public void TestBasic19() throws SQLException, ClassNotFoundException 
     {
@@ -525,7 +557,8 @@ public class TestCat
 		System.out.println("JDBC TestBasic19 - Get Primary Keys : Done");
     }
 
-@Test
+	/* Test Get DB Product name */
+	@Test
     public void TestBasic20()
         throws SQLException, ClassNotFoundException
     {
@@ -545,6 +578,7 @@ public class TestCat
         }
     }
 
+	/* Test Get DB Product Version */
     @Test
     public void TestBasic21()
         throws SQLException, ClassNotFoundException
@@ -566,6 +600,7 @@ public class TestCat
         }
     }
 
+	/* Test Get DB Major version */
     @Test
     public void TestBasic22()
         throws SQLException, ClassNotFoundException
@@ -586,6 +621,7 @@ public class TestCat
         }
     }
 
+	/* Test Get DB Minor version */
     @Test
     public void TestBasic23()
         throws SQLException, ClassNotFoundException
@@ -606,6 +642,7 @@ public class TestCat
         }
     }
 
+	/* Test Get Driver Name */
     @Test
     public void TestBasic24()
         throws SQLException, ClassNotFoundException
@@ -626,6 +663,7 @@ public class TestCat
         }
     }
 
+	/* Test Get Driver Version */
     @Test
     public void TestBasic25()
         throws SQLException, ClassNotFoundException
