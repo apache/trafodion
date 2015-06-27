@@ -8579,7 +8579,11 @@ void Scan::addIndexInfo()
 	    //alternate index?
 	    ValueIdList userKeyColumns(idesc->getIndexKey());
             CollIndex numSecondaryIndexKey = 
-              idesc->getNAFileSet()->getCountOfUserSpecifiedIndexCols();
+              idesc->getNAFileSet()->getCountOfColumns(
+                   TRUE,   // key columns only
+                   TRUE,   // user-specified key columns only
+                   FALSE,  // don't exclude system columns
+                   FALSE); // don't exclude salt/divisioning columns
 	    CollIndex numClusteringKey = 
               userKeyColumns.entries() - numSecondaryIndexKey;
 	    if(NOT idesc->isUniqueIndex())

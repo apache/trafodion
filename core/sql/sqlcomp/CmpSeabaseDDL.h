@@ -816,6 +816,7 @@ class CmpSeabaseDDL
 			NATable * naTable,
 			NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
 			NABoolean noPopulate, // TRUE, dont populate index
+                        NABoolean sameSequenceOfCols, // FALSE, allow "similar" indexes
 			ExeCliInterface *cliInterface);
 
   short createMetadataViews(ExeCliInterface * cliInterface);

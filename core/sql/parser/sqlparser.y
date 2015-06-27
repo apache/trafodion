@@ -9604,6 +9604,8 @@ misc_function :
 
      | TOK_ADD_MONTHS '(' value_expression ',' value_expression ')'
                       {
+                         NABoolean maybeNullable = TRUE;
+
                          if ($5 ->getOperatorType() == ITM_CONSTANT)
                            {
                             NABoolean dummyNegate = FALSE;
@@ -9614,15 +9616,18 @@ misc_function :
                                *SqlParser_Diags << DgSqlCode(-4097) << DgString0("Add_Months");
                                YYERROR;                        
                               } 
+                            maybeNullable = FALSE;
                            }
 
-                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
                          ItemExpr *iq2 =	new (PARSERHEAP()) Cast($5, iq);
                          $$ = new (PARSERHEAP())  BiArith(ITM_PLUS, $3,iq2);
 						 ((BiArith*) $$)->setStandardNormalization();
                       }
 	 | TOK_ADD_MONTHS '(' value_expression ',' value_expression ',' unsigned_integer ')'
                       {
+                         NABoolean maybeNullable = TRUE;
+
                          if ($5 ->getOperatorType() == ITM_CONSTANT)
                            {
                             NABoolean dummyNegate = FALSE;
@@ -9632,10 +9637,11 @@ misc_function :
                               { 
                                *SqlParser_Diags << DgSqlCode(-4097) << DgString0("Add_Months");
                                YYERROR;                        
-                              } 
+                              }
+                            maybeNullable = FALSE;
                            }
 
-                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
                          ItemExpr *iq2 =	new (PARSERHEAP()) Cast($5, iq);
                          $$ = new (PARSERHEAP())  BiArith(ITM_PLUS, $3,iq2);
 						 UInt32 value = $7;
@@ -25656,9 +25662,9 @@ like_option_list : like_option
                                            $1 /*like_option_list*/,
                                            $2 /*like_option*/);
                                   else if ($1 != NULL)
-                                    $$ = $2;
-                                  else
                                     $$ = $1;
+                                  else
+                                    $$ = $2;
                                 }
 
 /* type pElemDDL */

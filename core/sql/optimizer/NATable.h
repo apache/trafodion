@@ -477,12 +477,15 @@ public:
 				  NABoolean lookForUniqueIndex,
 				  NABoolean lookForPrimaryKey,
 				  NABoolean lookForAnyIndexOrPkey,
+                                  NABoolean lookForSameSequenceOfCols,
+                                  NABoolean excludeAlwaysComputedSystemCols,
 				  NAString *indexName);
   
   NABoolean getCorrespondingConstraint(NAList<NAString> &inputCols,
 				       NABoolean uniqueConstr,
 				       NAString *constrName = NULL,
-				       NABoolean *isPkey = NULL);
+				       NABoolean *isPkey = NULL,
+                                       NAList<int> *reorderList = NULL);
     
   const desc_struct * getPartnsDesc() const { return partnsDesc_; }
 

@@ -1,0 +1,854 @@
+'########################################################################
+'#                                                                      #
+'#   Excel/VBA macro to draw SQL/MX query execution plan trees from     #
+'#   SQLCI output log(s) containing plans produced by the               #
+'#   explain options 'f' ... command in Trafodion SQL.                   #
+'#                                                                      #
+'########################################################################
+'
+' Declarations
+Option Explicit
+Option Base 1
+
+Const MUSTHAVE = True
+Const NEEDNTHAVE = False
+
+                            ' Character offsets for plan in exp.sql output
+                            '   Version 1:
+Const V1_LCOFF = 0          '     Left child number (or ". ")
+Const V1_RCOFF = 4          '     Right child number (or ". ")
+Const V1_OPOFF = 8          '     Operator number
+Const V1_NMOFF = 12         '     Operator name
+Const V1_INOFF = 39         '     Information - varies by operator type
+Const V1_CDOFF = 61         '     Cardinality
+Const V1_XXOFF = 73         '     Anything else (Plan Id or statement name) ' 19Aug2005
+                            '   Version 2:
+Const V2_LCOFF = 0          '     Left child number (or ". ")
+Const V2_RCOFF = 5          '     Right child number (or ".  ")
+Const V2_OPOFF = 10         '     Operator number
+Const V2_NMOFF = 15         '     Operator name
+Const V2_EXOFF = 37         '     OPT - "o fs fr" etc.
+Const V2_DEOFF = 47         '     Description - varies by operator type
+Const V2_CDOFF = 69         '     Cardinality
+Const V2_XXOFF = 85         '     Anything else (Plan Id or statement name) ' 19Aug2005
+                            '   Version 3:                                  ' 18Dec2008
+Const V3_LCOFF = 0          '     Left child number (or ". ")               ' 18Dec2008
+Const V3_RCOFF = 6          '     Right child number (or ".  ")             ' 18Dec2008
+Const V3_OPOFF = 12         '     Operator number                           ' 18Dec2008
+Const V3_NMOFF = 18         '     Operator name                             ' 18Dec2008
+Const V3_EXOFF = 40         '     OPT - "o fs fr" etc.                      ' 18Dec2008
+Const V3_DEOFF = 50         '     Description - varies by operator type     ' 18Dec2008
+Const V3_CDOFF = 72         '     Cardinality                               ' 18Dec2008
+Const V3_XXOFF = 81         '     ?? Anything else (Plan Id or stmt name)   ' 18Dec2008
+                            ' Columns in worksheet for plan info
+Const LCCOL = 1             '   Left child number
+Const RCCOL = 2             '   Right child number
+Const OPCOL = 3             '   Operator number
+Const NMCOL = 4             '   Operator name
+Const INCOL = 5             '   Information/Description - varies by operator type
+Const CDCOL = 6             '   Cardinality
+Const XXCOL = 7             '   Plan Id or Statement Name (possibly absent) ' 19Aug2005
+                            ' Drawing constants
+Const XGAP As Single = 0    '   Horizontal gap between nodes at same level, in points
+
+Type Op_Def                 ' Structure for node of plan tree
+    dCard As Double         '   Cardinality
+    bParallel As Boolean    '   Node has top/bottom degrees of parallelism
+    iLevel As Integer       '   Drawing level of this node
+    iParent As Integer      '   Parent
+    iLeft As Integer        '   Left child
+    iRight As Integer       '   Right child
+    sName As String         '   Operator name
+    sInfo As String         '   Information - varies by operator type
+    sTop As String          '   Top degree of parallelism description
+    sBtm As String          '   Bottom degree of parallelism description
+    sOpShape As String      '   Operator's text box shape name in drawing
+    sTPShape As String      '   Top Parallelism text box shape name in drawing
+    sBPShape As String      '   Bottom Parallelism text box shape name in drawing
+End Type
+                            ' Global variables
+Dim UserHelp As Workbook    '   Workbook shown to help the user
+Dim SourceBook As Workbook  '   Workbook containing Source
+Dim Source As Worksheet     '   Worksheet containing plan description(s)
+Dim NewBook As Boolean      '   True = start a new workbook for our plans
+Dim Album As Workbook       '   The workbook in which we're drawing plans
+Dim Tablet As Worksheet     '   The active drawing worksheet in Album
+Dim Feedback As String      '   User feedback message
+Dim Op() As Op_Def          '   Dynamic array of plan tree nodes
+Dim Indent() As Single      '   Current maximum occupied indent for each tree level
+Dim Self As Shape           '   Current node's drawing shape object
+Dim Mom As Shape            '   Parent node's drawing shape object
+Dim IFType As Variant       '   Initial index to Open dialog file type list
+Dim StmtName As Variant     '   Statement Name                          ' 19Aug2005
+Dim badExcel As Boolean     '   True if Excel version > Excel 2003 (11) ' 18Jul2008
+Dim TBHEIGHT As Single      '   s/b a constant, but varies by Excel vsn ' 18Jul2008
+Dim YGAP As Single          '   ditto                                   ' 18Jul2008
+Dim Dops As Long            '   Drawn operators (progress)              ' 06Aug2008
+Dim Tops As Long            '   Total operators (progress)              ' 06Aug2008
+Sub Auto_Open()             ' Add command to Tools menu, then Show UserHelp
+    With CommandBars("Worksheet Menu Bar").Controls("&Tools").Controls.Add(Type:=msoControlButton, temporary:=True)
+        .BeginGroup = True
+        .Style = msoButtonCaption
+        .Caption = "Draw Trafodion Plan(s)..."
+        .OnAction = "DrawAllPlans"
+        .Enabled = True
+        .Visible = True
+    End With
+    With CommandBars("Chart Menu Bar").Controls("&Tools").Controls.Add(Type:=msoControlButton, temporary:=True)
+        .BeginGroup = True
+        .Style = msoButtonCaption
+        .Caption = "Draw Trafodion Plan(s)..."
+        .OnAction = "DrawAllPlans"
+        .Enabled = True
+        .Visible = True
+    End With
+    With CommandBars("Worksheet Menu Bar").Controls("&Help").Controls.Add(Type:=msoControlButton, temporary:=True)
+        .BeginGroup = True
+        .Style = msoButtonCaption
+        .Caption = "Trafodion Plan Drawer Documentation"
+        .OnAction = "HelpUser"
+        .Enabled = True
+        .Visible = True
+    End With
+    With CommandBars("Chart Menu Bar").Controls("&Help").Controls.Add(Type:=msoControlButton, temporary:=True)
+        .BeginGroup = True
+        .Style = msoButtonCaption
+        .Caption = "Trafodion Plan Drawer Documentation"
+        .OnAction = "HelpUser"
+        .Enabled = True
+        .Visible = True
+    End With
+    HelpUser
+    IFType = 1  ' Initial file type list index
+End Sub ' Auto_Open
+Sub FixExcel2007TextboxAutoSizingSnaFu _
+    (ByRef TB As Shape, _
+     ByVal newHeight As Single)                                             ' 18Jul2008
+                                                                            ' 18Jul2008
+'   Compensate for Excel 2007 textbox autosizing deficiencies;              ' 18Jul2008
+'   see 18Jul2008/21Jul2008/23Jul2008/28Jul2008 change tag                  ' 21Jul2008 23Jul2008 28Jul2008
+'   comments above                                                          ' 18Jul2008
+                                                                            ' 18Jul2008
+    Dim oldH As Single                                                      ' 18Jul2008
+    Dim oldW As Single                                                      ' 18Jul2008
+    Dim TBLen As Long                                                       ' 18Jul2008
+    Dim i As Integer                                                        ' 06Jan2011
+                                                                            ' 18Jul2008
+    TBLen = Len(TB.TextFrame.Characters.Text)                               ' 18Jul2008
+    If TBLen = 1 Then                                                       ' 18Jul2008
+'       oldW = 12                                                           ' 18Jul2008 28Jul2008
+        oldW = 18                                                           ' 28Jul2008
+    Else                                                                    ' 18Jul2008
+        TB.Width = 6 * (TBLen + 3)                                          ' 18Jul2008
+        i = 0                                                               ' 06Jan2011
+        Do                                                                  ' 18Jul2008
+            oldH = TB.Height                                                ' 18Jul2008
+            oldW = TB.Width                                                 ' 18Jul2008
+            TB.Width = oldW - 6                                             ' 18Jul2008
+            TB.TextFrame.AutoSize = True                                    ' 18Jul2008
+            i = i + 1                                                       ' 06Jan2011
+        Loop Until (TB.Height > oldH) Or (TB.Width = oldW) Or (i > 100)     ' 18Jul2008 06Jan2011
+    End If                                                                  ' 18Jul2008
+    TB.TextFrame.AutoSize = False                                           ' 18Jul2008
+'   TB.Width = CSng((WorksheetFunction.RoundUp(oldW + 5, 0) \ 6) * 6)       ' 23Jul2008 28Jul2008
+    TB.Width = CSng((WorksheetFunction.RoundUp(oldW + 5, 0) \ 6) * 6) + 6   ' 28Jul2008
+'   If newHeight = TBHEIGHT Then                                            ' 18Jul2008 28Jul2008
+'       newHeight = TBHEIGHT + 3                                            ' 18Jul2008 28Jul2008
+'   End If                                                                  ' 18Jul2008 28Jul2008
+    TB.Left = Self.Left                                                     ' 19Dec2011 RS for Win7
+'   TB.Height = newHeight                                                   ' 18Jul2008 28Jul2008
+    TB.Height = newHeight + 6                                               ' 28Jul2008
+'   With TB.TextFrame                                                       ' 21Jul2008 23Jul2008
+'       .AutoMargins = False                                                ' 21Jul2008 23Jul2008
+'       .MarginBottom = 0                                                   ' 21Jul2008 23Jul2008
+'       .MarginLeft = 0                                                     ' 21Jul2008 23Jul2008
+'       .MarginRight = 0                                                    ' 21Jul2008 23Jul2008
+'       .MarginTop = 0                                                      ' 21Jul2008 23Jul2008
+'   End With                                                                ' 21Jul2008 23Jul2008
+End Sub ' FixExcel2007TextboxAutoSizingSnaFu                                ' 18Jul2008
+Sub HelpUser()
+    On Error GoTo NewHelp
+    UserHelp.Activate
+    Exit Sub
+NewHelp:
+    Application.ScreenUpdating = False
+    ThisWorkbook.Sheets("Usage").Copy
+    Set UserHelp = ActiveWorkbook
+    ThisWorkbook.Sheets("Annotated Drawing").Copy After:=UserHelp.Worksheets(UserHelp.Worksheets.Count)
+    ThisWorkbook.Sheets("Plan Fragments and Instances").Copy After:=UserHelp.Worksheets(UserHelp.Worksheets.Count)
+    UserHelp.Sheets("Usage").Activate
+    Application.ScreenUpdating = True
+    Exit Sub
+End Sub ' Helpuser
+Sub Auto_Close()            ' Close userHelp
+    On Error Resume Next
+    UserHelp.Close SaveChanges:=False
+    Set UserHelp = Nothing
+End Sub ' Auto_Close()
+Sub DrawAllPlans()          ' Draw all plans from all user-selected plan files
+    Dim vFileList As Variant
+    Dim vFile As Variant
+    Dim lTPlans As Long     ' Total number of plans drawn
+    Dim lFPlans As Long     ' Number of plans drawn from one file
+    
+    badExcel = Left(Application.Version, 2) > 11            ' 18Jul2008 (> Excel 2003)
+    If badExcel Then                                        ' 18Jul2008
+        TBHEIGHT = 15                                       ' 18Jul2008
+'       YGAP = 22.5                                         ' 18Jul2008 28Jul2008
+        YGAP = 27                                           ' 28Jul2008
+    Else                                                    ' 18Jul2008
+        TBHEIGHT = 12                                       ' 18Jul2008
+        YGAP = 18                                           ' 18Jul2008
+    End If                                                  ' 18Jul2008
+    
+    vFileList = Application.GetOpenFilename( _
+        FileFilter:="FIXEXPLN Plan Tables (*.qpd; *.qpd2),*.qpd;*.qpd2,MXCI Log Files (*.txt; *.log; *.sql),*.txt;*.log;*.sql,All Files (*.*),*.*", _
+        FilterIndex:=IFType, _
+        Title:="Select Trafodion Plan Description Files", _
+        MultiSelect:=True)
+    If TypeName(vFileList) = "Boolean" Then     ' User cancelled the Open
+        Exit Sub
+    End If
+    NewBook = True
+    lTPlans = 0
+    For Each vFile In vFileList
+        Select Case LCase(Right(vFile, 4))
+            Case ".qpd", "qpd2"
+                IFType = 1
+            Case ".txt", ".log", ".sql"
+                IFType = 2
+            Case Else
+                IFType = 3
+        End Select
+        lFPlans = 0
+        If OpenV1Source(PlanFile:=vFile) Then
+            lFPlans = DrawFilePlans(PlanFile:=vFile, _
+                                    alreadyDrawn:=lTPlans, _
+                                    mandatory:=False)
+'           lTPlans = lTPlans + lFPlans                                     ' 18Dec2008
+            CloseSource
+        End If
+        If OpenV2Source(PlanFile:=vFile) Then
+            lFPlans = lFPlans + DrawFilePlans(PlanFile:=vFile, _
+                                              alreadyDrawn:=lTPlans, _
+                                              mandatory:=False)             ' 18Dec2008
+'           lTPlans = lTPlans + lFPlans                                     ' 18Dec2008
+            CloseSource
+        End If
+        If OpenV3Source(PlanFile:=vFile) Then                               ' 18Dec2008
+            lFPlans = lFPlans + DrawFilePlans(PlanFile:=vFile, _
+                                              alreadyDrawn:=lTPlans, _
+                                              mandatory:=(lFPlans = 0))     ' 18Dec2008
+            CloseSource                                                     ' 18Dec2008
+        End If
+        lTPlans = lTPlans + lFPlans                                         ' 18Dec2008
+    Next vFile
+    If lTPlans > 1 Then                         ' Drew more than one plan
+        Album.Worksheets(1).Activate            ' Show first one drawn
+        Album.Worksheets(1).Name = Left(Album.Worksheets(1).Name, 25) & " <1>" ' 17Jun2005
+    End If
+    Set Album = Nothing                         ' Discard objects, in a (probably
+    Set Tablet = Nothing                        ' vain) attempt to stop Excel from
+    Set Self = Nothing                          ' getting an Access Violation and
+    Set Mom = Nothing                           ' terminating ungracefully
+    Application.ScreenUpdating = True           ' Refresh, juts in case
+End Sub ' DrawAllPlans
+Function OpenV1Source(ByVal PlanFile As Variant) As Boolean ' Return true if open succeeds, else
+    Dim bSuccess As Boolean                                 ' emit error message and return false
+    
+    bSuccess = True ' Optimist
+    Application.StatusBar = "Opening " & PlanFile & " ..."
+    Application.ScreenUpdating = False                      ' Keep mum while we work
+    On Error GoTo OpenV1SourceError
+    Workbooks.OpenText _
+        FileName:=PlanFile, _
+        Origin:=xlWindows, _
+        StartRow:=1, _
+        DataType:=xlFixedWidth, _
+        FieldInfo:= _
+            Array( _
+                  Array(V1_LCOFF, 1), _
+                  Array(V1_RCOFF, 1), _
+                  Array(V1_OPOFF, 1), _
+                  Array(V1_NMOFF, 1), _
+                  Array(V1_INOFF, 1), _
+                  Array(V1_CDOFF, 1), _
+                  Array(V1_XXOFF, 2) _
+                 )                                          ' XXOFF was 9 (skip)    ' 19Aug2005
+    If bSuccess Then
+        Set SourceBook = ActiveWorkbook
+        Set Source = ActiveSheet
+    End If
+    Application.StatusBar = False
+    OpenV1Source = bSuccess
+    Exit Function
+OpenV1SourceError:
+    ReportError ErrorText:="Unable to open " & PlanFile, Terminal:=True
+    bSuccess = False
+    Resume Next
+End Function ' OpenV1Source
+Function OpenV2Source(ByVal PlanFile As Variant) As Boolean ' Return true if open succeeds, else
+    Dim bSuccess As Boolean                                 ' emit error message and return false
+    
+    bSuccess = True ' Optimist
+    Application.StatusBar = "Opening " & PlanFile & " ..."
+    Application.ScreenUpdating = False                      ' Keep mum while we work
+    On Error GoTo OpenV2SourceError
+    Workbooks.OpenText _
+        FileName:=PlanFile, _
+        Origin:=xlWindows, _
+        StartRow:=1, _
+        DataType:=xlFixedWidth, _
+        FieldInfo:= _
+            Array( _
+                  Array(V2_LCOFF, 1), _
+                  Array(V2_RCOFF, 1), _
+                  Array(V2_OPOFF, 1), _
+                  Array(V2_NMOFF, 1), _
+                  Array(V2_EXOFF, 9), _
+                  Array(V2_DEOFF, 1), _
+                  Array(V2_CDOFF, 1), _
+                  Array(V2_XXOFF, 2) _
+                 )                                          ' XXOFF was 9 (skip)    ' 19Aug2005
+    If bSuccess Then
+        Set SourceBook = ActiveWorkbook
+        Set Source = ActiveSheet
+    End If
+    Application.StatusBar = False
+    OpenV2Source = bSuccess
+    Exit Function
+OpenV2SourceError:
+    ReportError ErrorText:="Unable to open " & PlanFile, Terminal:=True
+    bSuccess = False
+    Resume Next
+End Function ' OpenV2Source
+Function OpenV3Source(ByVal PlanFile As Variant) As Boolean ' Return true if open succeeds, else
+    Dim bSuccess As Boolean                                 ' emit error message and return false
+                                                            ' New function as of 18Dec2008
+    bSuccess = True ' Optimist
+    Application.StatusBar = "Opening " & PlanFile & " ..."
+    Application.ScreenUpdating = False                      ' Keep mum while we work
+    On Error GoTo OpenV3SourceError
+    Workbooks.OpenText _
+        FileName:=PlanFile, _
+        Origin:=xlWindows, _
+        StartRow:=1, _
+        DataType:=xlFixedWidth, _
+        FieldInfo:= _
+            Array( _
+                  Array(V3_LCOFF, 1), _
+                  Array(V3_RCOFF, 1), _
+                  Array(V3_OPOFF, 1), _
+                  Array(V3_NMOFF, 1), _
+                  Array(V3_EXOFF, 9), _
+                  Array(V3_DEOFF, 1), _
+                  Array(V3_CDOFF, 1), _
+                  Array(V3_XXOFF, 2) _
+                 )                                          ' XXOFF was 9 (skip)    ' 19Aug2005
+    If bSuccess Then
+        Set SourceBook = ActiveWorkbook
+        Set Source = ActiveSheet
+    End If
+    Application.StatusBar = False
+    OpenV3Source = bSuccess
+    Exit Function
+OpenV3SourceError:
+    ReportError ErrorText:="Unable to open " & PlanFile, Terminal:=True
+    bSuccess = False
+    Resume Next
+End Function ' OpenV3Source
+Sub ReportError(ByVal ErrorText As String, _
+                Optional ByVal Terminal As Boolean = False)
+    Beep
+    MsgBox _
+        Prompt:=ErrorText, _
+        Buttons:=vbOKOnly + vbExclamation + vbApplicationModal, _
+        Title:="Oops ..."
+    If Terminal Then
+        CloseSource
+        Application.ScreenUpdating = True
+    End If
+End Sub ' ReportError
+Sub CloseSource()
+    If TypeName(SourceBook) <> "Nothing" Then
+        SourceBook.Close SaveChanges:=False
+        Set SourceBook = Nothing
+        Set Source = Nothing
+    End If
+End Sub ' CloseSource
+Function DrawFilePlans(ByVal PlanFile As String, _
+                       ByVal alreadyDrawn As Long, _
+                       ByVal mandatory As Boolean) As Long  ' Draw all plans in current Source;
+    Dim lPlans As Long                                      ' return number of plans drawn
+    Dim lRowCnt As Long
+    Dim lColCnt As Long
+    Dim lCurrRow As Long
+    
+    lPlans = alreadyDrawn
+    lColCnt = Source.UsedRange.Columns.Count
+    lRowCnt = Source.UsedRange.Rows.Count
+    If lRowCnt > 4 And lColCnt >= INCOL Then ' At least enough for a 1-operator plan
+        lCurrRow = 1
+        Do
+            Application.ScreenUpdating = False
+            If FindPlan(SRow:=lCurrRow, ERow:=lRowCnt) Then
+                If LoadPlan(SRow:=lCurrRow, ERow:=lRowCnt) Then
+                    lPlans = lPlans + 1
+                    DrawPlan PFile:=PlanFile, PlanNum:=lPlans
+                    Application.ScreenUpdating = True
+                End If
+            End If
+        Loop Until lCurrRow >= lRowCnt
+    End If
+    If lPlans = alreadyDrawn And mandatory Then ' didn't find any, and we should have
+        ReportError ErrorText:=SourceBook.Name & " contains no valid plans."
+    End If
+    DrawFilePlans = lPlans - alreadyDrawn
+End Function ' DrawFilePlans
+Function FindPlan(ByRef SRow As Long, _
+                  ByVal ERow As Long) As Boolean    ' Find plan heading in current Source;
+    Dim bFound As Boolean                           ' return true if found, else return false.
+    Dim rr As Long                                                              ' 22Jun2005
+    
+    Feedback = "Searching for plan(s) ..."
+    Application.StatusBar = Feedback
+    bFound = False
+    Do
+        If Source.Cells(SRow, LCCOL).Text = "LC" Then
+            If Source.Cells(SRow, RCCOL).Text = "RC" Then
+                If Source.Cells(SRow, OPCOL).Text = "OP" Then
+                    If Source.Cells(SRow, NMCOL).Text = "OPERATOR" Then
+                        If Source.Cells(SRow, INCOL).Text = "INFORMATION" Or _
+                           Source.Cells(SRow, INCOL).Text = "DESCRIPTION" Then
+                            If Source.Cells(SRow, CDCOL).Text = "CARDNALITY" Or _
+                               Source.Cells(SRow, CDCOL).Text = "CARD" And _
+                               Left(Source.Cells(SRow + 1, CDCOL), 7) = "-------" Then ' 18Dec2008
+                                If ERow >= SRow + 3 Then
+                                    StmtName = Source.Cells(SRow, XXCOL).Text   ' 19Aug2005
+                                    rr = rootRow(HRow:=SRow, slop:=3)           ' 22Jun2005
+                                    If rr > 0 Then                              ' 22Jun2005
+                                        SRow = rr                               ' 22Jun2005
+                                        bFound = True
+                                        Exit Do
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+        SRow = SRow + 1
+        If SRow Mod 1000 = 0 Then
+            Feedback = Feedback & "."
+            Application.StatusBar = Feedback
+        End If
+    Loop Until SRow >= ERow
+    Application.StatusBar = False
+    FindPlan = bFound
+End Function 'FindPlan
+Function rootRow(ByVal HRow As Long, _
+                 ByVal slop As Long) As Long    ' Find "root" within slop rows of the header
+    Dim r As Long                               ' row; return found row # or zero if not found;
+                                                ' New function as of 22Jun2005.
+    rootRow = 0
+    For r = (HRow + 1) To (HRow + slop) Step 1
+        If Source.Cells(r, NMCOL).Text = "root" Then
+            rootRow = r
+            If StmtName = "" Then                               ' 19Aug2005
+                StmtName = "Statement Name: <unknown>"          ' 19Aug2005
+            Else                                                ' 19Aug2005
+                StmtName = WorksheetFunction.Proper(StmtName) & _
+                           ": " & Source.Cells(r, XXCOL).Text   ' 19Aug2005
+            End If                                              ' 19Aug2005
+            Exit For
+        End If
+    Next r
+    Exit Function
+End Function
+Function LoadPlan(ByRef SRow As Long, _
+                  ByVal ERow As Long) As Boolean    ' Load current plan from current Source
+    Dim iCurrOp As Integer                          ' Return true if loaded OK, else return false
+    Dim iNumOps As Integer
+    Dim vLC As Variant
+    Dim vRC As Variant
+
+    Feedback = "Loading plan ..."
+    Application.StatusBar = Feedback
+    On Error GoTo PlanError                     ' In case it's messed up
+    iNumOps = Source.Cells(SRow, OPCOL).Value
+    ReDim Op(iNumOps)                           ' Size Op array to hold the plan
+    Op(iNumOps).iParent = 0                     ' Root has no parent
+    Do
+        iCurrOp = Source.Cells(SRow, OPCOL).Value
+        vLC = Source.Cells(SRow, LCCOL).Value
+        vRC = Source.Cells(SRow, RCCOL).Value
+        If TypeName(vLC) = "String" Then        ' "." indicates no left child
+            Op(iCurrOp).iLeft = 0
+        Else
+            Op(iCurrOp).iLeft = vLC
+            Op(vLC).iParent = iCurrOp
+        End If
+        If TypeName(vRC) = "String" Then        ' "." indicates no right child
+            Op(iCurrOp).iRight = 0
+        Else
+            Op(iCurrOp).iRight = vRC
+            Op(vRC).iParent = iCurrOp
+        End If
+        Op(iCurrOp).sName = Source.Cells(SRow, NMCOL).Value
+        Op(iCurrOp).sInfo = Source.Cells(SRow, INCOL).Value
+        Op(iCurrOp).dCard = Source.Cells(SRow, CDCOL).Value
+        SRow = SRow + 1
+    Loop Until iCurrOp = 1 Or SRow > ERow
+    If iCurrOp = 1 Then
+        LoadPlan = True
+        Application.StatusBar = False
+        Exit Function
+    End If
+PlanError:
+    ReportError ErrorText:=SourceBook.Name & " appears to contain an incomplete or erroneous plan -" & _
+                                             " found at row " & SRow & "."
+    LoadPlan = False
+    Application.StatusBar = False
+    Exit Function
+End Function ' LoadPlan
+Sub DrawPlan(ByVal PFile As String, _
+             ByVal PlanNum As Long)         ' Draw plan loaded by LoadPlan
+    
+    If NewBook Then                         ' Need to start a new workbook
+        Workbooks.Add xlWBATWorksheet
+        Set Album = ActiveWorkbook
+        NewBook = False
+    Else                                    ' Add new worksheet to end
+        Album.Worksheets.Add.Move After:=Album.Worksheets(Album.Worksheets.Count)
+    End If
+    Set Tablet = Album.ActiveSheet          ' Set our current drawing tablet
+    ReDim Indent(1)                         ' Resize our level intentation array
+    Indent(1) = -XGAP                       ' Nothing there yet
+    Feedback = "Drawing ... "               ' 06Aug2008
+    Dops = 0                                ' 06Aug2008
+    Tops = UBound(Op)                       ' 06Aug2008
+    AddOperator Node:=UBound(Op), Level:=1  ' Start at root, then recurse
+    Tablet.Shapes.SelectAll
+    If Tablet.Shapes.Count > 1 Then         ' 22Mar2002
+        Selection.Group.Select
+    End If                                  ' 22Mar2002
+    With ActiveWindow
+        .DisplayGridlines = False
+        .DisplayHeadings = False
+    End With
+    If ActiveWindow.UsableWidth < Selection.Width _
+    Or ActiveWindow.UsableHeight < Selection.Height Then
+        ActiveWindow.Zoom = True            ' Fit whole plan in one window
+    End If
+    If Selection.Width > (Selection.Height * 1.1) _
+    And Selection.Width > (PaperNarrowPoints(Tablet) * 1.1) Then
+        Tablet.PageSetup.Orientation = xlLandscape
+    Else
+        Tablet.PageSetup.Orientation = xlPortrait
+    End If
+    If PlanNum > 1 Then
+        Tablet.Name = Left(Source.Name, 25) & " <" & PlanNum & ">" ' 17Jun2005
+    Else
+        Tablet.Name = Left(Source.Name, 31)
+    End If
+    With Tablet.PageSetup
+        .Zoom = False
+        .FitToPagesTall = 1
+        .FitToPagesWide = 1
+        .CenterHorizontally = True
+        .CenterHeader = "&B&12" & Tablet.Name
+        .CenterFooter = "Drawn [" & Format(Date, "Short Date") & " @ " & _
+                        Format(Time, "Short Time") & "] from " & PFile
+    End With
+    Range("Z1").Select                      ' We're done
+    Tablet.DisplayPageBreaks = False
+    Application.StatusBar = False
+    Exit Sub
+End Sub ' DrawPlan
+Sub AddOperator(ByVal Node As Integer, _
+                ByVal Level As Integer)                     ' Add one plan operator
+    Dim Parent As Integer
+    Dim X As Single                                         ' Initializes to 0
+    Dim Y As Single                                         ' Initializes to 0
+    
+    Dops = Dops + 1                                         ' 06Aug2008
+    Application.StatusBar = Feedback & _
+                            ((Dops * 100) \ Tops) & "%"     ' 06Aug2008
+    If Level > UBound(Indent) Then                          ' Nothing at this level yet
+        ReDim Preserve Indent(Level)                        ' Create new Indent instance
+        Indent(Level) = -XGAP                               ' Mark as empty
+    End If
+    Parent = Op(Node).iParent                               ' Get my parent's node number
+    Op(Node).iLevel = Level                                 ' Save my level number
+    Op(Node).sOpShape = "Node" & Node                       ' Name for my shape
+    With Tablet.Shapes.AddLabel(Orientation:=msoTextOrientationHorizontal, _
+                                Left:=X, _
+                                Top:=Y, _
+                                Width:=5 * 72, _
+                                Height:=4 * TBHEIGHT)       ' 18Jul2008
+        With .TextFrame                                     ' 18Jul2008
+            .Orientation = msoTextOrientationHorizontal     ' 18Jul2008
+            .HorizontalAlignment = xlHAlignCenter           ' 18Jul2008
+            .VerticalAlignment = xlVAlignCenter             ' 18Jul2008
+            With .Characters                                ' 18Jul2008
+                .Text = OpDescription(Node)                 ' 18Jul2008
+                With .Font                                  ' 18Jul2008
+                    .Name = "Arial"                         ' 18Jul2008
+                    .FontStyle = "Regular"                  ' 18Jul2008
+                    .Size = 8                               ' 18Jul2008
+                End With                                    ' 18Jul2008
+            End With                                        ' 18Jul2008
+            .AutoSize = True                                ' 18Jul2008
+        End With                                            ' 18Jul2008
+        .Fill.Visible = msoFalse                            ' 18Jul2008
+        .Line.Visible = msoFalse                            ' 18Jul2008
+        .Placement = xlFreeFloating                         ' 18Jul2008
+        .LockAspectRatio = msoFalse                         ' 18Jul2008
+        .Name = Op(Node).sOpShape                           ' 18Jul2008
+    End With                                                ' 18Jul2008
+    Set Self = Tablet.Shapes(Op(Node).sOpShape)             ' Self = my shape object
+    Select Case Op(Node).sName                              ' Special case(s)
+'       Case "root", "esp_exchange", "partition_access"     ' Root of a segment  18Dec2008
+        Case "root", "partition_access"                     ' Root of a segment  18Dec2008
+            With Self.TextFrame.Characters.Font             ' 18Jul2008
+                .Underline = xlUnderlineStyleSingle         ' by underlining, and
+                .Color = RGB(0, 0, 255)                     ' turning it blue
+            End With
+        Case "esp_exchange"                                 ' 18Dec2008
+            With Self.TextFrame.Characters.Font             ' 18Dec2008
+                .Underline = xlUnderlineStyleSingle         ' 18Dec2008
+'               .Bold = True                                ' 18Dec2008
+                .Color = RGB(255, 0, 0)                     ' 18Dec2008
+            End With                                        ' 18Dec2008
+        Case Else
+    End Select
+    ' Identify the cardinality (leading part of operator name) text
+    With Self.TextFrame.Characters(Start:=1, _
+                                   Length:=Len(Format(Op(Node).dCard, "Scientific"))).Font  ' 18Jul2008
+        .Underline = xlUnderlineStyleNone                   ' In case operator was underlined
+'       .Bold = False ' in case operator was bolded         ' 18Dec2008
+        .ColorIndex = 54                                    ' turn it plum
+    End With
+    If badExcel Then                                        ' 18Jul2008
+        FixExcel2007TextboxAutoSizingSnaFu _
+            TB:=Self, newHeight:=TBHEIGHT * 2               ' 18Jul2008
+    Else                                                    ' 18Jul2008
+        Self.Width = CSng((WorksheetFunction.RoundUp( _
+                            Self.Width + 5, 0) \ 6) * 6)    ' 23Jul2008
+        Self.Height = TBHEIGHT * 2                          ' 18Jul2008
+    End If                                                  ' 18Jul2008
+    If Parent > 0 Then                                      ' I have a parent
+        Set Mom = Tablet.Shapes(Op(Parent).sOpShape)        ' Mom = parent's shape object
+'       Y = Mom.Top + (TBHEIGHT * 2) + YGAP                 ' Vertical placement (* 2 because we added cardinality) 28Jul2008
+        Y = Mom.Top + Mom.Height + YGAP                     ' 28Jul2008
+        If Op(Parent).iRight > 0 _
+        And Node = Op(Parent).iLeft Then                    ' I'm the left child of a binary node
+            X = Mom.Left + (Mom.Width / 2) - (Self.Width + (XGAP / 2))
+        Else                                                ' I'm a right or only child
+            X = Mom.Left + ((Mom.Width - Self.Width) / 2)   ' Horizontal (desired) placement
+        End If
+    End If
+    X = WorksheetFunction.Max(X, Indent(Level) + XGAP)      ' Ensure a space for me
+    With Self                                               ' Move me there
+        .Top = Y
+        .Left = X
+    End With
+    Indent(Level) = Self.Left + Self.Width                  ' Update level's indentation
+    If Parent > 0 Then                                      ' I have a parent - hook me up
+'       Tablet.Shapes.AddConnector(msoConnectorStraight, 0, 0, 0, 0).Select
+'       Selection.ShapeRange.ConnectorFormat.BeginConnect Tablet.Shapes(Op(Parent).sOpShape), 3
+'       Selection.ShapeRange.ConnectorFormat.EndConnect Tablet.Shapes(Op(Node).sOpShape), 1
+        With Tablet.Shapes.AddConnector(msoConnectorStraight, 0, 0, 0, 0)   ' 28Jul2008
+            With .ConnectorFormat                                           ' 28Jul2008
+                .BeginConnect Tablet.Shapes(Op(Parent).sOpShape), 3         ' 28Jul2008
+                .EndConnect Tablet.Shapes(Op(Node).sOpShape), 1             ' 28Jul2008
+            End With                                                        ' 28Jul2008
+        End With                                                            ' 28Jul2008
+        If Op(Parent).bParallel Then                        ' Parent has parallelism
+            Tablet.Shapes(Op(Parent).sBPShape).ZOrder msoBringToFront   ' Bring bottom degree
+        End If                                                          ' box to foreground
+        If Self.Left + (Self.Width / 2) > Mom.Left + (Mom.Width / 2) Then
+            AlignParents Lineage:=Node
+        End If
+    End If
+    If Op(Node).bParallel Then                              ' Must add top/bottom info
+        AddParallelism Node:=Node, bTop:=True
+        AddParallelism Node:=Node, bTop:=False
+    End If
+    If Op(Node).iLeft > 0 Then                              ' I have a left child
+        AddOperator Node:=Op(Node).iLeft, Level:=Level + 1
+    End If
+    If Op(Node).iRight > 0 Then                             ' I have a right child
+        AddOperator Node:=Op(Node).iRight, Level:=Level + 1
+    End If
+End Sub ' AddOperator
+Sub AlignParents(ByVal Lineage As Integer)                  ' Align all ancestors
+    Dim Parent As Integer
+    Dim M As Single
+    Dim Dad As Shape
+    Dim LC As Shape
+    Dim RC As Shape
+    
+    Do
+        Parent = Op(Lineage).iParent
+        If Parent > 0 Then
+            Set Dad = Tablet.Shapes(Op(Parent).sOpShape)
+            Set LC = Tablet.Shapes(Op(Op(Parent).iLeft).sOpShape)
+            If Lineage = Op(Parent).iRight Then
+                Set RC = Tablet.Shapes(Op(Lineage).sOpShape)
+                M = (LC.Left + RC.Left + ((LC.Width + RC.Width) / 2)) / 2
+            Else
+                M = LC.Left + (LC.Width / 2)
+            End If
+            M = M - (Dad.Left + (Dad.Width / 2))
+            If M < 0 Then
+                M = WorksheetFunction.Max(M, -Dad.Left)
+            End If
+            Dad.IncrementLeft M
+            If Op(Parent).bParallel Then
+                Tablet.Shapes(Op(Parent).sTPShape).IncrementLeft M
+                Tablet.Shapes(Op(Parent).sBPShape).IncrementLeft M
+            End If
+            Indent(Op(Parent).iLevel) = Dad.Left + Dad.Width
+        End If
+        Lineage = Op(Lineage).iParent
+    Loop Until Lineage = 0
+End Sub ' AlignParents
+Function OpDescription(ByVal Node As Integer) As String     ' Build description text
+    Dim Desc As String
+    
+    Op(Node).bParallel = False                              ' Until proven otherwise
+    Desc = Op(Node).sName                                   ' 19Aug2005
+    If Node = UBound(Op) Then ' top of tree - identify stmt ' 19Aug2005
+        Desc = StmtName & " - " & Desc                      ' 19Aug2005
+    End If                                                  ' 19Aug2005
+    Desc = Format(Op(Node).dCard, "Scientific") & Chr(10) & _
+            Desc & " [" & Node & "]"                        ' 19Aug2005
+    Select Case Op(Node).sName
+        Case "cursor_delete", _
+             "cursor_update", _
+             "file_scan", _
+             "trafodion_scan", _
+             "file_scan_unique", _
+             "trafodion_load", _
+             "index_scan", _
+             "trafodion_index_scan", _
+             "trafodion_vsbb_scan", _
+             "trafodion_vsbb_upser", _
+             "index_scan_unique", _
+             "insert", _
+             "insert_vsbb", _
+             "subset_delete", _
+             "subset_update", _
+             "trafodion_update", _
+             "trafodion_delete", _
+             "trafodion_insert", _
+             "trafodion_vsbb_updat", _
+             "trafodion_vsbb_delet", _
+             "unique_delete", _
+             "unique_update"        ' Add Info (table/index name)
+            Desc = Desc & " - " & Op(Node).sInfo
+        Case "esp_exchange", _
+             "split_top"            ' Parse Info into top and bottom parallelism degrees/functions
+            Op(Node).bParallel = True
+            On Error GoTo FixInfo   ' CBH 10/26/2000
+            Op(Node).sTop = Left(Op(Node).sInfo, WorksheetFunction.Find(":", Op(Node).sInfo) - 1)
+            Op(Node).sBtm = Mid(Op(Node).sInfo, WorksheetFunction.Find(":", Op(Node).sInfo) + 1)
+        Case Else
+    End Select
+    OpDescription = Desc
+    Exit Function                                           ' CBH 10/26/2000
+FixInfo:                                                    ' CBH 10/26/2000
+    Op(Node).sInfo = "( ? ):( ? )"                          ' CBH 10/26/2000
+    Resume                                                  ' CBH 10/26/2000
+End Function ' OpDescription
+Sub AddParallelism(ByVal Node As Integer, ByVal bTop As Boolean)    ' Add top/bottom info
+    Dim X As Single
+    Dim Y As Single
+    Dim sText As String
+    Dim sName As String
+    Dim pBox As Shape                                       ' 18Jul2008
+    
+    X = Self.Left
+    If bTop Then
+        sText = Op(Node).sTop
+        sName = "Top" & Node
+        Op(Node).sTPShape = sName
+    Else
+        sText = Op(Node).sBtm
+        sName = "Btm" & Node
+        Op(Node).sBPShape = sName
+    End If
+    With Tablet.Shapes.AddLabel(Orientation:=msoTextOrientationHorizontal, _
+                                Left:=X, _
+                                Top:=Y, _
+                                Width:=5 * 72, _
+                                Height:=4 * TBHEIGHT)       ' 18Jul2008
+        With .TextFrame                                     ' 18Jul2008
+            .Orientation = msoTextOrientationHorizontal     ' 18Jul2008
+            .HorizontalAlignment = xlHAlignCenter           ' 18Jul2008
+            .VerticalAlignment = xlVAlignCenter             ' 18Jul2008
+            With .Characters                                ' 18Jul2008
+                .Text = sText                               ' 18Jul2008
+                With .Font                                  ' 18Jul2008
+                    .Name = "Arial"                         ' 18Jul2008
+                    .FontStyle = "Italic"                   ' 18Jul2008
+                    .Size = 8                               ' 18Jul2008
+                    .Color = RGB(0, 128, 0) ' mid-green     ' 18Jul2008
+                End With                                    ' 18Jul2008
+            End With                                        ' 18Jul2008
+            .AutoSize = True                                ' 18Jul2008
+        End With                                            ' 18Jul2008
+        .Fill.Visible = msoTrue                             ' 18Jul2008
+        .Fill.Solid                                         ' 18Jul2008
+        .Fill.ForeColor.SchemeColor = 65                    ' 18Jul2008
+        .Fill.Transparency = 0#                             ' 18Jul2008
+        .Line.Visible = msoFalse                            ' 18Jul2008
+        .LockAspectRatio = msoFalse                         ' 18Jul2008
+        .Placement = xlFreeFloating                         ' 18Jul2008
+        .Name = sName                                       ' 18Jul2008
+    End With                                                ' 18Jul2008
+    Set pBox = Tablet.Shapes(sName)                         ' 18Jul2008
+    If badExcel Then                                        ' 18Jul2008
+        FixExcel2007TextboxAutoSizingSnaFu _
+            TB:=pBox, newHeight:=TBHEIGHT                   ' 18Jul2008
+    Else                                                    ' 18Jul2008
+        pBox.Height = TBHEIGHT                              ' 18Jul2008
+        pBox.Width = CSng((WorksheetFunction.RoundUp( _
+                           pBox.Width + 5, 0) \ 6) * 6)     ' 28Jul2008
+    End If                                                  ' 18Jul2008
+    pBox.IncrementLeft ((Self.Width - pBox.Width) / 2)      ' 18Jul2008
+    If bTop Then                                            ' 18Jul2008
+        pBox.Top = Self.Top - ((YGAP + pBox.Height) / 2)    ' 18Jul2008
+    Else                                                    ' 18Jul2008
+        pBox.Top = Self.Top + Self.Height + ((YGAP - pBox.Height) / 2)  ' 18Jul2008
+    End If                                                  ' 18Jul2008
+End Sub ' AddParallelism
+Function PaperNarrowPoints(Drawing As Worksheet) As Double
+    Dim NP As Double
+    
+    Select Case Drawing.PageSetup.PaperSize
+        Case xlPaperExecutive
+            NP = Application.InchesToPoints(7.5)
+        Case xlPaperLetter, xlPaperLetterSmall, xlPaperLegal, xlPaperFolio, xlPaperNote
+            NP = Application.InchesToPoints(8.5)
+        Case xlPaper10x14
+            NP = Application.InchesToPoints(10#)
+        Case xlPaperTabloid, xlPaper11x17
+            NP = Application.InchesToPoints(11#)
+        Case xlPaperA5
+            NP = Application.CentimetersToPoints(14.8)
+        Case xlPaperB5
+            NP = Application.CentimetersToPoints(18.2)
+        Case xlPaperA4, xlPaperA4Small
+            NP = Application.CentimetersToPoints(21#)
+        Case xlPaperQuarto
+            NP = Application.CentimetersToPoints(21.5)
+        Case xlPaperB4
+            NP = Application.CentimetersToPoints(25#)
+        Case Else
+            NP = Application.InchesToPoints(8.5)     ' Any better default?
+    End Select
+    PaperNarrowPoints = NP - (Drawing.PageSetup.LeftMargin + Drawing.PageSetup.RightMargin)
+End Function ' PaperNarrowPoints

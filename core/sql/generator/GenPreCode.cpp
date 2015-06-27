@@ -10450,7 +10450,9 @@ RelExpr * PhysicalTableMappingUDF::preCodeGen(Generator * generator,
 
   for(Int32 i = 0; i < getArity(); i++)
   {
-    getChildInfo(i)->getOutputIds().replaceVEGExpressions(availableValues, externalInputs);
+    getChildInfo(i)->getOutputIds().replaceVEGExpressions(
+         availableValues,
+         getGroupAttr()->getCharacteristicInputs());
   }
 
   planInfo_ = getPhysicalProperty()->getUDRPlanInfo();
