@@ -1,3 +1,23 @@
+/*
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+*/
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -7,6 +27,7 @@ import java.lang.*;
 
 public class TestBigCol
 {
+	/* Test varchar col size 200k, insert 200k long data */
 	@Test
 	public void JDBCBigCol1() throws InterruptedException, SQLException
 	{
@@ -46,6 +67,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test 200k long varchar col, data < and > 32k length */
 	@Test
 	public void JDBCBigCol2() throws InterruptedException, SQLException
 	{
@@ -85,6 +107,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test 200k long varchar col, using bound params */
 	@Test
 	public void JDBCBigCol3() throws InterruptedException, SQLException
 	{
@@ -135,6 +158,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test 200k varchar col, data < 32k, using bound params */
 	@Test
 	public void JDBCBigCol3a() throws InterruptedException, SQLException
 	{
@@ -185,6 +209,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k, bound param, data 200k length */
 	@Test
 	public void JDBCBigCol4() throws InterruptedException, SQLException
 	{
@@ -228,6 +253,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col 200k size, upsert, data 200k length*/
 	@Test
 	public void JDBCBigCol5() throws InterruptedException, SQLException
 	{
@@ -268,6 +294,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar 200k col size, upsert, data < and > 32k */
 	@Test
 	public void JDBCBigCol6() throws InterruptedException, SQLException
 	{
@@ -307,6 +334,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k size, upsert, bound param, data < 32k length, multiple rows */
 	@Test
 	public void JDBCBigCol7() throws InterruptedException, SQLException
 	{
@@ -357,6 +385,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k, insert data using bound params, data < and > 32k length */
 	@Test
 	public void JDBCBigCol8() throws InterruptedException, SQLException
 	{
@@ -407,6 +436,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k, upsert using bound params, single row, 200k long data */
 	@Test
 	public void JDBCBigCol9() throws InterruptedException, SQLException
 	{
@@ -450,6 +480,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k, insert using bound params, single row, 200k long data */
 	@Test
 	public void JDBCBigCol10() throws InterruptedException, SQLException
 	{
@@ -493,6 +524,7 @@ public class TestBigCol
 	 	}
 	}
 
+	/* Test varchar col size 200k, insert, delete using bound params, multiple rows, 200k long data */
 	@Test
 	public void JDBCBigCol11() throws InterruptedException, SQLException
 	{
@@ -549,7 +581,8 @@ public class TestBigCol
 			fail("Exception in JDBC varchar 200k test 11.." + ex.getMessage());
 	 	}
 	}
-	
+
+	/* Test varchar col size 200k, insert, update using bound params, multiple rows, 200k long data */	
 	public void JDBCBigCol12() throws InterruptedException, SQLException
 	{
 		System.out.println("JDBC varchar 200k test 12..");
@@ -615,6 +648,7 @@ public class TestBigCol
 	 	}
 	}
 	
+	/* Test varchar col size 200k, using batch insert, 200k long data */
 	@Test
 	public void JDBCBigColBatch1() throws InterruptedException, SQLException 
 	{
@@ -729,6 +763,7 @@ public class TestBigCol
         }
 	}
 
+	/* Test varchar col size 200k, upsert using batch, 200k long data */
 	@Test
 	public void JDBCBigColBatch2() throws InterruptedException, SQLException 
 	{
@@ -847,6 +882,7 @@ public class TestBigCol
         }
 	}
 
+	/* Test varchar col size 200k, insert/delete using batch, 200k long data */
 	@Test
 	public void JDBCBigColBatch3() throws InterruptedException, SQLException 
 	{
@@ -998,6 +1034,7 @@ public class TestBigCol
         }
 	}
 
+	/* Test varchar col size 200k, insert using batch, multiple >32k varchar cols, 200k long data */
 	@Test
 	public void JDBCBigColBatch4() throws InterruptedException, SQLException 
 	{
@@ -1105,7 +1142,7 @@ public class TestBigCol
         }
 	}
 
-	//BATCH DELETE
+	/* Test varchar col size 200k, batch insert and delete, multiple >32k varchar cols, 200k long data */
 	@Test
 	public void JDBCBigColBatch5() throws InterruptedException, SQLException 
 	{
@@ -1261,7 +1298,7 @@ public class TestBigCol
         }
 	}
 
-	//BATCH UPSERT/UPDATE
+	/* Test varchar col size 200k, batch upsert/update, multiple >32k varchar cols, 200k long data */
 	@Test
 	public void JDBCBigColBatch6() throws InterruptedException, SQLException 
 	{
