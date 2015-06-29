@@ -741,6 +741,26 @@ short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
     return lv_error;
 }
 
+
+short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions, int pv_tbloptslen, int pv_tbloptscnt, long pv_transid)
+{
+    short lv_error = FEOK;
+    TM_Transid lv_transid((TM_Native_Type) pv_transid);
+    TMlibTrace(("TMLIB_TRACE : ALTERTABLE ENTRY: txid: (%d,%d), tablename: %s\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname), 2);
+
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+    TM_Transaction *lp_trans = gp_trans_thr->get_current();
+    lv_error = lp_trans->alter_table(pv_tblname, pv_tblname_len, pv_tbloptions, pv_tbloptslen, pv_tbloptscnt);
+
+    TMlibTrace(("TMLIB_TRACE : ALTERTABLE EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
+
+    return lv_error;
+}
+
+
 // -------------------------------------------------------------------
 // DROPTABLE
 //

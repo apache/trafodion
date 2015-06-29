@@ -86,6 +86,7 @@ public class RMInterface {
     private native void createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, int numSplits, int keyLength, long transID, byte[] tblName);
     private native void dropTableReq(byte[] lv_byte_tblname, long transID);
     private native void truncateOnAbortReq(byte[] lv_byte_tblName, long transID); 
+    private native void alterTableReq(byte[] lv_byte_tblname, Object[] tableOptions, long transID);
 
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");
@@ -245,7 +246,7 @@ public class RMInterface {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             LOG.error("truncateTableOnAbort error: " + sw.toString());
-            throw new IOException("createTable exception. Unable to create table.");
+            throw new IOException("truncateTableOnAbort exception. Unable to create table.");
         }
     }
 
@@ -263,6 +264,18 @@ public class RMInterface {
             LOG.error("dropTable error " + sw.toString());
         }
     }
+
+    public void alter(String tblName, Object[] tableOptions, long transID) throws IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("alter ENTER: ");
+
+        try {
+            byte[] lv_byte_tblname = tblName.getBytes();
+            alterTableReq(lv_byte_tblname, tableOptions, transID);
+        } catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("Unable to alter table, exception: " + e);
+            throw new IOException("alter exception. Unable to create table.");
+        }
+    }   
 
     static public void clearTransactionStates(final long transactionID) {
       if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);

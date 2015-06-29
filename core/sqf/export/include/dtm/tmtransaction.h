@@ -52,6 +52,7 @@ public:
     short create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname, char** pv_keys, int pv_numsplits, int pv_keylen);
     short reg_truncateonabort(char* pa_tblname, int pv_tblname_len);
     short drop_table(char* pa_tblname, int pv_tblname_len);
+    short alter_table(char * pa_tblname, int pv_tblname_len, char ** pv_tbloptions, int pv_tbloptslen, int pv_tbloptscnt);
     TM_Transaction *release();
     short status(short *status);
     TM_Transid * getTransid();

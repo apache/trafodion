@@ -130,6 +130,7 @@ private:
 	  JM_NODEDOWN,
       JM_NODEUP,
       JM_CREATETABLE,
+      JM_ALTERTABLE,
       JM_REGTRUNCABORT,
       JM_DROPTABLE,
       JM_RQREGINFO,
@@ -185,7 +186,14 @@ public:
                            char** pv_keys,
                            int pv_numsplits,
                            int pv_keylen);
+   int alterTable(int64 pv_transid,
+                        const char* pa_tblname,
+                        int pv_tblname_len,
+                        char ** buffer_tblopts,
+                        int pv_numtblopts,
+                        int pv_tbloptslen);
    jobjectArray convertToByteArrayObjectArray(char **array, int numElements, int elementLen);
+   jobjectArray convertToStringObjectArray(const char **textArray, int arrayLen);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);
    int registerRegion(int64 pv_transid,
             int64 pv_startid,
