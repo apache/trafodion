@@ -15028,23 +15028,27 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
 
   // colocated ESP logic
   if ( (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON) AND
-        ixDescPartFunc AND partnsScaled ) {
+        ixDescPartFunc ) {
     // get region nodeMap which has regions nodeIds populated
-    const NodeMap* regNodeMap = ixDescPartFunc->getNodeMap();
     NodeMap* myNodeMap = (NodeMap*) myPartFunc->getNodeMap();
+    const NodeMap* regNodeMap = ixDescPartFunc->getNodeMap();
+
+    Int32 m=  myNodeMap->getNumEntries();
+    Int32 n = regNodeMap->getNumEntries();
+
     // m : n allocation strategy where m < n using most popular node num
-    if (numESPs < oldPartns) {
-      Lng32 regionsPerEsp = oldPartns / numESPs;
+    if (m < n) {
+      Lng32 regionsPerEsp = n / m;
       Lng32 beginPos = 0;
-      for (Lng32 index = 0; (index < numESPs && beginPos < oldPartns); index++) {
+      for (Lng32 index = 0; (index < m && beginPos < n); index++) {
         Lng32 endPos = beginPos + regionsPerEsp;
         Lng32 popularNodeId =
           regNodeMap->getPopularNodeNumber(beginPos, endPos);
         myNodeMap->setNodeNumber(index, popularNodeId);
         beginPos = endPos;
       }
-    } else if (numESPs == oldPartns ) { // 1:1 allocation strategy
-      for (Lng32 index = 0; index < oldPartns; index++) {
+    } else if (m == n) { // 1:1 allocation strategy
+      for (Lng32 index = 0; index < n; index++) {
         myNodeMap->setNodeNumber(index, regNodeMap->getNodeNumber(index));
       }
     }

@@ -2184,7 +2184,12 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table
      ARRAY(const char *) nodeNames(heap, partns);
      if (table->getRegionsNodeName(partns, nodeNames)) {
        for (Int32 p=0; p < partns; p++) {
-         const NAString node (nodeNames[p], heap);
+         NAString node(nodeNames[p], heap);
+         // remove anything after node name
+         size_t size = node.index('.');
+          if (size && size != NA_NPOS)
+            node.remove(size);
+
          // populate NodeMape with region server node ids
          nodeMap->setNodeNumber(p, nodeMap->mapNodeNameToNodeNum(node));
        }

@@ -2742,6 +2742,7 @@ HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
   if (js_tblName == NULL)
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBTI_PARAM));
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_PARAM;
   }
 
@@ -2776,12 +2777,14 @@ HBC_RetCode HBaseClient_JNI::getRegionsNodeName(const char* tblName,
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionsNodeName()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionsNodeName()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
   jenv_->PopLocalFrame(NULL);
