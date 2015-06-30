@@ -3389,7 +3389,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const LIST(HbaseStr)& row
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *cols, Int64 timestamp)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
 
@@ -3406,9 +3406,9 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
   jobjectArray j_cols = NULL;
-  if (!cols.isEmpty())
+  if (cols != NULL && !cols->isEmpty())
   {
-     j_cols = convertToByteArrayObjectArray(cols);
+     j_cols = convertToByteArrayObjectArray(*cols);
      if (j_cols == NULL)
      {
         getExceptionDetails();

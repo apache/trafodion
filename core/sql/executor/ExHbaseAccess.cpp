@@ -1005,24 +1005,27 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 0;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowDirect()
+Lng32 ExHbaseAccessTcb::createSQRowDirect(Int64 *latestRowTimestamp)
 {
   short retcode = 0;
      
   if (hbaseAccessTdb().alignedFormat())
-    retcode = createSQRowFromAlignedFormat();
+    retcode = createSQRowFromAlignedFormat(latestRowTimestamp);
   else
     {
-      if (hbaseAccessTdb().multiVersions())
+      if (hbaseAccessTdb().multiVersions()) {
+        if (latestRowTimestamp != NULL)
+           *latestRowTimestamp = -1;
         retcode = createSQRowFromHbaseFormatMulti();
+      }
       else
-        retcode = createSQRowFromHbaseFormat();
+        retcode = createSQRowFromHbaseFormat(latestRowTimestamp);
     }
 
    return retcode;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
+Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
 {
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
@@ -1046,7 +1049,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 
   // initialize latest timestamp to 0 for every column
   memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
-
+  if (latestRowTimestamp != NULL)
+     *latestRowTimestamp = -1;
   // initialize latest version to 0 for every column
   memset(latestVersionNumForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
   
@@ -1088,6 +1092,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
       if (timestamp > latestTimestampForCols_[idx])
         latestTimestampForCols_[idx] = timestamp;
 
+      if (latestRowTimestamp != NULL && timestamp  > *latestRowTimestamp)
+         *latestRowTimestamp = timestamp;
       latestVersionNumForCols_[idx] = 1;
 
       Attributes * attr = asciiSourceTD->getAttr(idx);
@@ -1544,7 +1550,7 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormatMulti()
   return 0;
 }
 
-Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
+Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
 {
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
@@ -1564,6 +1570,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
 
   // initialize latest timestamp to 0 for every column
   memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
+  if (latestRowTimestamp != NULL)
+      *latestRowTimestamp = -1;
 
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
@@ -1610,6 +1618,9 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
     
     if (timestamp > latestTimestampForCols_[idx])
       latestTimestampForCols_[idx] = timestamp;
+
+    if (latestRowTimestamp != NULL && timestamp > *latestRowTimestamp)
+        *latestRowTimestamp = timestamp;
 
     // copy to asciiRow only if this is the latest version seen so far
     // for this column. On 6/10/2014 we get two versions for a newly
