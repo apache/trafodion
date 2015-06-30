@@ -1315,6 +1315,13 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   for (Lng32 index = beginPos; index < endPos; index++) {
     CMPASSERT(map_.getUsage(index) != UNUSED_COLL_ENTRY);
     Lng32 currNodeNum = getNodeNumber(index);
+
+    // if node number is < 0 , then it's not initialized. Return it. 
+    if (currNodeNum < 0) {
+      NADELETEBASIC(nodes, CmpCommon::statementHeap());
+      return currNodeNum;
+    }
+
     nodes[currNodeNum] += 1; // keep count regions node number
   }
 
