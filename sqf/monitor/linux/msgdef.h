@@ -510,7 +510,7 @@ struct NewProcess_def
     char path[MAX_SEARCH_PATH];             // process's object lookup path to program
     char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
     char program[MAX_PROCESS_PATH];         // full path to object file
-    char process_name[MAX_PROCESS_NAME];    // NSK process name
+    char process_name[MAX_PROCESS_NAME];    // process name
     int  argc;                              // number of additional command line argument
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
     char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
@@ -523,7 +523,7 @@ struct NewProcess_reply_def
     int  nid;                               // node id of started process
     int  pid;                               // internal process id of started process
     Verifier_t verifier;                    // Process verifier
-    char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
+    char process_name[MAX_PROCESS_NAME];    // process names assigned to started process
     int  return_code;                       // mpi error code of spawn operation
 };
 
@@ -534,7 +534,7 @@ struct NewProcess_Notice_def
     Verifier_t verifier;                    // Process verifier
     long long tag;                          // user tag sent with original request
     char port[MPI_MAX_PORT_NAME];           // mpi port to started process
-    char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
+    char process_name[MAX_PROCESS_NAME];    // process names assigned to started process
     int  return_code;                       // mpi error code of spawn operation
 };
 
@@ -899,7 +899,7 @@ struct Startup_def
     int   nid;                              // process's node id argv[3] or -1 for attach
     int   pid;                              // process's process id argv[4] or -1 for attach
     int   os_pid;                           // process's native OS process id
-    char  process_name[MAX_PROCESS_NAME];   // process's NSK name argv[5] or assign for attach, "" will autogenerate name
+    char  process_name[MAX_PROCESS_NAME];   // process's name argv[5] or assign for attach, "" will autogenerate name
     char  port_name[MPI_MAX_PORT_NAME];     // mpi port name from MPI_Open_port
     char  program[MAX_PROCESS_PATH];        // process's object filename
     bool  event_messages;                   // true if want event messages
