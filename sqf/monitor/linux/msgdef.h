@@ -198,13 +198,10 @@ typedef enum {
 } JOINING_PHASE;
 
 typedef enum {
-    RoleType_Undefined=0,       // Maps to ZoneType_Any
-    RoleType_Maintenance,       // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Operation,         // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Connection,        // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Loader,            // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Aggregation,       // Maps to ZoneType_Aggregation, Backend or Any
-    RoleType_Storage            // Maps to ZoneType_Storage, Backend or Any
+    RoleType_Undefined   = 0x0000,          // Maps to ZoneType_Any
+    RoleType_Connection  = 0x0001,          // Maps to ZoneType_Edge, Frontend or Any
+    RoleType_Aggregation = 0x0002,          // Maps to ZoneType_Aggregation, Backend or Any
+    RoleType_Storage     = 0x0004           // Maps to ZoneType_Storage, Backend or Any
 } RoleType;
 
 typedef enum {
@@ -232,6 +229,8 @@ typedef enum {
     ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
+    ReqType_NodeAdd,                        // request to node to the static configuration
+    ReqType_NodeDelete,                     // request to delete node from the static configuration
     ReqType_NodeDown,                       // request to take down the identified node
     ReqType_NodeInfo,                       // node information request 
     ReqType_NodeUp,                         // request to bring up the identified node
@@ -539,14 +538,33 @@ struct NewProcess_Notice_def
     int  return_code;                       // mpi error code of spawn operation
 };
 
-struct NodeAdded_def
+struct NodeAdd_def
+{
+    int      nid;                               // node id of requesting process
+    int      pid;                               // process id of requesting process
+    char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+    int      first_core;                        // First or only core assigned
+    int      last_core;                         // Last core assigned or -1
+    int      processors;                        // Number of processors in logical node
+    int      roles;                             // Role assigment
+};
+
+struct NodeAdded_def                            // Node added notice
 {
     int  nid;
     int  zid;
     char node_name[MPI_MAX_PROCESSOR_NAME];
 };
 
-struct NodeDeleted_def
+struct NodeDelete_def
+{
+    int      nid;                                      // node id of requesting process
+    int      pid;                                      // process id of requesting process
+    int      target_pnid;                              // Target physical node id
+    char     target_node_name[MPI_MAX_PROCESSOR_NAME]; // Target node name
+};
+
+struct NodeDeleted_def                          // Node deleted notice
 {
     int  nid;
     int  zid;
@@ -1044,6 +1062,10 @@ struct request_def
         struct Mount_def             mount;
         struct Kill_def              kill;
         struct NewProcess_def        new_process;
+        struct NodeAdd_def           node_add;
+        struct NodeAdded_def         node_added;
+        struct NodeDelete_def        node_delete;
+        struct NodeDeleted_def       node_deleted;
         struct NodeInfo_def          node_info;
         struct Notify_def            notify;
         struct Open_def              open;

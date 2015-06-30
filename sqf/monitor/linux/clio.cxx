@@ -1153,6 +1153,8 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
         }
         break;
 
+    case MsgType_NodeAdded:
+    case MsgType_NodeDeleted:
     case MsgType_NodeDown:
     case MsgType_NodeQuiesce:
     case MsgType_NodePrepare:
@@ -1958,6 +1960,12 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
                 break;
             case ReqType_NewProcess:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.new_process);
+                break;
+            case ReqType_NodeAdd:
+                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_add);
+                break;
+            case ReqType_NodeDelete:
+                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_delete);
                 break;
             case ReqType_NodeDown:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.down);

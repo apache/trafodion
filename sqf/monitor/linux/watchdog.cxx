@@ -513,7 +513,7 @@ void InitLocalIO( void )
 
     if ( MyPNID == -1 )
     {
-        CClusterConfig  ClusterConfig; // 'cluster.conf' objects
+        CClusterConfig  ClusterConfig; // 'sqconfig.db' objects
         CPNodeConfig   *pnodeConfig;
         CLNodeConfig   *lnodeConfig;
 

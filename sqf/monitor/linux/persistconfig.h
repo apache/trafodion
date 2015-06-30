@@ -69,6 +69,7 @@ public:
                                     , int          persistRetries
                                     , int          persistWindow
                                     );
+    void          Clear( void );
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
     CPersistConfig *GetPersistConfig( const char *persistPrefix );

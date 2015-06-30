@@ -170,6 +170,28 @@ CPersistConfigContainer::~CPersistConfigContainer(void)
         persistConfig = head_;
     }
 
+    pkeysVector_.clear();
+
+    TRACE_EXIT;
+}
+
+void CPersistConfigContainer::Clear( void )
+{
+    CPersistConfig *persistConfig = head_;
+
+    const char method_name[] = "CPersistConfigContainer::Clear";
+    TRACE_ENTRY;
+
+    while ( head_ )
+    {
+        DeletePersistConfig( persistConfig );
+        persistConfig = head_;
+    }
+
+    persistsCount_ = 0;
+    head_ = NULL;
+    tail_ = NULL;
+
     TRACE_EXIT;
 }
 

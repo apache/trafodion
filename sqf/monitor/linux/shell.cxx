@@ -91,17 +91,20 @@ bool Slave = false;
 bool NodeState[MAX_NODES];
 bool MpiInitialized = false;
 bool SpareNodeColdStandby = true;
-bool nodeUpPending = false;
+bool ElasticityEnabled = false;
 
 bool  waitDeathPending = false;
 int   waitDeathNid;
 int   waitDeathPid;
 CLock waitDeathLock;
 
-int nodeUpPnid;
-char nodeUpName[MPI_MAX_PROCESSOR_NAME];
-CLock                 nodeUpLock;
-CClusterConfig ClusterConfig; // 'cluster.conf' objects
+bool  nodePending = false;
+char  nodePendingName[MPI_MAX_PROCESSOR_NAME];
+int   nodePendingPnid;
+CLock nodePendingLock;
+
+CClusterConfig ClusterConfig; // 'sqconfig.db' objects
+
 char PNode[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
 char Node[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
 char MyNode[MPI_MAX_PROCESSOR_NAME];
@@ -129,12 +132,19 @@ void  get_server_death (int nid, int pid);
 int   get_lnodes_count( int nid );
 bool  get_node_state( int nid, char *node_name, int &pnid, STATE &state, bool &integrating );
 char *get_token (char *cmd, char *token, char *delimiter, int maxlen=MAX_TOKEN, 
-                 bool isEqDelim=TRUE);
+                 bool isEqDelim=true, bool isDashDelim=false);
 int   get_pnid_by_nid( int nid );
 bool  get_more_proc_info(PROCESSTYPE process_type, bool allNodes);
 bool  get_zone_state( int &nid, int &zid , char *node_name, int &pnid, STATE &state );
 void  interrupt_handler(int signal, siginfo_t *info, void *);
 bool  isNumeric( char * str );
+void  node_add_cmd( char *cmd, char delimiter );
+void  node_config_cmd( char *cmd );
+void  node_delete_cmd( char *cmd );
+void  node_down( int nid, char *reason );
+void  node_down_cmd ( char *cmd );
+int   node_up( int nid, char *node_name, bool nowait=false );
+void  node_up_cmd( char *cmd, char delimiter );
 char *normalize_case (char *token);
 void  normalize_slashes (char *token);
 void  persist_config_cmd( char *cmd, bool keysOnly );
@@ -145,9 +155,9 @@ char *remove_white_space (char *cmd);
 void  remove_trailing_white_space (char *buf);
 void  send_set_req( ConfigType type, char *name, char *key, char *value );
 void  show_proc_info( void );
+bool  start_monitor( char *cmd_tail, bool warmstart, bool reintegrate );
 int   start_process (int *nid, PROCESSTYPE type, char *name, bool debug, int priority, bool nowait, char *infile, char *outfile, char *cmd_tail);
 char *time_string( void );
-int   up_node( int nid, char *node_name, bool nowait=false );
 void  write_startup_log( char *msg );
 
 char *ErrorMsg (int error_code);
@@ -312,6 +322,41 @@ const char *ProcessTypeString( PROCESSTYPE type )
             break;
         default:
             str = "ProcessType_Invalid";
+    }
+
+    return( str );
+}
+
+const char *RoleTypeString( ZoneType type )
+{
+    const char *str;
+
+    switch( type )
+    {
+        case ZoneType_Edge:
+            str = "connection";
+            break;
+        case ZoneType_Excluded:
+            str = "excluded";
+            break;
+        case ZoneType_Aggregation:
+            str = "aggregation";
+            break;
+        case ZoneType_Storage:
+            str = "storage";
+            break;
+        case ZoneType_Frontend:
+            str = "connection,aggregation";
+            break;
+        case ZoneType_Backend:
+            str = "aggregation,storage";
+            break;
+        case ZoneType_Any:
+            str = "connection,aggregation,storage";
+            break;
+        default:
+            str = "Undefined";
+            break;
     }
 
     return( str );
@@ -1017,11 +1062,11 @@ const char *join_phase_string( JOINING_PHASE phase )
     return( str );
 }
 
-void nodeUpComplete()
+void nodePendingComplete()
 {
-    nodeUpLock.lock();
-    nodeUpLock.wakeOne();
-    nodeUpLock.unlock();
+    nodePendingLock.lock();
+    nodePendingLock.wakeOne();
+    nodePendingLock.unlock();
 }
 
 void waitDeathComplete()
@@ -1047,18 +1092,44 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                MyName, recv_msg->u.request.u.event_notice.event_id);
         break;
 
+    case MsgType_NodeAdded:
+        printf ("[%s] %s - Node %d (%s) ADDED to configuration\n", 
+                MyName, time_string(), recv_msg->u.request.u.node_added.nid,
+                recv_msg->u.request.u.node_added.node_name);
+        if ( nodePending )
+        {
+            if ( strcmp( nodePendingName, recv_msg->u.request.u.node_added.node_name) == 0 )
+            {
+                nodePendingComplete();
+            }
+        }
+        break;
+
+    case MsgType_NodeDeleted:
+        printf ("[%s] %s - Node %d (%s) DELETED from configuration\n", 
+                MyName, time_string(), recv_msg->u.request.u.node_deleted.nid,
+                recv_msg->u.request.u.node_deleted.node_name);
+        if ( nodePending )
+        {
+            if ( strcmp( nodePendingName, recv_msg->u.request.u.node_deleted.node_name) == 0 )
+            {
+                nodePendingComplete();
+            }
+        }
+        break;
+
     case MsgType_NodeDown:
         printf ("[%s] Node %d (%s) is DOWN\n", 
                 MyName, recv_msg->u.request.u.down.nid,
                 recv_msg->u.request.u.down.node_name );
         NodeState[recv_msg->u.request.u.down.nid] = false;
 
-        if ( nodeUpPending )
+        if ( nodePending )
         {
-            if ( strcmp( nodeUpName, recv_msg->u.request.u.down.node_name) == 0 )
+            if ( strcmp( nodePendingName, recv_msg->u.request.u.down.node_name) == 0 )
             {   // The node that was supposed to come up had some problem
                 // and went down.
-                nodeUpComplete();
+                nodePendingComplete();
             }
         }
         if ( waitDeathPending )
@@ -1109,11 +1180,11 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                 MyName, time_string(), recv_msg->u.request.u.up.nid,
                 recv_msg->u.request.u.up.node_name);
         NodeState[recv_msg->u.request.u.down.nid] = true;        
-        if ( nodeUpPending )
+        if ( nodePending )
         {
-            if ( strcmp( nodeUpName, recv_msg->u.request.u.up.node_name) == 0 )
+            if ( strcmp( nodePendingName, recv_msg->u.request.u.up.node_name) == 0 )
             {
-                nodeUpComplete();
+                nodePendingComplete();
             }
         }
         break;
@@ -1166,13 +1237,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                 , MyName
                 , time_string()
                 , recv_msg->u.request.u.spare_up.node_name );
-        nodeUpComplete();
+        nodePendingComplete();
         break;
 
     case MsgType_Shutdown:
         printf("[%s] Shutdown notice, level=%d received\n",
                MyName, recv_msg->u.request.u.shutdown.level);
-        nodeUpComplete();
+        nodePendingComplete();
         break;
 
     case MsgType_TmSyncAbort:
@@ -1189,7 +1260,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                 , MyName
                 , time_string()
                 , recv_msg->u.request.u.reintegrate.msg );
-        nodeUpComplete();
+        nodePendingComplete();
         break;
 
     default:
@@ -1218,7 +1289,10 @@ void interrupt_handler(int signal, siginfo_t *info, void *)
         printf ("[%s] Failed signaling notice completion!\n", MyName );
     }
 
-    nodeUpComplete();
+    if (nodePending)
+    {
+        nodePendingComplete();
+    }
 }
 
 bool is_spare_node( char *node_name )
@@ -1536,33 +1610,55 @@ bool env_replace (char *cmd)
     return false;
 }
 
-char *find_delimiter(char *cmd, bool isEqDelim)
+char *find_delimiter(char *cmd, bool isEqDelim, bool isDashDelim)
 {
     char *ptr = cmd;
 
-    while (ptr && *ptr && *ptr != ' ' && *ptr != ',' && *ptr != '{' && *ptr != '}' && *ptr != ':')
+    while (ptr 
+       && *ptr 
+       && *ptr != ' ' 
+       && *ptr != ',' 
+       && *ptr != ';' 
+       && *ptr != '{' 
+       && *ptr != '}' 
+       && *ptr != ':')
     {
-		if (*ptr == '=' && isEqDelim)
-		{
-		    break;
-		}
+        if (*ptr == '-' && isDashDelim)
+        {
+            break;
+        }
+        if (*ptr == '=' && isEqDelim)
+        {
+            break;
+        }
         ptr++;
     }
 
     return ptr;
 }
 
-char *find_end_of_token (char *cmd, int maxlen, bool isEqDelim)
+char *find_end_of_token (char *cmd, int maxlen, bool isEqDelim, bool isDashDelim)
 {
     int length = 0;
     char *ptr = cmd;
 
-    while (ptr && *ptr && *ptr != ' ' && *ptr != ',' && *ptr != '{' && *ptr != '}' && *ptr != ':')
+    while (ptr 
+       && *ptr 
+       && *ptr != ' ' 
+       && *ptr != ',' 
+       && *ptr != ';' 
+       && *ptr != '{' 
+       && *ptr != '}' 
+       && *ptr != ':')
     {
-		if (*ptr == '=' && isEqDelim)
-		{
-		    break;
-		}
+        if (*ptr == '-' && isDashDelim)
+        {
+            break;
+        }
+        if (*ptr == '=' && isEqDelim)
+        {
+            break;
+        }
         length++;
         ptr++;
         if (length == maxlen)
@@ -2621,10 +2717,10 @@ void get_server_death (int nid, int pid)
 }
 
 char *get_token (char *cmd, char *token, char *delimiter, 
-                 int maxlen, bool isEqDelim)
+                 int maxlen, bool isEqDelim, bool isDashDelim)
 {
     char *ptr = remove_white_space (cmd);
-    char *end = find_end_of_token (ptr,maxlen,isEqDelim);
+    char *end = find_end_of_token (ptr,maxlen,isEqDelim,isDashDelim);
 
     *delimiter = *end;
     if (*end)
@@ -2632,11 +2728,16 @@ char *get_token (char *cmd, char *token, char *delimiter,
         *end = '\0';
         strcpy (token, ptr);
         *end = *delimiter;
-        end = find_delimiter(end, isEqDelim);
+        end = find_delimiter(end, isEqDelim,isDashDelim);
         *delimiter = *end;
         ptr = remove_white_space (end);
-        if (*ptr == '{' || *ptr == '}' || *ptr == ':' 
-		    || (*ptr == '=' && isEqDelim))
+        if (*ptr == '{' 
+         || *ptr == '}' 
+         || *ptr == ':' 
+         || *ptr == '-' 
+         || *ptr == ';' 
+         || (*ptr == '-' && isDashDelim)
+         || (*ptr == '=' && isEqDelim))
         {
             *delimiter = *ptr;
             ptr++;
@@ -2674,7 +2775,587 @@ bool isNumeric( char * str )
     return( isNum );
 }
 
-void listNodeInfo( int nid )
+void listZoneInfo( int nid, int zid )
+{
+    int i;
+    int count;
+    int  last_nid = 0;
+    MPI_Status status;
+
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        printf ("[%s] Unable to acquire message buffer.\n", MyName);
+        return;
+    }
+
+    bool needBanner = true;
+    bool getMoreInfo = false;
+    do
+    {
+        msg->type = MsgType_Service;
+        msg->noreply = false;
+        msg->reply_tag = REPLY_TAG;
+        msg->u.request.type = ReqType_ZoneInfo;
+        msg->u.request.u.zone_info.nid = MyNid;
+        msg->u.request.u.zone_info.pid = MyPid;
+        msg->u.request.u.zone_info.target_nid = nid;
+        msg->u.request.u.zone_info.target_zid = zid;
+        if ( !getMoreInfo )
+        {
+            msg->u.request.u.zone_info.continuation = false;
+        }
+    
+        gp_local_mon_io->send_recv( msg );
+        count = sizeof( *msg );
+        status.MPI_TAG = msg->reply_tag;
+
+        getMoreInfo = false;
+        if ((status.MPI_TAG == REPLY_TAG) &&
+            (count == sizeof (struct message_def)))
+        {
+            if ((msg->type == MsgType_Service) &&
+                (msg->u.reply.type == ReplyType_ZoneInfo))
+            {
+                if (msg->u.reply.u.zone_info.return_code == MPI_SUCCESS)
+                {
+                    if (msg->u.reply.u.zone_info.num_returned)
+                    {
+                        if (needBanner)
+                        {
+                            printf ("[%s] ZID PNID State    Name\n", MyName);
+                            printf ("[%s] --- ---- -------- --------\n", MyName);
+                            needBanner = false;
+                        }
+
+                        for (i=0; i < msg->u.reply.u.zone_info.num_returned; i++)
+                        {
+                            if ( msg->u.reply.u.zone_info.node[i].nid != -1 )
+                            {
+                                // Display zone node info
+                                last_nid = msg->u.reply.u.zone_info.node[i].nid;
+                                //      "[%s] ZID PNID State    Name\n", MyName);
+                                //      "[%s] --- ---- -------- --------\n", MyName);
+                                printf ("[%s] %3.3d  %3.3d %-8s %s\n",
+                                    MyName,
+                                    msg->u.reply.u.zone_info.node[i].zid,
+                                    msg->u.reply.u.zone_info.node[i].pnid,
+                                    StateString( msg->u.reply.u.zone_info.node[i].pstate ),
+                                    msg->u.reply.u.zone_info.node[i].node_name );
+                            }
+                        }
+                        getMoreInfo = (msg->u.reply.u.zone_info.num_returned == MAX_NODE_LIST);
+                        if (getMoreInfo)
+                        {  // Since we got the maximum number of node info
+                           // entries there may be additional node info
+                           // entries to retrieve.  Populate the request.
+                           msg->u.request.u.zone_info.last_nid = 
+                              msg->u.reply.u.zone_info.last_nid;
+                           msg->u.request.u.zone_info.last_pnid =
+                              msg->u.reply.u.zone_info.last_pnid;
+                           msg->u.request.u.zone_info.continuation = true;
+                        }
+                    }
+                }
+                else
+                {
+                    printf ("[%s] ZoneInfo failed, error=%s\n", MyName,
+                        ErrorMsg(msg->u.reply.u.zone_info.return_code));
+                }
+            }
+            else
+            {
+                printf
+                    ("[%s] Invalid MsgType(%d)/ReplyType(%d) for ZoneInfo message\n",
+                     MyName, msg->type, msg->u.reply.type);
+            }
+        }
+        else
+        {
+            printf ("[%s] ZoneInfo reply message invalid\n", MyName);
+        }
+    }
+    while (getMoreInfo);
+
+    gp_local_mon_io->release_msg(msg);
+}
+
+
+
+bool load_configuration( void )
+{
+    char mynode[MPI_MAX_PROCESSOR_NAME];
+    int i;
+    CLNodeConfig   *lnodeConfig;
+    CPNodeConfig   *pnodeConfig;
+    
+    // Read initialization file
+    gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
+    printf("Loading configuration from sqconfig.db on %s\n",mynode);
+    NumDown=0;
+    NumNodes=0;
+    NumLNodes=0;
+    for (i=0; i< MAX_NODES; i++)
+    {
+        NodeState[i] = false;
+    }
+
+    if ( ClusterConfig.IsConfigReady() )
+    {
+        // It was previously loaded, remove the current configuration
+        ClusterConfig.Clear();
+    }
+    if ( ClusterConfig.Initialize() )
+    {
+        if ( ! ClusterConfig.LoadConfig() )
+        {
+            printf("[%s] Error: Failed to load cluster configuration.\n", MyName);
+            return false;
+        }
+        NumLNodes = ClusterConfig.GetLNodesCount();
+        for ( i = 0; i < NumLNodes; i++ )
+        {
+            lnodeConfig = ClusterConfig.GetLNodeConfig( i );
+            if ( lnodeConfig )
+            {
+                pnodeConfig = lnodeConfig->GetPNodeConfig();
+                if ( pnodeConfig )
+                {
+                    if (!VirtualNodes)
+                    {
+                        strcpy( Node[i], pnodeConfig->GetName() );
+                    }
+                    if ( !NodeState[i] )
+                    {
+                        NodeState[i] = true;
+                    }
+                }
+                else
+                {
+                    printf( "[%s] Error: Internal error while loading physical node configuration\n",MyName);
+                }
+            }
+            else
+            {
+                printf( "[%s] Error: Internal error while loading logical node configuration\n",MyName);
+            }
+        }
+        NumNodes = ClusterConfig.GetPNodesCount();
+        for ( i = 0; i < NumNodes; i++ )
+        {
+            pnodeConfig = ClusterConfig.GetPNodeConfig( i );
+            if ( pnodeConfig )
+            {
+                if (!VirtualNodes)
+                {
+                    strcpy( PNode[i], pnodeConfig->GetName() );
+                }
+                else
+                {
+                    gethostname(PNode[i], MPI_MAX_PROCESSOR_NAME);
+                }
+            }
+            else
+            {
+                printf( "[%s] Error: Internal error while loading sqconfig.db, in physical node configuration\n",MyName);
+            }
+        }
+    }
+    else
+    {
+        printf( "[%s] Warning: No sqconfig.db found\n",MyName);
+        return false;
+    }
+
+    return true;
+}
+
+char *normalize_case (char *token)
+{
+    char *ptr = token;
+
+    while (*ptr)
+    {
+        *ptr = tolower (*ptr);
+        if (*ptr == '\n') *ptr = '\0';
+        ptr++;
+    }
+
+    return token;
+}
+
+void normalize_slashes (char *token)
+{
+    char *ptr;
+
+    for (ptr = token; *ptr; ptr++)
+    {
+        if (*ptr == '\\')
+        {
+            *ptr = '/';
+        }
+    }
+}
+
+void node_add( char *node_name, int first_core, int last_core, int processors, int roles )
+{
+    const char method_name[] = "node_add";
+
+    int pnid;
+    int count;
+    char msgString[MAX_BUFFER] = { 0 };
+    MPI_Status status;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Adding node:\n"
+                      "   node_name  = %s\n"
+                      "   first_core = %d\n"
+                      "   last_core  = %d\n"
+                      "   processors = %d\n"
+                      "   roles      = %s\n"
+                    , method_name, __LINE__, MyName
+                    , node_name, first_core, last_core, processors
+                    , RoleTypeString( (ZoneType) roles ));
+
+    // Check that node_name is not in the configuration
+    pnid = get_pnid_by_node_name( node_name );
+    if ( pnid != -1 )
+    {
+        sprintf( msgString, "[%s] Node %s already exists in configuration", MyName, node_name );
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] sending node add message.\n",
+                      method_name, __LINE__, MyName);
+
+    assert(gp_local_mon_io);
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        sprintf( msgString, "[%s] Unable to acquire message buffer.", MyName);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+
+    msg->type = MsgType_Service;
+    msg->noreply = false;
+    msg->reply_tag = REPLY_TAG;
+    msg->u.request.type = ReqType_NodeAdd;
+    msg->u.request.u.node_add.nid = MyNid;
+    msg->u.request.u.node_add.pid = MyPid;
+    STRCPY( msg->u.request.u.node_add.node_name, node_name ); 
+    msg->u.request.u.node_add.first_core = first_core;
+    msg->u.request.u.node_add.last_core  = last_core;
+    msg->u.request.u.node_add.processors = processors;
+    msg->u.request.u.node_add.roles      = roles;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Sending node add\n "
+                    , method_name, __LINE__, MyName );
+
+    gp_local_mon_io->send_recv( msg );
+    if (gp_local_mon_io->iv_shutdown)
+    {
+        gp_local_mon_io->release_msg(msg);
+        return;
+    }
+    status.MPI_TAG = msg->reply_tag;
+    count = sizeof( *msg );
+
+    if ((status.MPI_TAG == REPLY_TAG) &&
+        (count == sizeof (struct message_def)))
+    {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_Generic))
+        {
+            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            {
+                if ( trace_settings & TRACE_SHELL_CMD )
+                    trace_printf( "%s@%d [%s] Added node successfully. "
+                                  "error=%s\n"
+                                , method_name, __LINE__, MyName
+                                , ErrorMsg(msg->u.reply.u.generic.return_code));
+            }
+            else
+            {
+                if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
+                {
+                    printf( "[%s] Node add failed, could not access configuration database\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
+                {
+                    printf( "[%s] Node add failed, could not re-establish cluster configuration in monitor\n"
+                          , MyName );
+                }
+                else
+                {
+                    printf( "[%s] Node add failed, error=%s\n"
+                          , MyName, ErrorMsg(msg->u.reply.u.generic.return_code));
+                }
+            }
+        }
+        else
+        {
+            printf( "[%s] Invalid MsgType(%d)/ReplyType(%d) for Exit message\n"
+                  , MyName, msg->type, msg->u.reply.type);
+        }
+    }
+    else
+    {
+        printf( "[%s] Node add reply invalid, msg tag is %d, count= %d. \n"
+              , MyName, status.MPI_TAG, count);
+    }
+
+    if (gp_local_mon_io)
+        gp_local_mon_io->release_msg(msg);
+}
+
+void node_config( int nid, char *node_name )
+{
+    const char method_name[] = "node_config";
+
+    char coresString[MAX_TOKEN];
+    CLNodeConfig   *lnodeConfig;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Configuration for node:\n"
+                      "   nid        = %d\n"
+                      "   node_name  = %s\n"
+                    , method_name, __LINE__, MyName
+                    , nid, node_name );
+
+    lnodeConfig = ClusterConfig.GetFirstLNodeConfig();
+    for ( ; lnodeConfig; lnodeConfig = lnodeConfig->GetNext() )
+    {
+        if ( lnodeConfig )
+        {
+            if ((nid == -1 && *node_name == '\0' )
+             || (nid != -1 && nid == lnodeConfig->GetNid())
+             || (strcmp( node_name, lnodeConfig->GetName()) == 0))
+            {
+                if (lnodeConfig->GetLastCore() == -1)
+                {
+                    snprintf( coresString, sizeof(coresString)
+                            , "%d", lnodeConfig->GetFirstCore() );
+                }
+                else
+                {
+                    snprintf( coresString, sizeof(coresString)
+                            , "%d-%d"
+                            , lnodeConfig->GetFirstCore()
+                            , lnodeConfig->GetLastCore() );
+                }
+                printf( "node-id=%d, node-name=%s, "
+                        "cores=%s, processors=%d, roles=%s\n"
+                      , lnodeConfig->GetNid()
+                      , lnodeConfig->GetName()
+                      , coresString
+                      , lnodeConfig->GetProcessors()
+                      , RoleTypeString( lnodeConfig->GetZoneType() )
+                      );
+            }
+            if (nid != -1 && nid == lnodeConfig->GetNid())
+            {
+                break;
+            }
+            if (*node_name != '\0' 
+             && strcmp( node_name, lnodeConfig->GetName()) == 0)
+            {
+                break;
+            }
+        }
+    }
+}
+
+void node_delete( int nid, char *node_name )
+{
+    const char method_name[] = "node_delete";
+
+    bool integrating = false;
+    char msgString[MAX_BUFFER] = { 0 };
+    int pnid = -1;
+    int count;
+    MPI_Status status;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Deleting node:\n"
+                      "   nid        = %d\n"
+                      "   node_name  = %s\n"
+                    , method_name, __LINE__, MyName
+                    , nid, node_name );
+
+    // Check that node_name exists in the configuration
+    if (nid == -1)
+    {
+        pnid = get_pnid_by_node_name( node_name );
+        if ( pnid == -1 )
+        {
+            sprintf( msgString, "[%s] Node %s is not in configuration", MyName, node_name );
+            write_startup_log( msgString );
+            printf ("%s\n", msgString );
+            return;
+        }
+    }
+    else
+    {
+        pnid = get_pnid_by_nid( nid );
+        if ( pnid == -1 )
+        {
+            sprintf( msgString, "[%s] Node %d is not in configuration", MyName, nid );
+            write_startup_log( msgString );
+            printf ("%s\n", msgString );
+            return;
+        }
+    }
+
+    STATE state = State_Unknown;
+    // Check monitors state of the target node
+    if ( !get_node_state( nid, node_name, pnid, state, integrating ) )
+    {
+        sprintf( msgString, "[%s] Monitor does not have state information on nid=%d (%s)!"
+                          , MyName, nid, node_name);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+    }
+    if ( integrating )
+    {
+        sprintf( msgString, "[%s] Node up in progress! Try again when node re-integration completes.", MyName);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+    if ( state != State_Unknown )
+    {
+        if ( state != State_Down )
+        {
+            sprintf( msgString, "[%s] Node %s is not in down state! (state=%s)", MyName, node_name, StateString(state) );
+            write_startup_log( msgString );
+            printf ("%s\n", msgString );
+            return;
+        }
+    }
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] sending node delete message.\n",
+                      method_name, __LINE__, MyName);
+
+    assert(gp_local_mon_io);
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        sprintf( msgString, "[%s] Unable to acquire message buffer.", MyName);
+        write_startup_log( msgString );
+        printf ("%s\n", msgString );
+        return;
+    }
+
+    msg->type = MsgType_Service;
+    msg->noreply = false;
+    msg->reply_tag = REPLY_TAG;
+    msg->u.request.type = ReqType_NodeDelete;
+    msg->u.request.u.node_delete.nid = MyNid;
+    msg->u.request.u.node_delete.pid = MyPid;
+    msg->u.request.u.node_delete.target_pnid = pnid;
+    STRCPY( msg->u.request.u.node_delete.target_node_name, node_name ); 
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Sending node delete\n "
+                    , method_name, __LINE__, MyName );
+
+    gp_local_mon_io->send_recv( msg );
+    if (gp_local_mon_io->iv_shutdown)
+    {
+        gp_local_mon_io->release_msg(msg);
+        return;
+    }
+    status.MPI_TAG = msg->reply_tag;
+    count = sizeof( *msg );
+
+    if ((status.MPI_TAG == REPLY_TAG) &&
+        (count == sizeof (struct message_def)))
+    {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_Generic))
+        {
+            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            {
+                if ( trace_settings & TRACE_SHELL_CMD )
+                    trace_printf( "%s@%d [%s] Deleted node successfully. "
+                                  "error=%s\n", method_name, __LINE__, MyName
+                                 , ErrorMsg(msg->u.reply.u.generic.return_code));
+            }
+            else
+            {
+                if (msg->u.reply.u.generic.return_code == MPI_ERR_IO)
+                {
+                    printf( "[%s] Node deleted failed, could not access configuration database\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_NO_MEM)
+                {
+                    printf( "[%s] Node deleted failed, node does not exist in configuration in monitor\n"
+                          , MyName );
+                }
+                else if (msg->u.reply.u.generic.return_code == MPI_ERR_INTERN)
+                {
+                    printf( "[%s] Node deleted failed, could not re-establish cluster configuration in monitor\n"
+                          , MyName );
+                }
+                else
+                {
+                    printf( "[%s] Node deleted failed, error=%s\n"
+                          , MyName, ErrorMsg(msg->u.reply.u.generic.return_code));
+                }
+            }
+        }
+        else
+        {
+            printf( "[%s] Invalid MsgType(%d)/ReplyType(%d) for Exit message\n"
+                  , MyName, msg->type, msg->u.reply.type);
+        }
+    }
+    else
+    {
+        printf( "[%s] Node deleted reply invalid, msg tag is %d, count= %d. \n"
+              , MyName, status.MPI_TAG, count);
+    }
+
+    if (gp_local_mon_io)
+        gp_local_mon_io->release_msg(msg);
+}
+
+void node_down( int nid, char *reason )
+{
+    const char method_name[] = "node_down";
+    char msgString[MAX_BUFFER] = { 0 };
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf("%s@%d [%s] sending down node message.\n",
+                     method_name, __LINE__, MyName);
+
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        sprintf( msgString, "[%s] Unable to acquire message buffer.\n", MyName);
+        write_startup_log( msgString );
+        printf ("[%s] Unable to acquire message buffer.\n", MyName);
+        return;
+    }
+
+    msg->type = MsgType_Service;
+    msg->noreply = true;
+    msg->u.request.type = ReqType_NodeDown;
+    msg->u.request.u.down.nid = nid;
+    STRCPY(msg->u.request.u.down.node_name, Node[nid]);
+    STRCPY(msg->u.request.u.down.reason, reason);
+
+    gp_local_mon_io->send( msg );
+
+    NodeState[nid] = false;
+}
+
+void node_info( int nid )
 {
     int i;
     int count;
@@ -2851,220 +3532,177 @@ void listNodeInfo( int nid )
     gp_local_mon_io->release_msg(msg);
 }
 
-void listZoneInfo( int nid, int zid )
+int node_up( int nid, char *node_name, bool nowait )
 {
-    int i;
-    int count;
-    int  last_nid = 0;
-    MPI_Status status;
+    const char method_name[] = "node_up";
+    bool integrating = false;
+    int pnid;
+    int rc = -1;
+    char msgString[MAX_BUFFER] = { 0 };
 
-    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-    {   // Could not acquire a message buffer
-        printf ("[%s] Unable to acquire message buffer.\n", MyName);
-        return;
-    }
-
-    bool needBanner = true;
-    bool getMoreInfo = false;
-    do
+    // If this is a real cluster
+    if ( nid == -1 )
     {
-        msg->type = MsgType_Service;
-        msg->noreply = false;
-        msg->reply_tag = REPLY_TAG;
-        msg->u.request.type = ReqType_ZoneInfo;
-        msg->u.request.u.zone_info.nid = MyNid;
-        msg->u.request.u.zone_info.pid = MyPid;
-        msg->u.request.u.zone_info.target_nid = nid;
-        msg->u.request.u.zone_info.target_zid = zid;
-        if ( !getMoreInfo )
+        // Get current physical state of all nodes
+        if ( !update_cluster_state( true, false ) )
         {
-            msg->u.request.u.zone_info.continuation = false;
+            return( rc ) ;
         }
-    
-        gp_local_mon_io->send_recv( msg );
-        count = sizeof( *msg );
-        status.MPI_TAG = msg->reply_tag;
-
-        getMoreInfo = false;
-        if ((status.MPI_TAG == REPLY_TAG) &&
-            (count == sizeof (struct message_def)))
+        NodeState_t nodeState;
+        // Check physical state of the target node
+        if ( get_pnode_state( node_name, nodeState ) )
         {
-            if ((msg->type == MsgType_Service) &&
-                (msg->u.reply.type == ReplyType_ZoneInfo))
+            if ( nodeState != StateUp )
             {
-                if (msg->u.reply.u.zone_info.return_code == MPI_SUCCESS)
-                {
-                    if (msg->u.reply.u.zone_info.num_returned)
-                    {
-                        if (needBanner)
-                        {
-                            printf ("[%s] ZID PNID State    Name\n", MyName);
-                            printf ("[%s] --- ---- -------- --------\n", MyName);
-                            needBanner = false;
-                        }
-
-                        for (i=0; i < msg->u.reply.u.zone_info.num_returned; i++)
-                        {
-                            if ( msg->u.reply.u.zone_info.node[i].nid != -1 )
-                            {
-                                // Display zone node info
-                                last_nid = msg->u.reply.u.zone_info.node[i].nid;
-                                //      "[%s] ZID PNID State    Name\n", MyName);
-                                //      "[%s] --- ---- -------- --------\n", MyName);
-                                printf ("[%s] %3.3d  %3.3d %-8s %s\n",
-                                    MyName,
-                                    msg->u.reply.u.zone_info.node[i].zid,
-                                    msg->u.reply.u.zone_info.node[i].pnid,
-                                    StateString( msg->u.reply.u.zone_info.node[i].pstate ),
-                                    msg->u.reply.u.zone_info.node[i].node_name );
-                            }
-                        }
-                        getMoreInfo = (msg->u.reply.u.zone_info.num_returned == MAX_NODE_LIST);
-                        if (getMoreInfo)
-                        {  // Since we got the maximum number of node info
-                           // entries there may be additional node info
-                           // entries to retrieve.  Populate the request.
-                           msg->u.request.u.zone_info.last_nid = 
-                              msg->u.reply.u.zone_info.last_nid;
-                           msg->u.request.u.zone_info.last_pnid =
-                              msg->u.reply.u.zone_info.last_pnid;
-                           msg->u.request.u.zone_info.continuation = true;
-                        }
-                    }
-                }
-                else
-                {
-                    printf ("[%s] ZoneInfo failed, error=%s\n", MyName,
-                        ErrorMsg(msg->u.reply.u.zone_info.return_code));
-                }
-            }
-            else
-            {
-                printf
-                    ("[%s] Invalid MsgType(%d)/ReplyType(%d) for ZoneInfo message\n",
-                     MyName, msg->type, msg->u.reply.type);
+                sprintf( msgString, "[%s] Node %s is not available.", MyName, node_name);
+                write_startup_log( msgString );
+                printf("[%s] Node %s is not available.\n", MyName, node_name);
+                return( rc ) ;
             }
         }
-        else
+        STATE state;
+        // Check monitors state of the target node
+        if ( !get_node_state( nid, node_name, pnid, state, integrating ) )
         {
-            printf ("[%s] ZoneInfo reply message invalid\n", MyName);
+            return( rc ) ;
         }
-    }
-    while (getMoreInfo);
-
-    gp_local_mon_io->release_msg(msg);
-}
-
-
-
-bool load_nodes( void )
-{
-    char mynode[MPI_MAX_PROCESSOR_NAME];
-    int i;
-    CLNodeConfig   *lnodeConfig;
-    CPNodeConfig   *pnodeConfig;
-    
-    // Read initialization file
-    gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
-    printf("Processing cluster.conf on local host %s\n",mynode);
-    NumDown=0;
-    NumNodes=0;
-    NumLNodes=0;
-    for (i=0; i< MAX_NODES; i++)
-    {
-        NodeState[i] = false;
-    }
-
-    if ( ClusterConfig.Initialize() )
-    {
-        if ( ! ClusterConfig.LoadConfig() )
+        if ( integrating )
         {
-            printf("[%s] Error: Failed to load cluster configuration.\n", MyName);
-            return false;
+            sprintf( msgString, "[%s] Node up in progress! Try again when node re-integration completes.", MyName);
+            write_startup_log( msgString );
+            printf ("[%s] Node up in progress! Try again when node re-integration completes.\n", MyName );
+            return( rc ) ;
         }
-        NumLNodes = ClusterConfig.GetLNodesCount();
-        for ( i = 0; i < NumLNodes; i++ )
+        if ( state != State_Down )
         {
-            lnodeConfig = ClusterConfig.GetLNodeConfig( i );
-            if ( lnodeConfig )
+            sprintf( msgString, "[%s] Node %s is not in down state! (state=%s)", MyName, node_name, StateString(state) );
+            write_startup_log( msgString );
+            printf ("[%s] Node %s is not in down state! (state=%s)\n", MyName, node_name, StateString(state) );
+            return( rc ) ;
+        }
+
+        if ( SpareNodeColdStandby )
+        {
+            // Check monitors state of all logical nodes of the spare set.
+            // There must be at least one logical node down that is associated.
+            // with the spare set or the command is rejected (cold standby).
+            // Otherwise, the spare node comes up and it becomes a hot standby
+            // which is not currenly supported.
+            STATE spare_set_state = State_Up;
+            if ( !get_spare_set_state( node_name, spare_set_state ) )
             {
-                pnodeConfig = lnodeConfig->GetPNodeConfig();
-                if ( pnodeConfig )
-                {
-                    if (!VirtualNodes)
-                    {
-                        strcpy( Node[i], pnodeConfig->GetName() );
-                    }
-                    if ( !NodeState[i] )
-                    {
-                        NodeState[i] = true;
-                    }
-                }
-                else
-                {
-                    printf( "[%s] Error: Internal error while loading cluster.conf, in physical node configuration\n",MyName);
-                }
+                return( rc ) ;
             }
-            else
+            if ( spare_set_state != State_Down )
             {
-                printf( "[%s] Error: Internal error while loading cluster.conf, in logical node configuration\n",MyName);
+                sprintf( msgString, "[%s] No nodes in the down state for spare node activation on %s!", MyName, node_name );
+                write_startup_log( msgString );
+                printf ("[%s] No nodes in the down state for spare node activation on %s!\n", MyName, node_name );
+                return( rc ) ;
             }
         }
-        NumNodes = ClusterConfig.GetPNodesCount();
-        for ( i = 0; i < NumNodes; i++ )
+
+        // remove shared segment on the node
+        char cmd[256];
+        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $MY_SQROOT/logs/node_up_%s.log\"", node_name, node_name, node_name);
+        system(cmd);
+
+        // Start a monitor process on the node
+        if ( start_monitor( node_name, false, true ) )
         {
-            pnodeConfig = ClusterConfig.GetPNodeConfig( i );
-            if ( pnodeConfig )
-            {
-                if (!VirtualNodes)
-                {
-                    strcpy( PNode[i], pnodeConfig->GetName() );
-                }
-                else
-                {
-                    gethostname(PNode[i], MPI_MAX_PROCESSOR_NAME);
-                }
-            }
-            else
-            {
-                printf( "[%s] Error: Internal error while loading cluster.conf, in physical node configuration\n",MyName);
-            }
+            sprintf( msgString, "[%s] Unable to start monitor process in node %s.", MyName, node_name );
+            write_startup_log( msgString );
+            printf ("[%s] Unable to start monitor process in node %s.\n", MyName, node_name );
+            return( rc ) ;
         }
     }
     else
     {
-        printf( "[%s] Warning: No cluster.conf found\n",MyName);
-        return false;
-    }
-
-    return true;
-}
-
-char *normalize_case (char *token)
-{
-    char *ptr = token;
-
-    while (*ptr)
-    {
-        *ptr = tolower (*ptr);
-        if (*ptr == '\n') *ptr = '\0';
-        ptr++;
-    }
-
-    return token;
-}
-
-void normalize_slashes (char *token)
-{
-    char *ptr;
-
-    for (ptr = token; *ptr; ptr++)
-    {
-        if (*ptr == '\\')
+        STATE state;
+        if ( !get_node_state( nid, NULL, pnid, state, integrating ) )
         {
-            *ptr = '/';
+            return( rc ) ;
+        }
+        if ( state != State_Down )
+        {
+            sprintf( msgString, "[%s] Node is not in down state! (nid=%d, state=%s)", MyName, nid, StateString(state) );
+            write_startup_log( msgString );
+            printf ("[%s] Node is not in down state! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
+            return( rc ) ;
         }
     }
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] sending up node message.\n",
+                      method_name, __LINE__, MyName);
+
+    assert(gp_local_mon_io);
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {   // Could not acquire a message buffer
+        sprintf( msgString, "[%s] Unable to acquire message buffer.", MyName);
+        write_startup_log( msgString );
+        printf ("[%s] Unable to acquire message buffer.\n", MyName);
+        return( rc ) ;
+    }
+
+    msg->type = MsgType_Service;
+    msg->u.request.type = ReqType_NodeUp;
+    msg->u.request.u.up.nid = nid;
+
+    // If this is a real cluster
+    if ( nid == -1 )
+    {
+        if ( trace_settings & TRACE_SHELL_CMD )
+            trace_printf( "%s@%d [%s] %s node up successful, rtn=%d\n ",
+                 method_name, __LINE__, MyName, node_name,
+                 msg->u.reply.u.generic.return_code );
+
+        sprintf( msgString, "[%s] Node %s is merging to existing cluster.", 
+               MyName, node_name);
+        write_startup_log( msgString );
+        printf ("[%s] %s - Node %s is merging to existing cluster.\n",
+                 MyName, time_string(), node_name );
+
+        if ( ! nowait )
+        {
+            struct sigaction int_act, old_act;
+            int_act.sa_sigaction = interrupt_handler;
+            sigemptyset(&int_act.sa_mask);
+            sigaddset (&int_act.sa_mask, SIGINT);
+            int_act.sa_flags = SA_SIGINFO;
+            sigaction (SIGINT, &int_act, &old_act);
+
+            nodePending = true;
+            nodePendingPnid = pnid;
+            STRCPY(nodePendingName, node_name);
+
+            nodePendingLock.lock();
+            nodePendingLock.wait();
+            nodePendingLock.unlock();
+
+            sigaction (SIGINT, &old_act, NULL);
+
+            nodePending = false;
+        }
+        rc = MPI_SUCCESS;
+    }
+    else
+    {
+        msg->noreply = true;
+        STRCPY( msg->u.request.u.up.node_name, Node[nid] ); 
+        gp_local_mon_io->send( msg );
+        rc = 0;
+    }
+    
+    gp_local_mon_io->release_msg( msg );
+
+    if ( nid != -1 && get_pnid( nid ) == MyPNid )
+    {
+        // this process is no longer valid in the monitor and needs to be restarted.
+        sleep(1);
+        exit(0);
+    }
+
+    return( rc ) ;
 }
 
 void persist_config( char *prefix )
@@ -3253,7 +3891,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
 
     nid = -1;
     priority = 0;
-    processName[0] = '\0';             // The monitor will assign name if null
+    processName[0] = '\0';       // The monitor will assign name if null
+    infile[0] = '\0';           // The monitor's default infile is used
     outfile[0] = '\0';          // The monitor's default outfile is used
     process_type = ProcessType_Undefined;
 
@@ -4342,179 +4981,6 @@ char *time_string( void )
     return( timestr ) ;
 }
 
-int up_node( int nid, char *node_name, bool nowait )
-{
-    const char method_name[] = "up_node";
-    bool integrating = false;
-    int pnid;
-    int rc = -1;
-    char msgString[MAX_BUFFER] = { 0 };
-
-    // If this is a real cluster
-    if ( nid == -1 )
-    {
-        // Get current physical state of all nodes
-        if ( !update_cluster_state( true, false ) )
-        {
-            return( rc ) ;
-        }
-        NodeState_t nodeState;
-        // Check physical state of the target node
-        if ( get_pnode_state( node_name, nodeState ) )
-        {
-            if ( nodeState != StateUp )
-            {
-                sprintf( msgString, "[%s] Node %s is not available.", MyName, node_name);
-                write_startup_log( msgString );
-                printf("[%s] Node %s is not available.\n", MyName, node_name);
-                return( rc ) ;
-            }
-        }
-        STATE state;
-        // Check monitors state of the target node
-        if ( !get_node_state( nid, node_name, pnid, state, integrating ) )
-        {
-            return( rc ) ;
-        }
-        if ( integrating )
-        {
-            sprintf( msgString, "[%s] Node up in progress! Try again when node re-integration completes.", MyName);
-            write_startup_log( msgString );
-            printf ("[%s] Node up in progress! Try again when node re-integration completes.\n", MyName );
-            return( rc ) ;
-        }
-        if ( state != State_Down )
-        {
-            sprintf( msgString, "[%s] Node %s is not in down state! (state=%s)", MyName, node_name, StateString(state) );
-            write_startup_log( msgString );
-            printf ("[%s] Node %s is not in down state! (state=%s)\n", MyName, node_name, StateString(state) );
-            return( rc ) ;
-        }
-
-        if ( SpareNodeColdStandby )
-        {
-            // Check monitors state of all logical nodes of the spare set.
-            // There must be at least one logical node down that is associated.
-            // with the spare set or the command is rejected (cold standby).
-            // Otherwise, the spare node comes up and it becomes a hot standby
-            // which is not currenly supported.
-            STATE spare_set_state = State_Up;
-            if ( !get_spare_set_state( node_name, spare_set_state ) )
-            {
-                return( rc ) ;
-            }
-            if ( spare_set_state != State_Down )
-            {
-                sprintf( msgString, "[%s] No nodes in the down state for spare node activation on %s!", MyName, node_name );
-                write_startup_log( msgString );
-                printf ("[%s] No nodes in the down state for spare node activation on %s!\n", MyName, node_name );
-                return( rc ) ;
-            }
-        }
-
-        // remove shared segment on the node
-        char cmd[256];
-        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $MY_SQROOT/logs/node_up_%s.log\"", node_name, node_name, node_name);
-        system(cmd);
-
-        // Start a monitor process on the node
-        if ( start_monitor( node_name, false, true ) )
-        {
-            sprintf( msgString, "[%s] Unable to start monitor process in node %s.", MyName, node_name );
-            write_startup_log( msgString );
-            printf ("[%s] Unable to start monitor process in node %s.\n", MyName, node_name );
-            return( rc ) ;
-        }
-    }
-    else
-    {
-        STATE state;
-        if ( !get_node_state( nid, NULL, pnid, state, integrating ) )
-        {
-            return( rc ) ;
-        }
-        if ( state != State_Down )
-        {
-            sprintf( msgString, "[%s] Node is not in down state! (nid=%d, state=%s)", MyName, nid, StateString(state) );
-            write_startup_log( msgString );
-            printf ("[%s] Node is not in down state! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
-            return( rc ) ;
-        }
-    }
-    if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] sending up node message.\n",
-                      method_name, __LINE__, MyName);
-
-    assert(gp_local_mon_io);
-    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-    {   // Could not acquire a message buffer
-        sprintf( msgString, "[%s] Unable to acquire message buffer.", MyName);
-        write_startup_log( msgString );
-        printf ("[%s] Unable to acquire message buffer.\n", MyName);
-        return( rc ) ;
-    }
-
-    msg->type = MsgType_Service;
-    msg->u.request.type = ReqType_NodeUp;
-    msg->u.request.u.up.nid = nid;
-
-    // If this is a real cluster
-    if ( nid == -1 )
-    {
-        if ( trace_settings & TRACE_SHELL_CMD )
-            trace_printf( "%s@%d [%s] %s node up successful, rtn=%d\n ",
-                 method_name, __LINE__, MyName, node_name,
-                 msg->u.reply.u.generic.return_code );
-
-        sprintf( msgString, "[%s] Node %s is merging to existing cluster.", 
-               MyName, node_name);
-        write_startup_log( msgString );
-        printf ("[%s] %s - Node %s is merging to existing cluster.\n",
-                 MyName, time_string(), node_name );
-
-        if ( ! nowait )
-        {
-            struct sigaction int_act, old_act;
-            int_act.sa_sigaction = interrupt_handler;
-            sigemptyset(&int_act.sa_mask);
-            sigaddset (&int_act.sa_mask, SIGINT);
-            int_act.sa_flags = SA_SIGINFO;
-            sigaction (SIGINT, &int_act, &old_act);
-
-            nodeUpPending = true;
-            nodeUpPnid = pnid;
-            STRCPY(nodeUpName, node_name);
-
-            nodeUpLock.lock();
-            nodeUpLock.wait();
-            nodeUpLock.unlock();
-
-            sigaction (SIGINT, &old_act, NULL);
-
-            nodeUpPending = false;
-        }
-        rc = MPI_SUCCESS;
-    }
-    else
-    {
-        msg->noreply = true;
-        STRCPY( msg->u.request.u.up.node_name, Node[nid] ); 
-        gp_local_mon_io->send( msg );
-        rc = 0;
-    }
-    
-    gp_local_mon_io->release_msg( msg );
-
-    if ( nid != -1 && get_pnid( nid ) == MyPNid )
-    {
-        // this process is no longer valid in the monitor and needs to be restarted.
-        sleep(1);
-        exit(0);
-    }
-
-    return( rc ) ;
-}
-
 void write_startup_log( char *msg )
 {
     char fname[PATH_MAX];
@@ -4647,69 +5113,6 @@ char *cd_cmd (char *cmd_tail, char *wdir)
     }
 
     return wdir;
-}
-
-void down_cmd ( int nid, char *cmd_tail )
-{
-    int numLNodes = get_lnodes_count( nid );
-    const char method_name[] = "down_cmd";
-    char msgString[MAX_BUFFER] = { 0 };
-
-    if ( numLNodes == -1 )
-    {
-        return;
-    }
-    int pnid;
-    int zid = -1;
-    char node_name[MAX_PROCESS_PATH];
-    STATE state;
-    if ( !get_zone_state( nid, zid, node_name, pnid, state ) )
-    {
-        return;
-    }
-    if ( state == State_Down )
-    {
-        sprintf( msgString, "[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
-        write_startup_log( msgString );
-        printf ("[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
-        return;
-    }
-    else
-    {
-        if ( numLNodes > 1 )
-        {
-            if ( strcmp(cmd_tail, "!") )
-            {
-                sprintf( msgString, "[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
-                write_startup_log( msgString );
-                printf ("[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
-                return;
-            }
-        }
-    }
-
-    if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf("%s@%d [%s] sending down node message.\n",
-                     method_name, __LINE__, MyName);
-
-    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-    {   // Could not acquire a message buffer
-        sprintf( msgString, "[%s] Unable to acquire message buffer.\n", MyName);
-        write_startup_log( msgString );
-        printf ("[%s] Unable to acquire message buffer.\n", MyName);
-        return;
-    }
-
-    msg->type = MsgType_Service;
-    msg->noreply = true;
-    msg->u.request.type = ReqType_NodeDown;
-    msg->u.request.u.down.nid = nid;
-    STRCPY(msg->u.request.u.down.node_name, Node[nid]);
-    STRCPY(msg->u.request.u.down.reason, cmd_tail);
-
-    gp_local_mon_io->send( msg );
-
-    NodeState[nid] = false;
 }
 
 void dump_cmd (char *cmd_tail, char delimiter)
@@ -5237,10 +5640,15 @@ void help_cmd (void)
     printf ("[%s] -- ls [{[detail]}] [<path>]\n", MyName);
     printf ("[%s] -- measure | measure_cpu\n", MyName);
     printf ("[%s] -- monstats\n", MyName);
-    printf ("[%s] -- node add {<node-name>}\n", MyName);
+    printf ("[%s] -- node add node-name <node-name>,\n", MyName);
+    printf ("[%s] --          cores {<first-core>} [ - <last-core>}],\n", MyName);
+    printf ("[%s] --          processors {<processor-count>},\n", MyName);
+    printf ("[%s] --          roles {connection|aggregation|storage}\n", MyName);
     printf ("[%s] -- node config [<nid>|<node-name>]\n", MyName);
-    printf ("[%s] -- node delete {<node-name>}\n", MyName);
+    printf ("[%s] -- node delete <nid>|<node-name>\n", MyName);
+    printf ("[%s] -- node down <nid> [, <reason-string>]\n", MyName);
     printf ("[%s] -- node info [<nid>]\n", MyName);
+    printf ("[%s] -- node up <name>\n", MyName);
     printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- persist config [{keys}|<persist-process-prefix>]\n", MyName);
     printf ("[%s] -- persist exec <persist-process-prefix>\n", MyName);
@@ -5489,11 +5897,12 @@ void node_cmd (char *cmd_tail)
     int nid;
     char token[MAX_TOKEN];
     char delimiter;
-    char *ptr;
+    char *cmd = cmd_tail;
+    char msgString[MAX_BUFFER] = { 0 };
 
     if (*cmd_tail == '\0')
     {
-        // TODO: Deprecated (use node config)
+        // TODO: To be deprecated (use 'node config' instead)
         // printf ("[%s] Invalid nodes syntax!\n", MyName);
         if ( ClusterConfig.IsConfigReady() )
         {
@@ -5508,7 +5917,7 @@ void node_cmd (char *cmd_tail)
                 lnodeConfig = ClusterConfig.GetLNodeConfig( i );
                 if ( lnodeConfig == NULL || i != lnodeConfig->GetNid())
                 {
-                    printf("[%s] Fatal Error: Corrupt 'cluster.conf' file.\n",MyName);
+                    printf("[%s] Fatal Error: Corrupt 'sqconfig.db' file.\n",MyName);
                     exit(1);
                 }
 
@@ -5528,27 +5937,114 @@ void node_cmd (char *cmd_tail)
     }
     else
     {
-        ptr = get_token (cmd_tail, token, &delimiter);
-        if (strcmp (token, "info") == 0)
+        cmd = get_token (cmd, token, &delimiter);
+        if (strcmp( token, "add" ) == 0)
         {
             if (Started)
             {
-                if ( *ptr )
+#if 0
+                if ( VirtualNodes )
                 {
-                    nid = atoi (ptr);
-                    if ((!isNumeric(ptr)) || (nid >= NumLNodes) || (nid < 0))
+                    sprintf( msgString, "[%s] Node add is not available with Virtual Nodes!",MyName);
+                    write_startup_log( msgString );
+                    printf ("[%s] Node add is not available with Virtual Nodes!\n", MyName);    
+                }
+                else
+#endif
+                {
+                    if (ElasticityEnabled)
+                    {
+                        // node-name=<node-name>,
+                        // cores=<first-core>[-<last-core>],
+                        // processors=<processor-count>,
+                        // roles=connection|aggregation|storage
+                        node_add_cmd( cmd, delimiter );
+                    }
+                    else
+                    {
+                        sprintf( msgString, "[%s] Node add is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
+                        write_startup_log( msgString );
+                        printf ("[%s] Node add is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                    }
+                }
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
+            }
+        }
+        else if (strcmp( token, "config" ) == 0)
+        {
+            // [ <nid> | <node-name> ]
+            node_config_cmd( cmd );
+        }
+        else if (strcmp( token, "delete" ) == 0)
+        {
+            if (Started) // Should delete be ok with the instance down?
+            {
+#if 0
+                if ( VirtualNodes )
+                {
+                    sprintf( msgString, "[%s] Node delete is not available with Virtual Nodes!",MyName);
+                    write_startup_log( msgString );
+                    printf ("[%s] Node delete is not available with Virtual Nodes!\n", MyName);    
+                }
+                else
+#endif
+                {
+                    if (ElasticityEnabled)
+                    {
+                        // <nid> | <node-name>
+                        node_delete_cmd( cmd );
+                    }
+                    else
+                    {
+                        sprintf( msgString, "[%s] Node delete is not enabled, to enable export SQ_ELASTICY_ENABLED=1",MyName);
+                        write_startup_log( msgString );
+                        printf ("[%s] Node delete is not enabled, to enable export SQ_ELASTICY_ENABLED=1\n", MyName);    
+                    }
+                }
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
+            }
+        }
+        else if (strcmp( token, "down" ) == 0)
+        {
+            if (Started)
+            {
+                // <nid> [, <reason-string>]
+                node_down_cmd( cmd );
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
+            }
+        }
+        else if (strcmp (token, "info") == 0)
+        {
+            if (Started)
+            {
+                // [ <nid> ]
+                if ( *cmd )
+                {
+                    nid = atoi (cmd);
+                    if ((!isNumeric(cmd)) || (nid >= NumLNodes) || (nid < 0))
                     {
                         printf ("[%s] Invalid nid\n", MyName);
                     }
                     else
                     {
-                        listNodeInfo(nid);
+                        node_info(nid);
+                        CurNodes = NumLNodes-NumDown;
                     }
                 }
                 else
                 {
                     // display all nodes
-                    listNodeInfo(-1);
+                    node_info(-1);
+                    CurNodes = NumLNodes-NumDown;
                 }
             }
             else
@@ -5556,11 +6052,460 @@ void node_cmd (char *cmd_tail)
                 printf (EnvNotStarted, MyName);
             }
         }
+        else if (strcmp( token, "up" ) == 0)
+        {
+            if (Started)
+            {
+                // <name>
+                node_up_cmd( cmd, delimiter );
+            }
+            else
+            {
+                printf( EnvNotStarted, MyName );
+            }
+        }
         else
         {
             printf ("[%s] Invalid nodes syntax!\n", MyName);
         }
-        CurNodes = NumLNodes-NumDown;
+    }
+}
+
+void node_add_cmd( char *cmd, char delimiter )
+{
+    const char method_name[] = "node_add_cmd";
+
+    bool process_cmd = false;
+    char *cmd_tail = cmd;
+    char name[MAX_PROCESS_NAME] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+    int  first_core, last_core, processor_count, roles;
+    char msgString[MAX_BUFFER] = { 0 };
+
+    // setup defaults
+    name[0] = '\0';
+    first_core = -1;
+    last_core = -1;
+    processor_count = 1;
+    roles = 0;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing node add command.\n",
+                      method_name, __LINE__, MyName);
+    
+    // parse options
+    // { node-name=<node-name>,
+    //   cores=<first-core>[-<last-core>],
+    //   processors=<processor-count>,
+    //   roles=connection|aggregation|storage }
+    if (*cmd_tail != '\0')
+    {
+        delimiter = ';';
+        while (*cmd_tail)
+        {
+            cmd_tail = get_token (cmd_tail, token, &delimiter, MAX_TOKEN-1);
+            normalize_case (token);
+            if (strcmp( token, "node-name" ) == 0)
+            {
+                cmd_tail = get_token( cmd_tail, name, &delimiter, MAX_PROCESS_NAME-1, false );
+                //printf ("[%s] node-name=%s, delimeter=%c\n", MyName, name, delimiter);
+            }
+            else if (strcmp( token, "cores" ) == 0)
+            {
+                delimiter = '-';
+                cmd_tail = get_token (cmd_tail, token, &delimiter, MAX_TOKEN-1,false,true);
+                first_core = atoi (token);
+                //printf ("[%s] first_core=%d, delimeter=%c\n", MyName, first_core, delimiter);
+                if (delimiter == '-')
+                {
+                    cmd_tail = get_token (cmd_tail, token, &delimiter);
+                    last_core = atoi (token);
+                    //printf ("[%s] last_core=%d, delimeter=%c\n", MyName, last_core, delimiter);
+                }
+            }
+            else if (strcmp( token, "processors" ) == 0)
+            {
+                delimiter = '=';
+                cmd_tail = get_token (cmd_tail, token, &delimiter);
+                processor_count = atoi (token);
+                //printf ("[%s] processor_count=%d, delimeter=%c\n", MyName, processor_count, delimiter);
+            }
+            else if (strcmp( token, "roles" ) == 0)
+            {
+                while (*cmd_tail && delimiter != '}')
+                {
+                    delimiter = '=';
+                    cmd_tail = get_token (cmd_tail, token, &delimiter);
+                    normalize_case (token);
+                    if (strcmp( token, "connection" ) == 0)
+                    {
+                        roles += RoleType_Connection;
+                        //printf ("[%s] roles=0x%x (%s), delimeter=%c\n", MyName, roles, token, delimiter);
+                    }
+                    else if (strcmp( token, "aggregation" ) == 0)
+                    {
+                        roles += RoleType_Aggregation;
+                        //printf ("[%s] roles=0x%x (%s), delimeter=%c\n", MyName, roles, token, delimiter);
+                    }
+                    else if (strcmp( token, "storage" ) == 0)
+                    {
+                        roles += RoleType_Storage;
+                        //printf ("[%s] roles=0x%x (%s), delimeter=%c\n", MyName, roles, token, delimiter);
+                    }
+                }
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Invalid node add options syntax!",MyName);
+                write_startup_log( msgString );
+                printf ("[%s] Invalid node add options syntax!\n", MyName);
+                delimiter = ' ';
+                break;
+            }
+        }
+        
+        // Check for required values (currently all but last_core are required)
+        if (name[0] != 0 
+         && first_core != -1
+         && processor_count != -1
+         && roles != 0)
+        {
+            process_cmd = true;
+        }
+    }
+    else
+    {
+        sprintf( msgString, "[%s] Invalid node add options syntax!",MyName);
+        write_startup_log( msgString );
+        printf ("[%s] Invalid node add options syntax!\n", MyName);
+    }
+
+    if ( process_cmd )
+    {
+        node_add( name, first_core, last_core, processor_count, roles );
+        if ( !load_configuration() )
+        {
+            exit (1);
+        }
+    }
+    else
+    {
+        sprintf( msgString, "[%s] Invalid node add options syntax!",MyName);
+        write_startup_log( msgString );
+        printf ("[%s] Invalid node add options syntax!\n", MyName);
+    }
+}
+
+void node_config_cmd( char *cmd )
+{
+    const char method_name[] = "node_config_cmd";
+
+    char *cmd_tail = cmd;
+    char delim;
+    char msgString[MAX_BUFFER] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+    int nid = -1;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing node config command.\n",
+                      method_name, __LINE__, MyName);
+    
+    // [ <nid> | <node-name> ]
+    if (*cmd_tail != '\0')
+    {
+        // <nid> | <node-name>
+        cmd_tail = get_token( cmd_tail, token, &delim );
+        if ( isNumeric( token ) )
+        {
+            nid = atoi (token);
+            if (nid < 0 || nid > NumLNodes - 1)
+            {
+                sprintf( msgString, "[%s] Node id is not configured!",MyName);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+               return;
+            }
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node config. (nid=%s)"
+                    , MyName, token );
+            write_startup_log( msgString );
+        }
+        else
+        {
+            if ( get_node_name( token ) != 0 ) 
+            {
+                sprintf( msgString, "[%s] Node %s is not configured!"
+                       , MyName, token);
+                write_startup_log( msgString );
+                printf( "[%s] Node %s is not configured!\n"
+                      , MyName, token);
+                return;
+            }
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node config. (node_name=%s)"
+                    , MyName, token );
+            write_startup_log( msgString );
+        }
+    }
+
+    node_config( nid, token );
+}
+
+void node_delete_cmd( char *cmd )
+{
+    const char method_name[] = "node_delete_cmd";
+
+    char *cmd_tail = cmd;
+    char delim;
+    char msgString[MAX_BUFFER] = { 0 };
+    char node_name[MAX_TOKEN] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+    int nid = -1;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing node delete command.\n",
+                      method_name, __LINE__, MyName);
+    
+    // <nid> | <node-name>
+    if (*cmd_tail != '\0')
+    {
+        // <nid> | <node-name>
+        cmd_tail = get_token( cmd_tail, token, &delim );
+        if ( isNumeric( token ) )
+        {
+            nid = atoi (token);
+            if (nid < 0 || nid > NumLNodes - 1)
+            {
+                sprintf( msgString, "[%s] Invalid node id!",MyName);
+                write_startup_log( msgString );
+                printf ("%s\n", msgString);
+               return;
+            }
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node delete. (nid=%s)"
+                    , MyName, token );
+            write_startup_log( msgString );
+        }
+        else
+        {
+            if ( get_node_name( token ) != 0 ) 
+            {
+                sprintf( msgString, "[%s] Node %s is not configured!"
+                       , MyName, token);
+                write_startup_log( msgString );
+                printf( "[%s] Node %s is not configured!\n"
+                      , MyName, token);
+                return;
+            }
+            STRCPY(node_name, token);
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node delete. (node_name=%s)"
+                    , MyName, node_name );
+            write_startup_log( msgString );
+        }
+    }
+    else
+    {
+        sprintf( msgString, "[%s] Invalid node delete options syntax!",MyName);
+        write_startup_log( msgString );
+        printf ("[%s] Invalid node delete options syntax!\n", MyName);
+        return;
+    }
+
+    node_delete( nid, node_name );
+    if ( !load_configuration() )
+    {
+        exit (1);
+    }
+}
+
+void node_down_cmd( char *cmd )
+{
+    const char method_name[] = "node_down_cmd";
+
+    int numLNodes = -1;
+    int nid;
+    char *cmd_tail = cmd;
+    char delim;
+    char msgString[MAX_BUFFER] = { 0 };
+    char token[MAX_TOKEN] = { 0 };
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing node down command.\n",
+                      method_name, __LINE__, MyName);
+    
+    // <nid> [, <reason-string>]
+    cmd_tail = get_token( cmd_tail, token, &delim );
+    if ( isNumeric( token ) )
+    {
+        if (cmd_tail[0] != 0)
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (nid=%s) \"%s\""
+                    , MyName, token, cmd_tail );
+        }
+        else
+        {
+            snprintf( msgString, sizeof(msgString)
+                    , "[%s] Executing node down. (nid=%s)"
+                    , MyName, token );
+        }
+        write_startup_log( msgString );
+        nid = atoi (token);
+        if (nid < 0 || nid > NumLNodes - 1)
+        {
+            sprintf( msgString, "[%s] Invalid node id!",MyName);
+            write_startup_log( msgString );
+            printf ("%s\n", msgString);
+           return;
+        }
+    }
+    else
+    {
+        printf ("[%s] Invalid node id!\n", MyName);
+        return;
+    }
+
+    numLNodes = get_lnodes_count( nid );
+    if ( numLNodes == -1 )
+    {
+        return;
+    }
+
+    int pnid;
+    int zid = -1;
+    char node_name[MAX_PROCESS_PATH];
+    STATE state;
+
+    if ( !get_zone_state( nid, zid, node_name, pnid, state ) )
+    {
+        return;
+    }
+    if ( state == State_Down )
+    {
+        sprintf( msgString, "[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
+        write_startup_log( msgString );
+        printf ("[%s] Node is already down! (nid=%d, state=%s)\n", MyName, nid, StateString(state) );
+        return;
+    }
+    else
+    {
+        if ( numLNodes > 1 )
+        {
+            if ( strcmp(cmd_tail, "!") )
+            {
+                sprintf( msgString, "[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
+                write_startup_log( msgString );
+                printf ("[%s] Multiple logical nodes in physical node. Use <nid> '!' to down all logical nodes in physical node\n", MyName);
+                return;
+            }
+        }
+    }
+
+    node_down( nid, cmd_tail );
+
+    NodeState[nid] = false;
+}
+
+void node_up_cmd( char *cmd, char delimiter )
+{
+    const char method_name[] = "node_up_cmd";
+
+    bool nowait = false;
+    bool process_cmd;
+    char *cmd_tail = cmd;
+    char delim;
+    char token[MAX_TOKEN];
+    int  i;
+    char msgString[MAX_BUFFER] = { 0 };
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf ("%s@%d [%s] processing up node command.\n",
+                      method_name, __LINE__, MyName);
+    
+    if (*cmd && delimiter == '{')
+    {
+        process_cmd = false;
+    }
+    else
+    {
+        process_cmd = true;
+    }
+
+    // parse options
+    if (delimiter == '{')
+    {
+        delimiter = ' ';
+        while (*cmd_tail && delimiter != '}')
+        {
+            cmd_tail = get_token (cmd_tail, token, &delimiter);
+            normalize_case (token);
+            if (strcmp (token, "nowait") == 0)
+            {
+                nowait = true;
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Invalid up options syntax!",MyName);
+                write_startup_log( msgString );
+                printf ("[%s] Invalid up options syntax!\n", MyName);
+                delimiter = ' ';
+                break;
+            }
+        }
+        
+        if (*cmd_tail == '\0')
+        {
+            sprintf( msgString, "[%s] Invalid up syntax!",MyName);
+            write_startup_log( msgString );
+            printf ("[%s] Invalid up syntax!\n", MyName);
+        }
+        else if (delimiter == '}')
+        {
+            process_cmd = true;
+        }
+    }
+
+    if ( process_cmd )
+    {
+        if ( VirtualNodes )
+        {
+            get_token( cmd_tail, token, &delim );
+            if ( isNumeric( token ) )
+            {
+                i = atoi (token);
+                if ( (i < 0) || (i > (CurNodes - 1)) )
+                {
+                    sprintf( msgString, "[%s] Invalid node id!",MyName);
+                    write_startup_log( msgString );
+                    printf ("[%s] Invalid node id!\n", MyName);
+                }
+                else
+                {
+                    // 1:1 mapping of virtual logical to physical nodes
+                    node_up( i, Node[i] );
+                }
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Invalid node id!",MyName);
+                write_startup_log( msgString );
+                printf ("[%s] Invalid node id!\n", MyName);
+            }
+        }
+        else
+        {
+            if ( get_node_name( cmd_tail ) == 0 ) 
+            {
+                node_up( -1, cmd_tail, nowait );
+            }
+            else
+            {
+                sprintf( msgString, "[%s] Invalid node name!",MyName);
+                write_startup_log( msgString );
+                printf ("[%s] Invalid node name!\n", MyName);
+            }
+        }
     }
 }
 
@@ -6158,108 +7103,6 @@ void suspend_cmd (char *cmd_tail)
     }
 }
 
-void up_cmd( char *cmd, char delimiter )
-{
-    const char method_name[] = "up_cmd";
-
-    bool nowait = false;
-    bool process_cmd;
-    char *cmd_tail = cmd;
-    char delim;
-    char token[MAX_TOKEN];
-    int  i;
-    char msgString[MAX_BUFFER] = { 0 };
-
-    if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf ("%s@%d [%s] processing up node command.\n",
-                      method_name, __LINE__, MyName);
-    
-    if (*cmd && delimiter == '{')
-    {
-        process_cmd = false;
-    }
-    else
-    {
-        process_cmd = true;
-    }
-
-    // parse options
-    if (delimiter == '{')
-    {
-        delimiter = ' ';
-        while (*cmd_tail && delimiter != '}')
-        {
-            cmd_tail = get_token (cmd_tail, token, &delimiter);
-            normalize_case (token);
-            if (strcmp (token, "nowait") == 0)
-            {
-                nowait = true;
-            }
-            else
-            {
-                sprintf( msgString, "[%s] Invalid up options syntax!",MyName);
-                write_startup_log( msgString );
-                printf ("[%s] Invalid up options syntax!\n", MyName);
-                delimiter = ' ';
-                break;
-            }
-        }
-        
-        if (*cmd_tail == '\0')
-        {
-            sprintf( msgString, "[%s] Invalid up syntax!",MyName);
-            write_startup_log( msgString );
-            printf ("[%s] Invalid up syntax!\n", MyName);
-        }
-        else if (delimiter == '}')
-        {
-            process_cmd = true;
-        }
-    }
-
-    if ( process_cmd )
-    {
-        if ( VirtualNodes )
-        {
-            get_token( cmd_tail, token, &delim );
-            if ( isNumeric( token ) )
-            {
-                i = atoi (token);
-                if ( (i < 0) || (i > (CurNodes - 1)) )
-                {
-                    sprintf( msgString, "[%s] Invalid node id!",MyName);
-                    write_startup_log( msgString );
-                    printf ("[%s] Invalid node id!\n", MyName);
-                }
-                else
-                {
-                    // 1:1 mapping of virtual logical to physical nodes
-                    up_node( i, Node[i] );
-                }
-            }
-            else
-            {
-                sprintf( msgString, "[%s] Invalid node id!",MyName);
-                write_startup_log( msgString );
-                printf ("[%s] Invalid node id!\n", MyName);
-            }
-        }
-        else
-        {
-            if ( get_node_name( cmd_tail ) == 0 ) 
-            {
-                up_node( -1, cmd_tail, nowait );
-            }
-            else
-            {
-                sprintf( msgString, "[%s] Invalid node name!",MyName);
-                write_startup_log( msgString );
-                printf ("[%s] Invalid node name!\n", MyName);
-            }
-        }
-    }
-}
-
 void wait_cmd (char *cmd_tail)
 {
     int nid;
@@ -6405,8 +7248,6 @@ void zone_cmd (char *cmd_tail)
 
 bool process_command( char *token, char *cmd_tail, char delimiter )
 {
-    char delim;
-    int i;
     bool done=false;
     char msgString[MAX_BUFFER] = { 0 };
     struct message_def *saved_msg = msg;
@@ -6429,46 +7270,15 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
     }
     else if (strcmp (token, "down") == 0)
     {
-        cmd_tail = get_token( cmd_tail, token, &delim );
-        if ( isNumeric( token ) )
+        if (Started)
         {
-            if (cmd_tail[0] != 0)
-            {
-                snprintf( msgString, sizeof(msgString)
-                        , "[%s] Executing node down. (nid=%s) \"%s\""
-                        , MyName, token, cmd_tail );
-            }
-            else
-            {
-                snprintf( msgString, sizeof(msgString)
-                        , "[%s] Executing node down. (nid=%s)"
-                        , MyName, token );
-            }
-            write_startup_log( msgString );
-            i = atoi (token);
-            if (i < 0 || i > NumLNodes - 1)
-            {
-                sprintf( msgString, "[%s] Invalid node id!",MyName);
-                write_startup_log( msgString );
-                printf ("%s\n", msgString);
-            }
-            else
-            {
-                if (Started)
-                {            
-                    down_cmd( i , cmd_tail);
-                }
-                else
-                {
-                    sprintf( msgString, "[%s] Environment has not been started!",MyName);
-                    write_startup_log( msgString );
-                    printf (EnvNotStarted, MyName);
-                }
-            }
+            node_down_cmd( cmd_tail );
         }
         else
         {
-            printf ("[%s] Invalid node id!\n", MyName);
+            sprintf( msgString, "[%s] Environment has not been started!",MyName);
+            write_startup_log( msgString );
+            printf( EnvNotStarted, MyName );
         }
     }
     else if (strcmp (token, "dump") == 0)
@@ -6728,7 +7538,7 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
         write_startup_log( msgString );
         if (Started)
         {
-            up_cmd( cmd_tail, delimiter );
+            node_up_cmd( cmd_tail, delimiter );
         }
         else
         {
@@ -6970,7 +7780,7 @@ int main (int argc, char *argv[])
             gethostname(Node[i], MPI_MAX_PROCESSOR_NAME);
         }
         NumDown = 0;
-        if ( !load_nodes() )
+        if ( !load_configuration() )
         {
             exit (1);
         }
@@ -6979,7 +7789,7 @@ int main (int argc, char *argv[])
     else
     {
         gethostname(MyNode, MPI_MAX_PROCESSOR_NAME);
-        if ( !load_nodes() )
+        if ( !load_configuration() )
         {
             exit (1);
         }
@@ -6996,9 +7806,18 @@ int main (int argc, char *argv[])
     // Initialize mpirun std file settings
     MpirunInit();
 
+    char *env = getenv("SQ_ELASTICY_ENABLED");
+    if ( env && isdigit(*env) )
+    {
+        if ( strcmp(env,"0")!=0 )
+        {
+            ElasticityEnabled = true;
+        }
+    }
+
     if ( !VirtualNodes )
     {
-        char *env = getenv("SQ_COLD_STANDBY_SPARE");
+        env = getenv("SQ_COLD_STANDBY_SPARE");
         if ( env )
         {
             if ( strcmp(env,"0")==0 )

@@ -136,7 +136,8 @@ public:
     struct message_def *ReIntegErrorMessage( const char *msgText );
     void SetIntegratingNid( int nid ) { integratingPNid_ = nid; };
     int HardNodeUp( int pnid, char *node_name );
-    CNode* GetIntegratingNode() { return Node[integratingPNid_]; }
+    inline CNode *GetIntegratingNode() { return Node[integratingPNid_]; }
+    inline CNode *GetNode( int pnid ) { return Node[pnid]; }
     static char *Timestamp( void );
     void WakeUp( void );
     bool responsive();
@@ -151,8 +152,10 @@ public:
     MPI_Comm getJoinComm() { return joinComm_; }
     int getJoinSock() { return joinSock_; }
     void ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth=false );
-    void NodeTmReady( int nid );
+    void NodeAdded( CNode *node );
+    void NodeDeleted( CNode *node );
     void NodeReady( CNode *spareNode );
+    void NodeTmReady( int nid );
     bool isMonSyncResponsive() { return monSyncResponsive_; }
     void SaveSchedData( struct internal_msg_def *recv_msg );
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
@@ -161,6 +164,8 @@ public:
     int  ReceiveSock(char *buf, int size, int sockFd);
     int  SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
     int  SendSock(char *buf, int size, int sockFd);
+
+    bool ReinitializeConfigCluster( bool nodeAdded, int pnid );
 
     int incrGetVerifierNum();
 

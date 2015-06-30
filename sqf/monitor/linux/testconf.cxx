@@ -257,7 +257,7 @@ int TestClusterConfig( void )
     CPersistConfig *persistConfig;
     cpu_set_t       coreMask;
 
-    printf( "BEGIN 'cluster.conf' Test\n" );
+    printf( "BEGIN 'sqconfig.db' Test\n" );
     
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     if ( clusterConfig.Initialize() )
@@ -459,15 +459,15 @@ int TestClusterConfig( void )
         }
         else
         {
-            printf( "FAILED 'cluster.conf' Load\n" );
+            printf( "FAILED 'sqconfig.db' Load\n" );
         }
     }
     else
     {
-        printf( "FAILED 'cluster.conf' Initialize\n" );
+        printf( "FAILED 'sqconfig.db' Initialize\n" );
     }
 
-    printf( "\nEND 'cluster.conf' Test\n" );
+    printf( "\nEND 'sqconfig.db' Test\n" );
     return( rc );
 }
 

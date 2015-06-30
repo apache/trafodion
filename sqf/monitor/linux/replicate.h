@@ -269,6 +269,32 @@ private:
     int level_;
 };
 
+class CReplNodeAdd: public CReplObj
+{
+public:
+    CReplNodeAdd(CLNodeConfig *lnodeConfig, CProcess *process);
+    virtual ~CReplNodeAdd();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CLNodeConfig *lnodeConfig_;
+    CProcess     *process_;
+};
+
+class CReplNodeDelete: public CReplObj
+{
+public:
+    CReplNodeDelete(CPNodeConfig *pnodeConfig, CProcess *process);
+    virtual ~CReplNodeDelete();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    CPNodeConfig *pnodeConfig_;
+    CProcess     *process_;
+};
+
 class CReplNodeDown: public CReplObj
 {
 public:

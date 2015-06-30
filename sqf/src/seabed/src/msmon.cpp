@@ -3730,6 +3730,10 @@ void msg_mon_init() {
                           static_cast<int>(ReqType_Mount)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_NewProcess) ==
                           static_cast<int>(ReqType_NewProcess)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeAdd) ==
+                          static_cast<int>(ReqType_NodeAdd)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeDelete) ==
+                          static_cast<int>(ReqType_NodeDelete)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_NodeDown) ==
                           static_cast<int>(ReqType_NodeDown)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_NodeInfo) ==

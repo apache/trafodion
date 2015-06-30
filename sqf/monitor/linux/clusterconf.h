@@ -49,10 +49,24 @@ public:
     CClusterConfig( void );
     ~CClusterConfig( void );
 
+    void            Clear( void );
+    bool            DeleteNodeConfig( int  pnid );
     inline sqlite3 *GetConfigDb( void ){ return ( db_ ); }
     bool            Initialize( void );
-    bool            LoadConfig( void );
     inline bool     IsConfigReady( void ) { return ( configReady_ ); }
+    bool            LoadConfig( void );
+    bool            SaveNodeConfig( const char *name
+                                  , int         nid
+                                  , int         pnid
+                                  , int         firstCore
+                                  , int         lastCore
+                                  , int         processors
+                                  , int         excludedFirstCore
+                                  , int         excludedLastCore
+                                  , int         roles );
+    void            SetCoreMask( int        firstCore
+                               , int        lastCore
+                               , cpu_set_t &coreMask );
 
 protected:
 private:
@@ -67,6 +81,10 @@ private:
     char       currNodename_[MPI_MAX_PROCESSOR_NAME];
     cpu_set_t  currExcludedCoreMask_;
     cpu_set_t  currCoreMask_;
+    int        currExcludedFirstCore_;
+    int        currExcludedLastCore_;
+    int        currFirstCore_;
+    int        currLastCore_;
     int        currProcessor_;
     ZoneType   currZoneType_;
     CPNodeConfig *currPNodeConfig_;
@@ -76,6 +94,10 @@ private:
     char       prevNodename_[MPI_MAX_PROCESSOR_NAME];
     cpu_set_t  prevExcludedCoreMask_;
     cpu_set_t  prevCoreMask_;
+    int        prevExcludedFirstCore_;
+    int        prevExcludedLastCore_;
+    int        prevFirstCore_;
+    int        prevLastCore_;
     int        prevProcessor_;
     ZoneType   prevZoneType_;
     CPNodeConfig *prevPNodeConfig_;
@@ -99,6 +121,7 @@ private:
 
     void  AddNodeConfiguration( bool spareNode );
     void  AddPersistConfiguration( void );
+    bool  DeleteDbNodeData( int  pnid );
     PROCESSTYPE GetProcessType( const char *processtype );
     bool  ProcessLNode( int nid
                       , int pnid
@@ -117,6 +140,16 @@ private:
     bool  ProcessPersist( void );
     bool  ProcessPersistData( const char *persistkey
                             , const char *persistvalue );
+    bool SaveDbLNodeData( int         nid
+                        , int         pnid
+                        , int         firstCore
+                        , int         lastCore
+                        , int         processors
+                        , int         roles );
+    bool SaveDbPNodeData( const char *name
+                        , int         pnid
+                        , int         excludedFirstCore
+                        , int         excludedLastCore );
 };
 
 #endif /* CLUSTERCONF_H_ */

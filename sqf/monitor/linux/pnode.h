@@ -119,7 +119,9 @@ public:
     struct internal_msg_def *PopMsg( struct sync_buffer_def *recvBuf );
     bool    SpaceAvail ( int msgSize );
     void    AddMsg (struct internal_msg_def *&msg, int msgSize );
+    void    SetClusterConfig( CClusterConfig *clusterConfig ) { clusterConfig_ = clusterConfig; }
     void    SetupCluster( CNode ***pnode_list, CLNode ***lnode_list );
+    void    ReloadConfig( void );
     void    RemoveFromSpareNodesList( CNode *node );
 
     int     PackNodeMappings( intBuffPtr_t &buffer );
@@ -132,7 +134,7 @@ public:
 protected:
 
 private:
-    CClusterConfig *clusterConfig_;  // 'cluster.conf' objects
+    CClusterConfig *clusterConfig_;  // 'sqconfig.db' objects
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list
     CNode  *head_;  // head of physical nodes linked list
