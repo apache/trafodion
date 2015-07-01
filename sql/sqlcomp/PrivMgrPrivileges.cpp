@@ -431,6 +431,22 @@ PrivMgrPrivileges::PrivMgrPrivileges (
 }
 
 // ----------------------------------------------------------------------------
+// Construct a PrivMgrPrivileges object for on objectUID
+// ----------------------------------------------------------------------------
+PrivMgrPrivileges::PrivMgrPrivileges (
+   const int64_t objectUID,
+   const std::string &metadataLocation,
+   ComDiagsArea *pDiags)
+: PrivMgr(metadataLocation, pDiags),
+  objectUID_(objectUID),
+  grantorID_(0)
+{
+  objectTableName_  = metadataLocation + "." + PRIVMGR_OBJECT_PRIVILEGES;
+  columnTableName_  = metadataLocation + "." + PRIVMGR_COLUMN_PRIVILEGES;
+}
+
+
+// ----------------------------------------------------------------------------
 // Construct a basic PrivMgrPrivileges object
 // ----------------------------------------------------------------------------
 PrivMgrPrivileges::PrivMgrPrivileges (
@@ -589,7 +605,6 @@ PrivStatus privStatus = getColRowsForGrantee(columnRowList_,granteeID,roleIDs,
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::getPrivRowsForObject(
-   const int64_t objectUID,
    std::vector<ObjectPrivsRow> & objectPrivsRows)
    
 {
@@ -1609,7 +1624,6 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::insertPrivRowsForObject(
-   const int64_t objectUID,
    const std::vector<ObjectPrivsRow> & objectPrivsRows)
    
 {
@@ -1630,7 +1644,7 @@ PrivStatus PrivMgrPrivileges::insertPrivRowsForObject(
     char granteeTypeString[3] = {0};
     char grantorTypeString[3] = {0};
     
-    row.objectUID_ = objectUID;
+    row.objectUID_ = objectUID_;
     row.objectName_ = rowIn.objectName;
     row.objectType_ = rowIn.objectType;
     row.granteeID_ = rowIn.granteeID;
@@ -2044,10 +2058,8 @@ PrivStatus PrivMgrPrivileges::generateObjectRowList()
 //
 // Params:
 //   objectUsage - the affected object
+//   command - GRANT or REVOKE RESTRICT or REVOKE CASCADE
 //   listOfAffectedObjects - returns the list of affected objects
-//
-// In the future, we want to cache the lists of objects instead of going to the
-// metadata everytime.
 // ****************************************************************************
 PrivStatus PrivMgrPrivileges::getAffectedObjects(
   const ObjectUsage &objectUsage,
@@ -2656,6 +2668,8 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   objectUsage.updatedPrivs = privsToRevoke;
 
   // get list of dependent objects that need to change 
+  // since only restrict is operational, only 1 row will
+  // be found in the listOfObject
   std::vector<ObjectUsage *> listOfObjects;
   retcode = getAffectedObjects(objectUsage, 
                                PrivCommand::REVOKE_OBJECT_RESTRICT, 
@@ -2676,19 +2690,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
     ObjectUsage *pObj = listOfObjects[i];
     PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
 
-    // If view no longer has select privilege, throw an error
-    if (pObj->objectType == COM_VIEW_OBJECT)
-    {
-      if (!thePrivs.getPriv(SELECT_PRIV))
-      {
-         deleteListOfAffectedObjects(listOfObjects);
-         *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
-                  << DgString0 (pObj->objectName.c_str());
-         return STATUS_ERROR;
-      }
-    }
-
-    int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
+    int32_t theGrantor = grantorID_;
     int32_t theGrantee = pObj->objectOwner;
     int64_t theUID = pObj->objectUID;
 
