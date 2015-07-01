@@ -276,11 +276,11 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
-  Lng32 createSQRowFromHbaseFormat();
+  Lng32 createSQRowFromHbaseFormat(Int64 *lastestRowTimestamp = NULL);
   Lng32 createSQRowFromHbaseFormatMulti();
-  Lng32 createSQRowFromAlignedFormat();
+  Lng32 createSQRowFromAlignedFormat(Int64 *lastestRowTimestamp = NULL);
   short copyCell();
-  Lng32 createSQRowDirect();
+  Lng32 createSQRowDirect(Int64 *lastestRowTimestamp = NULL);
   Lng32 setupSQMultiVersionRow();
 
   void extractColNameFields
@@ -1032,6 +1032,7 @@ public:
 
  protected:
   NABoolean rowUpdated_;
+  Int64 latestRowTimestamp_;
 };
 
 // UMD: unique UpdMergeDel on native Hbase table

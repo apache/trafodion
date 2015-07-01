@@ -1715,6 +1715,7 @@ ExHbaseUMDtrafUniqueTaskTcb::ExHbaseUMDtrafUniqueTaskTcb
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+  latestRowTimestamp_ = -1;
 }
 
 void ExHbaseUMDtrafUniqueTaskTcb::init() 
@@ -1736,6 +1737,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	case NOT_STARTED:
 	  {
 	    rowUpdated_ = FALSE;
+            latestRowTimestamp_ = -1;
 
 	    step_ = SETUP_UMD;
 	  }
@@ -1815,7 +1817,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	  case CREATE_FETCHED_ROW:
 	    {
-	    retcode =  tcb_->createSQRowDirect();
+	    retcode =  tcb_->createSQRowDirect(&latestRowTimestamp_);
             if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
 	       step_ = NEXT_ROW;
@@ -2162,17 +2164,11 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-	    LIST(HbaseStr) columns(tcb_->getHeap());
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
-	                                     columns,
+                                             NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
- 
-                                             -1 //colTS_
-                                             );
-
-
-
+                                             latestRowTimestamp_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -2212,8 +2208,6 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     columnToCheck, 
 						     colValToCheck,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
-
-
 						     -1 //colTS_
 						     );
 
@@ -2602,9 +2596,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 	  {
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
-                                             tcb_->deletedColumns_,
+                                             &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
- 
                                              -1 //colTS_
                                              );
 
@@ -2923,7 +2916,6 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-	    LIST(HbaseStr) columns(tcb_->getHeap());
             retcode = tcb_->ehi_->getRowID(rowID);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	    {
@@ -2932,10 +2924,8 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
             }
 	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
 					     rowID,
-					     columns,
+					     NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-
-
 					     -1 //colTS_
 					     );
 
@@ -3323,9 +3313,8 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	  {
 	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
 					     tcb_->rowId_,
-					     tcb_->deletedColumns_,
+					     &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-
 					     -1 //colTS_
 					     );
 
