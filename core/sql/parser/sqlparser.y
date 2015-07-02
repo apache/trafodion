@@ -2164,7 +2164,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		delete_statement
 %type <relx>      		delete_start_tokens
 %type <relx>      		control_statement
-%type <relx>                    osim_statement
+%type <relx>            osim_statement
+%type <boolean>   		optional_osim_force
 %type <relx>      		set_statement  
 %type <relx>      		set_table_statement  
 %type <boolean>                 optional_stream
@@ -20725,16 +20726,22 @@ control_statement : TOK_CONTROL TOK_QUERY TOK_SHAPE query_shape_options query_sh
                   | declare_or_set_cqd
                   | set_session_default_statement
 
-osim_statement : TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
+osim_statement : 
+                    //control osim capture location '<osim directory path>';
+                    //create directory and files, 
+                    //begin a session to capture running queries and referred tables/views/statistics.
+                   TOK_CONTROL TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
                    {
-                      //input : $4 osim directory
+
                       OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::CAPTURE, 
-                                                                                    *$4,
+                                                                                    *$5,
                                                                                     FALSE,
                                                                                     PARSERHEAP());
                       $$ = osim;
                    }
-                   |TOK_OSIM TOK_CAPTURE TOK_STOP
+                   //control osim capture stop;
+                   //end osim capture session, dump statistics data of referred tables.
+                   |TOK_CONTROL TOK_OSIM TOK_CAPTURE TOK_STOP
                    {
                       OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::OFF, 
                                                                                     *(new (PARSERHEAP()) NAString("")),
@@ -20742,7 +20749,23 @@ osim_statement : TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
                                                                                     PARSERHEAP());
                       $$ = osim;
                    }
-                   |TOK_OSIM TOK_SIMULATE TOK_START
+                   //control osim load from '<osim directory path>';
+                   //restore table DDLs, constraints, views on dev machine,
+                   //using information in <osim directory path>, which is collected from production cluster,
+                   //when qualified names of any existing objects conflict with objects to be loaded, 
+                   //if ',FORCE' is present, drop the existing objects, otherwise abort.
+                   |TOK_CONTROL TOK_OSIM TOK_LOAD TOK_FROM character_string_literal optional_osim_force
+                   {
+                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
+                                                                                    *$5,
+                                                                                    $6,
+                                                                                    PARSERHEAP());
+                      $$ = osim;
+                   }
+                   //control osim simulate start;
+                   //setup runtime information on dev machine for simulation production cluster in plan generation, 
+                   //must run right after "constrol osim load ..." is issued.
+                   |TOK_CONTROL TOK_OSIM TOK_SIMULATE TOK_START
                    {
                       OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
                                                                                     *(new (PARSERHEAP()) NAString("")),
@@ -20750,37 +20773,36 @@ osim_statement : TOK_OSIM TOK_CAPTURE TOK_LOCATION character_string_literal
                                                                                     PARSERHEAP());
                       $$ = osim;
                    }
-                   |TOK_OSIM TOK_SIMULATE TOK_CONTINUE character_string_literal
+                   //control osim simulate continue '<osim diretory path>';
+                   //setup runtime information on dev machine for simulation, 
+                   //this command is used to continue a simulation in a new SQL session.
+                   |TOK_CONTROL TOK_OSIM TOK_SIMULATE TOK_CONTINUE character_string_literal
                    {
                       OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::SIMULATE, 
-                                                                                    *$4,
+                                                                                    *$5,
                                                                                     FALSE,
                                                                                     PARSERHEAP());
                       $$ = osim;
                    }
-                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal
-                   {
-                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
-                                                                                    *$4,
-                                                                                    FALSE,
-                                                                                    PARSERHEAP());
-                      $$ = osim;
-                   }
-                   |TOK_OSIM TOK_LOAD TOK_FROM character_string_literal ',' TOK_FORCE
-                   {
-                      OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::LOAD, 
-                                                                                    *$4,
-                                                                                    TRUE,
-                                                                                    PARSERHEAP());                                                             
-                      $$ = osim;
-                   }
-                   |TOK_OSIM TOK_UNLOAD character_string_literal
+                   //control osim unload '<osim directory path>';
+                   //cleanup tables created by "control osim load from ..." command, 
+                   //the acutal action is to drop tables in <osim directory path>/CREATE_TABLE_DDLS.txt, 
+                   //and objects that refer them.
+                   |TOK_CONTROL TOK_OSIM TOK_UNLOAD character_string_literal
                    {
                       OSIMControl *osim = new (PARSERHEAP()) OSIMControl( OptimizerSimulator::UNLOAD, 
-                                                                                    *$3,
+                                                                                    *$4,
                                                                                     FALSE,
                                                                                     PARSERHEAP());                                                            
                       $$ = osim;
+                   }
+optional_osim_force: ',' TOK_FORCE
+                   {
+                       $$ = TRUE;
+                   }
+                   |empty
+                   { 
+                       $$ = FALSE; 
                    }
 /* type relx */
 /* Except where noted (the Ansi flavor of SET CATALOG and of SET SCHEMA),

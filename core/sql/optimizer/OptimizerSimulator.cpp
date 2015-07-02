@@ -64,7 +64,9 @@ extern const WordAsBits SingleBitArray[];
 //the dir path should start from /bulkload
 #define UNLOAD_HDFS_DIR "/bulkload/osim_capture"
 
-ULng32 hashFunc_int(const Int32& Int)
+static std::string OSIMCAT = "OSIM";
+
+static ULng32 hashFunc_int(const Int32& Int)
 {
   return (ULng32)Int;
 }
@@ -218,12 +220,13 @@ XMLElementPtr OsimElementMapper::operator()(void *parser,
   return elemPtr;
 }
 
+/////////////////////////////////////////////////////////////////////////
+
+
 const char* OptimizerSimulator::sysCallLogFileName_[NUM_OF_SYSCALLS]= {
   "ESTIMATED_ROWS.txt" ,
   "NODE_AND_CLUSTER_NUMBERS.txt",
   "NAClusterInfo.txt",
-  "NODENAME_TO_NODENUMBER.txt",
-  "NODENUMBER_TO_NODENAME.txt",
   "MYSYSTEMNUMBER.txt",
   "VIEWS.txt" ,
   "VIEWDDLS.txt",
@@ -241,13 +244,9 @@ const char* OptimizerSimulator::sysCallLogFileName_[NUM_OF_SYSCALLS]= {
   "HISTOGRAM_PATHS.xml"
 };
 
-// This constructor for OptimizerSimulator initializes the
-// OSIM mode and log directory after reading the env variables.
 OptimizerSimulator::OptimizerSimulator(CollHeap *heap)
 :osimLogLocalDir_(heap),
  osimMode_(OptimizerSimulator::OFF),
- hashDict_NODENAME_TO_NODENUMBER_(NULL),
- hashDict_NODENUMBER_TO_NODENAME_(NULL),
  hashDict_getEstimatedRows_(NULL),
  hashDict_Views_(NULL),
  hashDict_Tables_(NULL),
@@ -261,7 +260,7 @@ OptimizerSimulator::OptimizerSimulator(CollHeap *heap)
  capturedNodeAndClusterNum_(FALSE),
  capturedInitialData_(FALSE),
  hashDictionariesInitialized_(FALSE),
- sysParamsInitialized_(FALSE),
+ clusterInfoInitialized_(FALSE),
  tablesBeforeActionInitilized_(FALSE),
  viewsBeforeActionInitilized_(FALSE),
  CLIInitialized_(FALSE),
@@ -278,9 +277,10 @@ OptimizerSimulator::OptimizerSimulator(CollHeap *heap)
     sysCallLogFilePath_[sc]=NULL;
     writeSysCallStream_[sc]=NULL;
   }
+  // Init log4cxx logging
+  CommonLogger::instance().initLog4cxx("log4cxx.trafodion.osim.config");
 }
 
-// LCOV_EXCL_START :dpm
 // Print OSIM error message
 void OSIM_errorMessage(const char *errMsg)
 {
@@ -309,26 +309,12 @@ void OptimizerSimulator::warningMessage(const char *errMsg)
                       << DgString0(errMsg);
 }
 
-void OptimizerSimulator::debugMessage(const char* format, ...)
-{
-    //Redirect to file if debug log file is set.
-    char* debugLog = getenv("OSIM_DEBUG_LOG");
-    FILE *stream = stdout;
-    if(debugLog) stream = fopen(debugLog,"a+");
-    va_list argptr;
-    fprintf(stream, "[OSIM]");
-    va_start(argptr, format);
-    vfprintf(stream, format, argptr);
-    va_end(argptr);
-    if(debugLog) fclose(stream);
-}
-
 void OptimizerSimulator::dumpVersions()
 {
     //dump version info
     NAString cmd = "sqvers -u > ";
     cmd += sysCallLogFilePath_[VERSIONSFILE];
-    system(cmd.data());                //dump versions
+    system(cmd.data()); //dump versions
 }
 
 NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const char * localDir)
@@ -358,18 +344,19 @@ NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const ch
                       createLogDir();
                       initHashDictionaries();
                       initLogFilePaths();
-                      //record all qualified table names before running query.
-                      saveTablesBeforeAction();
-                      saveViewsBeforeAction();
-                      setSysParamsInitialized(TRUE);
+                      //record all qualified table names before running query,
+                      //except meta tables and histogram tables in any schema
+                      saveTablesBeforeStart();
+                      saveViewsBeforeStart();
+                      setClusterInfoInitialized(TRUE);
                       break;
                   case LOAD: //OFF --> LOAD
                       setOsimMode(targetMode);
                       setOsimLogdir(localDir);
                       initHashDictionaries();
                       initLogFilePaths();
-                      saveTablesBeforeAction();
-                      saveViewsBeforeAction();
+                      saveTablesBeforeStart();
+                      saveViewsBeforeStart();
                       loadDDLs();
                       loadHistograms();
                       break;
@@ -383,10 +370,7 @@ NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const ch
                       NADefaults::updateSystemParameters(TRUE);
                       //apply cqds
                       readAndSetCQDs();
-                      setSysParamsInitialized(TRUE);
-                      break;
-                  default: //OFF -->other than capture or load
-                      errorMessage("Mode transition is not allowed.");
+                      setClusterInfoInitialized(TRUE);
                       break;
               } 
               break;
@@ -409,7 +393,7 @@ NABoolean OptimizerSimulator::setOsimModeAndLogDir(osimMode targetMode, const ch
                 NADefaults::updateSystemParameters(TRUE);
                 //apply CQDs
                 readAndSetCQDs();
-                setSysParamsInitialized(TRUE);
+                setClusterInfoInitialized(TRUE);
             }
             else
                 errorMessage("Mode transition rather than LOAD to SIMULATE is not allowed.");
@@ -439,27 +423,37 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
     short retcode;
     Queue * outQueue = NULL;
     NAString query(STMTHEAP);
-    debugMessage("Dumping DDL for %s\n", qualifiedName.getQualifiedNameAsAnsiString().data());
+    CommonLogger::log(OSIMCAT, LL_INFO, "Dumping DDL for %s", qualifiedName.getQualifiedNameAsAnsiString().data());
         
     query = "SHOWDDL " + qualifiedName.getQualifiedNameAsAnsiString();
         
-    retcode = fetchAllRowsFromMetaTable(outQueue, query.data());
+    retcode = fetchAllRowsFromMetaContext(outQueue, query.data());
     if (retcode < 0 || retcode == 100/*rows not found*/) {
            CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
            OsimLogException("Errors Dumping Table DDL.", __FILE__, __LINE__).throwException();
     }
     outQueue->position();
-    //The result of showddl will be distributed to three files.
+    
     ofstream * createSchema = writeSysCallStream_[CREATE_SCHEMA_DDLS];
+    //To cope with reference dependance, when loading DDLs,
+    //the result of showddl will be distributed into following three files,
+    //and later during osim loading, obey them in the order of
+    //create tables->create constraints->create indexes->create views.
     ofstream * createTable = writeSysCallStream_[CREATE_TABLE_DDLS];
     ofstream * createIndex = writeSysCallStream_[CREATE_INDEX_DDLS];
     ofstream * alterTable = writeSysCallStream_[ALTER_TABLE_DDLS];
         
     //Dump a "create schema ..." to schema ddl file for every table.
-    (*createSchema) << "CREATE SCHEMA " << qualifiedName.getCatalogName() <<"."<< qualifiedName.getSchemaName() << ";" << endl;
-        
-    //Add a comment to table ddl file
-    (*createTable) << "--CREATE TABLE " << qualifiedName.getQualifiedNameAsAnsiString() <<endl;
+    
+    //This comment line will be printed during loading, ';' must be omitted
+    (*createSchema) << "--" <<"CREATE SCHEMA IF NOT EXISTS " 
+                                            << qualifiedName.getCatalogName() 
+                                            << "." << qualifiedName.getSchemaName() <<endl;
+
+    (*createSchema) << "CREATE SCHEMA IF NOT EXISTS " 
+                               << qualifiedName.getCatalogName() 
+                               <<"."<< qualifiedName.getSchemaName() 
+                               << ";" << endl;
 
     NABoolean isCreateTableStmt = FALSE;
     NABoolean isCreateIndexStmt = FALSE;
@@ -467,9 +461,16 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
     for (int i = 0; i < outQueue->numEntries(); i++) {
         OutputInfo * vi = (OutputInfo*)outQueue->getNext();
         char * ptr = vi->get(0);
-            
-        if(strstr(ptr, "CREATE TABLE"))
+        Int32 ix = 0;
+        for(; ptr[ix]=='\n'; ix++);
+        
+        if( !isCreateTableStmt && 
+            !isCreateIndexStmt && 
+            !isAlterTableStmt    && strstr(ptr, "CREATE TABLE"))
         {//start of create table statement
+            //print 1st line as comment,
+            //this comment line will be printed during loading
+            (*createTable) << "--" << ptr+ix << endl; 
             (*createTable) << ptr << endl;
             isCreateTableStmt = TRUE;
         }
@@ -477,13 +478,16 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
         {//in the middle of create table statement
             (*createTable) << ptr << endl;
         }
-        else if(isCreateTableStmt && strstr(ptr, ";")/* ';' takes up a single line.*/)
+        else if(isCreateTableStmt && strstr(ptr, ";"))//';' takes up a single line.
         {//end of create table statement
             (*createTable) << ptr << endl;
             isCreateTableStmt = FALSE;
         }
-        else if(strstr(ptr, "CREATE INDEX"))
+        else if( !isCreateTableStmt && 
+                    !isCreateIndexStmt && 
+                    !isAlterTableStmt    && (strstr(ptr, "CREATE INDEX") ||strstr(ptr, "CREATE UNIQUE INDEX")) )
         {//start of create index statement
+            (*createIndex) << "--" <<ptr+ix << endl;
             (*createIndex) << ptr << endl;
             isCreateIndexStmt = TRUE;            
         }
@@ -491,13 +495,16 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
         {//in the middle of create index statement
             (*createIndex) << ptr << endl;
         }
-        else if(isCreateIndexStmt && strstr(ptr, ";")/* ';' takes up a single line.*/)
+        else if(isCreateIndexStmt && strstr(ptr, ";"))
         {//end of create index statement
             (*createIndex) << ptr << endl;
             isCreateIndexStmt = FALSE;
         }
-        else if(strstr(ptr, "ALTER TABLE"))//ALTER TABLE
+        else if( !isCreateTableStmt && 
+                    !isCreateIndexStmt && 
+                    !isAlterTableStmt    && strstr(ptr, "ALTER TABLE"))//ALTER TABLE
         {//start of alter table statement
+            (*alterTable) << "--" <<ptr+ix << endl;
             (*alterTable) << ptr << endl;
             isAlterTableStmt = TRUE;
         }
@@ -528,7 +535,7 @@ void OptimizerSimulator::dumpHistograms()
     for(iterator.getNext(name, tableUID); name && tableUID; iterator.getNext(name, tableUID))
     {
         
-        debugMessage("Dumping histograms for %s\n", name->getQualifiedNameAsAnsiString().data());
+        CommonLogger::log(OSIMCAT, LL_INFO, "Dumping histograms for %s", name->getQualifiedNameAsAnsiString().data());
         
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
@@ -565,7 +572,7 @@ void OptimizerSimulator::dumpHistograms()
         query += ".SB_HISTOGRAMS WHERE TABLE_UID = ";
         query += std::to_string((long long)(*tableUID)).c_str();
                             
-        retcode = executeInMetaContext(query.data());
+        retcode = executeFromMetaContext(query.data());
         
         if(retcode >= 0)
         {    
@@ -622,7 +629,7 @@ void OptimizerSimulator::dumpHistograms()
         query += ".SB_HISTOGRAM_INTERVALS WHERE TABLE_UID = ";
         query += std::to_string((long long)(*tableUID)).c_str();
          
-        retcode = executeInMetaContext(query.data());
+        retcode = executeFromMetaContext(query.data());
 
         if(retcode >= 0)
         {            
@@ -692,8 +699,8 @@ void OptimizerSimulator::dropObjects()
       query = "DROP TABLE IF EXISTS ";
       query += stdQualTblNm.c_str();
       query += " CASCADE;";
-      debugMessage("DELETING %s ...\n", stdQualTblNm.c_str());
-      retcode = executeInMetaContext(query.data());
+      CommonLogger::log(OSIMCAT, LL_INFO, "DELETING %s ...", stdQualTblNm.c_str());
+      retcode = executeFromMetaContext(query.data());
       if(retcode < 0)
       {
           CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -742,7 +749,7 @@ void OptimizerSimulator::checkDuplicateNames()
    }
 }
 
-void OptimizerSimulator::saveViewsBeforeAction()
+void OptimizerSimulator::saveViewsBeforeStart()
 {
    if(viewsBeforeActionInitilized_)
        return;
@@ -762,8 +769,9 @@ void OptimizerSimulator::saveViewsBeforeAction()
                               " where object_type = 'VI' "
                                            "and schema_name <> '_MD_' " 
                                            "and schema_name <> '_REPOS_' "
-                                           "and object_name <> 'HISTOGRAMS' "
-                                           "and object_name <> 'HISTOGRAM_INTERVALS'; ");
+                                           "and schema_name <> '_PRIVMGR_MD_' "
+                                           "and object_name <> 'SB_HISTOGRAMS' "
+                                           "and object_name <> 'SB_HISTOGRAM_INTERVALS'; ");
    if (retcode < 0)
    {
       cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -814,7 +822,7 @@ void OptimizerSimulator::saveViewsBeforeAction()
    viewsBeforeActionInitilized_ = TRUE;
 }
 
-void OptimizerSimulator::saveTablesBeforeAction()
+void OptimizerSimulator::saveTablesBeforeStart()
 {
    if(tablesBeforeActionInitilized_)
        return;
@@ -834,8 +842,9 @@ void OptimizerSimulator::saveTablesBeforeAction()
                               " where object_type = 'BT' "
                                            "and schema_name <> '_MD_' " 
                                            "and schema_name <> '_REPOS_' "
-                                           "and object_name <> 'HISTOGRAMS' "
-                                           "and object_name <> 'HISTOGRAM_INTERVALS'; ");
+                                           "and schema_name <> '_PRIVMGR_MD_' "
+                                           "and object_name <> 'SB_HISTOGRAMS' "
+                                           "and object_name <> 'SB_HISTOGRAM_INTERVALS'; ");
    if (retcode < 0)
    {
       cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -851,7 +860,7 @@ void OptimizerSimulator::saveTablesBeforeAction()
        if (retcode < 0)
        {
           cliInterface_->retrieveSQLDiagnostics(CmpCommon::diags());
-          NAString errMsg = "Get existing tables,, error ";
+          NAString errMsg = "Get existing tables, error ";
           errMsg += std::to_string((long long)(retcode)).c_str();
           OsimLogException(errMsg.data(),  __FILE__, __LINE__).throwException();
        }
@@ -888,7 +897,7 @@ void OptimizerSimulator::saveTablesBeforeAction()
 
 void OptimizerSimulator::loadDDLs()
 {
-    debugMessage("loading tables and views ...\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "loading tables and views ...");
     short retcode;
 
     //If force option is present, 
@@ -905,7 +914,7 @@ void OptimizerSimulator::loadDDLs()
 
     //Step 1 :
     //Fetch and execute "create schema ..." from schema ddl file.
-    debugMessage("Step 1 Create Schemas:\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "Step 1 Create Schemas:");
     ifstream createSchemas(sysCallLogFilePath_[CREATE_SCHEMA_DDLS]);
     if(!createSchemas.good())
     {
@@ -919,15 +928,15 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createSchemas, statement, comment))
     {
         if(comment.length() > 0)
-            debugMessage("%s\n", comment.data());
+            CommonLogger::log(OSIMCAT, LL_INFO, "%s", comment.data());
         if(statement.length() > 0)
-            retcode = executeInMetaContext(statement.data());
+            retcode = executeFromMetaContext(statement.data());
         //ignore error of creating schema, which might already exist.
     }
     
     //Step 2:
     //Fetch and execute "create table ... "  from table ddl file.
-    debugMessage("Step 2 Create Tables:\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "Step 2 Create Tables:");
     ifstream createTables(sysCallLogFilePath_[CREATE_TABLE_DDLS]);
     if(!createTables.good())
     {
@@ -941,9 +950,9 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createTables, statement, comment))
     {
         if(comment.length() > 0)
-            debugMessage("%s\n", comment.data());
+            CommonLogger::log(OSIMCAT, LL_INFO, "%s", comment.data());
         if(statement.length() > 0){
-            retcode = executeInMetaContext(statement.data());
+            retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
             {
                 CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -957,7 +966,7 @@ void OptimizerSimulator::loadDDLs()
     //Step 3:
     //Fetch and execute "alter table ..." from alter table ddl file,
     //including definition of index or constraints,
-    debugMessage("Step 3 Alter Tables:\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "Step 3 Alter Tables:");
     ifstream alterTables(sysCallLogFilePath_[ALTER_TABLE_DDLS]);
     if(!alterTables.good())
     {
@@ -971,9 +980,9 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(alterTables, statement, comment))
     {
         if(comment.length() > 0)
-            debugMessage("%s\n", comment.data());
+            CommonLogger::log(OSIMCAT, LL_INFO, "%s", comment.data());
         if(statement.length() > 0){
-            retcode = executeInMetaContext(statement.data());
+            retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
             {
                 CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -986,7 +995,7 @@ void OptimizerSimulator::loadDDLs()
 
     //Step 4:
     //Fetch and execute "create index ... " from create index ddl file,
-    debugMessage("Step 4 Create Indexes:\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "Step 4 Create Indexes:");
     ifstream createIndexes(sysCallLogFilePath_[CREATE_INDEX_DDLS]);
     if(!createIndexes.good())
     {
@@ -1000,19 +1009,19 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createIndexes, statement, comment))
     {
         if(comment.length() > 0)
-            debugMessage("%s\n", comment.data());
+            CommonLogger::log(OSIMCAT, LL_INFO, "%s", comment.data());
         if(statement.length() > 0){
             //it is ok for create index to fail, 
-            //as alter table of foreign key constraint,
-            //my create index explicitly on the foreign key column, 
-            //and this one will have same name as explicitly created one.
-            retcode = executeInMetaContext(statement.data());
+            //as "alter table add foreign key"
+            //may create an index on the foreign key column implicitly, 
+            //which will have name conflict with a "create index" here.
+            retcode = executeFromMetaContext(statement.data());
         }
     }
 
     //Step 5:
     //Fetch and execute "create view ..." from view ddl file.
-    debugMessage("Step 5 Create Views:\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "Step 5 Create Views:");
     ifstream createViews(sysCallLogFilePath_[VIEWDDLS]);
     if(!createViews.good())
     {
@@ -1026,9 +1035,9 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createViews, statement, comment))
     {
         if(comment.length() > 0)
-            debugMessage("%s\n", comment.data());
+            CommonLogger::log(OSIMCAT, LL_INFO, "%s", comment.data());
         if(statement.length() > 0){
-            retcode = executeInMetaContext(statement.data());
+            retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
             {
                 CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -1103,7 +1112,10 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
 
   //pass modified file and qualified histogram table name out 
   if(!modifiedPathList->contains(UIDModifiedPath))
+  {
+      unlink(UIDModifiedPath->data());
       modifiedPathList->insert(UIDModifiedPath, qualifiedName);
+  }
 
   //open append
   std::ifstream infile (dataPath.data(), std::ifstream::binary);
@@ -1115,6 +1127,42 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
   } 
   std::ofstream outfile (UIDModifiedPath->data(), std::ofstream::binary|std::ofstream::app);
   //update table UID between files
+  NAString uidstr;
+  NAList<NAString> fields(STMTHEAP);
+  NAString oneLine(STMTHEAP);
+  uidstr.format("%ld", tableUID);
+  while(oneLine.readLine(infile) > 0)
+  {
+    oneLine.split('|', fields);
+    //dumped fields of sb_histograms or sb_histogram_intervals
+    //should have at least 3 or more.
+    if(fields.entries() > 3)
+    {
+        //replace table uid column 
+        //with valid table uid in target instance.
+        fields[0] = uidstr;
+
+        //replace V5, V6 with string "empty" if they are null
+        NAString & V5 = fields[fields.entries() - 2];
+        NAString & V6 = fields[fields.entries() - 1];
+        
+        if(V5.length() == 0)
+            V5 = "empty";
+
+        if(V6.strip(NAString::trailing, '\n').length() == 0)
+            V6 = "empty";
+
+        //then output the modified oneLine
+        for(CollIndex i = 0; i < fields.entries() - 1; i++)
+        {
+            outfile << fields[i] << '|';
+        }
+        outfile << V6 << endl;
+    }
+    else
+        OsimLogException("Invalid format of histogram data.", __FILE__, __LINE__).throwException();
+  }
+#if 0
   enum workState { WRITEUID, READUID, RESTOFLINE };
   workState state = READUID;
   char a = ' ';
@@ -1153,7 +1201,7 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
         break;      
     }//switch
   }//while
-  
+#endif
   return TRUE;
 }
 
@@ -1187,7 +1235,7 @@ void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
 
 short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)
 {
-    debugMessage("loading %s\n", qualifiedName->getQualifiedNameAsString().data());
+    CommonLogger::log(OSIMCAT, LL_INFO, "loading %s", qualifiedName->getQualifiedNameAsString().data());
     short retcode;
 
     NAString cmd(STMTHEAP);
@@ -1226,9 +1274,7 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
     
     cmd =       "load data local inpath '" + *modifiedPath + "' into table ";
     cmd +=      qualifiedName->getCatalogName()+"_"+qualifiedName->getSchemaName()+"_"+qualifiedName->getObjectName();
-
     execHiveSQL(cmd.data());
-
     
     //create sb_histograms
     cmd =      "CREATE TABLE IF NOT EXISTS " + qualifiedName->getQualifiedNameAsString();
@@ -1259,25 +1305,23 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
                           "  , constraint "HBASE_HIST_PK" primary key"
                           "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
                           " )";
-    retcode = executeInMetaContext(cmd.data());
+    retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-        NAString errMsg = "Load histogram data error while creating sb_histograms:  " ;
+        NAString errMsg = "Load histogram data error:  " ;
         errMsg += std::to_string((long long)(retcode)).c_str();
         OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }
     
     cmd = "upsert using load into " + qualifiedName->getQualifiedNameAsString() + " select * from hive.hive.";
     cmd += qualifiedName->getCatalogName()+"_"+qualifiedName->getSchemaName()+"_"+qualifiedName->getObjectName(); 
-
-
-    retcode = executeInMetaContext(cmd.data());
+    retcode = executeFromMetaContext(cmd.data());
     
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-        NAString errMsg = "Load histogram data error while upsert using load:  " ;
+        NAString errMsg = "Load histogram data error:  " ;
         errMsg += std::to_string((long long)(retcode)).c_str();
         OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }
@@ -1287,7 +1331,7 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
 
 short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)
 {
-    debugMessage("loading %s\n", qualifiedName->getQualifiedNameAsString().data());
+    CommonLogger::log(OSIMCAT, LL_INFO, "loading %s", qualifiedName->getQualifiedNameAsString().data());
     short retcode;
 
     NAString cmd(STMTHEAP);
@@ -1336,7 +1380,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
                        "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
                        " )";
 
-    retcode = executeInMetaContext(cmd.data());
+    retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -1347,7 +1391,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
     
     cmd = "upsert using load into " + qualifiedName->getQualifiedNameAsString() + " select * from hive.hive.";
     cmd += qualifiedName->getCatalogName()+"_"+qualifiedName->getSchemaName()+"_"+qualifiedName->getObjectName();
-    retcode = executeInMetaContext(cmd.data());
+    retcode = executeFromMetaContext(cmd.data());
     if(retcode < 0)
     {
         CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
@@ -1361,7 +1405,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
 
 void OptimizerSimulator::loadHistograms()
 {
-    debugMessage("loading histograms ...\n");
+    CommonLogger::log(OSIMCAT, LL_INFO, "loading histograms ...");
 
     OsimElementMapper om;
     OsimAllHistograms * allHistograms = NULL;
@@ -1495,7 +1539,7 @@ Int64 OptimizerSimulator::getTableUID(const char * catName, const char * schName
    return retcode;
 }
 
-short OptimizerSimulator::fetchAllRowsFromMetaTable(Queue * &q, const char* query)
+short OptimizerSimulator::fetchAllRowsFromMetaContext(Queue * &q, const char* query)
 {   
    initializeCLI();
    
@@ -1517,10 +1561,10 @@ short OptimizerSimulator::fetchAllRowsFromMetaTable(Queue * &q, const char* quer
    
 }
 
-short OptimizerSimulator::executeInMetaContext(const char* query)
+short OptimizerSimulator::executeFromMetaContext(const char* query)
 {
     Queue* dummy = NULL;
-    return fetchAllRowsFromMetaTable(dummy, query);
+    return fetchAllRowsFromMetaContext(dummy, query);
 }
 
 //Get a complete SQL statement and a line of comment in front of the SQL statement
@@ -1603,7 +1647,6 @@ void OptimizerSimulator::histogramHDFSToLocal()
     hdfsFS hdfs = hdfsBuilderConnect(dstBld);
 
     //copy file from hdfs to local one by one
-
     int numEntries = 0;
     NAString src(STMTHEAP);
     NAString dst(STMTHEAP);
@@ -1655,7 +1698,7 @@ void OptimizerSimulator::removeHDFSCacheDirectory()
     hdfsBuilderSetNameNodePort(hdfsBld, 0);
     hdfsFS hdfs = hdfsBuilderConnect(hdfsBld);    
 
-    //it's ok to fail as the hdfs directory may not exist.
+    //it's ok to fail as this directory may not exist.
     hdfsDelete(hdfs, UNLOAD_HDFS_DIR, 1);
     
     hdfsDisconnect(hdfs);
@@ -1723,8 +1766,6 @@ void OptimizerSimulator::createLogDir()
 
 void OptimizerSimulator::readSysCallLogfiles()
 {
-  readLogfile_NODENAME_TO_NODENUMBER();
-  readLogfile_NODENUMBER_TO_NODENAME();
   readLogfile_MYSYSTEMNUMBER();
   readLogfile_getEstimatedRows();
   readLogFile_getNodeAndClusterNumbers();
@@ -1736,12 +1777,7 @@ void OptimizerSimulator::initHashDictionaries()
   // Initialize hash dictionary variables for all the system calls.
   if(!hashDictionariesInitialized_)
   {
-    hashDict_NODENAME_TO_NODENUMBER_ = new(heap_) NAHashDictionary<NAString, NAString>
-                                                  (&NAString::hash, 101, TRUE, heap_);
-                                                  
-    hashDict_NODENUMBER_TO_NODENAME_ = new(heap_) NAHashDictionary<Int32, NAString>
-                                                  (&hashFunc_int, 101, TRUE, heap_);
-    
+
     hashDict_getEstimatedRows_ = new(heap_) NAHashDictionary<NAString, double>
                                            (&NAString::hash, 101, TRUE, heap_);
 
@@ -1827,298 +1863,6 @@ void OptimizerSimulator::initLogFilePaths()
     }
   }
 }
-
-
-// BEGIN *********** System Call: NODENAME_TO_NODENUMBER_() *************
-//
-void OptimizerSimulator::capture_NODENAME_TO_NODENUMBER(short error,
-                                                         const char *fileName,
-                                                         short nodeNameLen,
-                                                         Int32 *nodeNumber)
-{
-  char nodeName[36];
-  char errNodeNum[12];
-
-  // filename is in the format \<node_name>.$<volume>.<subvolume>.<file>
-  strncpy(nodeName, fileName, nodeNameLen);
-  nodeName[nodeNameLen] = '\0';
-
-  // Concatenate error and nodeNumber.
-  sprintf(errNodeNum, ":%d:%d:", error, *nodeNumber);
-
-  NAString *key_nodeName = new (heap_) NAString(nodeName, heap_);
-  NAString *val_nodeNumber = new (heap_) NAString(errNodeNum, heap_);
-  if (hashDict_NODENAME_TO_NODENUMBER_->contains(key_nodeName))
-  {
-    NAString *chkValue = hashDict_NODENAME_TO_NODENUMBER_->getFirstValue(key_nodeName);
-    if(chkValue->compareTo(val_nodeNumber->data()))
-      // A given key should always have the same value.
-      CMPASSERT(FALSE);
-  }
-  else
-  {
-    NAString *check = hashDict_NODENAME_TO_NODENUMBER_->insert(key_nodeName,
-                                                               val_nodeNumber);
-    // Open file in append mode.
-    ofstream * outLogfile = writeSysCallStream_[NODENAME_TO_NODENUMBER];
-    Int32 origWidth = (*outLogfile).width();
-    // Write data at the end of the file.
-    (*outLogfile) << "  ";
-    (*outLogfile).width(5); (*outLogfile) << error << "  ";
-    (*outLogfile).width(9); (*outLogfile) << nodeName << "  ";
-    (*outLogfile).width(10);(*outLogfile) << *nodeNumber << "  " << endl;
-    (*outLogfile).width(origWidth);
-  }
-}
-
-void OptimizerSimulator::readLogfile_NODENAME_TO_NODENUMBER()
-{
-  char nodeName[36];
-  char errNodeNum[50];
-  Int32 nodeNumber;
-  short error;
-  NABoolean isDir;
-
-  if(!fileExists(sysCallLogFilePath_[NODENAME_TO_NODENUMBER],isDir))
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error errMsg below + filename + '\0'
-    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.",
-                       sysCallLogFilePath_[NODENAME_TO_NODENUMBER]);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-  }
-
-  ifstream inLogfile(sysCallLogFilePath_[NODENAME_TO_NODENUMBER]);
-
-  // Read and ignore the top 2 header lines.
-  inLogfile.ignore(OSIM_LINEMAX, '\n');
-  inLogfile.ignore(OSIM_LINEMAX, '\n');
-
-  while(inLogfile.good())
-  {
-    // read nodeName and errNodeNum from the file
-    inLogfile >> error >> nodeName >> nodeNumber;
-    // eofbit is not set until an attempt is made to read beyond EOF.
-    // Exit the loop if there was no data to read above.
-    if(!inLogfile.good())
-      break;
-    // Concatenate error and nodeNumber.
-    snprintf(errNodeNum, sizeof(errNodeNum), ":%d:%d:", error, nodeNumber);
-    NAString *key_nodeName = new (heap_) NAString(nodeName, heap_);
-    NAString *val_nodeNumber = new (heap_) NAString(errNodeNum, heap_);
-    NAString *check = hashDict_NODENAME_TO_NODENUMBER_->insert(key_nodeName,
-                                                               val_nodeNumber);
-  }
-}
-
-short OptimizerSimulator::simulate_NODENAME_TO_NODENUMBER(const char *fileName,
-                                                           short nodeNameLen,
-                                                           Int32 *nodeNumber)
-{
-  char nodeName[36];
-  char errNodeNum[12];
-  short error;
-
-  // filename is in the format \<node_name>.$<volume>.<subvolume>.<file>
-  strncpy(nodeName, fileName, nodeNameLen);
-  nodeName[nodeNameLen] = '\0';
-
-  NAString key_nodeName(nodeName, heap_);
-  if (hashDict_NODENAME_TO_NODENUMBER_->contains(&key_nodeName))
-  {
-    NAString *val_nodeNumber = hashDict_NODENAME_TO_NODENUMBER_->getFirstValue(&key_nodeName);
-    strcpy(errNodeNum, val_nodeNumber->data());
-    error = (short)atoi(strtok(errNodeNum, ":"));
-    *nodeNumber = atoi(strtok(NULL, ":"));
-    return error;
-  }
-  // Should NOT reach here.
-  CMPASSERT(FALSE);
-  return -1;
-}
-
-
-short OSIM_NODENAME_TO_NODENUMBER(const char *nodeName, short nodeNameLen, Int32 *nodeNumber)
-{
-  short error = 0;
-
-  OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
-
-  if(CURRCONTEXT_OPTSIMULATOR &&
-      !CURRCONTEXT_OPTSIMULATOR->isCallDisabled(1))
-    mode = CURRCONTEXT_OPTSIMULATOR->getOsimMode();
-
-  // Check for OSIM mode
-  switch (mode)
-  {
-    case OptimizerSimulator::OFF:
-    case OptimizerSimulator::LOAD:
-    case OptimizerSimulator::CAPTURE:
-#pragma nowarn(252)   // warning elimination
-        error = NODENAME_TO_NODENUMBER_ ((char *) nodeName, nodeNameLen, nodeNumber);
-#pragma warn(252)  // warning elimination
-        // Capture nodeName and primaryNodeNumber into the log file.
-        if(mode == OptimizerSimulator::CAPTURE)
-            CURRCONTEXT_OPTSIMULATOR->capture_NODENAME_TO_NODENUMBER(error, nodeName, nodeNameLen, nodeNumber);
-        break;
-    case OptimizerSimulator::SIMULATE:
-        // Get the primaryNodeNumber for corresponding nodeName from the Hash Dictonary
-        // that was build using captured values.
-        error = CURRCONTEXT_OPTSIMULATOR->simulate_NODENAME_TO_NODENUMBER(nodeName, nodeNameLen, nodeNumber);
-        break;
-    default:
-        //The OSIM must run under OFF (normal), CAPTURE or SIMULATE mode.
-        OSIM_errorMessage("Invalid OSIM mode - It must be OFF or CAPTURE or SIMULATE.");
-        break;
-  }
-  return error;
-}
-
-
-//number -> name
-void OptimizerSimulator::readLogfile_NODENUMBER_TO_NODENAME()
-{
-  char nodeName[36];
-  char errNodeName[17];
-  Int32 nodeNumber;
-  short error;
-  NABoolean isDir;
-
-  if(!fileExists(sysCallLogFilePath_[NODENUMBER_TO_NODENAME],isDir))
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error errMsg below + filename + '\0'
-    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.",
-                       sysCallLogFilePath_[NODENUMBER_TO_NODENAME]);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-  }
-
-  ifstream inLogfile(sysCallLogFilePath_[NODENUMBER_TO_NODENAME]);
-
-  // Read and ignore the top 2 header lines.
-  inLogfile.ignore(OSIM_LINEMAX, '\n');
-  inLogfile.ignore(OSIM_LINEMAX, '\n');
-
-  while(inLogfile.good())
-  {
-    // read nodeNumber and errNodeName from the file
-    inLogfile >> error >> nodeNumber >> nodeName;
-    // eofbit is not set until an attempt is made to read beyond EOF.
-    // Exit the loop if there was no data to read above.
-    if(!inLogfile.good())
-      break;
-    // Concatenate error and nodeName.
-    snprintf(errNodeName, sizeof(errNodeName), ":%d:%s:", error, nodeName);
-    Int32 *key_nodeNumber = new Int32(nodeNumber);
-    NAString *val_nodeName = new (heap_) NAString(errNodeName, heap_);
-    Int32 *check = hashDict_NODENUMBER_TO_NODENAME_->insert(key_nodeNumber,
-                                                          val_nodeName);
-  }
-}
-// BEGIN *********** System Call: NODENUMBER_TO_NODENAME_() *************
-//
-void OptimizerSimulator::capture_NODENUMBER_TO_NODENAME(short error,
-                                                         Int32 nodeNumber,
-                                                         char *nodeNameStr,
-                                                         short maxLen,
-                                                         short *actualLen)
-{
-  char nodeName[36];
-  char errNodeName[17];
-
-  // Get the nodeName for actualLen bytes.
-  strncpy(nodeName, nodeNameStr, *actualLen);
-  nodeName[*actualLen] = '\0';
-
-  // Concatenate error and nodeName.
-  snprintf(errNodeName, sizeof(errNodeName), ":%d:%s:", error, nodeName);
-
-  Int32 *key_nodeNumber = new Int32(nodeNumber);
-  NAString *val_nodeName = new (heap_) NAString(nodeName, heap_);
-  if (hashDict_NODENUMBER_TO_NODENAME_->contains(key_nodeNumber))
-  {
-    NAString *chkValue = hashDict_NODENUMBER_TO_NODENAME_->getFirstValue(key_nodeNumber);
-    if(chkValue->compareTo(val_nodeName->data()))
-      // A given key should always have the same value.
-      CMPASSERT(FALSE);
-  }
-  else
-  {
-    Int32 *check = hashDict_NODENUMBER_TO_NODENAME_->insert(key_nodeNumber,
-                                                          val_nodeName);
-    // Open file in append mode.
-    ofstream * outLogfile = writeSysCallStream_[NODENUMBER_TO_NODENAME];
-
-    Int32 origWidth = (*outLogfile).width();
-    // Write data at the end of the file.
-    (*outLogfile) << "  ";
-    (*outLogfile).width(5); (*outLogfile) << error << "  ";
-    (*outLogfile).width(10); (*outLogfile) << nodeNumber << "  ";
-    (*outLogfile).width(9); (*outLogfile) << nodeName << "  " << endl;
-    (*outLogfile).width(origWidth);
-  }
-}
-
-
-short OptimizerSimulator::simulate_NODENUMBER_TO_NODENAME(Int32 nodeNumber,
-                                                           char *nodeName,
-                                                           short maxLen,
-                                                           short *actualLen)
-{
-  char errNodeName[17];
-  short error;
-
-  if (hashDict_NODENUMBER_TO_NODENAME_->contains(&nodeNumber))
-  {
-    NAString *val_nodeName = hashDict_NODENUMBER_TO_NODENAME_->getFirstValue(&nodeNumber);
-    strcpy(errNodeName, val_nodeName->data());
-    error = (short)atoi(strtok(errNodeName, ":"));
-    strcpy(nodeName, strtok(NULL, ":"));
-    *actualLen = (short)strlen(nodeName);
-    return error;
-  }
-  // Should NOT reach here.
-  CMPASSERT(FALSE);
-  return -1;
-}
-
-// nodeNumber  IN
-// nodeName    OUT
-//maxLen        IN
-//actualLen     OUT
-short OSIM_NODENUMBER_TO_NODENAME(Int32 nodeNumber, char *nodeName, short maxLen, short *actualLen)
-{
-  short error = 0;
-
-  OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
-
-  if(CURRCONTEXT_OPTSIMULATOR &&
-     !CURRCONTEXT_OPTSIMULATOR->isCallDisabled(2))
-    mode = CURRCONTEXT_OPTSIMULATOR->getOsimMode();
-
-  // Check for OSIM mode
-  switch (mode)
-  {
-    case OptimizerSimulator::OFF:
-    case OptimizerSimulator::LOAD:
-    case OptimizerSimulator::CAPTURE:
-       error = NODENUMBER_TO_NODENAME_(nodeNumber, nodeName, maxLen, actualLen);
-       if(mode == OptimizerSimulator::CAPTURE)
-           CURRCONTEXT_OPTSIMULATOR->capture_NODENUMBER_TO_NODENAME(error, nodeNumber,
-                                                      nodeName, maxLen, actualLen);
-       break;
-    case OptimizerSimulator::SIMULATE:
-       error = CURRCONTEXT_OPTSIMULATOR->simulate_NODENUMBER_TO_NODENAME(nodeNumber, nodeName,
-                                                              maxLen, actualLen);
-       break;
-    default:
-      // The OSIM must run under OFF (normal), CAPTURE or SIMULATE mode.
-      OSIM_errorMessage("Invalid OSIM mode - It must be OFF or CAPTURE or SIMULATE.");
-      break;
-  }
-  return error;
-}
-
-// END ************* System Call: NODENUMBER_TO_NODENAME_() *************
-
 
 // BEGIN *********** System Call: MYSYSTEMNUMBER() *************
 //
@@ -2410,7 +2154,7 @@ void OptimizerSimulator::capture_CQDs()
                writeSysCallStream_[CQD_DEFAULTSFILE];
 
   // send all externalized CQDs.
-  NADefaults &defs = CmpCommon::context()->schemaDB_->getDefaults();
+  NADefaults &defs = CmpCommon::context()->getSchemaDB()->getDefaults();
 
   for (UInt32 i = 0; i < defs.numDefaultAttributes(); i++)
   {
@@ -2525,7 +2269,8 @@ void OptimizerSimulator::capture_TableOrView(NATable * naTab)
     // if table not already captured then:
     // * write out table name to tables.txt file
     
-    //tables referenced by this table should also be write out.
+    //tables referred by this table should also be write out.
+    //recursively call myself until no referred table.
     const AbstractRIConstraintList &refList = naTab->getRefConstraints();
     BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
     for (Int32 i = 0; i < refList.entries(); i++)
@@ -2546,9 +2291,11 @@ void OptimizerSimulator::capture_TableOrView(NATable * naTab)
           {
                OsimLogException("Errors Dumping Table DDL.", __FILE__, __LINE__).throwException();
           }
+          
           capture_TableOrView(otherNaTable);
     }
-      
+    //end capture referred tables
+    
     if(!hashDict_Tables_->contains(&objQualifiedName) && 
          //and only capture tables exist before capture command is issued.
          hashDict_TablesBeforeAction_->contains(&nastrQualifiedName) 
@@ -2575,14 +2322,14 @@ void OptimizerSimulator::captureQueryText(const char * query)
   // Open file in append mode.
   ofstream * outLogfile = writeSysCallStream_[QUERIESFILE];
 
-  (*outLogfile) << "--BeginQuery" << endl;
+  //(*outLogfile) << "--BeginQuery" << endl;
   (*outLogfile) << query ;
   Int32 queryStrLen = strlen(query);
   // put in a semi-colon at end of query if it is missing
   if (query[queryStrLen]!= ';')
     (*outLogfile) << ";";
   (*outLogfile) << endl;
-  (*outLogfile) << "--EndQuery" << endl;
+  //(*outLogfile) << "--EndQuery" << endl;
 }
 
 void OSIM_captureQueryText(const char * query)
@@ -2605,9 +2352,6 @@ void OSIM_captureQueryShape(const char * shape)
   if(CURRCONTEXT_OPTSIMULATOR)
       CURRCONTEXT_OPTSIMULATOR->captureQueryShape(shape);
 }
-
-// LCOV_EXCL_START :nsk
-// LCOV_EXCL_STOP
 
 //every time each query
 void OptimizerSimulator::capturePrologue()
@@ -2674,11 +2418,6 @@ void OptimizerSimulator::cleanup()
     
   }
 
-  // clear out hash dictionaries
-  if(hashDict_NODENAME_TO_NODENUMBER_)
-      hashDict_NODENAME_TO_NODENUMBER_->clear(TRUE);
-  if(hashDict_NODENUMBER_TO_NODENAME_)
-      hashDict_NODENUMBER_TO_NODENAME_->clear(TRUE);
   if(hashDict_getEstimatedRows_)
       hashDict_getEstimatedRows_->clear(TRUE);
   if(hashDict_Views_)
@@ -2778,41 +2517,10 @@ NABoolean OptimizerSimulator::runningInCaptureMode()
   return getOsimMode() == OptimizerSimulator::CAPTURE;
 }
 
-NABoolean OptimizerSimulator::isSysParamsInitialized()
-{
-  return sysParamsInitialized_;
-}
-
-void OptimizerSimulator::setSysParamsInitialized(NABoolean b)
-{
-  sysParamsInitialized_ = b;
-}
-
-NABoolean OSIM_SysParamsInitialized()
+NABoolean OSIM_ClusterInfoInitialized()
 {
   return (CURRCONTEXT_OPTSIMULATOR && 
-           CURRCONTEXT_OPTSIMULATOR->isSysParamsInitialized());
-}
-
-NABoolean OSIM_isNTbehavior()
-{
-  return (CURRCONTEXT_OPTSIMULATOR &&
-          CURRCONTEXT_OPTSIMULATOR->getOsimMode() == OptimizerSimulator::SIMULATE &&
-          CURRCONTEXT_OPTSIMULATOR->getCaptureSysType() == OptimizerSimulator::OSIM_WINNT);
-}
-
-NABoolean OSIM_isNSKbehavior()
-{
-  return (CURRCONTEXT_OPTSIMULATOR &&
-          CURRCONTEXT_OPTSIMULATOR->getOsimMode() == OptimizerSimulator::SIMULATE &&
-          CURRCONTEXT_OPTSIMULATOR->getCaptureSysType() == OptimizerSimulator::OSIM_NSK);
-}
-
-NABoolean OSIM_isLinuxbehavior()
-{
-  return (CURRCONTEXT_OPTSIMULATOR &&
-          CURRCONTEXT_OPTSIMULATOR->getOsimMode() == OptimizerSimulator::SIMULATE &&
-          CURRCONTEXT_OPTSIMULATOR->getCaptureSysType() == OptimizerSimulator::OSIM_LINUX);
+           CURRCONTEXT_OPTSIMULATOR->isClusterInfoInitialized());
 }
 
 NABoolean OSIM_runningSimulation()
