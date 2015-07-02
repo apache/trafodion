@@ -67,7 +67,7 @@ using namespace std;
 // no use for this in EID
 #include "ComGuardianFileNameParts.h"
 #endif
-
+#include "Collections.h"
 
 // -----------------------------------------------------------------------
 // definitions we use to stay as compatible with the RWCString class, and
@@ -382,6 +382,9 @@ public:
   size_t        first(const char* cs) const { return fbstring_.find_first_of(cs); }
   size_t        first(const char* cs, size_t N) const{return fbstring_.find_first_of(cs, N);}
 
+  //splite this string into words by delim, which are stored in heap of elems,
+  NAList<NAString> & split(char delim, NAList<NAString> & elems);
+  
   UInt32      hash(caseCompare cmp) const;
   UInt32      hash() const;
   UInt32      hashFoldCase() const;
@@ -426,12 +429,9 @@ public:
 
   NAString&     prepend(const NAString& s, size_t N);
   NAString&     prepend(char c, size_t rep=1);  // Prepend c rep times
-  istream&      readFile(istream&);                     // Read to EOF or null character.
-  istream&      readLine(istream&,
-                         NABoolean skipWhite = TRUE);   // Read to EOF or newline.
-  istream&      readString(istream&);                   // Read to EOF or null character.
-  istream&      readToDelim(istream&, char delim='\n'); // Read to EOF or delimitor.
-  istream&      readToken(istream&);                    // Read separated by white space.
+  Int32      readFile(ifstream&);                     // Read to EOF or null character.
+  Int32      readLine(ifstream&);   // Read to EOF or newline.
+  Int32      readToDelim(ifstream&, char delim='\n'); // Read to EOF or delimitor.
 
   NAString&     remove(size_t pos);                     // Remove pos to end of string
 
@@ -450,17 +450,15 @@ public:
   NAString&     replace(size_t pos, size_t n, const NAString&, size_t);
 
   void          resize(size_t N);                       // Truncate or add blanks as necessary.
-  /*
-  void          restoreFrom(RWvistream&);               // Restore from ASCII store
-  void          restoreFrom(RWFile&);                   // Restore string
-  void          saveOn(RWvostream& s) const;
-  void          saveOn(RWFile& f) const;
-  */
+
   NASubString   strip(stripType s=trailing, char c=' ');
+  
   void          toLower();                              // Change self to lower-case
   void          toUpper();                              // Change self to upper-case
   void          toUpper8859_1();              // ISO 8859_1 alphabet upper-case
-
+  
+  NABoolean format(const char* formatTemplate...);
+  
   // useful for supplying hash functions to template hash collection ctors:
   static UInt32       hash(const NAString&);
 protected:
@@ -473,18 +471,16 @@ protected:
   void                  cow();                          // Do copy on write as needed
   
   void                  cow(size_t nc);                 // Do copy on write as needed
-  static size_t         adjustCapacity(size_t nc);
+  
   void                  initChar(char, NAMemory *h);    // Initialize from char
+
+  static char* buildBuffer(const char* formatTemplate, va_list args);
+  
 private:
 
   void          clone();          // Make self a distinct copy
 
   void          clone(size_t nc); // Make self a distinct copy w. capacity nc
-#if 0
-  static const size_t initialCapac;           // Initial allocation Capacity
-  static const size_t resizeInc;              // Resizing increment
-  static const size_t freeboard;              // Max empty space before reclaim
-#endif
 
   NAMemory * heap() const { return fbstring_.heap(); }
   

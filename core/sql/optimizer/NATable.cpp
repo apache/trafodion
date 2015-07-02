@@ -2782,10 +2782,7 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
 static NABoolean checkRemote(desc_struct* part_desc_list,
                              char * tableName)
 {
-  if (!OSIM_isNSKbehavior())
     return TRUE;
-
-  return FALSE;
 }
 #pragma warn(262)  // warning elimination
 
@@ -3567,7 +3564,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
                            char *localNodeName)
 
 {
-  if (!OSIM_isNSKbehavior())
     return;
 } // processDuplicateNames()
 // LCOV_EXCL_STOP
@@ -4092,13 +4088,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		partns_desc = partns_desc->header.next;
 	      }
 
-	  }
-	else
-	  {
-	    if ( OSIM_isNSKbehavior() )
-	      if(maxIndexLevelsPtr)
-		indexLevels= *maxIndexLevelsPtr;
-	    
 	  }
       }
 
@@ -5232,8 +5221,8 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      if(!OSIM_runningSimulation())
-        error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
+      if(!OSIM_runningSimulation())        
+          primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
     }
     else{
       //get qualified name of the clustering index which should
@@ -5285,7 +5274,8 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
+      primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
+      
     }
   }
 
@@ -6649,10 +6639,7 @@ NATable::~NATable()
   NAColumn *col;
   NABoolean delHeading = ActiveSchemaDB()->getNATableDB()->cachingMetaData();
   const LIST(CollIndex) & tableIdList = getTableIdList();
-  for(CollIndex i = 0; i < tableIdList.entries(); i++)
-  {
-    gpClusterInfo->removeFromTableToClusterMap(tableIdList[i]);
-  }
+
   if (privInfo_)
   {
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
@@ -7249,8 +7236,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
     if(cacheMetaData_)
       currentCacheSize_ = heap_->getAllocSize();
 
-    cachedNATable->removeTableToClusterMapInfo();
-
     //insert into list of tables that will be deleted
     //at the end of the statement after the query has
     //been compiled and the plan has been sent to the
@@ -7298,17 +7283,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
   //return NATable from cache
   return cachedNATable;
 }
-
-void NATable::removeTableToClusterMapInfo()
-{
-  CMPASSERT(gpClusterInfo);
-  const LIST(CollIndex) & tableIdList = getTableIdList();
-  for(CollIndex i = 0; i < tableIdList.entries(); i++)
-  {
-    gpClusterInfo->removeFromTableToClusterMap(tableIdList[i]);
-  }
-
-} // NATable::removeTableToClusterMapInfo()
 
 // by default column histograms are marked to not be fetched, 
 // i.e. needHistogram_ is initialized to DONT_NEED_HIST.
@@ -8026,20 +8000,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(table->getColumnCount() == 0)) {
       
       bindWA->setErrStatus();
-
-      //Delete the NATable object by deleting the naTableHeap
-      //if all of the following are true
-      //metadata caching is 'ON' (i.e. cacheMetaData_ == TRUE)
-      //we are using the metadata cache in this statement (i.e. useCache_==TRUE)
-      //this type of object is cacheable (i.e. corrName.isCacheable==TRUE)
-      if((cacheMetaData_) &&
-         (useCache_) &&
-         (corrName.isCacheable())) {
-        table->removeTableToClusterMapInfo();
-        delete table;
-      } else {
-        delete table;
-      }
+      
       return NULL;
     }
 
@@ -8160,7 +8121,6 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
     {
       if (key->getQualifiedNameObj() == toRemove->getQualifiedNameObj())
         {
-          cachedNATable->removeTableToClusterMapInfo();
 
           //remove from list of cached NATables
           if (cachedTableList_.remove(cachedNATable) > 0)
@@ -8278,7 +8238,6 @@ void NATableDB::resetAfterStatement(){
           cachedTableList_.remove(statementCachedTableList_[i]);
           //remove from the cache itself
           remove(statementCachedTableList_[i]->getKey());
-          statementCachedTableList_[i]->removeTableToClusterMapInfo();
 
           if ( statementCachedTableList_[i]->getHeapType() == NATable::OTHER ) {
             delete statementCachedTableList_[i];
@@ -8291,10 +8250,6 @@ void NATableDB::resetAfterStatement(){
       }
     }
 
-    // Remove the nonCacheable tables from the table to cluster map.
-    for (i=0; i < nonCacheableTableIdents_.entries(); i++) {
-      gpClusterInfo->removeFromTableToClusterMap(nonCacheableTableIdents_[i]);
-    }
     nonCacheableTableIdents_.clear();
 
     //remove references to nonCacheable tables from cache
@@ -8369,7 +8324,6 @@ void NATableDB::flushCache()
     {
       if(cachedTableList_[i])
       {
-        cachedTableList_[i]->removeTableToClusterMapInfo();
         delete cachedTableList_[i];
       }
     }
@@ -8576,7 +8530,7 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
    NABoolean InStatementHeap = (tableHeap == (NAMemory *)CmpCommon::statementHeap());
 
    remove(NATablep->getKey());
-   NATablep->removeTableToClusterMapInfo();
+   
    cachedTableList_.removeAt( currIndx );
    if ( ! InStatementHeap )
       delete NATablep;

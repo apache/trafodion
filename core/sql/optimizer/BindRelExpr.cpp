@@ -5250,33 +5250,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     bindWA->setHostArraysArea(tempWA);
   }
 
-  // versioning support for distributed database
-  if(!OSIM_isLinuxbehavior()) // dont have to support this for the time being
-  {
-    // OSIM_isLinuxbehavior() is always TRUE on SQ. So this block of code
-    // will never execute on SQ. Mask it out for code coverage.
-    // LCOV_EXCL_START -
-    if(isTrueRoot())
-    {
-      // Mixed-version query is always flagged
-      if(gpClusterInfo->checkIfMixedVersion()) {
-  	    bindWA->setErrStatus();
-        return NULL;
-      }
-
-      // Downrev compiler checking is not needed when binding DML
-      // as part of DDL execution, because the DDL command will not 
-      // generate a plan.
-      if(! bindWA->inDDL()) {
-        if (gpClusterInfo->checkIfDownRevCompilerNeeded()) {
-	        bindWA->setErrStatus();
-          return NULL;
-        }
-      }
-    }
-    // LCOV_EXCL_STOP
-  }
-
   if (bindWA->errStatus()) return NULL;
 
   // For SPJ, store the spOutParams_ from the bindWA in RelRoot,
