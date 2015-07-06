@@ -546,7 +546,8 @@ typedef struct registerregion_req {
 typedef enum {
     TM_DDL_CREATE     = 0,
     TM_DDL_DROP       = 1,
-    TM_DDL_TRUNCATE   = 2
+    TM_DDL_TRUNCATE   = 2,
+    TM_DDL_ALTER      = 3
 } TM_DDL_REQ;
 
 typedef struct ddlmessage_req {
@@ -555,6 +556,8 @@ typedef struct ddlmessage_req {
     int                 ddlreq_len;
     int                 crt_numsplits;
     int                 crt_keylen;
+    int                 alt_numopts;
+    int                 alt_optslen;
     TM_DDL_REQ          ddlreq_type;
     char                key_eyecatch[10];
 } Ddl_Message_Req_Type;

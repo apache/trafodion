@@ -174,6 +174,50 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
     return lv_error;
 }
 
+short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,  char ** pv_tbloptions,  int pv_tbloptslen, int pv_tbloptscnt)
+{    
+    short lv_error = FEOK;
+    Tm_Req_Msg_Type lv_req;
+    Tm_Rsp_Msg_Type lv_rsp;
+ 
+    TMlibTrace(("TMLIB_TRACE : TM_Transaction::alter_table ENTRY tablename: %s\n", pa_tblname), 1);
+
+    int len = sizeof(Tm_Req_Msg_Type);
+    int len_aligned = 8*(((len + 7)/8));
+    int buffer_size = pv_tbloptslen*pv_tbloptscnt;
+    int total_buffer = len_aligned + buffer_size;
+    char *buffer = new char[total_buffer];
+
+    if (!gv_tmlib.is_initialized())
+         gv_tmlib.initialize();
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
+    iv_transid.set_external_data_type(&lv_req.u.iv_ddl_request.iv_transid);
+    memcpy(lv_req.u.iv_ddl_request.ddlreq, pa_tblname, pv_tblname_len);
+    lv_req.u.iv_ddl_request.ddlreq_len = pv_tblname_len;
+    lv_req.u.iv_ddl_request.alt_numopts = pv_tbloptscnt;
+    lv_req.u.iv_ddl_request.alt_optslen = pv_tbloptslen;
+    lv_req.u.iv_ddl_request.ddlreq_type = TM_DDL_ALTER;
+    memcpy(buffer, (char*)&lv_req, len);
+
+    int i;
+    int index = len_aligned;
+    for(i=0; i<pv_tbloptscnt; i++){
+       memcpy((buffer+index), pv_tbloptions[i], pv_tbloptslen);
+       index = index + pv_tbloptslen;
+    }
+
+    short lv_last_error = gv_tmlib.send_tm_link(buffer, total_buffer, &lv_rsp, iv_transid.get_node());
+    delete buffer;
+    if(lv_last_error)
+    {
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table returning error %d\n", iv_last_error), 1);
+        return lv_last_error;
+    }
+
+    return lv_error;
+}
+
 short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
 {
     short lv_error = FEOK;

@@ -355,9 +355,9 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
 
           // store nodeName-nodeId pairs
           NAString *key_nodeName = new (heap_) NAString(nodeInfo[i].node_name, heap_);
-          size_t i = key_nodeName->index(':');
-          if (i && i != NA_NPOS)
-            key_nodeName->remove(i);
+          size_t pos = key_nodeName->index('.');
+          if (pos && pos != NA_NPOS)
+            key_nodeName->remove(pos);
 
           Int32 *val_nodeId = new Int32(nodeInfo[i].nid);
           nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);

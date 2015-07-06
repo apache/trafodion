@@ -404,6 +404,10 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
    char *ddlbuffer;
    char **buffer_keys;
 
+   char **buffer_opts;
+   int pv_numtblopts;
+   int pv_tbloptslen;
+
    TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
 
    switch(pp_msg->request()->u.iv_ddl_request.ddlreq_type)
@@ -463,6 +467,40 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
          lv_err = gv_HbaseTM.regTruncateOnAbort(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
                          pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+      case TM_DDL_ALTER:
+        
+         len = sizeof(Tm_Req_Msg_Type);
+         len_aligned = 8*((len + 7)/8);
+
+         pv_numtblopts = pp_msg->request()->u.iv_ddl_request.alt_numopts;
+         pv_tbloptslen = pp_msg->request()->u.iv_ddl_request.alt_optslen;
+
+         ddlbuffer = pp_msg->getBuffer();
+
+         buffer_size = pv_numtblopts*pv_tbloptslen;
+         buffer_opts = new char *[pv_numtblopts];
+
+         index = len_aligned;
+         for(int i=0; i<pp_msg->request()->u.iv_ddl_request.alt_numopts; i++)
+         {
+            buffer_opts[i] = new char[pp_msg->request()->u.iv_ddl_request.alt_optslen];
+            memcpy(buffer_opts[i],(char*)(ddlbuffer)+index , pv_tbloptslen);
+            index = index + pv_tbloptslen;
+         }
+
+         lv_err = gv_HbaseTM.alterTable(lv_transid,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len,
+                         buffer_opts,
+                         pv_numtblopts,
+                         pv_tbloptslen);
+
+         if(ddlbuffer!=NULL) {
+            for(int i=0; i<pp_msg->request()->u.iv_ddl_request.alt_numopts; i++)
+               delete buffer_opts[i];
+            delete[] buffer_opts;
+         }
+
          break;
       default:
          TMTrace (1, ("RM_Info_HBASE::hb_ddl_operation : Invalid ddl operation\n"));

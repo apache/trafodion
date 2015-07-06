@@ -221,7 +221,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
-		  const LIST(HbaseStr) & columns,
+		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
 
@@ -525,7 +525,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr &row, 
-		  const LIST(HbaseStr) & columns,
+		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
 		  const int64_t timestamp);
 

@@ -35,6 +35,15 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
   (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid);
 
 
+/* 
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    alterTableReq
+ * Signature: ([B[Ljava/lang/Object;J)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblName, jobjectArray pv_tableOptions, jlong pv_transID);
+
+
 #ifdef __cplusplus
 }
 #endif

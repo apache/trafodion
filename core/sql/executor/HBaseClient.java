@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.NavigableMap;
 import java.util.Map;
+import java.util.Arrays;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -587,13 +588,11 @@ public class HBaseClient {
         ChangeFlags status = 
             setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
 
-        // TODO: Remove this stub once transactional alter method is added to table member
-        transID = 0;  // stub
-
         try {
             if (transID != 0) {
-                // TODO: write this method to support transactional alter
-                // table.alter(tblName, tableOptions, transID);
+                // Transactional alter support
+                table.alter(tblName, tableOptions, transID);
+                if (logger.isDebugEnabled()) logger.debug("HBaseClient.alter(" + tblName + ") called with object length: " + java.lang.reflect.Array.getLength(tableOptions));
             }
             else {
                 // the modifyTable and modifyColumn operations are asynchronous,

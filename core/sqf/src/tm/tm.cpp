@@ -2780,7 +2780,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
 {
     short                  lv_ret;
     char                   la_send_buffer[4096];
-    char                   la_recv_buffer[MAX_RECEIVE_BUFFER];
+    char                   la_recv_buffer[sizeof(Tm_Req_Msg_Type)];
     char                  *la_recv_buffer_ddl = NULL;
     Tm_Broadcast_Req_Type *lp_br_req;
     Tm_Broadcast_Rsp_Type *lp_br_rsp; 
@@ -2796,7 +2796,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
 
     TMTrace(2, ("tm_process_msg ENTRY\n"));
 
-    if(pp_sre->sre_reqDataSize > MAX_RECEIVE_BUFFER){
+    if((unsigned)(pp_sre->sre_reqDataSize) > (sizeof(Tm_Req_Msg_Type))){
        la_recv_buffer_ddl = new char[pp_sre->sre_reqDataSize];
 
     lv_ret = BMSG_READDATA_(pp_sre->sre_msgId,           // msgid

@@ -131,3 +131,57 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
       pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    }
 }
+
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    alterTableReq
+ * Signature: ([B[Ljava/lang/Object;J)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_alterTableReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblName, jobjectArray pv_tableOptions, jlong pv_transID) {
+
+   short lv_ret;
+   int tblopts_len =0;
+   char la_tblname[TM_MAX_DDLREQUEST_STRING];
+
+   char** tbl_options;
+   tbl_options = new char *[TM_MAX_DDLREQUEST_STRING];
+
+   int lv_tblname_len = pp_env->GetArrayLength(pv_tblName);
+   if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
+      cout << "Table name length is larger than max allowed" << endl;
+   }
+   else {
+      memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
+      jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblName, 0);
+      memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
+
+      int tbloptions_cnt = pp_env->GetArrayLength(pv_tableOptions);
+
+      for (int i=0; i<tbloptions_cnt; i++) {
+
+         cout << " TableOptions loop " << i << endl;
+         jstring jstr_options = (jstring) pp_env->GetObjectArrayElement(pv_tableOptions, i);
+         const char *str_options = pp_env->GetStringUTFChars(jstr_options, 0);
+         // Don't forget to call `ReleaseStringUTFChars` when you're done.
+         
+         //int str_opts_len = length(jstr_options);
+         //int str_opts_len = pp_env->GetStringUTFLength(jstr_options);
+         int str_opts_len = sizeof(str_options)/sizeof(*str_options);
+         cout << "str_opts_len: " << str_opts_len <<  " or " << sizeof(str_options)/sizeof(*str_options) << endl;
+
+         tbl_options[i] = new char[tbloptions_cnt];
+         memcpy(tbl_options[i], str_options, str_opts_len);
+
+         pp_env->ReleaseStringUTFChars(jstr_options, str_options);
+
+         if(tblopts_len == 0)
+            tblopts_len = str_opts_len;
+      }
+
+      long lv_transid = (long) pv_transID;
+      lv_ret = ALTERTABLE(la_tblname, lv_tblname_len, tbl_options, tblopts_len, tbloptions_cnt, lv_transid);
+      pp_env->ReleaseByteArrayElements(pv_tblName, lp_tblname, 0);
+   }
+}
+ 
