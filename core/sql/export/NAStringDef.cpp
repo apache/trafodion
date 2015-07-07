@@ -425,7 +425,7 @@ char* NAString::buildBuffer(const char* formatTemplate, va_list args)
   int bufferSize = 20049;
   int msgSize = 0;
   //buffer is managed by this static function
-  static __thread char *buffer = NULL;
+  static THREAD_P char *buffer = NULL;
   va_list args2;
   va_copy(args2, args);
   bool secondTry = false;
