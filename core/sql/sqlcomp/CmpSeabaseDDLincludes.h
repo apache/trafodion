@@ -43,6 +43,7 @@
 #include "StmtDDLAlterIndexHBaseOptions.h"
 #include "StmtDDLAlterTableAddColumn.h"
 #include "StmtDDLAlterTableDropColumn.h"
+#include "StmtDDLAlterTableAlterColumn.h"
 #include "StmtDDLAlterTableAlterColumnSetSGOption.h"
 #include "StmtDDLAlterTableHBaseOptions.h"
 #include "StmtDDLAddConstraintPK.h"

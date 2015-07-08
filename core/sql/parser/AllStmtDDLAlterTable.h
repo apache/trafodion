@@ -61,7 +61,7 @@
 #include "StmtDDLAlterTableNamespace.h"
 #include "StmtDDLAlterTableSetConstraint.h"
 #include "StmtDDLAlterTableToggleConstraint.h"
-#include "StmtDDLAlterTableAlterColumnDefaultValue.h"
+#include "StmtDDLAlterTableAlterColumn.h"
 #include "StmtDDLAlterTableAlterColumnSetSGOption.h"
 #include "StmtDDLAlterTableHBaseOptions.h"
 
