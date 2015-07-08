@@ -231,8 +231,6 @@ const char* OptimizerSimulator::sysCallLogFileName_[NUM_OF_SYSCALLS]= {
   "TABLES.txt",
   "CREATE_SCHEMA_DDLS.txt",
   "CREATE_TABLE_DDLS.txt" ,
-  "CREATE_INDEX_DDLS.txt",
-  "ALTER_TABLE_DDLS.txt",
   "SYNONYMS.txt",
   "SYNONYMDDLS.txt",
   "CQDS.txt" ,
@@ -303,6 +301,19 @@ void OptimizerSimulator::warningMessage(const char *errMsg)
   // WARNING message
   *CmpCommon::diags() << DgSqlCode(OSIM_ERRORORWARNING)
                       << DgString0(errMsg);
+}
+
+void OptimizerSimulator::debugMessage(const char* format, ...)
+{
+    char* debugLog = getenv("OSIM_DEBUG_LOG");
+    FILE *stream = stdout;
+    if(debugLog) stream = fopen(debugLog,"a+");
+    va_list argptr;
+    fprintf(stream, "[OSIM]");
+    va_start(argptr, format);
+    vfprintf(stream, format, argptr);
+    va_end(argptr);
+    if(debugLog) fclose(stream);
 }
 
 void OptimizerSimulator::dumpVersions()
@@ -419,7 +430,7 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
     short retcode;
     Queue * outQueue = NULL;
     NAString query(STMTHEAP);
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Dumping DDL for %s", qualifiedName.getQualifiedNameAsAnsiString().data());
+    debugMessage("Dumping DDL for %s\n", qualifiedName.getQualifiedNameAsAnsiString().data());
         
     query = "SHOWDDL " + qualifiedName.getQualifiedNameAsAnsiString();
         
@@ -431,13 +442,8 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
     outQueue->position();
     
     ofstream * createSchema = writeSysCallStream_[CREATE_SCHEMA_DDLS];
-    //To cope with reference dependance, when loading DDLs,
-    //the result of showddl will be distributed into following three files,
-    //and later during osim loading, obey them in the order of
-    //create tables->create constraints->create indexes->create views.
+
     ofstream * createTable = writeSysCallStream_[CREATE_TABLE_DDLS];
-    ofstream * createIndex = writeSysCallStream_[CREATE_INDEX_DDLS];
-    ofstream * alterTable = writeSysCallStream_[ALTER_TABLE_DDLS];
         
     //Dump a "create schema ..." to schema ddl file for every table.
     
@@ -451,68 +457,19 @@ void OptimizerSimulator::dumpDDLs(const QualifiedName & qualifiedName)
                                <<"."<< qualifiedName.getSchemaName() 
                                << ";" << endl;
 
-    NABoolean isCreateTableStmt = FALSE;
-    NABoolean isCreateIndexStmt = FALSE;
-    NABoolean isAlterTableStmt = FALSE;
     for (int i = 0; i < outQueue->numEntries(); i++) {
         OutputInfo * vi = (OutputInfo*)outQueue->getNext();
         char * ptr = vi->get(0);
+        //skip heading newline, and add a comment line
         Int32 ix = 0;
         for(; ptr[ix]=='\n'; ix++);
-        
-        if( !isCreateTableStmt && 
-            !isCreateIndexStmt && 
-            !isAlterTableStmt    && strstr(ptr, "CREATE TABLE"))
-        {//start of create table statement
-            //print 1st line as comment,
-            //this comment line will be printed during loading
-            (*createTable) << "--" << ptr+ix << endl; 
-            (*createTable) << ptr << endl;
-            isCreateTableStmt = TRUE;
-        }
-        else if(isCreateTableStmt && !strstr(ptr, ";"))
-        {//in the middle of create table statement
-            (*createTable) << ptr << endl;
-        }
-        else if(isCreateTableStmt && strstr(ptr, ";"))//';' takes up a single line.
-        {//end of create table statement
-            (*createTable) << ptr << endl;
-            isCreateTableStmt = FALSE;
-        }
-        else if( !isCreateTableStmt && 
-                    !isCreateIndexStmt && 
-                    !isAlterTableStmt    && (strstr(ptr, "CREATE INDEX") ||strstr(ptr, "CREATE UNIQUE INDEX")) )
-        {//start of create index statement
-            (*createIndex) << "--" <<ptr+ix << endl;
-            (*createIndex) << ptr << endl;
-            isCreateIndexStmt = TRUE;            
-        }
-        else if(isCreateIndexStmt && !strstr(ptr, ";"))
-        {//in the middle of create index statement
-            (*createIndex) << ptr << endl;
-        }
-        else if(isCreateIndexStmt && strstr(ptr, ";"))
-        {//end of create index statement
-            (*createIndex) << ptr << endl;
-            isCreateIndexStmt = FALSE;
-        }
-        else if( !isCreateTableStmt && 
-                    !isCreateIndexStmt && 
-                    !isAlterTableStmt    && strstr(ptr, "ALTER TABLE"))//ALTER TABLE
-        {//start of alter table statement
-            (*alterTable) << "--" <<ptr+ix << endl;
-            (*alterTable) << ptr << endl;
-            isAlterTableStmt = TRUE;
-        }
-        else if(isAlterTableStmt && !strstr(ptr, ";"))
-        {//in the middle of alter table statement
-            (*alterTable) << ptr << endl;
-        }
-        else if(isAlterTableStmt && strstr(ptr, ";"))
-        {//end of alter table statement
-            (*alterTable) << ptr << endl;
-            isAlterTableStmt = FALSE;
-        }
+        if( strstr(ptr, "CREATE TABLE") ||
+            strstr(ptr, "CREATE INDEX") ||
+            strstr(ptr, "CREATE UNIQUE INDEX") ||
+            strstr(ptr, "ALTER TABLE")  )
+            (*createTable) << "--" << ptr+ix << endl;
+        //output ddl    
+        (*createTable) << ptr << endl;
     }
 }
 
@@ -531,7 +488,7 @@ void OptimizerSimulator::dumpHistograms()
     for(iterator.getNext(name, tableUID); name && tableUID; iterator.getNext(name, tableUID))
     {
         
-        QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Dumping histograms for %s", name->getQualifiedNameAsAnsiString().data());
+        debugMessage("Dumping histograms for %s\n", name->getQualifiedNameAsAnsiString().data());
         
         //dump histograms data to hdfs
         query =   "UNLOAD WITH NULL_STRING '\\N' INTO ";
@@ -695,7 +652,7 @@ void OptimizerSimulator::dropObjects()
       query = "DROP TABLE IF EXISTS ";
       query += stdQualTblNm.c_str();
       query += " CASCADE;";
-      QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "DELETING %s ...", stdQualTblNm.c_str());
+      debugMessage("DELETING %s ...\n", stdQualTblNm.c_str());
       retcode = executeFromMetaContext(query.data());
       if(retcode < 0)
       {
@@ -893,7 +850,7 @@ void OptimizerSimulator::saveTablesBeforeStart()
 
 void OptimizerSimulator::loadDDLs()
 {
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "loading tables and views ...");
+    debugMessage("loading tables and views ...\n");
     short retcode;
 
     //If force option is present, 
@@ -910,7 +867,7 @@ void OptimizerSimulator::loadDDLs()
 
     //Step 1 :
     //Fetch and execute "create schema ..." from schema ddl file.
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Step 1 Create Schemas:");
+    debugMessage("Step 1 Create Schemas:\n");
     ifstream createSchemas(sysCallLogFilePath_[CREATE_SCHEMA_DDLS]);
     if(!createSchemas.good())
     {
@@ -924,7 +881,7 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createSchemas, statement, comment))
     {
         if(comment.length() > 0)
-            QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "%s", comment.data());
+            debugMessage("%s\n", comment.data());
         if(statement.length() > 0)
             retcode = executeFromMetaContext(statement.data());
         //ignore error of creating schema, which might already exist.
@@ -932,7 +889,7 @@ void OptimizerSimulator::loadDDLs()
     
     //Step 2:
     //Fetch and execute "create table ... "  from table ddl file.
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Step 2 Create Tables:");
+    debugMessage("Step 2 Create Tables:\n");
     ifstream createTables(sysCallLogFilePath_[CREATE_TABLE_DDLS]);
     if(!createTables.good())
     {
@@ -946,7 +903,7 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createTables, statement, comment))
     {
         if(comment.length() > 0)
-            QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "%s", comment.data());
+            debugMessage("%s\n", comment.data());
         if(statement.length() > 0){
             retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
@@ -960,64 +917,8 @@ void OptimizerSimulator::loadDDLs()
     }
 
     //Step 3:
-    //Fetch and execute "alter table ..." from alter table ddl file,
-    //including definition of index or constraints,
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Step 3 Alter Tables:");
-    ifstream alterTables(sysCallLogFilePath_[ALTER_TABLE_DDLS]);
-    if(!alterTables.good())
-    {
-        NAString errMsg = "Error open ";
-        errMsg += sysCallLogFilePath_[ALTER_TABLE_DDLS];
-        OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
-    }   
-    //ignore first 2 lines
-    alterTables.ignore(OSIM_LINEMAX, '\n');
-    alterTables.ignore(OSIM_LINEMAX, '\n');
-    while(readStmt(alterTables, statement, comment))
-    {
-        if(comment.length() > 0)
-            QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "%s", comment.data());
-        if(statement.length() > 0){
-            retcode = executeFromMetaContext(statement.data());
-            if(retcode < 0)
-            {
-                CmpCommon::diags()->mergeAfter(*(cliInterface_->getDiagsArea()));
-                NAString errMsg = "Alter Table Error: " ;
-                errMsg += std::to_string((long long)(retcode)).c_str();
-                OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
-            }
-        }
-    }
-
-    //Step 4:
-    //Fetch and execute "create index ... " from create index ddl file,
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Step 4 Create Indexes:");
-    ifstream createIndexes(sysCallLogFilePath_[CREATE_INDEX_DDLS]);
-    if(!createIndexes.good())
-    {
-        NAString errMsg = "Error open ";
-        errMsg += sysCallLogFilePath_[CREATE_INDEX_DDLS];
-        OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
-    }   
-    //ignore first 2 lines
-    createIndexes.ignore(OSIM_LINEMAX, '\n');
-    createIndexes.ignore(OSIM_LINEMAX, '\n');
-    while(readStmt(createIndexes, statement, comment))
-    {
-        if(comment.length() > 0)
-            QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "%s", comment.data());
-        if(statement.length() > 0){
-            //it is ok for create index to fail, 
-            //as "alter table add foreign key"
-            //may create an index on the foreign key column implicitly, 
-            //which will have name conflict with a "create index" here.
-            retcode = executeFromMetaContext(statement.data());
-        }
-    }
-
-    //Step 5:
     //Fetch and execute "create view ..." from view ddl file.
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "Step 5 Create Views:");
+    debugMessage("Step 3 Create Views:");
     ifstream createViews(sysCallLogFilePath_[VIEWDDLS]);
     if(!createViews.good())
     {
@@ -1031,7 +932,7 @@ void OptimizerSimulator::loadDDLs()
     while(readStmt(createViews, statement, comment))
     {
         if(comment.length() > 0)
-            QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "%s", comment.data());
+            debugMessage("%s\n", comment.data());
         if(statement.length() > 0){
             retcode = executeFromMetaContext(statement.data());
             if(retcode < 0)
@@ -1231,7 +1132,7 @@ void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
 
 short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)
 {
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "loading %s", qualifiedName->getQualifiedNameAsString().data());
+    debugMessage("loading %s\n", qualifiedName->getQualifiedNameAsString().data());
     short retcode;
 
     NAString cmd(STMTHEAP);
@@ -1327,7 +1228,7 @@ short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedN
 
 short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)
 {
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "loading %s", qualifiedName->getQualifiedNameAsString().data());
+    debugMessage("loading %s\n", qualifiedName->getQualifiedNameAsString().data());
     short retcode;
 
     NAString cmd(STMTHEAP);
@@ -1401,7 +1302,7 @@ short OptimizerSimulator::loadHistogramIntervalsTable(NAString* modifiedPath, Qu
 
 void OptimizerSimulator::loadHistograms()
 {
-    QRLogger::log(CAT_SQL_COMP_OSIM, LL_INFO, "loading histograms ...");
+    debugMessage("loading histograms ...\n");
 
     OsimElementMapper om;
     OsimAllHistograms * allHistograms = NULL;
@@ -2263,7 +2164,6 @@ void OptimizerSimulator::capture_TableOrView(NATable * naTab)
     // handle base tables
 
     // if table not already captured then:
-    // * write out table name to tables.txt file
     
     //tables referred by this table should also be write out.
     //recursively call myself until no referred table.

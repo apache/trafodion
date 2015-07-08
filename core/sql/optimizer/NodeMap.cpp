@@ -38,6 +38,7 @@
 
 #include "CliSemaphore.h"
 
+static const int nodeNameLen = 256;
 //<pb>
 //==============================================================================
 //  Helper functions called only by NodeMap member functions.
@@ -406,7 +407,7 @@ NodeMapEntry::getText() const
 {
   short actualClusterNameLen = 0;
   NABoolean result;
-  char buffer[256];
+  char buffer[nodeNameLen];
 
   result = gpClusterInfo->NODE_ID_TO_NAME(getClusterNumber(), 
                                                                buffer, 
@@ -2498,7 +2499,7 @@ NodeMap::getText() const
   Int32 lastClusterNumber=0;
   Int32 lastNodeNumber=0;
   Int32 inRange=0;
-  char buffer[50];
+  char buffer[nodeNameLen];
   NAString result = "(";
 
   for (ULng32 nodeIdx = 0; nodeIdx < map_.entries(); nodeIdx++) {

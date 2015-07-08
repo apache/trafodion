@@ -198,8 +198,6 @@ class OptimizerSimulator : public NABasicObject
       TABLESFILE,
       CREATE_SCHEMA_DDLS,
       CREATE_TABLE_DDLS,
-      CREATE_INDEX_DDLS,
-      ALTER_TABLE_DDLS,
       SYNONYMSFILE,
       SYNONYMDDLS,
       CQD_DEFAULTSFILE,
@@ -248,6 +246,7 @@ class OptimizerSimulator : public NABasicObject
 
     void errorMessage(const char *msg);
     void warningMessage(const char *msg);
+    void debugMessage(const char* format, ...);
     
     NABoolean setOsimModeAndLogDir(osimMode mode, const char * localdir);
 

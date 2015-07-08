@@ -351,18 +351,17 @@ NAList<NAString> & NAString::split(char delim, NAList<NAString> & elems)
 {
   int begin = 0;
   int end = 0;
-  bool delim_found = false;
   elems.clear();
   end = fbstring_.find_first_of(delim, begin);
+  //For string like "w1|w2|w3|", devided by '|' we get 4 words
+  //"w1", "w2", "w3", ""
   while(end >= begin)
   {
      NAString word(fbstring_.data() + begin,  end - begin);
      elems.insert(word);
      begin = end + 1;
      end = fbstring_.find_first_of(delim, begin);
-     delim_found = true;
   }
-
   if(fbstring_.size() > 0)
   {
     NAString end_word(fbstring_.data()+begin, fbstring_.size()-begin);
@@ -389,17 +388,7 @@ Int32 NAString::readFile(ifstream& in) // Read to EOF or null character.
 
 Int32 NAString::readLine(ifstream& in)   // Read to EOF or newline.
 {
-    char c;
-    Int32 char_count = 0;
-    fbstring_ = "";
-    c = in.get();
-    while(c != '\0' && c!='\n' && c!=EOF)
-    {
-        fbstring_.append(1, c);
-        c = in.get();
-        char_count++;
-    }
-    return char_count;
+    return readToDelim(in, '\n');
 }
 
 Int32 NAString::readToDelim(ifstream& in, char delim) // Read to EOF or delimitor.
@@ -418,7 +407,7 @@ Int32 NAString::readToDelim(ifstream& in, char delim) // Read to EOF or delimito
 }
 
 //This static function calculates and allocates buffer for the printf-like formatted string,
-//and the formatted string is copied to buffer.
+//and the formatted string is copied to the buffer.
 char* NAString::buildBuffer(const char* formatTemplate, va_list args)
 {
   // calculate needed bytes to allocate memory from system heap.

@@ -382,7 +382,7 @@ public:
   size_t        first(const char* cs) const { return fbstring_.find_first_of(cs); }
   size_t        first(const char* cs, size_t N) const{return fbstring_.find_first_of(cs, N);}
 
-  //splite this string into words by delim, which are stored in heap of elems,
+  //splite this string into words by delim, memory for words are allocated in heap of elems,
   NAList<NAString> & split(char delim, NAList<NAString> & elems);
   
   UInt32      hash(caseCompare cmp) const;
