@@ -63,7 +63,6 @@ std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP.QRCommon";
 std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP.QRCommon.IPC";
 std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP.MV.REFRESH";
 std::string CAT_SQL_COMP_MVCAND               = "SQL.Comp.MVCandidates";
-std::string CAT_SQL_COMP_OSIM                = "SQL.COMP.OSIM";
 std::string CAT_SQL_MEMORY                    = "SQL.Memory";
 std::string CAT_SQL_COMP_RANGE                = "SQL.COMP.Range";
 std::string CAT_QR_TRACER                     = "QRCommon.Tracer";
