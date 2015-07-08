@@ -298,7 +298,6 @@ public:
   NABoolean allNodesAreWildcards() const;
   NABoolean allClustersSpecified()  const;
 
-  const NAList<CollIndex> * getTableNodeList(void) const;
   //--------------------------------
   // Accessor functions.
   //--------------------------------
