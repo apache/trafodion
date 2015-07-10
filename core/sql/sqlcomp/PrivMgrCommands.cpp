@@ -486,9 +486,8 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
-      
-      privStatus = objectPrivileges.getPrivRowsForObject(objectUID,objectPrivsRows);
+      PrivMgrPrivileges objectPrivileges(objectUID,getMetadataLocation(),pDiags_);
+      privStatus = objectPrivileges.getPrivRowsForObject(objectPrivsRows);
    }
 
    catch (...)
@@ -871,9 +870,9 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
+      PrivMgrPrivileges objectPrivileges(objectUID, getMetadataLocation(),pDiags_);
       
-      privStatus = objectPrivileges.insertPrivRowsForObject(objectUID,objectPrivsRows);
+      privStatus = objectPrivileges.insertPrivRowsForObject(objectPrivsRows);
    }
 
    catch (...)
