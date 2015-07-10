@@ -4799,6 +4799,224 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
   return;
 }
 
+void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
+     StmtDDLAlterTableAlterColumnDatatype * alterColNode,
+     NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  const NAString &tabName = alterColNode->getTableName();
+
+  ComObjectName tableName(tabName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
+  const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
+  ActiveSchemaDB()->getNATableDB()->useCache();
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  CorrName cn(tableName.getObjectNamePart().getInternalName(),
+              STMTHEAP,
+              tableName.getSchemaNamePart().getInternalName(),
+              tableName.getCatalogNamePart().getInternalName());
+
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-4082)
+        << DgTableName(cn.getExposedNameAsAnsiString());
+    
+      processReturn();
+
+      return;
+    }
+
+  // Make sure user has the privilege to perform the alter column
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
+  // return an error if trying to alter a column from a volatile table
+  if (naTable->isVolatileTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT);
+     
+      processReturn ();
+
+      return;
+    }
+
+  const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+  const NAString &colName = alterColNode->getColumnName();
+
+  const NAColumn * nacol = nacolArr.getColumn(colName);
+  if (! nacol)
+    {
+      // column doesnt exist. Error.
+      *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                          << DgColumnName(colName);
+
+      processReturn();
+
+      return;
+    }
+
+  const NAType * currType = nacol->getType();
+  NAType * newType = alterColNode->getType();
+
+  // Column that can be altered must meet these conditions:
+  //   -- old and new column datatype must be VARCHAR
+  //   -- new col length must be greater than or equal to old length
+  //   -- old and new character sets must be the same
+  NABoolean canAlter = FALSE;
+  if ((DFS2REC::isSQLVarChar(currType->getFSDatatype())) &&
+      (DFS2REC::isSQLVarChar(newType->getFSDatatype())) &&
+      (currType->getFSDatatype() == newType->getFSDatatype()) &&
+      (currType->getNominalSize() <= newType->getNominalSize()) &&
+      (((CharType*)currType)->getCharSet() == ((CharType*)newType)->getCharSet()))
+    canAlter = TRUE;
+
+  if (NOT canAlter)
+    {
+      NAString reason;
+      if (NOT ((DFS2REC::isSQLVarChar(currType->getFSDatatype())) &&
+               (DFS2REC::isSQLVarChar(newType->getFSDatatype()))))
+        reason = "Old and New datatypes must be VARCHAR.";
+      else if (currType->getFSDatatype() != newType->getFSDatatype())
+        reason = "Old and New datatypes must be the same.";
+      else if (((CharType*)currType)->getCharSet() != ((CharType*)newType)->getCharSet())
+        reason = "Old and New character sets must be the same.";
+      else if (currType->getNominalSize() > newType->getNominalSize())
+        reason = "New length must be greater than or equal to old length.";
+
+      // key column cannot be altered
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+      
+      return;
+    }
+
+  const NAFileSet * naFS = naTable->getClusteringIndex();
+  const NAColumnArray &naKeyColArr = naFS->getIndexKeyColumns();
+  if (naKeyColArr.getColumn(colName))
+    {
+      // key column cannot be altered
+      *CmpCommon::diags() << DgSqlCode(-1420)
+                          << DgColumnName(colName);
+
+      processReturn();
+
+      return;
+    }
+
+  if (naTable->hasSecondaryIndexes())
+    {
+      const NAFileSetList &naFsList = naTable->getIndexList();
+
+      for (Lng32 i = 0; i < naFsList.entries(); i++)
+        {
+          naFS = naFsList[i];
+          
+          // skip clustering index
+          if (naFS->getKeytag() == 0)
+            continue;
+
+          const NAColumnArray &naIndexColArr = naFS->getAllColumns();
+          if (naIndexColArr.getColumn(colName))
+            {
+              // secondary index column cannot be altered
+              *CmpCommon::diags() << DgSqlCode(-1421)
+                                  << DgColumnName(colName)
+                                  << DgTableName(naFS->getExtFileSetName());
+
+              processReturn();
+
+              return;
+            }
+        } // for
+    } // secondary indexes present
+
+  Int64 objUID = naTable->objectUid().castToInt64();
+
+  Lng32 colNumber = nacol->getPosition();
+  char *col = NULL;
+
+  char buf[4000];
+  str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d where object_uid = %Ld and column_number = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+              newType->getNominalSize(),
+              objUID,
+              colNumber);
+  
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+      return;
+    }
+  
+  deallocEHI(ehi); 
+  heap_->deallocateMemory(col);
+  
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                  NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  
+  processReturn();
+  
+  return;
+}
+
 void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
                                                        StmtDDLAddConstraint * alterAddConstraint,
                                                        NAString &currCatName, NAString &currSchName)

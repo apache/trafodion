@@ -52,6 +52,7 @@
 #include "ParTableUsageList.cpp"	
 #include "StmtCompilationMode.cpp"   
 #include "StmtDDLAlter.cpp"		
+#include "StmtDDLAlterTableAlterColumn.cpp"		
 #include "StmtDDLCreate.cpp"		
 #include "StmtDDLDrop.cpp"		
 #include "StmtDDLGive.cpp"
