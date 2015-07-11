@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ ODBC_OBJS = $(OUTDIR)/odbcas_drvr.o \
 
 OBJS = $(COMMON_OBJS) $(COMPRESS_OBJS) $(DBT_OBJS) $(ODBC_OBJS) $(WMS_OBJS)
 
-INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(SQ_HOME)/../log4cpp/$(LOG4CPP_VER)/include -I$(SQ_HOME)/commonLogger
+INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(SQ_HOME)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 
 COMMON_DEFINES = -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DTIMER_FIXED -w -DNSK_ODBC_SRVR -D__TIME_LOGGER -DTHREADED
@@ -122,7 +122,7 @@ DBT_LIBS =
 
 EARLY_LIBS = -ljsig
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cpp
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -L$(LOG4CXX_LIB_DIR) -llog4cxx
 
 ifeq ($(SQ_MTYPE),64)
 LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server

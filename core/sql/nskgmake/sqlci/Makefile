@@ -27,6 +27,6 @@ DEP_LIBS += tdm_sqlcli sqlcilib arkcmp_dll
 
 CPPSRC += vprocsqlci.cpp
 
+
 SRCPATH := sqlci bin
 
-EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so

@@ -566,6 +566,8 @@ void HistogramCache::createColStatsList
                                            TRUE,        // look for unique index
                                            FALSE,       // look for primary key
                                            FALSE,       // look for any index or primary key
+                                           FALSE,       // sequence of cols doesn't matter
+                                           FALSE,       // don't exclude computed cols
                                            NULL         // index name
                                            ))
               col->setIsUnique(); 
@@ -2184,7 +2186,12 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table
      ARRAY(const char *) nodeNames(heap, partns);
      if (table->getRegionsNodeName(partns, nodeNames)) {
        for (Int32 p=0; p < partns; p++) {
-         const NAString node (nodeNames[p], heap);
+         NAString node(nodeNames[p], heap);
+         // remove anything after node name
+         size_t size = node.index('.');
+          if (size && size != NA_NPOS)
+            node.remove(size);
+
          // populate NodeMape with region server node ids
          nodeMap->setNodeNumber(p, nodeMap->mapNodeNameToNodeNum(node));
        }
@@ -2775,10 +2782,7 @@ static void createNodeMap (hive_tbl_desc* hvt_desc,
 static NABoolean checkRemote(desc_struct* part_desc_list,
                              char * tableName)
 {
-  if (!OSIM_isNSKbehavior())
     return TRUE;
-
-  return FALSE;
 }
 #pragma warn(262)  // warning elimination
 
@@ -3560,7 +3564,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
                            char *localNodeName)
 
 {
-  if (!OSIM_isNSKbehavior())
     return;
 } // processDuplicateNames()
 // LCOV_EXCL_STOP
@@ -4085,13 +4088,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		partns_desc = partns_desc->header.next;
 	      }
 
-	  }
-	else
-	  {
-	    if ( OSIM_isNSKbehavior() )
-	      if(maxIndexLevelsPtr)
-		indexLevels= *maxIndexLevelsPtr;
-	    
 	  }
       }
 
@@ -5225,8 +5221,8 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      if(!OSIM_runningSimulation())
-        error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
+      if(!OSIM_runningSimulation())        
+          primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
     }
     else{
       //get qualified name of the clustering index which should
@@ -5278,7 +5274,8 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
+      primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
+      
     }
   }
 
@@ -6247,16 +6244,25 @@ NABoolean NATable::verifyMvIsInitializedAndAvailable(BindWA *bindWA) const
 // 
 // primaryKeyOnly: TRUE, get primary key 
 // indexName: return index name, if passed in
+// lookForSameSequenceOfCols: TRUE, look for an index in which the
+//                            columns appear in the same sequence
+//                            as in inputCols (whether they are ASC or
+//                            DESC doesn't matter).
+//                            FALSE, accept any index that has the
+//                            same columns, in any sequence.
 NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 					 NABoolean lookForExplicitIndex,
 					 NABoolean lookForUniqueIndex,
 					 NABoolean lookForPrimaryKey,
 					 NABoolean lookForAnyIndexOrPkey,
+                                         NABoolean lookForSameSequenceOfCols,
+                                         NABoolean excludeAlwaysComputedSystemCols,
 					 NAString *indexName)
 {
   NABoolean indexFound = FALSE;
+  CollIndex numInputCols = inputCols.entries();
 
-  if (inputCols.entries() == 0)
+  if (numInputCols == 0)
     {
       lookForPrimaryKey = TRUE;
       lookForUniqueIndex = FALSE;
@@ -6303,36 +6309,72 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
       if (NOT found)
 	continue;
 
-      const NAColumnArray &nacArr = naf->getIndexKeyColumns();
+      Int32 numMatchedCols = 0;
+      NABoolean allColsMatched = TRUE;
 
-      Lng32 numKeyCols = 
-	(isPrimaryKey ? nacArr.entries() : 
-         naf->getCountOfUserSpecifiedIndexCols());
+      if (numInputCols > 0)
+        {
+          const NAColumnArray &nacArr = naf->getIndexKeyColumns();
 
-      if (naf->numSaltPartns() > 0)
-        numKeyCols-- ; // for salted index, the SALT column is counted
-      // as a user specified column, but it is not present in inputCols
-      // We want to disregard the salt column when looking for a match.
+          Lng32 numKeyCols = naf->getCountOfColumns(
+               TRUE,           // exclude non-key cols
+               !isPrimaryKey,  // exclude cols other than user-specified index cols
+               FALSE,          // don't exclude all system cols like SYSKEY
+               excludeAlwaysComputedSystemCols);
 
-      if ((inputCols.entries() > 0) && (inputCols.entries() != numKeyCols))
-	continue;
+          // compare # of columns first and disqualify the index
+          // if it doesn't have the right number of columns
+          if (numInputCols != numKeyCols)
+            continue;
 
-      NASet<NAString> keyColNAS(HEAP, inputCols.entries());
-      NASet<NAString> indexNAS(HEAP, inputCols.entries());
-      for (Int32 j = 0; j < numKeyCols; j++)
-	{
-	  const NAString &colName = inputCols[j];
-	  keyColNAS.insert(colName);
-          if (naf->numSaltPartns() > 0)
-            indexNAS.insert(nacArr[j+1]->getColName()); //SALT column is first
-          else                                          // skip it.
-            indexNAS.insert(nacArr[j]->getColName());
-	}
+          // compare individual key columns with the provided input columns
+          for (Int32 j = 0; j < nacArr.entries() && allColsMatched; j++)
+            {
+              NAColumn *nac = nacArr[j];
 
-      if (inputCols.entries() == 0)
-	indexFound = TRUE; // primary key
-      else if (keyColNAS == indexNAS) // found a matching index
-	indexFound = TRUE;
+              // exclude the same types of columns that we excluded in
+              // the call to naf->getCountOfColumns() above
+              if (!isPrimaryKey &&
+                  nac->getIndexColName() == nac->getColName())
+                continue;
+
+              if (excludeAlwaysComputedSystemCols &&
+                  nac->isComputedColumnAlways() && nac->isSystemColumn())
+                continue;
+
+              const NAString &keyColName = nac->getColName();
+              NABoolean colFound = FALSE;
+
+              // look up the key column name in the provided input columns
+              if (lookForSameSequenceOfCols)
+                {
+                  // in this case we know exactly where to look
+                  colFound = (keyColName == inputCols[numMatchedCols]);
+                }
+              else
+                for (Int32 k = 0; !colFound && k < numInputCols; k++)
+                  {
+                    if (keyColName == inputCols[k])
+                      colFound = TRUE;
+                  } // loop over provided input columns
+
+              if (colFound)
+                numMatchedCols++;
+              else
+                allColsMatched = FALSE;
+            } // loop over key columns of the index
+
+          if (allColsMatched)
+            {
+              // just checking that the above loop and
+              // getCountOfColumns() don't disagree
+              CMPASSERT(numMatchedCols == numKeyCols);
+
+              indexFound = TRUE;
+            }
+        } // inputCols specified
+      else
+        indexFound = TRUE; // primary key, no input cols specified
       
       if (indexFound)
 	{
@@ -6341,7 +6383,7 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 	      *indexName = naf->getExtFileSetName();
 	    }
 	}
-    }
+    } // loop over indexes of the table
 
   return indexFound;
 }
@@ -6349,13 +6391,11 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 					      NABoolean uniqueConstr,
 					      NAString *constrName,
-					      NABoolean * isPkey)
+					      NABoolean * isPkey,
+                                              NAList<int> *reorderList)
 {
   NABoolean constrFound = FALSE;
-
-  NABoolean lookForPrimaryKey = FALSE;
-  if (inputCols.entries() == 0)
-    lookForPrimaryKey = TRUE;
+  NABoolean lookForPrimaryKey = (inputCols.entries() == 0);
 
   const AbstractRIConstraintList &constrList = 
     (uniqueConstr ? getUniqueConstraints() : getRefConstraints());
@@ -6376,25 +6416,60 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
       if ((NOT uniqueConstr) && (ariConstr->getOperatorType() != ITM_REF_CONSTRAINT))
 	continue;
 
-      if ((inputCols.entries() > 0) && (inputCols.entries() != ariConstr->keyColumns().entries()))
-	continue;
-
       if (NOT lookForPrimaryKey)
 	{
-	  NASet<NAString> keyColNAS(HEAP, inputCols.entries());
-	  NASet<NAString> constrNAS(HEAP, inputCols.entries());
-	  for (Int32 j = 0; j < ariConstr->keyColumns().entries(); j++)
+          Int32 numUniqueCols = 0;
+          NABoolean allColsMatched = TRUE;
+          NABoolean reorderNeeded = FALSE;
+
+          if (reorderList)
+            reorderList->clear();
+
+	  for (Int32 j = 0; j < ariConstr->keyColumns().entries() && allColsMatched; j++)
 	    {
-	      const NAString &colName = inputCols[j];
-	      keyColNAS.insert(colName);
-	      constrNAS.insert((ariConstr->keyColumns()[j])->getColName());
+              // The RI constraint contains a dummy NAColumn, get to the
+              // real one to test for computed columns
+              NAColumn *nac = getNAColumnArray()[ariConstr->keyColumns()[j]->getPosition()];
+
+              if (nac->isComputedColumnAlways() && nac->isSystemColumn())
+                // always computed system columns in the key are redundant,
+                // don't include them (also don't include them in the DDL)
+                continue;
+
+              const NAString &uniqueColName = (ariConstr->keyColumns()[j])->getColName();
+              NABoolean colFound = FALSE;
+
+              // compare the unique column name to the provided input columns
+              for (Int32 k = 0; !colFound && k < inputCols.entries(); k++)
+                if (uniqueColName == inputCols[k])
+                  {
+                    colFound = TRUE;
+                    numUniqueCols++;
+                    if (reorderList)
+                      reorderList->insert(k);
+                    if (j != k)
+                      // inputCols and key columns come in different order
+                      // (order/sequence of column names, ignoring ASC/DESC)
+                      reorderNeeded = TRUE;
+                  }
+
+              if (!colFound)
+                allColsMatched = FALSE;
 	    }
 	  
-	  if (keyColNAS == constrNAS)
-	    constrFound = TRUE;
+	  if (inputCols.entries() == numUniqueCols && allColsMatched)
+            {
+              constrFound = TRUE;
+
+              if (reorderList && !reorderNeeded)
+                reorderList->clear();
+            }
 	}
       else
-	constrFound = TRUE;
+        {
+          // found the primary key constraint we were looking for
+          constrFound = TRUE;
+        }
       
       if (constrFound)
 	{
@@ -6408,7 +6483,10 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 	     if ((uniqueConstr) && (((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
 	       *isPkey = TRUE;
 	   }
-       }
+        }
+      else
+        if (reorderList)
+          reorderList->clear();
     }
 
   return constrFound;
@@ -6561,10 +6639,7 @@ NATable::~NATable()
   NAColumn *col;
   NABoolean delHeading = ActiveSchemaDB()->getNATableDB()->cachingMetaData();
   const LIST(CollIndex) & tableIdList = getTableIdList();
-  for(CollIndex i = 0; i < tableIdList.entries(); i++)
-  {
-    gpClusterInfo->removeFromTableToClusterMap(tableIdList[i]);
-  }
+
   if (privInfo_)
   {
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
@@ -7161,8 +7236,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
     if(cacheMetaData_)
       currentCacheSize_ = heap_->getAllocSize();
 
-    cachedNATable->removeTableToClusterMapInfo();
-
     //insert into list of tables that will be deleted
     //at the end of the statement after the query has
     //been compiled and the plan has been sent to the
@@ -7210,17 +7283,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
   //return NATable from cache
   return cachedNATable;
 }
-
-void NATable::removeTableToClusterMapInfo()
-{
-  CMPASSERT(gpClusterInfo);
-  const LIST(CollIndex) & tableIdList = getTableIdList();
-  for(CollIndex i = 0; i < tableIdList.entries(); i++)
-  {
-    gpClusterInfo->removeFromTableToClusterMap(tableIdList[i]);
-  }
-
-} // NATable::removeTableToClusterMapInfo()
 
 // by default column histograms are marked to not be fetched, 
 // i.e. needHistogram_ is initialized to DONT_NEED_HIST.
@@ -7938,20 +8000,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(table->getColumnCount() == 0)) {
       
       bindWA->setErrStatus();
-
-      //Delete the NATable object by deleting the naTableHeap
-      //if all of the following are true
-      //metadata caching is 'ON' (i.e. cacheMetaData_ == TRUE)
-      //we are using the metadata cache in this statement (i.e. useCache_==TRUE)
-      //this type of object is cacheable (i.e. corrName.isCacheable==TRUE)
-      if((cacheMetaData_) &&
-         (useCache_) &&
-         (corrName.isCacheable())) {
-        table->removeTableToClusterMapInfo();
-        delete table;
-      } else {
-        delete table;
-      }
+      
       return NULL;
     }
 
@@ -8072,7 +8121,6 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
     {
       if (key->getQualifiedNameObj() == toRemove->getQualifiedNameObj())
         {
-          cachedNATable->removeTableToClusterMapInfo();
 
           //remove from list of cached NATables
           if (cachedTableList_.remove(cachedNATable) > 0)
@@ -8190,7 +8238,6 @@ void NATableDB::resetAfterStatement(){
           cachedTableList_.remove(statementCachedTableList_[i]);
           //remove from the cache itself
           remove(statementCachedTableList_[i]->getKey());
-          statementCachedTableList_[i]->removeTableToClusterMapInfo();
 
           if ( statementCachedTableList_[i]->getHeapType() == NATable::OTHER ) {
             delete statementCachedTableList_[i];
@@ -8203,10 +8250,6 @@ void NATableDB::resetAfterStatement(){
       }
     }
 
-    // Remove the nonCacheable tables from the table to cluster map.
-    for (i=0; i < nonCacheableTableIdents_.entries(); i++) {
-      gpClusterInfo->removeFromTableToClusterMap(nonCacheableTableIdents_[i]);
-    }
     nonCacheableTableIdents_.clear();
 
     //remove references to nonCacheable tables from cache
@@ -8281,7 +8324,6 @@ void NATableDB::flushCache()
     {
       if(cachedTableList_[i])
       {
-        cachedTableList_[i]->removeTableToClusterMapInfo();
         delete cachedTableList_[i];
       }
     }
@@ -8488,7 +8530,7 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
    NABoolean InStatementHeap = (tableHeap == (NAMemory *)CmpCommon::statementHeap());
 
    remove(NATablep->getKey());
-   NATablep->removeTableToClusterMapInfo();
+   
    cachedTableList_.removeAt( currIndx );
    if ( ! InStatementHeap )
       delete NATablep;

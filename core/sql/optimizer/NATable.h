@@ -399,10 +399,6 @@ public:
   //***************************************************************************
   void resetAfterStatement();
 
-  // removes information from TabletoCluster Map. This object is instantiated
-  // per table and maintained in gpClusterInfo global object
-  void removeTableToClusterMapInfo();
-
   //setup this NATable for the statement.
   //This has to be done after NATable construction
   //or after an NATable has been retrieved from the cache
@@ -477,12 +473,15 @@ public:
 				  NABoolean lookForUniqueIndex,
 				  NABoolean lookForPrimaryKey,
 				  NABoolean lookForAnyIndexOrPkey,
+                                  NABoolean lookForSameSequenceOfCols,
+                                  NABoolean excludeAlwaysComputedSystemCols,
 				  NAString *indexName);
   
   NABoolean getCorrespondingConstraint(NAList<NAString> &inputCols,
 				       NABoolean uniqueConstr,
 				       NAString *constrName = NULL,
-				       NABoolean *isPkey = NULL);
+				       NABoolean *isPkey = NULL,
+                                       NAList<int> *reorderList = NULL);
     
   const desc_struct * getPartnsDesc() const { return partnsDesc_; }
 

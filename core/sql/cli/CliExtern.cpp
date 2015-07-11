@@ -761,7 +761,7 @@ void logAnMXEventForError( ComCondition & condition, SQLMXLoggingArea::Experienc
             }
         }
 
-      // when logging using log4cpp these are the only tokens used
+      // when logging using log4cxx these are the only tokens used
       SQLMXLoggingArea::logSQLMXEventForError( sqlcodeToEventId,
                                                buf,
                                                condition.getSqlID(),

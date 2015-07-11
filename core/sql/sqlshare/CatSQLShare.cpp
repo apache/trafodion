@@ -59,9 +59,11 @@
 // Unique values are composed as follows:
 // ---------------------------------------------------------------------------------
 // WINDOWS - just uses the rightmost 51 bits of the Julian timestamp
-// Linux:                                                                          !
-// ! node number ! rghtmost bits of procId ! rghtmost 49 bits of Julian timestamp  !
-// ! ( 7 bits )  !       (8 bits)          !   (expect rollover every 17 years)    !
+// Linux:                                                                               !
+// !          |rightmost 14 bits of node number | 
+// |          |             XOR                 |
+// |          |right most 14 bits of Thread ID  ! rghtmost 49 bits of Julian timestamp  !
+// ! sign bit |       (14 bits)                 !   (expect rollover every 17 years)    !
 // ---------------------------------------------------------------------------------
 //
 // The "Julian timestamp" is constructed from the combination of the system coldload
@@ -84,7 +86,8 @@ generateUniqueValue (void)
   SQLShareInt64 timeSinceColdLoad = 0;
 
   // Generate the highOrderBits for the UID.  They will not change for`
-  // the life of the process, so we only need to calculate them once
+  // the life of the thread, so we only need to calculate them once
+  // per thread
 
   if (highOrderBits == -1)
   {
@@ -110,17 +113,11 @@ generateUniqueValue (void)
     // should we return an error instead?
     if (rtnCode != XZFIL_ERR_OK)
     {
-      monNodeId = 127;
-      monProcessId = 1;
+      monNodeId = 255;
+      lnxOsTid = 1; 
     }
 
-    // Move in node Id and shift over to make room for the process Id
-    highOrderBits = (monNodeId << 8);
-
-    // set up the process Id, clear out the higher order bits and add to mask
-    Int64 pidBits = lnxOsTid;
-    pidBits = pidBits & 255; //255 == 1111 1111 in Hex
-    highOrderBits = highOrderBits + pidBits;
+    highOrderBits = (monNodeId & 0x3fff) ^ (lnxOsTid & 0x3fff);
 
     // Shift over to make room for the Juliantimestamp
     highOrderBits = highOrderBits << 49;
@@ -179,7 +176,7 @@ generateUniqueValueFast ()
   ts.tv_nsec = 1000;  //1 microsecond
             
   // Generate the highOrderBits for the UID.  They will not change for`
-  // the life of the process, so we only need to calculate them once
+  // the life of the thread, so we only need to calculate them once
 
   if (highOrderBits == -1)
   {
@@ -206,17 +203,11 @@ generateUniqueValueFast ()
     // should we return an error instead?
     if (rtnCode != XZFIL_ERR_OK)
     {
-      monNodeId = 127;
+      monNodeId = 255;
       lnxOsTid = 1;
     }
 
-    // Move in node Id and shift over to make room for the process Id
-    highOrderBits = (monNodeId << 8);
-
-    // set up the process Id, clear out the higher order bits and add to mask
-    Int64 pidBits = lnxOsTid;
-    pidBits = pidBits & 255; //255 == 1111 1111 in Hex
-    highOrderBits = highOrderBits + pidBits;
+    highOrderBits = (monNodeId & 0x3fff) ^ (lnxOsTid & 0x3fff);
 
     // Shift over to make room for the Juliantimestamp
     highOrderBits = highOrderBits << 49;

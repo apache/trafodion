@@ -320,6 +320,12 @@ create table test020t8 (c1 int not null, c2 int not null, c3 int not null,
  constraint test020t8uq1 unique (c2,c3),
  constraint test020t8uq2 unique (c1,c2,c3));
 
+insert into test020t8 values
+  (1,2,3),    -- to satisfy constraint test020t9ri3
+  (2,3,1),    -- to satisfy constraint test020t9ri
+  (11,22,33), -- to satisfy constraint test020t9ri3
+  (22,33,11); -- to satisfy constraint test020t9ri
+
 create table test020t9 (r1 int not null, r2 int not null, r3 int not null);
 create unique index test020t9ix on test020t9 (r1,r2);
 showddl test020t9;
@@ -331,6 +337,8 @@ alter table test020t9 add constraint test020t9ri foreign key (r1,r2,r3)
 showddl test020t9;
 
 create table test020t10 (c1 int not null primary key);
+
+insert into test020t10 values (1), (2), (3), (11), (22);
 
 -- The foreign key (r1) of RI constraint test020t9ri2
 -- will take advantage of existing unique index test020t9ix
@@ -344,13 +352,32 @@ alter table test020t9 add constraint test020t9ri3 foreign key (r1,r2)
  references test020t8 (c2,c3);
 showddl test020t9;
 
--- The foreign keys (r2,r1) of RI constraint test020t9ri4
+-- insert a row that satisfies RI constraints test020t9ri,
+-- test020t9ri2 and test020t9ri3
+insert into test020t9 values (2,3,1);
+
+-- prepare table t8 for the next RI constraint, test020t9ri4
+insert into test020t8 values (1,3,2);
+
+-- The foreign keys (r1,r2) of RI constraint test020t9ri4
 -- will NOT take advantage of existing unique index test020t9ix.
 -- A new non-unique index (named test020t9ri4) will be created for
--- RI constraint test020t9ri4.
-alter table test020t9 add constraint test020t9ri4 foreign key (r2,r1)
- references test020t8 (c2,c3);
+-- RI constraint test020t9ri4. Note that we will internally reorder
+-- the constraint to "foreign key (r2,r1) references ... (c2,c3)"
+-- to match the unique index on test020t8(c2,c3). This could be
+-- optimized in the future by re-using the index on test020t9(r1,r2),
+-- but that would require additional metadata to store the two
+-- corresponding lists (r1,r2) == (c3,c2) in the KEYS or some other
+-- table.
+alter table test020t9 add constraint test020t9ri4 foreign key (r1,r2)
+ references test020t8 (c3,c2);
 showddl test020t9;
+
+-- try to insert a row that satisfies  RI constraints test020t9ri,
+-- test020t9ri2 and test020t9ri3 but not test020t9ri4
+insert into test020t9 values (22,33,11);
+
+delete from test020t9;
 
 -- The foreign key (r2) of RI constraint test020t9ri5
 -- will take advantage of the existing non-unique index test020t9ri4.

@@ -816,6 +816,7 @@ class CmpSeabaseDDL
 			NATable * naTable,
 			NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
 			NABoolean noPopulate, // TRUE, dont populate index
+                        NABoolean sameSequenceOfCols, // FALSE, allow "similar" indexes
 			ExeCliInterface *cliInterface);
 
   short createMetadataViews(ExeCliInterface * cliInterface);
@@ -894,67 +895,71 @@ class CmpSeabaseDDL
 			  NAString &currCatName, NAString &currSchName);
 
   void addConstraints(
-		      ComObjectName &tableName,
-		      ComAnsiNamePart &currCatAnsiName,
-		      ComAnsiNamePart &currSchAnsiName,
-		      StmtDDLAddConstraintPK * pkConstr,
-		      StmtDDLAddConstraintUniqueArray &uniqueConstrArr,
-		      StmtDDLAddConstraintRIArray &riConstrArr,
-		      StmtDDLAddConstraintCheckArray &checkConstrArr,
-                      NABoolean isCompound = FALSE);
+       ComObjectName &tableName,
+       ComAnsiNamePart &currCatAnsiName,
+       ComAnsiNamePart &currSchAnsiName,
+       StmtDDLAddConstraintPK * pkConstr,
+       StmtDDLAddConstraintUniqueArray &uniqueConstrArr,
+       StmtDDLAddConstraintRIArray &riConstrArr,
+       StmtDDLAddConstraintCheckArray &checkConstrArr,
+       NABoolean isCompound = FALSE);
   
   void alterSeabaseTableAddColumn(
-                                  StmtDDLAlterTableAddColumn * alterAddColNode,
-                                  NAString &currCatName, NAString &currSchName);
+       StmtDDLAlterTableAddColumn * alterAddColNode,
+       NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableDropColumn(
-				   StmtDDLAlterTableDropColumn * alterDropColNode,
-				   NAString &currCatName, NAString &currSchName);
+       StmtDDLAlterTableDropColumn * alterDropColNode,
+       NAString &currCatName, NAString &currSchName);
   
   short alignedFormatTableAddDropColumn(
-                                        Int64 objUID,
-                                        NABoolean isAdd,
-                                        const NAString &catalogNamePart,
-                                        const NAString &schemaNamePart,
-                                        const NAString &objectNamePart,
-                                        char * colName, const NAColumn * nacol);
+       Int64 objUID,
+       NABoolean isAdd,
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       const NAString &objectNamePart,
+       char * colName, const NAColumn * nacol);
   
   short recreateViews(ExeCliInterface &cliInterface,
                       NAList<NAString> &viewNameList,
                       NAList<NAString> &viewDefnList);
 
   void alterSeabaseTableAlterIdentityColumn(
-                                            StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
-                                            NAString &currCatName, NAString &currSchName);
+       StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
+       NAString &currCatName, NAString &currSchName);
+  
+  void alterSeabaseTableAlterColumnDatatype(
+       StmtDDLAlterTableAlterColumnDatatype * alterColumnDatatype,
+       NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableAddPKeyConstraint(
-					  StmtDDLAddConstraint * alterAddConstraint,
-					  NAString &currCatName, NAString &currSchName);
+       StmtDDLAddConstraint * alterAddConstraint,
+       NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableAddUniqueConstraint(
-					    StmtDDLAddConstraint * alterAddConstraint,
-					    NAString &currCatName, NAString &currSchName);
+       StmtDDLAddConstraint * alterAddConstraint,
+       NAString &currCatName, NAString &currSchName);
   
   short isCircularDependent(
-			    CorrName &ringTable,
-			    CorrName &refdTable,
-			    CorrName &origRingTable,
-			    BindWA *bindWA);
-
+       CorrName &ringTable,
+       CorrName &refdTable,
+       CorrName &origRingTable,
+       BindWA *bindWA);
+  
   void alterSeabaseTableAddRIConstraint(
-					StmtDDLAddConstraint * alterAddConstraint,
-					NAString &currCatName, NAString &currSchName);
-
+       StmtDDLAddConstraint * alterAddConstraint,
+       NAString &currCatName, NAString &currSchName);
+  
   short getCheckConstraintText(StmtDDLAddConstraintCheck *addCheckNode,
 			       NAString &checkConstrText);
-
+  
   short getTextFromMD(
-		      ExeCliInterface * cliInterface,
-		      Int64 constrUID,
-                      Lng32 textType,
-                      Lng32 textSubID,
-		      NAString &constrText);
-    
+       ExeCliInterface * cliInterface,
+       Int64 constrUID,
+       Lng32 textType,
+       Lng32 textSubID,
+       NAString &constrText);
+  
   void alterSeabaseTableAddCheckConstraint(
 					StmtDDLAddConstraint * alterAddConstraint,
 					NAString &currCatName, NAString &currSchName);

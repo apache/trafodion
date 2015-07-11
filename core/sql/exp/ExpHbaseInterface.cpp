@@ -147,7 +147,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
             done = TRUE; 
             break;
          }
-         retcode = htc_->deleteRow(transID, rowID, columns, -1);
+         retcode = htc_->deleteRow(transID, rowID, &columns, -1);
          if (retcode != HTC_OK) 
          {
             done = TRUE;
@@ -213,11 +213,10 @@ Lng32 ExpHbaseInterface::checkAndDeleteRow(
       return HBASE_ROW_NOTFOUND_ERROR;
     }
 
-  LIST(HbaseStr) columns(heap_);
   // row exists, delete it
   retcode = deleteRow(tblName,
 		      rowID,
-		      columns,
+		      NULL,
                       noXn,
 		      timestamp);
 
@@ -797,7 +796,7 @@ Lng32 ExpHbaseInterface_JNI::getRowsOpen(
 Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 
-	  const LIST(HbaseStr) & columns,
+	  const LIST(HbaseStr) *columns,
 	  NABoolean noXn,
 	  const int64_t timestamp)
 

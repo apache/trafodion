@@ -244,6 +244,8 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_NODEUP     ].jm_signature = "(I)V";
   JavaMethods_[JM_CREATETABLE ].jm_name      = "callCreateTable";
   JavaMethods_[JM_CREATETABLE ].jm_signature = "(J[B[Ljava/lang/Object;)S";
+  JavaMethods_[JM_ALTERTABLE ].jm_name      = "callAlterTable";
+  JavaMethods_[JM_ALTERTABLE ].jm_signature = "(J[B[Ljava/lang/Object;)S";
   JavaMethods_[JM_REGTRUNCABORT].jm_name      = "callRegisterTruncateOnAbort";
   JavaMethods_[JM_REGTRUNCABORT].jm_signature = "(J[B)S";
   JavaMethods_[JM_DROPTABLE ].jm_name      = "callDropTable";
@@ -907,6 +909,63 @@ int CHbaseTM::createTable(int64 pv_transid,
 }
 
 //----------------------------------------------------------------------------
+// CHbaseTM: alterTable
+// Purpose: To handle alter table requests for hbase
+//---------------------------------------------------------------------------
+int CHbaseTM::alterTable(int64 pv_transid,
+                        const char* pa_tblname,
+                        int pv_tblname_len,
+                        char ** buffer_tblopts,
+                        int pv_numtblopts,
+                        int pv_tbloptslen)
+{
+   int lv_error = FEOK;
+   jlong jlv_transid = pv_transid;
+   CTmTxKey lv_tid(pv_transid);
+
+   HBASETrace(HBASETM_TraceExitError,
+              (HDR "CHbaseTM::createTable returning %d.\n", lv_error));
+
+   jthrowable exc;
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+
+   jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
+   if (jba_tblname == NULL)
+      return RET_ADD_PARAM;
+   _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
+
+   jobjectArray j_tblopts = NULL;
+   j_tblopts = convertToStringObjectArray((const char **) buffer_tblopts, pv_numtblopts);
+
+   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
+                    JavaMethods_[JM_ALTERTABLE].methodID,
+                    jlv_transid,
+                    jba_tblname,
+                    j_tblopts);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      lv_error = RET_EXCEPTION;
+   }
+
+   _tlp_jenv->DeleteLocalRef(jba_tblname);
+   _tlp_jenv->DeleteLocalRef(j_tblopts);
+
+   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::createTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
+                lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
+
+   return lv_error;
+}
+
+
+//----------------------------------------------------------------------------
 // CHbaseTM: regTruncateOnAbort
 // Purpose: To handle registration of truncate table during upsert using load
 // ---------------------------------------------------------------------------
@@ -1001,6 +1060,35 @@ int CHbaseTM::dropTable(int64 pv_transid,
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
 
    return lv_error;
+}
+
+jobjectArray CHbaseTM::convertToStringObjectArray(const char **textArray, int arrayLen)
+{
+   int i = 0;
+   jobjectArray j_objArray = NULL;
+   for ( i = 0; i < arrayLen ; i++)
+   {
+       jstring j_obj = _tlp_jenv->NewStringUTF(textArray[i]);
+       if (_tlp_jenv->ExceptionCheck())
+       {
+          if (j_objArray != NULL)
+             _tlp_jenv->DeleteLocalRef(j_objArray);
+          return NULL;
+       }
+       if (j_objArray == NULL)
+       {
+          j_objArray = _tlp_jenv->NewObjectArray(arrayLen,
+                 _tlp_jenv->GetObjectClass(j_obj), NULL);
+          if (_tlp_jenv->ExceptionCheck())
+          {
+             _tlp_jenv->DeleteLocalRef(j_obj);
+             return NULL;
+          }
+       }
+       _tlp_jenv->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       _tlp_jenv->DeleteLocalRef(j_obj);
+   }
+   return j_objArray;
 }
 
 jobjectArray CHbaseTM::convertToByteArrayObjectArray(char **array,

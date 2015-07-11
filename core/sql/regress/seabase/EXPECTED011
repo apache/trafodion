@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Thu May 21 10:49:05 2015
+-- Definition current  Wed Jul  8 15:31:57 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1180,7 +1180,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Thu May 21 10:49:45 2015
+-- Definition current  Wed Jul  8 15:33:08 2015
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1362,7 +1362,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000008581212298990535708589000000000206U3333300_1268_EXPLSTMT
+MXID11000004060212303129491881703000000000206U3333300_1276_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1414,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000008581212298990535708589000000000206U3333300_1279_EXPLSTMT2
+MXID11000004060212303129491881703000000000206U3333300_1287_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1979,6 +1979,95 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- tests for alter column
+>>create table t011t7(a int not null, b varchar(2), 
++>   c varchar(4) character set utf8 not null);
+
+--- SQL operation complete.
+>>invoke t011t7;
+
+-- Definition of Trafodion table TRAFODION.SCH.T011T7
+-- Definition current  Wed Jul  8 15:33:42 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>alter table t011t7 alter column b varchar(3);
+
+--- SQL operation complete.
+>>invoke t011t7;
+
+-- Definition of Trafodion table TRAFODION.SCH.T011T7
+-- Definition current  Wed Jul  8 15:33:43 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>alter table t011t7 alter column c varchar(5) character set utf8;
+
+--- SQL operation complete.
+>>invoke t011t7;
+
+-- Definition of Trafodion table TRAFODION.SCH.T011T7
+-- Definition current  Wed Jul  8 15:33:44 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(20 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>-- negative tests for alter column
+>>alter table t011t7 alter column a largeint;
+
+*** ERROR[1404] Column A cannot be altered. Reason: Old and New datatypes must be VARCHAR.
+
+--- SQL operation failed with errors.
+>>alter table t011t7 alter column b int;
+
+*** ERROR[1404] Column B cannot be altered. Reason: Old and New datatypes must be VARCHAR.
+
+--- SQL operation failed with errors.
+>>alter table t011t7 alter column b varchar(4) character set utf8;
+
+*** ERROR[1404] Column B cannot be altered. Reason: Old and New character sets must be the same.
+
+--- SQL operation failed with errors.
+>>alter table t011t7 alter column c varchar(6);
+
+*** ERROR[1404] Column C cannot be altered. Reason: Old and New character sets must be the same.
+
+--- SQL operation failed with errors.
+>>alter table t011t7 alter column b varchar(2);
+
+*** ERROR[1404] Column B cannot be altered. Reason: New length must be greater than or equal to old length.
+
+--- SQL operation failed with errors.
+>>alter table t011t7 alter column c varchar(4) character set utf8;
+
+*** ERROR[1404] Column C cannot be altered. Reason: New length must be greater than or equal to old length.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>
+>>
 >>obey TEST011(clnup);
 >>drop table T011T1;
 
@@ -2011,6 +2100,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 *** ERROR[1389] Object TRAFODION.SCH.T011T6B does not exist in Trafodion.
 
 --- SQL operation failed with errors.
+>>
+>>drop table t011t7;
+
+--- SQL operation complete.
 >>
 >>-- delete explain for statement explstmt from repository
 >>set parserflags 131072;

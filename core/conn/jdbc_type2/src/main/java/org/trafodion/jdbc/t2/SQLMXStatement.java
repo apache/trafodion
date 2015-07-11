@@ -1749,7 +1749,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 
         public boolean isClosed() throws SQLException {
                 // TODO Auto-generated method stub
-                return false;
+                return isClosed_;
         }
 
         public void setPoolable(boolean poolable) throws SQLException {

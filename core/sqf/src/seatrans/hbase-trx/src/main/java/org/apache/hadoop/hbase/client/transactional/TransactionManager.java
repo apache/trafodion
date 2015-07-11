@@ -51,11 +51,13 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
+import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionResponse;
@@ -74,11 +76,17 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse;
 
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
+import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
 import org.apache.hadoop.hbase.ipc.ServerRpcController;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
+import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+
 import org.apache.hadoop.ipc.RemoteException;
 
 import com.google.protobuf.ByteString;
@@ -129,6 +137,30 @@ public class TransactionManager {
   private TmDDL tmDDL;
   private boolean batchRSMetricsFlag = false;
   Configuration     config;
+
+  public static final int HBASE_NAME = 0;
+  public static final int HBASE_MAX_VERSIONS = 1;
+  public static final int HBASE_MIN_VERSIONS = 2;
+  public static final int HBASE_TTL = 3;
+  public static final int HBASE_BLOCKCACHE = 4;
+  public static final int HBASE_IN_MEMORY = 5;
+  public static final int HBASE_COMPRESSION = 6;
+  public static final int HBASE_BLOOMFILTER = 7;
+  public static final int HBASE_BLOCKSIZE = 8;
+  public static final int HBASE_DATA_BLOCK_ENCODING = 9;
+  public static final int HBASE_CACHE_BLOOMS_ON_WRITE = 10;
+  public static final int HBASE_CACHE_DATA_ON_WRITE = 11;
+  public static final int HBASE_CACHE_INDEXES_ON_WRITE = 12;
+  public static final int HBASE_COMPACT_COMPRESSION = 13;
+  public static final int HBASE_PREFIX_LENGTH_KEY = 14;
+  public static final int HBASE_EVICT_BLOCKS_ON_CLOSE = 15;
+  public static final int HBASE_KEEP_DELETED_CELLS = 16;
+  public static final int HBASE_REPLICATION_SCOPE = 17;
+  public static final int HBASE_MAX_FILESIZE = 18;
+  public static final int HBASE_COMPACT = 19;
+  public static final int HBASE_DURABILITY = 20;
+  public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
+  public static final int HBASE_SPLIT_POLICY = 22;
 
   public static final int TM_COMMIT_FALSE = 0;
   public static final int TM_COMMIT_READ_ONLY = 1;
@@ -2473,6 +2505,282 @@ public class TransactionManager {
             throw e;
         }
 
+    }
+
+    private class ChangeFlags {
+        boolean tableDescriptorChanged;
+        boolean columnDescriptorChanged;
+
+        ChangeFlags() {
+           tableDescriptorChanged = false;
+           columnDescriptorChanged = false;
+        }
+
+        void setTableDescriptorChanged() {
+           tableDescriptorChanged = true;
+        }
+
+        void setColumnDescriptorChanged() {
+           columnDescriptorChanged = true;
+       }
+
+       boolean tableDescriptorChanged() {
+          return tableDescriptorChanged;
+       }
+
+       boolean columnDescriptorChanged() {
+          return columnDescriptorChanged;
+       }
+    }
+
+   private ChangeFlags setDescriptors(Object[] tableOptions,
+                                      HTableDescriptor desc,
+                                      HColumnDescriptor colDesc,
+                                      int defaultVersionsValue) {
+       ChangeFlags returnStatus = new ChangeFlags();
+       String trueStr = "TRUE";
+       for (int i = 0; i < tableOptions.length; i++) {
+           if (i == HBASE_NAME)
+               continue ;
+           String tableOption = (String)tableOptions[i];
+           if ((i != HBASE_MAX_VERSIONS) && (tableOption.isEmpty()))
+               continue ;
+           switch (i) {
+           case HBASE_MAX_VERSIONS:
+               if (tableOption.isEmpty()) {
+                   if (colDesc.getMaxVersions() != defaultVersionsValue) {
+                       colDesc.setMaxVersions(defaultVersionsValue);
+                       returnStatus.setColumnDescriptorChanged();
+                   }
+               }
+               else {
+                   colDesc.setMaxVersions
+                       (Integer.parseInt(tableOption));
+                   returnStatus.setColumnDescriptorChanged();
+               }
+               break ;
+           case HBASE_MIN_VERSIONS:
+               colDesc.setMinVersions
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_TTL:
+               colDesc.setTimeToLive
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOCKCACHE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setBlockCacheEnabled(true);
+               else
+                   colDesc.setBlockCacheEnabled(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_IN_MEMORY:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setInMemory(true);
+               else
+                   colDesc.setInMemory(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_COMPRESSION:
+               if (tableOption.equalsIgnoreCase("GZ"))
+                   colDesc.setCompressionType(Algorithm.GZ);
+               else if (tableOption.equalsIgnoreCase("LZ4"))
+                   colDesc.setCompressionType(Algorithm.LZ4);
+               else if (tableOption.equalsIgnoreCase("LZO"))
+                   colDesc.setCompressionType(Algorithm.LZO);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setCompressionType(Algorithm.NONE);
+               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+                   colDesc.setCompressionType(Algorithm.SNAPPY);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOOMFILTER:
+               if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setBloomFilterType(BloomType.NONE);
+               else if (tableOption.equalsIgnoreCase("ROW"))
+                   colDesc.setBloomFilterType(BloomType.ROW);
+               else if (tableOption.equalsIgnoreCase("ROWCOL"))
+                   colDesc.setBloomFilterType(BloomType.ROWCOL);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_BLOCKSIZE:
+               colDesc.setBlocksize
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_DATA_BLOCK_ENCODING:
+               if (tableOption.equalsIgnoreCase("DIFF"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.DIFF);
+               else if (tableOption.equalsIgnoreCase("FAST_DIFF"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.NONE);
+               else if (tableOption.equalsIgnoreCase("PREFIX"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX);
+               else if (tableOption.equalsIgnoreCase("PREFIX_TREE"))
+                   colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_BLOOMS_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheBloomsOnWrite(true);
+               else
+                   colDesc.setCacheBloomsOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_DATA_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheDataOnWrite(true);
+               else
+                   colDesc.setCacheDataOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_CACHE_INDEXES_ON_WRITE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheIndexesOnWrite(true);
+               else
+                   colDesc.setCacheIndexesOnWrite(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_COMPACT_COMPRESSION:
+               if (tableOption.equalsIgnoreCase("GZ"))
+                   colDesc.setCompactionCompressionType(Algorithm.GZ);
+               else if (tableOption.equalsIgnoreCase("LZ4"))
+                   colDesc.setCompactionCompressionType(Algorithm.LZ4);
+               else if (tableOption.equalsIgnoreCase("LZO"))
+                   colDesc.setCompactionCompressionType(Algorithm.LZO);
+               else if (tableOption.equalsIgnoreCase("NONE"))
+                   colDesc.setCompactionCompressionType(Algorithm.NONE);
+               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+                   colDesc.setCompactionCompressionType(Algorithm.SNAPPY);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_PREFIX_LENGTH_KEY:
+               desc.setValue(KeyPrefixRegionSplitPolicy.PREFIX_LENGTH_KEY,
+                             tableOption);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_EVICT_BLOCKS_ON_CLOSE:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setEvictBlocksOnClose(true);
+               else
+                   colDesc.setEvictBlocksOnClose(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_KEEP_DELETED_CELLS:
+               if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setKeepDeletedCells(true);
+               else
+                   colDesc.setKeepDeletedCells(false);
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_REPLICATION_SCOPE:
+               colDesc.setScope
+                   (Integer.parseInt(tableOption));
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+           case HBASE_MAX_FILESIZE:
+               desc.setMaxFileSize
+                   (Long.parseLong(tableOption));
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_COMPACT:
+              if (tableOption.equalsIgnoreCase(trueStr))
+                   desc.setCompactionEnabled(true);
+               else
+                   desc.setCompactionEnabled(false);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_DURABILITY:
+               if (tableOption.equalsIgnoreCase("ASYNC_WAL"))
+                   desc.setDurability(Durability.ASYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("FSYNC_WAL"))
+                   desc.setDurability(Durability.FSYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("SKIP_WAL"))
+                   desc.setDurability(Durability.SKIP_WAL);
+               else if (tableOption.equalsIgnoreCase("SYNC_WAL"))
+                   desc.setDurability(Durability.SYNC_WAL);
+               else if (tableOption.equalsIgnoreCase("USE_DEFAULT"))
+                   desc.setDurability(Durability.USE_DEFAULT);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_MEMSTORE_FLUSH_SIZE:
+               desc.setMemStoreFlushSize
+                   (Long.parseLong(tableOption));
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           case HBASE_SPLIT_POLICY:
+                  // This method not yet available in earlier versions
+                  // desc.setRegionSplitPolicyClassName(tableOption)); 
+               desc.setValue(desc.SPLIT_POLICY, tableOption);
+               returnStatus.setTableDescriptorChanged();
+               break ;
+           default:
+               break;
+           }
+       }
+
+       return returnStatus;
+   }
+
+    private void waitForCompletion(String tblName,HBaseAdmin admin)
+       throws IOException {
+       // poll for completion of an asynchronous operation
+       boolean keepPolling = true;
+       while (keepPolling) {
+          // status.getFirst() returns the number of regions yet to be updated
+          // status.getSecond() returns the total number of regions
+          Pair<Integer,Integer> status = admin.getAlterStatus(tblName.getBytes());
+
+          keepPolling = (status.getFirst() > 0) && (status.getSecond() > 0);
+          if (keepPolling) {
+          try {
+             Thread.sleep(2000); // sleep two seconds or until interrupted
+             }
+             catch (InterruptedException e) {
+                // ignore the interruption and keep going
+             }
+          }  
+       }
+    }       
+
+ 
+    public void alterTable(final TransactionState transactionState, String tblName, Object[]  tableOptions)
+           throws Exception {
+        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTRY, transactionState: " + transactionState.getTransactionId());
+        
+        try {
+           HTableDescriptor htblDesc = hbadmin.getTableDescriptor(tblName.getBytes());
+           HColumnDescriptor[] families = htblDesc.getColumnFamilies();
+           HColumnDescriptor colDesc = families[0];  // Trafodion keeps SQL columns only in first column family
+           int defaultVersionsValue = colDesc.getMaxVersions();
+
+           ChangeFlags status =
+              setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+           
+           if (status.tableDescriptorChanged()) {
+              hbadmin.modifyTable(tblName,htblDesc);
+              waitForCompletion(tblName,hbadmin);
+           }
+           else if (status.columnDescriptorChanged()) {
+              hbadmin.modifyColumn(tblName,colDesc);
+              waitForCompletion(tblName,hbadmin);
+           }
+           hbadmin.close();
+
+           // Set transaction state object as participating in ddl transaction
+           transactionState.setDDLTx(true);
+
+           //record this create in TmDDL.
+           tmDDL.putRow( transactionState.getTransactionId(), "ALTER", tblName);
+
+        }
+        catch (Exception e) {
+            LOG.error("createTable Exception TxId: " + transactionState.getTransactionId() + "Exception: " + e);
+            throw e;
+        }
     }
 
     public void registerTruncateOnAbort(final TransactionState transactionState, String tblName)

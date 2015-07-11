@@ -273,18 +273,38 @@ void NAFileSet::setupForStatement()
   resetAfterStatement_= FALSE;
 }
 
-Lng32 NAFileSet::getCountOfUserSpecifiedIndexCols() const
+Lng32 NAFileSet::getCountOfColumns(
+     NABoolean excludeNonKeyColumns,
+     NABoolean excludeNonUserSpecifiedAlternateIndexColumns,
+     NABoolean excludeSystemColumns,
+     NABoolean excludeAlwaysComputedSystemColumns) const
 {
-  Lng32 userSpecifiedIndexCol = 0;
+  Lng32 numCols = 0;
+  const NAColumnArray *colArray = &allColumns_;
 
-  for(int i = 0; i < getIndexKeyColumns().entries(); i++)
-  {    
-    if (getIndexKeyColumns()[i]->getIndexColName() != 
-        getIndexKeyColumns()[i]->getColName())
-      userSpecifiedIndexCol++;
-  }
-  return userSpecifiedIndexCol ;
+  if (excludeNonKeyColumns ||
+      excludeNonUserSpecifiedAlternateIndexColumns)
+    colArray = &indexKeyColumns_;
+
+  for (CollIndex i=0; i < colArray->entries(); i++)
+    {
+      // figure out the various exclusion conditions other
+      // that non-key columns
+      const NAColumn *nac = (*colArray)[i];
+      if ( NOT ((excludeNonUserSpecifiedAlternateIndexColumns &&
+                 nac->getIndexColName() == nac->getColName())
+                ||
+                (excludeSystemColumns && nac->isSystemColumn())
+                ||
+                (excludeAlwaysComputedSystemColumns &&
+                 nac->isComputedColumnAlways() &&
+                 nac->isSystemColumn())))
+        numCols++;
+    }
+
+  return numCols;
 }
+
 // load-time initialization
 static THREAD_P RandomSequence* random_ = NULL;
 static THREAD_P NABoolean seeded_ = FALSE;

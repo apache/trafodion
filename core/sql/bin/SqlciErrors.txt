@@ -388,8 +388,9 @@
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.
 1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
 1403 ZZZZZ 99999 BEGINNER MINOR DBADMIN This ALTER command is not allowed on a reserved system schema object.
-1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is part of the table's primary key.
-1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is used in the secondary index $1~TableName.
+1404 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be altered. Reason: $0~string0
+1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is part of the table's primary key.
+1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is used in the secondary index $1~TableName.
 1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
 1423 ZZZZZ 99999 BEGINNER MINOR DBADMIN Insert into metadata table $0~string0 failed.
 1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined columns.
@@ -1283,7 +1284,8 @@ $1~String1 --------------------------------
 4253 ZZZZZ 99999 BEGINNER MINOR DBADMIN The provided object uid does not match the object uid in metadata for this table. Check the input values and rerun the query or provide only one of the input values.
 4254 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. Use cleanup command to drop it.
 4255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Provided schema name does not exist in metadata. Cleanup will be performed on objects in this schema, if they exist.
-4256 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object type specified for this object does not match the object type stored in metadata. 
+4256 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object type specified for this object does not match the object type stored in metadata.
+4257 ZZZZZ 99999 BEGINNER MINOR DBADMIN DIVISION BY with an approximate numeric data type is not supported.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

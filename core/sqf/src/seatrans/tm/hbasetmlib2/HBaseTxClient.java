@@ -705,6 +705,35 @@ public class HBaseTxClient {
       return TransReturnCode.RET_OK.getShort();
    }
 
+   public short callAlterTable(long transactionId, byte[] pv_tblname, Object[] tableOptions) throws Exception
+   {
+      TransactionState ts;
+      String strTblName = new String(pv_tblname, "UTF-8");
+
+      if (LOG.isTraceEnabled()) LOG.trace("Enter callAlterTable, txid: [" + transactionId + "],  tableName: " + strTblName);
+
+      ts = mapTransactionStates.get(transactionId);
+      if(ts == null) {
+         LOG.error("Returning from HBaseTxClient:callAlterTable, (null tx) retval: " + TransReturnCode.RET_NOTX.getShort()  + " txid: " + transactionId);
+         return TransReturnCode.RET_NOTX.getShort();
+      }
+
+      try {
+         trxManager.alterTable(ts, strTblName, tableOptions);
+      }
+      catch (Exception cte) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callAlterTable exception trxManager.alterTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         cte.printStackTrace(pw);
+         LOG.error("HBaseTxClient alterTable call error: " + sw.toString());
+
+         throw new Exception("alterTable call error");
+      }
+      return TransReturnCode.RET_OK.getShort();
+   }
+
    public short callRegisterTruncateOnAbort(long transactionId, byte[] pv_tblname) throws Exception
    {
       TransactionState ts;

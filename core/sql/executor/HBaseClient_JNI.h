@@ -279,7 +279,7 @@ public:
   HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
 		Int64 timestamp);
   HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
-  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& columns, Int64 timestamp);
+  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,

@@ -4295,8 +4295,13 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		if (onInsertRow_) {
 			return insertRow_;
 		} else {
-			if (isBeforeFirst_ || isAfterLast_) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_row", null);
+			if (isBeforeFirst_) {
+				String cursorExpt = "The cursor is before the first row, therefore no data can be retrieved.";
+				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), cursorExpt, null);
+			}
+			if (isAfterLast_) {
+				String cursorExpt = "The cursor is after last row, which could be due to the result set containing no rows, or all rows have been retrieved.";
+				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), cursorExpt, null);
 			}
 			return (BaseRow) cachedRows_.get(currentRow_ - 1);
 		}

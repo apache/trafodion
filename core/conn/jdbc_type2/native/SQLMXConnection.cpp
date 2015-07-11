@@ -385,7 +385,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
                     queryTimeout));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  statisticsIntervalTime=%ld, statisticsLimitTime=%ld, statisticsType=%s, programStatisticsEnabled=%s, statisticsSqlPlanEnabled=%s",
                     statisticsIntervalTime,
-                    statisticsLimitTime
+                    statisticsLimitTime,
                     DebugJString(jenv,statisticsType),
                     DebugJString(jenv,programStatisticsEnabled),
                     DebugJString(jenv,statisticsSqlPlanEnabled)

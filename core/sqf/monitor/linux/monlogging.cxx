@@ -98,15 +98,15 @@ void mem_log_write(int eventType, int value1, int value2)
     return;
 }
 
-CMonLog::CMonLog( const char *log4cppConfig
-                , const char *log4cppComponent
+CMonLog::CMonLog( const char *log4cxxConfig
+                , const char *log4cxxComponent
                 , const char *logFilePrefix
                 , int pnid
                 , int nid
                 , int pid
                 , const char *processName )
-       : log4cppConfig_(log4cppConfig)
-       , log4cppComponent_(log4cppComponent)
+       : log4cxxConfig_(log4cxxConfig)
+       , log4cxxComponent_(log4cxxComponent)
        , myPNid_(pnid)
        , myNid_(nid)
        , myPid_(pid)
@@ -127,7 +127,7 @@ CMonLog::CMonLog( const char *log4cppConfig
     logFileNamePrefix_.assign( logFilePrefix );
     logFileType_ = SBX_LOG_TYPE_LOGFILE;
 
-    // Log4cpp logging
+    // Log4cxx logging
     char   hostname[MAX_PROCESSOR_NAME] = {'\0'};
     gethostname(hostname, MAX_PROCESSOR_NAME);
 
@@ -156,7 +156,7 @@ CMonLog::CMonLog( const char *log4cppConfig
                , myPid_);
     }
 
-    CommonLogger::instance().initLog4cpp(log4cppConfig_.c_str(), logFileSuffix);
+    CommonLogger::instance().initLog4cxx(log4cxxConfig_.c_str(), logFileSuffix);
 }
 
 CMonLog::~CMonLog()
@@ -186,7 +186,7 @@ logLevel CMonLog::getLogLevel( posix_sqlog_severity_t severity )
             llevel = LL_FATAL;
             break;
         case SQ_LOG_ALERT:
-            llevel = LL_ALERT;
+            llevel = LL_WARN;
             break;
         case SQ_LOG_CRIT:
             llevel = LL_FATAL;
@@ -314,8 +314,8 @@ void CMonLog::writeMonLog(int eventType, posix_sqlog_severity_t severity, char *
 {
     logLevel llevel = getLogLevel( severity );
 
-    // Log4cpp logging
-    CommonLogger::log( log4cppComponent_
+    // Log4cxx logging
+    CommonLogger::log( log4cxxComponent_
                      , llevel
                      , "Node Number: %u,, PIN: %u , Process Name: %s,,, TID: %d, Message ID: %u, %s"
                      , myPNid_, myPid_, myProcessName_.c_str(), gettid(), eventType,  msg);
@@ -326,8 +326,8 @@ void CMonLog::writeMonProcLog(int eventType, posix_sqlog_severity_t severity, ch
 {
     logLevel llevel = getLogLevel( severity );
 
-    // Log4cpp logging
-    CommonLogger::log( log4cppComponent_
+    // Log4cxx logging
+    CommonLogger::log( log4cxxComponent_
                      , llevel
                      , "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, TID: %u, Message ID: %u, %s"
                      , myPNid_, myNid_, myPid_, myProcessName_.c_str(), gettid(), eventType, msg);

@@ -1,0 +1,46 @@
+////
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+////
+
+:linkattrs:
+:last-update-label!:
+
+[NOTE]
+======================================================================================================================================================
+Trafodion is currently transitioning to the Apache Incubator. This website is for the Apache Trafodion project and is *under development*.
+You might want to visit Trafodion's previous website located at link:https://wiki.trafodion.org[https://wiki.trafodion.org, window="_blank"] which is 
+not affiliated with Apache.
+======================================================================================================================================================
+
+= Welcome to Apache Trafodion
+link:http://trafodion.incubator.apache.org[Apache Trafodion] is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on 
+link:http://hadoop.apache.org[Hadoop, window="_blank"]. The name .Trafodion. (the Welsh word for transactions, pronounced .Tra-vod-eee-on.) was chosen 
+specifically to emphasize the differentiation that Trafodion provides in closing a critical gap in the Hadoop ecosystem. Trafodion builds on the 
+scalability, elasticity, and flexibility of Hadoop. Trafodion extends Hadoop to provide guaranteed transactional integrity, enabling new kinds of big data 
+applications to run on Hadoop. To learn more, see the link:http://docs.trafodion.org/Trafodion_Product_Brief.pdf[Trafodion Product Brief (pdf 162 KB), window="_blank"]
+
+= Key Features
+* Full-functioned ANSI SQL language support 
+* JDBC/ODBC connectivity for Linux/Windows clients 
+* Distributed ACID transaction protection across multiple statements, tables and rows
+* Performance improvements for OLTP workloads with compile-time and run-time optimizations
+* Support for large data sets using a parallel-aware query optimizer 
+
+= Key Benefits
+* Reuse existing SQL skills and improve developer productivity
+* Distributed ACID transactions guarantee data consistency across multiple rows and tables
+* Interoperability with existing tools and applications
+* Hadoop and Linux distribution neutral
+* Easy to add to your existing Hadoop infrastructure
+

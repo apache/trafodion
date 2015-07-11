@@ -714,25 +714,6 @@ short CmpSeabaseDDL::constraintErrorChecks(
       (ct == COM_FOREIGN_KEY_CONSTRAINT) ||
       (ct == COM_PRIMARY_KEY_CONSTRAINT))
     {
-      for (CollIndex ndx = 0; ndx < keyColList.entries(); ndx++)
-        {
-          const ComString intColName = keyColList[ndx];
-          if (intColName EQU "SYSKEY")
-            {
-              const NAString &tabName = addConstrNode->getTableName();
-              
-              *CmpCommon::diags() << 
-                DgSqlCode(((ct == COM_UNIQUE_CONSTRAINT) ? -CAT_SYSKEY_COL_NOT_ALLOWED_IN_UNIQUE_CNSTRNT :
-                           -CAT_SYSKEY_COL_NOT_ALLOWED_IN_RI_CNSTRNT))
-                                  << DgColumnName( ToAnsiIdentifier( intColName ))
-                                  << DgTableName(tabName);
-              
-              processReturn();
-              
-              return -1;
-            }
-        }
-      
       const NAColumnArray & naColArray = naTable->getNAColumnArray();
       
       // Now process each column defined in the parseColList to see if
@@ -746,6 +727,15 @@ short CmpSeabaseDDL::constraintErrorChecks(
             {
               *CmpCommon::diags() << DgSqlCode(-1009)
                                   << DgColumnName( ToAnsiIdentifier(keyColList[i]));
+              return -1;
+            }
+          if (nac->isSystemColumn())
+            {
+              *CmpCommon::diags() << DgSqlCode((ct == COM_FOREIGN_KEY_CONSTRAINT) ?
+                                               -CAT_SYSTEM_COL_NOT_ALLOWED_IN_RI_CNSTRNT :
+                                               -CAT_SYSTEM_COL_NOT_ALLOWED_IN_UNIQUE_CNSTRNT)
+                                  << DgColumnName(ToAnsiIdentifier(keyColList[i]))
+                                  << DgTableName(addConstrNode->getTableName());
               return -1;
             }
           
@@ -769,14 +759,9 @@ short CmpSeabaseDDL::constraintErrorChecks(
           // constraint list must be distinct.  The order of the existing constraint
           // does not have to be in the same order as the new constraint.
           //
-          NABoolean matchFound = FALSE;
-          
           if (naTable->getCorrespondingConstraint(keyColList,
                                                   TRUE, // unique constraint
                                                   NULL))
-            matchFound = TRUE;
-          
-          if (matchFound)
             {
               *CmpCommon::diags() << DgSqlCode(-CAT_DUPLICATE_UNIQUE_CONSTRAINT_ON_SAME_COL);
               
@@ -980,21 +965,24 @@ short CmpSeabaseDDL::updateIndexInfo(
                                      NATable * naTable,
                                      NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
                                      NABoolean noPopulate,
+                                     NABoolean sameSequenceOfCols,
                                      ExeCliInterface *cliInterface)
 {
   // Now we need to determine if an index has to be created for
   // the unique or ref constraint.  
   NABoolean createIndex = TRUE;
-
   NAString existingIndexName;
+
   if (naTable->getCorrespondingIndex(ringKeyColList, 
                                      TRUE, // explicit index only
                                      isUnique, //TRUE, look for unique index.
                                      TRUE, //isUnique, //TRUE, look for primary key.
                                      (NOT isUnique), // TRUE, look for any index or pkey
+                                     TRUE, // exclude system computed cols like salt, division
+                                     sameSequenceOfCols,
                                      &existingIndexName))
     createIndex = FALSE;
-  
+
   ComObjectName indexName(createIndex ? uniqueStr : existingIndexName);
   const NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
@@ -4811,6 +4799,224 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
   return;
 }
 
+void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
+     StmtDDLAlterTableAlterColumnDatatype * alterColNode,
+     NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  const NAString &tabName = alterColNode->getTableName();
+
+  ComObjectName tableName(tabName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
+  const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
+  ActiveSchemaDB()->getNATableDB()->useCache();
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  CorrName cn(tableName.getObjectNamePart().getInternalName(),
+              STMTHEAP,
+              tableName.getSchemaNamePart().getInternalName(),
+              tableName.getCatalogNamePart().getInternalName());
+
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-4082)
+        << DgTableName(cn.getExposedNameAsAnsiString());
+    
+      processReturn();
+
+      return;
+    }
+
+  // Make sure user has the privilege to perform the alter column
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
+  // return an error if trying to alter a column from a volatile table
+  if (naTable->isVolatileTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT);
+     
+      processReturn ();
+
+      return;
+    }
+
+  const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+  const NAString &colName = alterColNode->getColumnName();
+
+  const NAColumn * nacol = nacolArr.getColumn(colName);
+  if (! nacol)
+    {
+      // column doesnt exist. Error.
+      *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                          << DgColumnName(colName);
+
+      processReturn();
+
+      return;
+    }
+
+  const NAType * currType = nacol->getType();
+  NAType * newType = alterColNode->getType();
+
+  // Column that can be altered must meet these conditions:
+  //   -- old and new column datatype must be VARCHAR
+  //   -- new col length must be greater than or equal to old length
+  //   -- old and new character sets must be the same
+  NABoolean canAlter = FALSE;
+  if ((DFS2REC::isSQLVarChar(currType->getFSDatatype())) &&
+      (DFS2REC::isSQLVarChar(newType->getFSDatatype())) &&
+      (currType->getFSDatatype() == newType->getFSDatatype()) &&
+      (currType->getNominalSize() <= newType->getNominalSize()) &&
+      (((CharType*)currType)->getCharSet() == ((CharType*)newType)->getCharSet()))
+    canAlter = TRUE;
+
+  if (NOT canAlter)
+    {
+      NAString reason;
+      if (NOT ((DFS2REC::isSQLVarChar(currType->getFSDatatype())) &&
+               (DFS2REC::isSQLVarChar(newType->getFSDatatype()))))
+        reason = "Old and New datatypes must be VARCHAR.";
+      else if (currType->getFSDatatype() != newType->getFSDatatype())
+        reason = "Old and New datatypes must be the same.";
+      else if (((CharType*)currType)->getCharSet() != ((CharType*)newType)->getCharSet())
+        reason = "Old and New character sets must be the same.";
+      else if (currType->getNominalSize() > newType->getNominalSize())
+        reason = "New length must be greater than or equal to old length.";
+
+      // key column cannot be altered
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+      
+      return;
+    }
+
+  const NAFileSet * naFS = naTable->getClusteringIndex();
+  const NAColumnArray &naKeyColArr = naFS->getIndexKeyColumns();
+  if (naKeyColArr.getColumn(colName))
+    {
+      // key column cannot be altered
+      *CmpCommon::diags() << DgSqlCode(-1420)
+                          << DgColumnName(colName);
+
+      processReturn();
+
+      return;
+    }
+
+  if (naTable->hasSecondaryIndexes())
+    {
+      const NAFileSetList &naFsList = naTable->getIndexList();
+
+      for (Lng32 i = 0; i < naFsList.entries(); i++)
+        {
+          naFS = naFsList[i];
+          
+          // skip clustering index
+          if (naFS->getKeytag() == 0)
+            continue;
+
+          const NAColumnArray &naIndexColArr = naFS->getAllColumns();
+          if (naIndexColArr.getColumn(colName))
+            {
+              // secondary index column cannot be altered
+              *CmpCommon::diags() << DgSqlCode(-1421)
+                                  << DgColumnName(colName)
+                                  << DgTableName(naFS->getExtFileSetName());
+
+              processReturn();
+
+              return;
+            }
+        } // for
+    } // secondary indexes present
+
+  Int64 objUID = naTable->objectUid().castToInt64();
+
+  Lng32 colNumber = nacol->getPosition();
+  char *col = NULL;
+
+  char buf[4000];
+  str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d where object_uid = %Ld and column_number = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+              newType->getNominalSize(),
+              objUID,
+              colNumber);
+  
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+      return;
+    }
+  
+  deallocEHI(ehi); 
+  heap_->deallocateMemory(col);
+  
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+                                                  NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  
+  processReturn();
+  
+  return;
+}
+
 void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
                                                        StmtDDLAddConstraint * alterAddConstraint,
                                                        NAString &currCatName, NAString &currSchName)
@@ -5244,6 +5450,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
                       naTable,
                       TRUE,
                       (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
+                      FALSE,
                       &cliInterface))
     {
       *CmpCommon::diags()
@@ -5555,8 +5762,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   // was no referenced column list specified, the primary key is used
   // and a match has automatically been found.
 
-  NABoolean matchFound = FALSE;
-
   const ElemDDLColNameArray &referencedColNode = 
     constraintNode->getReferencedColumns();
 
@@ -5580,6 +5785,12 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       for (Lng32 i = 0; i < naf->getIndexKeyColumns().entries(); i++)
         {
           NAColumn * nac = naf->getIndexKeyColumns()[i];
+
+          if (nac->isComputedColumnAlways() &&
+              nac->isSystemColumn())
+            // always computed system columns in the key are redundant,
+            // don't include them (also don't include them in the DDL)
+            continue;
 
           const NAString &colName = nac->getColName();
           refdKeyColList.insert(colName);
@@ -5642,19 +5853,59 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
   NAString constrName;
   NABoolean isPkey = FALSE;
-  if (refdNaTable->getCorrespondingConstraint(refdKeyColList,
-                                              TRUE, // unique constraint
-                                              &constrName,
-                                              &isPkey))
-    matchFound = TRUE;
-  
-  if (NOT matchFound)
+  NAList<int> reorderList;
+  // Find a uniqueness constraint on the referenced table that matches
+  // the referenced column list (not necessarily in the original order
+  // of columns).  Also find out how to reorder the column lists to
+  // match the found uniqueness constraint.  This is the order in
+  // which we'll add the columns to the metadata (KEYS table).  Note
+  // that SHOWDDL may therefore show the foreign key columns in a
+  // different order. This is a limitation of the current way we
+  // store RI constraints in the metadata.
+  if (NOT refdNaTable->getCorrespondingConstraint(refdKeyColList,
+                                                  TRUE, // unique constraint
+                                                  &constrName,
+                                                  &isPkey,
+                                                  &reorderList))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_REFERENCED_CONSTRAINT_DOES_NOT_EXIST)
                           << DgConstraintName(addConstrName);
       
       return;
     }
+
+  if (reorderList.entries() > 0)
+    {
+      CollIndex numEntries = ringKeyColList.entries();
+
+      CMPASSERT(ringKeyColOrderList.entries() == numEntries &&
+                refdKeyColList.entries() == numEntries &&
+                reorderList.entries() == numEntries);
+
+      // re-order referencing and referenced key column lists to match
+      // the order of the uniqueness constraint in the referenced table
+      NAArray<NAString> ringTempKeyColArray(numEntries);
+      NAArray<NAString> ringTempKeyColOrderArray(numEntries);
+      NAArray<NAString> refdTempKeyColArray(numEntries);
+
+      // copy the lists into temp arrays in the correct order
+      for (CollIndex i=0; i<numEntries; i++)
+        {
+          CollIndex newEntry = static_cast<CollIndex>(reorderList[i]);
+
+          ringTempKeyColArray.insertAt(newEntry, ringKeyColList[i]);
+          ringTempKeyColOrderArray.insertAt(newEntry, ringKeyColOrderList[i]);
+          refdTempKeyColArray.insertAt(newEntry, refdKeyColList[i]);
+        }
+
+      // copy back into the lists (this will assert if we have any holes in the array)
+      for (CollIndex j=0; j<numEntries; j++)
+        {
+          ringKeyColList[j]      = ringTempKeyColArray[j];
+          ringKeyColOrderList[j] = ringTempKeyColOrderArray[j];
+          refdKeyColList[j]      = refdTempKeyColArray[j];
+        }
+    } // reorder the lists if needed
 
   // check for circular RI dependencies.
   // check if referenced table cn2 refers back to the referencing table cn.
@@ -5714,7 +5965,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
                               << DgConstraintName(addConstrName)
                               << DgTableName(referencingTableName.getObjectNamePart().getInternalName().data())
                               << DgString0(referencedTableName.getObjectNamePart().getInternalName().data()) 
-                              << DgString1("TBD");
+                              << DgString1(validQry);
           
           return;
         }
@@ -5778,6 +6029,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
                       ringNaTable,
                       FALSE,
                       (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
+                      TRUE, // because of the way the data is recorded in the
+                            // metadata, the indexes of referencing and referenced
+                            // tables need to have their columns in the same
+                            // sequence (differences in ASC/DESC are ok)
                       &cliInterface))
     {
       *CmpCommon::diags()

@@ -24,7 +24,7 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
+.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
 .PHONY: package package-all pkg-product pkg-sql-regress check-copyrights
 
 ################
@@ -32,7 +32,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
+all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
 
 package: pkg-product pkg-client
 
@@ -57,9 +57,6 @@ smstub: mpistub
 
 verhdr:
 	cd sqf && $(MAKE) genverhdr
-
-log4cpp: $(MPI_TARGET)
-	cd log4cpp/$(LOG4CPP_VER)/src && $(MAKE) liblog4cpp.so 2>&1 | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
 
 dbsecurity: $(MPI_TARGET)
 	cd dbsecurity && $(MAKE) all 2>&1 | sed -e "s/$$/	##(Security)/";exit $${PIPESTATUS[0]}
@@ -88,10 +85,9 @@ rest: verhdr
 odb: ndcs
 	cd conn/odb && $(MAKE) 2>&1 | sed -e "s/$$/	##(ODB)/" ; exit $${PIPESTATUS[0]}
 
-clean: sqroot clean-source-pkgs
+clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
-	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) clean
 	cd dbsecurity &&		$(MAKE) clean
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
@@ -102,9 +98,8 @@ clean: sqroot clean-source-pkgs
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 
-cleanall: sqroot clean-source-pkgs
+cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
-	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) cleanall
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
@@ -117,7 +112,7 @@ cleanall: sqroot clean-source-pkgs
 
 package-all: package pkg-sql-regress
 
-pkg-product: all pkg-source
+pkg-product: all  
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
 pkg-client: ci ndcs odb
@@ -126,23 +121,6 @@ pkg-client: ci ndcs odb
 # Package SQL regression tests (all target produces some regress/tool files so do that first)
 pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
-
-# Package open source files
-pkg-source: log4cpp-tar
-
-log4cpp-tar: sqf/sources/$(LOG4CPP_VER).tar
-
-sqf/sources/$(LOG4CPP_VER).tar : log4cpp/$(LOG4CPP_VER).tar
-	mkdir -p sqf/sources && ln log4cpp/$(LOG4CPP_VER).tar sqf/sources | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
-
-log4cpp/$(LOG4CPP_VER).tar:
-	cd log4cpp && tar -cf $(LOG4CPP_VER).tar $$(git ls-tree HEAD -r --name-only $(LOG4CPP_VER)) | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
-
-clean-source-pkgs: clean-log4cpp-tar
-	rm -rf sqf/sources
-
-clean-log4cpp-tar:
-	rm -f log4cpp/log4cpp*.tar
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
