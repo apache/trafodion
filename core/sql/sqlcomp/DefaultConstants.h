@@ -3738,6 +3738,7 @@ enum DefaultConstants
 
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,
+  EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
