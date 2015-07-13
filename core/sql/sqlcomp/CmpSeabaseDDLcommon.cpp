@@ -8329,6 +8329,14 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            alterSeabaseTableAlterIdentityColumn(alterIdentityColNode, 
                                                 currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)
+         {
+           StmtDDLAlterTableAlterColumnDatatype * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnDatatype();
+           
+           alterSeabaseTableAlterColumnDatatype(alterColNode, 
+                                                currCatName, currSchName);
+        }
        else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)
          {
            StmtDDLCleanupObjects * co = 

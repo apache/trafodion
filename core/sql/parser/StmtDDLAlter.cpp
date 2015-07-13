@@ -61,7 +61,7 @@
 #include "StmtDDLAlterSynonym.h"
 #include "StmtDDLAlterTableDisableIndex.h"
 #include "StmtDDLAlterTableEnableIndex.h"
-#include "StmtDDLAlterTableAlterColumnDefaultValue.h"
+#include "StmtDDLAlterTableAlterColumn.h"
 
 // -----------------------------------------------------------------------
 // definitions of non-inline methods for class ParCheckConstraintColUsage
@@ -1777,44 +1777,6 @@ StmtDDLDropConstraint::displayLabel3() const
 }
 
 //----------------------------------------------------------------------------
-// CLASS StmtDDLAlterTableAlterColumnDefaultValue
-//----------------------------------------------------------------------------
-StmtDDLAlterTableAlterColumnDefaultValue::StmtDDLAlterTableAlterColumnDefaultValue( const NAString &columnName 
-                                                                                  , ElemDDLNode *pColDefault
-                                                                                  , CollHeap *heap)
-    : StmtDDLAlterTable(DDL_ALTER_TABLE_ALTER_COLUMN_DEFAULT_VALUE, 
-			QualifiedName(PARSERHEAP()) /*no table name*/,
-		 	pColDefault /* alterTableAction_ */),	
-                        columnName_(columnName, heap)
-{
-
-
-}
-
-//
-// Virtual destructor
-//
-
-StmtDDLAlterTableAlterColumnDefaultValue::~StmtDDLAlterTableAlterColumnDefaultValue()
-{}
-
-//
-// Cast function: to provide the safe castdown to the current object
-//
-
-StmtDDLAlterTableAlterColumnDefaultValue *
-StmtDDLAlterTableAlterColumnDefaultValue::castToStmtDDLAlterTableAlterColumnDefaultValue()
-{
-  return this;
-}
-
-const NAString
-StmtDDLAlterTableAlterColumnDefaultValue::getText() const
-{
-  return "StmtDDLAlterTableAlterColumnDefaultValue" ;
-}
-	
-//----------------------------------------------------------------------------
 // CLASS StmtDDLAlterTableAlterColumnLoggable
 //----------------------------------------------------------------------------
 
@@ -1828,8 +1790,6 @@ StmtDDLAlterTableAlterColumnLoggable::StmtDDLAlterTableAlterColumnLoggable
         columnName_(heap),
 	loggable_(loggableVal)
 {
-
-
 
 }
 

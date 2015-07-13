@@ -90,6 +90,11 @@ public:
       ComDiagsArea *pDiags = NULL);
 
    PrivMgrPrivileges(
+      const int64_t objectUID,
+      const std::string &metadataLocation,
+      ComDiagsArea *pDiags = NULL);
+
+   PrivMgrPrivileges(
       const std::string &metadataLocation,
       ComDiagsArea *pDiags = NULL);
 
@@ -125,7 +130,6 @@ public:
       std::vector<PrivObjectBitmap> & privBitmaps);
       
    PrivStatus getPrivRowsForObject(
-      const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
 
    PrivStatus getPrivTextForObject(
@@ -182,7 +186,6 @@ public:
       const std::string & creatorName);
       
    PrivStatus insertPrivRowsForObject(
-      const int64_t objectUID,
       const std::vector<ObjectPrivsRow> & objectPrivsRows);
    
    PrivStatus populateObjectPriv(

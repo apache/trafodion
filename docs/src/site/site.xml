@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+<project xmlns="http://maven.apache.org/DECORATION/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+
+  <bannerLeft>
+    <name>Apache Trafodion</name>
+    <href>http://trafodion.incubator.apache.org</href>
+  </bannerLeft>
+  <bannerRight>
+    <name>Transactional SQL-on-Hadoop DBMS</name>
+  </bannerRight>
+
+  <publishDate position="none"/>
+  <version position="none"/>
+
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>1.4</version>
+  </skin>
+
+  <custom>
+    <fluidoSkin>
+      <topBarEnabled>true</topBarEnabled>
+      <!--
+      <topBarContainerStyle>width: 90%;</topBarContainerStyle>
+      <topBarIcon>
+        <name>Apache Trafodion</name>
+        <alt>Apache Trafodion</alt>
+        <src>/images/topbar-logo.png</src>
+        <href>/index.html</href>
+      </topBarIcon>
+      -->
+      <sideBarEnabled>false</sideBarEnabled>
+      <skipGenerationDate>true</skipGenerationDate>
+    </fluidoSkin>
+  </custom>
+
+  <body>
+    <head>
+      <script type="text/javascript">
+   
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create','UA-52475605-1','auto');ga('send','pageview');
+   
+      </script>
+    </head>
+
+    <breadcrumbs position="none"/>
+   
+    <menu name="Apache Trafodion Project">
+      <item name="Overview" href="index.html"/>
+      <item name="License" href="license.html" />
+      <item name="Release Notes" href="https://issues.apache.org/jira/browse/TRAFODION?report=com.atlassian.jira.plugin.system.project:changelog-panel#selectedTab=com.atlassian.jira.plugin.system.project%3Achangelog-panel" target="_blank" />
+      <item name="Issue Tracking" href="issue-tracking.html" />
+      <item name="Source Repository" href="source-repository.html" />
+      <item name="Apache JIRA" href="https://issues.apache.org/jira/browse/TRAFODION" target="_blank" />
+      <item name="LaunchPad (old bug tracker)" href="https://launchpad.net/trafodion" target="_blank" />
+    </menu>
+    <menu name="Documentation">
+      <item name="Apache Wiki" href="https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home" target="_blank" />
+      <item name="Old Wiki" href="https://wiki.trafodion.org" target="_blank"/>
+      <item name="FAQ" href="https://wiki.trafodion.org/wiki/index.php/FAQ" target="_blank" />
+    </menu>
+    <menu name="Community">
+      <item name="Mailing Lists" href="mail-lists.html" />
+      <item name="Team" href="team-list.html" />
+    </menu>
+    <menu name="Download">
+      <item name="Apache Downloads" href="http://www.apache.org/dyn/closer.cgi/trafodion/" target="_blank" />
+      <item name="Old Downloads" href="http://downloads.trafodion.org" target="_blank" />
+    </menu>
+    <menu name="Git">
+      <item name="Apache GIT" href="https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git" target="_blank" />
+      <item name="Apache GitHub" href="https://github.com/apache/incubator-trafodion" target="_blank" />
+      <item name="Old GIT" href="https://github.com/trafodion" target="_blank" />
+    </menu>
+    <menu name="ASF">
+      <item name="Apache Software Foundation" href="http://www.apache.org/foundation/" target="_blank" />
+      <item name="How Apache Works" href="http://www.apache.org/foundation/how-it-works.html" target="_blank" />
+      <item name="Sponsoring Apache" href="http://www.apache.org/foundation/sponsorship.html" target="_blank" />
+    </menu>
+    <footer>
+      <div class="row span16">
+        <span>Disclaimer: Apache Trafodion is an effort undergoing incubation at the Apache Software Foundation (ASF), sponsored by the Apache Incubator PMC. 
+        Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making 
+        process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the 
+        completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</span><br /><br />
+        <span>Apache, Apache Maven, Apache Maven Fluido Skin, the Apache feather logo, the Apache Maven project logo and the Apache Incubator project logo 
+        are trademarks of The Apache Software Foundation.</span><br />
+        <span>
+          <a href="http://www.apache.org" target="_blank"><img id="asf-logo" alt="Apache Software Foundation" src="images/logos/feather-small.gif" /></a>
+          <a href="http://incubator.apache.org/" target="_blank"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.gif" /></a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</project>
