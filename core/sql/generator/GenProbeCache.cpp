@@ -370,25 +370,18 @@ short ProbeCache::codeGen(Generator *generator)
       if (estimatedMemory > memoryLimitPerCpu) {
           numInnerTuples_ = memoryLimitPerCpu / innerRecLength;
           queue_index pUpSize_calc;
-          queue_index pDownSize_calc;                  
  
-          pUpSize_calc = numInnerTuples_ * pUpSize / (pUpSize + pDownSize);
-          pDownSize_calc = numInnerTuples_ * pDownSize / (pUpSize + pDownSize);
+          pUpSize_calc = numInnerTuples_ ;
           queue_index pq2 = 1;
           queue_index bits = pUpSize_calc;
           while (bits && pq2 < pUpSize_calc) {
               bits = bits  >> 1;
               pq2 = pq2 << 1;
           }
-          pUpSize = pq2;
-          pq2 = 1;
-          bits = pDownSize_calc;
-          while (bits && pq2 < pUpSize_calc) {
-              bits = bits  >> 1;
-              pq2 = pq2 << 1;
-          }
-          pDownSize = pq2;
-          pcNumEntries = numInnerTuples_;
+          pUpSize = MINOF(pq2/2, 4); 
+          pDownSize = MINOF(pq2/2, 4);
+          pcNumEntries = MINOF(numInnerTuples_, 4);
+          numInnerTuples_ = pcNumEntries;
           numCachedProbes_ = pcNumEntries;
       }
    } 
