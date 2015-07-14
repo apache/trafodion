@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -69,7 +69,11 @@ public:
 		short	sqlStmtType,
 		BOOL	useDefaultDesc,
 		BOOL internalStmt = FALSE,
-		long stmtId = 0);
+		long stmtId = 0,
+		short sqlQueryType = SQL_UNKNOWN,
+		Int32  resultSetIndex = 0,
+		SQLSTMT_ID* callStmtId = NULL);
+
 	SRVR_STMT_HDL *createSrvrStmtForMFC(const char *stmtLabel,
 		long	*sqlcode,
 		const char *moduleName,
@@ -90,6 +94,12 @@ public:
 
 	
 	SRVR_STMT_HDL *getSrvrStmt(long dialogueId,long stmtId,long	*sqlcode);
+	SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId, const char* stmtLabel, long *sqlcode);
+
+	long getStmtCount()
+	{
+		return count;
+	}
 	
 	inline void setCurrentStmt(SRVR_STMT_HDL *pSrvrStmt) { pCurrentSrvrStmt = pSrvrStmt;};
 	bool isModuleLoaded(std::string strModuleName);//MFC
@@ -117,6 +127,8 @@ private:
 //    __gnu_cxx::hash_map<std::string,SRVR_STMT_HDL*> mapOfInternalSrvrStmt;
     MapOfSrvrStmt mapOfSrvrStmt;
     MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
+
+	//CReplyMsgMap            replyMsgMap;
 
 	SRVR_STMT_HDL			*pCurrentSrvrStmt;
 	long					count;
