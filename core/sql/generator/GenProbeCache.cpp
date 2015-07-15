@@ -361,6 +361,31 @@ short ProbeCache::codeGen(Generator *generator)
       // that there is room enough for one row.
     }
 
+   double  memoryLimitPerCpu =
+      ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
+   double estimatedMemory;
+   
+   if (numInnerTuples_ > 0) {
+      estimatedMemory = numInnerTuples_ * innerRecLength;
+      if (estimatedMemory > memoryLimitPerCpu) {
+          numInnerTuples_ = memoryLimitPerCpu / innerRecLength;
+          queue_index pUpSize_calc;
+ 
+          pUpSize_calc = numInnerTuples_ ;
+          queue_index pq2 = 1;
+          queue_index bits = pUpSize_calc;
+          while (bits && pq2 < pUpSize_calc) {
+              bits = bits  >> 1;
+              pq2 = pq2 << 1;
+          }
+          pUpSize = MINOF(pq2/2, 4); 
+          pDownSize = MINOF(pq2/2, 4);
+          pcNumEntries = MINOF(numInnerTuples_, 4);
+          numInnerTuples_ = pcNumEntries;
+          numCachedProbes_ = pcNumEntries;
+      }
+   } 
+
 
   ///////////////////////////////////////////////////////
   // Create and initialize the ComTdbProbeCache, generate
@@ -454,7 +479,11 @@ CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
        totalMemory *= partFunc->getCountOfPartitions();
      }
   }
-          
+
+  double  memoryLimitPerCpu =
+      ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
+  if (totalMemory > memoryLimitPerCpu)
+     totalMemory = memoryLimitPerCpu;          
   return totalMemory;
 }
 

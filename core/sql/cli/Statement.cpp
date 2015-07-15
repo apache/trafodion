@@ -1400,43 +1400,6 @@ RETCODE Statement::prepare(char *source, ComDiagsArea &diagsArea,
 			passed_gen_code, passed_gen_code_len,
 			charset, unpackTdbs, cliFlags);
 
-  if (rc == 0)
-    {
-      if ((NOT (cliFlags & PREPARE_AUTO_QUERY_RETRY)) &&
-	  (NOT (cliFlags & PREPARE_NO_TEXT_CACHE)) &&
-	  source &&
-	  (stmt_type == DYNAMIC_STMT) &&
-	  unpackTdbs &&
-	  root_tdb &&
-	  root_tdb->qCacheInfoIsClass() &&
-	  root_tdb->qcInfo() &&
-	  root_tdb->qcInfo()->cacheWasHit() &&
-	  (! root_tdb->getLateNameInfoList()->variablePresent()) &&
-	  //	  (! root_tdb->getUdrStoiList()) &&
-	  //	  (context_->getSessionDefaults()->aqr()) &&
-	  (root_tdb->aqrEnabled()) &&
-	  (context_->getNumOfCliCalls() == 1))
-	{
-	  rc = execute(cliGlobals_, NULL,
-		       diagsArea, INITIAL_STATE_,
-		       TRUE, cliFlags);
-	  if (rc == 0)
-	    {
-	      // if a Xn was started by exe, then
-	      // set an indication in aqr that it was started
-	      // during prepare. Used at statement dealloc time to commit
-	      // that xn, if autocommit is on and the Xn still exists.
-	      ExTransaction * exTransaction = context_->getTransaction();
-	      if ((exTransaction->xnInProgress()) &&
-		  (exTransaction->exeStartedXn()) &&
-		  (exTransaction->implicitXn()))
-		context_->aqrInfo()->setXnStartedAtPrepare(TRUE);
-	      else
-		context_->aqrInfo()->setXnStartedAtPrepare(FALSE);
-	    }
-	}
-    }
-
   StmtDebug2("[END prepare] %p, result is %s", this, RetcodeToString(rc));
   return rc;
 }

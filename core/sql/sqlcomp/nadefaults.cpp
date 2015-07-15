@@ -1320,6 +1320,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PARTIALHGB_IN_MB,	"100"),
 
+ SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
