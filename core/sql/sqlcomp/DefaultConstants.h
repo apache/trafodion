@@ -3738,6 +3738,9 @@ enum DefaultConstants
 
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,
+
+  // estimated max naheap memory, used as a limit for update stats utility
+  USTAT_NAHEAP_ESTIMATED_MAX,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

@@ -3517,6 +3517,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
+  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation feasible with NAHEAP.
  XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
  XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
@@ -3535,7 +3536,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
+  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
   DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column
