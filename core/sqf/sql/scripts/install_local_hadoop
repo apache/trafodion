@@ -553,18 +553,6 @@ if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-0.98.4.2.2.0.0-2041-hadoop2.tar.gz
 fi
 
-
-# Default location of DCS code
-DCS_GIT=https://github.com/trafodion/dcs
-# Default location of REST code
-REST_GIT=https://github.com/trafodion/core
-
-# phoenix_test
-# PHX_SRC - Optionally specify a local source tree to use
-PHX_SRC=${PHX_SRC:-$MY_SW_ROOT/phoenix_test}
-# otherwise we download from here
-PHX_GIT=https://github.com/trafodion/phoenix_test
-
 echo "Checking for existing Hadoop processes..."
 if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 -o \
      `netstat -anl | grep ${MY_HADOOP_NN_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 ]; then
@@ -1525,8 +1513,42 @@ else
 fi
 # end of TPC-DS setup
 
-
 cd $MY_SW_ROOT
+
+echo "Setting up DCS, REST and Phoenix tests..."
+
+#Default GIT location
+GIT_DIR="git@github.com:apache/incubator-trafodion"
+DCS_SRC=$MY_SQROOT/../../dcs
+
+if [ -d $DCS_SRC ]; then
+   TRAF_SRC=$MY_SQROOT/../../
+   # Default location of DCS code
+   DCS_SRC=$MY_SQROOT/../../dcs
+   # Default location of REST code
+   REST_SRC=$MY_SQROOT/../rest
+   # Default location for phoenix_test
+   PHX_SRC=$MY_SQROOT/../../tests/phx
+else
+   TRAF_SRC=$MY_SW_ROOT/src/incubator-trafodion
+   if [ ! -d $TRAF_SRC ]; then
+     mkdir -p $MY_SW_ROOT/src
+     cd $MY_SW_ROOT/src
+     git clone $GIT_DIR
+   fi
+   # Default location of DCS code
+   DCS_SRC=$TRAF_SRC/dcs
+   # Default location of REST code
+   REST_SRC=$TRAF_SRC/core/rest
+   # Default location for phoenix_test
+   PHX_SRC=$TRAF_SRC/tests/phx
+fi
+
+echo "Default Trafodion Source directory..."
+echo "For Core... $TRAF_SRC"
+echo "For DCS... $DCS_SRC"
+echo "For REST... $REST_SRC"
+echo "For PHX... $PHX_SRC"
 
 if [ -d dcs-* ]; then
   echo "DCS files already exist, skipping DCS setup"
@@ -1549,21 +1571,12 @@ else
       echo "Using DCS tar file in source tree: $DCS_SRC" | tee -a ${MY_LOG_FILE}
     else
       echo "No DCS tar file found, building DCS: $DCS_SRC" | tee -a ${MY_LOG_FILE}
+      echo "Building DCS Source in $DCS_SRC" | tee -a ${MY_LOG_FILE}
       cd $DCS_SRC
       ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
       cd $MY_SW_ROOT
     fi
     DCS_TAR=$(ls $DCS_SRC/target/dcs*tar.gz)
-  else
-    echo "Downloading DCS Source: $DCS_GIT" | tee -a ${MY_LOG_FILE}
-    mkdir -p src
-    git clone $DCS_GIT src/dcs >>${MY_LOG_FILE} 2>&1
-    DCS_SRC="$MY_SW_ROOT/src/dcs"
-    echo "Building DCS Source..." | tee -a ${MY_LOG_FILE}
-    cd src/dcs
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    DCS_TAR=$(ls $MY_SW_ROOT/src/dcs/target/dcs*tar.gz)
   fi
   if [[ ! -f $DCS_TAR ]]
   then
@@ -1579,7 +1592,7 @@ else
   # configure DCS
 
   #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  echo "Adding DCS_INSTALL_DIR=$DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
   then
@@ -1617,7 +1630,7 @@ else
     </property>
   </configuration>
 EOF
-  echo "$(hostname -f) 4" > servers
+  echo "localhost 4" > servers
 
   # Configure DCS test scripts
   if [[ -n "$DCS_SRC" ]]
@@ -1654,9 +1667,6 @@ fi
 
 if [[ -d $PHX_SRC ]]; then
   echo "Phoenix files already exist, skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
-else
-  echo "Cloning phoenix_test repo...." | tee -a ${MY_LOG_FILE}
-  git clone $PHX_GIT $PHX_SRC >>${MY_LOG_FILE} 2>&1
 
   #######################################################
   # scripts to run tests
@@ -1711,27 +1721,12 @@ else
       echo "Using REST tar file in source tree: $REST_SRC" | tee -a ${MY_LOG_FILE}
     else
       echo "No REST tar file found, building REST: $REST_SRC" | tee -a ${MY_LOG_FILE}
+      echo "Building REST Source in $REST_SRC" | tee -a ${MY_LOG_FILE}
       cd $REST_SRC
       ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
       cd $MY_SW_ROOT
     fi
     REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
-  elif [[ -d $MY_SQROOT/../rest ]]
-  then
-    cd $MY_SQROOT/../rest
-    echo "Building REST Source in $MY_SQROOT/../rest" | tee -a ${MY_LOG_FILE}
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    REST_TAR=$(ls $MY_SQROOT/../rest/target/rest*tar.gz)
-  else
-    echo "Downloading REST Source: $REST_GIT" | tee -a ${MY_LOG_FILE}
-    mkdir -p $MY_SW_ROOT/src
-    cd $MY_SW_ROOT/src
-    git clone $REST_GIT core >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT/src/core/rest
-    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
-    cd $MY_SW_ROOT
-    REST_TAR=$(ls $MY_SW_ROOT/src/core/rest/target/rest*tar.gz)
   fi
   if [[ ! -f $REST_TAR ]]
   then
@@ -1747,7 +1742,7 @@ else
   # configure REST
 
   #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  echo "Adding REST_INSTALL_DIR=$REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
   then

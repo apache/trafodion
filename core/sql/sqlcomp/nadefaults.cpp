@@ -1320,6 +1320,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PARTIALHGB_IN_MB,	"100"),
 
+ SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
@@ -3517,7 +3518,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
-  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation feasible with NAHEAP.
+  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
  XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
  XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
