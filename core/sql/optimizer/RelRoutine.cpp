@@ -1613,7 +1613,7 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
    cmpSBD.buildColInfoArray(COM_USER_DEFINED_ROUTINE_OBJECT,
                             &colArray, 
                             colInfoArray, 
-                            FALSE, FALSE, NULL,
+                            FALSE, FALSE, NULL, NULL, NULL,
                             CmpCommon::statementHeap());
 
    for (size_t colNum = 0; colNum < colArray.entries(); colNum++)

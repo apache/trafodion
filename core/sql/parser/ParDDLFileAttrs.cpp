@@ -1597,6 +1597,7 @@ ParDDLFileAttrsCreateIndex::resetAllIsSpecDataMembers()
   
   // { ALIGNED | PACKED } FORMAT
   isRowFormatSpec_              = FALSE;
+
 } // ParDDLFileAttrsCreateIndex::resetAllIsSpecDataMembers()
 
 //
@@ -2000,6 +2001,10 @@ ParDDLFileAttrsCreateTable::copy(const ParDDLFileAttrsCreateTable &rhs)
   isOwnerSpec_          = rhs.isOwnerSpec_;
   owner_                = rhs.owner_;
 
+  // default column family
+  isColFamSpec_ = rhs.isColFamSpec_;
+  colFam_ = rhs.colFam_;
+
   // [ NO ] AUDITCOMPRESS      
   //   inherits from class ParDDLFileAttrsCreateIndex
 
@@ -2126,6 +2131,8 @@ ParDDLFileAttrsCreateTable::resetAllIsSpecDataMembers()
   // OWNER
   isOwnerSpec_ = FALSE;
 
+  isColFamSpec_                     = FALSE;
+
   // [ NO ] AUDITCOMPRESS
   //   inherits from class ParDDLFileAttrsCreateIndex
 
@@ -2176,6 +2183,22 @@ ParDDLFileAttrsCreateTable::setFileAttr(ElemDDLFileAttr * pFileAttr)
   case ELM_FILE_ATTR_UID_ELEM  :
   case ELM_FILE_ATTR_ROW_FORMAT_ELEM     :
     ParDDLFileAttrsCreateIndex::setFileAttr(pFileAttr);
+    break;
+
+  case ELM_FILE_ATTR_COL_FAM_ELEM :
+    if (isColFamSpec_)
+    {
+      // Duplicate Col Family phrases.
+      *SqlParser_Diags << DgSqlCode(-3183)
+                       << DgString0("Column Family");
+    }
+    isColFamSpec_ = TRUE;
+    ComASSERT(pFileAttr->castToElemDDLFileAttrColFam() NEQ NULL);
+    {
+      ElemDDLFileAttrColFam * pColFam =
+        pFileAttr->castToElemDDLFileAttrColFam();
+      colFam_ = pColFam->getColFam();
+    }
     break;
 
   case ELM_FILE_ATTR_AUDIT_ELEM:

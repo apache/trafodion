@@ -804,6 +804,8 @@ public:
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
+  NAString &defaultColFam() { return defaultColFam_; }
+  NAList<NAString> &allColFams() { return allColFams_; }
 private:
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
@@ -1087,6 +1089,9 @@ private:
   // keeps track of these new columnsa allowing us to 
   // destroy them when NATable is destroyed.
   NAColumnArray newColumns_;
+
+  NAString defaultColFam_;
+  NAList<NAString> allColFams_;
 }; // class NATable
 
 #pragma warn(1506)  // warning elimination 

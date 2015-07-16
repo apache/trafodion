@@ -895,6 +895,9 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
   Lng32 rowFormat; //hbase format = 0, aligned format = 1
+
+  const char * defaultColFam;
+  const char * allColFams;
 };
 
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase

@@ -151,7 +151,9 @@ public:
 
   inline ComCompressionType getCompressionType() const;
 
-//-- MV
+  inline NABoolean isColFamSpecified() const;
+
+  inline NAString getColFam() const;
 
   //
   // mutators
@@ -167,6 +169,8 @@ public:
         // off, this method should be invoked after the entire file
         // attributes clause is scanned.
          
+  inline void setDefaultValueForColFam();
+
   void setFileAttr(ElemDDLFileAttr * pFileAttrParseNode);
 
   // trace
@@ -235,6 +239,9 @@ private:
   NABoolean             isCompressionTypeSpec_;
   ComCompressionType    compressionType_;
 
+  // COLUMN FAMILY
+  NABoolean       isColFamSpec_;
+  NAString colFam_;
 
 //-- MV
 
@@ -414,6 +421,18 @@ ParDDLFileAttrsCreateTable::getCompressionType() const
 //-- MV
 //----------------------------------------------------------------------------
 
+// is the Col Family phrase specified?
+inline NABoolean
+ParDDLFileAttrsCreateTable::isColFamSpecified() const
+{
+  return isColFamSpec_;
+}
+
+inline NAString ParDDLFileAttrsCreateTable::getColFam() const
+{
+  return colFam_;
+}
+
 //
 // mutator
 //
@@ -438,6 +457,15 @@ ParDDLFileAttrsCreateTable::setDefaultValueForBuffered()
   if (NOT isBufferedSpecified())
   {
     setIsBuffered(isAudited());
+  }
+}
+
+inline void
+ParDDLFileAttrsCreateTable::setDefaultValueForColFam()
+{
+  if (NOT isColFamSpecified())
+  {
+    colFam_ = SEABASE_DEFAULT_COL_FAMILY;
   }
 }
 

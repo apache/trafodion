@@ -52,13 +52,15 @@ extern NABoolean getCharSetInferenceSetting(NAString& defval);
 // -----------------------------------------------------------------------
 
 // constructor
-ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
-                             NAType * pColumnDataType,
-                             ElemDDLNode * pColDefaultNode,
-                             ElemDDLNode * pColAttrList,
-                             CollHeap * heap)
+ElemDDLColDef::ElemDDLColDef(
+     const NAString *columnFamily,
+     const NAString *columnName,
+     NAType * pColumnDataType,
+     ElemDDLNode * pColDefaultNode,
+     ElemDDLNode * pColAttrList,
+     CollHeap * heap)
 : ElemDDLNode(ELM_COL_DEF_ELEM),
-  columnName_(columnName, heap),
+  columnName_(*columnName, heap),
   columnDataType_(pColumnDataType),
   defaultClauseStatus_(DEFAULT_CLAUSE_NOT_SPEC),
   isNewAdjustedDefaultConstValueNode_(FALSE),
@@ -86,6 +88,9 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
   seabaseSerialized_(FALSE)
 {
   //  ComASSERT(pColumnDataType NEQ NULL);
+
+  if (columnFamily)
+    columnFamily_ = *columnFamily;
 
   if (pColumnDataType NEQ NULL)
   {
@@ -1547,8 +1552,8 @@ ElemProxyColDef::ElemProxyColDef(QualifiedName *tableName,
                                  NAType *type,
                                  ElemDDLNode *colAttrs,
                                  CollHeap *heap)
-  : ElemDDLColDef(colName, type, NULL, colAttrs, heap),
-    tableName_(tableName)
+     : ElemDDLColDef(NULL, &colName, type, NULL, colAttrs, heap),
+       tableName_(tableName)
 {
 }
 

@@ -1,0 +1,73 @@
+-- tests for support of multiple column families
+
+create schema trafodion.sch027;
+set schema trafodion.sch027;
+
+log LOG027 clear;
+
+cqd TRAF_MULTI_COL_FAM 'ON';
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key);
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key) attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key, "cf2".b int) attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key, "cf2".b int, cf3.c int) 
+       attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+create index t027t01i1 on t027t01(b);
+invoke t027t01;
+showddl t027t01;
+
+insert into t027t01 values (1,2,3);
+select * from t027t01;
+update t027t01 set c = 33 where a = 1;
+select * from t027t01;
+delete from t027t01;
+select * from t027t01;
+
+alter table t027t01 add column "cf2".d int;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 add column "cf4".e int;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 drop column d;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 add column "cf2".d int;
+invoke t027t01;
+showddl t027t01;
+
+create table t027t01l like t027t01;
+invoke t027t01l;
+showddl t027t01l;
+
+-- negative tests
+create table t027t02 (a.a.a  int);
+create table t027t02 ("cf".a int) attribute aligned format;
+alter table t027t01 drop column "cf2".d;
+create index t027t01i2 on t027t01("cf2".b);
+select * from t027t01 where "cf".a = 1;
+
+-- cleanup
+drop table if exists t027t01;
+drop table if exists t027t02;
+
+log;

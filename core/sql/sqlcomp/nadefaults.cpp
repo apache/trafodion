@@ -3314,6 +3314,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  // max size in bytes of a char or varchar column.
   DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
 
+ DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
+
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
   DDkwd__(TRAF_NO_DTM_XN,      "OFF"),

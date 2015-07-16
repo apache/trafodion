@@ -304,6 +304,8 @@ class CmpSeabaseDDL
 			  NABoolean implicitPK,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
+                          std::vector<NAString> *colFamVec = NULL,
+                          const char * defaultColFam = NULL,
 			  NAMemory * heap = NULL);
 
   // The next three methods do use anything from the CmpSeabaseDDL class.
@@ -440,7 +442,18 @@ class CmpSeabaseDDL
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
 			 const char * cf1, const char * cf2, const char * cf3,
-			 NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
+                         NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
+                         NAText * hbaseCreateOptionsArray = NULL,
+                         const int numSplits = 0,
+                         const int keyLength = 0,
+                         char **encodedKeysBuffer = NULL,
+			 NABoolean doRetry = TRUE);
+
+  short createHbaseTable(ExpHbaseInterface *ehi, 
+			 HbaseStr *table,
+                         std::vector<NAString> &collFamVec,
+                         NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
+                         NAText *hbaseCreateOptionsArray = NULL,
                          const int numSplits = 0,
                          const int keyLength = 0,
                          char **encodedKeysBuffer = NULL,
@@ -448,6 +461,7 @@ class CmpSeabaseDDL
 
   short alterHbaseTable(ExpHbaseInterface *ehi,
                         HbaseStr *table,
+                        NAList<NAString> &allColFams,
                         NAList<HbaseCreateOption*> * hbaseCreateOptions);
 
   short dropHbaseTable(ExpHbaseInterface *ehi, 
@@ -499,6 +513,7 @@ class CmpSeabaseDDL
 		    ULng32 &colFlags);
 
   short getColInfo(ElemDDLColDef * colNode, 
+                   NAString &colFamily,
 		   NAString &colName,
                    NABoolean alignedFormat,
 		   Lng32 &datatype,
@@ -673,6 +688,11 @@ class CmpSeabaseDDL
                         Lng32 textType, 
                         Lng32 subID, 
                         NAString &text);
+
+  short deleteFromTextTable(ExeCliInterface *cliInterface,
+                            Int64 objUID, 
+                            Lng32 textType, 
+                            Lng32 subID);
 
   ItemExpr * bindDivisionExprAtDDLTime(ItemExpr *expr,
                                        NAColumnArray *availableCols,
@@ -1202,6 +1222,7 @@ class CmpSeabaseDDL
 				       NABoolean isUnique,
 				       NABoolean hasSyskey,
                                        NABoolean alignedFormat,
+                                       NAString &defaultColFam,
 				       const NAColumnArray &baseTableNAColArray,
 				       const NAColumnArray &baseTableKeyArr,
 				       Lng32 &keyColCount,

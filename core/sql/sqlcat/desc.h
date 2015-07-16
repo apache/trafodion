@@ -121,6 +121,8 @@ struct table_desc_struct {
   void * secKeySet;
   ComBoolean isInsertOnly;
   char * snapshotName;
+  char * default_col_fam;
+  char * all_col_fams;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;
