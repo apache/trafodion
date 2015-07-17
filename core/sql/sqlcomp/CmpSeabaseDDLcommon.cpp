@@ -5256,6 +5256,40 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
+static void processColFamily(NAString &inColFamily,
+                             NAString &outColFamily,
+                             std::vector<NAString> *colFamVec)
+{
+  if (inColFamily.isNull())
+    return;
+  
+  if (! colFamVec)
+    {
+      outColFamily = inColFamily;
+      return;
+    }
+
+  int i = 1;
+  NABoolean found = FALSE;
+  while ((NOT found) && (i <= colFamVec->size()))
+    {
+      NAString &nas = (*colFamVec)[i];
+      if (nas == inColFamily)
+        {
+          found = TRUE;
+        }
+      else
+        i++;
+    }
+
+  if (NOT found)
+    {
+      colFamVec->push_back(inColFamily);
+    }
+
+  outColFamily = "#" + (char)i;
+}
+
 short CmpSeabaseDDL::buildColInfoArray(
                                        ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
@@ -5372,9 +5406,12 @@ short CmpSeabaseDDL::buildColInfoArray(
             colFamVec->push_back(colFamily);
         }
 
+      NAString storedColFamily;
+      processColFamily(colFamily, storedColFamily, colFamVec);
+
       colInfoArray[index].hbaseColFam = 
-        new((heap ? heap : STMTHEAP)) char[colFamily.length() +1];
-      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)colFamily.data());
+        new((heap ? heap : STMTHEAP)) char[storedColFamily.length() +1];
+      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)storedColFamily.data());
 
       char idxNumStr[40];
       str_itoa(index+1, idxNumStr);
@@ -5402,7 +5439,9 @@ short CmpSeabaseDDL::buildColInfoArray(
         }
     }
 
+#ifdef __ignore
   // remove duplicates from colFamVec
+  std::vector<NAString>  newColFamVec;
   if (colFamVec)
     {
       if (nullColFamFound)
@@ -5410,7 +5449,43 @@ short CmpSeabaseDDL::buildColInfoArray(
 
       std::sort(colFamVec->begin(), colFamVec->end());
       colFamVec->erase(unique(colFamVec->begin(), colFamVec->end()), colFamVec->end());
+      
+      for (index = 0; index < colArray->entries(); index++)
+        {
+          NABoolean done = FALSE;
+          for (int j = 0; ((NOT done) && (j < colFamVec->size())); j++)
+            {
+              NAString & nas = (*colFamVec)[j];
+              if (nas == colInfoArray[index].hbaseColFam)
+                {
+                  //                  delete colInfoArray[index].hbaseColFam;
+                  
+                  //                  colInfoArray[index].hbaseColFam = 
+                  //                    new((heap ? heap : STMTHEAP)) char[2 +1];
+                  char * hcf = (char*)colInfoArray[index].hbaseColFam;
+                  hcf[0] = '#';
+                  hcf[1] = '0' + j; //j+1;
+                  hcf[2] = 0;
+                  
+                  done = TRUE;
+                }
+            } // inner for
+        } // outer for
+      
+      Lng32 cfvSize = colFamVec->size();
+      colFamVec->clear();
+      if (nullColFamFound)
+        colFamVec->push_back(defaultColFam);
+      
+      for (int j = 0; j < cfvSize; j++)
+        {
+          NAString colFam("#");
+          colFam += '0' + j;
+          
+          colFamVec->push_back(colFam);      
+        }
     }
+#endif
 
   return 0;
 }

@@ -3741,6 +3741,8 @@ enum DefaultConstants
 
   TRAF_MULTI_COL_FAM,
 
+  EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
