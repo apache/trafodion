@@ -961,6 +961,7 @@ CONTROL QUERY DEFAULT
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	4567
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>				-- 4567
@@ -1026,6 +1027,7 @@ CONTROL QUERY DEFAULT
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	4567
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>				-- still 4567
@@ -1088,6 +1090,7 @@ No CONTROL QUERY DEFAULT TIMEOUT settings are in effect.
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	6000
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>                            -- back to 6000

@@ -147,19 +147,29 @@ int JavaObjectInterface::createJVM()
     }
   }
 
-#ifdef _DEBUG
   int debugPort = 0;
   const char *debugPortStr = getenv("JVM_DEBUG_PORT");
   if (debugPortStr != NULL)
      debugPort = atoi(debugPortStr);
-  const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
-  if (debugTimeoutStr != NULL)
-     debugTimeout_ = atoi(debugTimeoutStr);
-  const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
-  char debugOptions[300];
-  if (debugPort > 0)
+  if (debugPort > 0
+#ifdef NDEBUG
+      // in a release build, only DB__ROOT can debug a process
+      && ComUser::isRootUserID()
+#endif
+     )
   {
-     debugPort_ = debugPort + (GetCliGlobals()->myPin() % 1000);
+     const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
+     if (debugTimeoutStr != NULL)
+       debugTimeout_ = atoi(debugTimeoutStr);
+     const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
+     char debugOptions[300];
+
+     debugPort_ = debugPort;
+     // to allow debugging multiple processes at the same time,
+     // specify a port that is a multiple of 1000 and the code will
+     // add pid mod 1000 to the port number to use
+     if (debugPort_ % 1000 == 0)
+       debugPort_ += (GetCliGlobals()->myPin() % 1000);
      sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
             debugPort_,   debugTimeout_);
      if (suspendOnDebug != NULL)
@@ -167,12 +177,12 @@ int JavaObjectInterface::createJVM()
      else
         strcat(debugOptions, ",suspend=n");
      jvm_options[numJVMOptions].optionString = debugOptions;
-     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                     "Debug options: %s", 
+     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_WARN,
+                     "Debugging JVM with options: %s", 
                      jvm_options[numJVMOptions].optionString);
      numJVMOptions++;
   }
-#endif 
+
   const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
   jvm_options[numJVMOptions].optionString = (char *)oomOption;
   numJVMOptions++;

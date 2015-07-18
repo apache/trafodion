@@ -33,10 +33,6 @@ package org.trafodion.sql.udr;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -48,7 +44,6 @@ import java.net.URLConnection;
 
 import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureClassLoader;
@@ -77,7 +72,7 @@ public class LmClassLoader extends SecureClassLoader
 			      // corresponding to the loaded class. 
   private final static boolean DEBUG = false; // static DEBUG
 
-  static private Vector cpURLs_ = null;    // vector of URLs used by all instances
+  static private Vector<String> cpURLs_ = null;    // vector of URLs used by all instances
 				           // of this Class. Created from CLASSPATH
 
   /**
@@ -119,9 +114,9 @@ public class LmClassLoader extends SecureClassLoader
    * @return  a Vector of String type(dirs and jars)
    *
    **/
-  private static Vector createURLVector(String path)
+  private static Vector<String> createURLVector(String path)
   {
-    Vector v = new Vector();
+    Vector<String> v = new Vector<String>();
     if (path == null)
     {
       return v;
@@ -354,6 +349,7 @@ public class LmClassLoader extends SecureClassLoader
         {
           JarFile jf = new JarFile(element);
           JarEntry je = jf.getJarEntry(name);
+          jf.close();
           if (je != null)
           {
             if (DEBUG)

@@ -3384,6 +3384,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
  SDD_____(UDR_JAVA_OPTIONS,                     "OFF"),
   DD_____(UDR_JAVA_OPTION_DELIMITERS,           " "),
+ XDDui___(UDR_JVM_DEBUG_PORT,                   "0"),
+ XDDui___(UDR_JVM_DEBUG_TIMEOUT,                "0"),
 
   DDkwd__(UNAVAILABLE_PARTITION,		"STOP"),	// "?" used?
  DDkwd__(UNC_PROCESS,				"OFF"),

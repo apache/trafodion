@@ -115,6 +115,9 @@ public:
     Int32 udrSerPlanInfoLen,
     char *udrSerPlanInfo,
 
+    Int32 javaDebugPort,
+    Int32 javaDebugTimeout,
+
     Space *space
 
     );
@@ -314,8 +317,10 @@ protected:
   Int32 udrSerPlanInfoLen_;                               // 224-227
   NABasicPtr udrSerPlanInfo_;                             // 228-235
 
+  Int32 javaDebugPort_;                                   // 236-239
+  Int32 javaDebugTimeout_;                                // 240-243
   // Make sure class size is a multiple of 8
-  char fillerComTdbUdr2_[36];                             // 236-271
+  char fillerComTdbUdr2_[28];                             // 244-271
 };
 
 

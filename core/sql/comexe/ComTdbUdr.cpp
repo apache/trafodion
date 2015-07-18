@@ -93,6 +93,9 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
                      Int32 udrSerPlanInfoLen,
                      char *udrSerPlanInfo,
 
+                     Int32 javaDebugPort,
+                     Int32 javaDebugTimeout,
+
                      Space *space
                      )
 : ComTdb(ex_UDR, eye_UDR, estimatedRowCount, criDescParent,
@@ -140,6 +143,8 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
   udrSerInvocationInfo_(udrSerInvocationInfo),
   udrSerPlanInfoLen_(udrSerPlanInfoLen),
   udrSerPlanInfo_(udrSerPlanInfo),
+  javaDebugPort_(javaDebugPort),
+  javaDebugTimeout_(javaDebugTimeout),
 
   numChildTableInputs_((Int16) numChildInputs),
   childInputExprs_(space,(void **)childInputExprs,numChildInputs),
@@ -437,6 +442,12 @@ void ComTdbUdr::displayContents(Space *space, ULng32 flag)
           space->allocateAndCopyToAlignedSpace(truncatedBuf, len, sz);
         }
       }
+    }
+    if (javaDebugPort_ > 0)
+    {
+      str_sprintf(buf, "\njavaDebugPort = %d, javaDebugTimeout = %d",
+                  javaDebugPort_, javaDebugTimeout_);
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
     }
 
   } // if (flag & 0x00000008)

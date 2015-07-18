@@ -26,6 +26,7 @@
 #include "LmRoutineCppObj.h"
 #include "LmParameter.h"
 #include "LmLangManagerC.h"
+#include "ComUser.h"
 
 // Utility method to set up a "wall" before and after a buffer.
 // This wall is set to a specific pattern. If someone accidentally
@@ -152,7 +153,7 @@ LmResult LmRoutineCppObj::dealloc(ComDiagsArea *diagsArea)
       *diagsArea << DgSqlCode(-LME_UDR_METHOD_ERROR)
                  << DgString0("destructor")
                  << DgString1(getNameForDiags())
-                 << DgString2(e.getText().c_str());
+                 << DgString2(e.getMessage().c_str());
       result = LM_ERR;
     }
   catch (...)
@@ -174,10 +175,11 @@ const char *LmRoutineCppObj::getParentQid()
   return invocationInfo_->getQueryId().c_str();
 }
 
-void LmRoutineCppObj::setRuntimeInfo(
+LmResult LmRoutineCppObj::setRuntimeInfo(
      const char   *parentQid,
      int           totalNumInstances,
-     int           myInstanceNum)
+     int           myInstanceNum,
+     ComDiagsArea *da)
 {
   invocationInfo_->setQueryId(parentQid);
   invocationInfo_->setTotalNumInstances(totalNumInstances);
@@ -220,6 +222,8 @@ void LmRoutineCppObj::setRuntimeInfo(
     }
   else
     outputRow_ = NULL;
+
+  return LM_OK;
 }
 
 LmResult LmRoutineCppObj::invokeRoutine(void *inputRow,
@@ -310,13 +314,13 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
               tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_INITIAL)
             invocationInfo_->print();
 
-#ifndef NDEBUG
-          {
-            if (invocationInfo_->getDebugFlags() &
-                tmudr::UDRInvocationInfo::DEBUG_INITIAL_COMPILE_TIME_LOOP)
+          if (invocationInfo_->getDebugFlags() &
+              tmudr::UDRInvocationInfo::DEBUG_INITIAL_COMPILE_TIME_LOOP)
+            if (invocationInfo_->getSessionUser() == ComUser::getRootUserName())
               interfaceObj_->debugLoop();
-          }
-#endif
+            else if (da)
+              *da << DgSqlCode(1260); // warning, only root user can debug
+
           interfaceObj_->describeParamsAndColumns(*invocationInfo_);
           break;
 
@@ -373,25 +377,21 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
                 planInfos_[planNum]->print();
               }
 
-#ifndef NDEBUG
             if ((invocationInfo_->getDebugFlags() &
                  tmudr::UDRInvocationInfo::DEBUG_INITIAL_RUN_TIME_LOOP_ALL) ||
                 (invocationInfo_->getDebugFlags() &
                  tmudr::UDRInvocationInfo::DEBUG_INITIAL_RUN_TIME_LOOP_ONE &&
                  invocationInfo_->getMyInstanceNum() == 0))
               interfaceObj_->debugLoop();
-#endif
 
             interfaceObj_->processData(*invocationInfo_,
                                        *planInfos_[planNum]);
 
             if (result == LM_OK)
               {
-#ifndef NDEBUG
                 if (invocationInfo_->getDebugFlags() & tmudr::UDRInvocationInfo::TRACE_ROWS)
                   printf("(%d) Emitting EOD\n",
                          invocationInfo_->getMyInstanceNum());
-#endif
 
                 // call emitRow to indicate EOD, something the
                 // C interface would do inside the UDF
@@ -434,7 +434,7 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
           (strncmp(sqlState, "38000", 5) != 0))
         {
           *da << DgSqlCode(-LME_CUSTOM_ERROR)
-              << DgString0(e.getText().c_str())
+              << DgString0(e.getMessage().c_str())
               << DgString1(sqlState);
           *da << DgCustomSQLState(sqlState);
         }
@@ -443,7 +443,7 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
           *da << DgSqlCode(-LME_UDF_ERROR)
               << DgString0(invocationInfo_->getUDRName().c_str())
               << DgString1(sqlState)
-              << DgString2(e.getText().c_str());
+              << DgString2(e.getMessage().c_str());
         }
       result = LM_ERR;
     }
@@ -512,7 +512,7 @@ LmResult LmRoutineCppObj::getRoutineInvocationInfo(
           << DgString0(getNameForDiags())
           << DgString1(invocationInfo_->callPhaseToString(invocationInfo_->getCallPhase()))
           << DgString2("LmRoutineCppObj::getRoutineInvocationInfo()")
-          << DgString3(e.getText().c_str());
+          << DgString3(e.getMessage().c_str());
       result = LM_ERR;
     }
   catch (...)
@@ -528,11 +528,14 @@ LmResult LmRoutineCppObj::getRoutineInvocationInfo(
   return result;
 }
 
-void LmRoutineCppObj::setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
-                                      SQLUDR_EmitRow emitRowPtr)
+LmResult LmRoutineCppObj::setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                          SQLUDR_EmitRow emitRowPtr,
+                                          ComDiagsArea *da)
 {
   interfaceObj_->getNextRowPtr_ = getNextRowPtr;
   interfaceObj_->emitRowPtr_    = emitRowPtr;
+
+  return LM_OK;
 }
 
 void LmRoutineCppObj::setUpWall(char *userBuf, int userBufLen)

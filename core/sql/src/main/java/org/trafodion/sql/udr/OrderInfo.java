@@ -61,6 +61,19 @@ public class OrderInfo
     // const Functions for use by UDR writer, both at compile and at run time
 
 /**
+ *  Default constructor.
+ */
+    public OrderInfo() {
+        columnNumbers_ = new Vector<Integer>();
+        orderTypes_ = new Vector<OrderTypeCode>();
+    }
+
+    public OrderInfo(OrderInfo o) {
+        columnNumbers_ = new Vector<Integer>(o.columnNumbers_);
+        orderTypes_ = new Vector<OrderTypeCode>(o.orderTypes_);
+    }
+
+/**
  *  Get the number of entries (columns) in the ordering.
  *  @return Number of entries/columns that make up the ordering.
  */
@@ -181,19 +194,6 @@ public class OrderInfo
     {
       columnNumbers_.clear();
       orderTypes_.clear();
-    }
-
-    public void mapColumnNumbers(Vector<Integer> map) throws UDRException {
-        for (int i=0; i<columnNumbers_.size(); i++)
-        {
-            int colNum = columnNumbers_.get(i).intValue();
-            if (map.get(colNum).intValue() < 0)
-                throw new UDRException(
-                                       38900,
-                                       "Invalid mapping for ORDER BY column %d",
-                                       colNum);
-            columnNumbers_.add(i, map.get(colNum));
-        }
     }
 
     private Vector<Integer> columnNumbers_;
