@@ -1547,6 +1547,9 @@ public:
     void startJitLogging(const char* checkPointName, Int64 elapsedSeconds);
 
     
+    static void setPerformISForMC(NABoolean x) { performISForMC_ = x; }
+    static NABoolean performISForMC() { return performISForMC_; }
+
                                               /*==============================*/
                                               /*     OBJECT INFORMATION       */
                                               /*==============================*/
@@ -1662,7 +1665,7 @@ private:
     //
     // When performing internal sort, determines the amount of memory required
     // for each column that will be read into memory.
-    Int64 getInternalSortMemoryRequirements();
+    Int64 getInternalSortMemoryRequirements(NABoolean performISForMC);
 
     // Get maximum amount of memory to use for internal sort.
     Int64 getMaxMemory();
@@ -1694,6 +1697,10 @@ private:
     // IUS in this batch.
     Lng32 selectIUSBatch(Int64 currentRows, Int64 futureRows,NABoolean& ranOut, Int32& colsSelected);
 
+    // Determine if all groups (both single and MC) can fit in memory for internal sort.
+    // No space is actually allocated and no state is set for each group.
+    NABoolean allGroupsFitInMemory();
+
     // Determine the next batch of columns to be processed with internal sort
     // by calling selectSortBatch() and ensuring that adequate memory can be
     // allocated for those columns.
@@ -1704,7 +1711,8 @@ private:
     // When a memory allocation fails, return any memory already allocated for
     // the group for internal sort, and set any PENDING columns back to
     // UNPROCESSED state.  This function cannot fail.
-    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, HSColGroupStruct* mgroup);
+    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, 
+                           HSColGroupStruct* mgroup);
 
     // Allocate memory for the columns selected for an internal sort batch.
     //Int32 allocateMemoryForColumns(Int64 rows);
@@ -1888,6 +1896,8 @@ private:
     double jitLogThreshold;
     Int64 stmtStartTime;
     NABoolean jitLogOn;
+
+    static THREAD_P NABoolean performISForMC_;
 
   };  // class HSGlobalsClass
 

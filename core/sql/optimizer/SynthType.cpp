@@ -732,7 +732,12 @@ static const NAType *synthAvgSum(const NAType& operand,
 		    {
 		      precision = MAX_NUMERIC_PRECISION;
 		    }
-		}
+		} else {
+
+                    if ( precision >= MAX_NUMERIC_PRECISION + 1 )
+                        precision = MINOF(precision + 10,
+                                          (Lng32)CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED));
+                }
 	    }
 
 	  if ((NOT type->isBigNum()) &&

@@ -51,7 +51,6 @@ extern std::string CAT_SQL_COMP_QR_HANDLER;
 extern std::string CAT_SQL_COMP_MV_REFRESH;
 extern std::string CAT_SQL_COMP_MVCAND;
 extern std::string CAT_SQL_COMP_XML;
-
 // ---- these categories are currently used
 extern std::string CAT_SQL_EXE;
 extern std::string CAT_SQL_COMP;

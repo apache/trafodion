@@ -3495,7 +3495,7 @@ NABoolean hqcConstant::isApproximatelyEqualTo(hqcConstant & other)
 #if 1    
     //Check if an error can occur when coverting coming ConstValue()(other) to target( this->getConstValue() )
     if(!other.getConstValue()->getType()->isCompatible(*(this->getSQCType())) 
-       ||other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE) )
+       || !other.getConstValue()->canBeSafelyCoercedTo(*(this->getSQCType())) )
        return FALSE;
 #else     
     if(other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE))

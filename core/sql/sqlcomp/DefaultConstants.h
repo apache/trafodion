@@ -3739,6 +3739,11 @@ enum DefaultConstants
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,
 
+  // estimated max naheap memory, used as a limit for update stats utility
+  USTAT_NAHEAP_ESTIMATED_MAX,
+
+  EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
+
   UDR_JVM_DEBUG_PORT,
   UDR_JVM_DEBUG_TIMEOUT,
 
