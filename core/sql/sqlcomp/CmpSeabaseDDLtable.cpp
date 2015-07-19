@@ -1,4 +1,4 @@
-/**********************************************************************
+ /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
@@ -1414,7 +1414,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
   ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
   Lng32 identityColPos = -1;
 
-  std::vector<NAString> colFamVec;
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
 
   // build colInfoArray and keyInfoArray, this may take two
   // iterations if we need to add a divisioning column
@@ -1429,7 +1430,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
                             &colArray, colInfoArray, implicitPK,
                             alignedFormat, &identityColPos,
-                            &colFamVec, defaultColFam.data()))
+                            &userColFamVec, &trafColFamVec, defaultColFam.data()))
         {
           processReturn();
 
@@ -1711,17 +1712,17 @@ short CmpSeabaseDDL::createSeabaseTable2(
   NABoolean addToTextTab = FALSE;
   if (defaultColFam != SEABASE_DEFAULT_COL_FAMILY)
     addToTextTab = TRUE;
-  else if (colFamVec.size() > 1)
+  else if (userColFamVec.size() > 1)
     addToTextTab = TRUE;
-  else if ((colFamVec.size() == 1) && (colFamVec[0] != SEABASE_DEFAULT_COL_FAMILY))
+  else if ((userColFamVec.size() == 1) && (userColFamVec[0] != SEABASE_DEFAULT_COL_FAMILY))
     addToTextTab = TRUE;
   if (addToTextTab)
     {
       allColFams = defaultColFam + " ";
       
-      for (int i = 0; i < colFamVec.size(); i++)
+      for (int i = 0; i < userColFamVec.size(); i++)
         {
-          allColFams += colFamVec[i];
+          allColFams += userColFamVec[i];
           allColFams += " ";
         }
 
@@ -1835,7 +1836,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
-  if (createHbaseTable(ehi, &hbaseTable, colFamVec,
+  if (createHbaseTable(ehi, &hbaseTable, trafColFamVec,
                        &hbaseCreateOptions, 
                        hbaseCreateOptionsArray,
                        numSplits, keyLength,
@@ -4240,6 +4241,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       colFamily = naTable->defaultColFam();
     }
 
+  NABoolean addFam = FALSE;
+  NAString trafColFam;
+  CollIndex idx = naTable->allColFams().index(colFamily);
+  if (idx == NULL_COLL_INDEX) // doesnt exist, add it
+    {
+      idx = naTable->allColFams().entries();
+      addFam = TRUE;
+    }
+
+  genTrafColFam(idx, trafColFam);
+
   const NAColumn * nacol = nacolArr.getColumn(colName);
   if (nacol)
     {
@@ -4270,9 +4282,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       ToQuotedString(quotedDefVal, defVal, FALSE);
     }
 
+  Int64 objUID = naTable->objectUid().castToInt64();
   str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              naTable->objectUid().castToInt64(), 
+              objUID,
               col_name,
               naTable->getColumnCount(), 
               COM_ADDED_USER_COLUMN_LIT,
@@ -4290,7 +4303,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               (Lng32)defaultClass,
               (quotedDefVal.isNull() ? "" : quotedDefVal.data()),
               (quotedHeading.isNull() ? "" : quotedHeading.data()),
-              colFamily.data(), 
+              trafColFam.data(),
               naTable->getColumnCount()+1,
               COM_UNKNOWN_PARAM_DIRECTION_LIT,
               "N",
@@ -4307,15 +4320,55 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
     }
 
   // if column family of added col doesnt exist in the table, add it
-  if (NOT naTable->allColFams().contains(colFamily))
+  //  CollIndex idx = naTable->allColFams().index(colFamily);
+  //  if (idx == NULL_COLL_INDEX) // doesnt exist, add it
+  if (addFam)
     {
-      HbaseCreateOption hbco("NAME", colFamily.data());
+      // col family doesnt exist. Add it to the table.
+      //      NAString trafColFam;
+      //      genTrafColFam(naTable->allColFams().entries(), trafColFam);
+
+      NAString currColFams;
+      if (getTextFromMD(&cliInterface, objUID, COM_HBASE_COL_FAMILY_TEXT, 
+                        0, currColFams))
+        {
+          deallocEHI(ehi); 
+          processReturn();
+          return;
+        }
+
+      Lng32 cliRC = deleteFromTextTable(&cliInterface, objUID, 
+                                        COM_HBASE_COL_FAMILY_TEXT, 0);
+      if (cliRC < 0)
+        {
+          deallocEHI(ehi); 
+          processReturn();
+          return;
+        }
+
+      NAString allColFams = currColFams + " " + colFamily;
+
+      cliRC = updateTextTable(&cliInterface, objUID, 
+                              COM_HBASE_COL_FAMILY_TEXT, 0,
+                              allColFams);
+      if (cliRC < 0)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_UNABLE_TO_CREATE_OBJECT)
+            << DgTableName(extTableName);
+          
+          deallocEHI(ehi); 
+          processReturn();
+          return;
+        }
+
+      HbaseCreateOption hbco("NAME", trafColFam.data()); //colFamily.data());
       NAList<HbaseCreateOption*> hbcol;
       hbcol.insert(&hbco);
       ElemDDLHbaseOptions edhbo(&hbcol, STMTHEAP);
 
       NAList<NAString> nal;
-      nal.insert(colFamily);
+      nal.insert(trafColFam);
 
       HbaseStr hbaseTable;
       hbaseTable.val = (char*)extNameForHbase.data();
@@ -7398,51 +7451,40 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       return;
     }
 
-  const char * cf1 = NULL;
-  const char * cf2 = NULL;
-  const char * cf3 = NULL;
+  std::vector<NAString> colFamVec;
   for (Lng32 i = 0; i < createTableNode->csl()->entries(); i++)
     {
       const NAString * nas = (NAString*)(*createTableNode->csl())[i];
 
-      switch (i)
-        {
-        case 0: cf1 = nas->data(); break;
-        case 1: cf2 = nas->data(); break;
-        case 2: cf3 = nas->data(); break;
-        default: break;
-        }
-
+      colFamVec.push_back(nas->data());
     }
 
   NAText hbaseOptionsStr;
-  NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL;
-  if (createTableNode->getHbaseOptionsClause())
+  NAList<HbaseCreateOption*> hbaseCreateOptions;
+  NAString hco;
+  retcode = setupHbaseOptions(createTableNode->getHbaseOptionsClause(), 
+                              0, objectNamePart,
+                              hbaseCreateOptions, hco);
+  if (retcode)
     {
-      hbaseCreateOptions = 
-        &createTableNode->getHbaseOptionsClause()->getHbaseOptions();
-      
-      for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
-        {
-          HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
-
-          hbaseOptionsStr += hbaseOption->key();
-          hbaseOptionsStr += " = ''";
-          hbaseOptionsStr += hbaseOption->val();
-          hbaseOptionsStr += "'' ";
-        }
+      deallocEHI(ehi);
+      processReturn();
+      return;
     }
+  
+  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
 
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)objectNamePart.data();
   hbaseTable.len = objectNamePart.length();
-  if (createHbaseTable(ehi, &hbaseTable, cf1, cf2, cf3,
-                       hbaseCreateOptions, NULL, 0, 0, NULL, FALSE) == -1)
+
+  if (createHbaseTable(ehi, &hbaseTable, colFamVec, 
+                       &hbaseCreateOptions, hbaseCreateOptionsArray) == -1)
     {
       deallocEHI(ehi); 
-
+      
       processReturn();
-
+      
       return;
     }
 

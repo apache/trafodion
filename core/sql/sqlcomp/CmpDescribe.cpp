@@ -2284,14 +2284,36 @@ static short cmpDisplayColumn(const NAColumn *nac,
   identityCol = FALSE;
   
   const NAString &colName = nac->getColName();
-  
+  NATable * naTable = (NATable*)nac->getNATable();
+
   NAString colFam;
   if ((nac->getNATable()->isSQLMXAlignedTable()) || 
       (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY))
     colFam = "";
   else
     {
-      colFam = ANSI_ID(nac->getHbaseColFam().data());
+#ifdef __ignore
+      // user created traf stored col fam is of the form:  #<1-byte-num>
+      //  1-byte-num is character '2' through '9', or 'a' through 'x'.
+      // This allows for 32 column families and
+      // is the index of user specified col family stored in naTable.allColFam().
+      unsigned char v = (unsigned char)nac->getHbaseColFam().data()[1];
+      int index = 0;
+      if (v >= '2' && v <= '9')
+        index = v - '2';
+      else if (v >= 'a' && v <= 'x')
+        index = (v - 'a') + 8;
+      else
+        return -1;
+#endif
+      int index = 0;
+      CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
+
+      if (index >= naTable->allColFams().entries())
+        return -1;
+
+      colFam = ANSI_ID(naTable->allColFams()[index].data());
+      
       colFam += ".";
     }
 

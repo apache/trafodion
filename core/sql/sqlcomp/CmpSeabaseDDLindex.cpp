@@ -549,6 +549,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   NAString &indexColFam = naTable->defaultColFam();
+  NAString trafColFam;
+  if (indexColFam != SEABASE_DEFAULT_COL_FAMILY)
+    {
+      CollIndex idx = naTable->allColFams().index(indexColFam);
+      genTrafColFam(idx, trafColFam);
+    }
 
   // Verify that current user has authority to create an index
   // The user must own the base table or have the ALTER_TABLE privilege or
@@ -778,7 +784,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 				     createIndexNode->isUniqueSpecified(),
 				     naTable->getClusteringIndex()->hasSyskey(),
                                      alignedFormat,
-                                     indexColFam,
+                                     trafColFam,
 				     naColArray,
 				     baseTableKeyArr,
 				     keyColCount,
@@ -896,7 +902,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
-  if (createHbaseTable(ehi, &hbaseIndex, indexColFam.data(), NULL, NULL,
+  if (createHbaseTable(ehi, &hbaseIndex, trafColFam.data(),
                        &hbaseCreateOptions, hbaseCreateOptionsArray, 
                        numSplits, keyLength, 
                        encodedKeysBuffer) == -1)

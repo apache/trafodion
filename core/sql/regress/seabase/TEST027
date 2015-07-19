@@ -3,6 +3,9 @@
 create schema trafodion.sch027;
 set schema trafodion.sch027;
 
+drop table if exists t027t01;
+drop table if exists t027t01l;
+
 log LOG027 clear;
 
 cqd TRAF_MULTI_COL_FAM 'ON';

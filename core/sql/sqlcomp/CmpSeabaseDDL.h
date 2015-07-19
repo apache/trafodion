@@ -304,7 +304,8 @@ class CmpSeabaseDDL
 			  NABoolean implicitPK,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
-                          std::vector<NAString> *colFamVec = NULL,
+                          std::vector<NAString> *userColFamVec = NULL,
+                          std::vector<NAString> *trafColFamVec = NULL,
                           const char * defaultColFam = NULL,
 			  NAMemory * heap = NULL);
 
@@ -359,14 +360,23 @@ class CmpSeabaseDDL
                        char * outObjType = NULL,
                        NABoolean lookInObjects = FALSE,
                        NABoolean lookInObjectsIdx = FALSE);
-
+  
    short getObjectValidDef(ExeCliInterface *cliInterface,
-                           const char * catName,
+                          const char * catName,
                            const char * schName,
                            const char * objName,
                            const ComObjectType objectType,
                            NABoolean &validDef);
-
+  
+   short genTrafColFam(int index, NAString &trafColFam);
+  
+   static short extractTrafColFam(const NAString &trafColFam, int &index);
+  
+   short processColFamily(NAString &inColFamily,
+                          NAString &outColFamily,
+                          std::vector<NAString> *userColFamVec,
+                          std::vector<NAString> *trafColFamVec);
+     
    short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
 
    short switchBackCompiler();
@@ -441,7 +451,7 @@ class CmpSeabaseDDL
 
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
-			 const char * cf1, const char * cf2, const char * cf3,
+			 const char * cf1, 
                          NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
                          NAText * hbaseCreateOptionsArray = NULL,
                          const int numSplits = 0,
