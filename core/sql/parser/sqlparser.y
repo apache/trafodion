@@ -24894,13 +24894,37 @@ column_definition : qualified_name data_type optional_col_def_default_clause
                                   delete $1 /*column_name*/;
                                 }
 
-column_definition : column_name 
+column_definition : qualified_name 
                                 {
+                                  NAString * colFam = NULL;
+                                  NAString * colNam = NULL;
+                                  ShortStringSequence *strseq = $1;
+                                  Lng32 numParts = strseq->numParts();
+                                  if (CmpCommon::getDefault(TRAF_MULTI_COL_FAM) == DF_OFF)
+                                    {
+                                      if (numParts != 1)
+                                        YYERROR;
+                                      colNam = strseq->extract(0);
+                                    }
+                                  else
+                                    {
+                                      if (numParts > 2)
+                                        YYERROR;
+
+                                      if (numParts == 1)
+                                        colNam = strseq->extract(0);
+                                      else
+                                        {
+                                          colFam = strseq->extract(0);
+                                          colNam = strseq->extract(1);
+                                        }
+                                    }
+
                                   $$ = new (PARSERHEAP())
 				    ElemDDLColDef(
-                                         NULL,
-                                         $1 /*column_name*/,
-                                         NULL,
+                                         colFam /* column family */,
+                                         colNam /*column_name*/,
+                                          NULL,
                                          NULL,
                                          NULL);
                                   delete $1 /*column_name*/;

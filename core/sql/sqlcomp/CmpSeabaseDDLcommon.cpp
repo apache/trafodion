@@ -2089,6 +2089,9 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
   NAText * hbaseCreateOptionsArray,
   NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
+  if (! hbaseCreateOptions)
+    return 0;
+
   for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
     {
       HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
@@ -2295,8 +2298,8 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
 
   if (! hbaseCreateOptions)
     {
-      *CmpCommon::diags() << DgSqlCode(-9999);
-      return -1;
+      //      *CmpCommon::diags() << DgSqlCode(-9999);
+      //      return -1;
     } 
 
   retcode = -1;
@@ -2365,10 +2368,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   if (CmpCommon::getDefault(TRAF_TRANS_TYPE) == DF_SSCC)
     isMVCC = false;
 
-  NAString colFamNames; // = (hbaseCreateOptionsArray)[HBASE_NAME].data();
-  //  if (NOT colFamNames.isNull())
-  //    colFamNames += " ";
-
+  NAString colFamNames;
   for (int i = 0; i < colFamVec.size(); i++)
     {
       colFamNames += colFamVec[i];
@@ -7845,8 +7845,18 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
   
-  retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
-                             hbaseCreateOptions, NULL,
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
+  NAString outColFam;
+  for (int i = 0; i < naTable->allColFams().entries(); i++)
+    {
+      processColFamily(naTable->allColFams()[i], outColFam,
+                       &userColFamVec, &trafColFamVec);
+    } // for
+  
+  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
+  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
+                             hbaseCreateOptions, hbaseCreateOptionsArray,
                              numSplits, keyLength, 
                              encodedKeysBuffer);
   if (retcode == -1)
