@@ -2327,34 +2327,6 @@ extern "C" void GETMXCSWARNINGORERROR(
     return;
 }
 
-bool isUTF8(const char *str)
-{
-    char c;
-    unsigned short byte = 1;
-    size_t len = strlen(str);
-
-    for (size_t i=0; i<len; i++)
-    {
-        c = str[i];
-
-        if (c >= 0x00 && c < 0x80 && byte == 1) // ascii
-            continue;
-        else if (c >= 0x80 && c < 0xc0 && byte > 1) // second, third, or fourth byte of a multi-byte sequence
-            byte--;
-        else if (c == 0xc0 || c == 0xc1) // overlong encoding
-            return false;
-        else if (c >= 0xc2 && c < 0xe0 && byte == 1) // start of 2-byte sequence
-            byte = 2;
-        else if (c >= 0xe0 && c < 0xf0 && byte == 1) // start of 3-byte sequence
-            byte = 3;
-        else if (c >= 0xf0 && c < 0xf5 && byte == 1) // start of 4-byte sequence
-            byte = 4;
-        else
-            return false;
-    }
-    return true;
-}
-
 char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize)
 {
     char c;

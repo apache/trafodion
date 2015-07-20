@@ -74,12 +74,12 @@ struct SRVR_SESSION_HDL {
 #define TRANSACTION_EXCEPTION   7
 
 // For Hash support.
-#define STREAMING_MODE 1073741824 //(2^30)
-#define STREAMING_DELAYEDERROR_MODE   536870912 //(2^29)
-#define CHARSET		   268435456 //(2^28) // For charset changes compatibility
-#define ROWWISE_ROWSET 134217728 //(2^27)
-#define PASSWORD_SECURITY 67108864 //(2^26)
-#define MXO_SPECIAL_1_MODE 512 // Compatibility mode
+#define STREAMING_MODE                0x40000000    //(2^30)
+#define STREAMING_DELAYEDERROR_MODE   0x20000000    //(2^29)
+#define CHARSET		                  0x10000000    //(2^28) // For charset changes compatibility
+#define ROWWISE_ROWSET                0x8000000     //(2^27)
+#define PASSWORD_SECURITY             0x4000000     //(2^26)
+#define MXO_SPECIAL_1_MODE            0x1000        // Compatibility mode
 
 // Following are the global variables
 #define             NO_OF_DESC_ITEMS        16
@@ -297,7 +297,6 @@ extern short resumeTransaction (long transTag);
 extern short endTransaction (void);
 
 // Add for new Rowsets logic
-extern bool isUTF8(const char *str);
 extern char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize=0);
 extern int getAllocLength(int DataType, int Length);
 
