@@ -268,8 +268,6 @@ void SRVR_CONNECT_HDL::addSrvrStmt(SRVR_STMT_HDL *pSrvrStmt,BOOL internalStmt)
         mapOfInternalSrvrStmt[pSrvrStmt->stmtName]= pSrvrStmt;  // +++ map error
     }
 
-    //End of Soln. No.: 10-100202-7923
-
     count++;
     //pSrvrStmt->myKey = count;
     FUNCTION_RETURN_VOID((NULL));
@@ -378,6 +376,13 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmt(
     {
         MEMORY_ALLOC_OBJ(pSrvrStmt,SRVR_STMT_HDL((long)this));
 
+        if (sqlQueryType == SQL_SP_RESULT_SET)
+        {
+            pSrvrStmt->sqlQueryType   = SQL_SP_RESULT_SET;
+            pSrvrStmt->callStmtId     = callStmtId;
+            pSrvrStmt->resultSetIndex = resultSetIndex;
+        }
+
         rc = pSrvrStmt->allocSqlmxHdls(stmtLabel, moduleName, moduleTimestamp,
             moduleVersion, sqlStmtType, useDefaultDesc);
         if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
@@ -476,6 +481,11 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::getInternalSrvrStmt(long dialogueId, const char
 
     if(pSrvrStmt != NULL)
         FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
+    else
+    {
+        *sqlcode = SQL_INVALID_HANDLE;
+        FUNCTION_RETURN_PTR(NULL, ("getInternalSrvrStmt() failed to find the internal statement \"%s\"", stmtLabel));
+    }
 }
 
 SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmtForMFC(

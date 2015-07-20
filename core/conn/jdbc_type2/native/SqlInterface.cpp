@@ -4451,6 +4451,15 @@ SQLRETURN COMMIT_ROWSET(long dialogueId, bool& bSQLMessageSet, odbc_SQLSvc_SQLEr
 
     SRVR_STMT_HDL *CmwSrvrStmt = getInternalSrvrStmt(dialogueId, "STMT_COMMIT_1", &sqlcode);
     /* Should process the error here if CmwSrvrStmt is NULL */
+    if(!CmwSrvrStmt || sqlcode == SQL_INVALID_HANDLE)
+    {
+        kdsCreateSQLErrorException(SQLError, 1, bSQLMessageSet);
+        kdsCopySQLErrorExceptionAndRowCount(SQLError,
+                "Internal Error: From Commit Rowsets, getInternalSrvrStmt() failed to get the prepared \"STMT_COMMIT_1\" statement",
+                sqlcode,
+                "HY000",
+                currentRowCount+1);
+    }
 
     // This should be changed to use the rowsets Execute() function once the code is checked in
     retcode = CmwSrvrStmt->Execute(NULL,1,TYPE_UNKNOWN,&inValueList,SQL_ASYNC_ENABLE_OFF,0, /* */NULL);

@@ -196,6 +196,7 @@ void kdsCopyToSQLValueSeq(SQLValueList_def *SQLValueList,
 	SQLValueList->_length++;
 	FUNCTION_RETURN_VOID((NULL));
 }
+
 void kdsCopySQLErrorExceptionAndRowCount(
 							odbc_SQLSvc_SQLError *SQLError, 
 							char *msg_buf,
@@ -211,13 +212,15 @@ void kdsCopySQLErrorExceptionAndRowCount(
 	// Allocate String Buffer
 	
 	SqlErrorDesc = (ERROR_DESC_def *)SQLError->errorList._buffer + SQLError->errorList._length;
-	SqlErrorDesc->errorText = new char[len+1];
-	if (SqlErrorDesc->errorText == NULL)
+	if (msg_buf)
 	{
-		exit(0);
-	}
-	strcpy(SqlErrorDesc->errorText, msg_buf);
-	SqlErrorDesc->sqlcode = sqlcode;
+        MEMORY_ALLOC_ARRAY(SqlErrorDesc->errorText, char, strlen(msg_buf)+1);
+        strcpy(SqlErrorDesc->errorText, msg_buf);
+    }
+    else
+        SqlErrorDesc->errorText = NULL;
+	
+    SqlErrorDesc->sqlcode = sqlcode;
 	strcpy(SqlErrorDesc->sqlstate, sqlState);
 	SqlErrorDesc->errorCodeType = SQLERRWARN;
 	SqlErrorDesc->Param1 = NULL;

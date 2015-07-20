@@ -407,6 +407,10 @@ SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId,
 			FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
 		}
 	}
+    else
+    {
+        FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+    }
 
 	rc = pConnect->switchContext(sqlcode);
 	switch (rc)

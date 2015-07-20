@@ -122,13 +122,8 @@ public:
 private:
 	SRVR_STMT_HDL_LIST		*pSrvrStmtListHead;
 	
-	//performance improvement changes
-//    __gnu_cxx::hash_map<long,SRVR_STMT_HDL*> mapOfSrvrStmt;
-//    __gnu_cxx::hash_map<std::string,SRVR_STMT_HDL*> mapOfInternalSrvrStmt;
     MapOfSrvrStmt mapOfSrvrStmt;
     MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
-
-	//CReplyMsgMap            replyMsgMap;
 
 	SRVR_STMT_HDL			*pCurrentSrvrStmt;
 	long					count;
