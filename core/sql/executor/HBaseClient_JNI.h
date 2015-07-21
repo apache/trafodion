@@ -20,6 +20,7 @@
 #ifndef HBASE_CLIENT_H
 #define HBASE_CLIENT_H
 #define INLINE_COLNAME_LEN 256
+#define MAX_COLNAME_LEN 32767 
 
 #include <list>
 #include "Platform.h"
@@ -281,7 +282,7 @@ public:
   HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, HbaseStr &columnToCheck, HbaseStr &colValToCheck, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
        Int64 timestamp, bool asyncOperation);
   HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, 
@@ -291,7 +292,7 @@ public:
   HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp,
                                                          bool asyncOperation);
   HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, bool asyncOperation);
+       HbaseStr &columnToCheck, HbaseStr &colValToCheck, Int64 timestamp, bool asyncOperation);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 

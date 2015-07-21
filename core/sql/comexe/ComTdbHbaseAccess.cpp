@@ -127,6 +127,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(returnMergeInsertExpr),
   encodedKeyExpr_(encodedKeyExpr),
   keyColValExpr_(keyColValExpr),
+  deletePreCondExpr_(NULL),
   hbaseFilterExpr_(hbaseFilterExpr),
 
   asciiRowLen_(asciiRowLen),
@@ -234,6 +235,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(NULL),
   encodedKeyExpr_(NULL),
   keyColValExpr_(NULL),
+  deletePreCondExpr_(NULL),
   hbaseFilterExpr_(NULL),
 
   asciiRowLen_(0),

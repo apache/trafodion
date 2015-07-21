@@ -1704,7 +1704,7 @@ short ExHbaseAccessTcb::extractColFamilyAndName(char * input,
 							      colFam, colName);
 }
 
-short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToCheck)
+short ExHbaseAccessTcb::evalKeyColValExpr(HbaseStr &columnToCheck, HbaseStr &colValToCheck)
 {
   if (! keyColValExpr())
     return -1;
@@ -1724,12 +1724,14 @@ short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToChe
       return -1;
     }
   
-  colValToCheck.assign(keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  memcpy(colValToCheck.val, keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  colValToCheck.len = hbaseAccessTdb().keyColValLen_;
 
   char * keyColNamePtr = hbaseAccessTdb().keyColName();
   short nameLen = *(short*)keyColNamePtr;
   char * keyColName = &keyColNamePtr[sizeof(short)];
-  columnToCheck.assign(keyColName, nameLen);
+  memcpy(columnToCheck.val, keyColName, nameLen);
+  columnToCheck.len = nameLen;
 
   return 0;
 }
@@ -1790,6 +1792,31 @@ short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
     
   return 0;
 }
+
+short ExHbaseAccessTcb::evalDeletePreCondExpr()
+{
+  if (! deletePreCondExpr()) {
+     return 1;
+  }
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  
+  exprRetCode =
+    deletePreCondExpr()->eval(pentry_down->getAtp(), workAtp_);
+
+  switch (exprRetCode) {
+     case ex_expr::EXPR_FALSE:
+        return 0;
+     case ex_expr::EXPR_TRUE:
+        return 1;
+     default:
+        return -1;
+  }
+  return 0; 
+}
+
 
 short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
 					   char * rowIdBuf, // input: buffer where rowid is created
