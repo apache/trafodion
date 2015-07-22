@@ -744,6 +744,7 @@ void LmLanguageManagerJava::initialize(LmResult &result,
                                         -LME_JVM_SYS_CLASS_ERROR,
                                         "org/trafodion/sql/udr/UDR$QueueStateInfo");
         result = LM_ERR;
+        jni->DeleteLocalRef(jc);
         return;
       }
 

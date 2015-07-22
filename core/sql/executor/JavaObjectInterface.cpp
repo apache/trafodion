@@ -21,6 +21,7 @@
 #include "JavaObjectInterface.h"
 #include "QRLogger.h"
 #include "Globals.h"
+#include "ComUser.h"
 
 // Changed the default to 512 to limit java heap size used by SQL processes.
 #define DEFAULT_JVM_MAX_HEAP_SIZE 512
