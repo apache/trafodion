@@ -1961,7 +1961,8 @@ void SPInfo::workTM()
   requestRow.release();
   requestData = NULL;
 
-  if (paramStyle_ != COM_STYLE_CPP_OBJ)
+  if (paramStyle_ != COM_STYLE_CPP_OBJ &&
+      paramStyle_ != COM_STYLE_JAVA_OBJ)
     {
       // should happen in the C interface only, C++ interface
       // sends this inside LmRoutine::invoke()

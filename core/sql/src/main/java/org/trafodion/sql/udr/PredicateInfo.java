@@ -17,7 +17,6 @@
 // @@@ END COPYRIGHT @@@
 
 package org.trafodion.sql.udr;
-import java.util.Vector;
 import java.nio.ByteBuffer;
 
 
@@ -57,7 +56,7 @@ public abstract class PredicateInfo extends TMUDRSerializableObject
             code_ = val;
         }
           
-        public int EvaluationCode() {
+        public int getEvaluationCode() {
             return code_;
         }
         
@@ -159,22 +158,23 @@ public abstract class PredicateInfo extends TMUDRSerializableObject
     public void setEvaluationCode(EvaluationCode c) {
         evalCode_ = c ;
     }
-    public abstract void mapColumnNumbers(Vector<Integer> map) throws UDRException;
-    public abstract String toString(TableInfo ti) ;
+    public abstract String toString(TableInfo ti) throws UDRException;
     
     public static short getCurrentVersion() { return 1; }
 
+    @Override
     public int serializedLength() throws UDRException{
       return super.serializedLength() + 2 * serializedLengthOfInt();
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
 
       super.serialize(outputBuffer);
 
-      serializeInt(evalCode_.EvaluationCode(),
+      serializeInt(evalCode_.getEvaluationCode(),
                    outputBuffer);
 
       serializeInt(operator_.ordinal(),
@@ -186,6 +186,7 @@ public abstract class PredicateInfo extends TMUDRSerializableObject
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException {
      int origPos = inputBuffer.position();
 

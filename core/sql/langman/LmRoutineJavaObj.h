@@ -47,6 +47,12 @@ friend class LmJavaExceptionReporter;
 
 public:
 
+  virtual LmResult setRuntimeInfo(
+       const char   *parentQid,
+       int           totalNumInstances,
+       int           myInstanceNum,
+       ComDiagsArea *da);
+
   virtual LmResult invokeRoutineMethod(
        /* IN */     tmudr::UDRInvocationInfo::CallPhase phase,
        /* IN */     const char   *serializedInvocationInfo,
@@ -71,6 +77,14 @@ public:
        /* IN */     Int32         planNum,
        /* OUT */    Int32        *planInfoLenOut,
        /* IN/OUT */ ComDiagsArea *da);
+
+  virtual LmResult setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                   SQLUDR_EmitRow emitRowPtr,
+                                   ComDiagsArea *da);
+  void setJNIFunctionPtrs(void *jniGetNextRowPtr,
+                          void *jniEmitRowPtr);
+  void setRowLengths(int inputRowLen,
+                     int outputRowLen);
 
 protected:
 
@@ -112,6 +126,17 @@ protected:
   jbyteArray returnedPIL_;
   jsize iiLen_;
   jsize piLen_;
-}; // class LmRoutineJava
+
+  // lengths of input and output rows, these are stored here
+  // to avoid unpacking the UDRInvocationInfo object on the
+  // C++ side
+  int inputRowLen_;
+  int outputRowLen_;
+
+  // function pointers for JNI and to emit result rows and EOD
+  SQLUDR_EmitRow      emitRowPtr_;
+  void *jniGetNextRowPtr_;
+  void *jniEmitRowPtr_;
+}; // class LmRoutineJavaObj
 
 #endif

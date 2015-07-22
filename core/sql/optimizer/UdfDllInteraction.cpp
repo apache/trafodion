@@ -101,7 +101,7 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
                           << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
                                             tmudr::UDRInvocationInfo::GET_ROUTINE_CALL))
                           << DgString2("describeParams")
-                          << DgString3(e.getText().data());
+                          << DgString3(e.getMessage().data());
       bindWA->setErrStatus();
       return FALSE;
     }
@@ -744,7 +744,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("serialize")
-             << DgString3(e.getText().data());
+             << DgString3(e.getMessage().data());
       return FALSE;
     }
   catch (...)
@@ -842,7 +842,7 @@ NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase
              << DgString0(invocationInfo->getUDRName().c_str())
              << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
              << DgString2("deserialize")
-             << DgString3(e.getText().data());
+             << DgString3(e.getMessage().data());
       return FALSE;
     }
   catch (...)
@@ -896,7 +896,7 @@ void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e,
       // valid SQLSTATE for UDRs, class 38 as defined
       // in the ANSI SQL standard
       *diags << DgSqlCode(-LME_CUSTOM_ERROR)
-             << DgString0(e.getText().data())
+             << DgString0(e.getMessage().data())
              << DgString1(sqlState);
       *diags << DgCustomSQLState(sqlState);
     }
@@ -905,7 +905,7 @@ void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e,
       *diags << DgSqlCode(-LME_UDF_ERROR)
              << DgString0(routineName)
              << DgString1(sqlState)
-             << DgString2(e.getText().data());
+             << DgString2(e.getMessage().data());
     }
 }
 
@@ -997,9 +997,10 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
     {
       NABoolean success = TRUE;
       NABoolean negate;
-      const NAType &paramType = actualParamVids[i].getType();
-      NABuiltInTypeEnum typeClass = paramType.getTypeQualifier();
       ConstValue *constVal = actualParamVids[i].getItemExpr()->castToConstValue(negate);
+      const NAType &paramType = (constVal ? constVal->getValueId().getType()
+                                          : actualParamVids[i].getType());
+      NABuiltInTypeEnum typeClass = paramType.getTypeQualifier();
       std::string paramName;
       char paramNum[10];
 

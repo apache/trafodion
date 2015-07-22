@@ -36,20 +36,17 @@ public class ParameterListInfo extends TupleInfo
     
     // UDR writers can ignore these methods    
     public static short getCurrentVersion() { return 1; }
+    @Override
     public int serializedLength() throws UDRException {
-      int result = super.serializedLength() + serializedLengthOfInt();
-
-      result += serializedLengthOfBinary(constBuffer_.limit());
+      int result = super.serializedLength();
 
       return result;
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException {
       int origPos = outputBuffer.position();
       super.serialize(outputBuffer);
-
-      serializeBinary(constBuffer_.array(),
-                      outputBuffer);
 
       int bytesSerialized = outputBuffer.position() - origPos;
 
@@ -58,6 +55,7 @@ public class ParameterListInfo extends TupleInfo
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException {
 
       int origPos = inputBuffer.position();
@@ -66,24 +64,9 @@ public class ParameterListInfo extends TupleInfo
 
       validateObjectType(TMUDRObjectType.PARAMETER_LIST_INFO_OBJ);
 
-      int size = deserializeInt(inputBuffer);
-
-      byte[] tmp = new byte[size];
-      inputBuffer.get(tmp,0,size);
-
-      setConstBuffer(tmp);
-      setRow(tmp);
-
       int bytesDeserialized = inputBuffer.position() - origPos;
       validateSerializedLength(bytesDeserialized);
 
       return bytesDeserialized;
     }
-    
-    
-    private void setConstBuffer(byte[] constBuffer) {
-        constBuffer_ = ByteBuffer.wrap(constBuffer);
-    }
-    private ByteBuffer constBuffer_;
-    
 }

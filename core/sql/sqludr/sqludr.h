@@ -403,7 +403,8 @@ typedef struct
   sqlstate, msgtext, calltype, statearea, udrinfo
 
 
-/* SQLTMUDF Queue State  */
+/* SQLTMUDF Queue State, also defined in
+   ../src/main/java/org/trafodion/sql/udr/UDR.java  */
 typedef enum SQLUDR_Q_STATE
 {
   SQLUDR_Q_MORE = 1,
@@ -511,7 +512,8 @@ namespace tmudr
     UDRException(int sqlState, const char *printf_format, ...);
     UDRException(const char * sqlState, const char *printf_format, ...);
     const char *getSQLState() const;
-    const std::string &getText() const;
+    const std::string &getMessage() const;
+    const std::string &getText() const; // deprecated, use getMessage()
 
   private:
 

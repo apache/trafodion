@@ -17,11 +17,8 @@
 // @@@ END COPYRIGHT @@@
 
 package org.trafodion.sql.udr;
-import java.util.Vector;
 import java.nio.ByteBuffer;
 
-
-// TO BE DONE (1) 3 serialize methods and (2) uncomment line in toString
 
 /**
    *  A comparison predicate to be evaluated on a table
@@ -77,6 +74,7 @@ public class ComparisonPredicateInfo extends PredicateInfo
     public ComparisonPredicateInfo() {
         super(TMUDRObjectType.COMP_PREDICATE_INFO_OBJ);
         columnNumber_ = -1;
+        value_ = "";
     }
 
     public void setColumnNumber(int columnNumber) {
@@ -87,19 +85,10 @@ public class ComparisonPredicateInfo extends PredicateInfo
         value_ = value;
     }
        
-    public void mapColumnNumbers(Vector<Integer> map) throws UDRException {
-        if (map.get(columnNumber_).intValue() < 0)
-            throw new UDRException(
-                                   38900,
-                                   "Invalid column mapping for column %d in a predicate",
-                                   columnNumber_);
-        columnNumber_ = map.get(columnNumber_).intValue();
-    }
-
-    public String toString(TableInfo ti) {
+    public String toString(TableInfo ti) throws UDRException {
         
-        //String s = ti.getColumn(columnNumber_).getColName();
-        String s = "hi";
+        String s = ti.getColumn(columnNumber_).getColName();
+
         switch (getOperator())
         {
         case UNKNOWN_OP:
@@ -139,11 +128,13 @@ public class ComparisonPredicateInfo extends PredicateInfo
     }
     
     public static short getCurrentVersion() { return 1; }
+    @Override
     public int serializedLength() throws UDRException{
       return super.serializedLength() +
         serializedLengthOfInt() +
         serializedLengthOfString(value_);
     }
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
@@ -163,6 +154,7 @@ public class ComparisonPredicateInfo extends PredicateInfo
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();

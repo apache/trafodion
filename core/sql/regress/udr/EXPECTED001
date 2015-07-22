@@ -3,6 +3,32 @@
 >>--------------------------------------------------------------------------
 >>log;
 >>
+>>obey TEST001(java_compile);
+>>--------------------------------------------------------------------------
+>>-- To compile Java code we invoke a script from regress/tools that uses
+>>-- environment variables to determine the source and target directories
+>>--------------------------------------------------------------------------
+>>log;
+------------------------------------------------------------------------------
+-- Compiling Java source files: TEST001_Sessionize.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/TEST001_Sessionize.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Compiling Java source files: TEST001_Fibonacci.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/TEST001_Fibonacci.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    TEST001_Sessionize.class
+--    TEST001_Sessionize$InternalColumns.class
+--    TEST001_Fibonacci.class
+-- Archive will be written to: TEST001.jar
+-- Executing: $jar cMf TEST001.jar TEST001_Sessionize.class TEST001_Sessionize$InternalColumns.class TEST001_Fibonacci.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>
 >>obey TEST001(create_tables);
 >>--------------------------------------------------------------------------
 >>create table clicks (userid char(32), ts TIME(6), ipAddr char(15)) ;
@@ -138,6 +164,20 @@
 
 --- SQL operation complete.
 >>
+>>-- create the equivalent Java library and TMUDF
+>>create library TEST001_Java file $$QUOTE$$ $$REGRRUNDIR$$/TEST001.jar $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create table_mapping function sessionize_java(user_colname char(10),
++>                                              ts_colname char(20),
++>                                              timeintval int)
++>external name 'TEST001_Sessionize'
++>language java
++>library TEST001_Java;
+
+--- SQL operation complete.
+>>
 >>-- negative test case, the entry point SESSIONIZE_ERR does not exist
 >>create table_mapping function sessionize_err(dummy char(10))
 +>returns (session_id largeint)
@@ -160,6 +200,15 @@
 +>external name 'Fibonacci'
 +>language cpp
 +>library TEST001;
+
+--- SQL operation complete.
+>>
+>>-- same in Java
+>>create table_mapping function fibonacci_java(start_row int, num_rows int)
++>returns (ordinal int, fibonacci_number largeint)
++>external name 'TEST001_Fibonacci'
++>language java
++>library TEST001_Java;
 
 --- SQL operation complete.
 >>
@@ -195,6 +244,33 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_DYNAMIC
 
 --- SQL operation complete.
 >>
+>>get table_mapping functions for library TEST001_Java ;
+
+Table_mapping Functions for Library SCH.TEST001_JAVA
+====================================================
+
+SCH.FIBONACCI_JAVA
+SCH.SESSIONIZE_JAVA
+
+--- SQL operation complete.
+>>
+>>showddl table_mapping function sessionize_java;
+
+CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
+  (
+    IN USER_COLNAME CHAR(10) CHARACTER SET ISO88591
+  , IN TS_COLNAME CHAR(20) CHARACTER SET ISO88591
+  , IN TIMEINTVAL INTEGER
+  )
+  EXTERNAL NAME 'TEST001_Sessionize'
+  LIBRARY TRAFODION.SCH.TEST001_JAVA
+  LANGUAGE JAVA
+  NO SQL
+  SAFE EXECUTION MODE
+  ;
+
+--- SQL operation complete.
+>>
 >>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
 +>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
 +>                                         JULIANTIMESTAMP(ts) as TS,
@@ -215,17 +291,16 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_DYNAMIC
 
 --- 4 row(s) selected.
 >>
->>-- meant to call sessionize_dynamic_shared, but sharing DLLs
->>-- is not yet working, getting an error so far
+>>-- call sessionize_dynamic_shared, sharing the same DLL
 >>SELECT *
-+>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
-+>                                         JULIANTIMESTAMP(ts) as TS,
-+>                                         ipAddr
-+>                                  FROM clicks
-+>                                  PARTITION BY ipaddr ORDER BY ts),
-+>                            'IPADDR',
-+>                            cast('TS' as char(2)),
-+>                            60000000)) XO;
++>FROM UDF(sessionize_dynamic_shared(TABLE(SELECT userid,
++>                                                JULIANTIMESTAMP(ts) as TS,
++>                                                ipAddr
++>                                         FROM clicks
++>                                         PARTITION BY ipaddr ORDER BY ts),
++>                                   'IPADDR',
++>                                   cast('TS' as char(2)),
++>                                   60000000)) XO;
 
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
@@ -295,6 +370,98 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 
 --- 1 row(s) selected.
 >>
+>>-- now test Java UDFs in a similar way
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
++>FROM UDF(sessionize_java(TABLE(SELECT userid,
++>                                      JULIANTIMESTAMP(ts) as TS,
++>                                      ipAddr
++>                               FROM clicks
++>                               PARTITION BY 1 ORDER BY 2),
++>                         'USERID',
++>                         'TS',
++>                         60000000));
+
+(EXPR)           USERID                            SESSION_ID            IPADDR
+---------------  --------------------------------  --------------------  ---------------
+
+23:59:59.500000  super-services                                       1  12.345.567.345 
+23:59:59.550000  super-services                                       1  12.345.567.345 
+21:59:59.500000  super-user                                           1  12.345.567.345 
+23:59:59.500000  super-user                                           2  12.345.567.345 
+
+--- 4 row(s) selected.
+>>
+>>-- uniqueness constraint avoids a groupby
+>>prepare s from
++>SELECT distinct ipaddr, session_id, sequence_no
++>FROM UDF(sessionize_java(TABLE(SELECT userid,
++>                                      JULIANTIMESTAMP(ts) as TS,
++>                                      ipAddr
++>                               FROM clicks
++>                               PARTITION BY ipaddr ORDER BY ts),
++>                         'IPADDR',
++>                         cast('TS' as char(2)),
++>                         60000000)) XO
++>where session_id < 10;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.79E+001
+2    .    3    tmudf                           XO                    5.00E+001
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  CLICKS                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+IPADDR           SESSION_ID            SEQUENCE_NO         
+---------------  --------------------  --------------------
+
+12.345.567.345                      1                     1
+12.345.567.345                      2                     1
+12.345.567.345                      2                     2
+12.345.567.345                      2                     3
+
+--- 4 row(s) selected.
+>>
+>>-- predicate on IPADDR is evaluated in child,
+>>-- predicate on SESSION_ID is evaluated in the UDF
+>>prepare s from
++>SELECT *
++>FROM UDF(sessionize_java(TABLE(SELECT userid,
++>                                      JULIANTIMESTAMP(ts) as TS,
++>                                      ipAddr
++>                               FROM clicks
++>                               PARTITION BY ipaddr ORDER BY ts),
++>                         'IPADDR',
++>                         cast('TS' as char(2)),
++>                         60000000)) XO
++>where SESSION_ID < 2 and
++>      IPADDR = '12.345.567.345';
+
+--- SQL command prepared.
+>>select count(*) from table(explain(null,'S'))
++>where operator = 'TMUDF'
++>  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
+--------------------  --------------------  --------------------------------  --------------------  ---------------
+
+                   1                     1  super-user                          212303930399500000  12.345.567.345 
+
+--- 1 row(s) selected.
 >>
 >>select *
 +>from UDF(fibonacci(1,10)) XO
@@ -326,9 +493,127 @@ ORDINAL      FIBONACCI_NUMBER
 
 --- 1 row(s) selected.
 >>
+>>select *
++>from UDF(fibonacci_java(1,10)) XO
++>order by 1;
+
+ORDINAL      FIBONACCI_NUMBER    
+-----------  --------------------
+
+          1                     1
+          2                     1
+          3                     2
+          4                     3
+          5                     5
+          6                     8
+          7                    13
+          8                    21
+          9                    34
+         10                    55
+
+--- 10 row(s) selected.
+>>
+>>select sum(fibonacci_number)
++>from UDF(fibonacci_java(50,10)) XO;
+
+(EXPR)              
+--------------------
+
+       2484365770887
+
+--- 1 row(s) selected.
+>>
+>>select *
++>from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
+
+ORDINAL      FIBONACCI_NUMBER    
+-----------  --------------------
+
+          1                     1
+          2                     1
+          3                     2
+          4                     3
+          5                     5
+          6                     8
+          7                    13
+          8                    21
+          9                    34
+         10                    55
+
+--- 10 row(s) selected.
+>>
+>>select *
++>from UDF(fibonacci(1,10)) cpp1 natural join
++>     UDF(fibonacci_java(1,10)) java1 natural join
++>     UDF(fibonacci_java(1,10)) java2;
+
+ORDINAL      FIBONACCI_NUMBER    
+-----------  --------------------
+
+          1                     1
+          2                     1
+          3                     2
+          4                     3
+          5                     5
+          6                     8
+          7                    13
+          8                    21
+          9                    34
+         10                    55
+
+--- 10 row(s) selected.
+>>
 >>prepare s from
 +>select * from udf(sessionize_dynamic(table(select * from t001_Datatypes),
 +>                                     'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
+
+--- SQL command prepared.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select * from udf(sessionize_java(table(select * from t001_Datatypes),
++>                                  'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
+
+--- SQL command prepared.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_CHAR_NOT_CASESPECIFIC  C_CHAR_VARYING   C_CHAR_VARYING_UPSHIFT  C_CHAR_VARYING_NOT_CASESPECIFIC  C_VARCHAR        C_VARCHAR_UPSHIFT  C_VARCHAR_NOT_CASESPECIFIC  C_NCHAR                         C_NCHAR_UPSHIFT                 C_NCHAR_NOT_CASESPECIFIC        C_NCHAR_VARYING                 C_NCHAR_VARYING_UPSHIFT         C_NCHAR_VARYING_NOT_CASESPECIFIC  C_NUMERIC     C_NUMERIC_UNSIGNED  C_DECIMAL    C_DECIMAL_UNSIGNED  C_INTEGER    C_INTEGER_UNSIGNED  C_LARGEINT            C_SMALLINT  C_SMALLINT_UNSIGNED  C_FLOAT                    C_REAL           C_DOUBLE_PRECISION         C_DATE      C_TIME    C_TIME6          C_TIMESTAMP0         C_TIMESTAMP                 C_TIMESTAMP6                C_INTERVAL  C_INTERVALS86     C_INTERVALD6S            C_BLOB                                                                                                C_CLOB
+--------------------  --------------------  ---------------  ---------------  -----------------------  ---------------  ----------------------  -------------------------------  ---------------  -----------------  --------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  ------------------------------  --------------------------------  ------------  ------------------  -----------  ------------------  -----------  ------------------  --------------------  ----------  -------------------  -------------------------  ---------------  -------------------------  ----------  --------  ---------------  -------------------  --------------------------  --------------------------  ----------  ----------------  -----------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+                   1                     1  CHAR_1           CHAR_1           char_1                   CHARVAR_1        CHARVAR_1               charvar_1                        VARCHAR_1        VARCHAR_1          varchar_1                   NCHAR_1                         NCHAR_1                         nchar_1                         NCHARVAR_1                      NCHARVAR_1                      ncharvar_1                               -1.00                1.00        -1.11                1.11           -1                   1                    -1          -1                    1  -1.11000000000000016E+000  -1.1100000E+000  -1.11000000000000016E+000  2001-01-01  01:01:01  01:01:01.111111  2001-01-01 01:01:01  2001-01-01 01:01:01.111111  2001-01-01 01:01:01.111111        1-01   88888888.666666   666666 23:59:59.999999  BLOB_1                                                                                                CLOB_1                                                                                              
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select * 
++>from udf(sessionize_dynamic(table(select * from t001_Datatypes),
++>                            'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60)) cpp
++>     natural join
++>     udf(sessionize_java(table(select * from t001_Datatypes),
++>                         'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60)) java;
 
 --- SQL command prepared.
 >>execute s;

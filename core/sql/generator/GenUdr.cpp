@@ -39,6 +39,7 @@
 #include "GenExpGenerator.h"
 #include "sql_buffer.h"
 #include "NAUserId.h"
+#include "ComUser.h"
 #pragma warning ( disable : 4244 )
 #include "ExplainTuple.h"
 #pragma warning ( default : 4244 )
@@ -436,6 +437,8 @@ static short udr_codegen(Generator *generator,
   newTdb = NULL;
   const NARoutine *metadata = NULL;
   const NARoutine *effectiveMetadata = NULL;
+  Int32 javaDebugPort = 0;
+  Int32 javaDebugTimeout = 0;
 
   OperatorTypeEnum relExprType = relExpr.getOperatorType();
   NABoolean isResultSet = (relExprType == REL_SP_PROXY ? TRUE : FALSE);
@@ -899,66 +902,34 @@ static short udr_codegen(Generator *generator,
 
   if (metadata && effectiveMetadata )
   {
-
-       // Check to see if we need to use the parent or action EntryPoint and Dll
-       // XXX Because SAS_SCORE always expect its entry point to be called 
-       // we always load the parent DLL and FUNC here. 
-       // This doesn't make it very general.
-       // We should force them to put in text tags in the metadata for those
-       // and allow these to be overriden by the action if the action has its
-       // own dll and function entry point.
-     
-       // In fact we should pass in all SAS Specific stuff as strings in the
-       // text table...
-#if 0
-    if (isUUDF && (m->getDllEntryPoint().length() == 0))
-    {
-       routineEntryName = AllocStringInSpace(*space, metadata->getDllEntryPoint());
-       sig = AllocStringInSpace(*space, metadata->getSignature());
-    }
-    else
-    {
-       routineEntryName = AllocStringInSpace(*space, m->getDllEntryPoint());
-       sig = AllocStringInSpace(*space, m->getSignature());
-    }
-    if (isUUDF && (m->getDllName().length() == 0))
-    {
-          // XXX right now the NAroutine:: constructor splits the DllName
-          // into the old container/path parts
-       container = AllocStringInSpace(*space, metadata->getFile());
-       path = AllocStringInSpace(*space, metadata->getExternalPath());
-    } 
-    else
-    {
-          // XXX right now the NAroutine:: constructor splits the DllName
-          // into the old container/path parts
-       container = AllocStringInSpace(*space, m->getFile());
-       path = AllocStringInSpace(*space, m->getExternalPath());
-    }
-#endif
-       // getSqlName will always return the name of the Function regardless 
-       // which NARoutine we access, so we will always get the original 
-       // Function name here and not the one of the Action.
+    // getSqlName will always return the name of the Function regardless 
+    // which NARoutine we access, so we will always get the original 
+    // Function name here and not the one of the Action.
 
     txAttrs = effectiveMetadata->getTxAttrs();
 
     const QualifiedName &qname = metadata->getSqlName();
     sqlName = AllocStringInSpace(*space, qname.getQualifiedNameAsAnsiString());
 
-       // For now the parent function Metadata is used to to initiate the 
-       // call. It is unclear yet how the Actions metadata should alter this
-       // if different... For now we use all the parents info!! XXX
+    // For now the parent function Metadata is used to to initiate the 
+    // call. It is unclear yet how the Actions metadata should alter this
+    // if different... For now we use all the parents info!! XXX
     if ( relExprType != REL_ISOLATED_SCALAR_UDF )
     {
-       routineEntryName = AllocStringInSpace(*space, metadata->getExternalName());
+       routineEntryName = AllocStringInSpace(*space, metadata->getMethodName());
     }
     else 
     {
        routineEntryName = AllocStringInSpace(*space, metadata->getDllEntryPoint());
     }
-      // Right now, the NARoutine constructor splits the Dll_name, into
-      // the File and Path parts for UDFs
-    container = AllocStringInSpace(*space, metadata->getFile());
+
+    // Class name for Java, unqualified DLL name for C/C++
+    pstyle = metadata->getParamStyle();
+    if (pstyle == COM_STYLE_JAVA_OBJ || pstyle == COM_STYLE_CPP_OBJ)
+      container = AllocStringInSpace(*space, metadata->getContainerName());
+    else
+      container = AllocStringInSpace(*space, metadata->getFile());
+    // Fully qualified jar file for Java, directory of DLL for C/C++
     path = AllocStringInSpace(*space, metadata->getExternalPath());
     sig = AllocStringInSpace(*space, metadata->getSignature());
 
@@ -967,7 +938,6 @@ static short udr_codegen(Generator *generator,
     
     rtype = metadata->getRoutineType();
     sqlmode = metadata->getSqlAccess();
-    pstyle = metadata->getParamStyle();
 
     extSecurity = metadata->getExternalSecurity();
     ownerId = metadata->getObjectOwner();
@@ -983,7 +953,26 @@ static short udr_codegen(Generator *generator,
       udrFlags |= UDR_CALL_ON_NULL;
     if (metadata->isExtraCall())
       udrFlags |= UDR_EXTRA_CALL;
-    
+
+    if (metadata->getLanguage() == COM_LANGUAGE_JAVA)
+      {
+        javaDebugPort = relExpr.getDefault(UDR_JVM_DEBUG_PORT);
+        if (javaDebugPort != 0)
+          {
+#ifndef _DEBUG
+            // in a release build, only DB__ROOT can debug the JVM
+            if (!ComUser::isRootUserID())
+              {
+                // a user other than DB__ROOT is trying to debug
+                // a UDR, don't allow it and issue a warning
+                javaDebugPort = 0;
+                *(CmpCommon::diags()) << DgSqlCode(1260);
+              }
+            else
+#endif
+              javaDebugTimeout = relExpr.getDefault(UDR_JVM_DEBUG_TIMEOUT);
+          }
+      }
   }  // if (metadata && effectiveMetadata) 
 
 #ifdef _DEBUG
@@ -1111,6 +1100,9 @@ static short udr_codegen(Generator *generator,
     udrSerInvocationInfo,
     udrSerPlanInfoLen,
     udrSerPlanInfo,
+
+    javaDebugPort,
+    javaDebugTimeout,
 
     space
     

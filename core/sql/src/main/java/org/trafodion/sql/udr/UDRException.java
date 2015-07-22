@@ -31,6 +31,11 @@ public class UDRException extends Exception
   {
 
 /**
+ * Serial id for "Serializable" base class
+ */
+	private static final long serialVersionUID = 7406408752369853225L;
+
+/**
  *  Constructor with an integer value for SQLSTATE
  *  @param sqlState ISO/ANSI SQLSTATE value to produce for this error.
  *                  According to the standard, this must be a value in
@@ -82,8 +87,11 @@ public class UDRException extends Exception
  *
  *  @return A string, representing the error message, including
  *          any substituted text with the additional arguments
- *          in the constructor. 
+ *          in the constructor.
+ *
+ *  @deprecated Use getMessage(), provided by the base class, instead.
  */
+      @Deprecated
       public String getText() {
           return getMessage();
       }
