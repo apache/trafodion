@@ -691,6 +691,97 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
         JNI_ReleaseStringUTFChars(jenv,statisticsSqlPlanEnabled, nStatisticsSqlPlanEnabled);
     }
 
+    SRVR_STMT_HDL *RbwSrvrStmt = NULL;
+    SRVR_STMT_HDL *CmwSrvrStmt = NULL;
+    const char    *rbwStmtStr  = "ROLLBACK WORK";
+    const char    *cmwStmtStr  = "COMMIT WORK";
+    int           stmtLen;
+    long          sqlcode;
+
+    SQLValue_def inputValue;
+    SQLRETURN retCode;
+
+    inputValue.dataCharset = 0;
+    inputValue.dataInd = 0;
+    inputValue.dataType = SQLTYPECODE_VARCHAR;
+    inputValue.dataValue._length = 0;
+    MEMORY_ALLOC_ARRAY(inputValue.dataValue._buffer, unsigned char, MAX_INTERNAL_STMT_LEN);
+
+    if((RbwSrvrStmt = createSrvrStmt(
+                    dialogueId,
+                    "STMT_ROLLBACK_1",
+                    &sqlcode,
+                    NULL,
+                    SQLCLI_ODBC_MODULE_VERSION,
+                    0,
+                    TYPE_UNKNOWN,
+                    FALSE,
+                    SQL_UNKNOWN,
+                    TRUE,
+                    0)) == NULL)
+    {
+        setConnectException.exception_nr = odbc_SQLSvc_Prepare_SQLInvalidHandle_exn_;
+        setConnectException.u.SQLInvalidHandle.sqlcode = sqlcode;
+        FUNCTION_RETURN_VOID(("createSrvrStmt() Failed"));
+    }
+
+    stmtLen = strlen(rbwStmtStr);
+    strncpy((char*)inputValue.dataValue._buffer, rbwStmtStr, stmtLen);
+    inputValue.dataValue._length = stmtLen;
+    retCode = RbwSrvrStmt->Prepare(&inputValue, INTERNAL_STMT, CLOSE_CURSORS_AT_COMMIT, 0);
+    if(retCode == SQL_ERROR)
+    {
+        setConnectException.exception_nr = odbc_SQLSvc_Prepare_SQLError_exn_;
+        //setConnectException.u.SQLError = ;
+        FUNCTION_RETURN_VOID(("Prepare ROLLBACK WORK Transaction Statement Failed"));
+    }
+
+    if((CmwSrvrStmt = createSrvrStmt(
+                    dialogueId,
+                    "STMT_COMMIT_1",
+                    &sqlcode,
+                    NULL,
+                    SQLCLI_ODBC_MODULE_VERSION,
+                    0,
+                    TYPE_UNKNOWN,
+                    FALSE,
+                    SQL_UNKNOWN,
+                    TRUE,
+                    0)) == NULL)
+    {
+        setConnectException.exception_nr = odbc_SQLSvc_Prepare_SQLInvalidHandle_exn_;
+        setConnectException.u.SQLInvalidHandle.sqlcode = sqlcode;
+        FUNCTION_RETURN_VOID(("createSrvrStmt() Failed"));
+    }
+
+    stmtLen = strlen(cmwStmtStr);
+    strncpy((char*)inputValue.dataValue._buffer, cmwStmtStr, stmtLen);
+    inputValue.dataValue._length = stmtLen;
+    retCode = CmwSrvrStmt->Prepare(&inputValue, INTERNAL_STMT, CLOSE_CURSORS_AT_COMMIT, 0);
+    if(retCode == SQL_ERROR)
+    {
+        setConnectException.exception_nr = odbc_SQLSvc_Prepare_SQLError_exn_;
+        //setConnectException.u.SQLError = ;
+        FUNCTION_RETURN_VOID(("Prepare COMMIT WORK Transaction Statement Failed"));
+    }
+
+    // Assign the module Information
+    nullModule.version = SQLCLI_ODBC_MODULE_VERSION;
+    nullModule.module_name = NULL;
+    nullModule.module_name_len = 0;
+    nullModule.charset = "ISO88591";
+    nullModule.creation_timestamp = 0;
+
+    srvrGlobal->m_FetchBufferSize = MAX_FETCH_BUFFER_SIZE; //Defaulting set the fetch buffer size to 512K
+    srvrGlobal->fetchAhead = false;
+    srvrGlobal->enableLongVarchar = false;
+    srvrGlobal->boolFlgforInitialization = 1;
+    srvrGlobal->maxRowsFetched = 0;
+
+    // temporary set buildId for non delay error mode for all connection.
+    // should be changed once we use InterfaceConnection in java layer.
+    srvrGlobal->drvrVersion.buildId = STREAMING_MODE | ROWWISE_ROWSET | CHARSET | PASSWORD_SECURITY; 
+    
     FUNCTION_RETURN_VOID((NULL));
 }
 

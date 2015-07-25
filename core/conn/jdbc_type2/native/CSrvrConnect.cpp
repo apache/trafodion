@@ -268,10 +268,8 @@ void SRVR_CONNECT_HDL::addSrvrStmt(SRVR_STMT_HDL *pSrvrStmt,BOOL internalStmt)
         mapOfInternalSrvrStmt[pSrvrStmt->stmtName]= pSrvrStmt;  // +++ map error
     }
 
-
-    //End of Soln. No.: 10-100202-7923
-
     count++;
+    //pSrvrStmt->myKey = count;
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -292,7 +290,6 @@ void SRVR_CONNECT_HDL::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
     if (pSrvrStmt->stmtType == INTERNAL_STMT)
         mapOfInternalSrvrStmt.erase(pSrvrStmt->stmtName);
 
-//  if(mapOfSrvrStmt.find(pSrvrStmt->stmt.tag) != mapOfSrvrStmt.end())
     if(mapOfSrvrStmt.find((long)pSrvrStmt) != mapOfSrvrStmt.end())
     {
         lpSrvrStmt=(SRVR_STMT_HDL * )mapOfSrvrStmt.find((long)pSrvrStmt)->second;
@@ -325,6 +322,7 @@ void SRVR_CONNECT_HDL::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
             MEMORY_DELETE_OBJ(lpSrvrStmt);
         }
 
+        count--;
     }
     FUNCTION_RETURN_VOID((NULL));
 }
@@ -338,7 +336,10 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmt(
     short   sqlStmtType,
     BOOL    useDefaultDesc,
     BOOL    internalStmt,
-    long stmtId)
+    long stmtId,
+    short sqlQueryType,      // If sqlQueryType indicates it's SPJ statement, then the member variable
+    Int32  resultSetIndex,   // resultSetIndex and callStmtId of SRVR_STMT_HDL should be initialized
+    SQLSTMT_ID* callStmtId)  // with these passed in args
 {
     FUNCTION_ENTRY("SRVR_CONNECT_HDL::createSrvrStmt",("..."));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  stmtLabel=%s, sqlcode=0x%08x",
@@ -368,11 +369,19 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmt(
            if(pSrvrStmt != NULL)
         FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
     }
-        else
-       pSrvrStmt = getSrvrStmt(0,stmtId,0);
+    else
+        pSrvrStmt = getSrvrStmt(0,stmtId,0);
+
     if (pSrvrStmt == NULL)
     {
         MEMORY_ALLOC_OBJ(pSrvrStmt,SRVR_STMT_HDL((long)this));
+
+        if (sqlQueryType == SQL_SP_RESULT_SET)
+        {
+            pSrvrStmt->sqlQueryType   = SQL_SP_RESULT_SET;
+            pSrvrStmt->callStmtId     = callStmtId;
+            pSrvrStmt->resultSetIndex = resultSetIndex;
+        }
 
         rc = pSrvrStmt->allocSqlmxHdls(stmtLabel, moduleName, moduleTimestamp,
             moduleVersion, sqlStmtType, useDefaultDesc);
@@ -455,6 +464,28 @@ SRVR_STMT_HDL *SRVR_CONNECT_HDL::getSrvrStmt(long dialogueId,long stmtId,long   
         FUNCTION_RETURN_PTR(((SRVR_STMT_HDL *)iterOfStmtId->second),(NULL));
 
     FUNCTION_RETURN_PTR(NULL,(NULL));
+}
+
+SRVR_STMT_HDL *SRVR_CONNECT_HDL::getInternalSrvrStmt(long dialogueId, const char* stmtLabel, long *sqlcode)
+{
+    FUNCTION_ENTRY("getInternalSrvrStmt",("dialogueId=0x%08x, stmtLabel=0x%08x, sqlcode=0x%08x",
+                dialogueId,
+                stmtLabel,
+                sqlcode));
+
+    SRVR_STMT_HDL *pSrvrStmt = NULL;
+
+    MapOfInternalSrvrStmt::iterator iterOfStmtId = mapOfInternalSrvrStmt.find(stmtLabel);
+    if( !(iterOfStmtId == mapOfInternalSrvrStmt.end()) )
+        pSrvrStmt =(SRVR_STMT_HDL *)iterOfStmtId->second;
+
+    if(pSrvrStmt != NULL)
+        FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
+    else
+    {
+        *sqlcode = SQL_INVALID_HANDLE;
+        FUNCTION_RETURN_PTR(NULL, ("getInternalSrvrStmt() failed to find the internal statement \"%s\"", stmtLabel));
+    }
 }
 
 SRVR_STMT_HDL *SRVR_CONNECT_HDL::createSrvrStmtForMFC(
